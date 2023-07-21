@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.37
+ * Version 1.9.56
  */
 
 (function (factory) {
@@ -11,11 +11,11 @@
     /**
      * Concat dependencies to scriptlet code
      *
-     * @param {string} scriptlet string view of scriptlet
-     * @returns {string} string view of scriptlet with attached dependencies
+     * @param scriptlet scriptlet or redirect function
+     * @returns string view of scriptlet with attached dependencies
      */
     function attachDependencies(scriptlet) {
-      const _scriptlet$injections = scriptlet.injections,
+      var _scriptlet$injections = scriptlet.injections,
         injections = _scriptlet$injections === void 0 ? [] : _scriptlet$injections;
       return injections.reduce(function (accum, dep) {
         return "".concat(accum, "\n").concat(dep.toString());
@@ -25,9 +25,9 @@
     /**
      * Add scriptlet call to existing code
      *
-     * @param {Function} scriptlet scriptlet func
-     * @param {string} code scriptlet's string representation
-     * @returns {string} wrapped scriptlet call
+     * @param scriptlet scriptlet func
+     * @param code scriptlet's string representation
+     * @returns wrapped scriptlet call
      */
     function addCall(scriptlet, code) {
       return "".concat(code, "\n    const updatedArgs = args ? [].concat(source).concat(args) : [source];\n    try {\n        ").concat(scriptlet.name, ".apply(this, updatedArgs);\n    } catch (e) {\n        console.log(e);\n    }");
@@ -49,19 +49,18 @@
      *      function noeval(source) { alert(source); }
      *      noeval.apply(this, args);
      * )({"args": ["aaa", "bbb"], "name":"noeval"}, ["aaa", "bbb"])`
-     * @param {Object} source - object with scriptlet properties
-     * @param {string} code - scriptlet source code with dependencies
-     * @param {boolean} redirect if function is redirect
-     * @returns {string} full scriptlet code
+     * @param source - object with scriptlet properties
+     * @param code - scriptlet source code with dependencies
+     * @param redirect if function is redirect
+     * @returns full scriptlet code
      */
     function passSourceAndProps(source, code) {
-      let redirect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      if (source.hit) {
-        source.hit = source.hit.toString();
-      }
-      const sourceString = JSON.stringify(source);
-      const argsString = source.args ? "[".concat(source.args.map(JSON.stringify), "]") : undefined;
-      const params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
+      var redirect = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var sourceString = JSON.stringify(source);
+      var argsString = source.args ? "[".concat(source.args.map(function (arg) {
+        return JSON.stringify(arg);
+      }), "]") : undefined;
+      var params = argsString ? "".concat(sourceString, ", ").concat(argsString) : sourceString;
       if (redirect) {
         return "(function(source, args){\n".concat(code, "\n})(").concat(params, ");");
       }
@@ -71,8 +70,8 @@
     /**
      * Wrap code in no name function
      *
-     * @param {string} code which must be wrapped
-     * @returns {string} wrapped code
+     * @param code which must be wrapped
+     * @returns wrapped code
      */
     function wrapInNonameFunc(code) {
       return "function(source, args){\n".concat(code, "\n}");
@@ -81,22 +80,22 @@
     /**
      * Checks whether the obj is an empty object
      *
-     * @param {Object} obj arbitrary object
-     * @returns {boolean} if object is empty
+     * @param obj arbitrary object
+     * @returns if object is empty
      */
-    const isEmptyObject = function isEmptyObject(obj) {
+    var isEmptyObject = function isEmptyObject(obj) {
       return Object.keys(obj).length === 0 && !obj.prototype;
     };
 
     /**
      * Safely retrieve property descriptor
      *
-     * @param {Object} obj target object
-     * @param {string} prop target property
-     * @returns {object|null} descriptor or null if it's not available or non-configurable
+     * @param obj target object
+     * @param  prop target property
+     * @returns descriptor or null if it's not available or non-configurable
      */
-    const safeGetDescriptor = function safeGetDescriptor(obj, prop) {
-      const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+    var safeGetDescriptor = function safeGetDescriptor(obj, prop) {
+      var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
       if (descriptor && descriptor.configurable) {
         return descriptor;
       }
@@ -106,13 +105,13 @@
     /**
      * Set getter and setter to property if it's configurable
      *
-     * @param {Object} object target object with property
-     * @param {string} property property name
-     * @param {Object} descriptor contains getter and setter functions
-     * @returns {boolean} is operation successful
+     * @param  object target object with property
+     * @param property property name
+     * @param descriptor contains getter and setter functions
+     * @returns is operation successful
      */
     function setPropertyAccess(object, property, descriptor) {
-      const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+      var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
       if (currentDescriptor && !currentDescriptor.configurable) {
         return false;
       }
@@ -124,37 +123,36 @@
      * Determines whether the passed value is NaN
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN
      *
-     * @param {any} num arbitrary value
-     * @returns {boolean} if provided value is NaN
+     * @param num arbitrary value
+     * @returns if provided value is NaN
      */
-    const nativeIsNaN = function nativeIsNaN(num) {
+    var nativeIsNaN = function nativeIsNaN(num) {
       // eslint-disable-next-line no-restricted-properties
-      const native = Number.isNaN || window.isNaN;
+      var native = Number.isNaN || window.isNaN;
       return native(num);
     };
-
     /**
      * Determines whether the passed value is a finite number
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
      *
-     * @param {any} num arbitrary value
-     * @returns {boolean} if provided value is finite
+     * @param num arbitrary value
+     * @returns if provided value is finite
      */
-    const nativeIsFinite = function nativeIsFinite(num) {
+    var nativeIsFinite = function nativeIsFinite(num) {
       // eslint-disable-next-line no-restricted-properties
-      const native = Number.isFinite || window.isFinite;
+      var native = Number.isFinite || window.isFinite;
       return native(num);
     };
 
     /**
      * Parses string for a number, if possible, otherwise returns null.
      *
-     * @param {any} rawString arbitrary string
-     * @returns {number|null} number or null if string not parsable
+     * @param rawString arbitrary string
+     * @returns number or null if string not parsable
      */
-    const getNumberFromString = function getNumberFromString(rawString) {
-      const parsedDelay = parseInt(rawString, 10);
-      const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+    var getNumberFromString = function getNumberFromString(rawString) {
+      var parsedDelay = parseInt(rawString, 10);
+      var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
       return validDelay;
     };
 
@@ -162,9 +160,9 @@
      * Generate a random integer between two values, inclusive
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_integer_between_two_values_inclusive
      *
-     * @param {number} min range minimum
-     * @param {number} max range maximum
-     * @returns {number} random number
+     * @param min range minimum
+     * @param max range maximum
+     * @returns random number
      */
     function getRandomIntInclusive(min, max) {
       min = Math.ceil(min);
@@ -173,53 +171,92 @@
     }
 
     /**
+     * A literal string or regexp pattern wrapped in forward slashes.
+     * For example, 'simpleStr' or '/adblock|_0x/'.
+     */
+
+    /**
      * String.prototype.replaceAll polyfill
      *
-     * @param {string} input input string
-     * @param {string} substr to look for
-     * @param {string} newSubstr replacement
-     * @returns {string} result string
+     * @param input input string
+     * @param substr to look for
+     * @param newSubstr replacement
+     * @returns result string
      */
-    const replaceAll = function replaceAll(input, substr, newSubstr) {
+    var replaceAll = function replaceAll(input, substr, newSubstr) {
       return input.split(substr).join(newSubstr);
     };
 
     /**
      * Escapes special chars in string
      *
-     * @param {string} str raw string
-     * @returns {string} string with escaped special characters
+     * @param str raw string
+     * @returns string with escaped special characters
      */
-    const escapeRegExp = function escapeRegExp(str) {
+    var escapeRegExp = function escapeRegExp(str) {
       return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
 
     /**
-     * A literal string or regexp pattern wrapped in forward slashes.
-     * For example, 'simpleStr' or '/adblock|_0x/'.
-     *
-     * @typedef {string} RawStrPattern
-     */
-
-    /**
-     * Converts string to the regexp
+     * Converts string to the regexp,
+     * if string contains valid regexp flags it will be converted to regexp with flags
      * TODO think about nested dependencies, but be careful with dependency loops
      *
-     * @param {RawStrPattern} [input=''] literal string or regexp pattern; defaults to '' (empty string)
-     * @returns {RegExp} regular expression; defaults to /.?/
-     * @throws {SyntaxError} Throw an error for invalid regex pattern
+     * @param input literal string or regexp pattern; defaults to '' (empty string)
+     * @returns regular expression; defaults to /.?/
      */
-    const toRegExp = function toRegExp() {
-      let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
-      const DEFAULT_VALUE = '.?';
-      const FORWARD_SLASH = '/';
+    var toRegExp = function toRegExp() {
+      var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      var DEFAULT_VALUE = '.?';
+      var FORWARD_SLASH = '/';
       if (input === '') {
         return new RegExp(DEFAULT_VALUE);
       }
-      if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-        return new RegExp(input.slice(1, -1));
+      var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+      var flagsPart = input.substring(delimiterIndex + 1);
+      var regExpPart = input.substring(0, delimiterIndex + 1);
+
+      /**
+       * Checks whether the string is a valid regexp flag
+       *
+       * @param flag string
+       * @returns True if regexp flag is valid, otherwise false.
+       */
+      var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+        if (!flag) {
+          return false;
+        }
+        try {
+          // eslint-disable-next-line no-new
+          new RegExp('', flag);
+          return true;
+        } catch (ex) {
+          return false;
+        }
+      };
+
+      /**
+       * Checks whether the text string contains valid regexp flags,
+       * and returns `flagsStr` if valid, otherwise empty string.
+       *
+       * @param regExpStr string
+       * @param flagsStr string
+       * @returns `flagsStr` if it is valid, otherwise empty string.
+       */
+      var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+        if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH)
+        // Not a correct regex if ends with '\\/'
+        && !regExpStr.endsWith('\\/') && isValidRegExpFlag(flagsStr)) {
+          return flagsStr;
+        }
+        return '';
+      };
+      var flags = getRegExpFlags(regExpPart, flagsPart);
+      if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+        var regExpInput = flags ? regExpPart : input;
+        return new RegExp(regExpInput.slice(1, -1), flags);
       }
-      const escaped = input
+      var escaped = input
       // remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
       // e.g #%#//scriptlet('prevent-setTimeout', '.css(\'display\',\'block\');')
       .replace(/\\'/g, '\'').replace(/\\"/g, '"')
@@ -231,16 +268,16 @@
     /**
      * Checks whether the input string can be converted to regexp
      *
-     * @param {RawStrPattern} input literal string or regexp pattern
-     * @returns {boolean} if input can be converted to regexp
+     * @param input literal string or regexp pattern
+     * @returns if input can be converted to regexp
      */
-    const isValidStrPattern = function isValidStrPattern(input) {
-      const FORWARD_SLASH = '/';
-      let str = escapeRegExp(input);
+    var isValidStrPattern = function isValidStrPattern(input) {
+      var FORWARD_SLASH = '/';
+      var str = escapeRegExp(input);
       if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
         str = input.slice(1, -1);
       }
-      let isValid;
+      var isValid;
       try {
         isValid = new RegExp(str);
         isValid = true;
@@ -253,36 +290,36 @@
     /**
      * Get string before regexp first match
      *
-     * @param {string} str input string
-     * @param {RegExp} rx find pattern
-     * @returns {string} result string
+     * @param str input string
+     * @param rx find pattern
+     * @returns result string
      */
-    const getBeforeRegExp = function getBeforeRegExp(str, rx) {
-      const index = str.search(rx);
+    var getBeforeRegExp = function getBeforeRegExp(str, rx) {
+      var index = str.search(rx);
       return str.substring(0, index);
     };
-    const substringAfter$1 = function substringAfter(str, separator) {
+    var substringAfter$1 = function substringAfter(str, separator) {
       if (!str) {
         return str;
       }
-      const index = str.indexOf(separator);
+      var index = str.indexOf(separator);
       return index < 0 ? '' : str.substring(index + separator.length);
     };
-    const substringBefore = function substringBefore(str, separator) {
+    var substringBefore = function substringBefore(str, separator) {
       if (!str || !separator) {
         return str;
       }
-      const index = str.indexOf(separator);
+      var index = str.indexOf(separator);
       return index < 0 ? str : str.substring(0, index);
     };
 
     /**
      * Wrap str in single quotes and replaces single quotes to double one
      *
-     * @param {string} str input string
-     * @returns {string} string with swapped quotes
+     * @param str input string
+     * @returns string with swapped quotes
      */
-    const wrapInSingleQuotes = function wrapInSingleQuotes(str) {
+    var wrapInSingleQuotes = function wrapInSingleQuotes(str) {
       if (str[0] === '\'' && str[str.length - 1] === '\'' || str[0] === '"' && str[str.length - 1] === '"') {
         str = str.substring(1, str.length - 1);
       }
@@ -294,29 +331,29 @@
     /**
      * Returns substring enclosed in the widest braces
      *
-     * @param {string} str input string
-     * @returns {string} substring
+     * @param str input string
+     * @returns substring
      */
-    const getStringInBraces = function getStringInBraces(str) {
-      const firstIndex = str.indexOf('(');
-      const lastIndex = str.lastIndexOf(')');
+    var getStringInBraces = function getStringInBraces(str) {
+      var firstIndex = str.indexOf('(');
+      var lastIndex = str.lastIndexOf(')');
       return str.substring(firstIndex + 1, lastIndex);
     };
 
     /**
      * Prepares RTCPeerConnection config as string for proper logging
      *
-     * @param {any} config RTC config
-     * @returns {string} stringified config
+     * @param config RTC config
+     * @returns stringified config
      */
-    const convertRtcConfigToString = function convertRtcConfigToString(config) {
-      const UNDEF_STR = 'undefined';
-      let str = UNDEF_STR;
+    var convertRtcConfigToString = function convertRtcConfigToString(config) {
+      var UNDEF_STR = 'undefined';
+      var str = UNDEF_STR;
       if (config === null) {
         str = 'null';
       } else if (config instanceof Object) {
-        const SERVERS_PROP_NAME = 'iceServers';
-        const URLS_PROP_NAME = 'urls';
+        var SERVERS_PROP_NAME = 'iceServers';
+        var URLS_PROP_NAME = 'urls';
         /*
             const exampleConfig = {
                 'iceServers': [
@@ -324,7 +361,7 @@
                 ],
             };
         */
-        if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
+        if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && config[SERVERS_PROP_NAME] && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
           str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
         }
       }
@@ -335,12 +372,12 @@
      * Checks whether the match input string can be converted to regexp,
      * used for match inputs with possible negation
      *
-     * @param {string} match literal string or regexp pattern
-     * @returns {boolean} true if input can be converted to regexp
+     * @param match literal string or regexp pattern
+     * @returns true if input can be converted to regexp
      */
-    const isValidMatchStr = function isValidMatchStr(match) {
-      const INVERT_MARKER = '!';
-      let str = match;
+    var isValidMatchStr = function isValidMatchStr(match) {
+      var INVERT_MARKER = '!';
+      var str = match;
       if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
         str = match.slice(1);
       }
@@ -351,39 +388,33 @@
      * Validates the match input number,
      * used for match inputs with possible negation
      *
-     * @param {string} match string of match number
-     * @returns {boolean} if match number is valid
+     * @param match string of match number
+     * @returns if match number is valid
      */
-    const isValidMatchNumber = function isValidMatchNumber(match) {
-      const INVERT_MARKER = '!';
-      let str = match;
+    var isValidMatchNumber = function isValidMatchNumber(match) {
+      var INVERT_MARKER = '!';
+      var str = match;
       if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
         str = match.slice(1);
       }
-      const num = parseFloat(str);
+      var num = parseFloat(str);
       return !nativeIsNaN(num) && nativeIsFinite(num);
     };
-
-    /**
-     * @typedef {Object} MatchData
-     * @property {boolean} isInvertedMatch if matching should be inverted
-     * @property {RegExp} matchRegexp match value parsed into regex
-     */
 
     /**
      * Parses match arg with possible negation for no matching.
      * Needed for prevent-setTimeout, prevent-setInterval,
      * prevent-requestAnimationFrame and prevent-window-open
      *
-     * @param {string} match matching arg
-     * @returns {MatchData} data prepared for matching
+     * @param match matching arg
+     * @returns data prepared for matching
      */
-    const parseMatchArg = function parseMatchArg(match) {
-      const INVERT_MARKER = '!';
+    var parseMatchArg = function parseMatchArg(match) {
+      var INVERT_MARKER = '!';
       // In case if "match" is "undefined" return "false"
-      const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
-      const matchValue = isInvertedMatch ? match.slice(1) : match;
-      const matchRegexp = toRegExp(matchValue);
+      var isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
+      var matchValue = isInvertedMatch ? match.slice(1) : match;
+      var matchRegexp = toRegExp(matchValue);
       return {
         isInvertedMatch,
         matchRegexp,
@@ -392,24 +423,18 @@
     };
 
     /**
-     * @typedef {Object} DelayData
-     * @property {boolean} isInvertedDelayMatch if matching should be inverted
-     * @property {number|null} delayMatch parsed delay or null if delay is invalid
-     */
-
-    /**
      * Parses delay arg with possible negation for no matching.
      * Needed for prevent-setTimeout and prevent-setInterval
      *
-     * @param {string} delay scriptlet's delay arg
-     * @returns {DelayData} parsed delay data
+     * @param delay scriptlet's delay arg
+     * @returns parsed delay data
      */
-    const parseDelayArg = function parseDelayArg(delay) {
-      const INVERT_MARKER = '!';
-      const isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
-      let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
-      delayValue = parseInt(delayValue, 10);
-      const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+    var parseDelayArg = function parseDelayArg(delay) {
+      var INVERT_MARKER = '!';
+      var isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
+      var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+      var parsedDelay = parseInt(delayValue, 10);
+      var delayMatch = nativeIsNaN(parsedDelay) ? null : parsedDelay;
       return {
         isInvertedDelayMatch,
         delayMatch
@@ -419,19 +444,19 @@
     /**
      * Converts object to string for logging
      *
-     * @param {Object} obj data object
-     * @returns {string} object's string representation
+     * @param obj data object
+     * @returns object's string representation
      */
-    const objectToString = function objectToString(obj) {
+    var objectToString = function objectToString(obj) {
       // In case if the type of passed obj is different than Object
       // https://github.com/AdguardTeam/Scriptlets/issues/282
       if (!obj || typeof obj !== 'object') {
         return String(obj);
       }
       return isEmptyObject(obj) ? '{}' : Object.entries(obj).map(function (pair) {
-        const key = pair[0];
-        const value = pair[1];
-        let recordValueStr = value;
+        var key = pair[0];
+        var value = pair[1];
+        var recordValueStr = value;
         if (value instanceof Object) {
           recordValueStr = "{ ".concat(objectToString(value), " }");
         }
@@ -442,11 +467,11 @@
     /**
      * Converts types into a string
      *
-     * @param {any} value input value type
-     * @returns {string} type's string representation
+     * @param value input value type
+     * @returns type's string representation
      */
-    const convertTypeToString = function convertTypeToString(value) {
-      let output;
+    var convertTypeToString = function convertTypeToString(value) {
+      var output;
       if (typeof value === 'undefined') {
         output = 'undefined';
       } else if (typeof value === 'object') {
@@ -464,14 +489,14 @@
     /**
      * Generate a random string, a length of the string is provided as an argument
      *
-     * @param {number} length output's length
-     * @returns {string} random string
+     * @param length output's length
+     * @returns random string
      */
     function getRandomStrByLength(length) {
-      let result = '';
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
-      const charactersLength = characters.length;
-      for (let i = 0; i < length; i += 1) {
+      var result = '';
+      var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
+      var charactersLength = characters.length;
+      for (var i = 0; i < length; i += 1) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
       }
       return result;
@@ -480,39 +505,39 @@
     /**
      * Generate a random string
      *
-     * @param {string} customResponseText response text to include in output
-     * @returns {string|null} random string or null if passed argument is invalid
+     * @param customResponseText response text to include in output
+     * @returns random string or null if passed argument is invalid
      */
     function generateRandomResponse(customResponseText) {
-      let customResponse = customResponseText;
+      var customResponse = customResponseText;
       if (customResponse === 'true') {
         // Generate random alphanumeric string of 10 symbols
         customResponse = Math.random().toString(36).slice(-10);
         return customResponse;
       }
       customResponse = customResponse.replace('length:', '');
-      const rangeRegex = /^\d+-\d+$/;
+      var rangeRegex = /^\d+-\d+$/;
       // Return empty string if range is invalid
       if (!rangeRegex.test(customResponse)) {
         return null;
       }
-      let rangeMin = getNumberFromString(customResponse.split('-')[0]);
-      let rangeMax = getNumberFromString(customResponse.split('-')[1]);
+      var rangeMin = getNumberFromString(customResponse.split('-')[0]);
+      var rangeMax = getNumberFromString(customResponse.split('-')[1]);
       if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
         return null;
       }
 
       // If rangeMin > rangeMax, swap variables
       if (rangeMin > rangeMax) {
-        const temp = rangeMin;
+        var temp = rangeMin;
         rangeMin = rangeMax;
         rangeMax = temp;
       }
-      const LENGTH_RANGE_LIMIT = 500 * 1000;
+      var LENGTH_RANGE_LIMIT = 500 * 1000;
       if (rangeMax > LENGTH_RANGE_LIMIT) {
         return null;
       }
-      const length = getRandomIntInclusive(rangeMin, rangeMax);
+      var length = getRandomIntInclusive(rangeMin, rangeMax);
       customResponse = getRandomStrByLength(length);
       return customResponse;
     }
@@ -522,8 +547,8 @@
      * Inferring goes from more specific to more ambiguous options
      * Arrays, objects and strings are parsed via JSON.parse
      *
-     * @param {string} value arbitrary string
-     * @returns {any} converted value
+     * @param value arbitrary string
+     * @returns converted value
      * @throws an error on unexpected input
      */
     function inferValue(value) {
@@ -545,20 +570,20 @@
 
       // Number class constructor works 2 times faster than JSON.parse
       // and wont interpret mixed inputs like '123asd' as parseFloat would
-      const MAX_ALLOWED_NUM = 32767;
-      const numVal = Number(value);
+      var MAX_ALLOWED_NUM = 32767;
+      var numVal = Number(value);
       if (!nativeIsNaN(numVal)) {
         if (Math.abs(numVal) > MAX_ALLOWED_NUM) {
           throw new Error('number values bigger than 32767 are not allowed');
         }
         return numVal;
       }
-      let errorMessage = "'".concat(value, "' value type can't be inferred");
+      var errorMessage = "'".concat(value, "' value type can't be inferred");
       try {
         // Parse strings, arrays and objects represented as JSON strings
         // '[1,2,3,"string"]' > [1, 2, 3, 'string']
         // '"arbitrary string"' > 'arbitrary string'
-        const parsableVal = JSON.parse(value);
+        var parsableVal = JSON.parse(value);
         if (parsableVal instanceof Object || typeof parsableVal === 'string') {
           return parsableVal;
         }
@@ -569,17 +594,21 @@
     }
 
     /**
+     * Transition names
+     */
+
+    /**
      * Iterate over iterable argument and evaluate current state with transitions
      *
-     * @param {Array|string} iterable rule or list or rules
-     * @param {Object} transitions transtion functions
-     * @param {string} init first transition name
-     * @param {any} args arguments which should be passed to transition functions
-     * @returns {string} state
+     * @param iterable rule or list or rules
+     * @param transitions helper object with transition functions
+     * @param init first transition name
+     * @param args arguments which should be passed to transition functions
+     * @returns state
      */
     function iterateWithTransitions(iterable, transitions, init, args) {
-      let state = init || Object.keys(transitions)[0];
-      for (let i = 0; i < iterable.length; i += 1) {
+      var state = init || Object.keys(transitions)[0];
+      for (var i = 0; i < iterable.length; i += 1) {
         state = transitions[state](iterable, i, args);
       }
       return state;
@@ -588,25 +617,25 @@
     /**
      * AdGuard scriptlet rule mask
      */
-    const ADG_SCRIPTLET_MASK = '#//scriptlet';
+    var ADG_SCRIPTLET_MASK = '#//scriptlet';
 
     /**
      * Helper to accumulate an array of strings char by char
      *
-     * @returns {Object} object with helper methods
+     * @returns object with helper methods
      */
-    const wordSaver = function wordSaver() {
-      let str = '';
-      const strings = [];
-      const saveSymb = function saveSymb(s) {
+    var wordSaver = function wordSaver() {
+      var str = '';
+      var strings = [];
+      var saveSymb = function saveSymb(s) {
         str += s;
         return str;
       };
-      const saveStr = function saveStr() {
+      var saveStr = function saveStr() {
         strings.push(str);
         str = '';
       };
-      const getAll = function getAll() {
+      var getAll = function getAll() {
         return [...strings];
       };
       return {
@@ -615,65 +644,56 @@
         getAll
       };
     };
-    const substringAfter = function substringAfter(str, separator) {
+    var substringAfter = function substringAfter(str, separator) {
       if (!str) {
         return str;
       }
-      const index = str.indexOf(separator);
+      var index = str.indexOf(separator);
       return index < 0 ? '' : str.substring(index + separator.length);
     };
 
     /**
      * Parses scriptlet rule and validates its syntax.
      *
-     * @param {string} ruleText Rule string
+     * @param ruleText Rule string
      *
-     * @returns {{name: string, args: Array<string>}} Parsed rule data.
+     * @returns Parsed rule data.
      * @throws An error on invalid rule syntax.
      */
-    const parseRule = function parseRule(ruleText) {
+    var parseRule = function parseRule(ruleText) {
       ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
-      /**
-       * Transition names
-       */
-      const TRANSITION = {
-        OPENED: 'opened',
-        PARAM: 'param',
-        CLOSED: 'closed'
-      };
-
       /**
        * Transition function: the current index position in start, end or between params
        *
-       * @param {string} rule rule string
-       * @param {number} index index
-       * @param {Object} Object helper object
-       * @param {Object} Object.sep contains prop symb with current separator char
-       * @throws {string} throws if given rule is not a scriptlet
-       * @returns {string} transition
+       * @param rule rule string
+       * @param index index
+       * @param Object helper object that contains prop symb with current separator char
+       * @param Object.sep contains prop `symb` with current separator char
+       * @throws throws if given rule is not a scriptlet
+       * @returns transition
        */
-      const opened = function opened(rule, index, _ref) {
-        let sep = _ref.sep;
-        const char = rule[index];
-        let transition;
+      var opened = function opened(rule, index, _ref) {
+        var sep = _ref.sep;
+        var char = rule[index];
+        var transition;
         switch (char) {
           case ' ':
           case '(':
           case ',':
             {
-              transition = TRANSITION.OPENED;
+              transition = "opened";
               break;
             }
           case '\'':
           case '"':
             {
               sep.symb = char;
-              transition = TRANSITION.PARAM;
+              transition = "param";
               break;
             }
           case ')':
             {
-              transition = index === rule.length - 1 ? TRANSITION.CLOSED : TRANSITION.OPENED;
+              transition = index === rule.length - 1 ? "closed" : "opened";
               break;
             }
           default:
@@ -683,57 +703,58 @@
         }
         return transition;
       };
+
       /**
        * Transition function: the current index position inside param
        *
-       * @param {string} rule rule string
-       * @param {number} index index
-       * @param {Object} Object helper object
-       * @param {Object} Object.sep contains prop `symb` with current separator char
-       * @param {Object} Object.saver helper which allow to save strings by car by char
-       * @returns {void}
+       * @param rule rule string
+       * @param index index
+       * @param Object helper object
+       * @param Object.sep contains prop `symb` with current separator char
+       * @param Object.saver helper which allow to save strings by car by cha
+       * @returns transition
        */
-      const param = function param(rule, index, _ref2) {
-        let saver = _ref2.saver,
+      var param = function param(rule, index, _ref2) {
+        var saver = _ref2.saver,
           sep = _ref2.sep;
-        const char = rule[index];
+        var char = rule[index];
         switch (char) {
           case '\'':
           case '"':
             {
-              const preIndex = index - 1;
-              const before = rule[preIndex];
+              var preIndex = index - 1;
+              var before = rule[preIndex];
               if (char === sep.symb && before !== '\\') {
                 sep.symb = null;
                 saver.saveStr();
-                return TRANSITION.OPENED;
+                return "opened";
               }
             }
           // eslint-disable-next-line no-fallthrough
           default:
             {
               saver.saveSymb(char);
-              return TRANSITION.PARAM;
+              return "param";
             }
         }
       };
-      const transitions = {
-        [TRANSITION.OPENED]: opened,
-        [TRANSITION.PARAM]: param,
-        [TRANSITION.CLOSED]: function () {}
+      var transitions = {
+        ["opened"]: opened,
+        ["param"]: param,
+        ["closed"]: function () {}
       };
-      const sep = {
+      var sep = {
         symb: null
       };
-      const saver = wordSaver();
-      const state = iterateWithTransitions(ruleText, transitions, TRANSITION.OPENED, {
+      var saver = wordSaver();
+      var state = iterateWithTransitions(ruleText, transitions, "opened", {
         sep,
         saver
       });
-      if (state !== 'closed') {
+      if (state !== "closed") {
         throw new Error("Invalid scriptlet rule ".concat(ruleText));
       }
-      const args = saver.getAll();
+      var args = saver.getAll();
       return {
         name: args[0],
         args: args.slice(1)
@@ -743,10 +764,10 @@
     /**
      * Validates event type
      *
-     * @param {any} type event type
-     * @returns {boolean} if type is valid
+     * @param type event type
+     * @returns true if type is valid
      */
-    const validateType = function validateType(type) {
+    var validateType = function validateType(type) {
       // https://github.com/AdguardTeam/Scriptlets/issues/125
       return typeof type !== 'undefined';
     };
@@ -754,45 +775,41 @@
     /**
      * Validates event listener
      *
-     * @param {any} listener event listener
-     * @returns {boolean} if listener callback is valid
+     * @param listener event listener
+     * @returns true if listener callback is valid
      */
-    const validateListener = function validateListener(listener) {
+    var validateListener = function validateListener(listener) {
       // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters
       return typeof listener !== 'undefined' && (typeof listener === 'function' || typeof listener === 'object'
       // https://github.com/AdguardTeam/Scriptlets/issues/76
-      && listener !== null && typeof listener.handleEvent === 'function');
+      && listener !== null && 'handleEvent' in listener && typeof listener.handleEvent === 'function');
     };
-
-    /**
-     * @typedef {object|Function|null} EventListener
-     */
 
     /**
      * Serialize valid event listener
      * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
      *
-     * @param {EventListener} listener valid listener
-     * @returns {string} listener string
+     * @param listener valid listener
+     * @returns listener string
      */
-    const listenerToString = function listenerToString(listener) {
+    var listenerToString = function listenerToString(listener) {
       return typeof listener === 'function' ? listener.toString() : listener.handleEvent.toString();
     };
 
-    const shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
+    var shouldMatchAnyDelay = function shouldMatchAnyDelay(delay) {
       return delay === '*';
     };
 
     /**
      * Handles input delay value
      *
-     * @param {any} delay matchDelay argument of adjust-* scriptlets
-     * @returns {number} proper number delay value
+     * @param delay matchDelay argument of adjust-* scriptlets
+     * @returns proper number delay value
      */
-    const getMatchDelay = function getMatchDelay(delay) {
-      const DEFAULT_DELAY = 1000;
-      const parsedDelay = parseInt(delay, 10);
-      const delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
+    var getMatchDelay = function getMatchDelay(delay) {
+      var DEFAULT_DELAY = 1000;
+      var parsedDelay = parseInt(delay, 10);
+      var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY // default scriptlet value
       : parsedDelay;
       return delayMatch;
     };
@@ -800,27 +817,27 @@
     /**
      * Checks delay match condition
      *
-     * @param {any} inputDelay matchDelay argument of adjust-* scriptlets
-     * @param {number} realDelay delay argument of setTimeout/setInterval
-     * @returns {boolean} if given delays match
+     * @param inputDelay matchDelay argument of adjust-* scriptlets
+     * @param realDelay delay argument of setTimeout/setInterval
+     * @returns  if given delays match
      */
-    const isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
+    var isDelayMatched = function isDelayMatched(inputDelay, realDelay) {
       return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
     };
 
     /**
      * Handles input boost value
      *
-     * @param {any} boost boost argument of adjust-* scriptlets
-     * @returns {number} proper number boost multiplier value
+     * @param boost boost argument of adjust-* scriptlets
+     * @returns proper number boost multiplier value
      */
-    const getBoostMultiplier = function getBoostMultiplier(boost) {
-      const DEFAULT_MULTIPLIER = 0.05;
+    var getBoostMultiplier = function getBoostMultiplier(boost) {
+      var DEFAULT_MULTIPLIER = 0.05;
       // https://github.com/AdguardTeam/Scriptlets/issues/262
-      const MIN_MULTIPLIER = 0.001;
-      const MAX_MULTIPLIER = 50;
-      const parsedBoost = parseFloat(boost);
-      let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
+      var MIN_MULTIPLIER = 0.001;
+      var MAX_MULTIPLIER = 50;
+      var parsedBoost = parseFloat(boost);
+      var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER // default scriptlet value
       : parsedBoost;
       if (boostMultiplier < MIN_MULTIPLIER) {
         boostMultiplier = MIN_MULTIPLIER;
@@ -836,18 +853,18 @@
      * for example, Opera 42 which is used for browserstack tests
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
      *
-     * @param {Array} input arbitrary array
-     * @returns {Array} flattened array
+     * @param input arbitrary array
+     * @returns flattened array
      */
-    const flatten = function flatten(input) {
-      const stack = [];
+    var flatten = function flatten(input) {
+      var stack = [];
       input.forEach(function (el) {
         return stack.push(el);
       });
-      const res = [];
+      var res = [];
       while (stack.length) {
         // pop value from stack
-        const next = stack.pop();
+        var next = stack.pop();
         if (Array.isArray(next)) {
           // push back array items, won't modify the original input
           next.forEach(function (el) {
@@ -864,10 +881,10 @@
     /**
      * Predicate method to check if the array item exists
      *
-     * @param {any} item arbitrary
-     * @returns {boolean} if item is truthy or not
+     * @param item arbitrary
+     * @returns if item is truthy or not
      */
-    const isExisting = function isExisting(item) {
+    var isExisting = function isExisting(item) {
       return !!item;
     };
 
@@ -877,9 +894,9 @@
      * @param {NodeList} nodeList arbitrary NodeList
      * @returns {Node[Array]} array of nodes
      */
-    const nodeListToArray = function nodeListToArray(nodeList) {
-      const nodes = [];
-      for (let i = 0; i < nodeList.length; i += 1) {
+    var nodeListToArray = function nodeListToArray(nodeList) {
+      var nodes = [];
+      for (var i = 0; i < nodeList.length; i += 1) {
         nodes.push(nodeList[i]);
       }
       return nodes;
@@ -888,10 +905,10 @@
     /**
      * Checks whether the input path is supported
      *
-     * @param {string} rawPath input path
-     * @returns {boolean} if cookie path is valid
+     * @param rawPath input path
+     * @returns if cookie path is valid
      */
-    const isValidCookiePath = function isValidCookiePath(rawPath) {
+    var isValidCookiePath = function isValidCookiePath(rawPath) {
       return rawPath === '/' || rawPath === 'none';
     };
 
@@ -899,10 +916,10 @@
      * Returns 'path=/' if rawPath is '/'
      * or empty string '' for other cases, `rawPath === 'none'` included
      *
-     * @param {string} rawPath path argument of *set-cookie-* scriptlets
-     * @returns {string} cookie path
+     * @param rawPath path argument of *set-cookie-* scriptlets
+     * @returns cookie path
      */
-    const getCookiePath = function getCookiePath(rawPath) {
+    var getCookiePath = function getCookiePath(rawPath) {
       if (rawPath === '/') {
         return 'path=/';
       }
@@ -914,55 +931,38 @@
     /**
      * Combines input cookie name, value, and path into string.
      *
-     * @param {string} rawName name argument of *set-cookie-* scriptlets
-     * @param {string} rawValue value argument of *set-cookie-* scriptlets
-     * @param {string} rawPath path argument of *set-cookie-* scriptlets
-     * @param {boolean} shouldEncode if cookie's name and value should be encoded
-     * @returns {string|null} string OR `null` if name or value is invalid
+     * @param rawName name argument of *set-cookie-* scriptlets
+     * @param rawValue value argument of *set-cookie-* scriptlets
+     * @param rawPath path argument of *set-cookie-* scriptlets
+     * @param shouldEncode if cookie's name and value should be encoded
+     * @returns string OR `null` if name or value is invalid
      */
-    const concatCookieNameValuePath = function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-      let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-      const COOKIE_BREAKER = ';';
+    var concatCookieNameValuePath = function concatCookieNameValuePath(rawName, rawValue, rawPath) {
+      var shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+      var COOKIE_BREAKER = ';';
       // semicolon will cause the cookie to break
       if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
         return null;
       }
-      const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
-      const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+      var name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+      var value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
       return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
     };
 
     /**
      * Gets supported cookie value
      *
-     * @param {string} value input cookie value
-     * @returns {string|null} valid cookie string if ok OR null if not
+     * @param value input cookie value
+     * @returns valid cookie string if ok OR null if not
      */
-    const getLimitedCookieValue = function getLimitedCookieValue(value) {
+    var getLimitedCookieValue = function getLimitedCookieValue(value) {
       if (!value) {
         return null;
       }
-      let validValue;
-      if (value === 'true') {
-        validValue = 'true';
-      } else if (value === 'True') {
-        validValue = 'True';
-      } else if (value === 'false') {
-        validValue = 'false';
-      } else if (value === 'False') {
-        validValue = 'False';
-      } else if (value === 'yes') {
-        validValue = 'yes';
-      } else if (value === 'Yes') {
-        validValue = 'Yes';
-      } else if (value === 'Y') {
-        validValue = 'Y';
-      } else if (value === 'no') {
-        validValue = 'no';
-      } else if (value === 'ok') {
-        validValue = 'ok';
-      } else if (value === 'OK') {
-        validValue = 'OK';
+      var allowedCookieValues = new Set(['true', 'false', 'yes', 'y', 'no', 'n', 'ok', 'accept', 'reject', 'allow', 'deny']);
+      var validValue;
+      if (allowedCookieValues.has(value.toLowerCase())) {
+        validValue = value;
       } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
         if (nativeIsNaN(validValue)) {
@@ -978,22 +978,26 @@
     };
 
     /**
+     * Object to represent document.cookie-like string
+     */
+
+    /**
      * Parses cookie string into object
      *
-     * @param {string} cookieString string that conforms to document.cookie format
-     * @returns {Object} key:value object that corresponds with incoming cookies keys and values
+     * @param cookieString string that conforms to document.cookie format
+     * @returns key:value object that corresponds with incoming cookies keys and values
      */
-    const parseCookieString = function parseCookieString(cookieString) {
-      const COOKIE_DELIMITER = '=';
-      const COOKIE_PAIRS_DELIMITER = ';';
+    var parseCookieString = function parseCookieString(cookieString) {
+      var COOKIE_DELIMITER = '=';
+      var COOKIE_PAIRS_DELIMITER = ';';
 
       // Get raw cookies
-      const cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
-      const cookieData = {};
+      var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+      var cookieData = {};
       cookieChunks.forEach(function (singleCookie) {
-        let cookieKey;
-        let cookieValue;
-        const delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+        var cookieKey;
+        var cookieValue = '';
+        var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
         if (delimiterIndex === -1) {
           cookieKey = singleCookie.trim();
         } else {
@@ -1009,19 +1013,19 @@
     /**
      * Check if cookie with specified name and value is present in a cookie string
      *
-     * @param {string} cookieString 'document.cookie'-like string
-     * @param {string} name name argument of *set-cookie-* scriptlets
-     * @param {string} value value argument of *set-cookie-* scriptlets
-     * @returns {boolean} if cookie is already set
+     * @param cookieString 'document.cookie'-like string
+     * @param name name argument of *set-cookie-* scriptlets
+     * @param value value argument of *set-cookie-* scriptlets
+     * @returns if cookie is already set
      */
-    const isCookieSetWithValue = function isCookieSetWithValue(cookieString, name, value) {
+    var isCookieSetWithValue = function isCookieSetWithValue(cookieString, name, value) {
       return cookieString.split(';').some(function (cookieStr) {
-        const pos = cookieStr.indexOf('=');
+        var pos = cookieStr.indexOf('=');
         if (pos === -1) {
           return false;
         }
-        const cookieName = cookieStr.slice(0, pos).trim();
-        const cookieValue = cookieStr.slice(pos + 1).trim();
+        var cookieName = cookieStr.slice(0, pos).trim();
+        var cookieValue = cookieStr.slice(pos + 1).trim();
         return name === cookieName && value === cookieValue;
       });
     };
@@ -1029,16 +1033,16 @@
     /**
      * Returns parsed offset expired number of ms or null if `offsetExpiresSec` is invalid
      *
-     * @param {string} offsetExpiresSec input offset param in seconds
-     * @returns {number|null} number is milliseconds OR null
+     * @param offsetExpiresSec input offset param in seconds
+     * @returns number is milliseconds OR null
      */
-    const getTrustedCookieOffsetMs = function getTrustedCookieOffsetMs(offsetExpiresSec) {
-      const ONE_YEAR_EXPIRATION_KEYWORD = '1year';
-      const ONE_DAY_EXPIRATION_KEYWORD = '1day';
-      const MS_IN_SEC = 1000;
-      const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-      const SECONDS_IN_DAY = 24 * 60 * 60;
-      let parsedSec;
+    var getTrustedCookieOffsetMs = function getTrustedCookieOffsetMs(offsetExpiresSec) {
+      var ONE_YEAR_EXPIRATION_KEYWORD = '1year';
+      var ONE_DAY_EXPIRATION_KEYWORD = '1day';
+      var MS_IN_SEC = 1000;
+      var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+      var SECONDS_IN_DAY = 24 * 60 * 60;
+      var parsedSec;
       // Set predefined expire value if corresponding keyword was passed
       if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
         parsedSec = SECONDS_IN_YEAR;
@@ -1056,80 +1060,80 @@
 
     /**
      * Noop function
-     *
-     * @returns {undefined} undefined
      */
-    const noopFunc = function noopFunc() {};
+    var noopFunc = function noopFunc() {};
 
     /**
      * Function returns noopFunc
      *
-     * @returns {Function} noopFunc
+     * @returns noopFunc
      */
-    const noopCallbackFunc = function noopCallbackFunc() {
+    var noopCallbackFunc = function noopCallbackFunc() {
       return noopFunc;
     };
 
     /**
      * Function returns null
      *
-     * @returns {null} null
+     * @returns null
      */
-    const noopNull = function noopNull() {
+    var noopNull = function noopNull() {
       return null;
     };
 
     /**
      * Function returns true
      *
-     * @returns {boolean} true
+     * @returns true
      */
-    const trueFunc = function trueFunc() {
+    var trueFunc = function trueFunc() {
       return true;
     };
 
     /**
      * Function returns false
      *
-     * @returns {boolean} false
+     * @returns false
      */
-    const falseFunc = function falseFunc() {
+    var falseFunc = function falseFunc() {
       return false;
     };
 
     /**
      * Function returns this
      *
-     * @returns {this} this object
+     * @returns this object
      */
     function noopThis() {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       return this;
     }
 
     /**
      * Function returns empty string
      *
-     * @returns {string} empty string
+     * @returns empty string
      */
-    const noopStr = function noopStr() {
+    var noopStr = function noopStr() {
       return '';
     };
 
     /**
      * Function returns empty array
      *
-     * @returns {Array} empty array
+     * @returns empty array
      */
-    const noopArray = function noopArray() {
+    var noopArray = function noopArray() {
       return [];
     };
 
     /**
      * Function returns empty object
      *
-     * @returns {Object} empty object
+     * @returns empty object
      */
-    const noopObject = function noopObject() {
+    var noopObject = function noopObject() {
       return {};
     };
 
@@ -1138,35 +1142,35 @@
      *
      * @throws
      */
-    const throwFunc = function throwFunc() {
+    var throwFunc = function throwFunc() {
       throw new Error();
     };
 
     /**
      * Function returns Promise.reject()
      *
-     * @returns {Promise} rejected Promise
+     * @returns rejected Promise
      */
-    const noopPromiseReject = function noopPromiseReject() {
+    var noopPromiseReject = function noopPromiseReject() {
       return Promise.reject();
     };
 
     /**
      * Returns Promise object that is resolved with specified props
      *
-     * @param {string} [responseBody='{}'] value to set as responseBody
-     * @param {string} [responseUrl=''] value to set as responseUrl
-     * @param {string} [responseType='default'] value to set as responseType
-     * @returns {Promise<Response>|undefined} resolved Promise or undefined if Response interface is not available
+     * @param responseBody value to set as responseBody
+     * @param responseUrl value to set as responseUrl
+     * @param responseType value to set as responseType
+     * @returns resolved Promise or undefined if Response interface is not available
      */
-    const noopPromiseResolve = function noopPromiseResolve() {
-      let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
-      let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-      let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'default';
+    var noopPromiseResolve = function noopPromiseResolve() {
+      var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '{}';
+      var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'default';
       if (typeof Response === 'undefined') {
         return;
       }
-      const response = new Response(responseBody, {
+      var response = new Response(responseBody, {
         status: 200,
         statusText: 'OK'
       });
@@ -1191,25 +1195,25 @@
      * and when it's one of them then return true, otherwise false
      * https://github.com/AdguardTeam/Scriptlets/issues/201
      *
-     * @param {string|undefined} stackMatch - input stack value to match
-     * @param {string} stackTrace - script error stack trace
-     * @returns {boolean} if stacks match
+     * @param stackMatch input stack value to match
+     * @param stackTrace script error stack trace
+     * @returns if stacks match
      */
-    const shouldAbortInlineOrInjectedScript = function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-      const INLINE_SCRIPT_STRING = 'inlineScript';
-      const INJECTED_SCRIPT_STRING = 'injectedScript';
-      const INJECTED_SCRIPT_MARKER = '<anonymous>';
-      const isInlineScript = function isInlineScript(stackMatch) {
-        return stackMatch.includes(INLINE_SCRIPT_STRING);
+    var shouldAbortInlineOrInjectedScript = function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+      var INLINE_SCRIPT_STRING = 'inlineScript';
+      var INJECTED_SCRIPT_STRING = 'injectedScript';
+      var INJECTED_SCRIPT_MARKER = '<anonymous>';
+      var isInlineScript = function isInlineScript(match) {
+        return match.includes(INLINE_SCRIPT_STRING);
       };
-      const isInjectedScript = function isInjectedScript(stackMatch) {
-        return stackMatch.includes(INJECTED_SCRIPT_STRING);
+      var isInjectedScript = function isInjectedScript(match) {
+        return match.includes(INJECTED_SCRIPT_STRING);
       };
       if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
         return false;
       }
-      let documentURL = window.location.href;
-      const pos = documentURL.indexOf('#');
+      var documentURL = window.location.href;
+      var pos = documentURL.indexOf('#');
       // Remove URL hash
       // in Chrome, URL in stackTrace doesn't contain hash
       // so, it's necessary to remove it, otherwise location.href
@@ -1217,26 +1221,26 @@
       if (pos !== -1) {
         documentURL = documentURL.slice(0, pos);
       }
-      const stackSteps = stackTrace.split('\n').slice(2).map(function (line) {
+      var stackSteps = stackTrace.split('\n').slice(2).map(function (line) {
         return line.trim();
       });
-      const stackLines = stackSteps.map(function (line) {
-        let stack;
+      var stackLines = stackSteps.map(function (line) {
+        var stack;
         // Get stack trace URL
         // in Firefox stack trace looks like this: advanceTaskQueue@http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:1834:20
         // in Chrome like this: at Assert.throws (http://127.0.0.1:8080/scriptlets/tests/dist/qunit.js:3178:16)
         // so, first group "(.*?@)" is required for Firefox, second group contains URL
-        const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
         if (getStackTraceURL) {
           var _stackURL, _stackURL2;
-          let stackURL = getStackTraceURL[2];
+          var stackURL = getStackTraceURL[2];
           if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith('(')) {
             stackURL = stackURL.slice(1);
           }
           if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
             var _stackFunction;
             stackURL = INJECTED_SCRIPT_STRING;
-            let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+            var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
             if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith('at')) {
               stackFunction = stackFunction.slice(2).trim();
             }
@@ -1250,7 +1254,7 @@
         return stack;
       });
       if (stackLines) {
-        for (let index = 0; index < stackLines.length; index += 1) {
+        for (var index = 0; index < stackLines.length; index += 1) {
           if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
             return true;
           }
@@ -1265,21 +1269,23 @@
     /**
      * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
      *
-     * @param {HTMLElement} rootElement shadow dom root
-     * @returns {HTMLElement[]} shadow-dom hosts
+     * @param rootElement shadow dom root
+     * @returns shadow-dom hosts
      */
-    const findHostElements = function findHostElements(rootElement) {
-      const hosts = [];
-      // Element.querySelectorAll() returns list of elements
-      // which are defined in DOM of Element.
-      // Meanwhile, inner DOM of the element with shadowRoot property
-      // is absolutely another DOM and which can not be reached by querySelectorAll('*')
-      const domElems = rootElement.querySelectorAll('*');
-      domElems.forEach(function (el) {
-        if (el.shadowRoot) {
-          hosts.push(el);
-        }
-      });
+    var findHostElements = function findHostElements(rootElement) {
+      var hosts = [];
+      if (rootElement) {
+        // Element.querySelectorAll() returns list of elements
+        // which are defined in DOM of Element.
+        // Meanwhile, inner DOM of the element with shadowRoot property
+        // is absolutely another DOM and which can not be reached by querySelectorAll('*')
+        var domElems = rootElement.querySelectorAll('*');
+        domElems.forEach(function (el) {
+          if (el.shadowRoot) {
+            hosts.push(el);
+          }
+        });
+      }
       return hosts;
     };
 
@@ -1291,31 +1297,25 @@
      */
 
     /**
-     * @typedef {Object} PierceData
-     * @property {HTMLElement[]} targets found elements that match the specified selector
-     * @property {HTMLElement[]} innerHosts inner shadow-dom hosts
-     */
-
-    /**
      * Pierces open shadow-dom in order to find:
      * - elements by 'selector' matching
      * - inner shadow-dom hosts
      *
-     * @param {string} selector DOM elements selector
-     * @param {HTMLElement[]|external:NodeList} hostElements shadow-dom hosts
-     * @returns {PierceData} object with found elements and shadow-dom hosts
+     * @param selector DOM elements selector
+     * @param hostElements shadow-dom hosts
+     * @returns object with found elements and shadow-dom hosts
      */
-    const pierceShadowDom = function pierceShadowDom(selector, hostElements) {
-      let targets = [];
-      const innerHostsAcc = [];
+    var pierceShadowDom = function pierceShadowDom(selector, hostElements) {
+      var targets = [];
+      var innerHostsAcc = [];
 
       // it's possible to get a few hostElements found by baseSelector on the page
       hostElements.forEach(function (host) {
         // check presence of selector element inside base element if it's not in shadow-dom
-        const simpleElems = host.querySelectorAll(selector);
+        var simpleElems = host.querySelectorAll(selector);
         targets = targets.concat([].slice.call(simpleElems));
-        const shadowRootElem = host.shadowRoot;
-        const shadowChildren = shadowRootElem.querySelectorAll(selector);
+        var shadowRootElem = host.shadowRoot;
+        var shadowChildren = shadowRootElem.querySelectorAll(selector);
         targets = targets.concat([].slice.call(shadowChildren));
 
         // find inner shadow-dom hosts inside processing shadow-dom
@@ -1324,7 +1324,7 @@
 
       // if there were more than one host element,
       // innerHostsAcc is an array of arrays and should be flatten
-      const innerHosts = flatten(innerHostsAcc);
+      var innerHosts = flatten(innerHostsAcc);
       return {
         targets,
         innerHosts
@@ -1334,10 +1334,10 @@
     /**
      * Checks whether the passed arg is proper callback
      *
-     * @param {any} callback arbitrary callback
-     * @returns {boolean} if callback is valid
+     * @param callback arbitrary callback
+     * @returns if callback is valid
      */
-    const isValidCallback = function isValidCallback(callback) {
+    var isValidCallback = function isValidCallback(callback) {
       return callback instanceof Function
       // passing string as 'code' arg is not recommended
       // but it is possible and not restricted
@@ -1350,28 +1350,27 @@
      * rounded down number for number/string values or passes on for other types.
      * Needed for prevent-setTimeout and prevent-setInterval
      *
-     * @param {any} delay native method delay arg
-     * @returns {any} number as parsed delay or any input type if `delay` is not parsable
+     * @param delay native method delay arg
+     * @returns number as parsed delay or any input type if `delay` is not parsable
      */
-    const parseRawDelay = function parseRawDelay(delay) {
-      const parsedDelay = Math.floor(parseInt(delay, 10));
+    var parseRawDelay = function parseRawDelay(delay) {
+      var parsedDelay = Math.floor(parseInt(delay, 10));
       return typeof parsedDelay === 'number' && !nativeIsNaN(parsedDelay) ? parsedDelay : delay;
     };
-
     /**
      * Checks whether 'callback' and 'delay' are matching
      * by given parameters 'matchCallback' and 'matchDelay'.
      * Used for prevent-setTimeout and prevent-setInterval.
      *
-     * @param {Object} preventData set of data to determine if scriptlet should match
-     * @param {Function} preventData.callback method's callback arg
-     * @param {any} preventData.delay method's delay arg
-     * @param {string} preventData.matchCallback scriptlets's callback arg
-     * @param {string} preventData.matchDelay scriptlets's delay arg
-     * @returns {boolean} if scriptlet should match
+     * @param preventData set of data to determine if scriptlet should match
+     * @param preventData.callback method's callback arg
+     * @param preventData.delay method's delay arg
+     * @param preventData.matchCallback scriptlets's callback arg
+     * @param preventData.matchDelay scriptlets's delay arg
+     * @returns if scriptlet should match
      */
-    const isPreventionNeeded = function isPreventionNeeded(_ref) {
-      let callback = _ref.callback,
+    var isPreventionNeeded = function isPreventionNeeded(_ref) {
+      var callback = _ref.callback,
         delay = _ref.delay,
         matchCallback = _ref.matchCallback,
         matchDelay = _ref.matchDelay;
@@ -1384,19 +1383,19 @@
       if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
         return false;
       }
-      const _parseMatchArg = parseMatchArg(matchCallback),
+      var _parseMatchArg = parseMatchArg(matchCallback),
         isInvertedMatch = _parseMatchArg.isInvertedMatch,
         matchRegexp = _parseMatchArg.matchRegexp;
-      const _parseDelayArg = parseDelayArg(matchDelay),
+      var _parseDelayArg = parseDelayArg(matchDelay),
         isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
         delayMatch = _parseDelayArg.delayMatch;
 
       // Parse delay for decimal, string and non-number values
       // https://github.com/AdguardTeam/Scriptlets/issues/247
-      const parsedDelay = parseRawDelay(delay);
-      let shouldPrevent = false;
+      var parsedDelay = parseRawDelay(delay);
+      var shouldPrevent = false;
       // https://github.com/AdguardTeam/Scriptlets/issues/105
-      const callbackStr = String(callback);
+      var callbackStr = String(callback);
       if (delayMatch === null) {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
       } else if (!matchCallback) {
@@ -1407,8 +1406,8 @@
       return shouldPrevent;
     };
 
-    const handleOldReplacement = function handleOldReplacement(replacement) {
-      let result;
+    var handleOldReplacement = function handleOldReplacement(replacement) {
+      var result;
       // defaults to return noopFunc instead of window.open
       if (!replacement) {
         result = noopFunc;
@@ -1418,11 +1417,11 @@
         // We should return noopFunc instead of window.open
         // but with some property if website checks it (examples 5, 6)
         // https://github.com/AdguardTeam/Scriptlets/issues/71
-        const isProp = replacement.startsWith('{') && replacement.endsWith('}');
+        var isProp = replacement.startsWith('{') && replacement.endsWith('}');
         if (isProp) {
-          const propertyPart = replacement.slice(1, -1);
-          const propertyName = substringBefore(propertyPart, '=');
-          const propertyValue = substringAfter$1(propertyPart, '=');
+          var propertyPart = replacement.slice(1, -1);
+          var propertyName = substringBefore(propertyPart, '=');
+          var propertyValue = substringAfter$1(propertyPart, '=');
           if (propertyValue === 'noopFunc') {
             result = {};
             result[propertyName] = noopFunc;
@@ -1431,25 +1430,33 @@
       }
       return result;
     };
-    const createDecoy = function createDecoy(args) {
-      const OBJECT_TAG_NAME = 'object';
-      const OBJECT_URL_PROP_NAME = 'data';
-      const IFRAME_TAG_NAME = 'iframe';
-      const IFRAME_URL_PROP_NAME = 'src';
-      const replacement = args.replacement,
+    /**
+     * Creates a decoy HTML element with a specified URL and delay before removal
+     *
+     * @param args an object with `replacement`, `url`, and `delay` properties
+     * @returns the decoy element that was created and added to the document body
+     */
+    var createDecoy = function createDecoy(args) {
+      var UrlPropNameOf = /*#__PURE__*/function (UrlPropNameOf) {
+        UrlPropNameOf["Object"] = "data";
+        UrlPropNameOf["Iframe"] = "src";
+        return UrlPropNameOf;
+      }({});
+      var replacement = args.replacement,
         url = args.url,
         delay = args.delay;
-      let tag;
-      let urlProp;
+      var tag;
       if (replacement === 'obj') {
-        tag = OBJECT_TAG_NAME;
-        urlProp = OBJECT_URL_PROP_NAME;
+        tag = "object";
       } else {
-        tag = IFRAME_TAG_NAME;
-        urlProp = IFRAME_URL_PROP_NAME;
+        tag = "iframe";
       }
-      const decoy = document.createElement(tag);
-      decoy[urlProp] = url;
+      var decoy = document.createElement(tag);
+      if (decoy instanceof HTMLObjectElement) {
+        decoy[UrlPropNameOf.Object] = url;
+      } else if (decoy instanceof HTMLIFrameElement) {
+        decoy[UrlPropNameOf.Iframe] = url;
+      }
       decoy.style.setProperty('height', '1px', 'important');
       decoy.style.setProperty('position', 'fixed', 'important');
       decoy.style.setProperty('top', '-1px', 'important');
@@ -1460,8 +1467,8 @@
       }, delay * 1000);
       return decoy;
     };
-    const getPreventGetter = function getPreventGetter(nativeGetter) {
-      const preventGetter = function preventGetter(target, prop) {
+    var getPreventGetter = function getPreventGetter(nativeGetter) {
+      var preventGetter = function preventGetter(target, prop) {
         if (prop && prop === 'closed') {
           return false;
         }
@@ -1478,29 +1485,29 @@
     /**
      * Hit used only for debug purposes now
      *
-     * @param {Object} source scriptlet properties
+     * @param source scriptlet properties
      * use LOG_MARKER = 'log: ' at the start of a message
      * for logging scriptlets
      */
-    const hit = function hit(source) {
+    var hit = function hit(source) {
       if (source.verbose !== true) {
         return;
       }
       try {
-        const log = console.log.bind(console);
-        const trace = console.trace.bind(console);
-        let prefix = source.ruleText || '';
+        var log = console.log.bind(console);
+        var trace = console.trace.bind(console);
+        var prefix = source.ruleText || '';
         if (source.domainName) {
-          const AG_SCRIPTLET_MARKER = '#%#//';
-          const UBO_SCRIPTLET_MARKER = '##+js';
-          let ruleStartIndex;
+          var AG_SCRIPTLET_MARKER = '#%#//';
+          var UBO_SCRIPTLET_MARKER = '##+js';
+          var ruleStartIndex;
           if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
             ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
           } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
             ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
           }
           // delete all domains from ruleText and leave just rule part
-          const rulePart = source.ruleText.slice(ruleStartIndex);
+          var rulePart = source.ruleText.slice(ruleStartIndex);
           // prepare applied scriptlet rule for specific domain
           prefix = "".concat(source.domainName).concat(rulePart);
         }
@@ -1522,33 +1529,25 @@
     };
 
     /**
-     * @typedef ChainInfo
-     * @property {Object} base current chain base
-     * @property {string} prop current chain prop
-     * @property {string} [chain] string representation
-     */
-
-    /**
      * Check if the property exists in the base object (recursively).
      * Similar to getPropertyInChain but upgraded for json-prune:
      * handle wildcard properties and does not define nonexistent base property as 'undefined'
      *
-     * @param {Object} base object that owns chain
-     * @param {string} chain chain of owner properties
-     * @param {boolean} [lookThrough=false]
-     * should the method look through it's props in order to wildcard
-     * @param {Array} [output=[]] result acc
-     * @returns {ChainInfo[]} array of objects
+     * @param base object that owns chain
+     * @param chain chain of owner properties
+     * @param lookThrough should the method look through it's props in order to find wildcard
+     * @param output result acc
+     * @returns list of ChainInfo objects
      */
     function getWildcardPropertyInChain(base, chain) {
-      let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-      const pos = chain.indexOf('.');
+      var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+      var pos = chain.indexOf('.');
       if (pos === -1) {
         // for paths like 'a.b.*' every final nested prop should be processed
         if (chain === '*' || chain === '[]') {
           // eslint-disable-next-line no-restricted-syntax
-          for (const key in base) {
+          for (var key in base) {
             // to process each key in base except inherited ones
             if (Object.prototype.hasOwnProperty.call(base, key)) {
               output.push({
@@ -1565,20 +1564,20 @@
         }
         return output;
       }
-      const prop = chain.slice(0, pos);
-      const shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
+      var prop = chain.slice(0, pos);
+      var shouldLookThrough = prop === '[]' && Array.isArray(base) || prop === '*' && base instanceof Object;
       if (shouldLookThrough) {
-        const nextProp = chain.slice(pos + 1);
-        const baseKeys = Object.keys(base);
+        var nextProp = chain.slice(pos + 1);
+        var baseKeys = Object.keys(base);
 
         // if there is a wildcard prop in input chain (e.g. 'ad.*.src' for 'ad.0.src ad.1.src'),
         // each one of base keys should be considered as a potential chain prop in final path
         baseKeys.forEach(function (key) {
-          const item = base[key];
+          var item = base[key];
           getWildcardPropertyInChain(item, nextProp, lookThrough, output);
         });
       }
-      const nextBase = base[prop];
+      var nextBase = base[prop];
       chain = chain.slice(pos + 1);
       if (nextBase !== undefined) {
         getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
@@ -1592,22 +1591,22 @@
      * is not a part of scriptlet's functionality, eg on invalid input,
      * and use 'forced' argument otherwise.
      *
-     * @param {Object} source required, scriptlet properties
-     * @param {any} message required, message to log
-     * @param {boolean} [forced=false] to log message unconditionally
-     * @param {boolean} [convertMessageToString=true] to convert message to string
+     * @param source required, scriptlet properties
+     * @param message required, message to log
+     * @param forced to log message unconditionally
+     * @param convertMessageToString to convert message to string
      */
-    const logMessage = function logMessage(source, message) {
-      let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-      const name = source.name,
+    var logMessage = function logMessage(source, message) {
+      var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+      var name = source.name,
         verbose = source.verbose;
       if (!forced && !verbose) {
         return;
       }
 
       // eslint-disable-next-line no-console
-      const nativeConsole = console.log;
+      var nativeConsole = console.log;
       if (!convertMessageToString) {
         // Template literals convert object to string,
         // so 'message' should not be passed to template literals
@@ -1621,24 +1620,24 @@
     /**
      * Checks if prunning is required
      *
-     * @param {Object} source required, scriptlet properties
-     * @param {Object} root object which should be pruned or logged
-     * @param {Array} prunePaths array with string of space-separated properties to remove
-     * @param {Array} requiredPaths array with string of space-separated properties
+     * @param source required, scriptlet properties
+     * @param root object which should be pruned or logged
+     * @param prunePaths array with string of space-separated property chains to remove
+     * @param requiredPaths array with string of space-separated propertiy chains
      * which must be all present for the pruning to occur
-     * @returns {boolean|undefined} true if prunning is required
+     * @returns true if prunning is required
      */
     function isPruningNeeded(source, root, prunePaths, requiredPaths) {
       if (!root) {
         return false;
       }
-      let shouldProcess;
+      var shouldProcess;
 
       // Only log hostname and matched JSON payload if only second argument is present
       if (prunePaths.length === 0 && requiredPaths.length > 0) {
-        const rootString = JSON.stringify(root);
-        const matchRegex = toRegExp(requiredPaths.join(''));
-        const shouldLog = matchRegex.test(rootString);
+        var rootString = JSON.stringify(root);
+        var matchRegex = toRegExp(requiredPaths.join(''));
+        var shouldLog = matchRegex.test(rootString);
         if (shouldLog) {
           logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
           if (root && typeof root === 'object') {
@@ -1648,29 +1647,33 @@
           return shouldProcess;
         }
       }
-      const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
-      for (let i = 0; i < requiredPaths.length; i += 1) {
-        const requiredPath = requiredPaths[i];
-        const lastNestedPropName = requiredPath.split('.').pop();
-        const hasWildcard = wildcardSymbols.some(function (symbol) {
+      var wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
+      var _loop = function _loop() {
+        var requiredPath = requiredPaths[i];
+        var lastNestedPropName = requiredPath.split('.').pop();
+        var hasWildcard = wildcardSymbols.some(function (symbol) {
           return requiredPath.includes(symbol);
         });
 
         // if the path has wildcard, getPropertyInChain should 'look through' chain props
-        const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+        var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
 
         // start value of 'shouldProcess' due to checking below
         shouldProcess = !hasWildcard;
-        for (let i = 0; i < details.length; i += 1) {
+        for (var j = 0; j < details.length; j += 1) {
+          var hasRequiredProp = typeof lastNestedPropName === 'string' && details[j].base[lastNestedPropName] !== undefined;
           if (hasWildcard) {
             // if there is a wildcard,
             // at least one (||) of props chain should be present in object
-            shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
+            shouldProcess = hasRequiredProp || shouldProcess;
           } else {
             // otherwise each one (&&) of them should be there
-            shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
+            shouldProcess = hasRequiredProp && shouldProcess;
           }
         }
+      };
+      for (var i = 0; i < requiredPaths.length; i += 1) {
+        _loop();
       }
       return shouldProcess;
     }
@@ -1678,14 +1681,14 @@
     /**
      * Prunes properties of 'root' object
      *
-     * @param {Object} source required, scriptlet properties
-     * @param {Object} root object which should be pruned or logged
-     * @param {Array} prunePaths array with string of space-separated properties to remove
-     * @param {Array} requiredPaths array with string of space-separated properties
+     * @param source required, scriptlet properties
+     * @param root object which should be pruned or logged
+     * @param prunePaths array with string of space-separated properties to remove
+     * @param requiredPaths array with string of space-separated properties
      * which must be all present for the pruning to occur
-     * @returns {Object} pruned root
+     * @returns pruned root
      */
-    const jsonPruner = function jsonPruner(source, root, prunePaths, requiredPaths) {
+    var jsonPruner = function jsonPruner(source, root, prunePaths, requiredPaths) {
       if (prunePaths.length === 0 && requiredPaths.length === 0) {
         logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
         if (root && typeof root === 'object') {
@@ -1701,7 +1704,7 @@
         // if pruning is needed, we check every input pathToRemove
         // and delete it if root has it
         prunePaths.forEach(function (path) {
-          const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+          var ownerObjArr = getWildcardPropertyInChain(root, path, true);
           ownerObjArr.forEach(function (ownerObj) {
             if (ownerObj !== undefined && ownerObj.base) {
               delete ownerObj.base[ownerObj.prop];
@@ -1715,30 +1718,41 @@
       return root;
     };
 
-    const getNativeRegexpTest = function getNativeRegexpTest() {
-      return Object.getOwnPropertyDescriptor(RegExp.prototype, 'test').value;
+    /**
+     * Returns the native `RegExp.prototype.test` method if it exists.
+     *
+     * @returns The native `RegExp.prototype.test` method.
+     * @throws If `RegExp.prototype.test` is not a function.
+     */
+    var getNativeRegexpTest = function getNativeRegexpTest() {
+      var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, 'test');
+      var nativeRegexTest = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+      if (descriptor && typeof descriptor.value === 'function') {
+        return nativeRegexTest;
+      }
+      throw new Error('RegExp.prototype.test is not a function');
     };
 
     /**
      * Modifies original response with the given replacement data.
      *
-     * @param {Response} origResponse Original response.
-     * @param {Object} replacement Replacement data for response with possible keys:
+     * @param origResponse Original response.
+     * @param replacement Replacement data for response with possible keys:
      * - `body`: optional, string, default to '{}';
      * - `type`: optional, string, original response type is used if not specified.
      *
-     * @returns {Response} Modified response.
+     * @returns Modified response.
      */
-    const modifyResponse = function modifyResponse(origResponse) {
+    var modifyResponse = function modifyResponse(origResponse) {
       var _origResponse$headers;
-      let replacement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+      var replacement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
         body: '{}'
       };
-      const headers = {};
+      var headers = {};
       origResponse === null || origResponse === void 0 ? void 0 : (_origResponse$headers = origResponse.headers) === null || _origResponse$headers === void 0 ? void 0 : _origResponse$headers.forEach(function (value, key) {
         headers[key] = value;
       });
-      const modifiedResponse = new Response(replacement.body, {
+      var modifiedResponse = new Response(replacement.body, {
         status: origResponse.status,
         statusText: origResponse.statusText,
         headers
@@ -1758,26 +1772,48 @@
     };
 
     /**
+     * Aggregates fetch and XMLHttpRequest.open arguments
+     * to operate on arbitrary request data objects
+     */
+
+    /**
+     * Object which is populated with request data from scriptlet arguments
+     */
+
+    /**
+     * Derivative of ParsedMatchProps with its values being
+     * converted to RegExp
+     */
+
+    /**
+     * Fetch and xhr.open options that are valid props
+     * to match for (trusted-)prevent-(fetch|xhr) scriptlets
+     *
+     * This type is being derived from getRequestProps return type
+     * as enums would be lost at build time disregarding 'const'
+     */
+
+    /**
      * Returns array of request props that are supported by fetch/xhr scriptlets.
      * Includes common 'url' and 'method' props and all other fetch-specific props
      *
-     * @returns {string[]} list of request props
+     * @returns list of request props
      */
-    const getRequestProps = function getRequestProps() {
-      return ['url', 'method', 'headers', 'body', 'mode', 'credentials', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'signal'];
+    var getRequestProps = function getRequestProps() {
+      return ['url', 'method', 'headers', 'body', 'credentials', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'signal', 'mode'];
     };
 
     /**
      * Collects Request options to object
      *
-     * @param {Request} request Request instance to collect properties from
-     * @returns {Object} data object
+     * @param request Request instance to collect properties from
+     * @returns data object
      */
-    const getRequestData = function getRequestData(request) {
-      const requestInitOptions = getRequestProps();
-      const entries = requestInitOptions.map(function (key) {
+    var getRequestData = function getRequestData(request) {
+      var requestInitOptions = getRequestProps();
+      var entries = requestInitOptions.map(function (key) {
         // if request has no such option, value will be undefined
-        const value = request[key];
+        var value = request[key];
         return [key, value];
       });
       return Object.fromEntries(entries);
@@ -1786,16 +1822,16 @@
     /**
      * Collects fetch args to object
      *
-     * @param {any} args fetch args
-     * @returns {Object} data object
+     * @param args fetch args
+     * @returns data object
      */
-    const getFetchData = function getFetchData(args) {
-      const fetchPropsObj = {};
-      let fetchUrl;
-      let fetchInit;
+    var getFetchData = function getFetchData(args) {
+      var fetchPropsObj = {};
+      var fetchUrl;
+      var fetchInit;
       if (args[0] instanceof Request) {
         // if Request passed to fetch, it will be in array
-        const requestData = getRequestData(args[0]);
+        var requestData = getRequestData(args[0]);
         fetchUrl = requestData.url;
         fetchInit = requestData;
       } else {
@@ -1805,7 +1841,8 @@
 
       fetchPropsObj.url = fetchUrl;
       if (fetchInit instanceof Object) {
-        Object.keys(fetchInit).forEach(function (prop) {
+        var props = Object.keys(fetchInit);
+        props.forEach(function (prop) {
           fetchPropsObj[prop] = fetchInit[prop];
         });
       }
@@ -1815,14 +1852,14 @@
     /**
      * Collect xhr.open arguments to object
      *
-     * @param {string} method request method
-     * @param {string} url request url
-     * @param {string} async request async prop
-     * @param {string} user request user prop
-     * @param {string} password request password prop
-     * @returns {Object} aggregated request data
+     * @param method request method
+     * @param url request url
+     * @param async request async prop
+     * @param user request user prop
+     * @param password request password prop
+     * @returns aggregated request data
      */
-    const getXhrData = function getXhrData(method, url, async, user, password) {
+    var getXhrData = function getXhrData(method, url, async, user, password) {
       return {
         method,
         url,
@@ -1836,21 +1873,22 @@
      * Parse propsToMatch input string into object;
      * used for prevent-fetch and prevent-xhr
      *
-     * @param {string} propsToMatchStr string of space-separated request properties to match
-     * @returns {Object} object where 'key' is prop name and 'value' is prop value
+     * @param propsToMatchStr string of space-separated request properties to match
+     * @returns object where 'key' is prop name and 'value' is prop value
      */
-    const parseMatchProps = function parseMatchProps(propsToMatchStr) {
-      const PROPS_DIVIDER = ' ';
-      const PAIRS_MARKER = ':';
-      const LEGAL_MATCH_PROPS = getRequestProps();
-      const propsObj = {};
-      const props = propsToMatchStr.split(PROPS_DIVIDER);
+    var parseMatchProps = function parseMatchProps(propsToMatchStr) {
+      var PROPS_DIVIDER = ' ';
+      var PAIRS_MARKER = ':';
+      var isRequestProp = function isRequestProp(prop) {
+        return getRequestProps().includes(prop);
+      };
+      var propsObj = {};
+      var props = propsToMatchStr.split(PROPS_DIVIDER);
       props.forEach(function (prop) {
-        const dividerInd = prop.indexOf(PAIRS_MARKER);
-        const key = prop.slice(0, dividerInd);
-        const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
-        if (hasLegalMatchProp) {
-          const value = prop.slice(dividerInd + 1);
+        var dividerInd = prop.indexOf(PAIRS_MARKER);
+        var key = prop.slice(0, dividerInd);
+        if (isRequestProp(key)) {
+          var value = prop.slice(dividerInd + 1);
           propsObj[key] = value;
         } else {
           // Escape multiple colons in prop
@@ -1865,10 +1903,10 @@
     /**
      * Validates parsed data values
      *
-     * @param {Object} data request data
-     * @returns {boolean} if data is valid
+     * @param data request data
+     * @returns if data is valid
      */
-    const validateParsedData = function validateParsedData(data) {
+    var isValidParsedData = function isValidParsedData(data) {
       return Object.values(data).every(function (value) {
         return isValidStrPattern(value);
       });
@@ -1877,12 +1915,14 @@
     /**
      * Converts valid parsed data to data obj for further matching
      *
-     * @param {Object} data parsed request data
-     * @returns {Object} data obj ready for matching
+     * @param data parsed request data
+     * @returns data obj ready for matching
      */
-    const getMatchPropsData = function getMatchPropsData(data) {
-      const matchData = {};
-      Object.keys(data).forEach(function (key) {
+    var getMatchPropsData = function getMatchPropsData(data) {
+      var matchData = {};
+      // Assertion is required, as Object.keys always returns string[]
+      var dataKeys = Object.keys(data);
+      dataKeys.forEach(function (key) {
         matchData[key] = toRegExp(data[key]);
       });
       return matchData;
@@ -1891,17 +1931,34 @@
     /**
      * Sets item to a specified storage, if storage isn't full.
      *
-     * @param {Object} source scriptlet's configuration
-     * @param {Storage} storage storage instance to set item into
-     * @param {string} key storage key
-     * @param {string} value staroge value
+     * @param source scriptlet's configuration
+     * @param storage storage instance to set item into
+     * @param key storage key
+     * @param  value staroge value
      */
-    const setStorageItem = function setStorageItem(source, storage, key, value) {
+    var setStorageItem = function setStorageItem(source, storage, key, value) {
       // setItem() may throw an exception if the storage is full.
       try {
         storage.setItem(key, value);
       } catch (e) {
-        const message = "Unable to set sessionStorage item due to: ".concat(e.message);
+        var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+        logMessage(source, message);
+      }
+    };
+
+    /**
+     * Removes the key/value pair with the given `key` from the `storage`.
+     * If unable to remove, logs the reason to console in debug mode.
+     *
+     * @param source scriptlet's configuration
+     * @param storage storage instance from which item has to be removed
+     * @param key storage key
+     */
+    var removeStorageItem = function removeStorageItem(source, storage, key) {
+      try {
+        storage.removeItem(key);
+      } catch (e) {
+        var message = "Unable to remove storage item due to: ".concat(e.message);
         logMessage(source, message);
       }
     };
@@ -1909,14 +1966,14 @@
     /**
      * Gets supported storage item value
      *
-     * @param {string} value input item value
-     * @returns {string|null|undefined|boolean} valid item value if ok OR null if not
+     * @param  value input item value
+     * @returns valid item value if ok OR null if not
      */
-    const getLimitedStorageItemValue = function getLimitedStorageItemValue(value) {
+    var getLimitedStorageItemValue = function getLimitedStorageItemValue(value) {
       if (typeof value !== 'string') {
         throw new Error('Invalid value');
       }
-      let validValue;
+      var validValue;
       if (value === 'undefined') {
         validValue = undefined;
       } else if (value === 'false') {
@@ -1943,6 +2000,8 @@
         validValue = 'yes';
       } else if (value === 'no') {
         validValue = 'no';
+      } else if (value === '$remove$') {
+        validValue = '$remove$';
       } else {
         throw new Error('Invalid value');
       }
@@ -1953,12 +2012,12 @@
      * Generates function which silents global errors on page generated by scriptlet
      * If error doesn't belong to our error we transfer it to the native onError handler
      *
-     * @param {string} rid - unique identifier of scriptlet
-     * @returns {Function} window.onerror handler
+     * @param rid - unique identifier of scriptlet
+     * @returns window.onerror handler
      */
     function createOnErrorHandler(rid) {
       // eslint-disable-next-line consistent-return
-      const nativeOnError = window.onerror;
+      var nativeOnError = window.onerror;
       return function onError(error) {
         if (typeof error === 'string' && error.includes(rid)) {
           return true;
@@ -1967,7 +2026,7 @@
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
           }
-          return nativeOnError.apply(this, [error, ...args]);
+          return nativeOnError.apply(window, [error, ...args]);
         }
         return false;
       };
@@ -1976,7 +2035,7 @@
     /**
      * Generate random seven symbols id
      *
-     * @returns {string} randomized id
+     * @returns randomized id
      */
     function randomId() {
       return Math.random().toString(36).slice(2, 9);
@@ -1990,7 +2049,7 @@
      * https://github.com/AdguardTeam/Scriptlets/issues/226
      * https://github.com/AdguardTeam/Scriptlets/issues/232
      *
-     * @returns {Object} descriptor addon
+     * @returns descriptor addon
      */
     function getDescriptorAddon() {
       return {
@@ -2005,11 +2064,11 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            const result = cb(...args);
+            var result = cb(...args);
             this.isAbortingSuspended = false;
             return result;
           } catch (_unused) {
-            const rid = randomId();
+            var rid = randomId();
             this.isAbortingSuspended = false;
             // It's necessary to throw error
             // otherwise script will be not aborted
@@ -2020,32 +2079,25 @@
     }
 
     /**
-     * @typedef ChainInfo
-     * @property {Object} base current chain base
-     * @property {string} prop current chain prop
-     * @property {string} [chain] string representation
-     */
-
-    /**
      * Check if the property exists in the base object (recursively)
      *
      * If property doesn't exist in base object,
      * defines this property as 'undefined'
      * and returns base, property name and remaining part of property chain
      *
-     * @param {Object} base object that owns chain
-     * @param {string} chain chain of owner properties
-     * @returns {ChainInfo} chain info object
+     * @param base object that owns chain
+     * @param chain chain of owner properties
+     * @returns chain info object
      */
     function getPropertyInChain(base, chain) {
-      const pos = chain.indexOf('.');
+      var pos = chain.indexOf('.');
       if (pos === -1) {
         return {
           base,
           prop: chain
         };
       }
-      const prop = chain.slice(0, pos);
+      var prop = chain.slice(0, pos);
 
       // https://github.com/AdguardTeam/Scriptlets/issues/128
       if (base === null) {
@@ -2057,7 +2109,7 @@
           chain
         };
       }
-      const nextBase = base[prop];
+      var nextBase = base[prop];
       chain = chain.slice(pos + 1);
       if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
         // for empty objects in chain
@@ -2092,26 +2144,28 @@
      * This is used by prevent-xhr, prevent-fetch, trusted-replace-xhr-response
      * and  trusted-replace-fetch-response scriptlets
      *
-     * @param {Object} source scriptlet properties
-     * @param {string} propsToMatch string of space-separated request properties to match
-     * @param {Object} requestData object with standard properties of fetch/xhr like url, method etc
-     * @returns {boolean} if request properties match
+     * @param source scriptlet properties
+     * @param propsToMatch string of space-separated request properties to match
+     * @param requestData object with standard properties of fetch/xhr like url, method etc
+     * @returns if request properties match
      */
-    const matchRequestProps = function matchRequestProps(source, propsToMatch, requestData) {
+    var matchRequestProps = function matchRequestProps(source, propsToMatch, requestData) {
       if (propsToMatch === '' || propsToMatch === '*') {
         return true;
       }
-      let isMatched;
-      const parsedData = parseMatchProps(propsToMatch);
-      if (!validateParsedData(parsedData)) {
+      var isMatched;
+      var parsedData = parseMatchProps(propsToMatch);
+      if (!isValidParsedData(parsedData)) {
         logMessage(source, "Invalid parameter: ".concat(propsToMatch));
         isMatched = false;
       } else {
-        const matchData = getMatchPropsData(parsedData);
+        var matchData = getMatchPropsData(parsedData);
+        var matchKeys = Object.keys(matchData);
         // prevent only if all props match
-        isMatched = Object.keys(matchData).every(function (matchKey) {
-          const matchValue = matchData[matchKey];
-          return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+        isMatched = matchKeys.every(function (matchKey) {
+          var matchValue = matchData[matchKey];
+          var dataValue = requestData[matchKey];
+          return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === 'string' && (matchValue === null || matchValue === void 0 ? void 0 : matchValue.test(dataValue));
         });
       }
       return isMatched;
@@ -2121,19 +2175,19 @@
      * Checks if the stackTrace contains stackRegexp
      * https://github.com/AdguardTeam/Scriptlets/issues/82
      *
-     * @param {string|undefined} stackMatch - input stack value to match
-     * @param {string} stackTrace - script error stack trace
-     * @returns {boolean} if the stackTrace contains stackRegexp
+     * @param stackMatch - input stack value to match
+     * @param stackTrace - script error stack trace
+     * @returns if the stackTrace contains stackRegexp
      */
-    const matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
+    var matchStackTrace = function matchStackTrace(stackMatch, stackTrace) {
       if (!stackMatch || stackMatch === '') {
         return true;
       }
       if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
         return true;
       }
-      const stackRegexp = toRegExp(stackMatch);
-      const refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
+      var stackRegexp = toRegExp(stackMatch);
+      var refinedStackTrace = stackTrace.split('\n').slice(2) // get rid of our own functions in the stack trace
       .map(function (line) {
         return line.trim();
       }) // trim the lines
@@ -2145,14 +2199,14 @@
      * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
      * Those calls that fall into the "cooldown" period, are ignored
      *
-     * @param {Function} cb callback
-     * @param {number} delay - milliseconds
-     * @returns {Function} throttled callback
+     * @param cb callback
+     * @param delay - milliseconds
+     * @returns throttled callback
      */
-    const throttle = function throttle(cb, delay) {
-      let wait = false;
-      let savedArgs;
-      const wrapper = function wrapper() {
+    var throttle = function throttle(cb, delay) {
+      var wait = false;
+      var savedArgs;
+      var wrapper = function wrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
@@ -2178,23 +2232,23 @@
     /**
      * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
      *
-     * @param {Function} callback function to call on each mutation
-     * @param {boolean} [observeAttrs] if observer should observe attributes changes
-     * @param {Array} [attrsToObserve] list of attributes to observe
+     * @param callback function to call on each mutation
+     * @param observeAttrs if observer should observe attributes changes
+     * @param attrsToObserve list of attributes to observe
      */
-    const observeDOMChanges = function observeDOMChanges(callback) {
-      let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+    var observeDOMChanges = function observeDOMChanges(callback) {
+      var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
       /**
        * 'delay' in milliseconds for 'throttle' method
        */
-      const THROTTLE_DELAY_MS = 20;
+      var THROTTLE_DELAY_MS = 20;
       /**
        * Used for remove-class
        */
-      // eslint-disable-next-line no-use-before-define
-      const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-      const connect = function connect() {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+      var connect = function connect() {
         if (attrsToObserve.length > 0) {
           observer.observe(document.documentElement, {
             childList: true,
@@ -2210,7 +2264,7 @@
           });
         }
       };
-      const disconnect = function disconnect() {
+      var disconnect = function disconnect() {
         observer.disconnect();
       };
 
@@ -2229,14 +2283,14 @@
     /**
      * Returns the list of added nodes from the list of mutations
      *
-     * @param {MutationRecord[]} mutations list of mutations
-     * @returns {Node[]} list of added nodes
+     * @param mutations list of mutations
+     * @returns list of added nodes
      */
-    const getAddedNodes = function getAddedNodes(mutations) {
-      const nodes = [];
-      for (let i = 0; i < mutations.length; i += 1) {
-        const addedNodes = mutations[i].addedNodes;
-        for (let j = 0; j < addedNodes.length; j += 1) {
+    var getAddedNodes = function getAddedNodes(mutations) {
+      var nodes = [];
+      for (var i = 0; i < mutations.length; i += 1) {
+        var addedNodes = mutations[i].addedNodes;
+        for (var j = 0; j < addedNodes.length; j += 1) {
           nodes.push(addedNodes[j]);
         }
       }
@@ -2248,46 +2302,37 @@
      * throttling and disconnect timeout.
      *
      * @param {Function} callback MutationObserver callback
-     * @param {Object} options MutationObserver options
-     * @param {number|null} timeout Disconnect timeout in ms
+     * @param {object} options MutationObserver options
+     * @param timeout Disconnect timeout in ms
      */
-    const observeDocumentWithTimeout = function observeDocumentWithTimeout(callback, options) {
-      let timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 10000;
-      const observer = new MutationObserver(function (mutations, observer) {
+    var observeDocumentWithTimeout = function observeDocumentWithTimeout(callback, options) {
+      var timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 10000;
+      var documentObserver = new MutationObserver(function (mutations, observer) {
         observer.disconnect();
-        callback(mutations);
+        callback(mutations, observer);
         observer.observe(document.documentElement, options);
       });
-      observer.observe(document.documentElement, options);
+      documentObserver.observe(document.documentElement, options);
       if (typeof timeout === 'number') {
         setTimeout(function () {
-          return observer.disconnect();
+          return documentObserver.disconnect();
         }, timeout);
       }
     };
 
     /**
-     * @typedef {Object} FlagsData object that holds info about valid flags
-     * and provides method for easy access
-     * @property {string} ASAP asap flag string
-     * @property {string} COMPLETE complete flag string
-     * @property {string} STAY stay flag string
-     * @property {Function} hasFlag to check if given flag is present
-     */
-
-    /**
      * Behaviour flags string parser
      *
-     * @param {string} flags required, 'applying' argument string
-     * @returns {FlagsData} object with parsed flags
+     * @param flags required, 'applying' argument string
+     * @returns object with parsed flags
      */
-    const parseFlags = function parseFlags(flags) {
-      const FLAGS_DIVIDER = ' ';
-      const ASAP_FLAG = 'asap';
-      const COMPLETE_FLAG = 'complete';
-      const STAY_FLAG = 'stay';
-      const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-      const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+    var parseFlags = function parseFlags(flags) {
+      var FLAGS_DIVIDER = ' ';
+      var ASAP_FLAG = 'asap';
+      var COMPLETE_FLAG = 'complete';
+      var STAY_FLAG = 'stay';
+      var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+      var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
         return VALID_FLAGS.includes(f);
       });
       return {
@@ -2308,13 +2353,13 @@
      *   - '$now$' - returns current time in ms, e.g 1667915146503
      *   - '$currentDate$' - returns current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
      *
-     * @param {string} rawValue keyword
-     * @returns {string} parsed value
+     * @param rawValue keyword
+     * @returns parsed value
      */
-    const parseKeywordValue = function parseKeywordValue(rawValue) {
-      const NOW_VALUE_KEYWORD = '$now$';
-      const CURRENT_DATE_KEYWORD = '$currentDate$';
-      let parsedValue = rawValue;
+    var parseKeywordValue = function parseKeywordValue(rawValue) {
+      var NOW_VALUE_KEYWORD = '$now$';
+      var CURRENT_DATE_KEYWORD = '$currentDate$';
+      var parsedValue = rawValue;
       if (rawValue === NOW_VALUE_KEYWORD) {
         // Set to current time in ms, e.g 1667915146503
         parsedValue = Date.now().toString();
@@ -2328,29 +2373,25 @@
     /**
      * Makes arbitrary operations on shadow root element,
      * to be passed as callback to hijackAttachShadow
-     *
-     * @callback attachShadowCallback
-     * @param {HTMLElement} shadowRoot
-     * @returns {void}
      */
 
     /**
      * Overrides attachShadow method of Element API on a given context
      * to pass retrieved shadowRoots to callback
      *
-     * @param {Object} context e.g global window object or contentWindow of an iframe
-     * @param {string} hostSelector selector to determine if callback should be called on current shadow subtree
-     * @param {attachShadowCallback} callback callback to call on shadow root
+     * @param context e.g global window object or contentWindow of an iframe
+     * @param hostSelector selector to determine if callback should be called on current shadow subtree
+     * @param callback callback to call on shadow root
      */
-    const hijackAttachShadow = function hijackAttachShadow(context, hostSelector, callback) {
-      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        const shadowRoot = Reflect.apply(target, thisArg, args);
+    var hijackAttachShadow = function hijackAttachShadow(context, hostSelector, callback) {
+      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        var shadowRoot = Reflect.apply(target, thisArg, args);
         if (thisArg && thisArg.matches(hostSelector || '*')) {
           callback(shadowRoot);
         }
         return shadowRoot;
       };
-      const attachShadowHandler = {
+      var attachShadowHandler = {
         apply: handlerWrapper
       };
       context.Element.prototype.attachShadow = new Proxy(context.Element.prototype.attachShadow, attachShadowHandler);
@@ -2359,70 +2400,73 @@
     /**
      * Grabs existing nodes and passes them to a given handler.
      *
-     * @param {string} selector CSS selector to find nodes by
-     * @param {Function} handler handler to pass nodes to
+     * @param selector CSS selector to find nodes by
+     * @param handler handler to pass nodes to
      */
-    const handleExistingNodes = function handleExistingNodes(selector, handler) {
-      const nodeList = document.querySelectorAll(selector);
-      const nodes = nodeListToArray(nodeList);
+    var handleExistingNodes = function handleExistingNodes(selector, handler) {
+      var nodeList = document.querySelectorAll(selector);
+      var nodes = nodeListToArray(nodeList);
       handler(nodes);
     };
 
     /**
      * Extracts added nodes from mutations and passes them to a given handler.
      *
-     * @param {MutationRecord[]} mutations mutations to find eligible nodes in
-     * @param {Function} handler handler to pass eligible nodes to
+     * @param mutations mutations to find eligible nodes in
+     * @param handler handler to pass eligible nodes to
      */
-    const handleMutations = function handleMutations(mutations, handler) {
-      const addedNodes = getAddedNodes(mutations);
+    var handleMutations = function handleMutations(mutations, handler) {
+      var addedNodes = getAddedNodes(mutations);
       handler(addedNodes);
     };
 
     /**
      * Checks if given node's text content should be replaced
      *
-     * @param {Node} node  node to check
-     * @param {RegExp|string} nodeNameMatch regexp or string to match node name
-     * @param {RegExp|string} textContentMatch regexp or string to match node's text content
-     * @returns {boolean} true if node's text content should be replaced
+     * @param node  node to check
+     * @param nodeNameMatch regexp or string to match node name
+     * @param textContentMatch regexp or string to match node's text content
+     * @returns true if node's text content should be replaced
      */
-    const isTargetNode = function isTargetNode(node, nodeNameMatch, textContentMatch) {
-      const nodeName = node.nodeName,
+    var isTargetNode = function isTargetNode(node, nodeNameMatch, textContentMatch) {
+      var nodeName = node.nodeName,
         textContent = node.textContent;
-      const nodeNameLowerCase = nodeName.toLowerCase();
-      return textContent !== '' && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
+      var nodeNameLowerCase = nodeName.toLowerCase();
+      return textContent !== null && textContent !== '' && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
     };
 
     /**
      * Replaces given node's text content with a given replacement.
      *
-     * @param {string} source source of the scriptlet
-     * @param {Node} node node to replace text content in
-     * @param {RegExp|string} pattern pattern to match text content
-     * @param {string} replacement replacement for matched text content
+     * @param source source of the scriptlet
+     * @param node node to replace text content in
+     * @param pattern pattern to match text content
+     * @param replacement replacement for matched text content
      */
-    const replaceNodeText = function replaceNodeText(source, node, pattern, replacement) {
-      node.textContent = node.textContent.replace(pattern, replacement);
-      hit(source);
+    var replaceNodeText = function replaceNodeText(source, node, pattern, replacement) {
+      var textContent = node.textContent;
+      if (textContent) {
+        node.textContent = textContent.replace(pattern, replacement);
+        hit(source);
+      }
     };
 
     /**
      * Modifies arguments for trusted-replace-node-text and remove-node-text scriptlets
      *
-     * @param {string} nodeName string or stringified regexp to match node name
-     * @param {string} textMatch string or stringified regexp to match node's text content
-     * @param {string} pattern string or stringified regexp to match replace pattern
-     * @returns {Object} derivative params
+     * @param nodeName string or stringified regexp to match node name
+     * @param textMatch string or stringified regexp to match node's text content
+     * @param pattern string or stringified regexp to match replace pattern
+     * @returns derivative params
      */
-    const parseNodeTextParams = function parseNodeTextParams(nodeName, textMatch) {
-      let pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      const REGEXP_START_MARKER = '/';
-      const isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
-      const selector = isStringNameMatch ? nodeName : '*';
-      const nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
-      const textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
-      let patternMatch;
+    var parseNodeTextParams = function parseNodeTextParams(nodeName, textMatch) {
+      var pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var REGEXP_START_MARKER = '/';
+      var isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
+      var selector = isStringNameMatch ? nodeName : '*';
+      var nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
+      var textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
+      var patternMatch;
       if (pattern) {
         patternMatch = !pattern.startsWith(REGEXP_START_MARKER) ? pattern : toRegExp(pattern);
       }
@@ -2524,82 +2568,82 @@
      */
     /* eslint-enable max-len */
     function trustedClickElement$1(source, selectors) {
-      let extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      let delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
+      var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
       if (!selectors) {
         return;
       }
-      const OBSERVER_TIMEOUT_MS = 10000;
-      const THROTTLE_DELAY_MS = 20;
-      const STATIC_CLICK_DELAY_MS = 150;
-      const COOKIE_MATCH_MARKER = 'cookie:';
-      const LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
-      const SELECTORS_DELIMITER = ',';
-      const COOKIE_STRING_DELIMITER = ';';
+      var OBSERVER_TIMEOUT_MS = 10000;
+      var THROTTLE_DELAY_MS = 20;
+      var STATIC_CLICK_DELAY_MS = 150;
+      var COOKIE_MATCH_MARKER = 'cookie:';
+      var LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
+      var SELECTORS_DELIMITER = ',';
+      var COOKIE_STRING_DELIMITER = ';';
       // Regex to split match pairs by commas, avoiding the ones included in regexes
-      const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
-      const sleep = function sleep(delayMs) {
+      var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
+      var sleep = function sleep(delayMs) {
         return new Promise(function (resolve) {
           return setTimeout(resolve, delayMs);
         });
       };
-      let parsedDelay;
+      var parsedDelay;
       if (delay) {
         parsedDelay = parseInt(delay, 10);
-        const isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
+        var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
         if (!isValidDelay) {
           // eslint-disable-next-line max-len
-          const message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
+          var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
           logMessage(source, message);
           return;
         }
       }
-      let canClick = !parsedDelay;
-      const cookieMatches = [];
-      const localStorageMatches = [];
-      let isInvertedMatchCookie = false;
-      let isInvertedMatchLocalStorage = false;
+      var canClick = !parsedDelay;
+      var cookieMatches = [];
+      var localStorageMatches = [];
+      var isInvertedMatchCookie = false;
+      var isInvertedMatchLocalStorage = false;
       if (extraMatch) {
         // Get all match marker:value pairs from argument
-        const parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
+        var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
           return matchStr.trim();
         });
 
         // Filter match pairs by marker
         parsedExtraMatch.forEach(function (matchStr) {
           if (matchStr.includes(COOKIE_MATCH_MARKER)) {
-            const _parseMatchArg = parseMatchArg(matchStr),
+            var _parseMatchArg = parseMatchArg(matchStr),
               isInvertedMatch = _parseMatchArg.isInvertedMatch,
               matchValue = _parseMatchArg.matchValue;
             isInvertedMatchCookie = isInvertedMatch;
-            const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, '');
+            var cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, '');
             cookieMatches.push(cookieMatch);
           }
           if (matchStr.includes(LOCAL_STORAGE_MATCH_MARKER)) {
-            const _parseMatchArg2 = parseMatchArg(matchStr),
-              isInvertedMatch = _parseMatchArg2.isInvertedMatch,
-              matchValue = _parseMatchArg2.matchValue;
-            isInvertedMatchLocalStorage = isInvertedMatch;
-            const localStorageMatch = matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, '');
+            var _parseMatchArg2 = parseMatchArg(matchStr),
+              _isInvertedMatch = _parseMatchArg2.isInvertedMatch,
+              _matchValue = _parseMatchArg2.matchValue;
+            isInvertedMatchLocalStorage = _isInvertedMatch;
+            var localStorageMatch = _matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, '');
             localStorageMatches.push(localStorageMatch);
           }
         });
       }
       if (cookieMatches.length > 0) {
-        const parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
-        const parsedCookies = parseCookieString(document.cookie);
-        const cookieKeys = Object.keys(parsedCookies);
+        var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
+        var parsedCookies = parseCookieString(document.cookie);
+        var cookieKeys = Object.keys(parsedCookies);
         if (cookieKeys.length === 0) {
           return;
         }
-        const cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
+        var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
           // Avoid getting /.?/ result from toRegExp on undefined
           // as cookie may be set without value,
           // on which cookie parsing will return cookieKey:undefined pair
-          const valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
-          const keyMatch = toRegExp(key);
+          var valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
+          var keyMatch = toRegExp(key);
           return cookieKeys.some(function (key) {
-            const keysMatched = keyMatch.test(key);
+            var keysMatched = keyMatch.test(key);
             if (!keysMatched) {
               return false;
             }
@@ -2611,18 +2655,18 @@
             return valueMatch.test(parsedCookies[key]);
           });
         });
-        const shouldRun = cookiesMatched !== isInvertedMatchCookie;
+        var shouldRun = cookiesMatched !== isInvertedMatchCookie;
         if (!shouldRun) {
           return;
         }
       }
       if (localStorageMatches.length > 0) {
-        const localStorageMatched = localStorageMatches.every(function (str) {
-          const itemValue = window.localStorage.getItem(str);
+        var localStorageMatched = localStorageMatches.every(function (str) {
+          var itemValue = window.localStorage.getItem(str);
           return itemValue || itemValue === '';
         });
-        const shouldRun = localStorageMatched !== isInvertedMatchLocalStorage;
-        if (!shouldRun) {
+        var _shouldRun = localStorageMatched !== isInvertedMatchLocalStorage;
+        if (!_shouldRun) {
           return;
         }
       }
@@ -2635,16 +2679,16 @@
        * - always know on what index corresponding element should be put
        * - prevent selectors from being queried multiple times
        */
-      let selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
+      var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
         return selector.trim();
       });
-      const createElementObj = function createElementObj(element) {
+      var createElementObj = function createElementObj(element) {
         return {
           element: element || null,
           clicked: false
         };
       };
-      const elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+      var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
 
       /**
        * Go through elementsSequence from left to right, clicking on found elements
@@ -2652,9 +2696,9 @@
        * Element should not be clicked if it is already clicked,
        * or a previous element is not found or clicked yet
        */
-      const clickElementsBySequence = async function clickElementsBySequence() {
-        for (let i = 0; i < elementsSequence.length; i += 1) {
-          const elementObj = elementsSequence[i];
+      var clickElementsBySequence = async function clickElementsBySequence() {
+        for (var i = 0; i < elementsSequence.length; i += 1) {
+          var elementObj = elementsSequence[i];
           // Add a delay between clicks to every element except the first one
           // https://github.com/AdguardTeam/Scriptlets/issues/284
           if (i >= 1) {
@@ -2670,7 +2714,7 @@
             elementObj.clicked = true;
           }
         }
-        const allElementsClicked = elementsSequence.every(function (elementObj) {
+        var allElementsClicked = elementsSequence.every(function (elementObj) {
           return elementObj.clicked === true;
         });
         if (allElementsClicked) {
@@ -2678,8 +2722,8 @@
           hit(source);
         }
       };
-      const handleElement = function handleElement(element, i) {
-        const elementObj = createElementObj(element);
+      var handleElement = function handleElement(element, i) {
+        var elementObj = createElementObj(element);
         elementsSequence[i] = elementObj;
         if (canClick) {
           clickElementsBySequence();
@@ -2694,13 +2738,13 @@
        * when delay is getting off after the last mutation took place.
        *
        */
-      const findElements = function findElements(mutations, observer) {
-        const fulfilledSelectors = [];
+      var findElements = function findElements(mutations, observer) {
+        var fulfilledSelectors = [];
         selectorsSequence.forEach(function (selector, i) {
           if (!selector) {
             return;
           }
-          const element = document.querySelector(selector);
+          var element = document.querySelector(selector);
           if (!element) {
             return;
           }
@@ -2714,14 +2758,14 @@
         });
 
         // Disconnect observer after finding all elements
-        const allSelectorsFulfilled = selectorsSequence.every(function (selector) {
+        var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
           return selector === null;
         });
         if (allSelectorsFulfilled) {
           observer.disconnect();
         }
       };
-      const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+      var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
       observer.observe(document.documentElement, {
         attributes: true,
         childList: true,
@@ -2782,18 +2826,18 @@
       if (!property) {
         return;
       }
-      const rid = randomId();
-      const abort = function abort() {
+      var rid = randomId();
+      var abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -2856,18 +2900,18 @@
       if (!property) {
         return;
       }
-      const rid = randomId();
-      const abort = function abort() {
+      var rid = randomId();
+      var abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -3031,11 +3075,11 @@
     /* eslint-enable max-len */
     function preventSetTimeout$1(source, matchCallback, matchDelay) {
       // logs setTimeouts to console if no arguments have been specified
-      const shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
-      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        const callback = args[0];
-        const delay = args[1];
-        let shouldPrevent = false;
+      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
+      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        var callback = args[0];
+        var delay = args[1];
+        var shouldPrevent = false;
         if (shouldLog) {
           hit(source);
           // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -3054,7 +3098,7 @@
         }
         return target.apply(thisArg, args);
       };
-      const setTimeoutHandler = {
+      var setTimeoutHandler = {
         apply: handlerWrapper
       };
       window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
@@ -3212,11 +3256,11 @@
     /* eslint-enable max-len */
     function preventSetInterval$1(source, matchCallback, matchDelay) {
       // logs setIntervals to console if no arguments have been specified
-      const shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
-      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        const callback = args[0];
-        const delay = args[1];
-        let shouldPrevent = false;
+      var shouldLog = typeof matchCallback === 'undefined' && typeof matchDelay === 'undefined';
+      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        var callback = args[0];
+        var delay = args[1];
+        var shouldPrevent = false;
         if (shouldLog) {
           hit(source);
           // https://github.com/AdguardTeam/Scriptlets/issues/105
@@ -3235,7 +3279,7 @@
         }
         return target.apply(thisArg, args);
       };
-      const setIntervalHandler = {
+      var setIntervalHandler = {
         apply: handlerWrapper
       };
       window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
@@ -3334,14 +3378,14 @@
      */
     /* eslint-enable max-len */
     function preventWindowOpen$1(source) {
-      let match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '*';
-      let delay = arguments.length > 2 ? arguments[2] : undefined;
-      let replacement = arguments.length > 3 ? arguments[3] : undefined;
+      var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '*';
+      var delay = arguments.length > 2 ? arguments[2] : undefined;
+      var replacement = arguments.length > 3 ? arguments[3] : undefined;
       // default match value is needed for preventing all window.open calls
       // if scriptlet runs without args
-      const nativeOpen = window.open;
-      const isNewSyntax = match !== '0' && match !== '1';
-      const oldOpenWrapper = function oldOpenWrapper(str) {
+      var nativeOpen = window.open;
+      var isNewSyntax = match !== '0' && match !== '1';
+      var oldOpenWrapper = function oldOpenWrapper(str) {
         match = Number(match) > 0;
         // 'delay' was 'search' prop for matching in old syntax
         for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
@@ -3351,29 +3395,29 @@
           logMessage(source, "Invalid parameter: ".concat(delay));
           return nativeOpen.apply(window, [str, ...args]);
         }
-        const searchRegexp = toRegExp(delay);
+        var searchRegexp = toRegExp(delay);
         if (match !== searchRegexp.test(str)) {
           return nativeOpen.apply(window, [str, ...args]);
         }
         hit(source);
         return handleOldReplacement(replacement);
       };
-      const newOpenWrapper = function newOpenWrapper(url) {
-        const shouldLog = replacement && replacement.includes('log');
+      var newOpenWrapper = function newOpenWrapper(url) {
+        var shouldLog = replacement && replacement.includes('log');
         for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
           args[_key2 - 1] = arguments[_key2];
         }
         if (shouldLog) {
-          const argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
-          const message = "".concat(url).concat(argsStr);
+          var argsStr = args && args.length > 0 ? ", ".concat(args.join(', ')) : '';
+          var message = "".concat(url).concat(argsStr);
           logMessage(source, message, true);
           hit(source);
         }
-        let shouldPrevent = false;
+        var shouldPrevent = false;
         if (match === '*') {
           shouldPrevent = true;
         } else if (isValidMatchStr(match)) {
-          const _parseMatchArg = parseMatchArg(match),
+          var _parseMatchArg = parseMatchArg(match),
             isInvertedMatch = _parseMatchArg.isInvertedMatch,
             matchRegexp = _parseMatchArg.matchRegexp;
           shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
@@ -3382,18 +3426,18 @@
           shouldPrevent = false;
         }
         if (shouldPrevent) {
-          const parsedDelay = parseInt(delay, 10);
-          let result;
+          var parsedDelay = parseInt(delay, 10);
+          var result;
           if (nativeIsNaN(parsedDelay)) {
             result = noopNull();
           } else {
-            const decoyArgs = {
+            var decoyArgs = {
               replacement,
               url,
               delay: parsedDelay
             };
-            const decoy = createDecoy(decoyArgs);
-            let popup = decoy.contentWindow;
+            var decoy = createDecoy(decoyArgs);
+            var popup = decoy.contentWindow;
             if (typeof popup === 'object' && popup !== null) {
               Object.defineProperty(popup, 'closed', {
                 value: false
@@ -3405,7 +3449,7 @@
                 value: null
               });
             } else {
-              const nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
+              var nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
               Object.defineProperty(decoy, 'contentWindow', {
                 get: getPreventGetter(nativeGetter)
               });
@@ -3503,37 +3547,37 @@
      */
     /* eslint-enable max-len */
     function abortCurrentInlineScript$1(source, property, search) {
-      const searchRegexp = toRegExp(search);
-      const rid = randomId();
-      const SRC_DATA_MARKER = 'data:text/javascript;base64,';
-      const getCurrentScript = function getCurrentScript() {
+      var searchRegexp = toRegExp(search);
+      var rid = randomId();
+      var SRC_DATA_MARKER = 'data:text/javascript;base64,';
+      var getCurrentScript = function getCurrentScript() {
         if ('currentScript' in document) {
           return document.currentScript;
         }
-        const scripts = document.getElementsByTagName('script');
+        var scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];
       };
-      const ourScript = getCurrentScript();
-      const abort = function abort() {
+      var ourScript = getCurrentScript();
+      var abort = function abort() {
         var _scriptEl$src;
-        const scriptEl = getCurrentScript();
+        var scriptEl = getCurrentScript();
         if (!scriptEl) {
           return;
         }
-        let content = scriptEl.textContent;
+        var content = scriptEl.textContent;
 
         // We are using Node.prototype.textContent property descriptor
         // to get the real script content
         // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
-          const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+          var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
           content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
 
         // https://github.com/AdguardTeam/Scriptlets/issues/130
         if (content.length === 0 && typeof scriptEl.src !== 'undefined' && (_scriptEl$src = scriptEl.src) !== null && _scriptEl$src !== void 0 && _scriptEl$src.startsWith(SRC_DATA_MARKER)) {
-          const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
+          var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
           content = window.atob(encodedContent);
         }
         if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
@@ -3541,10 +3585,10 @@
           throw new ReferenceError(rid);
         }
       };
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
 
         // The scriptlet might be executed before the chain property has been created
@@ -3553,15 +3597,15 @@
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
         if (base instanceof Object === false && base === null) {
-          const props = property.split('.');
-          const propIndex = props.indexOf(prop);
-          const baseName = props[propIndex - 1];
-          const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+          var props = property.split('.');
+          var propIndex = props.indexOf(prop);
+          var baseName = props[propIndex - 1];
+          var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
           logMessage(source, message);
           return;
         }
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -3575,13 +3619,13 @@
           });
           return;
         }
-        let currentValue = base[prop];
-        let origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        var currentValue = base[prop];
+        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
         if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
           currentValue = base[prop];
           origDescriptor = undefined;
         }
-        const descriptorWrapper = Object.assign(getDescriptorAddon(), {
+        var descriptorWrapper = Object.assign(getDescriptorAddon(), {
           currentValue,
           get() {
             if (!this.isAbortingSuspended) {
@@ -3719,9 +3763,9 @@
      */
     /* eslint-enable max-len */
     function setConstant$1(source, property, value) {
-      let stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      let valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
-      const uboAliases = ['set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set'];
+      var stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+      var uboAliases = ['set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set'];
 
       /**
        * UBO set-constant analog has it's own args sequence:
@@ -3749,9 +3793,9 @@
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-      const emptyArr = noopArray();
-      const emptyObj = noopObject();
-      let constantValue;
+      var emptyArr = noopArray();
+      var emptyObj = noopObject();
+      var constantValue;
       if (value === 'undefined') {
         constantValue = undefined;
       } else if (value === 'false') {
@@ -3797,9 +3841,9 @@
       } else {
         return;
       }
-      const valueWrapperNames = ['asFunction', 'asCallback', 'asResolved', 'asRejected'];
+      var valueWrapperNames = ['asFunction', 'asCallback', 'asResolved', 'asRejected'];
       if (valueWrapperNames.includes(valueWrapper)) {
-        const valueWrappersMap = {
+        var valueWrappersMap = {
           asFunction(v) {
             return function () {
               return v;
@@ -3821,8 +3865,8 @@
         };
         constantValue = valueWrappersMap[valueWrapper](constantValue);
       }
-      let canceled = false;
-      const mustCancel = function mustCancel(value) {
+      var canceled = false;
+      var mustCancel = function mustCancel(value) {
         if (canceled) {
           return canceled;
         }
@@ -3836,23 +3880,23 @@
        * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
        * reorganizing this to common helpers will most definitely complicate debugging
        *
-       * @param {Object} base arbitrary reachable object
+       * @param {object} base arbitrary reachable object
        * @param {string} prop property name
        * @param {boolean} configurable if set property should be configurable
-       * @param {Object} handler custom property descriptor object
+       * @param {object} handler custom property descriptor object
        * @returns {boolean} true if prop was trapped successfully
        */
-      const trapProp = function trapProp(base, prop, configurable, handler) {
+      var trapProp = function trapProp(base, prop, configurable, handler) {
         if (!handler.init(base[prop])) {
           return false;
         }
-        const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        let prevSetter;
+        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        var prevSetter;
         // This is required to prevent scriptlets overwrite each over
         if (origDescriptor instanceof Object) {
           // This check is required to avoid defining non-configurable props
           if (!origDescriptor.configurable) {
-            const message = "Property '".concat(prop, "' is not configurable");
+            var message = "Property '".concat(prop, "' is not configurable");
             logMessage(source, message);
             return false;
           }
@@ -3884,18 +3928,18 @@
        * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
        * reorganizing this to common helpers will most definitely complicate debugging
        *
-       * @param {Object} owner object that owns chain
+       * @param {object} owner object that owns chain
        * @param {string} property chain of owner properties
        */
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        const base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
 
         // Handler method init is used to keep track of factual value
         // and apply mustCancel() check only on end prop
-        const inChainPropHandler = {
+        var inChainPropHandler = {
           factValue: undefined,
           init(a) {
             this.factValue = a;
@@ -3915,7 +3959,7 @@
             }
           }
         };
-        const endPropHandler = {
+        var endPropHandler = {
           init(a) {
             if (mustCancel(a)) {
               return false;
@@ -3935,7 +3979,7 @@
 
         // End prop case
         if (!chain) {
-          const isTrapped = trapProp(base, prop, false, endPropHandler);
+          var isTrapped = trapProp(base, prop, false, endPropHandler);
           if (isTrapped) {
             hit(source);
           }
@@ -3954,7 +3998,7 @@
         }
 
         // Defined prop in chain
-        const propValue = owner[prop];
+        var propValue = owner[prop];
         if (propValue instanceof Object || typeof propValue === 'object' && propValue !== null) {
           setChainPropAccess(propValue, chain);
         }
@@ -4019,13 +4063,13 @@
      */
     /* eslint-enable max-len */
     function removeCookie$1(source, match) {
-      const matchRegexp = toRegExp(match);
-      const removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
-        const cookieSpec = "".concat(cookieName, "=");
-        const domain1 = "; domain=".concat(hostName);
-        const domain2 = "; domain=.".concat(hostName);
-        const path = '; path=/';
-        const expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      var matchRegexp = toRegExp(match);
+      var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+        var cookieSpec = "".concat(cookieName, "=");
+        var domain1 = "; domain=".concat(hostName);
+        var domain2 = "; domain=.".concat(hostName);
+        var path = '; path=/';
+        var expiration = '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie = cookieSpec + expiration;
         document.cookie = cookieSpec + domain1 + expiration;
         document.cookie = cookieSpec + domain2 + expiration;
@@ -4034,19 +4078,19 @@
         document.cookie = cookieSpec + domain2 + path + expiration;
         hit(source);
       };
-      const rmCookie = function rmCookie() {
+      var rmCookie = function rmCookie() {
         document.cookie.split(';').forEach(function (cookieStr) {
-          const pos = cookieStr.indexOf('=');
+          var pos = cookieStr.indexOf('=');
           if (pos === -1) {
             return;
           }
-          const cookieName = cookieStr.slice(0, pos).trim();
+          var cookieName = cookieStr.slice(0, pos).trim();
           if (!matchRegexp.test(cookieName)) {
             return;
           }
-          const hostParts = document.location.hostname.split('.');
-          for (let i = 0; i <= hostParts.length - 1; i += 1) {
-            const hostName = hostParts.slice(i).join('.');
+          var hostParts = document.location.hostname.split('.');
+          for (var i = 0; i <= hostParts.length - 1; i += 1) {
+            var hostName = hostParts.slice(i).join('.');
             if (hostName) {
               removeCookieFromHost(cookieName, hostName);
             }
@@ -4108,12 +4152,12 @@
      */
     /* eslint-enable max-len */
     function preventAddEventListener$1(source, typeSearch, listenerSearch) {
-      const typeSearchRegexp = toRegExp(typeSearch);
-      const listenerSearchRegexp = toRegExp(listenerSearch);
-      const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+      var typeSearchRegexp = toRegExp(typeSearch);
+      var listenerSearchRegexp = toRegExp(listenerSearch);
+      var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
       function addEventListenerWrapper(type, listener) {
         var _this$constructor;
-        let shouldPrevent = false;
+        var shouldPrevent = false;
         if (validateType(type) && validateListener(listener)) {
           shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
         }
@@ -4124,7 +4168,7 @@
 
         // Avoid illegal invocations due to lost context
         // https://github.com/AdguardTeam/Scriptlets/issues/271
-        let context = this;
+        var context = this;
         if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
           context = window;
         }
@@ -4133,7 +4177,7 @@
         }
         return nativeAddEventListener.apply(context, [type, listener, ...args]);
       }
-      const descriptor = {
+      var descriptor = {
         configurable: true,
         set: function set() {},
         get: function get() {
@@ -4174,9 +4218,9 @@
      * @added v1.0.4.
      */
     function preventBab$2(source) {
-      const nativeSetTimeout = window.setTimeout;
-      const babRegex = /\.bab_elementid.$/;
-      const timeoutWrapper = function timeoutWrapper(callback) {
+      var nativeSetTimeout = window.setTimeout;
+      var babRegex = /\.bab_elementid.$/;
+      var timeoutWrapper = function timeoutWrapper(callback) {
         if (typeof callback !== 'string' || !babRegex.test(callback)) {
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
@@ -4186,17 +4230,17 @@
         hit(source);
       };
       window.setTimeout = timeoutWrapper;
-      const signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
-      const check = function check(str) {
+      var signatures = [['blockadblock'], ['babasbm'], [/getItem\('babn'\)/], ['getElementById', 'String.fromCharCode', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 'charAt', 'DOMContentLoaded', 'AdBlock', 'addEventListener', 'doScroll', 'fromCharCode', '<<2|r>>4', 'sessionStorage', 'clientWidth', 'localStorage', 'Math', 'random']];
+      var check = function check(str) {
         if (typeof str !== 'string') {
           return false;
         }
-        for (let i = 0; i < signatures.length; i += 1) {
-          const tokens = signatures[i];
-          let match = 0;
-          for (let j = 0; j < tokens.length; j += 1) {
-            const token = tokens[j];
-            const found = token instanceof RegExp ? token.test(str) : str.includes(token);
+        for (var i = 0; i < signatures.length; i += 1) {
+          var tokens = signatures[i];
+          var match = 0;
+          for (var j = 0; j < tokens.length; j += 1) {
+            var token = tokens[j];
+            var found = token instanceof RegExp ? token.test(str) : str.includes(token);
             if (found) {
               match += 1;
             }
@@ -4207,17 +4251,17 @@
         }
         return false;
       };
-      const nativeEval = window.eval;
-      const evalWrapper = function evalWrapper(str) {
+      var nativeEval = window.eval;
+      var evalWrapper = function evalWrapper(str) {
         if (!check(str)) {
           return nativeEval(str);
         }
         hit(source);
-        const bodyEl = document.body;
+        var bodyEl = document.body;
         if (bodyEl) {
           bodyEl.style.removeProperty('visibility');
         }
-        const el = document.getElementById('babasbmsgx');
+        var el = document.getElementById('babasbmsgx');
         if (el) {
           el.parentNode.removeChild(el);
         }
@@ -4253,7 +4297,7 @@
      */
     /* eslint-enable max-len */
     function nowebrtc$1(source) {
-      let propertyName = '';
+      var propertyName = '';
       if (window.RTCPeerConnection) {
         propertyName = 'RTCPeerConnection';
       } else if (window.webkitRTCPeerConnection) {
@@ -4262,9 +4306,9 @@
       if (propertyName === '') {
         return;
       }
-      const rtcReplacement = function rtcReplacement(config) {
+      var rtcReplacement = function rtcReplacement(config) {
         // eslint-disable-next-line max-len
-        const message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
+        var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
         logMessage(source, message);
         hit(source);
       };
@@ -4274,7 +4318,7 @@
         createOffer: noopFunc,
         setRemoteDescription: noopFunc
       };
-      const rtc = window[propertyName];
+      var rtc = window[propertyName];
       window[propertyName] = rtcReplacement;
       if (rtc.prototype) {
         rtc.prototype.createDataChannel = function (a, b) {
@@ -4308,22 +4352,22 @@
      * @added v1.0.4.
      */
     function logAddEventListener$1(source) {
-      const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+      var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
       function addEventListenerWrapper(type, listener) {
         var _this$constructor;
         if (validateType(type) && validateListener(listener)) {
-          const message = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
+          var message = "addEventListener(\"".concat(type, "\", ").concat(listenerToString(listener), ")");
           logMessage(source, message, true);
           hit(source);
+        } else {
+          // logging while debugging
+          var _message = "Invalid event type or listener passed to addEventListener:\n        type: ".concat(convertTypeToString(type), "\n        listener: ").concat(convertTypeToString(listener));
+          logMessage(source, _message, true);
         }
-
-        // logging while debugging
-        const message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
-        logMessage(source, message, true);
 
         // Avoid illegal invocations due to lost context
         // https://github.com/AdguardTeam/Scriptlets/issues/271
-        let context = this;
+        var context = this;
         if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === 'Window' && this !== window) {
           context = window;
         }
@@ -4332,7 +4376,7 @@
         }
         return nativeAddEventListener.apply(context, [type, listener, ...args]);
       }
-      const descriptor = {
+      var descriptor = {
         configurable: true,
         set: function set() {},
         get: function get() {
@@ -4368,7 +4412,7 @@
      */
     function logEval$1(source) {
       // wrap eval function
-      const nativeEval = window.eval;
+      var nativeEval = window.eval;
       function evalWrapper(str) {
         hit(source);
         logMessage(source, "eval(\"".concat(str, "\")"), true);
@@ -4377,7 +4421,7 @@
       window.eval = evalWrapper;
 
       // wrap new Function
-      const nativeFunction = window.Function;
+      var nativeFunction = window.Function;
       function FunctionWrapper() {
         hit(source);
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -4453,6 +4497,7 @@
 
     /* eslint-disable no-eval, no-extra-bind, func-names */
 
+
     /**
      * @scriptlet prevent-eval-if
      *
@@ -4482,8 +4527,8 @@
      * @added v1.0.4.
      */
     function preventEvalIf$1(source, search) {
-      const searchRegexp = toRegExp(search);
-      const nativeEval = window.eval;
+      var searchRegexp = toRegExp(search);
+      var nativeEval = window.eval;
       window.eval = function (payload) {
         if (!searchRegexp.test(payload.toString())) {
           return nativeEval.call(window, payload);
@@ -4520,7 +4565,7 @@
       hit(source);
 
       // redefines Fab function for adblock detection
-      const Fab = function Fab() {};
+      var Fab = function Fab() {};
       Fab.prototype.check = noopFunc;
       Fab.prototype.clearEvent = noopFunc;
       Fab.prototype.emitEvent = noopFunc;
@@ -4540,14 +4585,14 @@
         set: noopFunc,
         get: noopFunc
       };
-      const fab = new Fab();
-      const getSetFab = {
+      var fab = new Fab();
+      var getSetFab = {
         get() {
           return Fab;
         },
         set() {}
       };
-      const getsetfab = {
+      var getsetfab = {
         get() {
           return fab;
         },
@@ -4652,8 +4697,8 @@
      * @added v1.0.4.
      */
     function preventPopadsNet$1(source) {
-      const rid = randomId();
-      const throwError = function throwError() {
+      var rid = randomId();
+      var throwError = function throwError() {
         throw new ReferenceError(rid);
       };
       delete window.PopAds;
@@ -4694,47 +4739,47 @@
      * @added v1.0.4.
      */
     function preventAdfly$1(source) {
-      const isDigit = function isDigit(data) {
+      var isDigit = function isDigit(data) {
         return /^\d$/.test(data);
       };
-      const handler = function handler(encodedURL) {
-        let evenChars = '';
-        let oddChars = '';
-        for (let i = 0; i < encodedURL.length; i += 1) {
+      var handler = function handler(encodedURL) {
+        var evenChars = '';
+        var oddChars = '';
+        for (var i = 0; i < encodedURL.length; i += 1) {
           if (i % 2 === 0) {
             evenChars += encodedURL.charAt(i);
           } else {
             oddChars = encodedURL.charAt(i) + oddChars;
           }
         }
-        let data = (evenChars + oddChars).split('');
-        for (let i = 0; i < data.length; i += 1) {
-          if (isDigit(data[i])) {
-            for (let ii = i + 1; ii < data.length; ii += 1) {
+        var data = (evenChars + oddChars).split('');
+        for (var _i = 0; _i < data.length; _i += 1) {
+          if (isDigit(data[_i])) {
+            for (var ii = _i + 1; ii < data.length; ii += 1) {
               if (isDigit(data[ii])) {
                 // eslint-disable-next-line no-bitwise
-                const temp = parseInt(data[i], 10) ^ parseInt(data[ii], 10);
+                var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
                 if (temp < 10) {
-                  data[i] = temp.toString();
+                  data[_i] = temp.toString();
                 }
-                i = ii;
+                _i = ii;
                 break;
               }
             }
           }
         }
         data = data.join('');
-        const decodedURL = window.atob(data).slice(16, -16);
+        var decodedURL = window.atob(data).slice(16, -16);
         if (window.stop) {
           window.stop();
         }
         window.onbeforeunload = null;
         window.location.href = decodedURL;
       };
-      let val;
+      var val;
       // Do not apply handler more than one time
-      let applyHandler = true;
-      const result = setPropertyAccess(window, 'ysmm', {
+      var applyHandler = true;
+      var result = setPropertyAccess(window, 'ysmm', {
         configurable: false,
         set: function set(value) {
           if (applyHandler) {
@@ -4790,19 +4835,19 @@
       if (!property) {
         return;
       }
-      const rid = randomId();
-      const abort = function abort() {
+      var rid = randomId();
+      var abort = function abort() {
         hit(source);
         debugger; // eslint-disable-line no-debugger
       };
 
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -4851,19 +4896,19 @@
       if (!property) {
         return;
       }
-      const rid = randomId();
-      const abort = function abort() {
+      var rid = randomId();
+      var abort = function abort() {
         hit(source);
         debugger; // eslint-disable-line no-debugger
       };
 
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -4908,29 +4953,29 @@
      */
     /* eslint-enable max-len */
     function debugCurrentInlineScript$1(source, property, search) {
-      const searchRegexp = toRegExp(search);
-      const rid = randomId();
-      const getCurrentScript = function getCurrentScript() {
+      var searchRegexp = toRegExp(search);
+      var rid = randomId();
+      var getCurrentScript = function getCurrentScript() {
         if ('currentScript' in document) {
           return document.currentScript;
         }
-        const scripts = document.getElementsByTagName('script');
+        var scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];
       };
-      const ourScript = getCurrentScript();
-      const abort = function abort() {
-        const scriptEl = getCurrentScript();
+      var ourScript = getCurrentScript();
+      var abort = function abort() {
+        var scriptEl = getCurrentScript();
         if (!scriptEl) {
           return;
         }
-        let content = scriptEl.textContent;
+        var content = scriptEl.textContent;
 
         // We are using Node.prototype.textContent property descriptor
         // to get the real script content
         // even when document.currentScript.textContent is replaced.
         // https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-593638991
         try {
-          const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
+          var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get;
           content = textContentGetter.call(scriptEl);
         } catch (e) {} // eslint-disable-line no-empty
 
@@ -4940,10 +4985,10 @@
         }
       };
 
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
 
         // The scriptlet might be executed before the chain property has been created
@@ -4952,15 +4997,15 @@
         // and if not, we simply exit without overriding anything.
         // e.g. https://github.com/AdguardTeam/Scriptlets/issues/57#issuecomment-575841092
         if (base instanceof Object === false && base === null) {
-          const props = property.split('.');
-          const propIndex = props.indexOf(prop);
-          const baseName = props[propIndex - 1];
-          const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+          var props = property.split('.');
+          var propIndex = props.indexOf(prop);
+          var baseName = props[propIndex - 1];
+          var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
           logMessage(message, source.verbose);
           return;
         }
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -4974,7 +5019,7 @@
           });
           return;
         }
-        let currentValue = base[prop];
+        var currentValue = base[prop];
         setPropertyAccess(base, prop, {
           set: function set(value) {
             abort();
@@ -5062,7 +5107,7 @@
      */
     /* eslint-enable max-len */
     function removeAttr$1(source, attrs, selector) {
-      let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
+      var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
       if (!attrs) {
         return;
       }
@@ -5070,14 +5115,14 @@
       if (!selector) {
         selector = "[".concat(attrs.join('],['), "]");
       }
-      const rmattr = function rmattr() {
-        let nodes = [];
+      var rmattr = function rmattr() {
+        var nodes = [];
         try {
           nodes = [].slice.call(document.querySelectorAll(selector));
         } catch (e) {
           logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
         }
-        let removed = false;
+        var removed = false;
         nodes.forEach(function (node) {
           attrs.forEach(function (attr) {
             node.removeAttribute(attr);
@@ -5088,8 +5133,8 @@
           hit(source);
         }
       };
-      const flags = parseFlags(applying);
-      const run = function run() {
+      var flags = parseFlags(applying);
+      var run = function run() {
         rmattr();
         if (!flags.hasFlag(flags.STAY)) {
           return;
@@ -5213,19 +5258,19 @@
      */
     /* eslint-enable max-len */
     function setAttr$1(source, selector, attr) {
-      let value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       if (!selector || !attr) {
         return;
       }
-      const allowedValues = ['true', 'false'];
+      var allowedValues = ['true', 'false'];
 
       // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
       if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767) && !allowedValues.includes(value.toLowerCase())) {
         return;
       }
-      const setAttr = function setAttr() {
-        const nodes = [].slice.call(document.querySelectorAll(selector));
-        let set = false;
+      var setAttr = function setAttr() {
+        var nodes = [].slice.call(document.querySelectorAll(selector));
+        var set = false;
         nodes.forEach(function (node) {
           node.setAttribute(attr, value);
           set = true;
@@ -5318,21 +5363,21 @@
     /* eslint-enable max-len */
 
     function removeClass$1(source, classNames, selector) {
-      let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
+      var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'asap stay';
       if (!classNames) {
         return;
       }
       classNames = classNames.split(/\s*\|\s*/);
-      let selectors = [];
+      var selectors = [];
       if (!selector) {
         selectors = classNames.map(function (className) {
           return ".".concat(className);
         });
       }
-      const removeClassHandler = function removeClassHandler() {
-        const nodes = new Set();
+      var removeClassHandler = function removeClassHandler() {
+        var nodes = new Set();
         if (selector) {
-          let foundNodes = [];
+          var foundNodes = [];
           try {
             foundNodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
@@ -5343,14 +5388,14 @@
           });
         } else if (selectors.length > 0) {
           selectors.forEach(function (s) {
-            const elements = document.querySelectorAll(s);
-            for (let i = 0; i < elements.length; i += 1) {
-              const element = elements[i];
+            var elements = document.querySelectorAll(s);
+            for (var i = 0; i < elements.length; i += 1) {
+              var element = elements[i];
               nodes.add(element);
             }
           });
         }
-        let removed = false;
+        var removed = false;
         nodes.forEach(function (node) {
           classNames.forEach(function (className) {
             if (node.classList.contains(className)) {
@@ -5363,9 +5408,9 @@
           hit(source);
         }
       };
-      const CLASS_ATTR_NAME = ['class'];
-      const flags = parseFlags(applying);
-      const run = function run() {
+      var CLASS_ATTR_NAME = ['class'];
+      var flags = parseFlags(applying);
+      var run = function run() {
         removeClassHandler();
         if (!flags.hasFlag(flags.STAY)) {
           return;
@@ -5425,7 +5470,7 @@
      */
     function disableNewtabLinks$1(source) {
       document.addEventListener('click', function (ev) {
-        let target = ev.target;
+        var target = ev.target;
         while (target !== null) {
           if (target.localName === 'a' && target.hasAttribute('target')) {
             ev.stopPropagation();
@@ -5512,13 +5557,13 @@
      */
     /* eslint-enable max-len */
     function adjustSetInterval$1(source, matchCallback, matchDelay, boost) {
-      const nativeSetInterval = window.setInterval;
-      const matchRegexp = toRegExp(matchCallback);
-      const intervalWrapper = function intervalWrapper(callback, delay) {
+      var nativeSetInterval = window.setInterval;
+      var matchRegexp = toRegExp(matchCallback);
+      var intervalWrapper = function intervalWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
           // eslint-disable-next-line max-len
-          const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
+          var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
           logMessage(source, message);
         } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
           delay *= getBoostMultiplier(boost);
@@ -5608,13 +5653,13 @@
      */
     /* eslint-enable max-len */
     function adjustSetTimeout$1(source, matchCallback, matchDelay, boost) {
-      const nativeSetTimeout = window.setTimeout;
-      const matchRegexp = toRegExp(matchCallback);
-      const timeoutWrapper = function timeoutWrapper(callback, delay) {
+      var nativeSetTimeout = window.setTimeout;
+      var matchRegexp = toRegExp(matchCallback);
+      var timeoutWrapper = function timeoutWrapper(callback, delay) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
           // eslint-disable-next-line max-len
-          const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
+          var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
           logMessage(source, message);
         } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
           delay *= getBoostMultiplier(boost);
@@ -5664,7 +5709,7 @@
      */
     /* eslint-enable max-len */
     function dirString$1(source, times) {
-      const _console = console,
+      var _console = console,
         dir = _console.dir;
       function dirWrapper(object) {
         if (typeof dir === 'function') {
@@ -5769,26 +5814,26 @@
       if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-      const prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
-      const nativeJSONParse = JSON.parse;
-      const jsonParseWrapper = function jsonParseWrapper() {
+      var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
+      var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      var nativeJSONParse = JSON.parse;
+      var jsonParseWrapper = function jsonParseWrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
-        const root = nativeJSONParse.apply(JSON, args);
+        var root = nativeJSONParse.apply(JSON, args);
         return jsonPruner(source, root, prunePaths, requiredPaths);
       };
 
       // JSON.parse mocking
       jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
       JSON.parse = jsonParseWrapper;
-      const nativeResponseJson = Response.prototype.json;
+      var nativeResponseJson = Response.prototype.json;
       // eslint-disable-next-line func-names
-      const responseJsonWrapper = function responseJsonWrapper() {
-        const promise = nativeResponseJson.apply(this);
+      var responseJsonWrapper = function responseJsonWrapper() {
+        var promise = nativeResponseJson.apply(this);
         return promise.then(function (obj) {
           return jsonPruner(source, obj, prunePaths, requiredPaths);
         });
@@ -5888,15 +5933,15 @@
     /* eslint-enable max-len */
 
     function preventRequestAnimationFrame$1(source, match) {
-      const nativeRequestAnimationFrame = window.requestAnimationFrame;
+      var nativeRequestAnimationFrame = window.requestAnimationFrame;
 
       // logs requestAnimationFrame to console if no arguments have been specified
-      const shouldLog = typeof match === 'undefined';
-      const _parseMatchArg = parseMatchArg(match),
+      var shouldLog = typeof match === 'undefined';
+      var _parseMatchArg = parseMatchArg(match),
         isInvertedMatch = _parseMatchArg.isInvertedMatch,
         matchRegexp = _parseMatchArg.matchRegexp;
-      const rafWrapper = function rafWrapper(callback) {
-        let shouldPrevent = false;
+      var rafWrapper = function rafWrapper(callback) {
+        var shouldPrevent = false;
         if (shouldLog) {
           hit(source);
           logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
@@ -5937,12 +5982,14 @@
      * - `name` — required, cookie name to be set
      * - `value` — required, cookie value; possible values:
      *     - number `>= 0 && <= 15`
-     *     - one of the predefined constants:
-     *         - `true` / `True`
-     *         - `false` / `False`
-     *         - `yes` / `Yes` / `Y`
-     *         - `no`
-     *         - `ok` / `OK`
+     *     - one of the predefined constants in any case variation:
+     *         - `true`
+     *         - `false`
+     *         - `yes` / `y`
+     *         - `no` / `n`
+     *         - `ok`
+     *         - `accept`/ `reject`
+     *         - `allow` / `deny`
      * - `path` — optional, cookie path, defaults to `/`; possible values:
      *     - `/` — root path
      *     - `none` — to set no path at all
@@ -5964,8 +6011,8 @@
      */
     /* eslint-enable max-len */
     function setCookie$1(source, name, value) {
-      let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
-      const validValue = getLimitedCookieValue(value);
+      var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
+      var validValue = getLimitedCookieValue(value);
       if (validValue === null) {
         logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
         return;
@@ -5974,7 +6021,7 @@
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
       if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
@@ -6002,12 +6049,14 @@
      * - `name` — required, cookie name to be set
      * - `value` — required, cookie value; possible values:
      *     - number `>= 0 && <= 15`
-     *     - one of the predefined constants:
-     *         - `true` / `True`
-     *         - `false` / `False`
-     *         - `yes` / `Yes` / `Y`
-     *         - `no`
-     *         - `ok` / `OK`
+     *     - one of the predefined constants in any case variation:
+     *         - `true`
+     *         - `false`
+     *         - `yes` / `y`
+     *         - `no` / `n`
+     *         - `ok`
+     *         - `accept`/ `reject`
+     *         - `allow` / `deny`
      * - `path` — optional, cookie path, defaults to `/`; possible values:
      *     - `/` — root path
      *     - `none` — to set no path at all
@@ -6028,11 +6077,11 @@
      * @added v1.3.14.
      */
     function setCookieReload$1(source, name, value) {
-      let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
+      var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
       if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
       }
-      const validValue = getLimitedCookieValue(value);
+      var validValue = getLimitedCookieValue(value);
       if (validValue === null) {
         logMessage(source, "Invalid cookie value: '".concat(value, "'"));
         return;
@@ -6041,7 +6090,7 @@
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+      var cookieToSet = concatCookieNameValuePath(name, validValue, path);
       if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
@@ -6095,22 +6144,22 @@
       if (!Element.prototype.attachShadow) {
         return;
       }
-      const hideElement = function hideElement(targetElement) {
-        const DISPLAY_NONE_CSS = 'display:none!important;';
+      var hideElement = function hideElement(targetElement) {
+        var DISPLAY_NONE_CSS = 'display:none!important;';
         targetElement.style.cssText = DISPLAY_NONE_CSS;
       };
 
       /**
        * Handles shadow-dom piercing and hiding of found elements
        */
-      const hideHandler = function hideHandler() {
+      var hideHandler = function hideHandler() {
         // start value of shadow-dom hosts for the page dom
-        let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
         // if there is shadow-dom host, they should be explored
-        while (hostElements.length !== 0) {
-          let isHidden = false;
-          const _pierceShadowDom = pierceShadowDom(selector, hostElements),
+        var _loop = function _loop() {
+          var isHidden = false;
+          var _pierceShadowDom = pierceShadowDom(selector, hostElements),
             targets = _pierceShadowDom.targets,
             innerHosts = _pierceShadowDom.innerHosts;
           targets.forEach(function (targetEl) {
@@ -6124,6 +6173,9 @@
           // continue to pierce for inner shadow-dom hosts
           // and search inside them while the next iteration
           hostElements = innerHosts;
+        };
+        while (hostElements.length !== 0) {
+          _loop();
         }
       };
       hideHandler();
@@ -6172,21 +6224,21 @@
       if (!Element.prototype.attachShadow) {
         return;
       }
-      const removeElement = function removeElement(targetElement) {
+      var removeElement = function removeElement(targetElement) {
         targetElement.remove();
       };
 
       /**
        * Handles shadow-dom piercing and removing of found elements
        */
-      const removeHandler = function removeHandler() {
+      var removeHandler = function removeHandler() {
         // start value of shadow-dom hosts for the page dom
-        let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+        var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
 
         // if there is shadow-dom host, they should be explored
-        while (hostElements.length !== 0) {
-          let isRemoved = false;
-          const _pierceShadowDom = pierceShadowDom(selector, hostElements),
+        var _loop = function _loop() {
+          var isRemoved = false;
+          var _pierceShadowDom = pierceShadowDom(selector, hostElements),
             targets = _pierceShadowDom.targets,
             innerHosts = _pierceShadowDom.innerHosts;
           targets.forEach(function (targetEl) {
@@ -6200,6 +6252,9 @@
           // continue to pierce for inner shadow-dom hosts
           // and search inside them while the next iteration
           hostElements = innerHosts;
+        };
+        while (hostElements.length !== 0) {
+          _loop();
         }
       };
       removeHandler();
@@ -6301,15 +6356,15 @@
      */
     /* eslint-enable max-len */
     function preventFetch$1(source, propsToMatch) {
-      let responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
-      let responseType = arguments.length > 3 ? arguments[3] : undefined;
+      var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'emptyObj';
+      var responseType = arguments.length > 3 ? arguments[3] : undefined;
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-      let strResponseBody;
+      var strResponseBody;
       if (responseBody === '' || responseBody === 'emptyObj') {
         strResponseBody = '{}';
       } else if (responseBody === 'emptyArr') {
@@ -6318,9 +6373,9 @@
         logMessage(source, "Invalid responseBody parameter: '".concat(responseBody, "'"));
         return;
       }
-      const isResponseTypeSpecified = typeof responseType !== 'undefined';
-      const isResponseTypeSupported = function isResponseTypeSupported(responseType) {
-        const SUPPORTED_TYPES = ['default', 'opaque'];
+      var isResponseTypeSpecified = typeof responseType !== 'undefined';
+      var isResponseTypeSupported = function isResponseTypeSupported(responseType) {
+        var SUPPORTED_TYPES = ['default', 'opaque'];
         return SUPPORTED_TYPES.includes(responseType);
       };
       // Skip disallowed response types,
@@ -6329,9 +6384,9 @@
         logMessage(source, "Invalid responseType parameter: '".concat(responseType, "'"));
         return;
       }
-      const handlerWrapper = async function handlerWrapper(target, thisArg, args) {
-        let shouldPrevent = false;
-        const fetchData = getFetchData(args);
+      var handlerWrapper = async function handlerWrapper(target, thisArg, args) {
+        var shouldPrevent = false;
+        var fetchData = getFetchData(args);
         if (typeof propsToMatch === 'undefined') {
           logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
           hit(source);
@@ -6340,15 +6395,26 @@
         shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
         if (shouldPrevent) {
           hit(source);
-          const origResponse = await Reflect.apply(target, thisArg, args);
-          return modifyResponse(origResponse, {
-            body: strResponseBody,
-            type: responseType
-          });
+          try {
+            var origResponse = await Reflect.apply(target, thisArg, args);
+            // In the case of apps, the blocked request has status 500
+            // and no error is thrown, so it's necessary to check response.ok
+            // https://github.com/AdguardTeam/Scriptlets/issues/334
+            if (!origResponse.ok) {
+              return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+            }
+            return modifyResponse(origResponse, {
+              body: strResponseBody,
+              type: responseType
+            });
+          } catch (ex) {
+            // https://github.com/AdguardTeam/Scriptlets/issues/334
+            return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+          }
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const fetchHandler = {
+      var fetchHandler = {
         apply: handlerWrapper
       };
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
@@ -6357,7 +6423,7 @@
     preventFetch$1.names = ['prevent-fetch',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-fetch-if.js', 'ubo-no-fetch-if.js', 'ubo-no-fetch-if'];
-    preventFetch$1.injections = [hit, getFetchData, objectToString, matchRequestProps, logMessage, modifyResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, parseMatchProps, validateParsedData, getMatchPropsData];
+    preventFetch$1.injections = [hit, getFetchData, objectToString, matchRequestProps, logMessage, noopPromiseResolve, modifyResponse, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, parseMatchProps, isValidParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
     /**
@@ -6366,6 +6432,8 @@
      * @description
      * Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
+     *
+     * To remove item from localStorage use `$remove$` as a value.
      *
      * ### Syntax
      *
@@ -6386,6 +6454,7 @@
      *         - `''` — empty string
      *         - `yes`
      *         - `no`
+     *         - `$remove$` — remove specific item from localStorage
      *
      * ### Examples
      *
@@ -6393,6 +6462,9 @@
      * example.org#%#//scriptlet('set-local-storage-item', 'player.live.current.mute', 'false')
      *
      * example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
+     *
+     * ! Removes the item with key 'foo' from local storage
+     * example.org#%#//scriptlet('set-local-storage-item', 'foo', '$remove$')
      * ```
      *
      * @added v1.4.3.
@@ -6404,20 +6476,24 @@
         logMessage(source, 'Item key should be specified.');
         return;
       }
-      let validValue;
+      var validValue;
       try {
         validValue = getLimitedStorageItemValue(value);
       } catch (_unused) {
         logMessage(source, "Invalid storage item value: '".concat(value, "'"));
         return;
       }
-      const _window = window,
+      var _window = window,
         localStorage = _window.localStorage;
-      setStorageItem(source, localStorage, key, validValue);
+      if (validValue === '$remove$') {
+        removeStorageItem(source, localStorage, key);
+      } else {
+        setStorageItem(source, localStorage, key, validValue);
+      }
       hit(source);
     }
     setLocalStorageItem$1.names = ['set-local-storage-item'];
-    setLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, getLimitedStorageItemValue];
+    setLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
     /**
@@ -6426,6 +6502,8 @@
      * @description
      * Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
      * Scriptlet won't set item if storage is full.
+     *
+     * To remove item from sessionStorage use `$remove$` as a value.
      *
      * ### Syntax
      *
@@ -6446,6 +6524,7 @@
      *         - `''` — empty string
      *         - `yes`
      *         - `no`
+     *         - `$remove$` — remove specific item from sessionStorage
      *
      * ### Examples
      *
@@ -6453,6 +6532,9 @@
      * example.org#%#//scriptlet('set-session-storage-item', 'player.live.current.mute', 'false')
      *
      * example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
+     *
+     * ! Removes the item with key 'foo' from session storage
+     * example.org#%#//scriptlet('set-session-storage-item', 'foo', '$remove$')
      * ```
      *
      * @added v1.4.3.
@@ -6464,20 +6546,24 @@
         logMessage(source, 'Item key should be specified.');
         return;
       }
-      let validValue;
+      var validValue;
       try {
         validValue = getLimitedStorageItemValue(value);
       } catch (_unused) {
         logMessage(source, "Invalid storage item value: '".concat(value, "'"));
         return;
       }
-      const _window = window,
+      var _window = window,
         sessionStorage = _window.sessionStorage;
-      setStorageItem(source, sessionStorage, key, validValue);
+      if (validValue === '$remove$') {
+        removeStorageItem(source, sessionStorage, key);
+      } else {
+        setStorageItem(source, sessionStorage, key, validValue);
+      }
       hit(source);
     }
     setSessionStorageItem$1.names = ['set-session-storage-item'];
-    setSessionStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, getLimitedStorageItemValue];
+    setSessionStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
     /**
@@ -6542,18 +6628,18 @@
       if (!property || !stack) {
         return;
       }
-      const rid = randomId();
-      const abort = function abort() {
+      var rid = randomId();
+      var abort = function abort() {
         hit(source);
         throw new ReferenceError(rid);
       };
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -6573,7 +6659,7 @@
         }
 
         // Prevent infinite loops when trapping prop used by helpers in getter/setter
-        const descriptorWrapper = Object.assign(getDescriptorAddon(), {
+        var descriptorWrapper = Object.assign(getDescriptorAddon(), {
           value: base[prop],
           get() {
             if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
@@ -6633,19 +6719,19 @@
       if (!property) {
         return;
       }
-      const refineStackTrace = function refineStackTrace(stackString) {
+      var refineStackTrace = function refineStackTrace(stackString) {
         // Split stack trace string by lines and remove first two elements ('Error' and getter call)
         // Remove '    at ' at the start of each string
-        const stackSteps = stackString.split('\n').slice(2).map(function (line) {
+        var stackSteps = stackString.split('\n').slice(2).map(function (line) {
           return line.replace(/ {4}at /, '');
         });
         // Trim each line extracting funcName : fullPath pair
-        const logInfoArray = stackSteps.map(function (line) {
-          let funcName;
-          let funcFullPath;
+        var logInfoArray = stackSteps.map(function (line) {
+          var funcName;
+          var funcFullPath;
           /* eslint-disable-next-line no-useless-escape */
-          const reg = /\(([^\)]+)\)/;
-          const regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
+          var reg = /\(([^\)]+)\)/;
+          var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
           if (line.match(reg)) {
             funcName = line.split(' ').slice(0, -1).join(' ');
             /* eslint-disable-next-line prefer-destructuring */
@@ -6662,20 +6748,20 @@
           return [funcName, funcFullPath];
         });
         // Convert array into object for better display using console.table
-        const logInfoObject = {};
+        var logInfoObject = {};
         logInfoArray.forEach(function (pair) {
           /* eslint-disable-next-line prefer-destructuring */
           logInfoObject[pair[0]] = pair[1];
         });
         return logInfoObject;
       };
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        let base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
         if (chain) {
-          const setter = function setter(a) {
+          var setter = function setter(a) {
             base = a;
             if (a instanceof Object) {
               setChainPropAccess(a, chain);
@@ -6689,7 +6775,7 @@
           });
           return;
         }
-        let value = base[prop];
+        var value = base[prop];
         /* eslint-disable no-console */
         setPropertyAccess(base, prop, {
           get() {
@@ -6800,12 +6886,12 @@
       if (typeof Proxy === 'undefined') {
         return;
       }
-      const nativeOpen = window.XMLHttpRequest.prototype.open;
-      const nativeSend = window.XMLHttpRequest.prototype.send;
-      let xhrData;
-      let modifiedResponse = '';
-      let modifiedResponseText = '';
-      const openWrapper = function openWrapper(target, thisArg, args) {
+      var nativeOpen = window.XMLHttpRequest.prototype.open;
+      var nativeSend = window.XMLHttpRequest.prototype.send;
+      var xhrData;
+      var modifiedResponse = '';
+      var modifiedResponseText = '';
+      var openWrapper = function openWrapper(target, thisArg, args) {
         // Get original request properties
         // eslint-disable-next-line prefer-spread
         xhrData = getXhrData.apply(null, args);
@@ -6821,12 +6907,12 @@
         // needed for getResponseHeader() and getAllResponseHeaders() methods
         if (thisArg.shouldBePrevented) {
           thisArg.collectedHeaders = [];
-          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+          var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
             // Collect headers
             thisArg.collectedHeaders.push(args);
             return Reflect.apply(target, thisArg, args);
           };
-          const setRequestHeaderHandler = {
+          var setRequestHeaderHandler = {
             apply: setRequestHeaderWrapper
           };
           // setRequestHeader() can only be called on xhr.open(),
@@ -6835,7 +6921,7 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const sendWrapper = function sendWrapper(target, thisArg, args) {
+      var sendWrapper = function sendWrapper(target, thisArg, args) {
         if (!thisArg.shouldBePrevented) {
           return Reflect.apply(target, thisArg, args);
         }
@@ -6846,7 +6932,7 @@
           modifiedResponse = new ArrayBuffer();
         }
         if (customResponseText) {
-          const randomText = generateRandomResponse(customResponseText);
+          var randomText = generateRandomResponse(customResponseText);
           if (randomText) {
             modifiedResponseText = randomText;
           } else {
@@ -6859,15 +6945,14 @@
          * to be able to collect response data without triggering
          * listeners on original XHR object
          */
-        const forgedRequest = new XMLHttpRequest();
+        var forgedRequest = new XMLHttpRequest();
         forgedRequest.addEventListener('readystatechange', function () {
           if (forgedRequest.readyState !== 4) {
             return;
           }
-          const readyState = forgedRequest.readyState,
+          var readyState = forgedRequest.readyState,
             responseURL = forgedRequest.responseURL,
             responseXML = forgedRequest.responseXML,
-            status = forgedRequest.status,
             statusText = forgedRequest.statusText;
 
           // Mock response object
@@ -6877,16 +6962,13 @@
               value: readyState,
               writable: false
             },
-            status: {
-              value: status,
-              writable: false
-            },
             statusText: {
               value: statusText,
               writable: false
             },
+            // If the request is blocked, responseURL is an empty string
             responseURL: {
-              value: responseURL,
+              value: responseURL || xhrData.url,
               writable: false
             },
             responseXML: {
@@ -6894,6 +6976,10 @@
               writable: false
             },
             // modified values
+            status: {
+              value: 200,
+              writable: false
+            },
             response: {
               value: modifiedResponse,
               writable: false
@@ -6906,11 +6992,11 @@
 
           // Mock events
           setTimeout(function () {
-            const stateEvent = new Event('readystatechange');
+            var stateEvent = new Event('readystatechange');
             thisArg.dispatchEvent(stateEvent);
-            const loadEvent = new Event('load');
+            var loadEvent = new Event('load');
             thisArg.dispatchEvent(loadEvent);
-            const loadEndEvent = new Event('loadend');
+            var loadEndEvent = new Event('loadend');
             thisArg.dispatchEvent(loadEndEvent);
           }, 1);
           hit(source);
@@ -6920,8 +7006,8 @@
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
         thisArg.collectedHeaders.forEach(function (header) {
-          const name = header[0];
-          const value = header[1];
+          var name = header[0];
+          var value = header[1];
           forgedRequest.setRequestHeader(name, value);
         });
         try {
@@ -6941,15 +7027,15 @@
        *
        * @returns {string|null} Header value or null if header is not set.
        */
-      const getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
+      var getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
         if (!thisArg.collectedHeaders.length) {
           return null;
         }
         // The search for the header name is case-insensitive
         // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getResponseHeader
-        const searchHeaderName = args[0].toLowerCase();
-        const matchedHeader = thisArg.collectedHeaders.find(function (header) {
-          const headerName = header[0].toLowerCase();
+        var searchHeaderName = args[0].toLowerCase();
+        var matchedHeader = thisArg.collectedHeaders.find(function (header) {
+          var headerName = header[0].toLowerCase();
           return headerName === searchHeaderName;
         });
         return matchedHeader ? matchedHeader[1] : null;
@@ -6963,34 +7049,34 @@
        *
        * @returns {string} All headers as a string. For no headers an empty string is returned.
        */
-      const getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
+      var getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
         if (!thisArg.collectedHeaders.length) {
           return '';
         }
-        const allHeadersStr = thisArg.collectedHeaders.map(function (header) {
+        var allHeadersStr = thisArg.collectedHeaders.map(function (header) {
           /**
            * TODO: array destructuring may be used here
            * after the typescript implementation and bundling refactoring
            * as now there is an error: slicedToArray is not defined
            */
-          const headerName = header[0];
-          const headerValue = header[1];
+          var headerName = header[0];
+          var headerValue = header[1];
           // In modern browsers, the header names are returned in all lower case, as per the latest spec.
           // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getAllResponseHeaders
           return "".concat(headerName.toLowerCase(), ": ").concat(headerValue);
         }).join('\r\n');
         return allHeadersStr;
       };
-      const openHandler = {
+      var openHandler = {
         apply: openWrapper
       };
-      const sendHandler = {
+      var sendHandler = {
         apply: sendWrapper
       };
-      const getHeaderHandler = {
+      var getHeaderHandler = {
         apply: getHeaderWrapper
       };
-      const getAllHeadersHandler = {
+      var getAllHeadersHandler = {
         apply: getAllHeadersWrapper
       };
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -7001,7 +7087,7 @@
     preventXHR$1.names = ['prevent-xhr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js', 'ubo-no-xhr-if.js', 'ubo-no-xhr-if'];
-    preventXHR$1.injections = [hit, objectToString, generateRandomResponse, matchRequestProps, getXhrData, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, validateParsedData, getMatchPropsData, getRequestProps, getRandomIntInclusive, getRandomStrByLength];
+    preventXHR$1.injections = [hit, objectToString, generateRandomResponse, matchRequestProps, getXhrData, logMessage, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getNumberFromString, nativeIsFinite, nativeIsNaN, parseMatchProps, isValidParsedData, getMatchPropsData, getRequestProps, getRandomIntInclusive, getRandomStrByLength];
 
     /**
      * @scriptlet close-window
@@ -7035,14 +7121,14 @@
      * @added v1.5.0.
      */
     function forceWindowClose$1(source) {
-      let path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
       // https://github.com/AdguardTeam/Scriptlets/issues/158#issuecomment-993423036
       if (typeof window.close !== 'function') {
-        const message = 'window.close() is not a function so \'close-window\' scriptlet is unavailable';
+        var message = 'window.close() is not a function so \'close-window\' scriptlet is unavailable';
         logMessage(source, message);
         return;
       }
-      const closeImmediately = function closeImmediately() {
+      var closeImmediately = function closeImmediately() {
         try {
           hit(source);
           window.close();
@@ -7052,8 +7138,8 @@
           logMessage(source, e);
         }
       };
-      const closeByExtension = function closeByExtension() {
-        const extCall = function extCall() {
+      var closeByExtension = function closeByExtension() {
+        var extCall = function extCall() {
           dispatchEvent(new Event('adguard:scriptlet-close-window'));
         };
         window.addEventListener('adguard:subscribed-to-close-window', extCall, {
@@ -7065,12 +7151,12 @@
           });
         }, 5000);
       };
-      const shouldClose = function shouldClose() {
+      var shouldClose = function shouldClose() {
         if (path === '') {
           return true;
         }
-        const pathRegexp = toRegExp(path);
-        const currentPath = "".concat(window.location.pathname).concat(window.location.search);
+        var pathRegexp = toRegExp(path);
+        var currentPath = "".concat(window.location.pathname).concat(window.location.search);
         return pathRegexp.test(currentPath);
       };
       if (shouldClose()) {
@@ -7120,8 +7206,8 @@
      */
     /* eslint-enable max-len */
     function preventRefresh$1(source, delaySec) {
-      const getMetaElements = function getMetaElements() {
-        let metaNodes = [];
+      var getMetaElements = function getMetaElements() {
+        var metaNodes = [];
         try {
           metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
         } catch (e) {
@@ -7134,17 +7220,17 @@
         }
         return Array.from(metaNodes);
       };
-      const getMetaContentDelay = function getMetaContentDelay(metaElements) {
-        const delays = metaElements.map(function (meta) {
-          const contentString = meta.getAttribute('content');
+      var getMetaContentDelay = function getMetaContentDelay(metaElements) {
+        var delays = metaElements.map(function (meta) {
+          var contentString = meta.getAttribute('content');
           if (contentString.length === 0) {
             return null;
           }
-          let contentDelay;
+          var contentDelay;
           // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv
-          const limiterIndex = contentString.indexOf(';');
+          var limiterIndex = contentString.indexOf(';');
           if (limiterIndex !== -1) {
-            const delaySubstring = contentString.substring(0, limiterIndex);
+            var delaySubstring = contentString.substring(0, limiterIndex);
             contentDelay = getNumberFromString(delaySubstring);
           } else {
             contentDelay = getNumberFromString(contentString);
@@ -7159,18 +7245,18 @@
           return null;
         }
         // Get smallest delay of all metas on the page
-        const minDelay = delays.reduce(function (a, b) {
+        var minDelay = delays.reduce(function (a, b) {
           return Math.min(a, b);
         });
         // eslint-disable-next-line consistent-return
         return minDelay;
       };
-      const stop = function stop() {
-        const metaElements = getMetaElements();
+      var stop = function stop() {
+        var metaElements = getMetaElements();
         if (metaElements.length === 0) {
           return;
         }
-        let secondsToRun = getNumberFromString(delaySec);
+        var secondsToRun = getNumberFromString(delaySec);
         // Check if argument is provided
         if (secondsToRun === null) {
           secondsToRun = getMetaContentDelay(metaElements);
@@ -7179,7 +7265,7 @@
         if (secondsToRun === null) {
           return;
         }
-        const delayMs = secondsToRun * 1000;
+        var delayMs = secondsToRun * 1000;
         setTimeout(function () {
           window.stop();
           hit(source);
@@ -7239,7 +7325,7 @@
       if (typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
       }
-      const srcMockData = {
+      var srcMockData = {
         // "KCk9Pnt9" = "()=>{}"
         script: 'data:text/javascript;base64,KCk9Pnt9',
         // Empty 1x1 image
@@ -7249,7 +7335,7 @@
         // Empty data
         link: 'data:text/plain;base64,'
       };
-      let instance;
+      var instance;
       if (tagName === 'script') {
         instance = HTMLScriptElement;
       } else if (tagName === 'img') {
@@ -7264,8 +7350,8 @@
 
       // For websites that use Trusted Types
       // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-      const hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
-      let policy;
+      var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
+      var policy;
       if (hasTrustedTypes) {
         // The name for the trusted-types policy should only be 'AGPolicy',because corelibs can
         // allow our policy if the server has restricted the creation of a trusted-types policy with
@@ -7279,24 +7365,24 @@
           }
         });
       }
-      const SOURCE_PROPERTY_NAME = tagName === 'link' ? 'href' : 'src';
-      const ONERROR_PROPERTY_NAME = 'onerror';
-      const searchRegexp = toRegExp(match);
+      var SOURCE_PROPERTY_NAME = tagName === 'link' ? 'href' : 'src';
+      var ONERROR_PROPERTY_NAME = 'onerror';
+      var searchRegexp = toRegExp(match);
 
       // This will be needed to silent error events on matched element,
       // as url wont be available
-      const setMatchedAttribute = function setMatchedAttribute(elem) {
+      var setMatchedAttribute = function setMatchedAttribute(elem) {
         return elem.setAttribute(source.name, 'matched');
       };
-      const setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
+      var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
         // Check if arguments are present
         if (!args[0] || !args[1]) {
           return Reflect.apply(target, thisArg, args);
         }
-        const nodeName = thisArg.nodeName.toLowerCase();
-        const attrName = args[0].toLowerCase();
-        const attrValue = args[1];
-        const isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
+        var nodeName = thisArg.nodeName.toLowerCase();
+        var attrName = args[0].toLowerCase();
+        var attrValue = args[1];
+        var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
         if (!isMatched) {
           return Reflect.apply(target, thisArg, args);
         }
@@ -7305,12 +7391,12 @@
         // Forward the URI that corresponds with element's MIME type
         return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
       };
-      const setAttributeHandler = {
+      var setAttributeHandler = {
         apply: setAttributeWrapper
       };
       // eslint-disable-next-line max-len
       instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
-      const origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+      var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
       if (!origSrcDescriptor) {
         return;
       }
@@ -7321,8 +7407,8 @@
           return origSrcDescriptor.get.call(this);
         },
         set(urlValue) {
-          const nodeName = this.nodeName.toLowerCase();
-          const isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
+          var nodeName = this.nodeName.toLowerCase();
+          var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
           if (!isMatched) {
             origSrcDescriptor.set.call(this, urlValue);
             return true;
@@ -7330,7 +7416,7 @@
 
           // eslint-disable-next-line no-undef
           if (policy && urlValue instanceof TrustedScriptURL) {
-            const trustedSrc = policy.createScriptURL(urlValue);
+            var trustedSrc = policy.createScriptURL(urlValue);
             origSrcDescriptor.set.call(this, trustedSrc);
             hit(source);
             return;
@@ -7343,7 +7429,7 @@
 
       // https://github.com/AdguardTeam/Scriptlets/issues/228
       // Prevent error event being triggered by other sources
-      const origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
+      var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
       if (!origOnerrorDescriptor) {
         return;
       }
@@ -7354,7 +7440,7 @@
           return origOnerrorDescriptor.get.call(this);
         },
         set(cb) {
-          const isMatched = this.getAttribute(source.name) === 'matched';
+          var isMatched = this.getAttribute(source.name) === 'matched';
           if (!isMatched) {
             origOnerrorDescriptor.set.call(this, cb);
             return true;
@@ -7363,24 +7449,24 @@
           return true;
         }
       });
-      const addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
+      var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
         // Check if arguments are present
         if (!args[0] || !args[1] || !thisArg) {
           return Reflect.apply(target, thisArg, args);
         }
-        const eventName = args[0];
-        const isMatched = typeof thisArg.getAttribute === 'function' && thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
+        var eventName = args[0];
+        var isMatched = typeof thisArg.getAttribute === 'function' && thisArg.getAttribute(source.name) === 'matched' && eventName === 'error';
         if (isMatched) {
           return Reflect.apply(target, thisArg, [eventName, noopFunc]);
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const addEventListenerHandler = {
+      var addEventListenerHandler = {
         apply: addEventListenerWrapper
       };
       // eslint-disable-next-line max-len
       EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
-      const preventInlineOnerror = function preventInlineOnerror(tagName, src) {
+      var preventInlineOnerror = function preventInlineOnerror(tagName, src) {
         window.addEventListener('error', function (event) {
           if (!event.target || !event.target.nodeName || event.target.nodeName.toLowerCase() !== tagName || !event.target.src || !src.test(event.target.src)) {
             return;
@@ -7414,7 +7500,7 @@
      * @added v1.6.18.
      */
     function noTopics$1(source) {
-      const TOPICS_PROPERTY_NAME = 'browsingTopics';
+      var TOPICS_PROPERTY_NAME = 'browsingTopics';
       if (Document instanceof Object === false) {
         return;
       }
@@ -7503,9 +7589,9 @@
      */
     /* eslint-enable max-len */
     function trustedReplaceXhrResponse$1(source) {
-      let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-      let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       // do nothing if browser does not support Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
       if (typeof Proxy === 'undefined') {
@@ -7514,21 +7600,21 @@
 
       // Only allow pattern as empty string for logging purposes
       if (pattern === '' && replacement !== '') {
-        const message = 'Pattern argument should not be empty string.';
+        var message = 'Pattern argument should not be empty string.';
         logMessage(source, message);
         return;
       }
-      const shouldLog = pattern === '' && replacement === '';
-      const nativeOpen = window.XMLHttpRequest.prototype.open;
-      const nativeSend = window.XMLHttpRequest.prototype.send;
-      let xhrData;
-      const openWrapper = function openWrapper(target, thisArg, args) {
+      var shouldLog = pattern === '' && replacement === '';
+      var nativeOpen = window.XMLHttpRequest.prototype.open;
+      var nativeSend = window.XMLHttpRequest.prototype.send;
+      var xhrData;
+      var openWrapper = function openWrapper(target, thisArg, args) {
         // eslint-disable-next-line prefer-spread
         xhrData = getXhrData.apply(null, args);
         if (shouldLog) {
           // Log if no propsToMatch given
-          const message = "xhr( ".concat(objectToString(xhrData), " )");
-          logMessage(source, message, true);
+          var _message = "xhr( ".concat(objectToString(xhrData), " )");
+          logMessage(source, _message, true);
           hit(source);
           return Reflect.apply(target, thisArg, args);
         }
@@ -7539,12 +7625,12 @@
         // Trap setRequestHeader of target xhr object to mimic request headers later
         if (thisArg.shouldBePrevented) {
           thisArg.collectedHeaders = [];
-          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+          var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
             // Collect headers
             thisArg.collectedHeaders.push(args);
             return Reflect.apply(target, thisArg, args);
           };
-          const setRequestHeaderHandler = {
+          var setRequestHeaderHandler = {
             apply: setRequestHeaderWrapper
           };
 
@@ -7554,7 +7640,7 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const sendWrapper = function sendWrapper(target, thisArg, args) {
+      var sendWrapper = function sendWrapper(target, thisArg, args) {
         if (!thisArg.shouldBePrevented) {
           return Reflect.apply(target, thisArg, args);
         }
@@ -7564,12 +7650,12 @@
          * to be able to collect response data without triggering
          * listeners on original XHR object
          */
-        const forgedRequest = new XMLHttpRequest();
+        var forgedRequest = new XMLHttpRequest();
         forgedRequest.addEventListener('readystatechange', function () {
           if (forgedRequest.readyState !== 4) {
             return;
           }
-          const readyState = forgedRequest.readyState,
+          var readyState = forgedRequest.readyState,
             response = forgedRequest.response,
             responseText = forgedRequest.responseText,
             responseURL = forgedRequest.responseURL,
@@ -7578,12 +7664,12 @@
             statusText = forgedRequest.statusText;
 
           // Extract content from response
-          const content = responseText || response;
+          var content = responseText || response;
           if (typeof content !== 'string') {
             return;
           }
-          const patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
-          const modifiedContent = content.replace(patternRegexp, replacement);
+          var patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
+          var modifiedContent = content.replace(patternRegexp, replacement);
 
           // Manually put required values into target XHR object
           // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
@@ -7622,11 +7708,11 @@
 
           // Mock events
           setTimeout(function () {
-            const stateEvent = new Event('readystatechange');
+            var stateEvent = new Event('readystatechange');
             thisArg.dispatchEvent(stateEvent);
-            const loadEvent = new Event('load');
+            var loadEvent = new Event('load');
             thisArg.dispatchEvent(loadEvent);
-            const loadEndEvent = new Event('loadend');
+            var loadEndEvent = new Event('loadend');
             thisArg.dispatchEvent(loadEndEvent);
           }, 1);
           hit(source);
@@ -7636,8 +7722,8 @@
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
         thisArg.collectedHeaders.forEach(function (header) {
-          const name = header[0];
-          const value = header[1];
+          var name = header[0];
+          var value = header[1];
           forgedRequest.setRequestHeader(name, value);
         });
         thisArg.collectedHeaders = [];
@@ -7648,10 +7734,10 @@
         }
         return undefined;
       };
-      const openHandler = {
+      var openHandler = {
         apply: openWrapper
       };
-      const sendHandler = {
+      var sendHandler = {
         apply: sendWrapper
       };
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -7661,7 +7747,7 @@
     // trusted scriptlets support no aliases
     ];
 
-    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
+    trustedReplaceXhrResponse$1.injections = [hit, logMessage, toRegExp, objectToString, matchRequestProps, getXhrData, getMatchPropsData, getRequestProps, isValidParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
 
     /* eslint-disable max-len */
     /**
@@ -7723,8 +7809,8 @@
     /* eslint-enable max-len */
 
     function xmlPrune$1(source, propsToRemove) {
-      let optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      let urlToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var urlToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       // do nothing if browser does not support Reflect, fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -7732,41 +7818,41 @@
       if (typeof Reflect === 'undefined' || typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-      let shouldPruneResponse = false;
-      const urlMatchRegexp = toRegExp(urlToMatch);
-      const isXML = function isXML(text) {
+      var shouldPruneResponse = false;
+      var urlMatchRegexp = toRegExp(urlToMatch);
+      var isXML = function isXML(text) {
         // It's necessary to check the type of 'text'
         // because 'text' is obtained from the xhr/fetch response,
         // so it could also be Blob/ArrayBuffer/Object or another type
         if (typeof text === 'string') {
           // Check if "text" starts with "<" and check if it ends with ">"
           // If so, then it might be an XML file and should be pruned or logged
-          const trimmedText = text.trim();
+          var trimmedText = text.trim();
           if (trimmedText.startsWith('<') && trimmedText.endsWith('>')) {
             return true;
           }
         }
         return false;
       };
-      const createXMLDocument = function createXMLDocument(text) {
-        const xmlParser = new DOMParser();
-        const xmlDocument = xmlParser.parseFromString(text, 'text/xml');
+      var createXMLDocument = function createXMLDocument(text) {
+        var xmlParser = new DOMParser();
+        var xmlDocument = xmlParser.parseFromString(text, 'text/xml');
         return xmlDocument;
       };
-      const isPruningNeeded = function isPruningNeeded(response, propsToRemove) {
+      var isPruningNeeded = function isPruningNeeded(response, propsToRemove) {
         if (!isXML(response)) {
           return false;
         }
-        const docXML = createXMLDocument(response);
+        var docXML = createXMLDocument(response);
         return !!docXML.querySelector(propsToRemove);
       };
-      const pruneXML = function pruneXML(text) {
+      var pruneXML = function pruneXML(text) {
         if (!isXML(text)) {
           shouldPruneResponse = false;
           return text;
         }
-        const xmlDoc = createXMLDocument(text);
-        const errorNode = xmlDoc.querySelector('parsererror');
+        var xmlDoc = createXMLDocument(text);
+        var errorNode = xmlDoc.querySelector('parsererror');
         if (errorNode) {
           return text;
         }
@@ -7774,7 +7860,7 @@
           shouldPruneResponse = false;
           return text;
         }
-        const elems = xmlDoc.querySelectorAll(propsToRemove);
+        var elems = xmlDoc.querySelectorAll(propsToRemove);
         if (!elems.length) {
           shouldPruneResponse = false;
           return text;
@@ -7782,14 +7868,14 @@
         elems.forEach(function (elem) {
           elem.remove();
         });
-        const serializer = new XMLSerializer();
+        var serializer = new XMLSerializer();
         text = serializer.serializeToString(xmlDoc);
         return text;
       };
-      const nativeOpen = window.XMLHttpRequest.prototype.open;
-      const nativeSend = window.XMLHttpRequest.prototype.send;
-      let xhrData;
-      const openWrapper = function openWrapper(target, thisArg, args) {
+      var nativeOpen = window.XMLHttpRequest.prototype.open;
+      var nativeSend = window.XMLHttpRequest.prototype.send;
+      var xhrData;
+      var openWrapper = function openWrapper(target, thisArg, args) {
         // eslint-disable-next-line prefer-spread
         xhrData = getXhrData.apply(null, args);
         if (matchRequestProps(source, urlToMatch, xhrData)) {
@@ -7799,12 +7885,12 @@
         // Trap setRequestHeader of target xhr object to mimic request headers later
         if (thisArg.shouldBePruned) {
           thisArg.collectedHeaders = [];
-          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+          var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
             // Collect headers
             thisArg.collectedHeaders.push(args);
             return Reflect.apply(target, thisArg, args);
           };
-          const setRequestHeaderHandler = {
+          var setRequestHeaderHandler = {
             apply: setRequestHeaderWrapper
           };
 
@@ -7814,8 +7900,8 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const sendWrapper = function sendWrapper(target, thisArg, args) {
-        const allowedResponseTypeValues = ['', 'text'];
+      var sendWrapper = function sendWrapper(target, thisArg, args) {
+        var allowedResponseTypeValues = ['', 'text'];
         // Do nothing if request do not match
         // or response type is not a string
         if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
@@ -7827,12 +7913,12 @@
          * to be able to collect response data without triggering
          * listeners on original XHR object
          */
-        const forgedRequest = new XMLHttpRequest();
+        var forgedRequest = new XMLHttpRequest();
         forgedRequest.addEventListener('readystatechange', function () {
           if (forgedRequest.readyState !== 4) {
             return;
           }
-          const readyState = forgedRequest.readyState,
+          var readyState = forgedRequest.readyState,
             response = forgedRequest.response,
             responseText = forgedRequest.responseText,
             responseURL = forgedRequest.responseURL,
@@ -7841,20 +7927,20 @@
             statusText = forgedRequest.statusText;
 
           // Extract content from response
-          const content = responseText || response;
+          var content = responseText || response;
           if (typeof content !== 'string') {
             return;
           }
           if (!propsToRemove) {
             if (isXML(response)) {
-              const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+              var message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
               logMessage(source, message);
               logMessage(source, createXMLDocument(response), true, false);
             }
           } else {
             shouldPruneResponse = isPruningNeeded(response, propsToRemove);
           }
-          const responseContent = shouldPruneResponse ? pruneXML(response) : response;
+          var responseContent = shouldPruneResponse ? pruneXML(response) : response;
           // Manually put required values into target XHR object
           // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
           Object.defineProperties(thisArg, {
@@ -7892,11 +7978,11 @@
 
           // Mock events
           setTimeout(function () {
-            const stateEvent = new Event('readystatechange');
+            var stateEvent = new Event('readystatechange');
             thisArg.dispatchEvent(stateEvent);
-            const loadEvent = new Event('load');
+            var loadEvent = new Event('load');
             thisArg.dispatchEvent(loadEvent);
-            const loadEndEvent = new Event('loadend');
+            var loadEndEvent = new Event('loadend');
             thisArg.dispatchEvent(loadEndEvent);
           }, 1);
           hit(source);
@@ -7906,8 +7992,8 @@
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
         thisArg.collectedHeaders.forEach(function (header) {
-          const name = header[0];
-          const value = header[1];
+          var name = header[0];
+          var value = header[1];
           forgedRequest.setRequestHeader(name, value);
         });
         thisArg.collectedHeaders = [];
@@ -7918,35 +8004,35 @@
         }
         return undefined;
       };
-      const openHandler = {
+      var openHandler = {
         apply: openWrapper
       };
-      const sendHandler = {
+      var sendHandler = {
         apply: sendWrapper
       };
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
       XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
-      const nativeFetch = window.fetch;
-      const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
-        const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
+      var nativeFetch = window.fetch;
+      var fetchWrapper = async function fetchWrapper(target, thisArg, args) {
+        var fetchURL = args[0] instanceof Request ? args[0].url : args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
         if (urlMatchRegexp.test(fetchURL)) {
-          const response = await nativeFetch(...args);
+          var response = await nativeFetch(...args);
           // It's required to fix issue with - Request with body": Failed to execute 'fetch' on 'Window':
           // Cannot construct a Request with a Request object that has already been used.
           // For example, it occurs on youtube when scriptlet is used without arguments
-          const clonedResponse = response.clone();
-          const responseText = await response.text();
+          var clonedResponse = response.clone();
+          var responseText = await response.text();
           shouldPruneResponse = isPruningNeeded(responseText, propsToRemove);
           if (!shouldPruneResponse) {
-            const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+            var message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
             logMessage(source, message);
             logMessage(source, createXMLDocument(responseText), true, false);
             return clonedResponse;
           }
-          const prunedText = pruneXML(responseText);
+          var prunedText = pruneXML(responseText);
           if (shouldPruneResponse) {
             hit(source);
             return new Response(prunedText, {
@@ -7959,7 +8045,7 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const fetchHandler = {
+      var fetchHandler = {
         apply: fetchWrapper
       };
       window.fetch = new Proxy(window.fetch, fetchHandler);
@@ -7967,7 +8053,7 @@
     xmlPrune$1.names = ['xml-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'xml-prune.js', 'ubo-xml-prune.js', 'ubo-xml-prune'];
-    xmlPrune$1.injections = [hit, logMessage, toRegExp, getXhrData, objectToString, matchRequestProps, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
+    xmlPrune$1.injections = [hit, logMessage, toRegExp, getXhrData, objectToString, matchRequestProps, getMatchPropsData, getRequestProps, isValidParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
 
     /* eslint-disable max-len */
     /**
@@ -8023,7 +8109,7 @@
     /* eslint-enable max-len */
 
     function m3uPrune$1(source, propsToRemove) {
-      let urlToMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var urlToMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -8031,10 +8117,10 @@
       if (typeof Reflect === 'undefined' || typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
-      let shouldPruneResponse = false;
-      const urlMatchRegexp = toRegExp(urlToMatch);
-      const SEGMENT_MARKER = '#';
-      const AD_MARKER = {
+      var shouldPruneResponse = false;
+      var urlMatchRegexp = toRegExp(urlToMatch);
+      var SEGMENT_MARKER = '#';
+      var AD_MARKER = {
         ASSET: '#EXT-X-ASSET:',
         CUE: '#EXT-X-CUE:',
         CUE_IN: '#EXT-X-CUE-IN',
@@ -8043,7 +8129,7 @@
         EXTM3U: '#EXTM3U',
         SCTE35: '#EXT-X-SCTE35:'
       };
-      const COMCAST_AD_MARKER = {
+      var COMCAST_AD_MARKER = {
         AD: '-AD-',
         VAST: '-VAST-',
         VMAP_AD: '-VMAP-AD-',
@@ -8051,8 +8137,8 @@
       };
 
       // List of tags which should not be removed
-      const TAGS_ALLOWLIST = ['#EXT-X-TARGETDURATION', '#EXT-X-MEDIA-SEQUENCE', '#EXT-X-DISCONTINUITY-SEQUENCE', '#EXT-X-ENDLIST', '#EXT-X-PLAYLIST-TYPE', '#EXT-X-I-FRAMES-ONLY', '#EXT-X-MEDIA', '#EXT-X-STREAM-INF', '#EXT-X-I-FRAME-STREAM-INF', '#EXT-X-SESSION-DATA', '#EXT-X-SESSION-KEY', '#EXT-X-INDEPENDENT-SEGMENTS', '#EXT-X-START'];
-      const isAllowedTag = function isAllowedTag(str) {
+      var TAGS_ALLOWLIST = ['#EXT-X-TARGETDURATION', '#EXT-X-MEDIA-SEQUENCE', '#EXT-X-DISCONTINUITY-SEQUENCE', '#EXT-X-ENDLIST', '#EXT-X-PLAYLIST-TYPE', '#EXT-X-I-FRAMES-ONLY', '#EXT-X-MEDIA', '#EXT-X-STREAM-INF', '#EXT-X-I-FRAME-STREAM-INF', '#EXT-X-SESSION-DATA', '#EXT-X-SESSION-KEY', '#EXT-X-INDEPENDENT-SEGMENTS', '#EXT-X-START'];
+      var isAllowedTag = function isAllowedTag(str) {
         return TAGS_ALLOWLIST.some(function (el) {
           return str.startsWith(el);
         });
@@ -8064,18 +8150,18 @@
        *
        * @param {Array} lines
        * @param {number} i
-       * @returns {Object} { array, index }
+       * @returns {object} { array, index }
        */
-      const pruneExtinfFromVmapBlock = function pruneExtinfFromVmapBlock(lines, i) {
-        let array = lines.slice();
-        let index = i;
+      var pruneExtinfFromVmapBlock = function pruneExtinfFromVmapBlock(lines, i) {
+        var array = lines.slice();
+        var index = i;
         if (array[index].includes(AD_MARKER.EXTINF)) {
           array[index] = undefined;
           index += 1;
           if (array[index].includes(AD_MARKER.DISCONTINUITY)) {
             array[index] = undefined;
             index += 1;
-            const prunedExtinf = pruneExtinfFromVmapBlock(array, index);
+            var prunedExtinf = pruneExtinfFromVmapBlock(array, index);
             array = prunedExtinf.array;
             index = prunedExtinf.index;
           }
@@ -8093,14 +8179,14 @@
        * @param {Array} lines
        * @returns {Array}
        */
-      const pruneVmapBlock = function pruneVmapBlock(lines) {
-        let array = lines.slice();
-        for (let i = 0; i < array.length - 1; i += 1) {
+      var pruneVmapBlock = function pruneVmapBlock(lines) {
+        var array = lines.slice();
+        for (var i = 0; i < array.length - 1; i += 1) {
           if (array[i].includes(COMCAST_AD_MARKER.VMAP_AD) || array[i].includes(COMCAST_AD_MARKER.VAST) || array[i].includes(COMCAST_AD_MARKER.AD)) {
             array[i] = undefined;
             if (array[i + 1].includes(AD_MARKER.EXTINF)) {
               i += 1;
-              const prunedExtinf = pruneExtinfFromVmapBlock(array, i);
+              var prunedExtinf = pruneExtinfFromVmapBlock(array, i);
               array = prunedExtinf.array;
               // It's necessary to subtract 1 from "i",
               // otherwise one line will be skipped
@@ -8121,7 +8207,7 @@
        * @returns {string|undefined}
        */
 
-      const pruneSpliceoutBlock = function pruneSpliceoutBlock(line, index, array) {
+      var pruneSpliceoutBlock = function pruneSpliceoutBlock(line, index, array) {
         if (!line.startsWith(AD_MARKER.CUE)) {
           return line;
         }
@@ -8144,7 +8230,7 @@
         }
         return line;
       };
-      const removeM3ULineRegexp = toRegExp(propsToRemove);
+      var removeM3ULineRegexp = toRegExp(propsToRemove);
 
       /**
        * Sets an item in array to undefined, if it contains removeM3ULineRegexp and one of the
@@ -8156,7 +8242,7 @@
        * @returns {string|undefined}
        */
 
-      const pruneInfBlock = function pruneInfBlock(line, index, array) {
+      var pruneInfBlock = function pruneInfBlock(line, index, array) {
         if (!line.startsWith(AD_MARKER.EXTINF)) {
           return line;
         }
@@ -8183,17 +8269,17 @@
        * @param {Array} lines
        * @returns {Array}
        */
-      const pruneSegments = function pruneSegments(lines) {
-        for (let i = 0; i < lines.length - 1; i += 1) {
+      var pruneSegments = function pruneSegments(lines) {
+        for (var i = 0; i < lines.length - 1; i += 1) {
           var _lines$i;
           if ((_lines$i = lines[i]) !== null && _lines$i !== void 0 && _lines$i.startsWith(SEGMENT_MARKER) && removeM3ULineRegexp.test(lines[i])) {
-            const segmentName = lines[i].substring(0, lines[i].indexOf(':'));
+            var segmentName = lines[i].substring(0, lines[i].indexOf(':'));
             if (!segmentName) {
               return lines;
             }
             lines[i] = undefined;
             i += 1;
-            for (let j = i; j < lines.length; j += 1) {
+            for (var j = i; j < lines.length; j += 1) {
               if (!lines[j].includes(segmentName) && !isAllowedTag(lines[j])) {
                 lines[j] = undefined;
               } else {
@@ -8212,11 +8298,11 @@
        * @param {*} text
        * @returns {boolean}
        */
-      const isM3U = function isM3U(text) {
+      var isM3U = function isM3U(text) {
         if (typeof text === 'string') {
           // Check if "text" starts with "#EXTM3U" or with "VMAP_AD_BREAK"
           // If so, then it might be an M3U file and should be pruned or logged
-          const trimmedText = text.trim();
+          var trimmedText = text.trim();
           return trimmedText.startsWith(AD_MARKER.EXTM3U) || trimmedText.startsWith(COMCAST_AD_MARKER.VMAP_AD_BREAK);
         }
         return false;
@@ -8229,7 +8315,7 @@
        * @param {RegExp} regexp
        * @returns {boolean}
        */
-      const isPruningNeeded = function isPruningNeeded(text, regexp) {
+      var isPruningNeeded = function isPruningNeeded(text, regexp) {
         return isM3U(text) && regexp.test(text);
       };
 
@@ -8240,8 +8326,8 @@
        * @returns {string}
        */
       // TODO: make it compatible with $hls modifier
-      const pruneM3U = function pruneM3U(text) {
-        let lines = text.split(/\n\r|\n|\r/);
+      var pruneM3U = function pruneM3U(text) {
+        var lines = text.split(/\n\r|\n|\r/);
         if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
           lines = pruneVmapBlock(lines);
           return lines.filter(function (l) {
@@ -8262,10 +8348,10 @@
           return !!l;
         }).join('\n');
       };
-      const nativeOpen = window.XMLHttpRequest.prototype.open;
-      const nativeSend = window.XMLHttpRequest.prototype.send;
-      let xhrData;
-      const openWrapper = function openWrapper(target, thisArg, args) {
+      var nativeOpen = window.XMLHttpRequest.prototype.open;
+      var nativeSend = window.XMLHttpRequest.prototype.send;
+      var xhrData;
+      var openWrapper = function openWrapper(target, thisArg, args) {
         // eslint-disable-next-line prefer-spread
         xhrData = getXhrData.apply(null, args);
         if (matchRequestProps(source, urlToMatch, xhrData)) {
@@ -8275,12 +8361,12 @@
         // Trap setRequestHeader of target xhr object to mimic request headers later
         if (thisArg.shouldBePruned) {
           thisArg.collectedHeaders = [];
-          const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+          var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
             // Collect headers
             thisArg.collectedHeaders.push(args);
             return Reflect.apply(target, thisArg, args);
           };
-          const setRequestHeaderHandler = {
+          var setRequestHeaderHandler = {
             apply: setRequestHeaderWrapper
           };
 
@@ -8290,8 +8376,8 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const sendWrapper = function sendWrapper(target, thisArg, args) {
-        const allowedResponseTypeValues = ['', 'text'];
+      var sendWrapper = function sendWrapper(target, thisArg, args) {
+        var allowedResponseTypeValues = ['', 'text'];
         // Do nothing if request do not match
         // or response type is not a string
         if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
@@ -8303,12 +8389,12 @@
          * to be able to collect response data without triggering
          * listeners on original XHR object
          */
-        const forgedRequest = new XMLHttpRequest();
+        var forgedRequest = new XMLHttpRequest();
         forgedRequest.addEventListener('readystatechange', function () {
           if (forgedRequest.readyState !== 4) {
             return;
           }
-          const readyState = forgedRequest.readyState,
+          var readyState = forgedRequest.readyState,
             response = forgedRequest.response,
             responseText = forgedRequest.responseText,
             responseURL = forgedRequest.responseURL,
@@ -8317,19 +8403,19 @@
             statusText = forgedRequest.statusText;
 
           // Extract content from response
-          const content = responseText || response;
+          var content = responseText || response;
           if (typeof content !== 'string') {
             return;
           }
           if (!propsToRemove) {
             if (isM3U(response)) {
-              const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+              var message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
               logMessage(source, message);
             }
           } else {
             shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
           }
-          const responseContent = shouldPruneResponse ? pruneM3U(response) : response;
+          var responseContent = shouldPruneResponse ? pruneM3U(response) : response;
           // Manually put required values into target XHR object
           // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
           Object.defineProperties(thisArg, {
@@ -8367,11 +8453,11 @@
 
           // Mock events
           setTimeout(function () {
-            const stateEvent = new Event('readystatechange');
+            var stateEvent = new Event('readystatechange');
             thisArg.dispatchEvent(stateEvent);
-            const loadEvent = new Event('load');
+            var loadEvent = new Event('load');
             thisArg.dispatchEvent(loadEvent);
-            const loadEndEvent = new Event('loadend');
+            var loadEndEvent = new Event('loadend');
             thisArg.dispatchEvent(loadEndEvent);
           }, 1);
           hit(source);
@@ -8381,8 +8467,8 @@
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
         thisArg.collectedHeaders.forEach(function (header) {
-          const name = header[0];
-          const value = header[1];
+          var name = header[0];
+          var value = header[1];
           forgedRequest.setRequestHeader(name, value);
         });
         thisArg.collectedHeaders = [];
@@ -8393,35 +8479,35 @@
         }
         return undefined;
       };
-      const openHandler = {
+      var openHandler = {
         apply: openWrapper
       };
-      const sendHandler = {
+      var sendHandler = {
         apply: sendWrapper
       };
       XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
       XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
-      const nativeFetch = window.fetch;
-      const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
-        const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
+      var nativeFetch = window.fetch;
+      var fetchWrapper = async function fetchWrapper(target, thisArg, args) {
+        var fetchURL = args[0] instanceof Request ? args[0].url : args[0];
         if (typeof fetchURL !== 'string' || fetchURL.length === 0) {
           return Reflect.apply(target, thisArg, args);
         }
         if (urlMatchRegexp.test(fetchURL)) {
-          const response = await nativeFetch(...args);
+          var response = await nativeFetch(...args);
           // It's required to fix issue with - Request with body": Failed to execute 'fetch' on 'Window':
           // Cannot construct a Request with a Request object that has already been used.
           // For example, it occurs on youtube when scriptlet is used without arguments
-          const clonedResponse = response.clone();
-          const responseText = await response.text();
+          var clonedResponse = response.clone();
+          var responseText = await response.text();
           // If "propsToRemove" is not defined, then response should be logged only
           if (!propsToRemove && isM3U(responseText)) {
-            const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+            var message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
             logMessage(source, message);
             return clonedResponse;
           }
           if (isPruningNeeded(responseText, removeM3ULineRegexp)) {
-            const prunedText = pruneM3U(responseText);
+            var prunedText = pruneM3U(responseText);
             hit(source);
             return new Response(prunedText, {
               status: response.status,
@@ -8433,7 +8519,7 @@
         }
         return Reflect.apply(target, thisArg, args);
       };
-      const fetchHandler = {
+      var fetchHandler = {
         apply: fetchWrapper
       };
       window.fetch = new Proxy(window.fetch, fetchHandler);
@@ -8441,7 +8527,7 @@
     m3uPrune$1.names = ['m3u-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'm3u-prune.js', 'ubo-m3u-prune.js', 'ubo-m3u-prune'];
-    m3uPrune$1.injections = [hit, toRegExp, logMessage, getXhrData, objectToString, matchRequestProps, getMatchPropsData, getRequestProps, validateParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
+    m3uPrune$1.injections = [hit, toRegExp, logMessage, getXhrData, objectToString, matchRequestProps, getMatchPropsData, getRequestProps, isValidParsedData, parseMatchProps, isValidStrPattern, escapeRegExp, isEmptyObject];
 
     /* eslint-disable max-len */
     /**
@@ -8514,8 +8600,8 @@
     /* eslint-enable max-len */
 
     function trustedSetCookie$1(source, name, value) {
-      let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
+      var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
       if (typeof name === 'undefined') {
         logMessage(source, 'Cookie name should be specified');
         return;
@@ -8524,23 +8610,23 @@
         logMessage(source, 'Cookie value should be specified');
         return;
       }
-      const parsedValue = parseKeywordValue(value);
+      var parsedValue = parseKeywordValue(value);
       if (!isValidCookiePath(path)) {
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
+      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
       if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
       }
       if (offsetExpiresSec) {
-        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+        var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
         if (!parsedOffsetMs) {
           logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
           return;
         }
-        const expires = Date.now() + parsedOffsetMs;
+        var expires = Date.now() + parsedOffsetMs;
         cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
       }
       document.cookie = cookieToSet;
@@ -8624,8 +8710,8 @@
     /* eslint-enable max-len */
 
     function trustedSetCookieReload$1(source, name, value) {
-      let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
+      var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '/';
       if (typeof name === 'undefined') {
         logMessage(source, 'Cookie name should be specified');
         return;
@@ -8640,23 +8726,23 @@
       if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
       }
-      const parsedValue = parseKeywordValue(value);
+      var parsedValue = parseKeywordValue(value);
       if (!isValidCookiePath(path)) {
         logMessage(source, "Invalid cookie path: '".concat(path, "'"));
         return;
       }
-      let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
+      var cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
       if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
       }
       if (offsetExpiresSec) {
-        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+        var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
         if (!parsedOffsetMs) {
           logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
           return;
         }
-        const expires = Date.now() + parsedOffsetMs;
+        var expires = Date.now() + parsedOffsetMs;
         cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
       }
       document.cookie = cookieToSet;
@@ -8665,7 +8751,7 @@
       // Get cookie value, it's required for checking purpose
       // in case if $now$ or $currentDate$ value is used
       // https://github.com/AdguardTeam/Scriptlets/issues/291
-      const cookieValueToCheck = parseCookieString(document.cookie)[name];
+      var cookieValueToCheck = parseCookieString(document.cookie)[name];
 
       // Only reload the page if cookie was set
       // https://github.com/AdguardTeam/Scriptlets/issues/212
@@ -8758,9 +8844,9 @@
      */
     /* eslint-enable max-len */
     function trustedReplaceFetchResponse$1(source) {
-      let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-      let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-      let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+      var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
       // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
       // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -8773,11 +8859,11 @@
         logMessage(source, 'Pattern argument should not be empty string');
         return;
       }
-      const shouldLog = pattern === '' && replacement === '';
-      const nativeFetch = fetch;
-      let shouldReplace = false;
-      let fetchData;
-      const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+      var shouldLog = pattern === '' && replacement === '';
+      var nativeFetch = fetch;
+      var shouldReplace = false;
+      var fetchData;
+      var handlerWrapper = function handlerWrapper(target, thisArg, args) {
         fetchData = getFetchData(args);
         if (shouldLog) {
           // log if no propsToMatch given
@@ -8798,8 +8884,8 @@
          * @param {string} textContent text to set as body content
          * @returns {Response}
          */
-        const forgeResponse = function forgeResponse(response, textContent) {
-          const bodyUsed = response.bodyUsed,
+        var forgeResponse = function forgeResponse(response, textContent) {
+          var bodyUsed = response.bodyUsed,
             headers = response.headers,
             ok = response.ok,
             redirected = response.redirected,
@@ -8807,7 +8893,7 @@
             statusText = response.statusText,
             type = response.type,
             url = response.url;
-          const forgedResponse = new Response(textContent, {
+          var forgedResponse = new Response(textContent, {
             status,
             statusText,
             headers
@@ -8837,15 +8923,15 @@
         // eslint-disable-next-line prefer-spread
         return nativeFetch.apply(null, args).then(function (response) {
           return response.text().then(function (bodyText) {
-            const patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
-            const modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-            const forgedResponse = forgeResponse(response, modifiedTextContent);
+            var patternRegexp = pattern === '*' ? /(\n|.)*/ : toRegExp(pattern);
+            var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+            var forgedResponse = forgeResponse(response, modifiedTextContent);
             hit(source);
             return forgedResponse;
           }).catch(function () {
             // log if response body can't be converted to a string
-            const fetchDataStr = objectToString(fetchData);
-            const message = "Response body can't be converted to text: ".concat(fetchDataStr);
+            var fetchDataStr = objectToString(fetchData);
+            var message = "Response body can't be converted to text: ".concat(fetchDataStr);
             logMessage(source, message);
             return Reflect.apply(target, thisArg, args);
           });
@@ -8853,7 +8939,7 @@
           return Reflect.apply(target, thisArg, args);
         });
       };
-      const fetchHandler = {
+      var fetchHandler = {
         apply: handlerWrapper
       };
       fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
@@ -8863,7 +8949,7 @@
     // trusted scriptlets support no aliases
     ];
 
-    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, parseMatchProps, validateParsedData, getMatchPropsData];
+    trustedReplaceFetchResponse$1.injections = [hit, logMessage, getFetchData, objectToString, matchRequestProps, toRegExp, isValidStrPattern, escapeRegExp, isEmptyObject, getRequestData, getRequestProps, parseMatchProps, isValidParsedData, getMatchPropsData];
 
     /* eslint-disable max-len */
     /**
@@ -8931,8 +9017,8 @@
         logMessage(source, 'Item value should be specified');
         return;
       }
-      const parsedValue = parseKeywordValue(value);
-      const _window = window,
+      var parsedValue = parseKeywordValue(value);
+      var _window = window,
         localStorage = _window.localStorage;
       setStorageItem(source, localStorage, key, parsedValue);
       hit(source);
@@ -9012,15 +9098,15 @@
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-      let constantValue;
+      var constantValue;
       try {
         constantValue = inferValue(value);
       } catch (e) {
         logMessage(source, e);
         return;
       }
-      let canceled = false;
-      const mustCancel = function mustCancel(value) {
+      var canceled = false;
+      var mustCancel = function mustCancel(value) {
         if (canceled) {
           return canceled;
         }
@@ -9034,23 +9120,23 @@
        * IMPORTANT! this duplicates corresponding func in set-constant scriptlet as
        * reorganizing this to common helpers will most definitely complicate debugging
        *
-       * @param {Object} base arbitrary reachable object
+       * @param {object} base arbitrary reachable object
        * @param {string} prop property name
        * @param {boolean} configurable if set property should be configurable
-       * @param {Object} handler custom property descriptor object
+       * @param {object} handler custom property descriptor object
        * @returns {boolean} true if prop was trapped successfully
        */
-      const trapProp = function trapProp(base, prop, configurable, handler) {
+      var trapProp = function trapProp(base, prop, configurable, handler) {
         if (!handler.init(base[prop])) {
           return false;
         }
-        const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        let prevSetter;
+        var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+        var prevSetter;
         // This is required to prevent scriptlets overwrite each over
         if (origDescriptor instanceof Object) {
           // This check is required to avoid defining non-configurable props
           if (!origDescriptor.configurable) {
-            const message = "Property '".concat(prop, "' is not configurable");
+            var message = "Property '".concat(prop, "' is not configurable");
             logMessage(source, message);
             return false;
           }
@@ -9082,18 +9168,18 @@
        * IMPORTANT! this duplicates corresponding func in set-constant scriptlet as
        * reorganizing this to common helpers will most definitely complicate debugging
        *
-       * @param {Object} owner object that owns chain
+       * @param {object} owner object that owns chain
        * @param {string} property chain of owner properties
        */
-      const setChainPropAccess = function setChainPropAccess(owner, property) {
-        const chainInfo = getPropertyInChain(owner, property);
-        const base = chainInfo.base;
-        const prop = chainInfo.prop,
+      var setChainPropAccess = function setChainPropAccess(owner, property) {
+        var chainInfo = getPropertyInChain(owner, property);
+        var base = chainInfo.base;
+        var prop = chainInfo.prop,
           chain = chainInfo.chain;
 
         // Handler method init is used to keep track of factual value
         // and apply mustCancel() check only on end prop
-        const inChainPropHandler = {
+        var inChainPropHandler = {
           factValue: undefined,
           init(a) {
             this.factValue = a;
@@ -9113,7 +9199,7 @@
             }
           }
         };
-        const endPropHandler = {
+        var endPropHandler = {
           init(a) {
             if (mustCancel(a)) {
               return false;
@@ -9133,7 +9219,7 @@
 
         // End prop case
         if (!chain) {
-          const isTrapped = trapProp(base, prop, false, endPropHandler);
+          var isTrapped = trapProp(base, prop, false, endPropHandler);
           if (isTrapped) {
             hit(source);
           }
@@ -9152,7 +9238,7 @@
         }
 
         // Defined prop in chain
-        const propValue = owner[prop];
+        var propValue = owner[prop];
         if (propValue instanceof Object || typeof propValue === 'object' && propValue !== null) {
           setChainPropAccess(propValue, chain);
         }
@@ -9208,7 +9294,7 @@
     /* eslint-enable max-len */
 
     function injectCssInShadowDom$1(source, cssRule) {
-      let hostSelector = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+      var hostSelector = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
       // do nothing if browser does not support ShadowRoot, Proxy or Reflect
       // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
       if (!Element.prototype.attachShadow || typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
@@ -9220,12 +9306,12 @@
         logMessage(source, '"url()" function is not allowed for css rules');
         return;
       }
-      const callback = function callback(shadowRoot) {
+      var callback = function callback(shadowRoot) {
         try {
           // adoptedStyleSheets and CSSStyleSheet constructor are not yet supported by Safari
           // https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets
           // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/CSSStyleSheet
-          const stylesheet = new CSSStyleSheet();
+          var stylesheet = new CSSStyleSheet();
           try {
             stylesheet.insertRule(cssRule);
           } catch (e) {
@@ -9234,7 +9320,7 @@
           }
           shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, stylesheet];
         } catch (_unused) {
-          const styleTag = document.createElement('style');
+          var styleTag = document.createElement('style');
           styleTag.innerText = cssRule;
           shadowRoot.appendChild(styleTag);
         }
@@ -9304,7 +9390,7 @@
      */
     /* eslint-enable max-len */
     function removeNodeText$1(source, nodeName, textMatch) {
-      const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch),
+      var _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch),
         selector = _parseNodeTextParams.selector,
         nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
         textContentMatch = _parseNodeTextParams.textContentMatch;
@@ -9318,12 +9404,12 @@
        * @param {Node[]} nodes nodes to handle
        * @returns {void}
        */
-      const handleNodes = function handleNodes(nodes) {
+      var handleNodes = function handleNodes(nodes) {
         return nodes.forEach(function (node) {
-          const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+          var shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
           if (shouldReplace) {
-            const ALL_TEXT_PATTERN = /^[\s\S]*$/;
-            const REPLACEMENT = '';
+            var ALL_TEXT_PATTERN = /^[\s\S]*$/;
+            var REPLACEMENT = '';
             replaceNodeText(source, node, ALL_TEXT_PATTERN, REPLACEMENT);
           }
         });
@@ -9412,7 +9498,7 @@
      */
     /* eslint-enable max-len */
     function trustedReplaceNodeText$1(source, nodeName, textMatch, pattern, replacement) {
-      const uboAliases = ['replace-node-text.js', 'rpnt.js', 'sed.js'];
+      var uboAliases = ['replace-node-text.js', 'rpnt.js', 'sed.js'];
 
       /**
        * UBO replaceNodeText scriptlet has different signature:
@@ -9427,15 +9513,15 @@
         for (var _len = arguments.length, extraArgs = new Array(_len > 5 ? _len - 5 : 0), _key = 5; _key < _len; _key++) {
           extraArgs[_key - 5] = arguments[_key];
         }
-        for (let i = 0; i < extraArgs.length; i += 1) {
-          const arg = extraArgs[i];
+        for (var i = 0; i < extraArgs.length; i += 1) {
+          var arg = extraArgs[i];
           if (arg === 'condition') {
             textMatch = extraArgs[i + 1];
             break;
           }
         }
       }
-      const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch, pattern),
+      var _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch, pattern),
         selector = _parseNodeTextParams.selector,
         nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
         textContentMatch = _parseNodeTextParams.textContentMatch,
@@ -9450,9 +9536,9 @@
        * @param {Node[]} nodes nodes to handle
        * @returns {void}
        */
-      const handleNodes = function handleNodes(nodes) {
+      var handleNodes = function handleNodes(nodes) {
         return nodes.forEach(function (node) {
-          const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+          var shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
           if (shouldReplace) {
             replaceNodeText(source, node, patternMatch, replacement);
           }
@@ -9569,16 +9655,16 @@
       if (!!stack && !matchStackTrace(stack, new Error().stack)) {
         return;
       }
-      const prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
-      const evalWrapper = function evalWrapper(target, thisArg, args) {
-        let data = Reflect.apply(target, thisArg, args);
+      var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
+      var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      var evalWrapper = function evalWrapper(target, thisArg, args) {
+        var data = Reflect.apply(target, thisArg, args);
         if (typeof data === 'object') {
           data = jsonPruner(source, data, prunePaths, requiredPaths);
         }
         return data;
       };
-      const evalHandler = {
+      var evalHandler = {
         apply: evalWrapper
       };
       // eslint-disable-next-line no-eval
@@ -9597,65 +9683,65 @@
 
     var scriptletList = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        trustedClickElement: trustedClickElement$1,
+        abortCurrentInlineScript: abortCurrentInlineScript$1,
         abortOnPropertyRead: abortOnPropertyRead$1,
         abortOnPropertyWrite: abortOnPropertyWrite$1,
-        preventSetTimeout: preventSetTimeout$1,
-        preventSetInterval: preventSetInterval$1,
-        preventWindowOpen: preventWindowOpen$1,
-        abortCurrentInlineScript: abortCurrentInlineScript$1,
-        setConstant: setConstant$1,
-        removeCookie: removeCookie$1,
-        preventAddEventListener: preventAddEventListener$1,
-        preventBab: preventBab$2,
-        nowebrtc: nowebrtc$1,
-        logAddEventListener: logAddEventListener$1,
-        logEval: logEval$1,
-        log: log$1,
-        noeval: noeval$1,
-        preventEvalIf: preventEvalIf$1,
-        preventFab: preventFab$1,
-        setPopadsDummy: setPopadsDummy$1,
-        preventPopadsNet: preventPopadsNet$1,
-        preventAdfly: preventAdfly$1,
-        debugOnPropertyRead: debugOnPropertyRead$1,
-        debugOnPropertyWrite: debugOnPropertyWrite$1,
-        debugCurrentInlineScript: debugCurrentInlineScript$1,
-        removeAttr: removeAttr$1,
-        setAttr: setAttr$1,
-        removeClass: removeClass$1,
-        disableNewtabLinks: disableNewtabLinks$1,
+        abortOnStackTrace: abortOnStackTrace$1,
         adjustSetInterval: adjustSetInterval$1,
         adjustSetTimeout: adjustSetTimeout$1,
+        debugCurrentInlineScript: debugCurrentInlineScript$1,
+        debugOnPropertyRead: debugOnPropertyRead$1,
+        debugOnPropertyWrite: debugOnPropertyWrite$1,
         dirString: dirString$1,
+        disableNewtabLinks: disableNewtabLinks$1,
+        evalDataPrune: evalDataPrune$1,
+        forceWindowClose: forceWindowClose$1,
+        hideInShadowDom: hideInShadowDom$1,
+        injectCssInShadowDom: injectCssInShadowDom$1,
         jsonPrune: jsonPrune$1,
+        log: log$1,
+        logAddEventListener: logAddEventListener$1,
+        logEval: logEval$1,
+        logOnStacktrace: logOnStacktrace$1,
+        m3uPrune: m3uPrune$1,
+        noTopics: noTopics$1,
+        noeval: noeval$1,
+        nowebrtc: nowebrtc$1,
+        preventAddEventListener: preventAddEventListener$1,
+        preventAdfly: preventAdfly$1,
+        preventBab: preventBab$2,
+        preventElementSrcLoading: preventElementSrcLoading$1,
+        preventEvalIf: preventEvalIf$1,
+        preventFab: preventFab$1,
+        preventFetch: preventFetch$1,
+        preventPopadsNet: preventPopadsNet$1,
+        preventRefresh: preventRefresh$1,
         preventRequestAnimationFrame: preventRequestAnimationFrame$1,
+        preventSetInterval: preventSetInterval$1,
+        preventSetTimeout: preventSetTimeout$1,
+        preventWindowOpen: preventWindowOpen$1,
+        preventXHR: preventXHR$1,
+        removeAttr: removeAttr$1,
+        removeClass: removeClass$1,
+        removeCookie: removeCookie$1,
+        removeInShadowDom: removeInShadowDom$1,
+        removeNodeText: removeNodeText$1,
+        setAttr: setAttr$1,
+        setConstant: setConstant$1,
         setCookie: setCookie$1,
         setCookieReload: setCookieReload$1,
-        hideInShadowDom: hideInShadowDom$1,
-        removeInShadowDom: removeInShadowDom$1,
-        preventFetch: preventFetch$1,
         setLocalStorageItem: setLocalStorageItem$1,
+        setPopadsDummy: setPopadsDummy$1,
         setSessionStorageItem: setSessionStorageItem$1,
-        abortOnStackTrace: abortOnStackTrace$1,
-        logOnStacktrace: logOnStacktrace$1,
-        preventXHR: preventXHR$1,
-        forceWindowClose: forceWindowClose$1,
-        preventRefresh: preventRefresh$1,
-        preventElementSrcLoading: preventElementSrcLoading$1,
-        noTopics: noTopics$1,
+        trustedClickElement: trustedClickElement$1,
+        trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
+        trustedReplaceNodeText: trustedReplaceNodeText$1,
         trustedReplaceXhrResponse: trustedReplaceXhrResponse$1,
-        xmlPrune: xmlPrune$1,
-        m3uPrune: m3uPrune$1,
+        trustedSetConstant: trustedSetConstant$1,
         trustedSetCookie: trustedSetCookie$1,
         trustedSetCookieReload: trustedSetCookieReload$1,
-        trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
         trustedSetLocalStorageItem: trustedSetLocalStorageItem$1,
-        trustedSetConstant: trustedSetConstant$1,
-        injectCssInShadowDom: injectCssInShadowDom$1,
-        removeNodeText: removeNodeText$1,
-        trustedReplaceNodeText: trustedReplaceNodeText$1,
-        evalDataPrune: evalDataPrune$1
+        xmlPrune: xmlPrune$1
     });
 
     /**
@@ -9666,7 +9752,7 @@
      * e.g. googletagmanager-gtm is removed and should be removed from compatibility table as well
      * but now it works as alias for google-analytics so it should stay valid for compiler
      */
-    const redirects$1 = [{
+    var redirects$1 = [{
       adg: '1x1-transparent.gif',
       ubo: '1x1.gif',
       abp: '1x1-transparent-gif'
@@ -9807,16 +9893,16 @@
       ubo: 'prebid-ads.js'
     }];
 
-    const JS_RULE_MARKER = '#%#';
-    const COMMENT_MARKER = '!';
+    var JS_RULE_MARKER = '#%#';
+    var COMMENT_MARKER = '!';
 
     /**
      * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
      *
-     * @param {string} rule rule text
-     * @returns {boolean} if rule text is comment
+     * @param rule rule text
+     * @returns if rule text is comment
      */
-    const isComment = function isComment(rule) {
+    var isComment = function isComment(rule) {
       return rule.startsWith(COMMENT_MARKER);
     };
 
@@ -9829,50 +9915,50 @@
     /**
      * uBlock scriptlet rule mask
      */
-    const UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
-    const UBO_SCRIPTLET_MASK_1 = '##+js';
-    const UBO_SCRIPTLET_MASK_2 = '##script:inject';
-    const UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
-    const UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
+    var UBO_SCRIPTLET_MASK_REG = /#@?#script:inject|#@?#\s*\+js/;
+    var UBO_SCRIPTLET_MASK_1 = '##+js';
+    var UBO_SCRIPTLET_MASK_2 = '##script:inject';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_1 = '#@#+js';
+    var UBO_SCRIPTLET_EXCEPTION_MASK_2 = '#@#script:inject';
 
     /**
      * AdBlock Plus snippet rule mask
      */
-    const ABP_SCRIPTLET_MASK = '#$#';
-    const ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
+    var ABP_SCRIPTLET_MASK = '#$#';
+    var ABP_SCRIPTLET_EXCEPTION_MASK = '#@$#';
 
     /**
      * AdGuard CSS rule mask
      */
-    const ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
+    var ADG_CSS_MASK_REG = /#@?\$#.+?\s*\{.*\}\s*$/g;
 
     /**
      * Checks if the `rule` is AdGuard scriptlet rule
      *
-     * @param {string} rule - rule text
-     * @returns {boolean} if given rule is adg rule
+     * @param rule - rule text
+     * @returns true if given rule is adg rule
      */
-    const isAdgScriptletRule = function isAdgScriptletRule(rule) {
+    var isAdgScriptletRule = function isAdgScriptletRule(rule) {
       return !isComment(rule) && rule.includes(ADG_SCRIPTLET_MASK);
     };
 
     /**
      * Checks if the `rule` is uBO scriptlet rule
      *
-     * @param {string} rule rule text
-     * @returns {boolean} if given rule is ubo rule
+     * @param rule rule text
+     * @returns true if given rule is ubo rule
      */
-    const isUboScriptletRule = function isUboScriptletRule(rule) {
+    var isUboScriptletRule = function isUboScriptletRule(rule) {
       return (rule.includes(UBO_SCRIPTLET_MASK_1) || rule.includes(UBO_SCRIPTLET_MASK_2) || rule.includes(UBO_SCRIPTLET_EXCEPTION_MASK_1) || rule.includes(UBO_SCRIPTLET_EXCEPTION_MASK_2)) && UBO_SCRIPTLET_MASK_REG.test(rule) && !isComment(rule);
     };
 
     /**
      * Checks if the `rule` is AdBlock Plus snippet
      *
-     * @param {string} rule rule text
-     * @returns {boolean} if given rule is abp rule
+     * @param rule rule text
+     * @returns true if given rule is abp rule
      */
-    const isAbpSnippetRule = function isAbpSnippetRule(rule) {
+    var isAbpSnippetRule = function isAbpSnippetRule(rule) {
       return (rule.includes(ABP_SCRIPTLET_MASK) || rule.includes(ABP_SCRIPTLET_EXCEPTION_MASK)) && rule.search(ADG_CSS_MASK_REG) === -1 && !isComment(rule);
     };
 
@@ -9880,20 +9966,20 @@
      * Returns array of scriptlet objects.
      * Needed for scriptlet name validation which will check aliases names.
      *
-     * @returns {Array<Object>} Array of all scriptlet objects.
+     * @returns Array of all scriptlet objects.
      */
-    const getScriptletsObjList = function getScriptletsObjList() {
+    var getScriptletsObjList = function getScriptletsObjList() {
       return Object.values(scriptletList);
     };
 
     /**
      * Finds scriptlet by the `name`.
      *
-     * @param {string} name Scriptlet name.
-     * @param {Array<Object>} scriptlets Array of all scriptlet objects.
+     * @param name Scriptlet name.
+     * @param scriptlets Array of all scriptlet objects.
      * @returns {Function} Scriptlet function.
      */
-    const getScriptletByName = function getScriptletByName(name, scriptlets) {
+    var getScriptletByName = function getScriptletByName(name, scriptlets) {
       if (!scriptlets) {
         scriptlets = getScriptletsObjList();
       }
@@ -9905,45 +9991,41 @@
         || !name.endsWith('.js') && s.names.includes("".concat(name, ".js")));
       });
     };
-    const scriptletObjects = getScriptletsObjList();
+    var scriptletObjects = getScriptletsObjList();
 
     /**
      * Checks whether the scriptlet `name` is valid by checking the scriptlet list object.
      *
-     * @param {string} name Scriptlet name.
-     * @returns {boolean} True if scriptlet name is valid.
+     * @param name Scriptlet name.
+     * @returns True if scriptlet name is valid.
      */
-    const isValidScriptletNameNotCached = function isValidScriptletNameNotCached(name) {
+    var isValidScriptletNameNotCached = function isValidScriptletNameNotCached(name) {
       if (!name) {
         return false;
       }
-      const scriptlet = getScriptletByName(name, scriptletObjects);
-      if (!scriptlet) {
-        return false;
-      }
-      return true;
+      return !!getScriptletByName(name, scriptletObjects);
     };
 
     /**
      * Cache for better performance of scriptlet name validation.
      */
-    const scriptletNameValidationCache = new Map();
+    var scriptletNameValidationCache = new Map();
 
     /**
      * Checks whether the `name` is valid scriptlet name.
      * Uses cache for better performance.
      *
-     * @param {string} name Scriptlet name.
-     * @returns {boolean} True if scriptlet name is valid.
+     * @param name Scriptlet name.
+     * @returns true if scriptlet name is a valid one.
      */
-    const isValidScriptletName = function isValidScriptletName(name) {
+    var isValidScriptletName = function isValidScriptletName(name) {
       if (!name) {
         return false;
       }
       // if there is no cached validation value
       if (!scriptletNameValidationCache.has(name)) {
         // we should calculate it first
-        const isValid = isValidScriptletNameNotCached(name);
+        var isValid = isValidScriptletNameNotCached(name);
         // and save it to the cache then
         scriptletNameValidationCache.set(name, isValid);
         return isValid;
@@ -9961,17 +10043,17 @@
     /**
      * Redirect resources markers
      */
-    const ADG_UBO_REDIRECT_MARKER = 'redirect=';
-    const ADG_UBO_REDIRECT_RULE_MARKER = 'redirect-rule=';
-    const ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
-    const EMPTY_REDIRECT_MARKER = 'empty';
-    const VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
+    var ADG_UBO_REDIRECT_MARKER = 'redirect=';
+    var ADG_UBO_REDIRECT_RULE_MARKER = 'redirect-rule=';
+    var ABP_REDIRECT_MARKER = 'rewrite=abp-resource:';
+    var EMPTY_REDIRECT_MARKER = 'empty';
+    var VALID_SOURCE_TYPES = ['image', 'media', 'subdocument', 'stylesheet', 'script', 'xmlhttprequest', 'other'];
 
     /**
      * Source types for redirect rules if there is no one of them.
      * Used for ADG -> UBO conversion.
      */
-    const ABSENT_SOURCE_TYPE_REPLACEMENT = [{
+    var ABSENT_SOURCE_TYPE_REPLACEMENT = [{
       NAME: 'nooptext',
       TYPES: VALID_SOURCE_TYPES
     }, {
@@ -10002,16 +10084,16 @@
       NAME: 'googletagservices-gpt',
       TYPES: ['script']
     }];
-    const validAdgRedirects = redirects$1.filter(function (el) {
-      return el.adg;
+    var validAdgRedirects = redirects$1.filter(function (el) {
+      return !!el.adg;
     });
 
     /**
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for UBO -> ADG converting
      */
-    const uboToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
-      return el.ubo;
+    var uboToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+      return !!el.ubo;
     }).map(function (el) {
       return [el.ubo, el.adg];
     }));
@@ -10020,8 +10102,8 @@
      * Compatibility object where KEYS = ABP redirect names and VALUES = ADG redirect names
      * It's used for ABP -> ADG converting
      */
-    const abpToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
-      return el.abp;
+    var abpToAdgCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+      return !!el.abp;
     }).map(function (el) {
       return [el.abp, el.adg];
     }));
@@ -10030,7 +10112,7 @@
      * Compatibility object where KEYS = UBO redirect names and VALUES = ADG redirect names
      * It's used for ADG -> UBO converting
      */
-    const adgToUboCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
+    var adgToUboCompatibility = Object.fromEntries(validAdgRedirects.filter(function (el) {
       return el.ubo;
     }).map(function (el) {
       return [el.adg, el.ubo];
@@ -10040,26 +10122,26 @@
      * Needed for AdGuard redirect names validation where KEYS = **valid** AdGuard redirect names
      * 'adgToUboCompatibility' is still needed for ADG -> UBO converting
      */
-    const validAdgCompatibility = Object.fromEntries(validAdgRedirects.map(function (el) {
+    var validAdgCompatibility = Object.fromEntries(validAdgRedirects.map(function (el) {
       return [el.adg, 'valid adg redirect'];
     }));
-    const REDIRECT_RULE_TYPES = {
-      VALID_ADG: {
+    var REDIRECT_RULE_TYPES = {
+      ["VALID_ADG"]: {
         redirectMarker: ADG_UBO_REDIRECT_MARKER,
-        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
-        compatibility: validAdgCompatibility
+        compatibility: validAdgCompatibility,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER
       },
-      ADG: {
+      ["ADG"]: {
         redirectMarker: ADG_UBO_REDIRECT_MARKER,
-        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
-        compatibility: adgToUboCompatibility
+        compatibility: adgToUboCompatibility,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER
       },
-      UBO: {
+      ["UBO"]: {
         redirectMarker: ADG_UBO_REDIRECT_MARKER,
-        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER,
-        compatibility: uboToAdgCompatibility
+        compatibility: uboToAdgCompatibility,
+        redirectRuleMarker: ADG_UBO_REDIRECT_RULE_MARKER
       },
-      ABP: {
+      ["ABP"]: {
         redirectMarker: ABP_REDIRECT_MARKER,
         compatibility: abpToAdgCompatibility
       }
@@ -10068,62 +10150,63 @@
     /**
      * Parses redirect rule modifiers
      *
-     * @param {string} rule rule text
-     * @returns {Array} list of rule modifiers
+     * @param rule rule text
+     * @returns list of rule modifiers
      */
-    const parseModifiers = function parseModifiers(rule) {
+    var parseModifiers = function parseModifiers(rule) {
       return substringAfter$1(rule, '$').split(',');
     };
 
     /**
      * Gets redirect resource name
      *
-     * @param {string} rule rule text
-     * @param {string} marker - specific Adg/Ubo or Abp redirect resources marker
-     * @returns {string} - redirect resource name
+     * @param rule rule text
+     * @param marker - specific Adg/Ubo or Abp redirect resources marker
+     * @returns - redirect resource name
      */
-    const getRedirectName = function getRedirectName(rule, marker) {
-      const ruleModifiers = parseModifiers(rule);
-      const redirectNamePart = ruleModifiers.find(function (el) {
+    var getRedirectName = function getRedirectName(rule, marker) {
+      var ruleModifiers = parseModifiers(rule);
+      var redirectNamePart = ruleModifiers.find(function (el) {
         return el.includes(marker);
       });
-      return substringAfter$1(redirectNamePart, marker);
+      return redirectNamePart ? substringAfter$1(redirectNamePart, marker) : null;
     };
 
     /**
      * Checks if the `rule` is AdGuard redirect rule.
      * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
      *
-     * @param {string} rule - rule text
-     * @returns {boolean} if given rule is adg redirect
+     * @param rule - rule text
+     * @returns true if given rule is adg redirect
      */
-    const isAdgRedirectRule = function isAdgRedirectRule(rule) {
-      const MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
-      return !isComment(rule) && (rule.includes(REDIRECT_RULE_TYPES.ADG.redirectMarker) || rule.includes(REDIRECT_RULE_TYPES.ADG.redirectRuleMarker))
+    var isAdgRedirectRule = function isAdgRedirectRule(rule) {
+      var MARKER_IN_BASE_PART_MASK = '/((?!\\$|\\,).{1})redirect((-rule)?)=(.{0,}?)\\$(popup)?/';
+      var _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES["ADG"],
+        redirectMarker = _REDIRECT_RULE_TYPES$.redirectMarker,
+        redirectRuleMarker = _REDIRECT_RULE_TYPES$.redirectRuleMarker;
+      return !isComment(rule) && (rule.includes(redirectMarker) || typeof redirectRuleMarker === 'string' && rule.includes(redirectRuleMarker))
       // some js rules may have 'redirect=' in it, so we should get rid of them
       && !rule.includes(JS_RULE_MARKER)
       // get rid of rules like '_redirect=*://look.$popup'
       && !toRegExp(MARKER_IN_BASE_PART_MASK).test(rule);
     };
 
-    // const getRedirectResourceMarkerData = ()
-
     /**
      * Checks if the `rule` satisfies the `type`
      *
-     * @param {string} rule - rule text
-     * @param {'VALID_ADG'|'ADG'|'UBO'|'ABP'} type - type of a redirect rule
-     * @returns {boolean} if the `rule` satisfies the `type`
+     * @param rule - rule text
+     * @param type - type of a redirect rule
+     * @returns if the `rule` satisfies the `type`
      */
-    const isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
-      const _REDIRECT_RULE_TYPES$ = REDIRECT_RULE_TYPES[type],
-        redirectMarker = _REDIRECT_RULE_TYPES$.redirectMarker,
-        redirectRuleMarker = _REDIRECT_RULE_TYPES$.redirectRuleMarker,
-        compatibility = _REDIRECT_RULE_TYPES$.compatibility;
+    var isRedirectRuleByType = function isRedirectRuleByType(rule, type) {
+      var _REDIRECT_RULE_TYPES$2 = REDIRECT_RULE_TYPES[type],
+        redirectMarker = _REDIRECT_RULE_TYPES$2.redirectMarker,
+        redirectRuleMarker = _REDIRECT_RULE_TYPES$2.redirectRuleMarker,
+        compatibility = _REDIRECT_RULE_TYPES$2.compatibility;
       if (rule && !isComment(rule)) {
-        let marker;
+        var marker;
         // check if there is a $redirect-rule modifier in rule
-        let markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
+        var markerIndex = redirectRuleMarker ? rule.indexOf(redirectRuleMarker) : -1;
         if (markerIndex > -1) {
           marker = redirectRuleMarker;
         } else {
@@ -10135,7 +10218,10 @@
             return false;
           }
         }
-        const redirectName = getRedirectName(rule, marker);
+        if (!marker) {
+          return false;
+        }
+        var redirectName = getRedirectName(rule, marker);
         if (!redirectName) {
           return false;
         }
@@ -10149,41 +10235,41 @@
     /**
      * Checks if the `rule` is **valid** AdGuard redirect resource rule
      *
-     * @param {string} rule - rule text
-     * @returns {boolean} if given rule is valid adg redirect
+     * @param rule - rule text
+     * @returns true if given rule is valid adg redirect
      */
-    const isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
-      return isRedirectRuleByType(rule, 'VALID_ADG');
+    var isValidAdgRedirectRule = function isValidAdgRedirectRule(rule) {
+      return isRedirectRuleByType(rule, "VALID_ADG");
     };
 
     /**
      * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
      *
-     * @param {string} rule - AdGuard rule text
-     * @returns {boolean} - true if the rule can be converted to Ubo
+     * @param rule - AdGuard rule text
+     * @returns - true if the rule can be converted to Ubo
      */
-    const isAdgRedirectCompatibleWithUbo = function isAdgRedirectCompatibleWithUbo(rule) {
-      return isAdgRedirectRule(rule) && isRedirectRuleByType(rule, 'ADG');
+    var isAdgRedirectCompatibleWithUbo = function isAdgRedirectCompatibleWithUbo(rule) {
+      return isAdgRedirectRule(rule) && isRedirectRuleByType(rule, "ADG");
     };
 
     /**
      * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
      *
-     * @param {string} rule - Ubo rule text
-     * @returns {boolean} - true if the rule can be converted to AdGuard
+     * @param rule - Ubo rule text
+     * @returns - true if the rule can be converted to AdGuard
      */
-    const isUboRedirectCompatibleWithAdg = function isUboRedirectCompatibleWithAdg(rule) {
-      return isRedirectRuleByType(rule, 'UBO');
+    var isUboRedirectCompatibleWithAdg = function isUboRedirectCompatibleWithAdg(rule) {
+      return isRedirectRuleByType(rule, "UBO");
     };
 
     /**
      * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
      *
-     * @param {string} rule - Abp rule text
-     * @returns {boolean} - true if the rule can be converted to AdGuard
+     * @param rule - Abp rule text
+     * @returns - true if the rule can be converted to AdGuard
      */
-    const isAbpRedirectCompatibleWithAdg = function isAbpRedirectCompatibleWithAdg(rule) {
-      return isRedirectRuleByType(rule, 'ABP');
+    var isAbpRedirectCompatibleWithAdg = function isAbpRedirectCompatibleWithAdg(rule) {
+      return isRedirectRuleByType(rule, "ABP");
     };
 
     /**
@@ -10199,24 +10285,24 @@
      * $script,redirect=noopvast-2.0
      * $xmlhttprequest,redirect=noopvast-2.0
      *
-     * @param {string} rule rule text
-     * @returns {boolean} if the rule has specified content type before conversion
+     * @param rule rule text
+     * @returns if the rule has specified content type before conversion
      */
-    const hasValidContentType = function hasValidContentType(rule) {
-      const ruleModifiers = parseModifiers(rule);
+    var hasValidContentType = function hasValidContentType(rule) {
+      var ruleModifiers = parseModifiers(rule);
       // rule can have more than one source type modifier
-      const sourceTypes = ruleModifiers.filter(function (el) {
+      var sourceTypes = ruleModifiers.filter(function (el) {
         return VALID_SOURCE_TYPES.includes(el);
       });
-      const isSourceTypeSpecified = sourceTypes.length > 0;
-      const isEmptyRedirect = ruleModifiers.includes("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) || ruleModifiers.includes("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER));
+      var isSourceTypeSpecified = sourceTypes.length > 0;
+      var isEmptyRedirect = ruleModifiers.includes("".concat(ADG_UBO_REDIRECT_MARKER).concat(EMPTY_REDIRECT_MARKER)) || ruleModifiers.includes("".concat(ADG_UBO_REDIRECT_RULE_MARKER).concat(EMPTY_REDIRECT_MARKER));
       if (isEmptyRedirect) {
         // no source type for 'empty' is allowed
         return true;
       }
       return isSourceTypeSpecified;
     };
-    const validator = {
+    var validator = {
       UBO_SCRIPTLET_MASK_REG,
       ABP_SCRIPTLET_MASK,
       ABP_SCRIPTLET_EXCEPTION_MASK,
@@ -10242,114 +10328,126 @@
     function _arrayWithHoles(arr) {
       if (Array.isArray(arr)) return arr;
     }
-    var arrayWithHoles = _arrayWithHoles;
 
     function _iterableToArray(iter) {
-      if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+      if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
     }
-    var iterableToArray = _iterableToArray;
 
     function _arrayLikeToArray(arr, len) {
       if (len == null || len > arr.length) len = arr.length;
-      for (var i = 0, arr2 = new Array(len); i < len; i++) {
-        arr2[i] = arr[i];
-      }
+      for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
       return arr2;
     }
-    var arrayLikeToArray = _arrayLikeToArray;
 
     function _unsupportedIterableToArray(o, minLen) {
       if (!o) return;
-      if (typeof o === "string") return arrayLikeToArray(o, minLen);
+      if (typeof o === "string") return _arrayLikeToArray(o, minLen);
       var n = Object.prototype.toString.call(o).slice(8, -1);
       if (n === "Object" && o.constructor) n = o.constructor.name;
       if (n === "Map" || n === "Set") return Array.from(o);
-      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
     }
-    var unsupportedIterableToArray = _unsupportedIterableToArray;
 
     function _nonIterableRest() {
       throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
     }
-    var nonIterableRest = _nonIterableRest;
 
     function _toArray(arr) {
-      return arrayWithHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableRest();
+      return _arrayWithHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableRest();
     }
-    var toArray$1 = _toArray;
 
     /**
      * AdGuard scriptlet rule
      */
-    const ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/;
+    var ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/;
     // eslint-disable-next-line no-template-curly-in-string
-    const ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
+    var ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
     // eslint-disable-next-line no-template-curly-in-string
-    const ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
+    var ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@%#//scriptlet(${args})';
 
     /**
      * uBlock scriptlet rule mask
      */
     // eslint-disable-next-line no-template-curly-in-string
-    const UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
+    var UBO_SCRIPTLET_TEMPLATE = '${domains}##+js(${args})';
     // eslint-disable-next-line no-template-curly-in-string
-    const UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
-    const UBO_ALIAS_NAME_MARKER = 'ubo-';
-    const UBO_SCRIPTLET_JS_ENDING = '.js';
+    var UBO_SCRIPTLET_EXCEPTION_TEMPLATE = '${domains}#@#+js(${args})';
+    var UBO_ALIAS_NAME_MARKER = 'ubo-';
+    var UBO_SCRIPTLET_JS_ENDING = '.js';
 
     // https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
-    const UBO_XHR_TYPE = 'xhr';
-    const ADG_XHR_TYPE = 'xmlhttprequest';
-    const ADG_SET_CONSTANT_NAME = 'set-constant';
-    const ADG_SET_CONSTANT_EMPTY_STRING = '';
-    const ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
-    const ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
-    const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
-    const UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
-    const UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
-    const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
-    const ADG_PREVENT_FETCH_EMPTY_STRING = '';
-    const ADG_PREVENT_FETCH_WILDCARD = '*';
-    const UBO_NO_FETCH_IF_WILDCARD = '/^/';
-    const ESCAPED_COMMA_SEPARATOR = '\\,';
-    const COMMA_SEPARATOR = ',';
-    const REMOVE_ATTR_METHOD = 'removeAttr';
-    const REMOVE_CLASS_METHOD = 'removeClass';
-    const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
-    const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
-    const ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
-    const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
-    const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
+    var UBO_XHR_TYPE = 'xhr';
+    var ADG_XHR_TYPE = 'xmlhttprequest';
+    var ADG_SET_CONSTANT_NAME = 'set-constant';
+    var ADG_SET_CONSTANT_EMPTY_STRING = '';
+    var ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+    var ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
+    var UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+    var UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+    var UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
+    var ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
+    var ADG_PREVENT_FETCH_EMPTY_STRING = '';
+    var ADG_PREVENT_FETCH_WILDCARD = '*';
+    var UBO_NO_FETCH_IF_WILDCARD = '/^/';
+    var ESCAPED_COMMA_SEPARATOR = '\\,';
+    var COMMA_SEPARATOR = ',';
+    var REMOVE_ATTR_METHOD = 'removeAttr';
+    var REMOVE_CLASS_METHOD = 'removeClass';
+    var REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
+    var REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
+    var ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
+    var ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
+    var REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
+
+    /**
+     * Possible rule origins.
+     */
+    var Origin = /*#__PURE__*/function (Origin) {
+      Origin["Ubo"] = "ubo";
+      Origin["Abp"] = "abp";
+      Origin["AdgValid"] = "adgValid";
+      Origin["AdgInvalid"] = "adgInvalid";
+      return Origin;
+    }(Origin || {});
+    /**
+     * Array of origin names in the order they must be checked for rule conversion.
+     */
+    var originNames = [Origin.Ubo, Origin.Abp, Origin.AdgValid, Origin.AdgInvalid];
 
     /**
      * Returns array of strings separated by space which is not in quotes
      *
-     * @param {string} str arbitrary string
-     * @returns {string[]} result array
+     * @param str arbitrary string
+     * @returns result array
+     * @throws
      */
-    const getSentences = function getSentences(str) {
-      const reg = /'.*?'|".*?"|\S+/g;
-      return str.match(reg);
+    var getAbpSnippetArguments = function getAbpSnippetArguments(str) {
+      var reg = /'.*?'|".*?"|\S+/g;
+      var sentences = str.match(reg);
+      if (!sentences) {
+        throw new Error('Invalid ABP snippet args.');
+      }
+      return sentences;
     };
 
     /**
      * Replaces string with data by placeholders
      *
-     * @param {string} str string with placeholders
-     * @param {Object} data where keys are placeholders names
-     * @returns {string} string filled with data
+     * @param str string with placeholders
+     * @param data where keys are placeholders names
+     * @returns string filled with data
      */
-    const replacePlaceholders = function replacePlaceholders(str, data) {
+    var replacePlaceholders = function replacePlaceholders(str, data) {
       return Object.keys(data).reduce(function (acc, key) {
-        const reg = new RegExp("\\$\\{".concat(key, "\\}"), 'g');
+        var reg = new RegExp("\\$\\{".concat(key, "\\}"), 'g');
         acc = acc.replace(reg, data[key]);
         return acc;
       }, str);
     };
-    const splitArgs = function splitArgs(str) {
-      const args = [];
-      let prevArgStart = 0;
-      for (let i = 0; i < str.length; i += 1) {
+    var splitArgs = function splitArgs(str) {
+      var args = [];
+      var prevArgStart = 0;
+      for (var i = 0; i < str.length; i += 1) {
         // do not split args by escaped comma
         // https://github.com/AdguardTeam/Scriptlets/issues/133
         if (str[i] === COMMA_SEPARATOR && str[i - 1] !== '\\') {
@@ -10365,11 +10463,11 @@
     /**
      * Validates remove-attr/class scriptlet args
      *
-     * @param {string[]} parsedArgs scriptlet arguments
-     * @returns {string[]|Error} valid args OR error for invalid selector
+     * @param parsedArgs scriptlet arguments
+     * @returns valid args OR error for invalid selector
      */
-    const validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
-      const _parsedArgs = toArray$1(parsedArgs),
+    var validateRemoveAttrClassArgs = function validateRemoveAttrClassArgs(parsedArgs) {
+      var _parsedArgs = _toArray(parsedArgs),
         name = _parsedArgs[0],
         value = _parsedArgs[1],
         restArgs = _parsedArgs.slice(2);
@@ -10384,8 +10482,8 @@
       // 2. join 'selector' into one arg
       // 3. combine all args
       // https://github.com/AdguardTeam/Scriptlets/issues/133
-      const lastArg = restArgs.pop();
-      let applying;
+      var lastArg = restArgs.pop(); // https://github.com/microsoft/TypeScript/issues/30406
+      var applying;
       // check the last parsed arg for matching possible 'applying' vale
       if (REMOVE_ATTR_CLASS_APPLYING.some(function (el) {
         return lastArg.includes(el);
@@ -10394,40 +10492,41 @@
       } else {
         restArgs.push(lastArg);
       }
-      const selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
+      var selector = replaceAll(restArgs.join(', '), ESCAPED_COMMA_SEPARATOR, COMMA_SEPARATOR);
       if (selector.length > 0 && typeof document !== 'undefined') {
         // empty selector is valid for these scriptlets as it applies to all elements,
         // all other selectors should be validated
         // e.g. #%#//scriptlet('ubo-remove-class.js', 'blur', ', html')
         document.querySelectorAll(selector);
       }
-      const validArgs = applying ? [name, value, selector, applying] : [name, value, selector];
+      var validArgs = applying ? [name, value, selector, applying] : [name, value, selector];
       return validArgs;
     };
 
     /**
      * Converts string of UBO scriptlet rule to AdGuard scriptlet rule
      *
-     * @param {string} rule UBO scriptlet rule
-     * @returns {string[]} array with one AdGuard scriptlet rule
+     * @param rule UBO scriptlet rule
+     * @returns array with one AdGuard scriptlet rule
      */
-    const convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
-      const domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
-      const mask = rule.match(validator.UBO_SCRIPTLET_MASK_REG)[0];
-      let template;
-      if (mask.includes('@')) {
+    var convertUboScriptletToAdg = function convertUboScriptletToAdg(rule) {
+      var domains = getBeforeRegExp(rule, validator.UBO_SCRIPTLET_MASK_REG);
+      var matchResult = rule.match(validator.UBO_SCRIPTLET_MASK_REG);
+      var mask = Array.isArray(matchResult) ? matchResult[0] : null;
+      var template;
+      if (mask !== null && mask !== void 0 && mask.includes('@')) {
         template = ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
       } else {
         template = ADGUARD_SCRIPTLET_TEMPLATE;
       }
-      const argsStr = getStringInBraces(rule);
-      let parsedArgs = splitArgs(argsStr);
-      const scriptletName = parsedArgs[0].includes(UBO_SCRIPTLET_JS_ENDING) ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
+      var argsStr = getStringInBraces(rule);
+      var parsedArgs = splitArgs(argsStr);
+      var scriptletName = parsedArgs[0].includes(UBO_SCRIPTLET_JS_ENDING) ? "ubo-".concat(parsedArgs[0]) : "ubo-".concat(parsedArgs[0]).concat(UBO_SCRIPTLET_JS_ENDING);
       if (REMOVE_ATTR_ALIASES.includes(scriptletName) || REMOVE_CLASS_ALIASES.includes(scriptletName)) {
         parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
       }
-      const args = parsedArgs.map(function (arg, index) {
-        let outputArg = arg;
+      var args = parsedArgs.map(function (arg, index) {
+        var outputArg = arg;
         if (index === 0) {
           outputArg = scriptletName;
         }
@@ -10439,7 +10538,7 @@
       }).map(function (arg) {
         return wrapInSingleQuotes(arg);
       }).join("".concat(COMMA_SEPARATOR, " "));
-      const adgRule = replacePlaceholders(template, {
+      var adgRule = replacePlaceholders(template, {
         domains,
         args
       });
@@ -10449,20 +10548,22 @@
     /**
      * Convert string of ABP snippet rule to AdGuard scriptlet rule
      *
-     * @param {string} rule ABP snippet rule
-     * @returns {Array} array of AdGuard scriptlet rules, one or few items depends on Abp-rule
+     * @param rule ABP snippet rule
+     * @returns array of AdGuard scriptlet rules, one or few items depends on Abp-rule
      */
-    const convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
-      const SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-      const mask = rule.includes(validator.ABP_SCRIPTLET_MASK) ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
-      const template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
-      const domains = substringBefore(rule, mask);
-      const args = substringAfter$1(rule, mask);
+    var convertAbpSnippetToAdg = function convertAbpSnippetToAdg(rule) {
+      var SEMICOLON_DIVIDER = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
+      var mask = rule.includes(validator.ABP_SCRIPTLET_MASK) ? validator.ABP_SCRIPTLET_MASK : validator.ABP_SCRIPTLET_EXCEPTION_MASK;
+      var template = mask === validator.ABP_SCRIPTLET_MASK ? ADGUARD_SCRIPTLET_TEMPLATE : ADGUARD_SCRIPTLET_EXCEPTION_TEMPLATE;
+      var domains = substringBefore(rule, mask);
+      var args = substringAfter$1(rule, mask);
+
+      /* eslint-disable @typescript-eslint/no-shadow */
       return args.split(SEMICOLON_DIVIDER)
       // abp-rule may have `;` at the end which makes last array item irrelevant
       // https://github.com/AdguardTeam/Scriptlets/issues/236
       .filter(isExisting).map(function (args) {
-        return getSentences(args).map(function (arg, index) {
+        return getAbpSnippetArguments(args).map(function (arg, index) {
           return index === 0 ? "abp-".concat(arg) : arg;
         }).map(function (arg) {
           return wrapInSingleQuotes(arg);
@@ -10473,6 +10574,7 @@
           args
         });
       });
+      /* eslint-enable @typescript-eslint/no-shadow */
     };
 
     /**
@@ -10480,12 +10582,12 @@
      *
      * IMPORTANT! The method is not very fast as it parses the rule and checks its syntax.
      *
-     * @param {string} adgRuleText Single ADG scriptlet rule.
+     * @param adgRuleText Single ADG scriptlet rule.
      *
-     * @returns {boolean} False if ADG scriptlet rule syntax is not valid
+     * @returns False if ADG scriptlet rule syntax is not valid
      * or `adgRuleText` is not an ADG scriptlet rule.
      */
-    const isValidAdgScriptletRuleSyntax = function isValidAdgScriptletRuleSyntax(adgRuleText) {
+    var isValidAdgScriptletRuleSyntax = function isValidAdgScriptletRuleSyntax(adgRuleText) {
       if (!adgRuleText) {
         return false;
       }
@@ -10493,7 +10595,7 @@
         return false;
       }
       // isAdgScriptletRule() does not check the rule syntax
-      let parsedRule;
+      var parsedRule;
       try {
         // parseRule() ensures that the rule syntax is valid
         // and it will throw an error if it is not
@@ -10505,48 +10607,83 @@
     };
 
     /**
-     * Converts any scriptlet rule into AdGuard syntax rule.
-     * Comment is returned as is.
-     *
-     * @param {string} rule Scriptlet rule.
-     *
-     * @returns {string[]} Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
-     * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
+     * Functions to validate if a given string corresponds to a scriptlet rule of a particular origin.
      */
-    const convertScriptletToAdg = function convertScriptletToAdg(rule) {
-      let result;
-      // TODO: multiple conditions may be refactored
-      if (validator.isUboScriptletRule(rule)) {
-        result = convertUboScriptletToAdg(rule);
-      } else if (validator.isAbpSnippetRule(rule)) {
-        result = convertAbpSnippetToAdg(rule);
-      } else if (validator.isAdgScriptletRule(rule)) {
-        if (isValidAdgScriptletRuleSyntax(rule)) {
-          result = [rule];
-        } else {
-          // eslint-disable-next-line no-console
-          console.log("Invalid AdGuard scriptlet rule: ".concat(rule));
-          result = [];
-        }
-      } else if (validator.isComment(rule)) {
-        result = [rule];
+    var OriginValidator = {
+      [Origin.Ubo]: validator.isUboScriptletRule,
+      [Origin.Abp]: validator.isAbpSnippetRule,
+      [Origin.AdgValid]: isValidAdgScriptletRuleSyntax,
+      [Origin.AdgInvalid]: function (r) {
+        return validator.isAdgScriptletRule(r) && !isValidAdgScriptletRuleSyntax(r);
       }
-      return result;
+    };
+
+    // Functions to convert a given scriptlet rule from a mapped origin to an AdGuard rule
+    var Converter = {
+      [Origin.Ubo]: convertUboScriptletToAdg,
+      [Origin.Abp]: convertAbpSnippetToAdg,
+      [Origin.AdgValid]: function (r) {
+        return [r];
+      },
+      [Origin.AdgInvalid]: function (r) {
+        // eslint-disable-next-line no-console
+        console.log("Invalid AdGuard scriptlet rule: ".concat(r));
+        return [];
+      }
+    };
+
+    /**
+     * Returns rule origin name in a meaningful order.
+     *
+     * @param rule The rule string to check.
+     * @returns Rule origin name or undefined if the rule has no valid origin.
+     */
+    var getRuleOrigin = function getRuleOrigin(rule) {
+      return originNames.find(function (originName) {
+        return OriginValidator[originName](rule);
+      });
+    };
+
+    /**
+     * Converts any scriptlet rule into AdGuard syntax rule.
+     * Comments and non-scriptlet rules are returned without changes.
+     *
+     * @param rule Rule.
+     *
+     * @returns Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
+     * For the ADG `rule` validates its syntax, and returns an empty array if it is invalid.
+     */
+    var convertScriptletToAdg = function convertScriptletToAdg(rule) {
+      if (validator.isComment(rule)) {
+        return [rule];
+      }
+
+      // Determine rule's origin
+      var originName = getRuleOrigin(rule);
+
+      // if the origin is unknown, return rule unchanged
+      // as it is a non-scriptlet rule
+      if (!originName) {
+        return [rule];
+      }
+
+      // Call converter of given origin
+      return Converter[originName](rule);
     };
 
     /**
      * Converts UBO scriptlet rule to AdGuard one
      *
-     * @param {string} rule AdGuard scriptlet rule
-     * @returns {string} UBO scriptlet rule
+     * @param rule AdGuard scriptlet rule
+     * @returns UBO scriptlet rule
      */
-    const convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
-      let res;
+    var convertAdgScriptletToUbo = function convertAdgScriptletToUbo(rule) {
+      var res;
       if (validator.isAdgScriptletRule(rule)) {
-        const _parseRule = parseRule(rule),
+        var _parseRule = parseRule(rule),
           parsedName = _parseRule.name,
           parsedParams = _parseRule.args;
-        let preparedParams;
+        var preparedParams;
         if (parsedName === ADG_SET_CONSTANT_NAME
         // https://github.com/AdguardTeam/FiltersCompiler/issues/102
         && parsedParams[1] === ADG_SET_CONSTANT_EMPTY_STRING) {
@@ -10568,12 +10705,13 @@
         }
 
         // object of name and aliases for the Adg-scriptlet
-        const adgScriptletObject = Object.keys(scriptletList).map(function (el) {
-          return scriptletList[el];
-        }).map(function (s) {
-          const _s$names = toArray$1(s.names),
-            name = _s$names[0],
-            aliases = _s$names.slice(1);
+        var scriptletNames = Object.keys(scriptletList);
+        var adgScriptletObject = scriptletNames.map(function (name) {
+          return scriptletList[name];
+        }).map(function (scriptlet) {
+          var _scriptlet$names = _toArray(scriptlet.names),
+            name = _scriptlet$names[0],
+            aliases = _scriptlet$names.slice(1);
           return {
             name,
             aliases
@@ -10581,28 +10719,27 @@
         }).find(function (el) {
           return el.name === parsedName || el.aliases.includes(parsedName);
         });
-        const aliases = adgScriptletObject.aliases;
+        var aliases = adgScriptletObject.aliases;
         if (aliases.length > 0) {
-          const uboAlias = adgScriptletObject.aliases
-          // eslint-disable-next-line no-restricted-properties
-          .find(function (alias) {
+          var uboAlias = adgScriptletObject.aliases.find(function (alias) {
             return alias.includes(UBO_ALIAS_NAME_MARKER);
           });
           if (uboAlias) {
-            const mask = rule.match(ADGUARD_SCRIPTLET_MASK_REG)[0];
-            let template;
-            if (mask.includes('@')) {
+            var matchResult = rule.match(ADGUARD_SCRIPTLET_MASK_REG);
+            var mask = Array.isArray(matchResult) ? matchResult[0] : null;
+            var template;
+            if (mask !== null && mask !== void 0 && mask.includes('@')) {
               template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
             } else {
               template = UBO_SCRIPTLET_TEMPLATE;
             }
-            const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
-            const uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '')
+            var domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
+            var uboName = uboAlias.replace(UBO_ALIAS_NAME_MARKER, '')
             // '.js' in the Ubo scriptlet name can be omitted
             // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
             .replace(UBO_SCRIPTLET_JS_ENDING, '');
-            const args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join("".concat(COMMA_SEPARATOR, " "))) : uboName;
-            const uboRule = replacePlaceholders(template, {
+            var args = preparedParams.length > 0 ? "".concat(uboName, ", ").concat(preparedParams.join("".concat(COMMA_SEPARATOR, " "))) : uboName;
+            var uboRule = replacePlaceholders(template, {
               domains,
               args
             });
@@ -10616,24 +10753,24 @@
     /**
      * Returns scriptlet name from `rule`.
      *
-     * @param {string} rule AdGuard syntax scriptlet rule.
-     * @returns {string|null} Scriptlet name or null.
+     * @param rule AdGuard syntax scriptlet rule.
+     * @returns Scriptlet name or null.
      */
-    const getAdgScriptletName = function getAdgScriptletName(rule) {
+    var getAdgScriptletName = function getAdgScriptletName(rule) {
       // get substring after '#//scriptlet('
-      let buffer = substringAfter$1(rule, "".concat(ADG_SCRIPTLET_MASK, "("));
+      var buffer = substringAfter$1(rule, "".concat(ADG_SCRIPTLET_MASK, "("));
       if (!buffer) {
         return null;
       }
       // get the quote used for the first scriptlet parameter which is a name
-      const nameQuote = buffer[0];
+      var nameQuote = buffer[0];
       // delete the quote from the buffer
       buffer = buffer.slice(1);
       if (!buffer) {
         return null;
       }
       // get a supposed scriptlet name
-      const name = substringBefore(buffer, nameQuote);
+      var name = substringBefore(buffer, nameQuote);
       return name === buffer ? null : name;
     };
 
@@ -10645,17 +10782,17 @@
      * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
      * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
      *
-     * @param {string} ruleText Any scriptlet rule — ADG or UBO or ABP.
+     * @param ruleText Any scriptlet rule — ADG or UBO or ABP.
      *
-     * @returns {boolean} True if scriptlet name is valid in rule.
+     * @returns True if scriptlet name is valid in rule.
      */
-    const isValidScriptletRule = function isValidScriptletRule(ruleText) {
+    var isValidScriptletRule = function isValidScriptletRule(ruleText) {
       if (!ruleText) {
         return false;
       }
 
       // `ruleText` with ABP syntax may contain more than one snippet in one rule
-      const rulesArray = convertScriptletToAdg(ruleText);
+      var rulesArray = convertScriptletToAdg(ruleText);
 
       // for ADG rule with invalid syntax convertScriptletToAdg() will return empty array
       if (rulesArray.length === 0) {
@@ -10664,9 +10801,9 @@
 
       // checking if each of parsed scriptlets is valid
       // if at least one of them is not valid - whole `ruleText` is not valid too
-      const isValid = rulesArray.every(function (rule) {
-        const name = getAdgScriptletName(rule);
-        return validator.isValidScriptletName(name);
+      var isValid = rulesArray.every(function (rule) {
+        var name = getAdgScriptletName(rule);
+        return name && validator.isValidScriptletName(name);
       });
       return isValid;
     };
@@ -10674,49 +10811,53 @@
     /**
      * Gets index and redirect resource marker from UBO/ADG modifiers array
      *
-     * @param {string[]} modifiers rule modifiers
-     * @param {Object} redirectsData validator.REDIRECT_RULE_TYPES.(UBO|ADG)
-     * @param {string} rule rule string
-     * @returns {Object} { index, marker }
+     * @param modifiers rule modifiers
+     * @param redirectsData validator.REDIRECT_RULE_TYPES.(UBO|ADG)
+     * @param rule rule string
+     * @returns merker data object
      */
-    const getMarkerData = function getMarkerData(modifiers, redirectsData, rule) {
-      let marker;
-      let index = modifiers.findIndex(function (m) {
-        return m.includes(redirectsData.redirectRuleMarker);
-      });
-      if (index > -1) {
-        marker = redirectsData.redirectRuleMarker;
-      } else {
+    var getMarkerData = function getMarkerData(modifiers, redirectsData, rule) {
+      var redirectRuleMarker = redirectsData.redirectRuleMarker,
+        redirectMarker = redirectsData.redirectMarker;
+      var index;
+      if (redirectRuleMarker) {
         index = modifiers.findIndex(function (m) {
-          return m.includes(redirectsData.redirectMarker);
+          return m.includes(redirectRuleMarker);
         });
         if (index > -1) {
-          marker = redirectsData.redirectMarker;
-        } else {
-          throw new Error("No redirect resource modifier found in rule: ".concat(rule));
+          return {
+            index,
+            marker: redirectRuleMarker
+          };
         }
       }
-      return {
-        index,
-        marker
-      };
+      index = modifiers.findIndex(function (m) {
+        return m.includes(redirectMarker);
+      });
+      if (index > -1) {
+        return {
+          index,
+          marker: redirectMarker
+        };
+      }
+      throw new Error("No redirect resource modifier found in rule: ".concat(rule));
     };
 
     /**
      * Converts Ubo redirect rule to Adg one
      *
-     * @param {string} rule ubo redirect rule
-     * @returns {string} converted adg rule
+     * @param rule ubo redirect rule
+     * @returns  converted adg rule
      */
-    const convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
-      const firstPartOfRule = substringBefore(rule, '$');
-      const uboModifiers = validator.parseModifiers(rule);
-      const uboMarkerData = getMarkerData(uboModifiers, validator.REDIRECT_RULE_TYPES.UBO, rule);
-      const adgModifiers = uboModifiers.map(function (modifier, index) {
+    var convertUboRedirectToAdg = function convertUboRedirectToAdg(rule) {
+      var firstPartOfRule = substringBefore(rule, '$');
+      var uboModifiers = validator.parseModifiers(rule);
+      var uboMarkerData = getMarkerData(uboModifiers, validator.REDIRECT_RULE_TYPES.UBO, rule);
+      var adgModifiers = uboModifiers.map(function (modifier, index) {
         if (index === uboMarkerData.index) {
-          const uboName = substringAfter$1(modifier, uboMarkerData.marker);
-          const adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
-          const adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
+          var uboName = substringAfter$1(modifier, uboMarkerData.marker);
+          var adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
+          var adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
           return "".concat(adgMarker).concat(adgName);
         }
         if (modifier === UBO_XHR_TYPE) {
@@ -10730,16 +10871,16 @@
     /**
      * Converts Abp redirect rule to Adg one
      *
-     * @param {string} rule abp redirect rule
-     * @returns {string} converted adg rule
+     * @param rule abp redirect rule
+     * @returns converted adg rule
      */
-    const convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
-      const firstPartOfRule = substringBefore(rule, '$');
-      const abpModifiers = validator.parseModifiers(rule);
-      const adgModifiers = abpModifiers.map(function (modifier) {
+    var convertAbpRedirectToAdg = function convertAbpRedirectToAdg(rule) {
+      var firstPartOfRule = substringBefore(rule, '$');
+      var abpModifiers = validator.parseModifiers(rule);
+      var adgModifiers = abpModifiers.map(function (modifier) {
         if (modifier.includes(validator.REDIRECT_RULE_TYPES.ABP.redirectMarker)) {
-          const abpName = substringAfter$1(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
-          const adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
+          var abpName = substringAfter$1(modifier, validator.REDIRECT_RULE_TYPES.ABP.redirectMarker);
+          var adgName = validator.REDIRECT_RULE_TYPES.ABP.compatibility[abpName];
           return "".concat(validator.REDIRECT_RULE_TYPES.ADG.redirectMarker).concat(adgName);
         }
         return modifier;
@@ -10751,10 +10892,10 @@
      * Converts redirect rule to AdGuard one
      *
      * @param {string} rule redirect rule
-     * @returns {string} converted adg rule
+     * @returns converted adg rule
      */
-    const convertRedirectToAdg = function convertRedirectToAdg(rule) {
-      let result;
+    var convertRedirectToAdg = function convertRedirectToAdg(rule) {
+      var result;
       if (validator.isUboRedirectCompatibleWithAdg(rule)) {
         result = convertUboRedirectToAdg(rule);
       } else if (validator.isAbpRedirectCompatibleWithAdg(rule)) {
@@ -10774,35 +10915,35 @@
      *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
      * 3. Replaces Adg redirect name by Ubo analog
      *
-     * @param {string} rule adg rule
-     * @returns {string} converted ubo rule
+     * @param rule adg rule
+     * @returns converted ubo rule
      * @throws on incompatible rule
      */
-    const convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
+    var convertAdgRedirectToUbo = function convertAdgRedirectToUbo(rule) {
       if (!validator.isAdgRedirectCompatibleWithUbo(rule)) {
         throw new Error("Unable to convert for uBO - unsupported redirect in rule: ".concat(rule));
       }
-      const basePart = substringBefore(rule, '$');
-      const adgModifiers = validator.parseModifiers(rule);
-      const adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
-      const adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
+      var basePart = substringBefore(rule, '$');
+      var adgModifiers = validator.parseModifiers(rule);
+      var adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
+      var adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
       if (!validator.hasValidContentType(rule)) {
         // add missed source types as content type modifiers
-        const sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT.find(function (el) {
+        var sourceTypesData = validator.ABSENT_SOURCE_TYPE_REPLACEMENT.find(function (el) {
           return el.NAME === adgRedirectName;
         });
         if (typeof sourceTypesData === 'undefined') {
           // eslint-disable-next-line max-len
           throw new Error("Unable to convert for uBO - no types to add for specific redirect in rule: ".concat(rule));
         }
-        const additionModifiers = sourceTypesData.TYPES;
+        var additionModifiers = sourceTypesData.TYPES;
         adgModifiers.push(...additionModifiers);
       }
-      const uboModifiers = adgModifiers.map(function (el, index) {
+      var uboModifiers = adgModifiers.map(function (el, index) {
         if (index === adgMarkerData.index) {
-          const uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker;
+          var uboMarker = adgMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER ? validator.REDIRECT_RULE_TYPES.UBO.redirectRuleMarker : validator.REDIRECT_RULE_TYPES.UBO.redirectMarker;
           // eslint-disable-next-line max-len
-          const uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
+          var uboRedirectName = validator.REDIRECT_RULE_TYPES.ADG.compatibility[adgRedirectName];
           return "".concat(uboMarker).concat(uboRedirectName);
         }
         return el;
@@ -10832,22 +10973,22 @@
      */
     function GoogleAnalytics(source) {
       // eslint-disable-next-line func-names
-      const Tracker = function Tracker() {}; // constructor
-      const proto = Tracker.prototype;
+      var Tracker = function Tracker() {}; // constructor
+      var proto = Tracker.prototype;
       proto.get = noopFunc;
       proto.set = noopFunc;
       proto.send = noopFunc;
-      const googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+      var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
       // a -- fake arg for 'ga.length < 1' antiadblock checking
       // eslint-disable-next-line no-unused-vars
       function ga(a) {
-        const len = arguments.length;
+        var len = arguments.length;
         if (len === 0) {
           return;
         }
         // eslint-disable-next-line prefer-rest-params
-        const lastArg = arguments[len - 1];
-        let replacer;
+        var lastArg = arguments[len - 1];
+        var replacer;
         if (lastArg instanceof Object && lastArg !== null && typeof lastArg.hitCallback === 'function') {
           replacer = lastArg.hitCallback;
         } else if (typeof lastArg === 'function') {
@@ -10874,7 +11015,7 @@
       ga.remove = noopFunc;
       ga.loaded = true;
       window[googleAnalyticsName] = ga;
-      const _window = window,
+      var _window = window,
         dataLayer = _window.dataLayer,
         google_optimize = _window.google_optimize; // eslint-disable-line camelcase
       if (dataLayer instanceof Object === false) {
@@ -10890,7 +11031,7 @@
        * @param {object|Array} dataObj gtag payload
        * @param {string} funcName callback prop name
        */
-      const handleCallback = function handleCallback(dataObj, funcName) {
+      var handleCallback = function handleCallback(dataObj, funcName) {
         if (dataObj && typeof dataObj[funcName] === 'function') {
           setTimeout(dataObj[funcName]);
         }
@@ -10900,7 +11041,7 @@
           if (data instanceof Object) {
             handleCallback(data, 'eventCallback');
             // eslint-disable-next-line no-restricted-syntax, guard-for-in
-            for (const key in data) {
+            for (var key in data) {
               handleCallback(data[key], 'event_callback');
             }
             // eslint-disable-next-line no-prototype-builtins
@@ -10920,7 +11061,7 @@
       // https://github.com/AdguardTeam/Scriptlets/issues/81
       // eslint-disable-next-line camelcase
       if (google_optimize instanceof Object && typeof google_optimize.get === 'function') {
-        const googleOptimizeWrapper = {
+        var googleOptimizeWrapper = {
           get: noopFunc
         };
         window.google_optimize = googleOptimizeWrapper;
@@ -10980,8 +11121,8 @@
           data[2]();
         }
       };
-      const gaq = new Gaq();
-      const asyncTrackers = window._gaq || [];
+      var gaq = new Gaq();
+      var asyncTrackers = window._gaq || [];
       if (Array.isArray(asyncTrackers)) {
         while (asyncTrackers[0]) {
           gaq.push(asyncTrackers.shift());
@@ -10994,8 +11135,8 @@
       function Gat() {}
 
       // Mock tracker api
-      const api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
-      const tracker = api.reduce(function (res, funcName) {
+      var api = ['_addIgnoredOrganic', '_addIgnoredRef', '_addItem', '_addOrganic', '_addTrans', '_clearIgnoredOrganic', '_clearIgnoredRef', '_clearOrganic', '_cookiePathCopy', '_deleteCustomVar', '_getName', '_setAccount', '_getAccount', '_getClientInfo', '_getDetectFlash', '_getDetectTitle', '_getLinkerUrl', '_getLocalGifPath', '_getServiceMode', '_getVersion', '_getVisitorCustomVar', '_initData', '_link', '_linkByPost', '_setAllowAnchor', '_setAllowHash', '_setAllowLinker', '_setCampContentKey', '_setCampMediumKey', '_setCampNameKey', '_setCampNOKey', '_setCampSourceKey', '_setCampTermKey', '_setCampaignCookieTimeout', '_setCampaignTrack', '_setClientInfo', '_setCookiePath', '_setCookiePersistence', '_setCookieTimeout', '_setCustomVar', '_setDetectFlash', '_setDetectTitle', '_setDomainName', '_setLocalGifPath', '_setLocalRemoteServerMode', '_setLocalServerMode', '_setReferrerOverride', '_setRemoteServerMode', '_setSampleRate', '_setSessionTimeout', '_setSiteSpeedSampleRate', '_setSessionCookieTimeout', '_setVar', '_setVisitorCookieTimeout', '_trackEvent', '_trackPageLoadTime', '_trackPageview', '_trackSocial', '_trackTiming', '_trackTrans', '_visitCode'];
+      var tracker = api.reduce(function (res, funcName) {
         res[funcName] = noopFunc;
         return res;
       }, {});
@@ -11031,7 +11172,7 @@
       Gat.prototype.oa = noopFunc;
       Gat.prototype.pa = noopFunc;
       Gat.prototype.u = noopFunc;
-      const gat = new Gat();
+      var gat = new Gat();
       window._gat = gat;
       hit(source);
     }
@@ -11071,7 +11212,7 @@
           if (arg !== null && arg instanceof Object && arg.constructor.name === 'Object') {
             // eslint-disable-next-line no-restricted-syntax
             for (var _i = 0, _Object$keys = Object.keys(arg); _i < _Object$keys.length; _i++) {
-              const key = _Object$keys[_i];
+              var key = _Object$keys[_i];
               if (typeof arg[key] === 'function') {
                 try {
                   // https://github.com/AdguardTeam/Scriptlets/issues/252
@@ -11085,19 +11226,19 @@
           }
         }
       };
-      const adElems = document.querySelectorAll('.adsbygoogle');
-      const css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
-      const statusAttrName = 'data-adsbygoogle-status';
-      const ASWIFT_IFRAME_MARKER = 'aswift_';
-      const GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
-      let executed = false;
-      for (let i = 0; i < adElems.length; i += 1) {
-        const adElemChildNodes = adElems[i].childNodes;
-        const childNodesQuantity = adElemChildNodes.length;
+      var adElems = document.querySelectorAll('.adsbygoogle');
+      var css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
+      var statusAttrName = 'data-adsbygoogle-status';
+      var ASWIFT_IFRAME_MARKER = 'aswift_';
+      var GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
+      var executed = false;
+      for (var i = 0; i < adElems.length; i += 1) {
+        var adElemChildNodes = adElems[i].childNodes;
+        var childNodesQuantity = adElemChildNodes.length;
         // childNodes of .adsbygoogle can be defined if scriptlet was executed before
         // so we should check that childNodes are exactly defined by us
         // TODO: remake after scriptlets context developing in 1.3
-        let areIframesDefined = false;
+        var areIframesDefined = false;
         if (childNodesQuantity > 0) {
           // it should be only 2 child iframes if scriptlet was executed
           areIframesDefined = childNodesQuantity === 2
@@ -11109,17 +11250,17 @@
         if (!areIframesDefined) {
           // here we do the job if scriptlet has not been executed earlier
           adElems[i].setAttribute(statusAttrName, 'done');
-          const aswiftIframe = document.createElement('iframe');
+          var aswiftIframe = document.createElement('iframe');
           aswiftIframe.id = "".concat(ASWIFT_IFRAME_MARKER).concat(i);
           aswiftIframe.style = css;
           adElems[i].appendChild(aswiftIframe);
-          const innerAswiftIframe = document.createElement('iframe');
+          var innerAswiftIframe = document.createElement('iframe');
           aswiftIframe.contentWindow.document.body.appendChild(innerAswiftIframe);
-          const googleadsIframe = document.createElement('iframe');
+          var googleadsIframe = document.createElement('iframe');
           googleadsIframe.id = "".concat(GOOGLE_ADS_IFRAME_MARKER).concat(i);
           googleadsIframe.style = css;
           adElems[i].appendChild(googleadsIframe);
-          const innerGoogleadsIframe = document.createElement('iframe');
+          var innerGoogleadsIframe = document.createElement('iframe');
           googleadsIframe.contentWindow.document.body.appendChild(innerGoogleadsIframe);
           executed = true;
         }
@@ -11151,32 +11292,32 @@
      * @added v1.0.10.
      */
     function GoogleTagServicesGpt(source) {
-      const slots = new Map();
-      const slotsById = new Map();
-      const slotsPerPath = new Map();
-      const slotCreatives = new Map();
-      const eventCallbacks = new Map();
-      const gTargeting = new Map();
-      const addEventListener = function addEventListener(name, listener) {
+      var slots = new Map();
+      var slotsById = new Map();
+      var slotsPerPath = new Map();
+      var slotCreatives = new Map();
+      var eventCallbacks = new Map();
+      var gTargeting = new Map();
+      var addEventListener = function addEventListener(name, listener) {
         if (!eventCallbacks.has(name)) {
           eventCallbacks.set(name, new Set());
         }
         eventCallbacks.get(name).add(listener);
         return this;
       };
-      const removeEventListener = function removeEventListener(name, listener) {
+      var removeEventListener = function removeEventListener(name, listener) {
         if (eventCallbacks.has(name)) {
           return eventCallbacks.get(name).delete(listener);
         }
         return false;
       };
-      const fireSlotEvent = function fireSlotEvent(name, slot) {
+      var fireSlotEvent = function fireSlotEvent(name, slot) {
         return new Promise(function (resolve) {
           requestAnimationFrame(function () {
-            const size = [0, 0];
-            const callbacksSet = eventCallbacks.get(name) || [];
-            const callbackArray = Array.from(callbacksSet);
-            for (let i = 0; i < callbackArray.length; i += 1) {
+            var size = [0, 0];
+            var callbacksSet = eventCallbacks.get(name) || [];
+            var callbackArray = Array.from(callbacksSet);
+            for (var i = 0; i < callbackArray.length; i += 1) {
               callbackArray[i]({
                 isEmpty: true,
                 size,
@@ -11187,19 +11328,19 @@
           });
         });
       };
-      const emptySlotElement = function emptySlotElement(slot) {
-        const node = document.getElementById(slot.getSlotElementId());
+      var emptySlotElement = function emptySlotElement(slot) {
+        var node = document.getElementById(slot.getSlotElementId());
         while (node !== null && node !== void 0 && node.lastChild) {
           node.lastChild.remove();
         }
       };
-      const recreateIframeForSlot = function recreateIframeForSlot(slot) {
+      var recreateIframeForSlot = function recreateIframeForSlot(slot) {
         var _document$getElementB;
-        const eid = "google_ads_iframe_".concat(slot.getId());
+        var eid = "google_ads_iframe_".concat(slot.getId());
         (_document$getElementB = document.getElementById(eid)) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.remove();
-        const node = document.getElementById(slot.getSlotElementId());
+        var node = document.getElementById(slot.getSlotElementId());
         if (node) {
-          const f = document.createElement('iframe');
+          var f = document.createElement('iframe');
           f.id = eid;
           f.srcdoc = '<body></body>';
           f.style = 'position:absolute; width:0; height:0; left:0; right:0; z-index:-1; border:0';
@@ -11212,15 +11353,15 @@
           node.appendChild(f);
         }
       };
-      const displaySlot = function displaySlot(slot) {
+      var displaySlot = function displaySlot(slot) {
         if (!slot) {
           return;
         }
-        const id = slot.getSlotElementId();
+        var id = slot.getSlotElementId();
         if (!document.getElementById(id)) {
           return;
         }
-        const parent = document.getElementById(id);
+        var parent = document.getElementById(id);
         if (parent) {
           parent.appendChild(document.createElement('div'));
         }
@@ -11232,14 +11373,14 @@
         fireSlotEvent('slotOnload', slot);
         fireSlotEvent('impressionViewable', slot);
       };
-      const companionAdsService = {
+      var companionAdsService = {
         addEventListener,
         removeEventListener,
         enableSyncLoading: noopFunc,
         setRefreshUnfilledSlots: noopFunc,
         getSlots: noopArray
       };
-      const contentService = {
+      var contentService = {
         addEventListener,
         removeEventListener,
         setContent: noopFunc
@@ -11256,7 +11397,7 @@
       function SizeMappingBuilder() {} // constructor
       SizeMappingBuilder.prototype.addSize = noopThis;
       SizeMappingBuilder.prototype.build = noopNull;
-      const getTargetingValue = function getTargetingValue(v) {
+      var getTargetingValue = function getTargetingValue(v) {
         if (typeof v === 'string') {
           return [v];
         }
@@ -11267,32 +11408,32 @@
         }
         return [];
       };
-      const updateTargeting = function updateTargeting(targeting, map) {
+      var updateTargeting = function updateTargeting(targeting, map) {
         if (typeof map === 'object') {
-          for (const key in map) {
+          for (var key in map) {
             if (Object.prototype.hasOwnProperty.call(map, key)) {
               targeting.set(key, getTargetingValue(map[key]));
             }
           }
         }
       };
-      const defineSlot = function defineSlot(adUnitPath, creatives, optDiv) {
+      var defineSlot = function defineSlot(adUnitPath, creatives, optDiv) {
         if (slotsById.has(optDiv)) {
           var _document$getElementB2;
           (_document$getElementB2 = document.getElementById(optDiv)) === null || _document$getElementB2 === void 0 ? void 0 : _document$getElementB2.remove();
           return slotsById.get(optDiv);
         }
-        const attributes = new Map();
-        const targeting = new Map();
-        const exclusions = new Set();
-        const response = {
+        var attributes = new Map();
+        var targeting = new Map();
+        var exclusions = new Set();
+        var response = {
           advertiserId: undefined,
           campaignId: undefined,
           creativeId: undefined,
           creativeTemplateId: undefined,
           lineItemId: undefined
         };
-        const sizes = [{
+        var sizes = [{
           getHeight: function getHeight() {
             return 2;
           },
@@ -11300,13 +11441,13 @@
             return 2;
           }
         }];
-        const num = (slotsPerPath.get(adUnitPath) || 0) + 1;
+        var num = (slotsPerPath.get(adUnitPath) || 0) + 1;
         slotsPerPath.set(adUnitPath, num);
-        const id = "".concat(adUnitPath, "_").concat(num);
-        let clickUrl = '';
-        let collapseEmptyDiv = null;
-        const services = new Set();
-        const slot = {
+        var id = "".concat(adUnitPath, "_").concat(num);
+        var clickUrl = '';
+        var collapseEmptyDiv = null;
+        var services = new Set();
+        var slot = {
           addService(e) {
             services.add(e);
             return slot;
@@ -11427,7 +11568,7 @@
         slotCreatives.set(optDiv, creatives);
         return slot;
       };
-      const pubAdsService = {
+      var pubAdsService = {
         addEventListener,
         removeEventListener,
         clear: noopFunc,
@@ -11475,10 +11616,10 @@
         setVideoContent: noopThis,
         updateCorrelator: noopFunc
       };
-      const _window = window,
+      var _window = window,
         _window$googletag = _window.googletag,
         googletag = _window$googletag === void 0 ? {} : _window$googletag;
-      const _googletag$cmd = googletag.cmd,
+      var _googletag$cmd = googletag.cmd,
         cmd = _googletag$cmd === void 0 ? [] : _googletag$cmd;
       googletag.apiReady = true;
       googletag.cmd = [];
@@ -11503,7 +11644,7 @@
       };
       googletag.disablePublisherConsole = noopFunc;
       googletag.display = function (arg) {
-        let id;
+        var id;
         if (arg !== null && arg !== void 0 && arg.getSlotElementId) {
           id = arg.getSlotElementId();
         } else if (arg !== null && arg !== void 0 && arg.nodeType) {
@@ -11578,10 +11719,10 @@
      * @added v1.0.10.
      */
     function metrikaYandexTag(source) {
-      const asyncCallbackFromOptions = function asyncCallbackFromOptions(id, param) {
-        let options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-        let callback = options.callback;
-        const ctx = options.ctx;
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions(id, param) {
+        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
         if (typeof callback === 'function') {
           callback = ctx !== undefined ? callback.bind(ctx) : callback;
           setTimeout(function () {
@@ -11593,17 +11734,17 @@
       /**
        * https://yandex.ru/support/metrica/objects/addfileextension.html
        */
-      const addFileExtension = noopFunc;
+      var addFileExtension = noopFunc;
 
       /**
        * https://yandex.ru/support/metrica/objects/extlink.html
        */
-      const extLink = asyncCallbackFromOptions;
+      var extLink = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/file.html
        */
-      const file = asyncCallbackFromOptions;
+      var file = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/get-client-id.html
@@ -11611,7 +11752,7 @@
        * @param {string} id
        * @param {Function} cb
        */
-      const getClientID = function getClientID(id, cb) {
+      var getClientID = function getClientID(id, cb) {
         if (!cb) {
           return;
         }
@@ -11621,28 +11762,28 @@
       /**
        * https://yandex.ru/support/metrica/objects/hit.html
        */
-      const hitFunc = asyncCallbackFromOptions;
+      var hitFunc = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/notbounce.html
        */
-      const notBounce = asyncCallbackFromOptions;
+      var notBounce = asyncCallbackFromOptions;
 
       /**
        * https://yandex.ru/support/metrica/objects/params-method.html
        */
-      const params = noopFunc;
+      var params = noopFunc;
 
       /**
        * https://yandex.ru/support/metrica/objects/reachgoal.html
        *
        * @param {string} id
        * @param {string} target
-       * @param {Object} params
+       * @param {object} params
        * @param {Function} callback
        * @param {any} ctx
        */
-      const reachGoal = function reachGoal(id, target, params, callback, ctx) {
+      var reachGoal = function reachGoal(id, target, params, callback, ctx) {
         asyncCallbackFromOptions(null, null, {
           callback,
           ctx
@@ -11652,16 +11793,16 @@
       /**
        * https://yandex.ru/support/metrica/objects/set-user-id.html
        */
-      const setUserID = noopFunc;
+      var setUserID = noopFunc;
 
       /**
        * https://yandex.ru/support/metrica/objects/user-params.html
        */
-      const userParams = noopFunc;
+      var userParams = noopFunc;
 
       // https://github.com/AdguardTeam/Scriptlets/issues/198
-      const destruct = noopFunc;
-      const api = {
+      var destruct = noopFunc;
+      var api = {
         addFileExtension,
         extLink,
         file,
@@ -11693,7 +11834,7 @@
         ym.a = window.ym.a;
         window.ym = ym;
         window.ym.a.forEach(function (params) {
-          const id = params[0];
+          var id = params[0];
           init(id);
         });
       }
@@ -11718,17 +11859,17 @@
      * @added v1.0.10.
      */
     function metrikaYandexWatch(source) {
-      const cbName = 'yandex_metrika_callbacks';
+      var cbName = 'yandex_metrika_callbacks';
 
       /**
        * Gets callback and its context from options and call it in async way
        *
-       * @param {Object} options Yandex Metrika API options
+       * @param {object} options Yandex Metrika API options
        */
-      const asyncCallbackFromOptions = function asyncCallbackFromOptions() {
-        let options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        let callback = options.callback;
-        const ctx = options.ctx;
+      var asyncCallbackFromOptions = function asyncCallbackFromOptions() {
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var callback = options.callback;
+        var ctx = options.ctx;
         if (typeof callback === 'function') {
           callback = ctx !== undefined ? callback.bind(ctx) : callback;
           setTimeout(function () {
@@ -11851,7 +11992,7 @@
      *
      * @added v1.3.19.
      */
-    const preventBab$1 = preventBab$2;
+    var preventBab$1 = preventBab$2;
     preventBab$1.names = ['prevent-bab',
     // list of prevent-bab redirect aliases
     'nobab.js', 'ubo-nobab.js', 'bab-defuser.js', 'ubo-bab-defuser.js', 'ubo-nobab', 'ubo-bab-defuser'];
@@ -11874,7 +12015,7 @@
      * @added v1.2.3.
      */
     function AmazonApstag(source) {
-      const apstagWrapper = {
+      var apstagWrapper = {
         fetchBids(a, b) {
           if (typeof b === 'function') {
             b([]);
@@ -11908,14 +12049,14 @@
      */
 
     function Matomo(source) {
-      const Tracker = function Tracker() {};
+      var Tracker = function Tracker() {};
       Tracker.prototype.setDoNotTrack = noopFunc;
       Tracker.prototype.setDomains = noopFunc;
       Tracker.prototype.setCustomDimension = noopFunc;
       Tracker.prototype.trackPageView = noopFunc;
-      const AsyncTracker = function AsyncTracker() {};
+      var AsyncTracker = function AsyncTracker() {};
       AsyncTracker.prototype.addListener = noopFunc;
-      const matomoWrapper = {
+      var matomoWrapper = {
         getTracker: Tracker,
         getAsyncTracker: AsyncTracker
       };
@@ -11946,11 +12087,11 @@
      * @added v1.5.0.
      */
     function Fingerprintjs2(source) {
-      let browserId = '';
-      for (let i = 0; i < 8; i += 1) {
+      var browserId = '';
+      for (var i = 0; i < 8; i += 1) {
         browserId += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
       }
-      const Fingerprint2 = function Fingerprint2() {};
+      var Fingerprint2 = function Fingerprint2() {};
       Fingerprint2.get = function (options, callback) {
         if (!callback) {
           callback = options;
@@ -11996,14 +12137,14 @@
      * @added v1.6.2.
      */
     function Fingerprintjs3(source) {
-      const visitorId = function () {
-        let id = '';
-        for (let i = 0; i < 8; i += 1) {
+      var visitorId = function () {
+        var id = '';
+        for (var i = 0; i < 8; i += 1) {
           id += (Math.random() * 0x10000 + 0x1000).toString(16).slice(-4);
         }
         return id;
       }();
-      const FingerprintJS = function FingerprintJS() {};
+      var FingerprintJS = function FingerprintJS() {};
       FingerprintJS.prototype = {
         load() {
           return Promise.resolve(new FingerprintJS());
@@ -12044,7 +12185,7 @@
      * @added v1.5.0.
      */
     function Gemius(source) {
-      const GemiusPlayer = function GemiusPlayer() {};
+      var GemiusPlayer = function GemiusPlayer() {};
       GemiusPlayer.prototype = {
         setVideoObject: noopFunc,
         newProgram: noopFunc,
@@ -12074,13 +12215,13 @@
      * @added v1.5.0.
      */
     function ATInternetSmartTag(source) {
-      const setNoopFuncWrapper = {
+      var setNoopFuncWrapper = {
         set: noopFunc
       };
-      const sendNoopFuncWrapper = {
+      var sendNoopFuncWrapper = {
         send: noopFunc
       };
-      const ecommerceWrapper = {
+      var ecommerceWrapper = {
         displayCart: {
           products: setNoopFuncWrapper,
           cart: setNoopFuncWrapper
@@ -12103,7 +12244,7 @@
       };
 
       // eslint-disable-next-line new-cap, func-names
-      const tag = function tag() {};
+      var tag = function tag() {};
       tag.prototype = {
         setConfig: noopFunc,
         setParam: noopFunc,
@@ -12141,7 +12282,7 @@
           removeAll: noopFunc
         }
       };
-      const smartTagWrapper = {
+      var smartTagWrapper = {
         Tracker: {
           Tag: tag
         }
@@ -12174,17 +12315,17 @@
      * @added v1.5.0.
      */
     function preventBab2(source) {
-      const script = document.currentScript;
+      var script = document.currentScript;
       if (script === null) {
         return;
       }
-      const url = script.src;
+      var url = script.src;
       if (typeof url !== 'string') {
         return;
       }
-      const domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
-      const matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
-      const domainsRegex = new RegExp(matchStr);
+      var domainsStr = ['adclixx\\.net', 'adnetasia\\.com', 'adtrackers\\.net', 'bannertrack\\.net'].join('|');
+      var matchStr = "^https?://[\\w-]+\\.(".concat(domainsStr, ")/.");
+      var domainsRegex = new RegExp(matchStr);
       if (domainsRegex.test(url) === false) {
         return;
       }
@@ -12204,6 +12345,9 @@
      * @description
      * Mocks the IMA SDK of Google.
      *
+     * Related Mozilla shim:
+     * https://searchfox.org/mozilla-central/source/browser/extensions/webcompat/shims/google-ima.js
+     *
      * ### Examples
      *
      * ```adblock
@@ -12214,12 +12358,13 @@
      */
 
     function GoogleIma3(source) {
-      const VERSION = '3.453.0';
-      const ima = {};
-      const AdDisplayContainer = function AdDisplayContainer() {};
+      var _window$google$ima;
+      var VERSION = '3.453.0';
+      var ima = {};
+      var AdDisplayContainer = function AdDisplayContainer() {};
       AdDisplayContainer.prototype.destroy = noopFunc;
       AdDisplayContainer.prototype.initialize = noopFunc;
-      const ImaSdkSettings = function ImaSdkSettings() {};
+      var ImaSdkSettings = function ImaSdkSettings() {};
       ImaSdkSettings.CompanionBackfillMode = {
         ALWAYS: 'always',
         ON_MASTER_AD: 'on_master_ad'
@@ -12323,13 +12468,13 @@
           INSECURE: 2
         }
       };
-      const EventHandler = function EventHandler() {
+      var EventHandler = function EventHandler() {
         this.listeners = new Map();
         this._dispatch = function (e) {
-          const listeners = this.listeners.get(e.type) || [];
+          var listeners = this.listeners.get(e.type) || [];
           // eslint-disable-next-line no-restricted-syntax
           for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
-            const listener = _Array$from[_i];
+            var listener = _Array$from[_i];
             try {
               listener(e);
             } catch (r) {
@@ -12348,7 +12493,7 @@
           (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
         };
       };
-      const AdsManager = new EventHandler();
+      var AdsManager = new EventHandler();
       /* eslint-disable no-use-before-define */
       AdsManager.volume = 1;
       AdsManager.collapse = noopFunc;
@@ -12393,7 +12538,7 @@
       AdsManager.start = function () {
         // eslint-disable-next-line no-restricted-syntax
         for (var _i2 = 0, _arr = [AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CONTENT_RESUME_REQUESTED]; _i2 < _arr.length; _i2++) {
-          const type = _arr[_i2];
+          var type = _arr[_i2];
           try {
             this._dispatch(new ima.AdEvent(type));
           } catch (e) {
@@ -12405,8 +12550,8 @@
       AdsManager.updateAdsRenderingSettings = noopFunc;
       /* eslint-enable no-use-before-define */
 
-      const manager = Object.create(AdsManager);
-      const AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type, adsRequest, userRequestContext) {
+      var manager = Object.create(AdsManager);
+      var AdsManagerLoadedEvent = function AdsManagerLoadedEvent(type, adsRequest, userRequestContext) {
         this.type = type;
         this.adsRequest = adsRequest;
         this.userRequestContext = userRequestContext;
@@ -12425,7 +12570,7 @@
       AdsManagerLoadedEvent.Type = {
         ADS_MANAGER_LOADED: 'adsManagerLoaded'
       };
-      const AdsLoader = EventHandler;
+      var AdsLoader = EventHandler;
       AdsLoader.prototype.settings = new ImaSdkSettings();
       AdsLoader.prototype.contentComplete = noopFunc;
       AdsLoader.prototype.destroy = noopFunc;
@@ -12438,23 +12583,23 @@
       AdsLoader.prototype.requestAds = function (adsRequest, userRequestContext) {
         var _this = this;
         requestAnimationFrame(function () {
-          const ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
-          const event = new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext);
+          var ADS_MANAGER_LOADED = AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED;
+          var event = new ima.AdsManagerLoadedEvent(ADS_MANAGER_LOADED, adsRequest, userRequestContext);
           _this._dispatch(event);
         });
-        const e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
+        var e = new ima.AdError('adPlayError', 1205, 1205, 'The browser prevented playback initiated without user interaction.', adsRequest, userRequestContext);
         requestAnimationFrame(function () {
           _this._dispatch(new ima.AdErrorEvent(e));
         });
       };
-      const AdsRenderingSettings = noopFunc;
-      const AdsRequest = function AdsRequest() {};
+      var AdsRenderingSettings = noopFunc;
+      var AdsRequest = function AdsRequest() {};
       AdsRequest.prototype = {
         setAdWillAutoPlay: noopFunc,
         setAdWillPlayMuted: noopFunc,
         setContinuousPlayback: noopFunc
       };
-      const AdPodInfo = function AdPodInfo() {};
+      var AdPodInfo = function AdPodInfo() {};
       AdPodInfo.prototype = {
         getAdPosition: function getAdPosition() {
           return 1;
@@ -12475,7 +12620,7 @@
           return 1;
         }
       };
-      const Ad = function Ad() {};
+      var Ad = function Ad() {};
       Ad.prototype = {
         pi: new AdPodInfo(),
         getAdId: function getAdId() {
@@ -12572,7 +12717,7 @@
           return true;
         }
       };
-      const CompanionAd = function CompanionAd() {};
+      var CompanionAd = function CompanionAd() {};
       CompanionAd.prototype = {
         getAdSlotId: function getAdSlotId() {
           return '';
@@ -12590,7 +12735,7 @@
           return 1;
         }
       };
-      const AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
+      var AdError = function AdError(type, code, vast, message, adsRequest, userRequestContext) {
         this.errorCode = code;
         this.message = message;
         this.type = type;
@@ -12615,12 +12760,12 @@
       };
       AdError.ErrorCode = {};
       AdError.Type = {};
-      const isEngadget = function isEngadget() {
+      var isEngadget = function isEngadget() {
         try {
           // eslint-disable-next-line no-restricted-syntax
           for (var _i3 = 0, _Object$values = Object.values(window.vidible._getContexts()); _i3 < _Object$values.length; _i3++) {
             var _ctx$getPlayer, _ctx$getPlayer$div;
-            const ctx = _Object$values[_i3];
+            var ctx = _Object$values[_i3];
             // eslint-disable-next-line no-restricted-properties
             if ((_ctx$getPlayer = ctx.getPlayer()) !== null && _ctx$getPlayer !== void 0 && (_ctx$getPlayer$div = _ctx$getPlayer.div) !== null && _ctx$getPlayer$div !== void 0 && _ctx$getPlayer$div.innerHTML.includes('www.engadget.com')) {
               return true;
@@ -12629,8 +12774,8 @@
         } catch (e) {} // eslint-disable-line no-empty
         return false;
       };
-      const currentAd = isEngadget() ? undefined : new Ad();
-      const AdEvent = function AdEvent(type) {
+      var currentAd = isEngadget() ? undefined : new Ad();
+      var AdEvent = function AdEvent(type) {
         this.type = type;
       };
       AdEvent.prototype = {
@@ -12673,7 +12818,7 @@
         VOLUME_CHANGED: 'volumeChange',
         VOLUME_MUTED: 'mute'
       };
-      const AdErrorEvent = function AdErrorEvent(error) {
+      var AdErrorEvent = function AdErrorEvent(error) {
         this.error = error;
         this.type = 'adError';
         this.getError = function () {
@@ -12690,11 +12835,11 @@
       AdErrorEvent.Type = {
         AD_ERROR: 'adError'
       };
-      const CustomContentLoadedEvent = function CustomContentLoadedEvent() {};
+      var CustomContentLoadedEvent = function CustomContentLoadedEvent() {};
       CustomContentLoadedEvent.Type = {
         CUSTOM_CONTENT_LOADED: 'deprecated-event'
       };
-      const CompanionAdSelectionSettings = function CompanionAdSelectionSettings() {};
+      var CompanionAdSelectionSettings = function CompanionAdSelectionSettings() {};
       CompanionAdSelectionSettings.CreativeType = {
         ALL: 'All',
         FLASH: 'Flash',
@@ -12711,7 +12856,7 @@
         SELECT_EXACT_MATCH: 'SelectExactMatch',
         SELECT_NEAR_MATCH: 'SelectNearMatch'
       };
-      const AdCuePoints = function AdCuePoints() {};
+      var AdCuePoints = function AdCuePoints() {};
       AdCuePoints.prototype = {
         getCuePoints: function getCuePoints() {
           return [];
@@ -12723,8 +12868,8 @@
           return '';
         }
       };
-      const AdProgressData = noopFunc;
-      const UniversalAdIdInfo = function UniversalAdIdInfo() {};
+      var AdProgressData = noopFunc;
+      var UniversalAdIdInfo = function UniversalAdIdInfo() {};
       Object.assign(ima, {
         AdCuePoints,
         AdDisplayContainer,
@@ -12762,6 +12907,15 @@
       });
       if (!window.google) {
         window.google = {};
+      }
+
+      // Workaround for https://github.com/AdguardTeam/Scriptlets/issues/331
+      // To avoid conflicts with the DAI SDK, we need to make sure that the
+      // google.ima.dai namespace is not overwritten.
+      // TODO: Later we should create a mock for the DAI SDK as well.
+      // See https://github.com/AdguardTeam/Scriptlets/issues/239
+      if ((_window$google$ima = window.google.ima) !== null && _window$google$ima !== void 0 && _window$google$ima.dai) {
+        ima.dai = window.google.ima.dai;
       }
       window.google.ima = ima;
       hit(source);
@@ -12804,7 +12958,7 @@
         return new UserConsentStatusForVendorSubscribe();
       };
       UserConsentStatusForVendor.prototype.subscribe = noopFunc;
-      const DidomiWrapper = {
+      var DidomiWrapper = {
         isConsentRequired: falseFunc,
         getUserConsentStatusForPurpose: trueFunc,
         getUserConsentStatus: trueFunc,
@@ -12837,7 +12991,7 @@
         }
       };
       window.Didomi = DidomiWrapper;
-      const didomiStateWrapper = {
+      var didomiStateWrapper = {
         didomiExperimentId: '',
         didomiExperimentUserGroup: '',
         didomiGDPRApplies: 1,
@@ -12853,7 +13007,7 @@
         didomiVendorsRawConsentUnknown: ''
       };
       window.didomiState = didomiStateWrapper;
-      const tcData = {
+      var tcData = {
         eventStatus: 'tcloaded',
         gdprApplies: false,
         listenerId: noopFunc,
@@ -12866,19 +13020,19 @@
       };
 
       // https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md#how-does-the-cmp-provide-the-api
-      const __tcfapiWrapper = function __tcfapiWrapper(command, version, callback) {
+      var __tcfapiWrapper = function __tcfapiWrapper(command, version, callback) {
         if (typeof callback !== 'function' || command === 'removeEventListener') {
           return;
         }
         callback(tcData, true);
       };
       window.__tcfapi = __tcfapiWrapper;
-      const didomiEventListenersWrapper = {
+      var didomiEventListenersWrapper = {
         stub: true,
         push: noopFunc
       };
       window.didomiEventListeners = didomiEventListenersWrapper;
-      const didomiOnReadyWrapper = {
+      var didomiOnReadyWrapper = {
         stub: true,
         push(arg) {
           if (typeof arg !== 'function') {
@@ -12929,7 +13083,7 @@
      */
 
     function Prebid(source) {
-      const pushFunction = function pushFunction(arg) {
+      var pushFunction = function pushFunction(arg) {
         if (typeof arg === 'function') {
           try {
             arg.call();
@@ -12938,7 +13092,7 @@
           }
         }
       };
-      const pbjsWrapper = {
+      var pbjsWrapper = {
         addAdUnits() {},
         adServers: {
           dfp: {
@@ -13033,34 +13187,61 @@
 
     var redirectsList = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        noeval: noeval$1,
-        GoogleAnalytics: GoogleAnalytics,
-        GoogleAnalyticsGa: GoogleAnalyticsGa,
-        GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
-        GoogleTagServicesGpt: GoogleTagServicesGpt,
-        ScoreCardResearchBeacon: ScoreCardResearchBeacon,
-        metrikaYandexTag: metrikaYandexTag,
-        metrikaYandexWatch: metrikaYandexWatch,
-        Pardot: Pardot,
-        preventFab: preventFab$1,
-        preventBab: preventBab$1,
-        setPopadsDummy: setPopadsDummy$1,
-        preventPopadsNet: preventPopadsNet$1,
+        ATInternetSmartTag: ATInternetSmartTag,
         AmazonApstag: AmazonApstag,
-        Matomo: Matomo,
+        DidomiLoader: DidomiLoader,
         Fingerprintjs2: Fingerprintjs2,
         Fingerprintjs3: Fingerprintjs3,
         Gemius: Gemius,
-        ATInternetSmartTag: ATInternetSmartTag,
-        preventBab2: preventBab2,
+        GoogleAnalytics: GoogleAnalytics,
+        GoogleAnalyticsGa: GoogleAnalyticsGa,
         GoogleIma3: GoogleIma3,
-        DidomiLoader: DidomiLoader,
+        GoogleSyndicationAdsByGoogle: GoogleSyndicationAdsByGoogle,
+        GoogleTagServicesGpt: GoogleTagServicesGpt,
+        Matomo: Matomo,
+        NaverWcslog: NaverWcslog,
+        Pardot: Pardot,
         Prebid: Prebid,
+        ScoreCardResearchBeacon: ScoreCardResearchBeacon,
+        metrikaYandexTag: metrikaYandexTag,
+        metrikaYandexWatch: metrikaYandexWatch,
+        noeval: noeval$1,
         prebidAds: prebidAds,
-        NaverWcslog: NaverWcslog
+        preventBab: preventBab$1,
+        preventBab2: preventBab2,
+        preventFab: preventFab$1,
+        preventPopadsNet: preventPopadsNet$1,
+        setPopadsDummy: setPopadsDummy$1
     });
 
+    function _typeof(obj) {
+      "@babel/helpers - typeof";
+
+      return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
+        return typeof obj;
+      } : function (obj) {
+        return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+      }, _typeof(obj);
+    }
+
+    function _toPrimitive(input, hint) {
+      if (_typeof(input) !== "object" || input === null) return input;
+      var prim = input[Symbol.toPrimitive];
+      if (prim !== undefined) {
+        var res = prim.call(input, hint || "default");
+        if (_typeof(res) !== "object") return res;
+        throw new TypeError("@@toPrimitive must return a primitive value.");
+      }
+      return (hint === "string" ? String : Number)(input);
+    }
+
+    function _toPropertyKey(arg) {
+      var key = _toPrimitive(arg, "string");
+      return _typeof(key) === "symbol" ? key : String(key);
+    }
+
     function _defineProperty(obj, key, value) {
+      key = _toPropertyKey(key);
       if (key in obj) {
         Object.defineProperty(obj, key, {
           value: value,
@@ -13073,7 +13254,16 @@
       }
       return obj;
     }
-    var defineProperty = _defineProperty;
+
+    function getDefaultExportFromCjs (x) {
+    	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+    }
+
+    var jsYaml$2 = {};
+
+    var loader$1 = {};
+
+    var common$6 = {};
 
     function isNothing(subject) {
       return typeof subject === 'undefined' || subject === null;
@@ -13107,24 +13297,14 @@
     function isNegativeZero(number) {
       return number === 0 && Number.NEGATIVE_INFINITY === 1 / number;
     }
-    var isNothing_1 = isNothing;
-    var isObject_1 = isObject;
-    var toArray_1 = toArray;
-    var repeat_1 = repeat;
-    var isNegativeZero_1 = isNegativeZero;
-    var extend_1 = extend;
-    var common = {
-      isNothing: isNothing_1,
-      isObject: isObject_1,
-      toArray: toArray_1,
-      repeat: repeat_1,
-      isNegativeZero: isNegativeZero_1,
-      extend: extend_1
-    };
+    common$6.isNothing = isNothing;
+    common$6.isObject = isObject;
+    common$6.toArray = toArray;
+    common$6.repeat = repeat;
+    common$6.isNegativeZero = isNegativeZero;
+    common$6.extend = extend;
 
-    // YAML error class. http://stackoverflow.com/questions/8458984
-
-    function YAMLException$1(reason, mark) {
+    function YAMLException$4(reason, mark) {
       // Super constructor
       Error.call(this);
       this.name = 'YAMLException';
@@ -13143,9 +13323,9 @@
     }
 
     // Inherit from Error
-    YAMLException$1.prototype = Object.create(Error.prototype);
-    YAMLException$1.prototype.constructor = YAMLException$1;
-    YAMLException$1.prototype.toString = function toString(compact) {
+    YAMLException$4.prototype = Object.create(Error.prototype);
+    YAMLException$4.prototype.constructor = YAMLException$4;
+    YAMLException$4.prototype.toString = function toString(compact) {
       var result = this.name + ': ';
       result += this.reason || '(unknown reason)';
       if (!compact && this.mark) {
@@ -13153,16 +13333,17 @@
       }
       return result;
     };
-    var exception = YAMLException$1;
+    var exception = YAMLException$4;
 
-    function Mark(name, buffer, position, line, column) {
+    var common$5 = common$6;
+    function Mark$1(name, buffer, position, line, column) {
       this.name = name;
       this.buffer = buffer;
       this.position = position;
       this.line = line;
       this.column = column;
     }
-    Mark.prototype.getSnippet = function getSnippet(indent, maxLength) {
+    Mark$1.prototype.getSnippet = function getSnippet(indent, maxLength) {
       var head, start, tail, end, snippet;
       if (!this.buffer) return null;
       indent = indent || 4;
@@ -13188,9 +13369,9 @@
         }
       }
       snippet = this.buffer.slice(start, end);
-      return common.repeat(' ', indent) + head + snippet + tail + '\n' + common.repeat(' ', indent + this.position - start + head.length) + '^';
+      return common$5.repeat(' ', indent) + head + snippet + tail + '\n' + common$5.repeat(' ', indent + this.position - start + head.length) + '^';
     };
-    Mark.prototype.toString = function toString(compact) {
+    Mark$1.prototype.toString = function toString(compact) {
       var snippet,
         where = '';
       if (this.name) {
@@ -13205,8 +13386,9 @@
       }
       return where;
     };
-    var mark = Mark;
+    var mark = Mark$1;
 
+    var YAMLException$3 = exception;
     var TYPE_CONSTRUCTOR_OPTIONS = ['kind', 'resolve', 'construct', 'instanceOf', 'predicate', 'represent', 'defaultStyle', 'styleAliases'];
     var YAML_NODE_KINDS = ['scalar', 'sequence', 'mapping'];
     function compileStyleAliases(map) {
@@ -13220,11 +13402,11 @@
       }
       return result;
     }
-    function Type$1(tag, options) {
+    function Type$h(tag, options) {
       options = options || {};
       Object.keys(options).forEach(function (name) {
         if (TYPE_CONSTRUCTOR_OPTIONS.indexOf(name) === -1) {
-          throw new exception('Unknown option "' + name + '" is met in definition of "' + tag + '" YAML type.');
+          throw new YAMLException$3('Unknown option "' + name + '" is met in definition of "' + tag + '" YAML type.');
         }
       });
 
@@ -13243,13 +13425,16 @@
       this.defaultStyle = options['defaultStyle'] || null;
       this.styleAliases = compileStyleAliases(options['styleAliases'] || null);
       if (YAML_NODE_KINDS.indexOf(this.kind) === -1) {
-        throw new exception('Unknown kind "' + this.kind + '" is specified for "' + tag + '" YAML type.');
+        throw new YAMLException$3('Unknown kind "' + this.kind + '" is specified for "' + tag + '" YAML type.');
       }
     }
-    var type = Type$1;
+    var type = Type$h;
 
     /*eslint-disable max-len*/
 
+    var common$4 = common$6;
+    var YAMLException$2 = exception;
+    var Type$g = type;
     function compileList(schema, name, result) {
       var exclude = [];
       schema.include.forEach(function (includedSchema) {
@@ -13285,25 +13470,25 @@
       }
       return result;
     }
-    function Schema$1(definition) {
+    function Schema$5(definition) {
       this.include = definition.include || [];
       this.implicit = definition.implicit || [];
       this.explicit = definition.explicit || [];
       this.implicit.forEach(function (type) {
         if (type.loadKind && type.loadKind !== 'scalar') {
-          throw new exception('There is a non-scalar type in the implicit list of a schema. Implicit resolving of such types is not supported.');
+          throw new YAMLException$2('There is a non-scalar type in the implicit list of a schema. Implicit resolving of such types is not supported.');
         }
       });
       this.compiledImplicit = compileList(this, 'implicit', []);
       this.compiledExplicit = compileList(this, 'explicit', []);
       this.compiledTypeMap = compileMap(this.compiledImplicit, this.compiledExplicit);
     }
-    Schema$1.DEFAULT = null;
-    Schema$1.create = function createSchema() {
+    Schema$5.DEFAULT = null;
+    Schema$5.create = function createSchema() {
       var schemas, types;
       switch (arguments.length) {
         case 1:
-          schemas = Schema$1.DEFAULT;
+          schemas = Schema$5.DEFAULT;
           types = arguments[0];
           break;
         case 2:
@@ -13311,52 +13496,57 @@
           types = arguments[1];
           break;
         default:
-          throw new exception('Wrong number of arguments for Schema.create function');
+          throw new YAMLException$2('Wrong number of arguments for Schema.create function');
       }
-      schemas = common.toArray(schemas);
-      types = common.toArray(types);
+      schemas = common$4.toArray(schemas);
+      types = common$4.toArray(types);
       if (!schemas.every(function (schema) {
-        return schema instanceof Schema$1;
+        return schema instanceof Schema$5;
       })) {
-        throw new exception('Specified list of super schemas (or a single Schema object) contains a non-Schema object.');
+        throw new YAMLException$2('Specified list of super schemas (or a single Schema object) contains a non-Schema object.');
       }
-      if (!types.every(function (type$1) {
-        return type$1 instanceof type;
+      if (!types.every(function (type) {
+        return type instanceof Type$g;
       })) {
-        throw new exception('Specified list of YAML types (or a single Type object) contains a non-Type object.');
+        throw new YAMLException$2('Specified list of YAML types (or a single Type object) contains a non-Type object.');
       }
-      return new Schema$1({
+      return new Schema$5({
         include: schemas,
         explicit: types
       });
     };
-    var schema = Schema$1;
+    var schema = Schema$5;
 
-    var str = new type('tag:yaml.org,2002:str', {
+    var Type$f = type;
+    var str = new Type$f('tag:yaml.org,2002:str', {
       kind: 'scalar',
       construct: function construct(data) {
         return data !== null ? data : '';
       }
     });
 
-    var seq = new type('tag:yaml.org,2002:seq', {
+    var Type$e = type;
+    var seq = new Type$e('tag:yaml.org,2002:seq', {
       kind: 'sequence',
       construct: function construct(data) {
         return data !== null ? data : [];
       }
     });
 
-    var map = new type('tag:yaml.org,2002:map', {
+    var Type$d = type;
+    var map = new Type$d('tag:yaml.org,2002:map', {
       kind: 'mapping',
       construct: function construct(data) {
         return data !== null ? data : {};
       }
     });
 
-    var failsafe = new schema({
+    var Schema$4 = schema;
+    var failsafe = new Schema$4({
       explicit: [str, seq, map]
     });
 
+    var Type$c = type;
     function resolveYamlNull(data) {
       if (data === null) return true;
       var max = data.length;
@@ -13368,7 +13558,7 @@
     function isNull(object) {
       return object === null;
     }
-    var _null = new type('tag:yaml.org,2002:null', {
+    var _null = new Type$c('tag:yaml.org,2002:null', {
       kind: 'scalar',
       resolve: resolveYamlNull,
       construct: constructYamlNull,
@@ -13390,6 +13580,7 @@
       defaultStyle: 'lowercase'
     });
 
+    var Type$b = type;
     function resolveYamlBoolean(data) {
       if (data === null) return false;
       var max = data.length;
@@ -13401,7 +13592,7 @@
     function isBoolean(object) {
       return Object.prototype.toString.call(object) === '[object Boolean]';
     }
-    var bool = new type('tag:yaml.org,2002:bool', {
+    var bool = new Type$b('tag:yaml.org,2002:bool', {
       kind: 'scalar',
       resolve: resolveYamlBoolean,
       construct: constructYamlBoolean,
@@ -13420,6 +13611,8 @@
       defaultStyle: 'lowercase'
     });
 
+    var common$3 = common$6;
+    var Type$a = type;
     function isHexCode(c) {
       return 0x30 /* 0 */ <= c && c <= 0x39 /* 9 */ || 0x41 /* A */ <= c && c <= 0x46 /* F */ || 0x61 /* a */ <= c && c <= 0x66 /* f */;
     }
@@ -13544,9 +13737,9 @@
       return sign * parseInt(value, 10);
     }
     function isInteger(object) {
-      return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common.isNegativeZero(object);
+      return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common$3.isNegativeZero(object);
     }
-    var int = new type('tag:yaml.org,2002:int', {
+    var int = new Type$a('tag:yaml.org,2002:int', {
       kind: 'scalar',
       resolve: resolveYamlInteger,
       construct: constructYamlInteger,
@@ -13575,6 +13768,8 @@
       }
     });
 
+    var common$2 = common$6;
+    var Type$9 = type;
     var YAML_FLOAT_PATTERN = new RegExp(
     // 2.5e4, 2.5 and integers
     '^(?:[-+]?(?:0|[1-9][0-9_]*)(?:\\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?' +
@@ -13653,7 +13848,7 @@
           case 'camelcase':
             return '-.Inf';
         }
-      } else if (common.isNegativeZero(object)) {
+      } else if (common$2.isNegativeZero(object)) {
         return '-0.0';
       }
       res = object.toString(10);
@@ -13664,9 +13859,9 @@
       return SCIENTIFIC_WITHOUT_DOT.test(res) ? res.replace('e', '.e') : res;
     }
     function isFloat(object) {
-      return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 !== 0 || common.isNegativeZero(object));
+      return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 !== 0 || common$2.isNegativeZero(object));
     }
-    var float = new type('tag:yaml.org,2002:float', {
+    var float = new Type$9('tag:yaml.org,2002:float', {
       kind: 'scalar',
       resolve: resolveYamlFloat,
       construct: constructYamlFloat,
@@ -13675,15 +13870,18 @@
       defaultStyle: 'lowercase'
     });
 
-    var json = new schema({
+    var Schema$3 = schema;
+    var json = new Schema$3({
       include: [failsafe],
       implicit: [_null, bool, int, float]
     });
 
-    var core = new schema({
+    var Schema$2 = schema;
+    var core = new Schema$2({
       include: [json]
     });
 
+    var Type$8 = type;
     var YAML_DATE_REGEXP = new RegExp('^([0-9][0-9][0-9][0-9])' +
     // [1] year
     '-([0-9][0-9])' +
@@ -13772,7 +13970,7 @@
     function representYamlTimestamp(object /*, style*/) {
       return object.toISOString();
     }
-    var timestamp = new type('tag:yaml.org,2002:timestamp', {
+    var timestamp = new Type$8('tag:yaml.org,2002:timestamp', {
       kind: 'scalar',
       resolve: resolveYamlTimestamp,
       construct: constructYamlTimestamp,
@@ -13780,16 +13978,17 @@
       represent: representYamlTimestamp
     });
 
+    var Type$7 = type;
     function resolveYamlMerge(data) {
       return data === '<<' || data === null;
     }
-    var merge = new type('tag:yaml.org,2002:merge', {
+    var merge = new Type$7('tag:yaml.org,2002:merge', {
       kind: 'scalar',
       resolve: resolveYamlMerge
     });
 
-    function commonjsRequire (target) {
-    	throw new Error('Could not dynamically require "' + target + '". Please configure the dynamicRequireTargets option of @rollup/plugin-commonjs appropriately for this require call to behave properly.');
+    function commonjsRequire(path) {
+    	throw new Error('Could not dynamically require "' + path + '". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.');
     }
 
     /*eslint-disable no-bitwise*/
@@ -13800,6 +13999,7 @@
       var _require$1 = commonjsRequire;
       NodeBuffer = _require$1('buffer').Buffer;
     } catch (__) {}
+    var Type$6 = type;
 
     // [ 64, 65, 66 ] -> [ padding, CR, LF ]
     var BASE64_MAP = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\n\r';
@@ -13912,7 +14112,7 @@
     function isBinary(object) {
       return NodeBuffer && NodeBuffer.isBuffer(object);
     }
-    var binary = new type('tag:yaml.org,2002:binary', {
+    var binary = new Type$6('tag:yaml.org,2002:binary', {
       kind: 'scalar',
       resolve: resolveYamlBinary,
       construct: constructYamlBinary,
@@ -13920,6 +14120,7 @@
       represent: representYamlBinary
     });
 
+    var Type$5 = type;
     var _hasOwnProperty$3 = Object.prototype.hasOwnProperty;
     var _toString$2 = Object.prototype.toString;
     function resolveYamlOmap(data) {
@@ -13948,12 +14149,13 @@
     function constructYamlOmap(data) {
       return data !== null ? data : [];
     }
-    var omap = new type('tag:yaml.org,2002:omap', {
+    var omap = new Type$5('tag:yaml.org,2002:omap', {
       kind: 'sequence',
       resolve: resolveYamlOmap,
       construct: constructYamlOmap
     });
 
+    var Type$4 = type;
     var _toString$1 = Object.prototype.toString;
     function resolveYamlPairs(data) {
       if (data === null) return true;
@@ -13989,12 +14191,13 @@
       }
       return result;
     }
-    var pairs = new type('tag:yaml.org,2002:pairs', {
+    var pairs = new Type$4('tag:yaml.org,2002:pairs', {
       kind: 'sequence',
       resolve: resolveYamlPairs,
       construct: constructYamlPairs
     });
 
+    var Type$3 = type;
     var _hasOwnProperty$2 = Object.prototype.hasOwnProperty;
     function resolveYamlSet(data) {
       if (data === null) return true;
@@ -14010,18 +14213,20 @@
     function constructYamlSet(data) {
       return data !== null ? data : {};
     }
-    var set = new type('tag:yaml.org,2002:set', {
+    var set = new Type$3('tag:yaml.org,2002:set', {
       kind: 'mapping',
       resolve: resolveYamlSet,
       construct: constructYamlSet
     });
 
-    var default_safe = new schema({
+    var Schema$1 = schema;
+    var default_safe = new Schema$1({
       include: [core],
       implicit: [timestamp, merge],
       explicit: [binary, omap, pairs, set]
     });
 
+    var Type$2 = type;
     function resolveJavascriptUndefined() {
       return true;
     }
@@ -14035,7 +14240,7 @@
     function isUndefined(object) {
       return typeof object === 'undefined';
     }
-    var _undefined = new type('tag:yaml.org,2002:js/undefined', {
+    var _undefined = new Type$2('tag:yaml.org,2002:js/undefined', {
       kind: 'scalar',
       resolve: resolveJavascriptUndefined,
       construct: constructJavascriptUndefined,
@@ -14043,6 +14248,7 @@
       represent: representJavascriptUndefined
     });
 
+    var Type$1 = type;
     function resolveJavascriptRegExp(data) {
       if (data === null) return false;
       if (data.length === 0) return false;
@@ -14082,7 +14288,7 @@
     function isRegExp(object) {
       return Object.prototype.toString.call(object) === '[object RegExp]';
     }
-    var regexp = new type('tag:yaml.org,2002:js/regexp', {
+    var regexp = new Type$1('tag:yaml.org,2002:js/regexp', {
       kind: 'scalar',
       resolve: resolveJavascriptRegExp,
       construct: constructJavascriptRegExp,
@@ -14108,6 +14314,7 @@
       /* global window */
       if (typeof window !== 'undefined') esprima = window.esprima;
     }
+    var Type = type;
     function resolveJavascriptFunction(data) {
       if (data === null) return false;
       try {
@@ -14157,7 +14364,7 @@
     function isFunction(object) {
       return Object.prototype.toString.call(object) === '[object Function]';
     }
-    var _function = new type('tag:yaml.org,2002:js/function', {
+    var _function = new Type('tag:yaml.org,2002:js/function', {
       kind: 'scalar',
       resolve: resolveJavascriptFunction,
       construct: constructJavascriptFunction,
@@ -14165,13 +14372,19 @@
       represent: representJavascriptFunction
     });
 
-    var default_full = schema.DEFAULT = new schema({
+    var Schema = schema;
+    var default_full = Schema.DEFAULT = new Schema({
       include: [default_safe],
       explicit: [_undefined, regexp, _function]
     });
 
     /*eslint-disable max-len,no-use-before-define*/
 
+    var common$1 = common$6;
+    var YAMLException$1 = exception;
+    var Mark = mark;
+    var DEFAULT_SAFE_SCHEMA$1 = default_safe;
+    var DEFAULT_FULL_SCHEMA$1 = default_full;
     var _hasOwnProperty$1 = Object.prototype.hasOwnProperty;
     var CONTEXT_FLOW_IN = 1;
     var CONTEXT_FLOW_OUT = 2;
@@ -14256,7 +14469,7 @@
     function State$1(input, options) {
       this.input = input;
       this.filename = options['filename'] || null;
-      this.schema = options['schema'] || default_full;
+      this.schema = options['schema'] || DEFAULT_FULL_SCHEMA$1;
       this.onWarning = options['onWarning'] || null;
       this.legacy = options['legacy'] || false;
       this.json = options['json'] || false;
@@ -14282,7 +14495,7 @@
     }
 
     function generateError(state, message) {
-      return new exception(message, new mark(state.filename, state.input, state.position, state.line, state.position - state.lineStart));
+      return new YAMLException$1(message, new Mark(state.filename, state.input, state.position, state.line, state.position - state.lineStart));
     }
     function throwError(state, message) {
       throw generateError(state, message);
@@ -14354,7 +14567,7 @@
     }
     function mergeMappings(state, destination, source, overridableKeys) {
       var sourceKeys, key, index, quantity;
-      if (!common.isObject(source)) {
+      if (!common$1.isObject(source)) {
         throwError(state, 'cannot merge mappings; the provided source object is unacceptable');
       }
       sourceKeys = Object.keys(source);
@@ -14479,7 +14692,7 @@
       if (count === 1) {
         state.result += ' ';
       } else if (count > 1) {
-        state.result += common.repeat('\n', count - 1);
+        state.result += common$1.repeat('\n', count - 1);
       }
     }
     function readPlainScalar(state, nodeIndent, withinFlowCollection) {
@@ -14804,7 +15017,7 @@
         if (state.lineIndent < textIndent) {
           // Perform the chomping.
           if (chomping === CHOMPING_KEEP) {
-            state.result += common.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
+            state.result += common$1.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
           } else if (chomping === CHOMPING_CLIP) {
             if (didReadContent) {
               // i.e. only if the scalar is not empty.
@@ -14822,12 +15035,12 @@
           if (is_WHITE_SPACE(ch)) {
             atMoreIndented = true;
             // except for the first content line (cf. Example 8.1)
-            state.result += common.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
+            state.result += common$1.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
 
             // End of more-indented block.
           } else if (atMoreIndented) {
             atMoreIndented = false;
-            state.result += common.repeat('\n', emptyLines + 1);
+            state.result += common$1.repeat('\n', emptyLines + 1);
 
             // Just one line break - perceive as the same line.
           } else if (emptyLines === 0) {
@@ -14838,13 +15051,13 @@
 
             // Several line breaks - perceive as different lines.
           } else {
-            state.result += common.repeat('\n', emptyLines);
+            state.result += common$1.repeat('\n', emptyLines);
           }
 
           // Literal style: just add exact number of line breaks between content lines.
         } else {
           // Keep all line breaks except the header line break.
-          state.result += common.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
+          state.result += common$1.repeat('\n', didReadContent ? 1 + emptyLines : emptyLines);
         }
         didReadContent = true;
         detectedIndent = true;
@@ -15390,7 +15603,7 @@
       }
       return state.documents;
     }
-    function loadAll$1(input, iterator, options) {
+    function loadAll(input, iterator, options) {
       if (iterator !== null && typeof iterator === 'object' && typeof options === 'undefined') {
         options = iterator;
         iterator = null;
@@ -15403,7 +15616,7 @@
         iterator(documents[index]);
       }
     }
-    function load$1(input, options) {
+    function load(input, options) {
       var documents = loadDocuments(input, options);
       if (documents.length === 0) {
         /*eslint-disable no-undefined*/
@@ -15411,35 +15624,35 @@
       } else if (documents.length === 1) {
         return documents[0];
       }
-      throw new exception('expected a single document in the stream, but found more');
+      throw new YAMLException$1('expected a single document in the stream, but found more');
     }
-    function safeLoadAll$1(input, iterator, options) {
+    function safeLoadAll(input, iterator, options) {
       if (typeof iterator === 'object' && iterator !== null && typeof options === 'undefined') {
         options = iterator;
         iterator = null;
       }
-      return loadAll$1(input, iterator, common.extend({
-        schema: default_safe
+      return loadAll(input, iterator, common$1.extend({
+        schema: DEFAULT_SAFE_SCHEMA$1
       }, options));
     }
-    function safeLoad$1(input, options) {
-      return load$1(input, common.extend({
-        schema: default_safe
+    function safeLoad(input, options) {
+      return load(input, common$1.extend({
+        schema: DEFAULT_SAFE_SCHEMA$1
       }, options));
     }
-    var loadAll_1 = loadAll$1;
-    var load_1 = load$1;
-    var safeLoadAll_1 = safeLoadAll$1;
-    var safeLoad_1 = safeLoad$1;
-    var loader = {
-      loadAll: loadAll_1,
-      load: load_1,
-      safeLoadAll: safeLoadAll_1,
-      safeLoad: safeLoad_1
-    };
+    loader$1.loadAll = loadAll;
+    loader$1.load = load;
+    loader$1.safeLoadAll = safeLoadAll;
+    loader$1.safeLoad = safeLoad;
+
+    var dumper$1 = {};
 
     /*eslint-disable no-use-before-define*/
 
+    var common = common$6;
+    var YAMLException = exception;
+    var DEFAULT_FULL_SCHEMA = default_full;
+    var DEFAULT_SAFE_SCHEMA = default_safe;
     var _toString = Object.prototype.toString;
     var _hasOwnProperty = Object.prototype.hasOwnProperty;
     var CHAR_TAB = 0x09; /* Tab */
@@ -15516,12 +15729,12 @@
         handle = 'U';
         length = 8;
       } else {
-        throw new exception('code point within a string may not be greater than 0xFFFFFFFF');
+        throw new YAMLException('code point within a string may not be greater than 0xFFFFFFFF');
       }
       return '\\' + handle + common.repeat('0', length - string.length) + string;
     }
     function State(options) {
-      this.schema = options['schema'] || default_full;
+      this.schema = options['schema'] || DEFAULT_FULL_SCHEMA;
       this.indent = Math.max(1, options['indent'] || 2);
       this.noArrayIndent = options['noArrayIndent'] || false;
       this.skipInvalid = options['skipInvalid'] || false;
@@ -15748,7 +15961,7 @@
           case STYLE_DOUBLE:
             return '"' + escapeString(string) + '"';
           default:
-            throw new exception('impossible error: invalid scalar style');
+            throw new YAMLException('impossible error: invalid scalar style');
         }
       }();
     }
@@ -15961,7 +16174,7 @@
         objectKeyList.sort(state.sortKeys);
       } else if (state.sortKeys) {
         // Something is wrong
-        throw new exception('sortKeys must be a boolean or a function');
+        throw new YAMLException('sortKeys must be a boolean or a function');
       }
       for (index = 0, length = objectKeyList.length; index < length; index += 1) {
         pairBuffer = '';
@@ -16018,7 +16231,7 @@
             } else if (_hasOwnProperty.call(type.represent, style)) {
               _result = type.represent[style](object, style);
             } else {
-              throw new exception('!<' + type.tag + '> tag resolver accepts not "' + style + '" style');
+              throw new YAMLException('!<' + type.tag + '> tag resolver accepts not "' + style + '" style');
             }
             state.dump = _result;
           }
@@ -16088,7 +16301,7 @@
           }
         } else {
           if (state.skipInvalid) return false;
-          throw new exception('unacceptable kind of an object to dump ' + type);
+          throw new YAMLException('unacceptable kind of an object to dump ' + type);
         }
         if (state.tag !== null && state.tag !== '?') {
           state.dump = '!<' + state.tag + '> ' + state.dump;
@@ -16130,83 +16343,60 @@
         }
       }
     }
-    function dump$1(input, options) {
+    function dump(input, options) {
       options = options || {};
       var state = new State(options);
       if (!state.noRefs) getDuplicateReferences(input, state);
       if (writeNode(state, 0, input, true, true)) return state.dump + '\n';
       return '';
     }
-    function safeDump$1(input, options) {
-      return dump$1(input, common.extend({
-        schema: default_safe
+    function safeDump(input, options) {
+      return dump(input, common.extend({
+        schema: DEFAULT_SAFE_SCHEMA
       }, options));
     }
-    var dump_1 = dump$1;
-    var safeDump_1 = safeDump$1;
-    var dumper = {
-      dump: dump_1,
-      safeDump: safeDump_1
-    };
+    dumper$1.dump = dump;
+    dumper$1.safeDump = safeDump;
 
+    var loader = loader$1;
+    var dumper = dumper$1;
     function deprecated(name) {
       return function () {
         throw new Error('Function ' + name + ' is deprecated and cannot be used.');
       };
     }
-    var Type = type;
-    var Schema = schema;
-    var FAILSAFE_SCHEMA = failsafe;
-    var JSON_SCHEMA = json;
-    var CORE_SCHEMA = core;
-    var DEFAULT_SAFE_SCHEMA = default_safe;
-    var DEFAULT_FULL_SCHEMA = default_full;
-    var load = loader.load;
-    var loadAll = loader.loadAll;
-    var safeLoad = loader.safeLoad;
-    var safeLoadAll = loader.safeLoadAll;
-    var dump = dumper.dump;
-    var safeDump = dumper.safeDump;
-    var YAMLException = exception;
+    jsYaml$2.Type = type;
+    jsYaml$2.Schema = schema;
+    jsYaml$2.FAILSAFE_SCHEMA = failsafe;
+    jsYaml$2.JSON_SCHEMA = json;
+    jsYaml$2.CORE_SCHEMA = core;
+    jsYaml$2.DEFAULT_SAFE_SCHEMA = default_safe;
+    jsYaml$2.DEFAULT_FULL_SCHEMA = default_full;
+    jsYaml$2.load = loader.load;
+    jsYaml$2.loadAll = loader.loadAll;
+    jsYaml$2.safeLoad = loader.safeLoad;
+    jsYaml$2.safeLoadAll = loader.safeLoadAll;
+    jsYaml$2.dump = dumper.dump;
+    jsYaml$2.safeDump = dumper.safeDump;
+    jsYaml$2.YAMLException = exception;
 
     // Deprecated schema names from JS-YAML 2.0.x
-    var MINIMAL_SCHEMA = failsafe;
-    var SAFE_SCHEMA = default_safe;
-    var DEFAULT_SCHEMA = default_full;
+    jsYaml$2.MINIMAL_SCHEMA = failsafe;
+    jsYaml$2.SAFE_SCHEMA = default_safe;
+    jsYaml$2.DEFAULT_SCHEMA = default_full;
 
     // Deprecated functions from JS-YAML 1.x.x
-    var scan = deprecated('scan');
-    var parse = deprecated('parse');
-    var compose = deprecated('compose');
-    var addConstructor = deprecated('addConstructor');
-    var jsYaml$1 = {
-      Type: Type,
-      Schema: Schema,
-      FAILSAFE_SCHEMA: FAILSAFE_SCHEMA,
-      JSON_SCHEMA: JSON_SCHEMA,
-      CORE_SCHEMA: CORE_SCHEMA,
-      DEFAULT_SAFE_SCHEMA: DEFAULT_SAFE_SCHEMA,
-      DEFAULT_FULL_SCHEMA: DEFAULT_FULL_SCHEMA,
-      load: load,
-      loadAll: loadAll,
-      safeLoad: safeLoad,
-      safeLoadAll: safeLoadAll,
-      dump: dump,
-      safeDump: safeDump,
-      YAMLException: YAMLException,
-      MINIMAL_SCHEMA: MINIMAL_SCHEMA,
-      SAFE_SCHEMA: SAFE_SCHEMA,
-      DEFAULT_SCHEMA: DEFAULT_SCHEMA,
-      scan: scan,
-      parse: parse,
-      compose: compose,
-      addConstructor: addConstructor
-    };
+    jsYaml$2.scan = deprecated('scan');
+    jsYaml$2.parse = deprecated('parse');
+    jsYaml$2.compose = deprecated('compose');
+    jsYaml$2.addConstructor = deprecated('addConstructor');
 
-    var jsYaml = jsYaml$1;
+    var yaml = jsYaml$2;
+    var jsYaml = yaml;
+    var jsYaml$1 = /*@__PURE__*/getDefaultExportFromCjs(jsYaml);
 
     function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+    function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
     /**
      * Redirect - object used to redirect some requests
@@ -16218,7 +16408,7 @@
      *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
      * }
      *
-     * @typedef {Object} Redirect
+     * @typedef {object} Redirect
      * @property {string} title resource name
      * @property {string} comment resource description
      * @property {string} content encoded resource content
@@ -16237,7 +16427,7 @@
        */
       constructor(rawYaml) {
         try {
-          const arrOfRedirects = jsYaml.safeLoad(rawYaml);
+          var arrOfRedirects = jsYaml$1.safeLoad(rawYaml);
           this.redirects = arrOfRedirects.reduce(function (acc, redirect) {
             return _objectSpread(_objectSpread({}, acc), {}, {
               [redirect.title]: redirect
@@ -16263,11 +16453,11 @@
         }
 
         // look title among aliases
-        const values = Object.keys(this.redirects).map(function (key) {
+        var values = Object.keys(this.redirects).map(function (key) {
           return _this.redirects[key];
         });
         return values.find(function (redirect) {
-          const aliases = redirect.aliases;
+          var aliases = redirect.aliases;
           if (!aliases) {
             return false;
           }
@@ -16283,7 +16473,7 @@
        * unknown.
        */
       isBlocking(title) {
-        const redirect = this.redirects[title];
+        var redirect = this.redirects[title];
         if (redirect) {
           return !!redirect.isBlocking;
         }
@@ -16291,7 +16481,7 @@
       }
     }
 
-    const redirectsMap = {
+    var redirectsMap = {
       "1x1-transparent.gif": "1x1-transparent.gif",
       "1x1.gif": "1x1-transparent.gif",
       "1x1-transparent-gif": "1x1-transparent.gif",
@@ -16410,8 +16600,8 @@
      * @param {string} name - redirect name
      * @returns {Function}
      */
-    const getRedirectByName = function getRedirectByName(name) {
-      const redirects = Object.keys(redirectsList).map(function (key) {
+    var getRedirectByName = function getRedirectByName(name) {
+      var redirects = Object.keys(redirectsList).map(function (key) {
         return redirectsList[key];
       });
       return redirects.find(function (r) {
@@ -16420,7 +16610,7 @@
     };
 
     /**
-     * @typedef {Object} Source - redirect properties
+     * @typedef {object} Source - redirect properties
      * @property {string} name redirect name
      * @property {Array<string>} args Arguments for redirect function
      * @property {'extension'|'test'} [engine] -
@@ -16434,9 +16624,9 @@
      * @param {Source} source
      * @returns {string} redirect code
      */
-    const getRedirectCode = function getRedirectCode(source) {
-      const redirect = getRedirectByName(source.name);
-      let result = attachDependencies(redirect);
+    var getRedirectCode = function getRedirectCode(source) {
+      var redirect = getRedirectByName(source.name);
+      var result = attachDependencies(redirect);
       result = addCall(redirect, result);
 
       // redirect code for different sources is checked in tests
@@ -16444,10 +16634,10 @@
       result = source.engine === 'test' ? wrapInNonameFunc(result) : passSourceAndProps(source, result, true);
       return result;
     };
-    const getRedirectFilename = function getRedirectFilename(name) {
+    var getRedirectFilename = function getRedirectFilename(name) {
       return redirectsMap[name];
     };
-    const redirects = {
+    var redirects = {
       Redirects,
       getRedirectFilename,
       getCode: getRedirectCode,
@@ -16464,30 +16654,30 @@
 
     function abortCurrentInlineScript(source, args) {
       function abortCurrentInlineScript(source, property, search) {
-        const searchRegexp = toRegExp(search);
-        const rid = randomId();
-        const SRC_DATA_MARKER = "data:text/javascript;base64,";
-        const getCurrentScript = function getCurrentScript() {
+        var searchRegexp = toRegExp(search);
+        var rid = randomId();
+        var SRC_DATA_MARKER = "data:text/javascript;base64,";
+        var getCurrentScript = function getCurrentScript() {
           if ("currentScript" in document) {
             return document.currentScript;
           }
-          const scripts = document.getElementsByTagName("script");
+          var scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
-        const ourScript = getCurrentScript();
-        const abort = function abort() {
+        var ourScript = getCurrentScript();
+        var abort = function abort() {
           var _scriptEl$src;
-          const scriptEl = getCurrentScript();
+          var scriptEl = getCurrentScript();
           if (!scriptEl) {
             return;
           }
-          let content = scriptEl.textContent;
+          var content = scriptEl.textContent;
           try {
-            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
+            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
           } catch (e) {}
           if (content.length === 0 && typeof scriptEl.src !== "undefined" && (_scriptEl$src = scriptEl.src) !== null && _scriptEl$src !== void 0 && _scriptEl$src.startsWith(SRC_DATA_MARKER)) {
-            const encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
+            var encodedContent = scriptEl.src.slice(SRC_DATA_MARKER.length);
             content = window.atob(encodedContent);
           }
           if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
@@ -16495,21 +16685,21 @@
             throw new ReferenceError(rid);
           }
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (base instanceof Object === false && base === null) {
-            const props = property.split(".");
-            const propIndex = props.indexOf(prop);
-            const baseName = props[propIndex - 1];
-            const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+            var props = property.split(".");
+            var propIndex = props.indexOf(prop);
+            var baseName = props[propIndex - 1];
+            var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
             logMessage(source, message);
             return;
           }
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -16523,13 +16713,13 @@
             });
             return;
           }
-          let currentValue = base[prop];
-          let origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+          var currentValue = base[prop];
+          var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
           if (origDescriptor instanceof Object === false || origDescriptor.get instanceof Function === false) {
             currentValue = base[prop];
             origDescriptor = undefined;
           }
-          const descriptorWrapper = Object.assign(getDescriptorAddon(), {
+          var descriptorWrapper = Object.assign(getDescriptorAddon(), {
             currentValue: currentValue,
             get() {
               if (!this.isAbortingSuspended) {
@@ -16567,7 +16757,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -16575,14 +16765,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -16590,7 +16780,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -16619,20 +16809,42 @@
         };
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -16641,7 +16853,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -16651,19 +16863,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16677,14 +16889,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -16703,18 +16915,18 @@
               for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
                 args[_key - 1] = arguments[_key];
               }
-              const result = cb(...args);
+              var result = cb(...args);
               this.isAbortingSuspended = false;
               return result;
             } catch (_unused) {
-              const rid = randomId();
+              var rid = randomId();
               this.isAbortingSuspended = false;
               throw new ReferenceError(rid);
             }
           }
         };
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortCurrentInlineScript.apply(this, updatedArgs);
       } catch (e) {
@@ -16726,18 +16938,18 @@
         if (!property) {
           return;
         }
-        const rid = randomId();
-        const abort = function abort() {
+        var rid = randomId();
+        var abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -16763,7 +16975,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -16771,14 +16983,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -16786,7 +16998,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -16815,7 +17027,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -16824,7 +17036,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -16834,19 +17046,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -16862,7 +17074,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortOnPropertyRead.apply(this, updatedArgs);
       } catch (e) {
@@ -16874,18 +17086,18 @@
         if (!property) {
           return;
         }
-        const rid = randomId();
-        const abort = function abort() {
+        var rid = randomId();
+        var abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -16910,7 +17122,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -16918,14 +17130,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -16933,7 +17145,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -16962,7 +17174,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -16971,7 +17183,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -16981,19 +17193,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17009,7 +17221,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortOnPropertyWrite.apply(this, updatedArgs);
       } catch (e) {
@@ -17021,18 +17233,18 @@
         if (!property || !stack) {
           return;
         }
-        const rid = randomId();
-        const abort = function abort() {
+        var rid = randomId();
+        var abort = function abort() {
           hit(source);
           throw new ReferenceError(rid);
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -17050,7 +17262,7 @@
             logMessage(source, "Invalid parameter: ".concat(stack));
             return;
           }
-          const descriptorWrapper = Object.assign(getDescriptorAddon(), {
+          var descriptorWrapper = Object.assign(getDescriptorAddon(), {
             value: base[prop],
             get() {
               if (!this.isAbortingSuspended && this.isolateCallback(matchStackTrace, stack, new Error().stack)) {
@@ -17081,7 +17293,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -17089,14 +17301,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -17104,7 +17316,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -17133,7 +17345,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -17142,7 +17354,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -17152,19 +17364,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17178,12 +17390,12 @@
         }
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -17202,8 +17414,8 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        const stackRegexp = toRegExp(stackMatch);
-        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
@@ -17217,11 +17429,11 @@
               for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
                 args[_key - 1] = arguments[_key];
               }
-              const result = cb(...args);
+              var result = cb(...args);
               this.isAbortingSuspended = false;
               return result;
             } catch (_unused) {
-              const rid = randomId();
+              var rid = randomId();
               this.isAbortingSuspended = false;
               throw new ReferenceError(rid);
             }
@@ -17229,14 +17441,14 @@
         };
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -17244,58 +17456,85 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getNativeRegexpTest() {
-        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+        var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
+        var nativeRegexTest = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+        if (descriptor && typeof descriptor.value === "function") {
+          return nativeRegexTest;
+        }
+        throw new Error("RegExp.prototype.test is not a function");
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        const INLINE_SCRIPT_STRING = "inlineScript";
-        const INJECTED_SCRIPT_STRING = "injectedScript";
-        const INJECTED_SCRIPT_MARKER = "<anonymous>";
-        const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.includes(INLINE_SCRIPT_STRING);
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(match) {
+          return match.includes(INLINE_SCRIPT_STRING);
         };
-        const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.includes(INJECTED_SCRIPT_STRING);
+        var isInjectedScript = function isInjectedScript(match) {
+          return match.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        let documentURL = window.location.href;
-        const pos = documentURL.indexOf("#");
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        const stackLines = stackSteps.map(function (line) {
-          let stack;
-          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
             var _stackURL, _stackURL2;
-            let stackURL = getStackTraceURL[2];
+            var stackURL = getStackTraceURL[2];
             if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
             if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
               var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
-              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -17309,7 +17548,7 @@
           return stack;
         });
         if (stackLines) {
-          for (let index = 0; index < stackLines.length; index += 1) {
+          for (var index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -17320,7 +17559,7 @@
         }
         return false;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         abortOnStackTrace.apply(this, updatedArgs);
       } catch (e) {
@@ -17329,11 +17568,11 @@
     }
     function adjustSetInterval(source, args) {
       function adjustSetInterval(source, matchCallback, matchDelay, boost) {
-        const nativeSetInterval = window.setInterval;
-        const matchRegexp = toRegExp(matchCallback);
-        const intervalWrapper = function intervalWrapper(callback, delay) {
+        var nativeSetInterval = window.setInterval;
+        var matchRegexp = toRegExp(matchCallback);
+        var intervalWrapper = function intervalWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
-            const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
+            var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
             logMessage(source, message);
           } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
@@ -17351,19 +17590,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17380,24 +17619,46 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getBoostMultiplier(boost) {
-        const DEFAULT_MULTIPLIER = .05;
-        const MIN_MULTIPLIER = .001;
-        const MAX_MULTIPLIER = 50;
-        const parsedBoost = parseFloat(boost);
-        let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+        var DEFAULT_MULTIPLIER = .05;
+        var MIN_MULTIPLIER = .001;
+        var MAX_MULTIPLIER = 50;
+        var parsedBoost = parseFloat(boost);
+        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
         }
@@ -17410,14 +17671,14 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -17425,23 +17686,23 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function nativeIsFinite(num) {
-        const native = Number.isFinite || window.isFinite;
+        var native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function getMatchDelay(delay) {
-        const DEFAULT_DELAY = 1e3;
-        const parsedDelay = parseInt(delay, 10);
-        const delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        var DEFAULT_DELAY = 1e3;
+        var parsedDelay = parseInt(delay, 10);
+        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
       function shouldMatchAnyDelay(delay) {
         return delay === "*";
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         adjustSetInterval.apply(this, updatedArgs);
       } catch (e) {
@@ -17450,11 +17711,11 @@
     }
     function adjustSetTimeout(source, args) {
       function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
-        const nativeSetTimeout = window.setTimeout;
-        const matchRegexp = toRegExp(matchCallback);
-        const timeoutWrapper = function timeoutWrapper(callback, delay) {
+        var nativeSetTimeout = window.setTimeout;
+        var matchRegexp = toRegExp(matchCallback);
+        var timeoutWrapper = function timeoutWrapper(callback, delay) {
           if (!isValidCallback(callback)) {
-            const message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
+            var message = "Scriptlet can't be applied because of invalid callback: '".concat(String(callback), "'");
             logMessage(source, message);
           } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
@@ -17472,19 +17733,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17501,24 +17762,46 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getBoostMultiplier(boost) {
-        const DEFAULT_MULTIPLIER = .05;
-        const MIN_MULTIPLIER = .001;
-        const MAX_MULTIPLIER = 50;
-        const parsedBoost = parseFloat(boost);
-        let boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
+        var DEFAULT_MULTIPLIER = .05;
+        var MIN_MULTIPLIER = .001;
+        var MAX_MULTIPLIER = 50;
+        var parsedBoost = parseFloat(boost);
+        var boostMultiplier = nativeIsNaN(parsedBoost) || !nativeIsFinite(parsedBoost) ? DEFAULT_MULTIPLIER : parsedBoost;
         if (boostMultiplier < MIN_MULTIPLIER) {
           boostMultiplier = MIN_MULTIPLIER;
         }
@@ -17531,14 +17814,14 @@
         return shouldMatchAnyDelay(inputDelay) || realDelay === getMatchDelay(inputDelay);
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -17546,23 +17829,23 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function nativeIsFinite(num) {
-        const native = Number.isFinite || window.isFinite;
+        var native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function getMatchDelay(delay) {
-        const DEFAULT_DELAY = 1e3;
-        const parsedDelay = parseInt(delay, 10);
-        const delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
+        var DEFAULT_DELAY = 1e3;
+        var parsedDelay = parseInt(delay, 10);
+        var delayMatch = nativeIsNaN(parsedDelay) ? DEFAULT_DELAY : parsedDelay;
         return delayMatch;
       }
       function shouldMatchAnyDelay(delay) {
         return delay === "*";
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         adjustSetTimeout.apply(this, updatedArgs);
       } catch (e) {
@@ -17571,24 +17854,24 @@
     }
     function debugCurrentInlineScript(source, args) {
       function debugCurrentInlineScript(source, property, search) {
-        const searchRegexp = toRegExp(search);
-        const rid = randomId();
-        const getCurrentScript = function getCurrentScript() {
+        var searchRegexp = toRegExp(search);
+        var rid = randomId();
+        var getCurrentScript = function getCurrentScript() {
           if ("currentScript" in document) {
             return document.currentScript;
           }
-          const scripts = document.getElementsByTagName("script");
+          var scripts = document.getElementsByTagName("script");
           return scripts[scripts.length - 1];
         };
-        const ourScript = getCurrentScript();
-        const abort = function abort() {
-          const scriptEl = getCurrentScript();
+        var ourScript = getCurrentScript();
+        var abort = function abort() {
+          var scriptEl = getCurrentScript();
           if (!scriptEl) {
             return;
           }
-          let content = scriptEl.textContent;
+          var content = scriptEl.textContent;
           try {
-            const textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
+            var textContentGetter = Object.getOwnPropertyDescriptor(Node.prototype, "textContent").get;
             content = textContentGetter.call(scriptEl);
           } catch (e) {}
           if (scriptEl instanceof HTMLScriptElement && content.length > 0 && scriptEl !== ourScript && searchRegexp.test(content)) {
@@ -17596,21 +17879,21 @@
             debugger;
           }
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (base instanceof Object === false && base === null) {
-            const props = property.split(".");
-            const propIndex = props.indexOf(prop);
-            const baseName = props[propIndex - 1];
-            const message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
+            var props = property.split(".");
+            var propIndex = props.indexOf(prop);
+            var baseName = props[propIndex - 1];
+            var message = "The scriptlet had been executed before the ".concat(baseName, " was loaded.");
             logMessage(message, source.verbose);
             return;
           }
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -17624,7 +17907,7 @@
             });
             return;
           }
-          let currentValue = base[prop];
+          var currentValue = base[prop];
           setPropertyAccess(base, prop, {
             set: function set(value) {
               abort();
@@ -17643,7 +17926,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -17651,14 +17934,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -17666,7 +17949,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -17695,20 +17978,42 @@
         };
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -17717,7 +18022,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -17727,19 +18032,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17753,14 +18058,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -17770,7 +18075,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         debugCurrentInlineScript.apply(this, updatedArgs);
       } catch (e) {
@@ -17782,18 +18087,18 @@
         if (!property) {
           return;
         }
-        const rid = randomId();
-        const abort = function abort() {
+        var rid = randomId();
+        var abort = function abort() {
           hit(source);
           debugger;
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -17819,7 +18124,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -17827,14 +18132,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -17842,7 +18147,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -17871,7 +18176,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -17880,7 +18185,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -17890,19 +18195,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -17919,7 +18224,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         debugOnPropertyRead.apply(this, updatedArgs);
       } catch (e) {
@@ -17931,18 +18236,18 @@
         if (!property) {
           return;
         }
-        const rid = randomId();
-        const abort = function abort() {
+        var rid = randomId();
+        var abort = function abort() {
           hit(source);
           debugger;
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -17967,7 +18272,7 @@
         return Math.random().toString(36).slice(2, 9);
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -17975,14 +18280,14 @@
         return true;
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -17990,7 +18295,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -18019,7 +18324,7 @@
         };
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -18028,7 +18333,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -18038,19 +18343,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18066,7 +18371,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         debugOnPropertyWrite.apply(this, updatedArgs);
       } catch (e) {
@@ -18075,7 +18380,7 @@
     }
     function dirString(source, args) {
       function dirString(source, times) {
-        const _console = console,
+        var _console = console,
           dir = _console.dir;
         function dirWrapper(object) {
           if (typeof dir === "function") {
@@ -18090,19 +18395,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18115,7 +18420,7 @@
           window.__debug(source);
         }
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         dirString.apply(this, updatedArgs);
       } catch (e) {
@@ -18125,7 +18430,7 @@
     function disableNewtabLinks(source, args) {
       function disableNewtabLinks(source) {
         document.addEventListener("click", function (ev) {
-          let target = ev.target;
+          var target = ev.target;
           while (target !== null) {
             if (target.localName === "a" && target.hasAttribute("target")) {
               ev.stopPropagation();
@@ -18142,19 +18447,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18167,7 +18472,7 @@
           window.__debug(source);
         }
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         disableNewtabLinks.apply(this, updatedArgs);
       } catch (e) {
@@ -18179,16 +18484,16 @@
         if (!!stack && !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-        const prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
-        const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
-        const evalWrapper = function evalWrapper(target, thisArg, args) {
-          let data = Reflect.apply(target, thisArg, args);
+        var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
+        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
+        var evalWrapper = function evalWrapper(target, thisArg, args) {
+          var data = Reflect.apply(target, thisArg, args);
           if (typeof data === "object") {
             data = jsonPruner(source, data, prunePaths, requiredPaths);
           }
           return data;
         };
-        const evalHandler = {
+        var evalHandler = {
           apply: evalWrapper
         };
         window.eval = new Proxy(window.eval, evalHandler);
@@ -18198,19 +18503,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18230,19 +18535,19 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        const stackRegexp = toRegExp(stackMatch);
-        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
       function getWildcardPropertyInChain(base, chain) {
-        let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-        const pos = chain.indexOf(".");
+        var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           if (chain === "*" || chain === "[]") {
-            for (const key in base) {
+            for (var key in base) {
               if (Object.prototype.hasOwnProperty.call(base, key)) {
                 output.push({
                   base: base,
@@ -18258,17 +18563,17 @@
           }
           return output;
         }
-        const prop = chain.slice(0, pos);
-        const shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
+        var prop = chain.slice(0, pos);
+        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
         if (shouldLookThrough) {
-          const nextProp = chain.slice(pos + 1);
-          const baseKeys = Object.keys(base);
+          var nextProp = chain.slice(pos + 1);
+          var baseKeys = Object.keys(base);
           baseKeys.forEach(function (key) {
-            const item = base[key];
+            var item = base[key];
             getWildcardPropertyInChain(item, nextProp, lookThrough, output);
           });
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if (nextBase !== undefined) {
           getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
@@ -18276,14 +18581,14 @@
         return output;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -18291,27 +18596,49 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isPruningNeeded(source, root, prunePaths, requiredPaths) {
         if (!root) {
           return false;
         }
-        let shouldProcess;
+        var shouldProcess;
         if (prunePaths.length === 0 && requiredPaths.length > 0) {
-          const rootString = JSON.stringify(root);
-          const matchRegex = toRegExp(requiredPaths.join(""));
-          const shouldLog = matchRegex.test(rootString);
+          var rootString = JSON.stringify(root);
+          var matchRegex = toRegExp(requiredPaths.join(""));
+          var shouldLog = matchRegex.test(rootString);
           if (shouldLog) {
             logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
             if (root && typeof root === "object") {
@@ -18321,22 +18648,26 @@
             return shouldProcess;
           }
         }
-        const wildcardSymbols = [".*.", "*.", ".*", ".[].", "[].", ".[]"];
-        for (let i = 0; i < requiredPaths.length; i += 1) {
-          const requiredPath = requiredPaths[i];
-          const lastNestedPropName = requiredPath.split(".").pop();
-          const hasWildcard = wildcardSymbols.some(function (symbol) {
+        var wildcardSymbols = [".*.", "*.", ".*", ".[].", "[].", ".[]"];
+        var _loop = function _loop() {
+          var requiredPath = requiredPaths[i];
+          var lastNestedPropName = requiredPath.split(".").pop();
+          var hasWildcard = wildcardSymbols.some(function (symbol) {
             return requiredPath.includes(symbol);
           });
-          const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+          var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
           shouldProcess = !hasWildcard;
-          for (let i = 0; i < details.length; i += 1) {
+          for (var j = 0; j < details.length; j += 1) {
+            var hasRequiredProp = typeof lastNestedPropName === "string" && details[j].base[lastNestedPropName] !== undefined;
             if (hasWildcard) {
-              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
+              shouldProcess = hasRequiredProp || shouldProcess;
             } else {
-              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
+              shouldProcess = hasRequiredProp && shouldProcess;
             }
           }
+        };
+        for (var i = 0; i < requiredPaths.length; i += 1) {
+          _loop();
         }
         return shouldProcess;
       }
@@ -18353,7 +18684,7 @@
             return root;
           }
           prunePaths.forEach(function (path) {
-            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+            var ownerObjArr = getWildcardPropertyInChain(root, path, true);
             ownerObjArr.forEach(function (ownerObj) {
               if (ownerObj !== undefined && ownerObj.base) {
                 delete ownerObj.base[ownerObj.prop];
@@ -18367,42 +18698,47 @@
         return root;
       }
       function getNativeRegexpTest() {
-        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+        var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
+        var nativeRegexTest = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+        if (descriptor && typeof descriptor.value === "function") {
+          return nativeRegexTest;
+        }
+        throw new Error("RegExp.prototype.test is not a function");
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        const INLINE_SCRIPT_STRING = "inlineScript";
-        const INJECTED_SCRIPT_STRING = "injectedScript";
-        const INJECTED_SCRIPT_MARKER = "<anonymous>";
-        const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.includes(INLINE_SCRIPT_STRING);
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(match) {
+          return match.includes(INLINE_SCRIPT_STRING);
         };
-        const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.includes(INJECTED_SCRIPT_STRING);
+        var isInjectedScript = function isInjectedScript(match) {
+          return match.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        let documentURL = window.location.href;
-        const pos = documentURL.indexOf("#");
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        const stackLines = stackSteps.map(function (line) {
-          let stack;
-          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
             var _stackURL, _stackURL2;
-            let stackURL = getStackTraceURL[2];
+            var stackURL = getStackTraceURL[2];
             if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
             if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
               var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
-              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -18416,7 +18752,7 @@
           return stack;
         });
         if (stackLines) {
-          for (let index = 0; index < stackLines.length; index += 1) {
+          for (var index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -18427,7 +18763,7 @@
         }
         return false;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         evalDataPrune.apply(this, updatedArgs);
       } catch (e) {
@@ -18436,13 +18772,13 @@
     }
     function forceWindowClose(source, args) {
       function forceWindowClose(source) {
-        let path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var path = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
         if (typeof window.close !== "function") {
-          const message = "window.close() is not a function so 'close-window' scriptlet is unavailable";
+          var message = "window.close() is not a function so 'close-window' scriptlet is unavailable";
           logMessage(source, message);
           return;
         }
-        const closeImmediately = function closeImmediately() {
+        var closeImmediately = function closeImmediately() {
           try {
             hit(source);
             window.close();
@@ -18450,8 +18786,8 @@
             logMessage(source, e);
           }
         };
-        const closeByExtension = function closeByExtension() {
-          const extCall = function extCall() {
+        var closeByExtension = function closeByExtension() {
+          var extCall = function extCall() {
             dispatchEvent(new Event("adguard:scriptlet-close-window"));
           };
           window.addEventListener("adguard:subscribed-to-close-window", extCall, {
@@ -18463,12 +18799,12 @@
             });
           }, 5e3);
         };
-        const shouldClose = function shouldClose() {
+        var shouldClose = function shouldClose() {
           if (path === "") {
             return true;
           }
-          const pathRegexp = toRegExp(path);
-          const currentPath = "".concat(window.location.pathname).concat(window.location.search);
+          var pathRegexp = toRegExp(path);
+          var currentPath = "".concat(window.location.pathname).concat(window.location.search);
           return pathRegexp.test(currentPath);
         };
         if (shouldClose()) {
@@ -18483,19 +18819,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18509,34 +18845,56 @@
         }
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
         }
         nativeConsole("".concat(name, ": ").concat(message));
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         forceWindowClose.apply(this, updatedArgs);
       } catch (e) {
@@ -18548,15 +18906,15 @@
         if (!Element.prototype.attachShadow) {
           return;
         }
-        const hideElement = function hideElement(targetElement) {
-          const DISPLAY_NONE_CSS = "display:none!important;";
+        var hideElement = function hideElement(targetElement) {
+          var DISPLAY_NONE_CSS = "display:none!important;";
           targetElement.style.cssText = DISPLAY_NONE_CSS;
         };
-        const hideHandler = function hideHandler() {
-          let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
-          while (hostElements.length !== 0) {
-            let isHidden = false;
-            const _pierceShadowDom = pierceShadowDom(selector, hostElements),
+        var hideHandler = function hideHandler() {
+          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+          var _loop = function _loop() {
+            var isHidden = false;
+            var _pierceShadowDom = pierceShadowDom(selector, hostElements),
               targets = _pierceShadowDom.targets,
               innerHosts = _pierceShadowDom.innerHosts;
             targets.forEach(function (targetEl) {
@@ -18567,6 +18925,9 @@
               hit(source);
             }
             hostElements = innerHosts;
+          };
+          while (hostElements.length !== 0) {
+            _loop();
           }
         };
         hideHandler();
@@ -18577,19 +18938,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18603,11 +18964,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        const THROTTLE_DELAY_MS = 20;
-        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        const connect = function connect() {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -18623,7 +18984,7 @@
             });
           }
         };
-        const disconnect = function disconnect() {
+        var disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -18634,40 +18995,42 @@
         connect();
       }
       function findHostElements(rootElement) {
-        const hosts = [];
-        const domElems = rootElement.querySelectorAll("*");
-        domElems.forEach(function (el) {
-          if (el.shadowRoot) {
-            hosts.push(el);
-          }
-        });
+        var hosts = [];
+        if (rootElement) {
+          var domElems = rootElement.querySelectorAll("*");
+          domElems.forEach(function (el) {
+            if (el.shadowRoot) {
+              hosts.push(el);
+            }
+          });
+        }
         return hosts;
       }
       function pierceShadowDom(selector, hostElements) {
-        let targets = [];
-        const innerHostsAcc = [];
+        var targets = [];
+        var innerHostsAcc = [];
         hostElements.forEach(function (host) {
-          const simpleElems = host.querySelectorAll(selector);
+          var simpleElems = host.querySelectorAll(selector);
           targets = targets.concat([].slice.call(simpleElems));
-          const shadowRootElem = host.shadowRoot;
-          const shadowChildren = shadowRootElem.querySelectorAll(selector);
+          var shadowRootElem = host.shadowRoot;
+          var shadowChildren = shadowRootElem.querySelectorAll(selector);
           targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
         });
-        const innerHosts = flatten(innerHostsAcc);
+        var innerHosts = flatten(innerHostsAcc);
         return {
           targets: targets,
           innerHosts: innerHosts
         };
       }
       function flatten(input) {
-        const stack = [];
+        var stack = [];
         input.forEach(function (el) {
           return stack.push(el);
         });
-        const res = [];
+        var res = [];
         while (stack.length) {
-          const next = stack.pop();
+          var next = stack.pop();
           if (Array.isArray(next)) {
             next.forEach(function (el) {
               return stack.push(el);
@@ -18679,9 +19042,9 @@
         return res.reverse();
       }
       function throttle(cb, delay) {
-        let wait = false;
-        let savedArgs;
-        const wrapper = function wrapper() {
+        var wait = false;
+        var savedArgs;
+        var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -18701,7 +19064,7 @@
         };
         return wrapper;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         hideInShadowDom.apply(this, updatedArgs);
       } catch (e) {
@@ -18710,7 +19073,7 @@
     }
     function injectCssInShadowDom(source, args) {
       function injectCssInShadowDom(source, cssRule) {
-        let hostSelector = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var hostSelector = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
         if (!Element.prototype.attachShadow || typeof Proxy === "undefined" || typeof Reflect === "undefined") {
           return;
         }
@@ -18718,9 +19081,9 @@
           logMessage(source, '"url()" function is not allowed for css rules');
           return;
         }
-        const callback = function callback(shadowRoot) {
+        var callback = function callback(shadowRoot) {
           try {
-            const stylesheet = new CSSStyleSheet();
+            var stylesheet = new CSSStyleSheet();
             try {
               stylesheet.insertRule(cssRule);
             } catch (e) {
@@ -18729,7 +19092,7 @@
             }
             shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, stylesheet];
           } catch (_unused) {
-            const styleTag = document.createElement("style");
+            var styleTag = document.createElement("style");
             styleTag.innerText = cssRule;
             shadowRoot.appendChild(styleTag);
           }
@@ -18742,19 +19105,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18768,14 +19131,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -18783,19 +19146,19 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function hijackAttachShadow(context, hostSelector, callback) {
-        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
-          const shadowRoot = Reflect.apply(target, thisArg, args);
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          var shadowRoot = Reflect.apply(target, thisArg, args);
           if (thisArg && thisArg.matches(hostSelector || "*")) {
             callback(shadowRoot);
           }
           return shadowRoot;
         };
-        const attachShadowHandler = {
+        var attachShadowHandler = {
           apply: handlerWrapper
         };
         context.Element.prototype.attachShadow = new Proxy(context.Element.prototype.attachShadow, attachShadowHandler);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         injectCssInShadowDom.apply(this, updatedArgs);
       } catch (e) {
@@ -18807,21 +19170,21 @@
         if (!!stack && !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-        const prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
-        const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
-        const nativeJSONParse = JSON.parse;
-        const jsonParseWrapper = function jsonParseWrapper() {
+        var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
+        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
+        var nativeJSONParse = JSON.parse;
+        var jsonParseWrapper = function jsonParseWrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
-          const root = nativeJSONParse.apply(JSON, args);
+          var root = nativeJSONParse.apply(JSON, args);
           return jsonPruner(source, root, prunePaths, requiredPaths);
         };
         jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
         JSON.parse = jsonParseWrapper;
-        const nativeResponseJson = Response.prototype.json;
-        const responseJsonWrapper = function responseJsonWrapper() {
-          const promise = nativeResponseJson.apply(this);
+        var nativeResponseJson = Response.prototype.json;
+        var responseJsonWrapper = function responseJsonWrapper() {
+          var promise = nativeResponseJson.apply(this);
           return promise.then(function (obj) {
             return jsonPruner(source, obj, prunePaths, requiredPaths);
           });
@@ -18836,19 +19199,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -18868,19 +19231,19 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        const stackRegexp = toRegExp(stackMatch);
-        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
       function getWildcardPropertyInChain(base, chain) {
-        let lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-        const pos = chain.indexOf(".");
+        var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           if (chain === "*" || chain === "[]") {
-            for (const key in base) {
+            for (var key in base) {
               if (Object.prototype.hasOwnProperty.call(base, key)) {
                 output.push({
                   base: base,
@@ -18896,17 +19259,17 @@
           }
           return output;
         }
-        const prop = chain.slice(0, pos);
-        const shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
+        var prop = chain.slice(0, pos);
+        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
         if (shouldLookThrough) {
-          const nextProp = chain.slice(pos + 1);
-          const baseKeys = Object.keys(base);
+          var nextProp = chain.slice(pos + 1);
+          var baseKeys = Object.keys(base);
           baseKeys.forEach(function (key) {
-            const item = base[key];
+            var item = base[key];
             getWildcardPropertyInChain(item, nextProp, lookThrough, output);
           });
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if (nextBase !== undefined) {
           getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
@@ -18914,14 +19277,14 @@
         return output;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -18932,11 +19295,11 @@
         if (!root) {
           return false;
         }
-        let shouldProcess;
+        var shouldProcess;
         if (prunePaths.length === 0 && requiredPaths.length > 0) {
-          const rootString = JSON.stringify(root);
-          const matchRegex = toRegExp(requiredPaths.join(""));
-          const shouldLog = matchRegex.test(rootString);
+          var rootString = JSON.stringify(root);
+          var matchRegex = toRegExp(requiredPaths.join(""));
+          var shouldLog = matchRegex.test(rootString);
           if (shouldLog) {
             logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2)), true);
             if (root && typeof root === "object") {
@@ -18946,22 +19309,26 @@
             return shouldProcess;
           }
         }
-        const wildcardSymbols = [".*.", "*.", ".*", ".[].", "[].", ".[]"];
-        for (let i = 0; i < requiredPaths.length; i += 1) {
-          const requiredPath = requiredPaths[i];
-          const lastNestedPropName = requiredPath.split(".").pop();
-          const hasWildcard = wildcardSymbols.some(function (symbol) {
+        var wildcardSymbols = [".*.", "*.", ".*", ".[].", "[].", ".[]"];
+        var _loop = function _loop() {
+          var requiredPath = requiredPaths[i];
+          var lastNestedPropName = requiredPath.split(".").pop();
+          var hasWildcard = wildcardSymbols.some(function (symbol) {
             return requiredPath.includes(symbol);
           });
-          const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+          var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
           shouldProcess = !hasWildcard;
-          for (let i = 0; i < details.length; i += 1) {
+          for (var j = 0; j < details.length; j += 1) {
+            var hasRequiredProp = typeof lastNestedPropName === "string" && details[j].base[lastNestedPropName] !== undefined;
             if (hasWildcard) {
-              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) || shouldProcess;
+              shouldProcess = hasRequiredProp || shouldProcess;
             } else {
-              shouldProcess = !(details[i].base[lastNestedPropName] === undefined) && shouldProcess;
+              shouldProcess = hasRequiredProp && shouldProcess;
             }
           }
+        };
+        for (var i = 0; i < requiredPaths.length; i += 1) {
+          _loop();
         }
         return shouldProcess;
       }
@@ -18978,7 +19345,7 @@
             return root;
           }
           prunePaths.forEach(function (path) {
-            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+            var ownerObjArr = getWildcardPropertyInChain(root, path, true);
             ownerObjArr.forEach(function (ownerObj) {
               if (ownerObj !== undefined && ownerObj.base) {
                 delete ownerObj.base[ownerObj.prop];
@@ -18992,55 +19359,82 @@
         return root;
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getNativeRegexpTest() {
-        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+        var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
+        var nativeRegexTest = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+        if (descriptor && typeof descriptor.value === "function") {
+          return nativeRegexTest;
+        }
+        throw new Error("RegExp.prototype.test is not a function");
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        const INLINE_SCRIPT_STRING = "inlineScript";
-        const INJECTED_SCRIPT_STRING = "injectedScript";
-        const INJECTED_SCRIPT_MARKER = "<anonymous>";
-        const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.includes(INLINE_SCRIPT_STRING);
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(match) {
+          return match.includes(INLINE_SCRIPT_STRING);
         };
-        const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.includes(INJECTED_SCRIPT_STRING);
+        var isInjectedScript = function isInjectedScript(match) {
+          return match.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        let documentURL = window.location.href;
-        const pos = documentURL.indexOf("#");
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        const stackLines = stackSteps.map(function (line) {
-          let stack;
-          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
             var _stackURL, _stackURL2;
-            let stackURL = getStackTraceURL[2];
+            var stackURL = getStackTraceURL[2];
             if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
             if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
               var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
-              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -19054,7 +19448,7 @@
           return stack;
         });
         if (stackLines) {
-          for (let index = 0; index < stackLines.length; index += 1) {
+          for (var index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -19065,7 +19459,7 @@
         }
         return false;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         jsonPrune.apply(this, updatedArgs);
       } catch (e) {
@@ -19079,7 +19473,7 @@
         }
         console.log(args);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         log.apply(this, updatedArgs);
       } catch (e) {
@@ -19088,17 +19482,18 @@
     }
     function logAddEventListener(source, args) {
       function logAddEventListener(source) {
-        const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+        var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
         function addEventListenerWrapper(type, listener) {
           var _this$constructor;
           if (validateType(type) && validateListener(listener)) {
-            const message = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
+            var message = 'addEventListener("'.concat(type, '", ').concat(listenerToString(listener), ")");
             logMessage(source, message, true);
             hit(source);
+          } else {
+            var _message = "Invalid event type or listener passed to addEventListener:\n        type: ".concat(convertTypeToString(type), "\n        listener: ").concat(convertTypeToString(listener));
+            logMessage(source, _message, true);
           }
-          const message = "Invalid event type or listener passed to addEventListener:\ntype: ".concat(convertTypeToString(type), "\nlistener: ").concat(convertTypeToString(listener));
-          logMessage(source, message, true);
-          let context = this;
+          var context = this;
           if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
             context = window;
           }
@@ -19107,7 +19502,7 @@
           }
           return nativeAddEventListener.apply(context, [type, listener, ...args]);
         }
-        const descriptor = {
+        var descriptor = {
           configurable: true,
           set: function set() {},
           get: function get() {
@@ -19123,19 +19518,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19152,13 +19547,13 @@
         return typeof type !== "undefined";
       }
       function validateListener(listener) {
-        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
+        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && "handleEvent" in listener && typeof listener.handleEvent === "function");
       }
       function listenerToString(listener) {
         return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
       function convertTypeToString(value) {
-        let output;
+        var output;
         if (typeof value === "undefined") {
           output = "undefined";
         } else if (typeof value === "object") {
@@ -19173,14 +19568,14 @@
         return output;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -19192,9 +19587,9 @@
           return String(obj);
         }
         return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
-          const key = pair[0];
-          const value = pair[1];
-          let recordValueStr = value;
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -19204,7 +19599,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         logAddEventListener.apply(this, updatedArgs);
       } catch (e) {
@@ -19213,14 +19608,14 @@
     }
     function logEval(source, args) {
       function logEval(source) {
-        const nativeEval = window.eval;
+        var nativeEval = window.eval;
         function evalWrapper(str) {
           hit(source);
           logMessage(source, 'eval("'.concat(str, '")'), true);
           return nativeEval(str);
         }
         window.eval = evalWrapper;
-        const nativeFunction = window.Function;
+        var nativeFunction = window.Function;
         function FunctionWrapper() {
           hit(source);
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -19238,19 +19633,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19264,21 +19659,21 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
         }
         nativeConsole("".concat(name, ": ").concat(message));
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         logEval.apply(this, updatedArgs);
       } catch (e) {
@@ -19290,15 +19685,15 @@
         if (!property) {
           return;
         }
-        const refineStackTrace = function refineStackTrace(stackString) {
-          const stackSteps = stackString.split("\n").slice(2).map(function (line) {
+        var refineStackTrace = function refineStackTrace(stackString) {
+          var stackSteps = stackString.split("\n").slice(2).map(function (line) {
             return line.replace(/ {4}at /, "");
           });
-          const logInfoArray = stackSteps.map(function (line) {
-            let funcName;
-            let funcFullPath;
-            const reg = /\(([^\)]+)\)/;
-            const regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
+          var logInfoArray = stackSteps.map(function (line) {
+            var funcName;
+            var funcFullPath;
+            var reg = /\(([^\)]+)\)/;
+            var regFirefox = /(.*?@)(\S+)(:\d+):\d+\)?$/;
             if (line.match(reg)) {
               funcName = line.split(" ").slice(0, -1).join(" ");
               funcFullPath = line.match(reg)[1];
@@ -19311,19 +19706,19 @@
             }
             return [funcName, funcFullPath];
           });
-          const logInfoObject = {};
+          var logInfoObject = {};
           logInfoArray.forEach(function (pair) {
             logInfoObject[pair[0]] = pair[1];
           });
           return logInfoObject;
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          let base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
           if (chain) {
-            const setter = function setter(a) {
+            var setter = function setter(a) {
               base = a;
               if (a instanceof Object) {
                 setChainPropAccess(a, chain);
@@ -19337,7 +19732,7 @@
             });
             return;
           }
-          let value = base[prop];
+          var value = base[prop];
           setPropertyAccess(base, prop, {
             get() {
               hit(source);
@@ -19356,14 +19751,14 @@
         setChainPropAccess(window, property);
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -19371,7 +19766,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -19400,7 +19795,7 @@
         };
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -19412,19 +19807,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19438,14 +19833,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -19455,7 +19850,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         logOnStacktrace.apply(this, updatedArgs);
       } catch (e) {
@@ -19464,14 +19859,14 @@
     }
     function m3uPrune(source, args) {
       function m3uPrune(source, propsToRemove) {
-        let urlToMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var urlToMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
         if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-        let shouldPruneResponse = false;
-        const urlMatchRegexp = toRegExp(urlToMatch);
-        const SEGMENT_MARKER = "#";
-        const AD_MARKER = {
+        var shouldPruneResponse = false;
+        var urlMatchRegexp = toRegExp(urlToMatch);
+        var SEGMENT_MARKER = "#";
+        var AD_MARKER = {
           ASSET: "#EXT-X-ASSET:",
           CUE: "#EXT-X-CUE:",
           CUE_IN: "#EXT-X-CUE-IN",
@@ -19480,28 +19875,28 @@
           EXTM3U: "#EXTM3U",
           SCTE35: "#EXT-X-SCTE35:"
         };
-        const COMCAST_AD_MARKER = {
+        var COMCAST_AD_MARKER = {
           AD: "-AD-",
           VAST: "-VAST-",
           VMAP_AD: "-VMAP-AD-",
           VMAP_AD_BREAK: "#EXT-X-VMAP-AD-BREAK:"
         };
-        const TAGS_ALLOWLIST = ["#EXT-X-TARGETDURATION", "#EXT-X-MEDIA-SEQUENCE", "#EXT-X-DISCONTINUITY-SEQUENCE", "#EXT-X-ENDLIST", "#EXT-X-PLAYLIST-TYPE", "#EXT-X-I-FRAMES-ONLY", "#EXT-X-MEDIA", "#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF", "#EXT-X-SESSION-DATA", "#EXT-X-SESSION-KEY", "#EXT-X-INDEPENDENT-SEGMENTS", "#EXT-X-START"];
-        const isAllowedTag = function isAllowedTag(str) {
+        var TAGS_ALLOWLIST = ["#EXT-X-TARGETDURATION", "#EXT-X-MEDIA-SEQUENCE", "#EXT-X-DISCONTINUITY-SEQUENCE", "#EXT-X-ENDLIST", "#EXT-X-PLAYLIST-TYPE", "#EXT-X-I-FRAMES-ONLY", "#EXT-X-MEDIA", "#EXT-X-STREAM-INF", "#EXT-X-I-FRAME-STREAM-INF", "#EXT-X-SESSION-DATA", "#EXT-X-SESSION-KEY", "#EXT-X-INDEPENDENT-SEGMENTS", "#EXT-X-START"];
+        var isAllowedTag = function isAllowedTag(str) {
           return TAGS_ALLOWLIST.some(function (el) {
             return str.startsWith(el);
           });
         };
-        const pruneExtinfFromVmapBlock = function pruneExtinfFromVmapBlock(lines, i) {
-          let array = lines.slice();
-          let index = i;
+        var pruneExtinfFromVmapBlock = function pruneExtinfFromVmapBlock(lines, i) {
+          var array = lines.slice();
+          var index = i;
           if (array[index].includes(AD_MARKER.EXTINF)) {
             array[index] = undefined;
             index += 1;
             if (array[index].includes(AD_MARKER.DISCONTINUITY)) {
               array[index] = undefined;
               index += 1;
-              const prunedExtinf = pruneExtinfFromVmapBlock(array, index);
+              var prunedExtinf = pruneExtinfFromVmapBlock(array, index);
               array = prunedExtinf.array;
               index = prunedExtinf.index;
             }
@@ -19511,14 +19906,14 @@
             index: index
           };
         };
-        const pruneVmapBlock = function pruneVmapBlock(lines) {
-          let array = lines.slice();
-          for (let i = 0; i < array.length - 1; i += 1) {
+        var pruneVmapBlock = function pruneVmapBlock(lines) {
+          var array = lines.slice();
+          for (var i = 0; i < array.length - 1; i += 1) {
             if (array[i].includes(COMCAST_AD_MARKER.VMAP_AD) || array[i].includes(COMCAST_AD_MARKER.VAST) || array[i].includes(COMCAST_AD_MARKER.AD)) {
               array[i] = undefined;
               if (array[i + 1].includes(AD_MARKER.EXTINF)) {
                 i += 1;
-                const prunedExtinf = pruneExtinfFromVmapBlock(array, i);
+                var prunedExtinf = pruneExtinfFromVmapBlock(array, i);
                 array = prunedExtinf.array;
                 i = prunedExtinf.index - 1;
               }
@@ -19526,7 +19921,7 @@
           }
           return array;
         };
-        const pruneSpliceoutBlock = function pruneSpliceoutBlock(line, index, array) {
+        var pruneSpliceoutBlock = function pruneSpliceoutBlock(line, index, array) {
           if (!line.startsWith(AD_MARKER.CUE)) {
             return line;
           }
@@ -19549,8 +19944,8 @@
           }
           return line;
         };
-        const removeM3ULineRegexp = toRegExp(propsToRemove);
-        const pruneInfBlock = function pruneInfBlock(line, index, array) {
+        var removeM3ULineRegexp = toRegExp(propsToRemove);
+        var pruneInfBlock = function pruneInfBlock(line, index, array) {
           if (!line.startsWith(AD_MARKER.EXTINF)) {
             return line;
           }
@@ -19570,17 +19965,17 @@
           }
           return line;
         };
-        const pruneSegments = function pruneSegments(lines) {
-          for (let i = 0; i < lines.length - 1; i += 1) {
+        var pruneSegments = function pruneSegments(lines) {
+          for (var i = 0; i < lines.length - 1; i += 1) {
             var _lines$i;
             if ((_lines$i = lines[i]) !== null && _lines$i !== void 0 && _lines$i.startsWith(SEGMENT_MARKER) && removeM3ULineRegexp.test(lines[i])) {
-              const segmentName = lines[i].substring(0, lines[i].indexOf(":"));
+              var segmentName = lines[i].substring(0, lines[i].indexOf(":"));
               if (!segmentName) {
                 return lines;
               }
               lines[i] = undefined;
               i += 1;
-              for (let j = i; j < lines.length; j += 1) {
+              for (var j = i; j < lines.length; j += 1) {
                 if (!lines[j].includes(segmentName) && !isAllowedTag(lines[j])) {
                   lines[j] = undefined;
                 } else {
@@ -19592,18 +19987,18 @@
           }
           return lines;
         };
-        const isM3U = function isM3U(text) {
+        var isM3U = function isM3U(text) {
           if (typeof text === "string") {
-            const trimmedText = text.trim();
+            var trimmedText = text.trim();
             return trimmedText.startsWith(AD_MARKER.EXTM3U) || trimmedText.startsWith(COMCAST_AD_MARKER.VMAP_AD_BREAK);
           }
           return false;
         };
-        const isPruningNeeded = function isPruningNeeded(text, regexp) {
+        var isPruningNeeded = function isPruningNeeded(text, regexp) {
           return isM3U(text) && regexp.test(text);
         };
-        const pruneM3U = function pruneM3U(text) {
-          let lines = text.split(/\n\r|\n|\r/);
+        var pruneM3U = function pruneM3U(text) {
+          var lines = text.split(/\n\r|\n|\r/);
           if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
             lines = pruneVmapBlock(lines);
             return lines.filter(function (l) {
@@ -19624,57 +20019,57 @@
             return !!l;
           }).join("\n");
         };
-        const nativeOpen = window.XMLHttpRequest.prototype.open;
-        const nativeSend = window.XMLHttpRequest.prototype.send;
-        let xhrData;
-        const openWrapper = function openWrapper(target, thisArg, args) {
+        var nativeOpen = window.XMLHttpRequest.prototype.open;
+        var nativeSend = window.XMLHttpRequest.prototype.send;
+        var xhrData;
+        var openWrapper = function openWrapper(target, thisArg, args) {
           xhrData = getXhrData.apply(null, args);
           if (matchRequestProps(source, urlToMatch, xhrData)) {
             thisArg.shouldBePruned = true;
           }
           if (thisArg.shouldBePruned) {
             thisArg.collectedHeaders = [];
-            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
               thisArg.collectedHeaders.push(args);
               return Reflect.apply(target, thisArg, args);
             };
-            const setRequestHeaderHandler = {
+            var setRequestHeaderHandler = {
               apply: setRequestHeaderWrapper
             };
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const sendWrapper = function sendWrapper(target, thisArg, args) {
-          const allowedResponseTypeValues = ["", "text"];
+        var sendWrapper = function sendWrapper(target, thisArg, args) {
+          var allowedResponseTypeValues = ["", "text"];
           if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
             return Reflect.apply(target, thisArg, args);
           }
-          const forgedRequest = new XMLHttpRequest();
+          var forgedRequest = new XMLHttpRequest();
           forgedRequest.addEventListener("readystatechange", function () {
             if (forgedRequest.readyState !== 4) {
               return;
             }
-            const readyState = forgedRequest.readyState,
+            var readyState = forgedRequest.readyState,
               response = forgedRequest.response,
               responseText = forgedRequest.responseText,
               responseURL = forgedRequest.responseURL,
               responseXML = forgedRequest.responseXML,
               status = forgedRequest.status,
               statusText = forgedRequest.statusText;
-            const content = responseText || response;
+            var content = responseText || response;
             if (typeof content !== "string") {
               return;
             }
             if (!propsToRemove) {
               if (isM3U(response)) {
-                const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+                var message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
                 logMessage(source, message);
               }
             } else {
               shouldPruneResponse = isPruningNeeded(response, removeM3ULineRegexp);
             }
-            const responseContent = shouldPruneResponse ? pruneM3U(response) : response;
+            var responseContent = shouldPruneResponse ? pruneM3U(response) : response;
             Object.defineProperties(thisArg, {
               readyState: {
                 value: readyState,
@@ -19706,19 +20101,19 @@
               }
             });
             setTimeout(function () {
-              const stateEvent = new Event("readystatechange");
+              var stateEvent = new Event("readystatechange");
               thisArg.dispatchEvent(stateEvent);
-              const loadEvent = new Event("load");
+              var loadEvent = new Event("load");
               thisArg.dispatchEvent(loadEvent);
-              const loadEndEvent = new Event("loadend");
+              var loadEndEvent = new Event("loadend");
               thisArg.dispatchEvent(loadEndEvent);
             }, 1);
             hit(source);
           });
           nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
           thisArg.collectedHeaders.forEach(function (header) {
-            const name = header[0];
-            const value = header[1];
+            var name = header[0];
+            var value = header[1];
             forgedRequest.setRequestHeader(name, value);
           });
           thisArg.collectedHeaders = [];
@@ -19729,31 +20124,31 @@
           }
           return undefined;
         };
-        const openHandler = {
+        var openHandler = {
           apply: openWrapper
         };
-        const sendHandler = {
+        var sendHandler = {
           apply: sendWrapper
         };
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
         XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
-        const nativeFetch = window.fetch;
-        const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
-          const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
+        var nativeFetch = window.fetch;
+        var fetchWrapper = async function fetchWrapper(target, thisArg, args) {
+          var fetchURL = args[0] instanceof Request ? args[0].url : args[0];
           if (typeof fetchURL !== "string" || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
           if (urlMatchRegexp.test(fetchURL)) {
-            const response = await nativeFetch(...args);
-            const clonedResponse = response.clone();
-            const responseText = await response.text();
+            var response = await nativeFetch(...args);
+            var clonedResponse = response.clone();
+            var responseText = await response.text();
             if (!propsToRemove && isM3U(responseText)) {
-              const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+              var message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
               logMessage(source, message);
               return clonedResponse;
             }
             if (isPruningNeeded(responseText, removeM3ULineRegexp)) {
-              const prunedText = pruneM3U(responseText);
+              var prunedText = pruneM3U(responseText);
               hit(source);
               return new Response(prunedText, {
                 status: response.status,
@@ -19765,7 +20160,7 @@
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const fetchHandler = {
+        var fetchHandler = {
           apply: fetchWrapper
         };
         window.fetch = new Proxy(window.fetch, fetchHandler);
@@ -19775,19 +20170,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19801,27 +20196,49 @@
         }
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -19841,47 +20258,51 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        let isMatched;
-        const parsedData = parseMatchProps(propsToMatch);
-        if (!validateParsedData(parsedData)) {
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+        if (!isValidParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          const matchData = getMatchPropsData(parsedData);
-          isMatched = Object.keys(matchData).every(function (matchKey) {
-            const matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          var matchData = getMatchPropsData(parsedData);
+          var matchKeys = Object.keys(matchData);
+          isMatched = matchKeys.every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            var dataValue = requestData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === "string" && (matchValue === null || matchValue === void 0 ? void 0 : matchValue.test(dataValue));
           });
         }
         return isMatched;
       }
       function getMatchPropsData(data) {
-        const matchData = {};
-        Object.keys(data).forEach(function (key) {
+        var matchData = {};
+        var dataKeys = Object.keys(data);
+        dataKeys.forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
       function getRequestProps() {
-        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+        return ["url", "method", "headers", "body", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal", "mode"];
       }
-      function validateParsedData(data) {
+      function isValidParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
       function parseMatchProps(propsToMatchStr) {
-        const PROPS_DIVIDER = " ";
-        const PAIRS_MARKER = ":";
-        const LEGAL_MATCH_PROPS = getRequestProps();
-        const propsObj = {};
-        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var isRequestProp = function isRequestProp(prop) {
+          return getRequestProps().includes(prop);
+        };
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          const dividerInd = prop.indexOf(PAIRS_MARKER);
-          const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
-          if (hasLegalMatchProp) {
-            const value = prop.slice(dividerInd + 1);
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          if (isRequestProp(key)) {
+            var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -19890,12 +20311,12 @@
         return propsObj;
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -19907,7 +20328,7 @@
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         m3uPrune.apply(this, updatedArgs);
       } catch (e) {
@@ -19916,7 +20337,7 @@
     }
     function noTopics(source, args) {
       function noTopics(source) {
-        const TOPICS_PROPERTY_NAME = "browsingTopics";
+        var TOPICS_PROPERTY_NAME = "browsingTopics";
         if (Document instanceof Object === false) {
           return;
         }
@@ -19933,19 +20354,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -19959,13 +20380,13 @@
         }
       }
       function noopPromiseResolve() {
-        let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
-        let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
         if (typeof Response === "undefined") {
           return;
         }
-        const response = new Response(responseBody, {
+        var response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
         });
@@ -19979,7 +20400,7 @@
         });
         return Promise.resolve(response);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         noTopics.apply(this, updatedArgs);
       } catch (e) {
@@ -19998,19 +20419,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20024,21 +20445,21 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
         }
         nativeConsole("".concat(name, ": ").concat(message));
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         noeval.apply(this, updatedArgs);
       } catch (e) {
@@ -20047,7 +20468,7 @@
     }
     function nowebrtc(source, args) {
       function nowebrtc(source) {
-        let propertyName = "";
+        var propertyName = "";
         if (window.RTCPeerConnection) {
           propertyName = "RTCPeerConnection";
         } else if (window.webkitRTCPeerConnection) {
@@ -20056,8 +20477,8 @@
         if (propertyName === "") {
           return;
         }
-        const rtcReplacement = function rtcReplacement(config) {
-          const message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
+        var rtcReplacement = function rtcReplacement(config) {
+          var message = "Document tried to create an RTCPeerConnection: ".concat(convertRtcConfigToString(config));
           logMessage(source, message);
           hit(source);
         };
@@ -20067,7 +20488,7 @@
           createOffer: noopFunc,
           setRemoteDescription: noopFunc
         };
-        const rtc = window[propertyName];
+        var rtc = window[propertyName];
         window[propertyName] = rtcReplacement;
         if (rtc.prototype) {
           rtc.prototype.createDataChannel = function (a, b) {
@@ -20083,19 +20504,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20110,14 +20531,14 @@
       }
       function noopFunc() {}
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -20125,20 +20546,20 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function convertRtcConfigToString(config) {
-        const UNDEF_STR = "undefined";
-        let str = UNDEF_STR;
+        var UNDEF_STR = "undefined";
+        var str = UNDEF_STR;
         if (config === null) {
           str = "null";
         } else if (config instanceof Object) {
-          const SERVERS_PROP_NAME = "iceServers";
-          const URLS_PROP_NAME = "urls";
-          if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
+          var SERVERS_PROP_NAME = "iceServers";
+          var URLS_PROP_NAME = "urls";
+          if (Object.prototype.hasOwnProperty.call(config, SERVERS_PROP_NAME) && config[SERVERS_PROP_NAME] && Object.prototype.hasOwnProperty.call(config[SERVERS_PROP_NAME][0], URLS_PROP_NAME) && !!config[SERVERS_PROP_NAME][0][URLS_PROP_NAME]) {
             str = config[SERVERS_PROP_NAME][0][URLS_PROP_NAME].toString();
           }
         }
         return str;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         nowebrtc.apply(this, updatedArgs);
       } catch (e) {
@@ -20147,12 +20568,12 @@
     }
     function preventAddEventListener(source, args) {
       function preventAddEventListener(source, typeSearch, listenerSearch) {
-        const typeSearchRegexp = toRegExp(typeSearch);
-        const listenerSearchRegexp = toRegExp(listenerSearch);
-        const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+        var typeSearchRegexp = toRegExp(typeSearch);
+        var listenerSearchRegexp = toRegExp(listenerSearch);
+        var nativeAddEventListener = window.EventTarget.prototype.addEventListener;
         function addEventListenerWrapper(type, listener) {
           var _this$constructor;
-          let shouldPrevent = false;
+          var shouldPrevent = false;
           if (validateType(type) && validateListener(listener)) {
             shouldPrevent = typeSearchRegexp.test(type.toString()) && listenerSearchRegexp.test(listenerToString(listener));
           }
@@ -20160,7 +20581,7 @@
             hit(source);
             return undefined;
           }
-          let context = this;
+          var context = this;
           if (this && ((_this$constructor = this.constructor) === null || _this$constructor === void 0 ? void 0 : _this$constructor.name) === "Window" && this !== window) {
             context = window;
           }
@@ -20169,7 +20590,7 @@
           }
           return nativeAddEventListener.apply(context, [type, listener, ...args]);
         }
-        const descriptor = {
+        var descriptor = {
           configurable: true,
           set: function set() {},
           get: function get() {
@@ -20185,19 +20606,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20211,28 +20632,50 @@
         }
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function validateType(type) {
         return typeof type !== "undefined";
       }
       function validateListener(listener) {
-        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && typeof listener.handleEvent === "function");
+        return typeof listener !== "undefined" && (typeof listener === "function" || typeof listener === "object" && listener !== null && "handleEvent" in listener && typeof listener.handleEvent === "function");
       }
       function listenerToString(listener) {
         return typeof listener === "function" ? listener.toString() : listener.handleEvent.toString();
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventAddEventListener.apply(this, updatedArgs);
       } catch (e) {
@@ -20241,45 +20684,45 @@
     }
     function preventAdfly(source, args) {
       function preventAdfly(source) {
-        const isDigit = function isDigit(data) {
+        var isDigit = function isDigit(data) {
           return /^\d$/.test(data);
         };
-        const handler = function handler(encodedURL) {
-          let evenChars = "";
-          let oddChars = "";
-          for (let i = 0; i < encodedURL.length; i += 1) {
+        var handler = function handler(encodedURL) {
+          var evenChars = "";
+          var oddChars = "";
+          for (var i = 0; i < encodedURL.length; i += 1) {
             if (i % 2 === 0) {
               evenChars += encodedURL.charAt(i);
             } else {
               oddChars = encodedURL.charAt(i) + oddChars;
             }
           }
-          let data = (evenChars + oddChars).split("");
-          for (let i = 0; i < data.length; i += 1) {
-            if (isDigit(data[i])) {
-              for (let ii = i + 1; ii < data.length; ii += 1) {
+          var data = (evenChars + oddChars).split("");
+          for (var _i = 0; _i < data.length; _i += 1) {
+            if (isDigit(data[_i])) {
+              for (var ii = _i + 1; ii < data.length; ii += 1) {
                 if (isDigit(data[ii])) {
-                  const temp = parseInt(data[i], 10) ^ parseInt(data[ii], 10);
+                  var temp = parseInt(data[_i], 10) ^ parseInt(data[ii], 10);
                   if (temp < 10) {
-                    data[i] = temp.toString();
+                    data[_i] = temp.toString();
                   }
-                  i = ii;
+                  _i = ii;
                   break;
                 }
               }
             }
           }
           data = data.join("");
-          const decodedURL = window.atob(data).slice(16, -16);
+          var decodedURL = window.atob(data).slice(16, -16);
           if (window.stop) {
             window.stop();
           }
           window.onbeforeunload = null;
           window.location.href = decodedURL;
         };
-        let val;
-        let applyHandler = true;
-        const result = setPropertyAccess(window, "ysmm", {
+        var val;
+        var applyHandler = true;
+        var result = setPropertyAccess(window, "ysmm", {
           configurable: false,
           set: function set(value) {
             if (applyHandler) {
@@ -20303,7 +20746,7 @@
         }
       }
       function setPropertyAccess(object, property, descriptor) {
-        const currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
+        var currentDescriptor = Object.getOwnPropertyDescriptor(object, property);
         if (currentDescriptor && !currentDescriptor.configurable) {
           return false;
         }
@@ -20315,19 +20758,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20341,21 +20784,21 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
         }
         nativeConsole("".concat(name, ": ").concat(message));
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventAdfly.apply(this, updatedArgs);
       } catch (e) {
@@ -20364,9 +20807,9 @@
     }
     function preventBab(source, args) {
       function preventBab(source) {
-        const nativeSetTimeout = window.setTimeout;
-        const babRegex = /\.bab_elementid.$/;
-        const timeoutWrapper = function timeoutWrapper(callback) {
+        var nativeSetTimeout = window.setTimeout;
+        var babRegex = /\.bab_elementid.$/;
+        var timeoutWrapper = function timeoutWrapper(callback) {
           if (typeof callback !== "string" || !babRegex.test(callback)) {
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
@@ -20376,17 +20819,17 @@
           hit(source);
         };
         window.setTimeout = timeoutWrapper;
-        const signatures = [["blockadblock"], ["babasbm"], [/getItem\('babn'\)/], ["getElementById", "String.fromCharCode", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "charAt", "DOMContentLoaded", "AdBlock", "addEventListener", "doScroll", "fromCharCode", "<<2|r>>4", "sessionStorage", "clientWidth", "localStorage", "Math", "random"]];
-        const check = function check(str) {
+        var signatures = [["blockadblock"], ["babasbm"], [/getItem\('babn'\)/], ["getElementById", "String.fromCharCode", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "charAt", "DOMContentLoaded", "AdBlock", "addEventListener", "doScroll", "fromCharCode", "<<2|r>>4", "sessionStorage", "clientWidth", "localStorage", "Math", "random"]];
+        var check = function check(str) {
           if (typeof str !== "string") {
             return false;
           }
-          for (let i = 0; i < signatures.length; i += 1) {
-            const tokens = signatures[i];
-            let match = 0;
-            for (let j = 0; j < tokens.length; j += 1) {
-              const token = tokens[j];
-              const found = token instanceof RegExp ? token.test(str) : str.includes(token);
+          for (var i = 0; i < signatures.length; i += 1) {
+            var tokens = signatures[i];
+            var match = 0;
+            for (var j = 0; j < tokens.length; j += 1) {
+              var token = tokens[j];
+              var found = token instanceof RegExp ? token.test(str) : str.includes(token);
               if (found) {
                 match += 1;
               }
@@ -20397,17 +20840,17 @@
           }
           return false;
         };
-        const nativeEval = window.eval;
-        const evalWrapper = function evalWrapper(str) {
+        var nativeEval = window.eval;
+        var evalWrapper = function evalWrapper(str) {
           if (!check(str)) {
             return nativeEval(str);
           }
           hit(source);
-          const bodyEl = document.body;
+          var bodyEl = document.body;
           if (bodyEl) {
             bodyEl.style.removeProperty("visibility");
           }
-          const el = document.getElementById("babasbmsgx");
+          var el = document.getElementById("babasbmsgx");
           if (el) {
             el.parentNode.removeChild(el);
           }
@@ -20419,19 +20862,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20444,7 +20887,7 @@
           window.__debug(source);
         }
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventBab.apply(this, updatedArgs);
       } catch (e) {
@@ -20456,13 +20899,13 @@
         if (typeof Proxy === "undefined" || typeof Reflect === "undefined") {
           return;
         }
-        const srcMockData = {
+        var srcMockData = {
           script: "data:text/javascript;base64,KCk9Pnt9",
           img: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
           iframe: "data:text/html;base64, PGRpdj48L2Rpdj4=",
           link: "data:text/plain;base64,"
         };
-        let instance;
+        var instance;
         if (tagName === "script") {
           instance = HTMLScriptElement;
         } else if (tagName === "img") {
@@ -20474,8 +20917,8 @@
         } else {
           return;
         }
-        const hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
-        let policy;
+        var hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === "function";
+        var policy;
         if (hasTrustedTypes) {
           policy = window.trustedTypes.createPolicy("AGPolicy", {
             createScriptURL: function createScriptURL(arg) {
@@ -20483,20 +20926,20 @@
             }
           });
         }
-        const SOURCE_PROPERTY_NAME = tagName === "link" ? "href" : "src";
-        const ONERROR_PROPERTY_NAME = "onerror";
-        const searchRegexp = toRegExp(match);
-        const setMatchedAttribute = function setMatchedAttribute(elem) {
+        var SOURCE_PROPERTY_NAME = tagName === "link" ? "href" : "src";
+        var ONERROR_PROPERTY_NAME = "onerror";
+        var searchRegexp = toRegExp(match);
+        var setMatchedAttribute = function setMatchedAttribute(elem) {
           return elem.setAttribute(source.name, "matched");
         };
-        const setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
+        var setAttributeWrapper = function setAttributeWrapper(target, thisArg, args) {
           if (!args[0] || !args[1]) {
             return Reflect.apply(target, thisArg, args);
           }
-          const nodeName = thisArg.nodeName.toLowerCase();
-          const attrName = args[0].toLowerCase();
-          const attrValue = args[1];
-          const isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
+          var nodeName = thisArg.nodeName.toLowerCase();
+          var attrName = args[0].toLowerCase();
+          var attrValue = args[1];
+          var isMatched = attrName === SOURCE_PROPERTY_NAME && tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(attrValue);
           if (!isMatched) {
             return Reflect.apply(target, thisArg, args);
           }
@@ -20504,11 +20947,11 @@
           setMatchedAttribute(thisArg);
           return Reflect.apply(target, thisArg, [attrName, srcMockData[nodeName]]);
         };
-        const setAttributeHandler = {
+        var setAttributeHandler = {
           apply: setAttributeWrapper
         };
         instance.prototype.setAttribute = new Proxy(Element.prototype.setAttribute, setAttributeHandler);
-        const origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
+        var origSrcDescriptor = safeGetDescriptor(instance.prototype, SOURCE_PROPERTY_NAME);
         if (!origSrcDescriptor) {
           return;
         }
@@ -20519,14 +20962,14 @@
             return origSrcDescriptor.get.call(this);
           },
           set(urlValue) {
-            const nodeName = this.nodeName.toLowerCase();
-            const isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
+            var nodeName = this.nodeName.toLowerCase();
+            var isMatched = tagName.toLowerCase() === nodeName && srcMockData[nodeName] && searchRegexp.test(urlValue);
             if (!isMatched) {
               origSrcDescriptor.set.call(this, urlValue);
               return true;
             }
             if (policy && urlValue instanceof TrustedScriptURL) {
-              const trustedSrc = policy.createScriptURL(urlValue);
+              var trustedSrc = policy.createScriptURL(urlValue);
               origSrcDescriptor.set.call(this, trustedSrc);
               hit(source);
               return;
@@ -20536,7 +20979,7 @@
             hit(source);
           }
         });
-        const origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
+        var origOnerrorDescriptor = safeGetDescriptor(HTMLElement.prototype, ONERROR_PROPERTY_NAME);
         if (!origOnerrorDescriptor) {
           return;
         }
@@ -20547,7 +20990,7 @@
             return origOnerrorDescriptor.get.call(this);
           },
           set(cb) {
-            const isMatched = this.getAttribute(source.name) === "matched";
+            var isMatched = this.getAttribute(source.name) === "matched";
             if (!isMatched) {
               origOnerrorDescriptor.set.call(this, cb);
               return true;
@@ -20556,22 +20999,22 @@
             return true;
           }
         });
-        const addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
+        var addEventListenerWrapper = function addEventListenerWrapper(target, thisArg, args) {
           if (!args[0] || !args[1] || !thisArg) {
             return Reflect.apply(target, thisArg, args);
           }
-          const eventName = args[0];
-          const isMatched = typeof thisArg.getAttribute === "function" && thisArg.getAttribute(source.name) === "matched" && eventName === "error";
+          var eventName = args[0];
+          var isMatched = typeof thisArg.getAttribute === "function" && thisArg.getAttribute(source.name) === "matched" && eventName === "error";
           if (isMatched) {
             return Reflect.apply(target, thisArg, [eventName, noopFunc]);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const addEventListenerHandler = {
+        var addEventListenerHandler = {
           apply: addEventListenerWrapper
         };
         EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, addEventListenerHandler);
-        const preventInlineOnerror = function preventInlineOnerror(tagName, src) {
+        var preventInlineOnerror = function preventInlineOnerror(tagName, src) {
           window.addEventListener("error", function (event) {
             if (!event.target || !event.target.nodeName || event.target.nodeName.toLowerCase() !== tagName || !event.target.src || !src.test(event.target.src)) {
               return;
@@ -20591,19 +21034,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20617,27 +21060,49 @@
         }
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function safeGetDescriptor(obj, prop) {
-        const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+        var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
         if (descriptor && descriptor.configurable) {
           return descriptor;
         }
         return null;
       }
       function noopFunc() {}
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventElementSrcLoading.apply(this, updatedArgs);
       } catch (e) {
@@ -20646,8 +21111,8 @@
     }
     function preventEvalIf(source, args) {
       function preventEvalIf(source, search) {
-        const searchRegexp = toRegExp(search);
-        const nativeEval = window.eval;
+        var searchRegexp = toRegExp(search);
+        var nativeEval = window.eval;
         window.eval = function (payload) {
           if (!searchRegexp.test(payload.toString())) {
             return nativeEval.call(window, payload);
@@ -20657,16 +21122,38 @@
         }.bind(window);
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function hit(source) {
@@ -20674,19 +21161,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20699,7 +21186,7 @@
           window.__debug(source);
         }
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventEvalIf.apply(this, updatedArgs);
       } catch (e) {
@@ -20709,7 +21196,7 @@
     function preventFab(source, args) {
       function preventFab(source) {
         hit(source);
-        const Fab = function Fab() {};
+        var Fab = function Fab() {};
         Fab.prototype.check = noopFunc;
         Fab.prototype.clearEvent = noopFunc;
         Fab.prototype.emitEvent = noopFunc;
@@ -20729,14 +21216,14 @@
           set: noopFunc,
           get: noopFunc
         };
-        const fab = new Fab();
-        const getSetFab = {
+        var fab = new Fab();
+        var getSetFab = {
           get() {
             return Fab;
           },
           set() {}
         };
-        const getsetfab = {
+        var getsetfab = {
           get() {
             return fab;
           },
@@ -20778,19 +21265,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20807,7 +21294,7 @@
       function noopThis() {
         return this;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventFab.apply(this, updatedArgs);
       } catch (e) {
@@ -20816,12 +21303,12 @@
     }
     function preventFetch(source, args) {
       function preventFetch(source, propsToMatch) {
-        let responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
-        let responseType = arguments.length > 3 ? arguments[3] : undefined;
+        var responseBody = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "emptyObj";
+        var responseType = arguments.length > 3 ? arguments[3] : undefined;
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-        let strResponseBody;
+        var strResponseBody;
         if (responseBody === "" || responseBody === "emptyObj") {
           strResponseBody = "{}";
         } else if (responseBody === "emptyArr") {
@@ -20830,18 +21317,18 @@
           logMessage(source, "Invalid responseBody parameter: '".concat(responseBody, "'"));
           return;
         }
-        const isResponseTypeSpecified = typeof responseType !== "undefined";
-        const isResponseTypeSupported = function isResponseTypeSupported(responseType) {
-          const SUPPORTED_TYPES = ["default", "opaque"];
+        var isResponseTypeSpecified = typeof responseType !== "undefined";
+        var isResponseTypeSupported = function isResponseTypeSupported(responseType) {
+          var SUPPORTED_TYPES = ["default", "opaque"];
           return SUPPORTED_TYPES.includes(responseType);
         };
         if (isResponseTypeSpecified && !isResponseTypeSupported(responseType)) {
           logMessage(source, "Invalid responseType parameter: '".concat(responseType, "'"));
           return;
         }
-        const handlerWrapper = async function handlerWrapper(target, thisArg, args) {
-          let shouldPrevent = false;
-          const fetchData = getFetchData(args);
+        var handlerWrapper = async function handlerWrapper(target, thisArg, args) {
+          var shouldPrevent = false;
+          var fetchData = getFetchData(args);
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
             hit(source);
@@ -20850,15 +21337,22 @@
           shouldPrevent = matchRequestProps(source, propsToMatch, fetchData);
           if (shouldPrevent) {
             hit(source);
-            const origResponse = await Reflect.apply(target, thisArg, args);
-            return modifyResponse(origResponse, {
-              body: strResponseBody,
-              type: responseType
-            });
+            try {
+              var origResponse = await Reflect.apply(target, thisArg, args);
+              if (!origResponse.ok) {
+                return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+              }
+              return modifyResponse(origResponse, {
+                body: strResponseBody,
+                type: responseType
+              });
+            } catch (ex) {
+              return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+            }
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const fetchHandler = {
+        var fetchHandler = {
           apply: handlerWrapper
         };
         fetch = new Proxy(fetch, fetchHandler);
@@ -20868,19 +21362,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -20894,11 +21388,11 @@
         }
       }
       function getFetchData(args) {
-        const fetchPropsObj = {};
-        let fetchUrl;
-        let fetchInit;
+        var fetchPropsObj = {};
+        var fetchUrl;
+        var fetchInit;
         if (args[0] instanceof Request) {
-          const requestData = getRequestData(args[0]);
+          var requestData = getRequestData(args[0]);
           fetchUrl = requestData.url;
           fetchInit = requestData;
         } else {
@@ -20907,7 +21401,8 @@
         }
         fetchPropsObj.url = fetchUrl;
         if (fetchInit instanceof Object) {
-          Object.keys(fetchInit).forEach(function (prop) {
+          var props = Object.keys(fetchInit);
+          props.forEach(function (prop) {
             fetchPropsObj[prop] = fetchInit[prop];
           });
         }
@@ -20918,9 +21413,9 @@
           return String(obj);
         }
         return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
-          const key = pair[0];
-          const value = pair[1];
-          let recordValueStr = value;
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -20931,45 +21426,68 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        let isMatched;
-        const parsedData = parseMatchProps(propsToMatch);
-        if (!validateParsedData(parsedData)) {
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+        if (!isValidParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          const matchData = getMatchPropsData(parsedData);
-          isMatched = Object.keys(matchData).every(function (matchKey) {
-            const matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          var matchData = getMatchPropsData(parsedData);
+          var matchKeys = Object.keys(matchData);
+          isMatched = matchKeys.every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            var dataValue = requestData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === "string" && (matchValue === null || matchValue === void 0 ? void 0 : matchValue.test(dataValue));
           });
         }
         return isMatched;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
         }
         nativeConsole("".concat(name, ": ").concat(message));
       }
+      function noopPromiseResolve() {
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
+        if (typeof Response === "undefined") {
+          return;
+        }
+        var response = new Response(responseBody, {
+          status: 200,
+          statusText: "OK"
+        });
+        Object.defineProperties(response, {
+          url: {
+            value: responseUrl
+          },
+          type: {
+            value: responseType
+          }
+        });
+        return Promise.resolve(response);
+      }
       function modifyResponse(origResponse) {
         var _origResponse$headers;
-        let replacement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+        var replacement = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
           body: "{}"
         };
-        const headers = {};
+        var headers = {};
         origResponse === null || origResponse === void 0 ? void 0 : (_origResponse$headers = origResponse.headers) === null || _origResponse$headers === void 0 ? void 0 : _origResponse$headers.forEach(function (value, key) {
           headers[key] = value;
         });
-        const modifiedResponse = new Response(replacement.body, {
+        var modifiedResponse = new Response(replacement.body, {
           status: origResponse.status,
           statusText: origResponse.statusText,
           headers: headers
@@ -20985,25 +21503,47 @@
         return modifiedResponse;
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -21019,28 +21559,29 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
-        const requestInitOptions = getRequestProps();
-        const entries = requestInitOptions.map(function (key) {
-          const value = request[key];
+        var requestInitOptions = getRequestProps();
+        var entries = requestInitOptions.map(function (key) {
+          var value = request[key];
           return [key, value];
         });
         return Object.fromEntries(entries);
       }
       function getRequestProps() {
-        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+        return ["url", "method", "headers", "body", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal", "mode"];
       }
       function parseMatchProps(propsToMatchStr) {
-        const PROPS_DIVIDER = " ";
-        const PAIRS_MARKER = ":";
-        const LEGAL_MATCH_PROPS = getRequestProps();
-        const propsObj = {};
-        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var isRequestProp = function isRequestProp(prop) {
+          return getRequestProps().includes(prop);
+        };
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          const dividerInd = prop.indexOf(PAIRS_MARKER);
-          const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
-          if (hasLegalMatchProp) {
-            const value = prop.slice(dividerInd + 1);
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          if (isRequestProp(key)) {
+            var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -21048,19 +21589,20 @@
         });
         return propsObj;
       }
-      function validateParsedData(data) {
+      function isValidParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
       function getMatchPropsData(data) {
-        const matchData = {};
-        Object.keys(data).forEach(function (key) {
+        var matchData = {};
+        var dataKeys = Object.keys(data);
+        dataKeys.forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventFetch.apply(this, updatedArgs);
       } catch (e) {
@@ -21069,8 +21611,8 @@
     }
     function preventPopadsNet(source, args) {
       function preventPopadsNet(source) {
-        const rid = randomId();
-        const throwError = function throwError() {
+        var rid = randomId();
+        var throwError = function throwError() {
           throw new ReferenceError(rid);
         };
         delete window.PopAds;
@@ -21087,7 +21629,7 @@
         hit(source);
       }
       function createOnErrorHandler(rid) {
-        const nativeOnError = window.onerror;
+        var nativeOnError = window.onerror;
         return function onError(error) {
           if (typeof error === "string" && error.includes(rid)) {
             return true;
@@ -21096,7 +21638,7 @@
             for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
               args[_key - 1] = arguments[_key];
             }
-            return nativeOnError.apply(this, [error, ...args]);
+            return nativeOnError.apply(window, [error, ...args]);
           }
           return false;
         };
@@ -21109,19 +21651,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21134,7 +21676,7 @@
           window.__debug(source);
         }
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventPopadsNet.apply(this, updatedArgs);
       } catch (e) {
@@ -21143,8 +21685,8 @@
     }
     function preventRefresh(source, args) {
       function preventRefresh(source, delaySec) {
-        const getMetaElements = function getMetaElements() {
-          let metaNodes = [];
+        var getMetaElements = function getMetaElements() {
+          var metaNodes = [];
           try {
             metaNodes = document.querySelectorAll('meta[http-equiv="refresh" i][content]');
           } catch (e) {
@@ -21156,16 +21698,16 @@
           }
           return Array.from(metaNodes);
         };
-        const getMetaContentDelay = function getMetaContentDelay(metaElements) {
-          const delays = metaElements.map(function (meta) {
-            const contentString = meta.getAttribute("content");
+        var getMetaContentDelay = function getMetaContentDelay(metaElements) {
+          var delays = metaElements.map(function (meta) {
+            var contentString = meta.getAttribute("content");
             if (contentString.length === 0) {
               return null;
             }
-            let contentDelay;
-            const limiterIndex = contentString.indexOf(";");
+            var contentDelay;
+            var limiterIndex = contentString.indexOf(";");
             if (limiterIndex !== -1) {
-              const delaySubstring = contentString.substring(0, limiterIndex);
+              var delaySubstring = contentString.substring(0, limiterIndex);
               contentDelay = getNumberFromString(delaySubstring);
             } else {
               contentDelay = getNumberFromString(contentString);
@@ -21177,24 +21719,24 @@
           if (!delays.length) {
             return null;
           }
-          const minDelay = delays.reduce(function (a, b) {
+          var minDelay = delays.reduce(function (a, b) {
             return Math.min(a, b);
           });
           return minDelay;
         };
-        const stop = function stop() {
-          const metaElements = getMetaElements();
+        var stop = function stop() {
+          var metaElements = getMetaElements();
           if (metaElements.length === 0) {
             return;
           }
-          let secondsToRun = getNumberFromString(delaySec);
+          var secondsToRun = getNumberFromString(delaySec);
           if (secondsToRun === null) {
             secondsToRun = getMetaContentDelay(metaElements);
           }
           if (secondsToRun === null) {
             return;
           }
-          const delayMs = secondsToRun * 1e3;
+          var delayMs = secondsToRun * 1e3;
           setTimeout(function () {
             window.stop();
             hit(source);
@@ -21213,19 +21755,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21239,19 +21781,19 @@
         }
       }
       function getNumberFromString(rawString) {
-        const parsedDelay = parseInt(rawString, 10);
-        const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        var parsedDelay = parseInt(rawString, 10);
+        var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return validDelay;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -21259,10 +21801,10 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventRefresh.apply(this, updatedArgs);
       } catch (e) {
@@ -21271,13 +21813,13 @@
     }
     function preventRequestAnimationFrame(source, args) {
       function preventRequestAnimationFrame(source, match) {
-        const nativeRequestAnimationFrame = window.requestAnimationFrame;
-        const shouldLog = typeof match === "undefined";
-        const _parseMatchArg = parseMatchArg(match),
+        var nativeRequestAnimationFrame = window.requestAnimationFrame;
+        var shouldLog = typeof match === "undefined";
+        var _parseMatchArg = parseMatchArg(match),
           isInvertedMatch = _parseMatchArg.isInvertedMatch,
           matchRegexp = _parseMatchArg.matchRegexp;
-        const rafWrapper = function rafWrapper(callback) {
-          let shouldPrevent = false;
+        var rafWrapper = function rafWrapper(callback) {
+          var shouldPrevent = false;
           if (shouldLog) {
             hit(source);
             logMessage(source, "requestAnimationFrame(".concat(String(callback), ")"), true);
@@ -21300,19 +21842,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21327,10 +21869,10 @@
       }
       function noopFunc() {}
       function parseMatchArg(match) {
-        const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
-        const matchValue = isInvertedMatch ? match.slice(1) : match;
-        const matchRegexp = toRegExp(matchValue);
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp,
@@ -21338,12 +21880,12 @@
         };
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -21356,14 +21898,14 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -21374,19 +21916,41 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventRequestAnimationFrame.apply(this, updatedArgs);
       } catch (e) {
@@ -21395,11 +21959,11 @@
     }
     function preventSetInterval(source, args) {
       function preventSetInterval(source, matchCallback, matchDelay) {
-        const shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
-        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
-          const callback = args[0];
-          const delay = args[1];
-          let shouldPrevent = false;
+        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          var callback = args[0];
+          var delay = args[1];
+          var shouldPrevent = false;
           if (shouldLog) {
             hit(source);
             logMessage(source, "setInterval(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -21417,7 +21981,7 @@
           }
           return target.apply(thisArg, args);
         };
-        const setIntervalHandler = {
+        var setIntervalHandler = {
           apply: handlerWrapper
         };
         window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
@@ -21427,19 +21991,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21454,7 +22018,7 @@
       }
       function noopFunc() {}
       function isPreventionNeeded(_ref) {
-        let callback = _ref.callback,
+        var callback = _ref.callback,
           delay = _ref.delay,
           matchCallback = _ref.matchCallback,
           matchDelay = _ref.matchDelay;
@@ -21464,15 +22028,15 @@
         if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
           return false;
         }
-        const _parseMatchArg = parseMatchArg(matchCallback),
+        var _parseMatchArg = parseMatchArg(matchCallback),
           isInvertedMatch = _parseMatchArg.isInvertedMatch,
           matchRegexp = _parseMatchArg.matchRegexp;
-        const _parseDelayArg = parseDelayArg(matchDelay),
+        var _parseDelayArg = parseDelayArg(matchDelay),
           isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
           delayMatch = _parseDelayArg.delayMatch;
-        const parsedDelay = parseRawDelay(delay);
-        let shouldPrevent = false;
-        const callbackStr = String(callback);
+        var parsedDelay = parseRawDelay(delay);
+        var shouldPrevent = false;
+        var callbackStr = String(callback);
         if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
@@ -21483,14 +22047,14 @@
         return shouldPrevent;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -21498,27 +22062,49 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function parseMatchArg(match) {
-        const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
-        const matchValue = isInvertedMatch ? match.slice(1) : match;
-        const matchRegexp = toRegExp(matchValue);
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp,
@@ -21526,11 +22112,11 @@
         };
       }
       function parseDelayArg(delay) {
-        const INVERT_MARKER = "!";
-        const isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
-        let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
-        delayValue = parseInt(delayValue, 10);
-        const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        var INVERT_MARKER = "!";
+        var isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
+        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        var parsedDelay = parseInt(delayValue, 10);
+        var delayMatch = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return {
           isInvertedDelayMatch: isInvertedDelayMatch,
           delayMatch: delayMatch
@@ -21540,20 +22126,20 @@
         return callback instanceof Function || typeof callback === "string";
       }
       function isValidMatchStr(match) {
-        const INVERT_MARKER = "!";
-        let str = match;
+        var INVERT_MARKER = "!";
+        var str = match;
         if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
         return isValidStrPattern(str);
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -21566,23 +22152,23 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function nativeIsFinite(num) {
-        const native = Number.isFinite || window.isFinite;
+        var native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function isValidMatchNumber(match) {
-        const INVERT_MARKER = "!";
-        let str = match;
+        var INVERT_MARKER = "!";
+        var str = match;
         if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
-        const num = parseFloat(str);
+        var num = parseFloat(str);
         return !nativeIsNaN(num) && nativeIsFinite(num);
       }
       function parseRawDelay(delay) {
-        const parsedDelay = Math.floor(parseInt(delay, 10));
+        var parsedDelay = Math.floor(parseInt(delay, 10));
         return typeof parsedDelay === "number" && !nativeIsNaN(parsedDelay) ? parsedDelay : delay;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventSetInterval.apply(this, updatedArgs);
       } catch (e) {
@@ -21591,11 +22177,11 @@
     }
     function preventSetTimeout(source, args) {
       function preventSetTimeout(source, matchCallback, matchDelay) {
-        const shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
-        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
-          const callback = args[0];
-          const delay = args[1];
-          let shouldPrevent = false;
+        var shouldLog = typeof matchCallback === "undefined" && typeof matchDelay === "undefined";
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
+          var callback = args[0];
+          var delay = args[1];
+          var shouldPrevent = false;
           if (shouldLog) {
             hit(source);
             logMessage(source, "setTimeout(".concat(String(callback), ", ").concat(delay, ")"), true);
@@ -21613,7 +22199,7 @@
           }
           return target.apply(thisArg, args);
         };
-        const setTimeoutHandler = {
+        var setTimeoutHandler = {
           apply: handlerWrapper
         };
         window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
@@ -21623,19 +22209,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21650,7 +22236,7 @@
       }
       function noopFunc() {}
       function isPreventionNeeded(_ref) {
-        let callback = _ref.callback,
+        var callback = _ref.callback,
           delay = _ref.delay,
           matchCallback = _ref.matchCallback,
           matchDelay = _ref.matchDelay;
@@ -21660,15 +22246,15 @@
         if (!isValidMatchStr(matchCallback) || matchDelay && !isValidMatchNumber(matchDelay)) {
           return false;
         }
-        const _parseMatchArg = parseMatchArg(matchCallback),
+        var _parseMatchArg = parseMatchArg(matchCallback),
           isInvertedMatch = _parseMatchArg.isInvertedMatch,
           matchRegexp = _parseMatchArg.matchRegexp;
-        const _parseDelayArg = parseDelayArg(matchDelay),
+        var _parseDelayArg = parseDelayArg(matchDelay),
           isInvertedDelayMatch = _parseDelayArg.isInvertedDelayMatch,
           delayMatch = _parseDelayArg.delayMatch;
-        const parsedDelay = parseRawDelay(delay);
-        let shouldPrevent = false;
-        const callbackStr = String(callback);
+        var parsedDelay = parseRawDelay(delay);
+        var shouldPrevent = false;
+        var callbackStr = String(callback);
         if (delayMatch === null) {
           shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
         } else if (!matchCallback) {
@@ -21679,14 +22265,14 @@
         return shouldPrevent;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -21694,10 +22280,10 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function parseMatchArg(match) {
-        const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
-        const matchValue = isInvertedMatch ? match.slice(1) : match;
-        const matchRegexp = toRegExp(matchValue);
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp,
@@ -21705,39 +22291,61 @@
         };
       }
       function parseDelayArg(delay) {
-        const INVERT_MARKER = "!";
-        const isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
-        let delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
-        delayValue = parseInt(delayValue, 10);
-        const delayMatch = nativeIsNaN(delayValue) ? null : delayValue;
+        var INVERT_MARKER = "!";
+        var isInvertedDelayMatch = delay === null || delay === void 0 ? void 0 : delay.startsWith(INVERT_MARKER);
+        var delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+        var parsedDelay = parseInt(delayValue, 10);
+        var delayMatch = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return {
           isInvertedDelayMatch: isInvertedDelayMatch,
           delayMatch: delayMatch
         };
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function isValidCallback(callback) {
         return callback instanceof Function || typeof callback === "string";
       }
       function isValidMatchStr(match) {
-        const INVERT_MARKER = "!";
-        let str = match;
+        var INVERT_MARKER = "!";
+        var str = match;
         if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
@@ -21747,12 +22355,12 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -21762,23 +22370,23 @@
         return isValid;
       }
       function nativeIsFinite(num) {
-        const native = Number.isFinite || window.isFinite;
+        var native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function isValidMatchNumber(match) {
-        const INVERT_MARKER = "!";
-        let str = match;
+        var INVERT_MARKER = "!";
+        var str = match;
         if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
-        const num = parseFloat(str);
+        var num = parseFloat(str);
         return !nativeIsNaN(num) && nativeIsFinite(num);
       }
       function parseRawDelay(delay) {
-        const parsedDelay = Math.floor(parseInt(delay, 10));
+        var parsedDelay = Math.floor(parseInt(delay, 10));
         return typeof parsedDelay === "number" && !nativeIsNaN(parsedDelay) ? parsedDelay : delay;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventSetTimeout.apply(this, updatedArgs);
       } catch (e) {
@@ -21787,12 +22395,12 @@
     }
     function preventWindowOpen(source, args) {
       function preventWindowOpen(source) {
-        let match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "*";
-        let delay = arguments.length > 2 ? arguments[2] : undefined;
-        let replacement = arguments.length > 3 ? arguments[3] : undefined;
-        const nativeOpen = window.open;
-        const isNewSyntax = match !== "0" && match !== "1";
-        const oldOpenWrapper = function oldOpenWrapper(str) {
+        var match = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "*";
+        var delay = arguments.length > 2 ? arguments[2] : undefined;
+        var replacement = arguments.length > 3 ? arguments[3] : undefined;
+        var nativeOpen = window.open;
+        var isNewSyntax = match !== "0" && match !== "1";
+        var oldOpenWrapper = function oldOpenWrapper(str) {
           match = Number(match) > 0;
           for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
             args[_key - 1] = arguments[_key];
@@ -21801,29 +22409,29 @@
             logMessage(source, "Invalid parameter: ".concat(delay));
             return nativeOpen.apply(window, [str, ...args]);
           }
-          const searchRegexp = toRegExp(delay);
+          var searchRegexp = toRegExp(delay);
           if (match !== searchRegexp.test(str)) {
             return nativeOpen.apply(window, [str, ...args]);
           }
           hit(source);
           return handleOldReplacement(replacement);
         };
-        const newOpenWrapper = function newOpenWrapper(url) {
-          const shouldLog = replacement && replacement.includes("log");
+        var newOpenWrapper = function newOpenWrapper(url) {
+          var shouldLog = replacement && replacement.includes("log");
           for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
             args[_key2 - 1] = arguments[_key2];
           }
           if (shouldLog) {
-            const argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
-            const message = "".concat(url).concat(argsStr);
+            var argsStr = args && args.length > 0 ? ", ".concat(args.join(", ")) : "";
+            var message = "".concat(url).concat(argsStr);
             logMessage(source, message, true);
             hit(source);
           }
-          let shouldPrevent = false;
+          var shouldPrevent = false;
           if (match === "*") {
             shouldPrevent = true;
           } else if (isValidMatchStr(match)) {
-            const _parseMatchArg = parseMatchArg(match),
+            var _parseMatchArg = parseMatchArg(match),
               isInvertedMatch = _parseMatchArg.isInvertedMatch,
               matchRegexp = _parseMatchArg.matchRegexp;
             shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
@@ -21832,18 +22440,18 @@
             shouldPrevent = false;
           }
           if (shouldPrevent) {
-            const parsedDelay = parseInt(delay, 10);
-            let result;
+            var parsedDelay = parseInt(delay, 10);
+            var result;
             if (nativeIsNaN(parsedDelay)) {
               result = noopNull();
             } else {
-              const decoyArgs = {
+              var decoyArgs = {
                 replacement: replacement,
                 url: url,
                 delay: parsedDelay
               };
-              const decoy = createDecoy(decoyArgs);
-              let popup = decoy.contentWindow;
+              var decoy = createDecoy(decoyArgs);
+              var popup = decoy.contentWindow;
               if (typeof popup === "object" && popup !== null) {
                 Object.defineProperty(popup, "closed", {
                   value: false
@@ -21855,7 +22463,7 @@
                   value: null
                 });
               } else {
-                const nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
+                var nativeGetter = decoy.contentWindow && decoy.contentWindow.get;
                 Object.defineProperty(decoy, "contentWindow", {
                   get: getPreventGetter(nativeGetter)
                 });
@@ -21876,19 +22484,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -21902,12 +22510,12 @@
         }
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -21920,35 +22528,57 @@
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       function isValidMatchStr(match) {
-        const INVERT_MARKER = "!";
-        let str = match;
+        var INVERT_MARKER = "!";
+        var str = match;
         if (match !== null && match !== void 0 && match.startsWith(INVERT_MARKER)) {
           str = match.slice(1);
         }
         return isValidStrPattern(str);
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function parseMatchArg(match) {
-        const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
-        const matchValue = isInvertedMatch ? match.slice(1) : match;
-        const matchRegexp = toRegExp(matchValue);
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp,
@@ -21956,17 +22586,17 @@
         };
       }
       function handleOldReplacement(replacement) {
-        let result;
+        var result;
         if (!replacement) {
           result = noopFunc;
         } else if (replacement === "trueFunc") {
           result = trueFunc;
         } else if (replacement.includes("=")) {
-          const isProp = replacement.startsWith("{") && replacement.endsWith("}");
+          var isProp = replacement.startsWith("{") && replacement.endsWith("}");
           if (isProp) {
-            const propertyPart = replacement.slice(1, -1);
-            const propertyName = substringBefore(propertyPart, "=");
-            const propertyValue = substringAfter(propertyPart, "=");
+            var propertyPart = replacement.slice(1, -1);
+            var propertyName = substringBefore(propertyPart, "=");
+            var propertyValue = substringAfter(propertyPart, "=");
             if (propertyValue === "noopFunc") {
               result = {};
               result[propertyName] = noopFunc;
@@ -21976,24 +22606,26 @@
         return result;
       }
       function createDecoy(args) {
-        const OBJECT_TAG_NAME = "object";
-        const OBJECT_URL_PROP_NAME = "data";
-        const IFRAME_TAG_NAME = "iframe";
-        const IFRAME_URL_PROP_NAME = "src";
-        const replacement = args.replacement,
+        var UrlPropNameOf = function (UrlPropNameOf) {
+          UrlPropNameOf["Object"] = "data";
+          UrlPropNameOf["Iframe"] = "src";
+          return UrlPropNameOf;
+        }({});
+        var replacement = args.replacement,
           url = args.url,
           delay = args.delay;
-        let tag;
-        let urlProp;
+        var tag;
         if (replacement === "obj") {
-          tag = OBJECT_TAG_NAME;
-          urlProp = OBJECT_URL_PROP_NAME;
+          tag = "object";
         } else {
-          tag = IFRAME_TAG_NAME;
-          urlProp = IFRAME_URL_PROP_NAME;
+          tag = "iframe";
         }
-        const decoy = document.createElement(tag);
-        decoy[urlProp] = url;
+        var decoy = document.createElement(tag);
+        if (decoy instanceof HTMLObjectElement) {
+          decoy[UrlPropNameOf.Object] = url;
+        } else if (decoy instanceof HTMLIFrameElement) {
+          decoy[UrlPropNameOf.Iframe] = url;
+        }
         decoy.style.setProperty("height", "1px", "important");
         decoy.style.setProperty("position", "fixed", "important");
         decoy.style.setProperty("top", "-1px", "important");
@@ -22005,7 +22637,7 @@
         return decoy;
       }
       function getPreventGetter(nativeGetter) {
-        const preventGetter = function preventGetter(target, prop) {
+        var preventGetter = function preventGetter(target, prop) {
           if (prop && prop === "closed") {
             return false;
           }
@@ -22020,14 +22652,14 @@
         return null;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -22042,17 +22674,17 @@
         if (!str || !separator) {
           return str;
         }
-        const index = str.indexOf(separator);
+        var index = str.indexOf(separator);
         return index < 0 ? str : str.substring(0, index);
       }
       function substringAfter(str, separator) {
         if (!str) {
           return str;
         }
-        const index = str.indexOf(separator);
+        var index = str.indexOf(separator);
         return index < 0 ? "" : str.substring(index + separator.length);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventWindowOpen.apply(this, updatedArgs);
       } catch (e) {
@@ -22064,12 +22696,12 @@
         if (typeof Proxy === "undefined") {
           return;
         }
-        const nativeOpen = window.XMLHttpRequest.prototype.open;
-        const nativeSend = window.XMLHttpRequest.prototype.send;
-        let xhrData;
-        let modifiedResponse = "";
-        let modifiedResponseText = "";
-        const openWrapper = function openWrapper(target, thisArg, args) {
+        var nativeOpen = window.XMLHttpRequest.prototype.open;
+        var nativeSend = window.XMLHttpRequest.prototype.send;
+        var xhrData;
+        var modifiedResponse = "";
+        var modifiedResponseText = "";
+        var openWrapper = function openWrapper(target, thisArg, args) {
           xhrData = getXhrData.apply(null, args);
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "xhr( ".concat(objectToString(xhrData), " )"), true);
@@ -22079,18 +22711,18 @@
           }
           if (thisArg.shouldBePrevented) {
             thisArg.collectedHeaders = [];
-            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
               thisArg.collectedHeaders.push(args);
               return Reflect.apply(target, thisArg, args);
             };
-            const setRequestHeaderHandler = {
+            var setRequestHeaderHandler = {
               apply: setRequestHeaderWrapper
             };
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const sendWrapper = function sendWrapper(target, thisArg, args) {
+        var sendWrapper = function sendWrapper(target, thisArg, args) {
           if (!thisArg.shouldBePrevented) {
             return Reflect.apply(target, thisArg, args);
           }
@@ -22101,30 +22733,25 @@
             modifiedResponse = new ArrayBuffer();
           }
           if (customResponseText) {
-            const randomText = generateRandomResponse(customResponseText);
+            var randomText = generateRandomResponse(customResponseText);
             if (randomText) {
               modifiedResponseText = randomText;
             } else {
               logMessage(source, "Invalid randomize parameter: '".concat(customResponseText, "'"));
             }
           }
-          const forgedRequest = new XMLHttpRequest();
+          var forgedRequest = new XMLHttpRequest();
           forgedRequest.addEventListener("readystatechange", function () {
             if (forgedRequest.readyState !== 4) {
               return;
             }
-            const readyState = forgedRequest.readyState,
+            var readyState = forgedRequest.readyState,
               responseURL = forgedRequest.responseURL,
               responseXML = forgedRequest.responseXML,
-              status = forgedRequest.status,
               statusText = forgedRequest.statusText;
             Object.defineProperties(thisArg, {
               readyState: {
                 value: readyState,
-                writable: false
-              },
-              status: {
-                value: status,
                 writable: false
               },
               statusText: {
@@ -22132,11 +22759,15 @@
                 writable: false
               },
               responseURL: {
-                value: responseURL,
+                value: responseURL || xhrData.url,
                 writable: false
               },
               responseXML: {
                 value: responseXML,
+                writable: false
+              },
+              status: {
+                value: 200,
                 writable: false
               },
               response: {
@@ -22149,19 +22780,19 @@
               }
             });
             setTimeout(function () {
-              const stateEvent = new Event("readystatechange");
+              var stateEvent = new Event("readystatechange");
               thisArg.dispatchEvent(stateEvent);
-              const loadEvent = new Event("load");
+              var loadEvent = new Event("load");
               thisArg.dispatchEvent(loadEvent);
-              const loadEndEvent = new Event("loadend");
+              var loadEndEvent = new Event("loadend");
               thisArg.dispatchEvent(loadEndEvent);
             }, 1);
             hit(source);
           });
           nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
           thisArg.collectedHeaders.forEach(function (header) {
-            const name = header[0];
-            const value = header[1];
+            var name = header[0];
+            var value = header[1];
             forgedRequest.setRequestHeader(name, value);
           });
           try {
@@ -22171,38 +22802,38 @@
           }
           return undefined;
         };
-        const getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
+        var getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
           if (!thisArg.collectedHeaders.length) {
             return null;
           }
-          const searchHeaderName = args[0].toLowerCase();
-          const matchedHeader = thisArg.collectedHeaders.find(function (header) {
-            const headerName = header[0].toLowerCase();
+          var searchHeaderName = args[0].toLowerCase();
+          var matchedHeader = thisArg.collectedHeaders.find(function (header) {
+            var headerName = header[0].toLowerCase();
             return headerName === searchHeaderName;
           });
           return matchedHeader ? matchedHeader[1] : null;
         };
-        const getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
+        var getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
           if (!thisArg.collectedHeaders.length) {
             return "";
           }
-          const allHeadersStr = thisArg.collectedHeaders.map(function (header) {
-            const headerName = header[0];
-            const headerValue = header[1];
+          var allHeadersStr = thisArg.collectedHeaders.map(function (header) {
+            var headerName = header[0];
+            var headerValue = header[1];
             return "".concat(headerName.toLowerCase(), ": ").concat(headerValue);
           }).join("\r\n");
           return allHeadersStr;
         };
-        const openHandler = {
+        var openHandler = {
           apply: openWrapper
         };
-        const sendHandler = {
+        var sendHandler = {
           apply: sendWrapper
         };
-        const getHeaderHandler = {
+        var getHeaderHandler = {
           apply: getHeaderWrapper
         };
-        const getAllHeadersHandler = {
+        var getAllHeadersHandler = {
           apply: getAllHeadersWrapper
         };
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -22215,19 +22846,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -22245,9 +22876,9 @@
           return String(obj);
         }
         return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
-          const key = pair[0];
-          const value = pair[1];
-          let recordValueStr = value;
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -22255,31 +22886,31 @@
         }).join(" ");
       }
       function generateRandomResponse(customResponseText) {
-        let customResponse = customResponseText;
+        var customResponse = customResponseText;
         if (customResponse === "true") {
           customResponse = Math.random().toString(36).slice(-10);
           return customResponse;
         }
         customResponse = customResponse.replace("length:", "");
-        const rangeRegex = /^\d+-\d+$/;
+        var rangeRegex = /^\d+-\d+$/;
         if (!rangeRegex.test(customResponse)) {
           return null;
         }
-        let rangeMin = getNumberFromString(customResponse.split("-")[0]);
-        let rangeMax = getNumberFromString(customResponse.split("-")[1]);
+        var rangeMin = getNumberFromString(customResponse.split("-")[0]);
+        var rangeMax = getNumberFromString(customResponse.split("-")[1]);
         if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
           return null;
         }
         if (rangeMin > rangeMax) {
-          const temp = rangeMin;
+          var temp = rangeMin;
           rangeMin = rangeMax;
           rangeMax = temp;
         }
-        const LENGTH_RANGE_LIMIT = 500 * 1e3;
+        var LENGTH_RANGE_LIMIT = 500 * 1e3;
         if (rangeMax > LENGTH_RANGE_LIMIT) {
           return null;
         }
-        const length = getRandomIntInclusive(rangeMin, rangeMax);
+        var length = getRandomIntInclusive(rangeMin, rangeMax);
         customResponse = getRandomStrByLength(length);
         return customResponse;
       }
@@ -22287,16 +22918,18 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        let isMatched;
-        const parsedData = parseMatchProps(propsToMatch);
-        if (!validateParsedData(parsedData)) {
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+        if (!isValidParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          const matchData = getMatchPropsData(parsedData);
-          isMatched = Object.keys(matchData).every(function (matchKey) {
-            const matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          var matchData = getMatchPropsData(parsedData);
+          var matchKeys = Object.keys(matchData);
+          isMatched = matchKeys.every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            var dataValue = requestData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === "string" && (matchValue === null || matchValue === void 0 ? void 0 : matchValue.test(dataValue));
           });
         }
         return isMatched;
@@ -22311,14 +22944,14 @@
         };
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -22326,25 +22959,47 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -22360,30 +23015,31 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getNumberFromString(rawString) {
-        const parsedDelay = parseInt(rawString, 10);
-        const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        var parsedDelay = parseInt(rawString, 10);
+        var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return validDelay;
       }
       function nativeIsFinite(num) {
-        const native = Number.isFinite || window.isFinite;
+        var native = Number.isFinite || window.isFinite;
         return native(num);
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function parseMatchProps(propsToMatchStr) {
-        const PROPS_DIVIDER = " ";
-        const PAIRS_MARKER = ":";
-        const LEGAL_MATCH_PROPS = getRequestProps();
-        const propsObj = {};
-        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var isRequestProp = function isRequestProp(prop) {
+          return getRequestProps().includes(prop);
+        };
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          const dividerInd = prop.indexOf(PAIRS_MARKER);
-          const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
-          if (hasLegalMatchProp) {
-            const value = prop.slice(dividerInd + 1);
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          if (isRequestProp(key)) {
+            var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -22391,20 +23047,21 @@
         });
         return propsObj;
       }
-      function validateParsedData(data) {
+      function isValidParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
       function getMatchPropsData(data) {
-        const matchData = {};
-        Object.keys(data).forEach(function (key) {
+        var matchData = {};
+        var dataKeys = Object.keys(data);
+        dataKeys.forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
       function getRequestProps() {
-        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+        return ["url", "method", "headers", "body", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal", "mode"];
       }
       function getRandomIntInclusive(min, max) {
         min = Math.ceil(min);
@@ -22412,15 +23069,15 @@
         return Math.floor(Math.random() * (max - min + 1) + min);
       }
       function getRandomStrByLength(length) {
-        let result = "";
-        const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
-        const charactersLength = characters.length;
-        for (let i = 0; i < length; i += 1) {
+        var result = "";
+        var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~";
+        var charactersLength = characters.length;
+        for (var i = 0; i < length; i += 1) {
           result += characters.charAt(Math.floor(Math.random() * charactersLength));
         }
         return result;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         preventXHR.apply(this, updatedArgs);
       } catch (e) {
@@ -22429,7 +23086,7 @@
     }
     function removeAttr(source, args) {
       function removeAttr(source, attrs, selector) {
-        let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
+        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
         if (!attrs) {
           return;
         }
@@ -22437,14 +23094,14 @@
         if (!selector) {
           selector = "[".concat(attrs.join("],["), "]");
         }
-        const rmattr = function rmattr() {
-          let nodes = [];
+        var rmattr = function rmattr() {
+          var nodes = [];
           try {
             nodes = [].slice.call(document.querySelectorAll(selector));
           } catch (e) {
             logMessage(source, "Invalid selector arg: '".concat(selector, "'"));
           }
-          let removed = false;
+          var removed = false;
           nodes.forEach(function (node) {
             attrs.forEach(function (attr) {
               node.removeAttribute(attr);
@@ -22455,8 +23112,8 @@
             hit(source);
           }
         };
-        const flags = parseFlags(applying);
-        const run = function run() {
+        var flags = parseFlags(applying);
+        var run = function run() {
           rmattr();
           if (!flags.hasFlag(flags.STAY)) {
             return;
@@ -22488,19 +23145,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -22514,11 +23171,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        const THROTTLE_DELAY_MS = 20;
-        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        const connect = function connect() {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -22534,7 +23191,7 @@
             });
           }
         };
-        const disconnect = function disconnect() {
+        var disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -22545,12 +23202,12 @@
         connect();
       }
       function parseFlags(flags) {
-        const FLAGS_DIVIDER = " ";
-        const ASAP_FLAG = "asap";
-        const COMPLETE_FLAG = "complete";
-        const STAY_FLAG = "stay";
-        const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
+        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
           return VALID_FLAGS.includes(f);
         });
         return {
@@ -22563,14 +23220,14 @@
         };
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -22578,9 +23235,9 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function throttle(cb, delay) {
-        let wait = false;
-        let savedArgs;
-        const wrapper = function wrapper() {
+        var wait = false;
+        var savedArgs;
+        var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -22600,7 +23257,7 @@
         };
         return wrapper;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeAttr.apply(this, updatedArgs);
       } catch (e) {
@@ -22609,21 +23266,21 @@
     }
     function removeClass(source, args) {
       function removeClass(source, classNames, selector) {
-        let applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
+        var applying = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "asap stay";
         if (!classNames) {
           return;
         }
         classNames = classNames.split(/\s*\|\s*/);
-        let selectors = [];
+        var selectors = [];
         if (!selector) {
           selectors = classNames.map(function (className) {
             return ".".concat(className);
           });
         }
-        const removeClassHandler = function removeClassHandler() {
-          const nodes = new Set();
+        var removeClassHandler = function removeClassHandler() {
+          var nodes = new Set();
           if (selector) {
-            let foundNodes = [];
+            var foundNodes = [];
             try {
               foundNodes = [].slice.call(document.querySelectorAll(selector));
             } catch (e) {
@@ -22634,14 +23291,14 @@
             });
           } else if (selectors.length > 0) {
             selectors.forEach(function (s) {
-              const elements = document.querySelectorAll(s);
-              for (let i = 0; i < elements.length; i += 1) {
-                const element = elements[i];
+              var elements = document.querySelectorAll(s);
+              for (var i = 0; i < elements.length; i += 1) {
+                var element = elements[i];
                 nodes.add(element);
               }
             });
           }
-          let removed = false;
+          var removed = false;
           nodes.forEach(function (node) {
             classNames.forEach(function (className) {
               if (node.classList.contains(className)) {
@@ -22654,9 +23311,9 @@
             hit(source);
           }
         };
-        const CLASS_ATTR_NAME = ["class"];
-        const flags = parseFlags(applying);
-        const run = function run() {
+        var CLASS_ATTR_NAME = ["class"];
+        var flags = parseFlags(applying);
+        var run = function run() {
           removeClassHandler();
           if (!flags.hasFlag(flags.STAY)) {
             return;
@@ -22688,19 +23345,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -22714,14 +23371,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -22729,11 +23386,11 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function observeDOMChanges(callback) {
-        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        const THROTTLE_DELAY_MS = 20;
-        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        const connect = function connect() {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -22749,7 +23406,7 @@
             });
           }
         };
-        const disconnect = function disconnect() {
+        var disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -22760,12 +23417,12 @@
         connect();
       }
       function parseFlags(flags) {
-        const FLAGS_DIVIDER = " ";
-        const ASAP_FLAG = "asap";
-        const COMPLETE_FLAG = "complete";
-        const STAY_FLAG = "stay";
-        const VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
-        const passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
+        var FLAGS_DIVIDER = " ";
+        var ASAP_FLAG = "asap";
+        var COMPLETE_FLAG = "complete";
+        var STAY_FLAG = "stay";
+        var VALID_FLAGS = [STAY_FLAG, ASAP_FLAG, COMPLETE_FLAG];
+        var passedFlags = flags.trim().split(FLAGS_DIVIDER).filter(function (f) {
           return VALID_FLAGS.includes(f);
         });
         return {
@@ -22778,9 +23435,9 @@
         };
       }
       function throttle(cb, delay) {
-        let wait = false;
-        let savedArgs;
-        const wrapper = function wrapper() {
+        var wait = false;
+        var savedArgs;
+        var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -22800,7 +23457,7 @@
         };
         return wrapper;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeClass.apply(this, updatedArgs);
       } catch (e) {
@@ -22809,13 +23466,13 @@
     }
     function removeCookie(source, args) {
       function removeCookie(source, match) {
-        const matchRegexp = toRegExp(match);
-        const removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
-          const cookieSpec = "".concat(cookieName, "=");
-          const domain1 = "; domain=".concat(hostName);
-          const domain2 = "; domain=.".concat(hostName);
-          const path = "; path=/";
-          const expiration = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        var matchRegexp = toRegExp(match);
+        var removeCookieFromHost = function removeCookieFromHost(cookieName, hostName) {
+          var cookieSpec = "".concat(cookieName, "=");
+          var domain1 = "; domain=".concat(hostName);
+          var domain2 = "; domain=.".concat(hostName);
+          var path = "; path=/";
+          var expiration = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           document.cookie = cookieSpec + expiration;
           document.cookie = cookieSpec + domain1 + expiration;
           document.cookie = cookieSpec + domain2 + expiration;
@@ -22824,19 +23481,19 @@
           document.cookie = cookieSpec + domain2 + path + expiration;
           hit(source);
         };
-        const rmCookie = function rmCookie() {
+        var rmCookie = function rmCookie() {
           document.cookie.split(";").forEach(function (cookieStr) {
-            const pos = cookieStr.indexOf("=");
+            var pos = cookieStr.indexOf("=");
             if (pos === -1) {
               return;
             }
-            const cookieName = cookieStr.slice(0, pos).trim();
+            var cookieName = cookieStr.slice(0, pos).trim();
             if (!matchRegexp.test(cookieName)) {
               return;
             }
-            const hostParts = document.location.hostname.split(".");
-            for (let i = 0; i <= hostParts.length - 1; i += 1) {
-              const hostName = hostParts.slice(i).join(".");
+            var hostParts = document.location.hostname.split(".");
+            for (var i = 0; i <= hostParts.length - 1; i += 1) {
+              var hostName = hostParts.slice(i).join(".");
               if (hostName) {
                 removeCookieFromHost(cookieName, hostName);
               }
@@ -22847,16 +23504,38 @@
         window.addEventListener("beforeunload", rmCookie);
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function hit(source) {
@@ -22864,19 +23543,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -22889,7 +23568,7 @@
           window.__debug(source);
         }
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeCookie.apply(this, updatedArgs);
       } catch (e) {
@@ -22901,14 +23580,14 @@
         if (!Element.prototype.attachShadow) {
           return;
         }
-        const removeElement = function removeElement(targetElement) {
+        var removeElement = function removeElement(targetElement) {
           targetElement.remove();
         };
-        const removeHandler = function removeHandler() {
-          let hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
-          while (hostElements.length !== 0) {
-            let isRemoved = false;
-            const _pierceShadowDom = pierceShadowDom(selector, hostElements),
+        var removeHandler = function removeHandler() {
+          var hostElements = !baseSelector ? findHostElements(document.documentElement) : document.querySelectorAll(baseSelector);
+          var _loop = function _loop() {
+            var isRemoved = false;
+            var _pierceShadowDom = pierceShadowDom(selector, hostElements),
               targets = _pierceShadowDom.targets,
               innerHosts = _pierceShadowDom.innerHosts;
             targets.forEach(function (targetEl) {
@@ -22919,6 +23598,9 @@
               hit(source);
             }
             hostElements = innerHosts;
+          };
+          while (hostElements.length !== 0) {
+            _loop();
           }
         };
         removeHandler();
@@ -22929,19 +23611,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -22955,11 +23637,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        const THROTTLE_DELAY_MS = 20;
-        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        const connect = function connect() {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -22975,7 +23657,7 @@
             });
           }
         };
-        const disconnect = function disconnect() {
+        var disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -22986,40 +23668,42 @@
         connect();
       }
       function findHostElements(rootElement) {
-        const hosts = [];
-        const domElems = rootElement.querySelectorAll("*");
-        domElems.forEach(function (el) {
-          if (el.shadowRoot) {
-            hosts.push(el);
-          }
-        });
+        var hosts = [];
+        if (rootElement) {
+          var domElems = rootElement.querySelectorAll("*");
+          domElems.forEach(function (el) {
+            if (el.shadowRoot) {
+              hosts.push(el);
+            }
+          });
+        }
         return hosts;
       }
       function pierceShadowDom(selector, hostElements) {
-        let targets = [];
-        const innerHostsAcc = [];
+        var targets = [];
+        var innerHostsAcc = [];
         hostElements.forEach(function (host) {
-          const simpleElems = host.querySelectorAll(selector);
+          var simpleElems = host.querySelectorAll(selector);
           targets = targets.concat([].slice.call(simpleElems));
-          const shadowRootElem = host.shadowRoot;
-          const shadowChildren = shadowRootElem.querySelectorAll(selector);
+          var shadowRootElem = host.shadowRoot;
+          var shadowChildren = shadowRootElem.querySelectorAll(selector);
           targets = targets.concat([].slice.call(shadowChildren));
           innerHostsAcc.push(findHostElements(shadowRootElem));
         });
-        const innerHosts = flatten(innerHostsAcc);
+        var innerHosts = flatten(innerHostsAcc);
         return {
           targets: targets,
           innerHosts: innerHosts
         };
       }
       function flatten(input) {
-        const stack = [];
+        var stack = [];
         input.forEach(function (el) {
           return stack.push(el);
         });
-        const res = [];
+        var res = [];
         while (stack.length) {
-          const next = stack.pop();
+          var next = stack.pop();
           if (Array.isArray(next)) {
             next.forEach(function (el) {
               return stack.push(el);
@@ -23031,9 +23715,9 @@
         return res.reverse();
       }
       function throttle(cb, delay) {
-        let wait = false;
-        let savedArgs;
-        const wrapper = function wrapper() {
+        var wait = false;
+        var savedArgs;
+        var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -23053,7 +23737,7 @@
         };
         return wrapper;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeInShadowDom.apply(this, updatedArgs);
       } catch (e) {
@@ -23062,16 +23746,16 @@
     }
     function removeNodeText(source, args) {
       function removeNodeText(source, nodeName, textMatch) {
-        const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch),
+        var _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch),
           selector = _parseNodeTextParams.selector,
           nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
           textContentMatch = _parseNodeTextParams.textContentMatch;
-        const handleNodes = function handleNodes(nodes) {
+        var handleNodes = function handleNodes(nodes) {
           return nodes.forEach(function (node) {
-            const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+            var shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
             if (shouldReplace) {
-              const ALL_TEXT_PATTERN = /^[\s\S]*$/;
-              const REPLACEMENT = "";
+              var ALL_TEXT_PATTERN = /^[\s\S]*$/;
+              var REPLACEMENT = "";
               replaceNodeText(source, node, ALL_TEXT_PATTERN, REPLACEMENT);
             }
           });
@@ -23087,46 +23771,49 @@
         });
       }
       function observeDocumentWithTimeout(callback, options) {
-        let timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1e4;
-        const observer = new MutationObserver(function (mutations, observer) {
+        var timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1e4;
+        var documentObserver = new MutationObserver(function (mutations, observer) {
           observer.disconnect();
-          callback(mutations);
+          callback(mutations, observer);
           observer.observe(document.documentElement, options);
         });
-        observer.observe(document.documentElement, options);
+        documentObserver.observe(document.documentElement, options);
         if (typeof timeout === "number") {
           setTimeout(function () {
-            return observer.disconnect();
+            return documentObserver.disconnect();
           }, timeout);
         }
       }
       function handleExistingNodes(selector, handler) {
-        const nodeList = document.querySelectorAll(selector);
-        const nodes = nodeListToArray(nodeList);
+        var nodeList = document.querySelectorAll(selector);
+        var nodes = nodeListToArray(nodeList);
         handler(nodes);
       }
       function handleMutations(mutations, handler) {
-        const addedNodes = getAddedNodes(mutations);
+        var addedNodes = getAddedNodes(mutations);
         handler(addedNodes);
       }
       function replaceNodeText(source, node, pattern, replacement) {
-        node.textContent = node.textContent.replace(pattern, replacement);
-        hit(source);
+        var textContent = node.textContent;
+        if (textContent) {
+          node.textContent = textContent.replace(pattern, replacement);
+          hit(source);
+        }
       }
       function isTargetNode(node, nodeNameMatch, textContentMatch) {
-        const nodeName = node.nodeName,
+        var nodeName = node.nodeName,
           textContent = node.textContent;
-        const nodeNameLowerCase = nodeName.toLowerCase();
-        return textContent !== "" && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
+        var nodeNameLowerCase = nodeName.toLowerCase();
+        return textContent !== null && textContent !== "" && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
       }
       function parseNodeTextParams(nodeName, textMatch) {
-        let pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-        const REGEXP_START_MARKER = "/";
-        const isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
-        const selector = isStringNameMatch ? nodeName : "*";
-        const nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
-        const textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
-        let patternMatch;
+        var pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+        var REGEXP_START_MARKER = "/";
+        var isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
+        var selector = isStringNameMatch ? nodeName : "*";
+        var nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
+        var textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
+        var patternMatch;
         if (pattern) {
           patternMatch = !pattern.startsWith(REGEXP_START_MARKER) ? pattern : toRegExp(pattern);
         }
@@ -23142,19 +23829,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -23168,36 +23855,58 @@
         }
       }
       function nodeListToArray(nodeList) {
-        const nodes = [];
-        for (let i = 0; i < nodeList.length; i += 1) {
+        var nodes = [];
+        for (var i = 0; i < nodeList.length; i += 1) {
           nodes.push(nodeList[i]);
         }
         return nodes;
       }
       function getAddedNodes(mutations) {
-        const nodes = [];
-        for (let i = 0; i < mutations.length; i += 1) {
-          const addedNodes = mutations[i].addedNodes;
-          for (let j = 0; j < addedNodes.length; j += 1) {
+        var nodes = [];
+        for (var i = 0; i < mutations.length; i += 1) {
+          var addedNodes = mutations[i].addedNodes;
+          for (var j = 0; j < addedNodes.length; j += 1) {
             nodes.push(addedNodes[j]);
           }
         }
         return nodes;
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         removeNodeText.apply(this, updatedArgs);
       } catch (e) {
@@ -23206,17 +23915,17 @@
     }
     function setAttr(source, args) {
       function setAttr(source, selector, attr) {
-        let value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var value = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (!selector || !attr) {
           return;
         }
-        const allowedValues = ["true", "false"];
+        var allowedValues = ["true", "false"];
         if (value.length !== 0 && (nativeIsNaN(parseInt(value, 10)) || parseInt(value, 10) < 0 || parseInt(value, 10) > 32767) && !allowedValues.includes(value.toLowerCase())) {
           return;
         }
-        const setAttr = function setAttr() {
-          const nodes = [].slice.call(document.querySelectorAll(selector));
-          let set = false;
+        var setAttr = function setAttr() {
+          var nodes = [].slice.call(document.querySelectorAll(selector));
+          var set = false;
           nodes.forEach(function (node) {
             node.setAttribute(attr, value);
             set = true;
@@ -23233,19 +23942,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -23259,11 +23968,11 @@
         }
       }
       function observeDOMChanges(callback) {
-        let observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        let attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-        const THROTTLE_DELAY_MS = 20;
-        const observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
-        const connect = function connect() {
+        var observeAttrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        var attrsToObserve = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+        var THROTTLE_DELAY_MS = 20;
+        var observer = new MutationObserver(throttle(callbackWrapper, THROTTLE_DELAY_MS));
+        var connect = function connect() {
           if (attrsToObserve.length > 0) {
             observer.observe(document.documentElement, {
               childList: true,
@@ -23279,7 +23988,7 @@
             });
           }
         };
-        const disconnect = function disconnect() {
+        var disconnect = function disconnect() {
           observer.disconnect();
         };
         function callbackWrapper() {
@@ -23290,13 +23999,13 @@
         connect();
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function throttle(cb, delay) {
-        let wait = false;
-        let savedArgs;
-        const wrapper = function wrapper() {
+        var wait = false;
+        var savedArgs;
+        var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -23316,7 +24025,7 @@
         };
         return wrapper;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setAttr.apply(this, updatedArgs);
       } catch (e) {
@@ -23325,9 +24034,9 @@
     }
     function setConstant(source, args) {
       function setConstant(source, property, value) {
-        let stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        let valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
-        const uboAliases = ["set-constant.js", "ubo-set-constant.js", "set.js", "ubo-set.js", "ubo-set-constant", "ubo-set"];
+        var stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
+        var uboAliases = ["set-constant.js", "ubo-set-constant.js", "set.js", "ubo-set.js", "ubo-set-constant", "ubo-set"];
         if (uboAliases.includes(source.name)) {
           if (stack.length !== 1 && !getNumberFromString(stack)) {
             valueWrapper = stack;
@@ -23337,9 +24046,9 @@
         if (!property || !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-        const emptyArr = noopArray();
-        const emptyObj = noopObject();
-        let constantValue;
+        var emptyArr = noopArray();
+        var emptyObj = noopObject();
+        var constantValue;
         if (value === "undefined") {
           constantValue = undefined;
         } else if (value === "false") {
@@ -23385,9 +24094,9 @@
         } else {
           return;
         }
-        const valueWrapperNames = ["asFunction", "asCallback", "asResolved", "asRejected"];
+        var valueWrapperNames = ["asFunction", "asCallback", "asResolved", "asRejected"];
         if (valueWrapperNames.includes(valueWrapper)) {
-          const valueWrappersMap = {
+          var valueWrappersMap = {
             asFunction(v) {
               return function () {
                 return v;
@@ -23409,23 +24118,23 @@
           };
           constantValue = valueWrappersMap[valueWrapper](constantValue);
         }
-        let canceled = false;
-        const mustCancel = function mustCancel(value) {
+        var canceled = false;
+        var mustCancel = function mustCancel(value) {
           if (canceled) {
             return canceled;
           }
           canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
           return canceled;
         };
-        const trapProp = function trapProp(base, prop, configurable, handler) {
+        var trapProp = function trapProp(base, prop, configurable, handler) {
           if (!handler.init(base[prop])) {
             return false;
           }
-          const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-          let prevSetter;
+          var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+          var prevSetter;
           if (origDescriptor instanceof Object) {
             if (!origDescriptor.configurable) {
-              const message = "Property '".concat(prop, "' is not configurable");
+              var message = "Property '".concat(prop, "' is not configurable");
               logMessage(source, message);
               return false;
             }
@@ -23448,12 +24157,12 @@
           });
           return true;
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          const base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
-          const inChainPropHandler = {
+          var inChainPropHandler = {
             factValue: undefined,
             init(a) {
               this.factValue = a;
@@ -23472,7 +24181,7 @@
               }
             }
           };
-          const endPropHandler = {
+          var endPropHandler = {
             init(a) {
               if (mustCancel(a)) {
                 return false;
@@ -23490,7 +24199,7 @@
             }
           };
           if (!chain) {
-            const isTrapped = trapProp(base, prop, false, endPropHandler);
+            var isTrapped = trapProp(base, prop, false, endPropHandler);
             if (isTrapped) {
               hit(source);
             }
@@ -23503,7 +24212,7 @@
           if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
             trapProp(base, prop, true, inChainPropHandler);
           }
-          const propValue = owner[prop];
+          var propValue = owner[prop];
           if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
             setChainPropAccess(propValue, chain);
           }
@@ -23516,19 +24225,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -23542,14 +24251,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -23557,8 +24266,8 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function getNumberFromString(rawString) {
-        const parsedDelay = parseInt(rawString, 10);
-        const validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
+        var parsedDelay = parseInt(rawString, 10);
+        var validDelay = nativeIsNaN(parsedDelay) ? null : parsedDelay;
         return validDelay;
       }
       function noopArray() {
@@ -23584,13 +24293,13 @@
         return Promise.reject();
       }
       function noopPromiseResolve() {
-        let responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
-        let responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        let responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
+        var responseBody = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "{}";
+        var responseUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var responseType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "default";
         if (typeof Response === "undefined") {
           return;
         }
-        const response = new Response(responseBody, {
+        var response = new Response(responseBody, {
           status: 200,
           statusText: "OK"
         });
@@ -23605,14 +24314,14 @@
         return Promise.resolve(response);
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -23620,7 +24329,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -23655,53 +24364,53 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        const stackRegexp = toRegExp(stackMatch);
-        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        const INLINE_SCRIPT_STRING = "inlineScript";
-        const INJECTED_SCRIPT_STRING = "injectedScript";
-        const INJECTED_SCRIPT_MARKER = "<anonymous>";
-        const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.includes(INLINE_SCRIPT_STRING);
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(match) {
+          return match.includes(INLINE_SCRIPT_STRING);
         };
-        const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.includes(INJECTED_SCRIPT_STRING);
+        var isInjectedScript = function isInjectedScript(match) {
+          return match.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        let documentURL = window.location.href;
-        const pos = documentURL.indexOf("#");
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        const stackLines = stackSteps.map(function (line) {
-          let stack;
-          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
             var _stackURL, _stackURL2;
-            let stackURL = getStackTraceURL[2];
+            var stackURL = getStackTraceURL[2];
             if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
             if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
               var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
-              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -23715,7 +24424,7 @@
           return stack;
         });
         if (stackLines) {
-          for (let index = 0; index < stackLines.length; index += 1) {
+          for (var index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -23727,22 +24436,49 @@
         return false;
       }
       function getNativeRegexpTest() {
-        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+        var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
+        var nativeRegexTest = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+        if (descriptor && typeof descriptor.value === "function") {
+          return nativeRegexTest;
+        }
+        throw new Error("RegExp.prototype.test is not a function");
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setConstant.apply(this, updatedArgs);
       } catch (e) {
@@ -23751,8 +24487,8 @@
     }
     function setCookie(source, args) {
       function setCookie(source, name, value) {
-        let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
-        const validValue = getLimitedCookieValue(value);
+        var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
+        var validValue = getLimitedCookieValue(value);
         if (validValue === null) {
           logMessage(source, "Invalid cookie value: '".concat(validValue, "'"));
           return;
@@ -23761,7 +24497,7 @@
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
         if (!cookieToSet) {
           logMessage(source, "Invalid cookie name or value");
           return;
@@ -23774,19 +24510,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -23800,14 +24536,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -23815,34 +24551,17 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function getLimitedCookieValue(value) {
         if (!value) {
           return null;
         }
-        let validValue;
-        if (value === "true") {
-          validValue = "true";
-        } else if (value === "True") {
-          validValue = "True";
-        } else if (value === "false") {
-          validValue = "false";
-        } else if (value === "False") {
-          validValue = "False";
-        } else if (value === "yes") {
-          validValue = "yes";
-        } else if (value === "Yes") {
-          validValue = "Yes";
-        } else if (value === "Y") {
-          validValue = "Y";
-        } else if (value === "no") {
-          validValue = "no";
-        } else if (value === "ok") {
-          validValue = "ok";
-        } else if (value === "OK") {
-          validValue = "OK";
+        var allowedCookieValues = new Set(["true", "false", "yes", "y", "no", "n", "ok", "accept", "reject", "allow", "deny"]);
+        var validValue;
+        if (allowedCookieValues.has(value.toLowerCase())) {
+          validValue = value;
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
           if (nativeIsNaN(validValue)) {
@@ -23857,13 +24576,13 @@
         return validValue;
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const COOKIE_BREAKER = ";";
+        var shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var COOKIE_BREAKER = ";";
         if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
           return null;
         }
-        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
-        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        var name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        var value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
         return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
@@ -23875,7 +24594,7 @@
         }
         return "";
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setCookie.apply(this, updatedArgs);
       } catch (e) {
@@ -23884,11 +24603,11 @@
     }
     function setCookieReload(source, args) {
       function setCookieReload(source, name, value) {
-        let path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
+        var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "/";
         if (isCookieSetWithValue(document.cookie, name, value)) {
           return;
         }
-        const validValue = getLimitedCookieValue(value);
+        var validValue = getLimitedCookieValue(value);
         if (validValue === null) {
           logMessage(source, "Invalid cookie value: '".concat(value, "'"));
           return;
@@ -23897,7 +24616,7 @@
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+        var cookieToSet = concatCookieNameValuePath(name, validValue, path);
         if (!cookieToSet) {
           logMessage(source, "Invalid cookie name or value");
           return;
@@ -23913,19 +24632,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -23939,14 +24658,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -23954,17 +24673,17 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function isCookieSetWithValue(cookieString, name, value) {
         return cookieString.split(";").some(function (cookieStr) {
-          const pos = cookieStr.indexOf("=");
+          var pos = cookieStr.indexOf("=");
           if (pos === -1) {
             return false;
           }
-          const cookieName = cookieStr.slice(0, pos).trim();
-          const cookieValue = cookieStr.slice(pos + 1).trim();
+          var cookieName = cookieStr.slice(0, pos).trim();
+          var cookieValue = cookieStr.slice(pos + 1).trim();
           return name === cookieName && value === cookieValue;
         });
       }
@@ -23972,27 +24691,10 @@
         if (!value) {
           return null;
         }
-        let validValue;
-        if (value === "true") {
-          validValue = "true";
-        } else if (value === "True") {
-          validValue = "True";
-        } else if (value === "false") {
-          validValue = "false";
-        } else if (value === "False") {
-          validValue = "False";
-        } else if (value === "yes") {
-          validValue = "yes";
-        } else if (value === "Yes") {
-          validValue = "Yes";
-        } else if (value === "Y") {
-          validValue = "Y";
-        } else if (value === "no") {
-          validValue = "no";
-        } else if (value === "ok") {
-          validValue = "ok";
-        } else if (value === "OK") {
-          validValue = "OK";
+        var allowedCookieValues = new Set(["true", "false", "yes", "y", "no", "n", "ok", "accept", "reject", "allow", "deny"]);
+        var validValue;
+        if (allowedCookieValues.has(value.toLowerCase())) {
+          validValue = value;
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
           if (nativeIsNaN(validValue)) {
@@ -24007,13 +24709,13 @@
         return validValue;
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const COOKIE_BREAKER = ";";
+        var shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var COOKIE_BREAKER = ";";
         if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
           return null;
         }
-        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
-        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        var name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        var value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
         return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
@@ -24025,7 +24727,7 @@
         }
         return "";
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setCookieReload.apply(this, updatedArgs);
       } catch (e) {
@@ -24038,16 +24740,20 @@
           logMessage(source, "Item key should be specified.");
           return;
         }
-        let validValue;
+        var validValue;
         try {
           validValue = getLimitedStorageItemValue(value);
         } catch (_unused) {
           logMessage(source, "Invalid storage item value: '".concat(value, "'"));
           return;
         }
-        const _window = window,
+        var _window = window,
           localStorage = _window.localStorage;
-        setStorageItem(source, localStorage, key, validValue);
+        if (validValue === "$remove$") {
+          removeStorageItem(source, localStorage, key);
+        } else {
+          setStorageItem(source, localStorage, key, validValue);
+        }
         hit(source);
       }
       function hit(source) {
@@ -24055,19 +24761,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -24081,14 +24787,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -24096,14 +24802,22 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
         } catch (e) {
-          const message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          logMessage(source, message);
+        }
+      }
+      function removeStorageItem(source, storage, key) {
+        try {
+          storage.removeItem(key);
+        } catch (e) {
+          var message = "Unable to remove storage item due to: ".concat(e.message);
           logMessage(source, message);
         }
       }
@@ -24111,7 +24825,7 @@
         if (typeof value !== "string") {
           throw new Error("Invalid value");
         }
-        let validValue;
+        var validValue;
         if (value === "undefined") {
           validValue = undefined;
         } else if (value === "false") {
@@ -24138,12 +24852,14 @@
           validValue = "yes";
         } else if (value === "no") {
           validValue = "no";
+        } else if (value === "$remove$") {
+          validValue = "$remove$";
         } else {
           throw new Error("Invalid value");
         }
         return validValue;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setLocalStorageItem.apply(this, updatedArgs);
       } catch (e) {
@@ -24174,19 +24890,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -24199,7 +24915,7 @@
           window.__debug(source);
         }
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setPopadsDummy.apply(this, updatedArgs);
       } catch (e) {
@@ -24212,16 +24928,20 @@
           logMessage(source, "Item key should be specified.");
           return;
         }
-        let validValue;
+        var validValue;
         try {
           validValue = getLimitedStorageItemValue(value);
         } catch (_unused) {
           logMessage(source, "Invalid storage item value: '".concat(value, "'"));
           return;
         }
-        const _window = window,
+        var _window = window,
           sessionStorage = _window.sessionStorage;
-        setStorageItem(source, sessionStorage, key, validValue);
+        if (validValue === "$remove$") {
+          removeStorageItem(source, sessionStorage, key);
+        } else {
+          setStorageItem(source, sessionStorage, key, validValue);
+        }
         hit(source);
       }
       function hit(source) {
@@ -24229,19 +24949,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -24255,14 +24975,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -24270,14 +24990,22 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function setStorageItem(source, storage, key, value) {
         try {
           storage.setItem(key, value);
         } catch (e) {
-          const message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          logMessage(source, message);
+        }
+      }
+      function removeStorageItem(source, storage, key) {
+        try {
+          storage.removeItem(key);
+        } catch (e) {
+          var message = "Unable to remove storage item due to: ".concat(e.message);
           logMessage(source, message);
         }
       }
@@ -24285,7 +25013,7 @@
         if (typeof value !== "string") {
           throw new Error("Invalid value");
         }
-        let validValue;
+        var validValue;
         if (value === "undefined") {
           validValue = undefined;
         } else if (value === "false") {
@@ -24312,12 +25040,14 @@
           validValue = "yes";
         } else if (value === "no") {
           validValue = "no";
+        } else if (value === "$remove$") {
+          validValue = "$remove$";
         } else {
           throw new Error("Invalid value");
         }
         return validValue;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         setSessionStorageItem.apply(this, updatedArgs);
       } catch (e) {
@@ -24326,74 +25056,74 @@
     }
     function trustedClickElement(source, args) {
       function trustedClickElement(source, selectors) {
-        let extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        let delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
+        var extraMatch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var delay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : NaN;
         if (!selectors) {
           return;
         }
-        const OBSERVER_TIMEOUT_MS = 1e4;
-        const THROTTLE_DELAY_MS = 20;
-        const STATIC_CLICK_DELAY_MS = 150;
-        const COOKIE_MATCH_MARKER = "cookie:";
-        const LOCAL_STORAGE_MATCH_MARKER = "localStorage:";
-        const SELECTORS_DELIMITER = ",";
-        const COOKIE_STRING_DELIMITER = ";";
-        const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
-        const sleep = function sleep(delayMs) {
+        var OBSERVER_TIMEOUT_MS = 1e4;
+        var THROTTLE_DELAY_MS = 20;
+        var STATIC_CLICK_DELAY_MS = 150;
+        var COOKIE_MATCH_MARKER = "cookie:";
+        var LOCAL_STORAGE_MATCH_MARKER = "localStorage:";
+        var SELECTORS_DELIMITER = ",";
+        var COOKIE_STRING_DELIMITER = ";";
+        var EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
+        var sleep = function sleep(delayMs) {
           return new Promise(function (resolve) {
             return setTimeout(resolve, delayMs);
           });
         };
-        let parsedDelay;
+        var parsedDelay;
         if (delay) {
           parsedDelay = parseInt(delay, 10);
-          const isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
+          var isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
           if (!isValidDelay) {
-            const message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
+            var message = "Passed delay '".concat(delay, "' is invalid or bigger than ").concat(OBSERVER_TIMEOUT_MS, " ms");
             logMessage(source, message);
             return;
           }
         }
-        let canClick = !parsedDelay;
-        const cookieMatches = [];
-        const localStorageMatches = [];
-        let isInvertedMatchCookie = false;
-        let isInvertedMatchLocalStorage = false;
+        var canClick = !parsedDelay;
+        var cookieMatches = [];
+        var localStorageMatches = [];
+        var isInvertedMatchCookie = false;
+        var isInvertedMatchLocalStorage = false;
         if (extraMatch) {
-          const parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
+          var parsedExtraMatch = extraMatch.split(EXTRA_MATCH_DELIMITER).map(function (matchStr) {
             return matchStr.trim();
           });
           parsedExtraMatch.forEach(function (matchStr) {
             if (matchStr.includes(COOKIE_MATCH_MARKER)) {
-              const _parseMatchArg = parseMatchArg(matchStr),
+              var _parseMatchArg = parseMatchArg(matchStr),
                 isInvertedMatch = _parseMatchArg.isInvertedMatch,
                 matchValue = _parseMatchArg.matchValue;
               isInvertedMatchCookie = isInvertedMatch;
-              const cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, "");
+              var cookieMatch = matchValue.replace(COOKIE_MATCH_MARKER, "");
               cookieMatches.push(cookieMatch);
             }
             if (matchStr.includes(LOCAL_STORAGE_MATCH_MARKER)) {
-              const _parseMatchArg2 = parseMatchArg(matchStr),
-                isInvertedMatch = _parseMatchArg2.isInvertedMatch,
-                matchValue = _parseMatchArg2.matchValue;
-              isInvertedMatchLocalStorage = isInvertedMatch;
-              const localStorageMatch = matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, "");
+              var _parseMatchArg2 = parseMatchArg(matchStr),
+                _isInvertedMatch = _parseMatchArg2.isInvertedMatch,
+                _matchValue = _parseMatchArg2.matchValue;
+              isInvertedMatchLocalStorage = _isInvertedMatch;
+              var localStorageMatch = _matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, "");
               localStorageMatches.push(localStorageMatch);
             }
           });
         }
         if (cookieMatches.length > 0) {
-          const parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
-          const parsedCookies = parseCookieString(document.cookie);
-          const cookieKeys = Object.keys(parsedCookies);
+          var parsedCookieMatches = parseCookieString(cookieMatches.join(COOKIE_STRING_DELIMITER));
+          var parsedCookies = parseCookieString(document.cookie);
+          var cookieKeys = Object.keys(parsedCookies);
           if (cookieKeys.length === 0) {
             return;
           }
-          const cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
-            const valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
-            const keyMatch = toRegExp(key);
+          var cookiesMatched = Object.keys(parsedCookieMatches).every(function (key) {
+            var valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
+            var keyMatch = toRegExp(key);
             return cookieKeys.some(function (key) {
-              const keysMatched = keyMatch.test(key);
+              var keysMatched = keyMatch.test(key);
               if (!keysMatched) {
                 return false;
               }
@@ -24403,34 +25133,34 @@
               return valueMatch.test(parsedCookies[key]);
             });
           });
-          const shouldRun = cookiesMatched !== isInvertedMatchCookie;
+          var shouldRun = cookiesMatched !== isInvertedMatchCookie;
           if (!shouldRun) {
             return;
           }
         }
         if (localStorageMatches.length > 0) {
-          const localStorageMatched = localStorageMatches.every(function (str) {
-            const itemValue = window.localStorage.getItem(str);
+          var localStorageMatched = localStorageMatches.every(function (str) {
+            var itemValue = window.localStorage.getItem(str);
             return itemValue || itemValue === "";
           });
-          const shouldRun = localStorageMatched !== isInvertedMatchLocalStorage;
-          if (!shouldRun) {
+          var _shouldRun = localStorageMatched !== isInvertedMatchLocalStorage;
+          if (!_shouldRun) {
             return;
           }
         }
-        let selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
+        var selectorsSequence = selectors.split(SELECTORS_DELIMITER).map(function (selector) {
           return selector.trim();
         });
-        const createElementObj = function createElementObj(element) {
+        var createElementObj = function createElementObj(element) {
           return {
             element: element || null,
             clicked: false
           };
         };
-        const elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
-        const clickElementsBySequence = async function clickElementsBySequence() {
-          for (let i = 0; i < elementsSequence.length; i += 1) {
-            const elementObj = elementsSequence[i];
+        var elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+        var clickElementsBySequence = async function clickElementsBySequence() {
+          for (var i = 0; i < elementsSequence.length; i += 1) {
+            var elementObj = elementsSequence[i];
             if (i >= 1) {
               await sleep(STATIC_CLICK_DELAY_MS);
             }
@@ -24442,27 +25172,27 @@
               elementObj.clicked = true;
             }
           }
-          const allElementsClicked = elementsSequence.every(function (elementObj) {
+          var allElementsClicked = elementsSequence.every(function (elementObj) {
             return elementObj.clicked === true;
           });
           if (allElementsClicked) {
             hit(source);
           }
         };
-        const handleElement = function handleElement(element, i) {
-          const elementObj = createElementObj(element);
+        var handleElement = function handleElement(element, i) {
+          var elementObj = createElementObj(element);
           elementsSequence[i] = elementObj;
           if (canClick) {
             clickElementsBySequence();
           }
         };
-        const findElements = function findElements(mutations, observer) {
-          const fulfilledSelectors = [];
+        var findElements = function findElements(mutations, observer) {
+          var fulfilledSelectors = [];
           selectorsSequence.forEach(function (selector, i) {
             if (!selector) {
               return;
             }
-            const element = document.querySelector(selector);
+            var element = document.querySelector(selector);
             if (!element) {
               return;
             }
@@ -24472,14 +25202,14 @@
           selectorsSequence = selectorsSequence.map(function (selector) {
             return fulfilledSelectors.includes(selector) ? null : selector;
           });
-          const allSelectorsFulfilled = selectorsSequence.every(function (selector) {
+          var allSelectorsFulfilled = selectorsSequence.every(function (selector) {
             return selector === null;
           });
           if (allSelectorsFulfilled) {
             observer.disconnect();
           }
         };
-        const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+        var observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
         observer.observe(document.documentElement, {
           attributes: true,
           childList: true,
@@ -24500,19 +25230,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -24526,27 +25256,49 @@
         }
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function parseCookieString(cookieString) {
-        const COOKIE_DELIMITER = "=";
-        const COOKIE_PAIRS_DELIMITER = ";";
-        const cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
-        const cookieData = {};
+        var COOKIE_DELIMITER = "=";
+        var COOKIE_PAIRS_DELIMITER = ";";
+        var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+        var cookieData = {};
         cookieChunks.forEach(function (singleCookie) {
-          let cookieKey;
-          let cookieValue;
-          const delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+          var cookieKey;
+          var cookieValue = "";
+          var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
           if (delimiterIndex === -1) {
             cookieKey = singleCookie.trim();
           } else {
@@ -24558,9 +25310,9 @@
         return cookieData;
       }
       function throttle(cb, delay) {
-        let wait = false;
-        let savedArgs;
-        const wrapper = function wrapper() {
+        var wait = false;
+        var savedArgs;
+        var wrapper = function wrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -24581,14 +25333,14 @@
         return wrapper;
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -24596,17 +25348,17 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function parseMatchArg(match) {
-        const INVERT_MARKER = "!";
-        const isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
-        const matchValue = isInvertedMatch ? match.slice(1) : match;
-        const matchRegexp = toRegExp(matchValue);
+        var INVERT_MARKER = "!";
+        var isInvertedMatch = match ? match === null || match === void 0 ? void 0 : match.startsWith(INVERT_MARKER) : false;
+        var matchValue = isInvertedMatch ? match.slice(1) : match;
+        var matchRegexp = toRegExp(matchValue);
         return {
           isInvertedMatch: isInvertedMatch,
           matchRegexp: matchRegexp,
           matchValue: matchValue
         };
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedClickElement.apply(this, updatedArgs);
       } catch (e) {
@@ -24615,9 +25367,9 @@
     }
     function trustedReplaceFetchResponse(source, args) {
       function trustedReplaceFetchResponse(source) {
-        let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
@@ -24625,11 +25377,11 @@
           logMessage(source, "Pattern argument should not be empty string");
           return;
         }
-        const shouldLog = pattern === "" && replacement === "";
-        const nativeFetch = fetch;
-        let shouldReplace = false;
-        let fetchData;
-        const handlerWrapper = function handlerWrapper(target, thisArg, args) {
+        var shouldLog = pattern === "" && replacement === "";
+        var nativeFetch = fetch;
+        var shouldReplace = false;
+        var fetchData;
+        var handlerWrapper = function handlerWrapper(target, thisArg, args) {
           fetchData = getFetchData(args);
           if (shouldLog) {
             logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
@@ -24640,8 +25392,8 @@
           if (!shouldReplace) {
             return Reflect.apply(target, thisArg, args);
           }
-          const forgeResponse = function forgeResponse(response, textContent) {
-            const bodyUsed = response.bodyUsed,
+          var forgeResponse = function forgeResponse(response, textContent) {
+            var bodyUsed = response.bodyUsed,
               headers = response.headers,
               ok = response.ok,
               redirected = response.redirected,
@@ -24649,7 +25401,7 @@
               statusText = response.statusText,
               type = response.type,
               url = response.url;
-            const forgedResponse = new Response(textContent, {
+            var forgedResponse = new Response(textContent, {
               status: status,
               statusText: statusText,
               headers: headers
@@ -24675,14 +25427,14 @@
           };
           return nativeFetch.apply(null, args).then(function (response) {
             return response.text().then(function (bodyText) {
-              const patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
-              const modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-              const forgedResponse = forgeResponse(response, modifiedTextContent);
+              var patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
+              var modifiedTextContent = bodyText.replace(patternRegexp, replacement);
+              var forgedResponse = forgeResponse(response, modifiedTextContent);
               hit(source);
               return forgedResponse;
             }).catch(function () {
-              const fetchDataStr = objectToString(fetchData);
-              const message = "Response body can't be converted to text: ".concat(fetchDataStr);
+              var fetchDataStr = objectToString(fetchData);
+              var message = "Response body can't be converted to text: ".concat(fetchDataStr);
               logMessage(source, message);
               return Reflect.apply(target, thisArg, args);
             });
@@ -24690,7 +25442,7 @@
             return Reflect.apply(target, thisArg, args);
           });
         };
-        const fetchHandler = {
+        var fetchHandler = {
           apply: handlerWrapper
         };
         fetch = new Proxy(fetch, fetchHandler);
@@ -24700,19 +25452,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -24726,14 +25478,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -24741,11 +25493,11 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function getFetchData(args) {
-        const fetchPropsObj = {};
-        let fetchUrl;
-        let fetchInit;
+        var fetchPropsObj = {};
+        var fetchUrl;
+        var fetchInit;
         if (args[0] instanceof Request) {
-          const requestData = getRequestData(args[0]);
+          var requestData = getRequestData(args[0]);
           fetchUrl = requestData.url;
           fetchInit = requestData;
         } else {
@@ -24754,7 +25506,8 @@
         }
         fetchPropsObj.url = fetchUrl;
         if (fetchInit instanceof Object) {
-          Object.keys(fetchInit).forEach(function (prop) {
+          var props = Object.keys(fetchInit);
+          props.forEach(function (prop) {
             fetchPropsObj[prop] = fetchInit[prop];
           });
         }
@@ -24765,9 +25518,9 @@
           return String(obj);
         }
         return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
-          const key = pair[0];
-          const value = pair[1];
-          let recordValueStr = value;
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -24778,40 +25531,64 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        let isMatched;
-        const parsedData = parseMatchProps(propsToMatch);
-        if (!validateParsedData(parsedData)) {
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+        if (!isValidParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          const matchData = getMatchPropsData(parsedData);
-          isMatched = Object.keys(matchData).every(function (matchKey) {
-            const matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          var matchData = getMatchPropsData(parsedData);
+          var matchKeys = Object.keys(matchData);
+          isMatched = matchKeys.every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            var dataValue = requestData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === "string" && (matchValue === null || matchValue === void 0 ? void 0 : matchValue.test(dataValue));
           });
         }
         return isMatched;
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -24827,28 +25604,29 @@
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getRequestData(request) {
-        const requestInitOptions = getRequestProps();
-        const entries = requestInitOptions.map(function (key) {
-          const value = request[key];
+        var requestInitOptions = getRequestProps();
+        var entries = requestInitOptions.map(function (key) {
+          var value = request[key];
           return [key, value];
         });
         return Object.fromEntries(entries);
       }
       function getRequestProps() {
-        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+        return ["url", "method", "headers", "body", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal", "mode"];
       }
       function parseMatchProps(propsToMatchStr) {
-        const PROPS_DIVIDER = " ";
-        const PAIRS_MARKER = ":";
-        const LEGAL_MATCH_PROPS = getRequestProps();
-        const propsObj = {};
-        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var isRequestProp = function isRequestProp(prop) {
+          return getRequestProps().includes(prop);
+        };
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          const dividerInd = prop.indexOf(PAIRS_MARKER);
-          const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
-          if (hasLegalMatchProp) {
-            const value = prop.slice(dividerInd + 1);
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          if (isRequestProp(key)) {
+            var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -24856,19 +25634,20 @@
         });
         return propsObj;
       }
-      function validateParsedData(data) {
+      function isValidParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
       function getMatchPropsData(data) {
-        const matchData = {};
-        Object.keys(data).forEach(function (key) {
+        var matchData = {};
+        var dataKeys = Object.keys(data);
+        dataKeys.forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedReplaceFetchResponse.apply(this, updatedArgs);
       } catch (e) {
@@ -24877,29 +25656,29 @@
     }
     function trustedReplaceNodeText(source, args) {
       function trustedReplaceNodeText(source, nodeName, textMatch, pattern, replacement) {
-        const uboAliases = ["replace-node-text.js", "rpnt.js", "sed.js"];
+        var uboAliases = ["replace-node-text.js", "rpnt.js", "sed.js"];
         if (uboAliases.includes(source.name)) {
           replacement = pattern;
           pattern = textMatch;
           for (var _len = arguments.length, extraArgs = new Array(_len > 5 ? _len - 5 : 0), _key = 5; _key < _len; _key++) {
             extraArgs[_key - 5] = arguments[_key];
           }
-          for (let i = 0; i < extraArgs.length; i += 1) {
-            const arg = extraArgs[i];
+          for (var i = 0; i < extraArgs.length; i += 1) {
+            var arg = extraArgs[i];
             if (arg === "condition") {
               textMatch = extraArgs[i + 1];
               break;
             }
           }
         }
-        const _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch, pattern),
+        var _parseNodeTextParams = parseNodeTextParams(nodeName, textMatch, pattern),
           selector = _parseNodeTextParams.selector,
           nodeNameMatch = _parseNodeTextParams.nodeNameMatch,
           textContentMatch = _parseNodeTextParams.textContentMatch,
           patternMatch = _parseNodeTextParams.patternMatch;
-        const handleNodes = function handleNodes(nodes) {
+        var handleNodes = function handleNodes(nodes) {
           return nodes.forEach(function (node) {
-            const shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
+            var shouldReplace = isTargetNode(node, nodeNameMatch, textContentMatch);
             if (shouldReplace) {
               replaceNodeText(source, node, patternMatch, replacement);
             }
@@ -24916,46 +25695,49 @@
         });
       }
       function observeDocumentWithTimeout(callback, options) {
-        let timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1e4;
-        const observer = new MutationObserver(function (mutations, observer) {
+        var timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1e4;
+        var documentObserver = new MutationObserver(function (mutations, observer) {
           observer.disconnect();
-          callback(mutations);
+          callback(mutations, observer);
           observer.observe(document.documentElement, options);
         });
-        observer.observe(document.documentElement, options);
+        documentObserver.observe(document.documentElement, options);
         if (typeof timeout === "number") {
           setTimeout(function () {
-            return observer.disconnect();
+            return documentObserver.disconnect();
           }, timeout);
         }
       }
       function handleExistingNodes(selector, handler) {
-        const nodeList = document.querySelectorAll(selector);
-        const nodes = nodeListToArray(nodeList);
+        var nodeList = document.querySelectorAll(selector);
+        var nodes = nodeListToArray(nodeList);
         handler(nodes);
       }
       function handleMutations(mutations, handler) {
-        const addedNodes = getAddedNodes(mutations);
+        var addedNodes = getAddedNodes(mutations);
         handler(addedNodes);
       }
       function replaceNodeText(source, node, pattern, replacement) {
-        node.textContent = node.textContent.replace(pattern, replacement);
-        hit(source);
+        var textContent = node.textContent;
+        if (textContent) {
+          node.textContent = textContent.replace(pattern, replacement);
+          hit(source);
+        }
       }
       function isTargetNode(node, nodeNameMatch, textContentMatch) {
-        const nodeName = node.nodeName,
+        var nodeName = node.nodeName,
           textContent = node.textContent;
-        const nodeNameLowerCase = nodeName.toLowerCase();
-        return textContent !== "" && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
+        var nodeNameLowerCase = nodeName.toLowerCase();
+        return textContent !== null && textContent !== "" && (nodeNameMatch instanceof RegExp ? nodeNameMatch.test(nodeNameLowerCase) : nodeNameMatch === nodeNameLowerCase) && (textContentMatch instanceof RegExp ? textContentMatch.test(textContent) : textContent.includes(textContentMatch));
       }
       function parseNodeTextParams(nodeName, textMatch) {
-        let pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-        const REGEXP_START_MARKER = "/";
-        const isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
-        const selector = isStringNameMatch ? nodeName : "*";
-        const nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
-        const textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
-        let patternMatch;
+        var pattern = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+        var REGEXP_START_MARKER = "/";
+        var isStringNameMatch = !(nodeName.startsWith(REGEXP_START_MARKER) && nodeName.endsWith(REGEXP_START_MARKER));
+        var selector = isStringNameMatch ? nodeName : "*";
+        var nodeNameMatch = isStringNameMatch ? nodeName : toRegExp(nodeName);
+        var textContentMatch = !textMatch.startsWith(REGEXP_START_MARKER) ? textMatch : toRegExp(textMatch);
+        var patternMatch;
         if (pattern) {
           patternMatch = !pattern.startsWith(REGEXP_START_MARKER) ? pattern : toRegExp(pattern);
         }
@@ -24971,19 +25753,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -24997,36 +25779,58 @@
         }
       }
       function nodeListToArray(nodeList) {
-        const nodes = [];
-        for (let i = 0; i < nodeList.length; i += 1) {
+        var nodes = [];
+        for (var i = 0; i < nodeList.length; i += 1) {
           nodes.push(nodeList[i]);
         }
         return nodes;
       }
       function getAddedNodes(mutations) {
-        const nodes = [];
-        for (let i = 0; i < mutations.length; i += 1) {
-          const addedNodes = mutations[i].addedNodes;
-          for (let j = 0; j < addedNodes.length; j += 1) {
+        var nodes = [];
+        for (var i = 0; i < mutations.length; i += 1) {
+          var addedNodes = mutations[i].addedNodes;
+          for (var j = 0; j < addedNodes.length; j += 1) {
             nodes.push(addedNodes[j]);
           }
         }
         return nodes;
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedReplaceNodeText.apply(this, updatedArgs);
       } catch (e) {
@@ -25035,26 +25839,26 @@
     }
     function trustedReplaceXhrResponse(source, args) {
       function trustedReplaceXhrResponse(source) {
-        let pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-        let replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        let propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var pattern = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+        var replacement = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var propsToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (typeof Proxy === "undefined") {
           return;
         }
         if (pattern === "" && replacement !== "") {
-          const message = "Pattern argument should not be empty string.";
+          var message = "Pattern argument should not be empty string.";
           logMessage(source, message);
           return;
         }
-        const shouldLog = pattern === "" && replacement === "";
-        const nativeOpen = window.XMLHttpRequest.prototype.open;
-        const nativeSend = window.XMLHttpRequest.prototype.send;
-        let xhrData;
-        const openWrapper = function openWrapper(target, thisArg, args) {
+        var shouldLog = pattern === "" && replacement === "";
+        var nativeOpen = window.XMLHttpRequest.prototype.open;
+        var nativeSend = window.XMLHttpRequest.prototype.send;
+        var xhrData;
+        var openWrapper = function openWrapper(target, thisArg, args) {
           xhrData = getXhrData.apply(null, args);
           if (shouldLog) {
-            const message = "xhr( ".concat(objectToString(xhrData), " )");
-            logMessage(source, message, true);
+            var _message = "xhr( ".concat(objectToString(xhrData), " )");
+            logMessage(source, _message, true);
             hit(source);
             return Reflect.apply(target, thisArg, args);
           }
@@ -25063,39 +25867,39 @@
           }
           if (thisArg.shouldBePrevented) {
             thisArg.collectedHeaders = [];
-            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
               thisArg.collectedHeaders.push(args);
               return Reflect.apply(target, thisArg, args);
             };
-            const setRequestHeaderHandler = {
+            var setRequestHeaderHandler = {
               apply: setRequestHeaderWrapper
             };
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const sendWrapper = function sendWrapper(target, thisArg, args) {
+        var sendWrapper = function sendWrapper(target, thisArg, args) {
           if (!thisArg.shouldBePrevented) {
             return Reflect.apply(target, thisArg, args);
           }
-          const forgedRequest = new XMLHttpRequest();
+          var forgedRequest = new XMLHttpRequest();
           forgedRequest.addEventListener("readystatechange", function () {
             if (forgedRequest.readyState !== 4) {
               return;
             }
-            const readyState = forgedRequest.readyState,
+            var readyState = forgedRequest.readyState,
               response = forgedRequest.response,
               responseText = forgedRequest.responseText,
               responseURL = forgedRequest.responseURL,
               responseXML = forgedRequest.responseXML,
               status = forgedRequest.status,
               statusText = forgedRequest.statusText;
-            const content = responseText || response;
+            var content = responseText || response;
             if (typeof content !== "string") {
               return;
             }
-            const patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
-            const modifiedContent = content.replace(patternRegexp, replacement);
+            var patternRegexp = pattern === "*" ? /(\n|.)*/ : toRegExp(pattern);
+            var modifiedContent = content.replace(patternRegexp, replacement);
             Object.defineProperties(thisArg, {
               readyState: {
                 value: readyState,
@@ -25127,19 +25931,19 @@
               }
             });
             setTimeout(function () {
-              const stateEvent = new Event("readystatechange");
+              var stateEvent = new Event("readystatechange");
               thisArg.dispatchEvent(stateEvent);
-              const loadEvent = new Event("load");
+              var loadEvent = new Event("load");
               thisArg.dispatchEvent(loadEvent);
-              const loadEndEvent = new Event("loadend");
+              var loadEndEvent = new Event("loadend");
               thisArg.dispatchEvent(loadEndEvent);
             }, 1);
             hit(source);
           });
           nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
           thisArg.collectedHeaders.forEach(function (header) {
-            const name = header[0];
-            const value = header[1];
+            var name = header[0];
+            var value = header[1];
             forgedRequest.setRequestHeader(name, value);
           });
           thisArg.collectedHeaders = [];
@@ -25150,10 +25954,10 @@
           }
           return undefined;
         };
-        const openHandler = {
+        var openHandler = {
           apply: openWrapper
         };
-        const sendHandler = {
+        var sendHandler = {
           apply: sendWrapper
         };
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
@@ -25164,19 +25968,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -25190,14 +25994,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -25205,16 +26009,38 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function objectToString(obj) {
@@ -25222,9 +26048,9 @@
           return String(obj);
         }
         return isEmptyObject(obj) ? "{}" : Object.entries(obj).map(function (pair) {
-          const key = pair[0];
-          const value = pair[1];
-          let recordValueStr = value;
+          var key = pair[0];
+          var value = pair[1];
+          var recordValueStr = value;
           if (value instanceof Object) {
             recordValueStr = "{ ".concat(objectToString(value), " }");
           }
@@ -25235,16 +26061,18 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        let isMatched;
-        const parsedData = parseMatchProps(propsToMatch);
-        if (!validateParsedData(parsedData)) {
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+        if (!isValidParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          const matchData = getMatchPropsData(parsedData);
-          isMatched = Object.keys(matchData).every(function (matchKey) {
-            const matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          var matchData = getMatchPropsData(parsedData);
+          var matchKeys = Object.keys(matchData);
+          isMatched = matchKeys.every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            var dataValue = requestData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === "string" && (matchValue === null || matchValue === void 0 ? void 0 : matchValue.test(dataValue));
           });
         }
         return isMatched;
@@ -25259,32 +26087,34 @@
         };
       }
       function getMatchPropsData(data) {
-        const matchData = {};
-        Object.keys(data).forEach(function (key) {
+        var matchData = {};
+        var dataKeys = Object.keys(data);
+        dataKeys.forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
       function getRequestProps() {
-        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+        return ["url", "method", "headers", "body", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal", "mode"];
       }
-      function validateParsedData(data) {
+      function isValidParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
       function parseMatchProps(propsToMatchStr) {
-        const PROPS_DIVIDER = " ";
-        const PAIRS_MARKER = ":";
-        const LEGAL_MATCH_PROPS = getRequestProps();
-        const propsObj = {};
-        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var isRequestProp = function isRequestProp(prop) {
+          return getRequestProps().includes(prop);
+        };
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          const dividerInd = prop.indexOf(PAIRS_MARKER);
-          const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
-          if (hasLegalMatchProp) {
-            const value = prop.slice(dividerInd + 1);
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          if (isRequestProp(key)) {
+            var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -25293,12 +26123,12 @@
         return propsObj;
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -25313,7 +26143,7 @@
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedReplaceXhrResponse.apply(this, updatedArgs);
       } catch (e) {
@@ -25325,30 +26155,30 @@
         if (!property || !matchStackTrace(stack, new Error().stack)) {
           return;
         }
-        let constantValue;
+        var constantValue;
         try {
           constantValue = inferValue(value);
         } catch (e) {
           logMessage(source, e);
           return;
         }
-        let canceled = false;
-        const mustCancel = function mustCancel(value) {
+        var canceled = false;
+        var mustCancel = function mustCancel(value) {
           if (canceled) {
             return canceled;
           }
           canceled = value !== undefined && constantValue !== undefined && typeof value !== typeof constantValue && value !== null;
           return canceled;
         };
-        const trapProp = function trapProp(base, prop, configurable, handler) {
+        var trapProp = function trapProp(base, prop, configurable, handler) {
           if (!handler.init(base[prop])) {
             return false;
           }
-          const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-          let prevSetter;
+          var origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
+          var prevSetter;
           if (origDescriptor instanceof Object) {
             if (!origDescriptor.configurable) {
-              const message = "Property '".concat(prop, "' is not configurable");
+              var message = "Property '".concat(prop, "' is not configurable");
               logMessage(source, message);
               return false;
             }
@@ -25371,12 +26201,12 @@
           });
           return true;
         };
-        const setChainPropAccess = function setChainPropAccess(owner, property) {
-          const chainInfo = getPropertyInChain(owner, property);
-          const base = chainInfo.base;
-          const prop = chainInfo.prop,
+        var setChainPropAccess = function setChainPropAccess(owner, property) {
+          var chainInfo = getPropertyInChain(owner, property);
+          var base = chainInfo.base;
+          var prop = chainInfo.prop,
             chain = chainInfo.chain;
-          const inChainPropHandler = {
+          var inChainPropHandler = {
             factValue: undefined,
             init(a) {
               this.factValue = a;
@@ -25395,7 +26225,7 @@
               }
             }
           };
-          const endPropHandler = {
+          var endPropHandler = {
             init(a) {
               if (mustCancel(a)) {
                 return false;
@@ -25413,7 +26243,7 @@
             }
           };
           if (!chain) {
-            const isTrapped = trapProp(base, prop, false, endPropHandler);
+            var isTrapped = trapProp(base, prop, false, endPropHandler);
             if (isTrapped) {
               hit(source);
             }
@@ -25426,7 +26256,7 @@
           if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
             trapProp(base, prop, true, inChainPropHandler);
           }
-          const propValue = owner[prop];
+          var propValue = owner[prop];
           if (propValue instanceof Object || typeof propValue === "object" && propValue !== null) {
             setChainPropAccess(propValue, chain);
           }
@@ -25439,19 +26269,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -25480,17 +26310,17 @@
         if (value === "NaN") {
           return NaN;
         }
-        const MAX_ALLOWED_NUM = 32767;
-        const numVal = Number(value);
+        var MAX_ALLOWED_NUM = 32767;
+        var numVal = Number(value);
         if (!nativeIsNaN(numVal)) {
           if (Math.abs(numVal) > MAX_ALLOWED_NUM) {
             throw new Error("number values bigger than 32767 are not allowed");
           }
           return numVal;
         }
-        let errorMessage = "'".concat(value, "' value type can't be inferred");
+        var errorMessage = "'".concat(value, "' value type can't be inferred");
         try {
-          const parsableVal = JSON.parse(value);
+          var parsableVal = JSON.parse(value);
           if (parsableVal instanceof Object || typeof parsableVal === "string") {
             return parsableVal;
           }
@@ -25500,14 +26330,14 @@
         throw new TypeError(errorMessage);
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -25515,14 +26345,14 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function getPropertyInChain(base, chain) {
-        const pos = chain.indexOf(".");
+        var pos = chain.indexOf(".");
         if (pos === -1) {
           return {
             base: base,
             prop: chain
           };
         }
-        const prop = chain.slice(0, pos);
+        var prop = chain.slice(0, pos);
         if (base === null) {
           return {
             base: base,
@@ -25530,7 +26360,7 @@
             chain: chain
           };
         }
-        const nextBase = base[prop];
+        var nextBase = base[prop];
         chain = chain.slice(pos + 1);
         if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
           return {
@@ -25559,16 +26389,38 @@
         };
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function matchStackTrace(stackMatch, stackTrace) {
@@ -25578,56 +26430,61 @@
         if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
           return true;
         }
-        const stackRegexp = toRegExp(stackMatch);
-        const refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         }).join("\n");
         return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
       }
       function nativeIsNaN(num) {
-        const native = Number.isNaN || window.isNaN;
+        var native = Number.isNaN || window.isNaN;
         return native(num);
       }
       function isEmptyObject(obj) {
         return Object.keys(obj).length === 0 && !obj.prototype;
       }
       function getNativeRegexpTest() {
-        return Object.getOwnPropertyDescriptor(RegExp.prototype, "test").value;
+        var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
+        var nativeRegexTest = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+        if (descriptor && typeof descriptor.value === "function") {
+          return nativeRegexTest;
+        }
+        throw new Error("RegExp.prototype.test is not a function");
       }
       function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
-        const INLINE_SCRIPT_STRING = "inlineScript";
-        const INJECTED_SCRIPT_STRING = "injectedScript";
-        const INJECTED_SCRIPT_MARKER = "<anonymous>";
-        const isInlineScript = function isInlineScript(stackMatch) {
-          return stackMatch.includes(INLINE_SCRIPT_STRING);
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(match) {
+          return match.includes(INLINE_SCRIPT_STRING);
         };
-        const isInjectedScript = function isInjectedScript(stackMatch) {
-          return stackMatch.includes(INJECTED_SCRIPT_STRING);
+        var isInjectedScript = function isInjectedScript(match) {
+          return match.includes(INJECTED_SCRIPT_STRING);
         };
         if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
           return false;
         }
-        let documentURL = window.location.href;
-        const pos = documentURL.indexOf("#");
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
         if (pos !== -1) {
           documentURL = documentURL.slice(0, pos);
         }
-        const stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
           return line.trim();
         });
-        const stackLines = stackSteps.map(function (line) {
-          let stack;
-          const getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
           if (getStackTraceURL) {
             var _stackURL, _stackURL2;
-            let stackURL = getStackTraceURL[2];
+            var stackURL = getStackTraceURL[2];
             if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
               stackURL = stackURL.slice(1);
             }
             if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
               var _stackFunction;
               stackURL = INJECTED_SCRIPT_STRING;
-              let stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
               if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
                 stackFunction = stackFunction.slice(2).trim();
               }
@@ -25641,7 +26498,7 @@
           return stack;
         });
         if (stackLines) {
-          for (let index = 0; index < stackLines.length; index += 1) {
+          for (var index = 0; index < stackLines.length; index += 1) {
             if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
               return true;
             }
@@ -25652,7 +26509,7 @@
         }
         return false;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedSetConstant.apply(this, updatedArgs);
       } catch (e) {
@@ -25661,8 +26518,8 @@
     }
     function trustedSetCookie(source, args) {
       function trustedSetCookie(source, name, value) {
-        let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
+        var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
         if (typeof name === "undefined") {
           logMessage(source, "Cookie name should be specified");
           return;
@@ -25671,23 +26528,23 @@
           logMessage(source, "Cookie value should be specified");
           return;
         }
-        const parsedValue = parseKeywordValue(value);
+        var parsedValue = parseKeywordValue(value);
         if (!isValidCookiePath(path)) {
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
+        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
         if (!cookieToSet) {
           logMessage(source, "Invalid cookie name or value");
           return;
         }
         if (offsetExpiresSec) {
-          const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+          var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
           if (!parsedOffsetMs) {
             logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
             return;
           }
-          const expires = Date.now() + parsedOffsetMs;
+          var expires = Date.now() + parsedOffsetMs;
           cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
         }
         document.cookie = cookieToSet;
@@ -25698,19 +26555,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -25724,14 +26581,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -25739,25 +26596,25 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const COOKIE_BREAKER = ";";
+        var shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var COOKIE_BREAKER = ";";
         if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
           return null;
         }
-        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
-        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        var name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        var value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
         return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
       }
       function getTrustedCookieOffsetMs(offsetExpiresSec) {
-        const ONE_YEAR_EXPIRATION_KEYWORD = "1year";
-        const ONE_DAY_EXPIRATION_KEYWORD = "1day";
-        const MS_IN_SEC = 1e3;
-        const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-        const SECONDS_IN_DAY = 24 * 60 * 60;
-        let parsedSec;
+        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        var MS_IN_SEC = 1e3;
+        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        var SECONDS_IN_DAY = 24 * 60 * 60;
+        var parsedSec;
         if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
           parsedSec = SECONDS_IN_YEAR;
         } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
@@ -25771,9 +26628,9 @@
         return parsedSec * MS_IN_SEC;
       }
       function parseKeywordValue(rawValue) {
-        const NOW_VALUE_KEYWORD = "$now$";
-        const CURRENT_DATE_KEYWORD = "$currentDate$";
-        let parsedValue = rawValue;
+        var NOW_VALUE_KEYWORD = "$now$";
+        var CURRENT_DATE_KEYWORD = "$currentDate$";
+        var parsedValue = rawValue;
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
@@ -25787,7 +26644,7 @@
         }
         return "";
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedSetCookie.apply(this, updatedArgs);
       } catch (e) {
@@ -25796,8 +26653,8 @@
     }
     function trustedSetCookieReload(source, args) {
       function trustedSetCookieReload(source, name, value) {
-        let offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        let path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
+        var offsetExpiresSec = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "/";
         if (typeof name === "undefined") {
           logMessage(source, "Cookie name should be specified");
           return;
@@ -25809,28 +26666,28 @@
         if (isCookieSetWithValue(document.cookie, name, value)) {
           return;
         }
-        const parsedValue = parseKeywordValue(value);
+        var parsedValue = parseKeywordValue(value);
         if (!isValidCookiePath(path)) {
           logMessage(source, "Invalid cookie path: '".concat(path, "'"));
           return;
         }
-        let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
+        var cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
         if (!cookieToSet) {
           logMessage(source, "Invalid cookie name or value");
           return;
         }
         if (offsetExpiresSec) {
-          const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
+          var parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
           if (!parsedOffsetMs) {
             logMessage(source, "Invalid offsetExpiresSec value: ".concat(offsetExpiresSec));
             return;
           }
-          const expires = Date.now() + parsedOffsetMs;
+          var expires = Date.now() + parsedOffsetMs;
           cookieToSet += " expires=".concat(new Date(expires).toUTCString(), ";");
         }
         document.cookie = cookieToSet;
         hit(source);
-        const cookieValueToCheck = parseCookieString(document.cookie)[name];
+        var cookieValueToCheck = parseCookieString(document.cookie)[name];
         if (isCookieSetWithValue(document.cookie, name, cookieValueToCheck)) {
           window.location.reload();
         }
@@ -25840,19 +26697,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -25866,14 +26723,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -25882,35 +26739,35 @@
       }
       function isCookieSetWithValue(cookieString, name, value) {
         return cookieString.split(";").some(function (cookieStr) {
-          const pos = cookieStr.indexOf("=");
+          var pos = cookieStr.indexOf("=");
           if (pos === -1) {
             return false;
           }
-          const cookieName = cookieStr.slice(0, pos).trim();
-          const cookieValue = cookieStr.slice(pos + 1).trim();
+          var cookieName = cookieStr.slice(0, pos).trim();
+          var cookieValue = cookieStr.slice(pos + 1).trim();
           return name === cookieName && value === cookieValue;
         });
       }
       function concatCookieNameValuePath(rawName, rawValue, rawPath) {
-        let shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const COOKIE_BREAKER = ";";
+        var shouldEncode = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var COOKIE_BREAKER = ";";
         if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || "".concat(rawValue).includes(COOKIE_BREAKER))) {
           return null;
         }
-        const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
-        const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
+        var name = shouldEncode ? encodeURIComponent(rawName) : rawName;
+        var value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
         return "".concat(name, "=").concat(value, "; ").concat(getCookiePath(rawPath), ";");
       }
       function isValidCookiePath(rawPath) {
         return rawPath === "/" || rawPath === "none";
       }
       function getTrustedCookieOffsetMs(offsetExpiresSec) {
-        const ONE_YEAR_EXPIRATION_KEYWORD = "1year";
-        const ONE_DAY_EXPIRATION_KEYWORD = "1day";
-        const MS_IN_SEC = 1e3;
-        const SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
-        const SECONDS_IN_DAY = 24 * 60 * 60;
-        let parsedSec;
+        var ONE_YEAR_EXPIRATION_KEYWORD = "1year";
+        var ONE_DAY_EXPIRATION_KEYWORD = "1day";
+        var MS_IN_SEC = 1e3;
+        var SECONDS_IN_YEAR = 365 * 24 * 60 * 60;
+        var SECONDS_IN_DAY = 24 * 60 * 60;
+        var parsedSec;
         if (offsetExpiresSec === ONE_YEAR_EXPIRATION_KEYWORD) {
           parsedSec = SECONDS_IN_YEAR;
         } else if (offsetExpiresSec === ONE_DAY_EXPIRATION_KEYWORD) {
@@ -25924,9 +26781,9 @@
         return parsedSec * MS_IN_SEC;
       }
       function parseKeywordValue(rawValue) {
-        const NOW_VALUE_KEYWORD = "$now$";
-        const CURRENT_DATE_KEYWORD = "$currentDate$";
-        let parsedValue = rawValue;
+        var NOW_VALUE_KEYWORD = "$now$";
+        var CURRENT_DATE_KEYWORD = "$currentDate$";
+        var parsedValue = rawValue;
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
@@ -25935,14 +26792,14 @@
         return parsedValue;
       }
       function parseCookieString(cookieString) {
-        const COOKIE_DELIMITER = "=";
-        const COOKIE_PAIRS_DELIMITER = ";";
-        const cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
-        const cookieData = {};
+        var COOKIE_DELIMITER = "=";
+        var COOKIE_PAIRS_DELIMITER = ";";
+        var cookieChunks = cookieString.split(COOKIE_PAIRS_DELIMITER);
+        var cookieData = {};
         cookieChunks.forEach(function (singleCookie) {
-          let cookieKey;
-          let cookieValue;
-          const delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
+          var cookieKey;
+          var cookieValue = "";
+          var delimiterIndex = singleCookie.indexOf(COOKIE_DELIMITER);
           if (delimiterIndex === -1) {
             cookieKey = singleCookie.trim();
           } else {
@@ -25959,7 +26816,7 @@
         }
         return "";
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedSetCookieReload.apply(this, updatedArgs);
       } catch (e) {
@@ -25976,8 +26833,8 @@
           logMessage(source, "Item value should be specified");
           return;
         }
-        const parsedValue = parseKeywordValue(value);
-        const _window = window,
+        var parsedValue = parseKeywordValue(value);
+        var _window = window,
           localStorage = _window.localStorage;
         setStorageItem(source, localStorage, key, parsedValue);
         hit(source);
@@ -25987,19 +26844,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -26013,14 +26870,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -26031,14 +26888,14 @@
         try {
           storage.setItem(key, value);
         } catch (e) {
-          const message = "Unable to set sessionStorage item due to: ".concat(e.message);
+          var message = "Unable to set sessionStorage item due to: ".concat(e.message);
           logMessage(source, message);
         }
       }
       function parseKeywordValue(rawValue) {
-        const NOW_VALUE_KEYWORD = "$now$";
-        const CURRENT_DATE_KEYWORD = "$currentDate$";
-        let parsedValue = rawValue;
+        var NOW_VALUE_KEYWORD = "$now$";
+        var CURRENT_DATE_KEYWORD = "$currentDate$";
+        var parsedValue = rawValue;
         if (rawValue === NOW_VALUE_KEYWORD) {
           parsedValue = Date.now().toString();
         } else if (rawValue === CURRENT_DATE_KEYWORD) {
@@ -26046,7 +26903,7 @@
         }
         return parsedValue;
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedSetLocalStorageItem.apply(this, updatedArgs);
       } catch (e) {
@@ -26055,41 +26912,41 @@
     }
     function xmlPrune(source, args) {
       function xmlPrune(source, propsToRemove) {
-        let optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-        let urlToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
+        var optionalProp = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+        var urlToMatch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         if (typeof Reflect === "undefined" || typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
-        let shouldPruneResponse = false;
-        const urlMatchRegexp = toRegExp(urlToMatch);
-        const isXML = function isXML(text) {
+        var shouldPruneResponse = false;
+        var urlMatchRegexp = toRegExp(urlToMatch);
+        var isXML = function isXML(text) {
           if (typeof text === "string") {
-            const trimmedText = text.trim();
+            var trimmedText = text.trim();
             if (trimmedText.startsWith("<") && trimmedText.endsWith(">")) {
               return true;
             }
           }
           return false;
         };
-        const createXMLDocument = function createXMLDocument(text) {
-          const xmlParser = new DOMParser();
-          const xmlDocument = xmlParser.parseFromString(text, "text/xml");
+        var createXMLDocument = function createXMLDocument(text) {
+          var xmlParser = new DOMParser();
+          var xmlDocument = xmlParser.parseFromString(text, "text/xml");
           return xmlDocument;
         };
-        const isPruningNeeded = function isPruningNeeded(response, propsToRemove) {
+        var isPruningNeeded = function isPruningNeeded(response, propsToRemove) {
           if (!isXML(response)) {
             return false;
           }
-          const docXML = createXMLDocument(response);
+          var docXML = createXMLDocument(response);
           return !!docXML.querySelector(propsToRemove);
         };
-        const pruneXML = function pruneXML(text) {
+        var pruneXML = function pruneXML(text) {
           if (!isXML(text)) {
             shouldPruneResponse = false;
             return text;
           }
-          const xmlDoc = createXMLDocument(text);
-          const errorNode = xmlDoc.querySelector("parsererror");
+          var xmlDoc = createXMLDocument(text);
+          var errorNode = xmlDoc.querySelector("parsererror");
           if (errorNode) {
             return text;
           }
@@ -26097,7 +26954,7 @@
             shouldPruneResponse = false;
             return text;
           }
-          const elems = xmlDoc.querySelectorAll(propsToRemove);
+          var elems = xmlDoc.querySelectorAll(propsToRemove);
           if (!elems.length) {
             shouldPruneResponse = false;
             return text;
@@ -26105,62 +26962,62 @@
           elems.forEach(function (elem) {
             elem.remove();
           });
-          const serializer = new XMLSerializer();
+          var serializer = new XMLSerializer();
           text = serializer.serializeToString(xmlDoc);
           return text;
         };
-        const nativeOpen = window.XMLHttpRequest.prototype.open;
-        const nativeSend = window.XMLHttpRequest.prototype.send;
-        let xhrData;
-        const openWrapper = function openWrapper(target, thisArg, args) {
+        var nativeOpen = window.XMLHttpRequest.prototype.open;
+        var nativeSend = window.XMLHttpRequest.prototype.send;
+        var xhrData;
+        var openWrapper = function openWrapper(target, thisArg, args) {
           xhrData = getXhrData.apply(null, args);
           if (matchRequestProps(source, urlToMatch, xhrData)) {
             thisArg.shouldBePruned = true;
           }
           if (thisArg.shouldBePruned) {
             thisArg.collectedHeaders = [];
-            const setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
+            var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
               thisArg.collectedHeaders.push(args);
               return Reflect.apply(target, thisArg, args);
             };
-            const setRequestHeaderHandler = {
+            var setRequestHeaderHandler = {
               apply: setRequestHeaderWrapper
             };
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const sendWrapper = function sendWrapper(target, thisArg, args) {
-          const allowedResponseTypeValues = ["", "text"];
+        var sendWrapper = function sendWrapper(target, thisArg, args) {
+          var allowedResponseTypeValues = ["", "text"];
           if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
             return Reflect.apply(target, thisArg, args);
           }
-          const forgedRequest = new XMLHttpRequest();
+          var forgedRequest = new XMLHttpRequest();
           forgedRequest.addEventListener("readystatechange", function () {
             if (forgedRequest.readyState !== 4) {
               return;
             }
-            const readyState = forgedRequest.readyState,
+            var readyState = forgedRequest.readyState,
               response = forgedRequest.response,
               responseText = forgedRequest.responseText,
               responseURL = forgedRequest.responseURL,
               responseXML = forgedRequest.responseXML,
               status = forgedRequest.status,
               statusText = forgedRequest.statusText;
-            const content = responseText || response;
+            var content = responseText || response;
             if (typeof content !== "string") {
               return;
             }
             if (!propsToRemove) {
               if (isXML(response)) {
-                const message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
+                var message = "XMLHttpRequest.open() URL: ".concat(responseURL, "\nresponse: ").concat(response);
                 logMessage(source, message);
                 logMessage(source, createXMLDocument(response), true, false);
               }
             } else {
               shouldPruneResponse = isPruningNeeded(response, propsToRemove);
             }
-            const responseContent = shouldPruneResponse ? pruneXML(response) : response;
+            var responseContent = shouldPruneResponse ? pruneXML(response) : response;
             Object.defineProperties(thisArg, {
               readyState: {
                 value: readyState,
@@ -26192,19 +27049,19 @@
               }
             });
             setTimeout(function () {
-              const stateEvent = new Event("readystatechange");
+              var stateEvent = new Event("readystatechange");
               thisArg.dispatchEvent(stateEvent);
-              const loadEvent = new Event("load");
+              var loadEvent = new Event("load");
               thisArg.dispatchEvent(loadEvent);
-              const loadEndEvent = new Event("loadend");
+              var loadEndEvent = new Event("loadend");
               thisArg.dispatchEvent(loadEndEvent);
             }, 1);
             hit(source);
           });
           nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
           thisArg.collectedHeaders.forEach(function (header) {
-            const name = header[0];
-            const value = header[1];
+            var name = header[0];
+            var value = header[1];
             forgedRequest.setRequestHeader(name, value);
           });
           thisArg.collectedHeaders = [];
@@ -26215,32 +27072,32 @@
           }
           return undefined;
         };
-        const openHandler = {
+        var openHandler = {
           apply: openWrapper
         };
-        const sendHandler = {
+        var sendHandler = {
           apply: sendWrapper
         };
         XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
         XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
-        const nativeFetch = window.fetch;
-        const fetchWrapper = async function fetchWrapper(target, thisArg, args) {
-          const fetchURL = args[0] instanceof Request ? args[0].url : args[0];
+        var nativeFetch = window.fetch;
+        var fetchWrapper = async function fetchWrapper(target, thisArg, args) {
+          var fetchURL = args[0] instanceof Request ? args[0].url : args[0];
           if (typeof fetchURL !== "string" || fetchURL.length === 0) {
             return Reflect.apply(target, thisArg, args);
           }
           if (urlMatchRegexp.test(fetchURL)) {
-            const response = await nativeFetch(...args);
-            const clonedResponse = response.clone();
-            const responseText = await response.text();
+            var response = await nativeFetch(...args);
+            var clonedResponse = response.clone();
+            var responseText = await response.text();
             shouldPruneResponse = isPruningNeeded(responseText, propsToRemove);
             if (!shouldPruneResponse) {
-              const message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
+              var message = "fetch URL: ".concat(fetchURL, "\nresponse text: ").concat(responseText);
               logMessage(source, message);
               logMessage(source, createXMLDocument(responseText), true, false);
               return clonedResponse;
             }
-            const prunedText = pruneXML(responseText);
+            var prunedText = pruneXML(responseText);
             if (shouldPruneResponse) {
               hit(source);
               return new Response(prunedText, {
@@ -26253,7 +27110,7 @@
           }
           return Reflect.apply(target, thisArg, args);
         };
-        const fetchHandler = {
+        var fetchHandler = {
           apply: fetchWrapper
         };
         window.fetch = new Proxy(window.fetch, fetchHandler);
@@ -26263,19 +27120,19 @@
           return;
         }
         try {
-          const log = console.log.bind(console);
-          const trace = console.trace.bind(console);
-          let prefix = source.ruleText || "";
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
           if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = "#%#//";
-            const UBO_SCRIPTLET_MARKER = "##+js";
-            let ruleStartIndex;
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
             if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
             } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
               ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
             }
-            const rulePart = source.ruleText.slice(ruleStartIndex);
+            var rulePart = source.ruleText.slice(ruleStartIndex);
             prefix = "".concat(source.domainName).concat(rulePart);
           }
           log("".concat(prefix, " trace start"));
@@ -26289,14 +27146,14 @@
         }
       }
       function logMessage(source, message) {
-        let forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        let convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-        const name = source.name,
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
           verbose = source.verbose;
         if (!forced && !verbose) {
           return;
         }
-        const nativeConsole = console.log;
+        var nativeConsole = console.log;
         if (!convertMessageToString) {
           nativeConsole("".concat(name, ":"), message);
           return;
@@ -26304,16 +27161,38 @@
         nativeConsole("".concat(name, ": ").concat(message));
       }
       function toRegExp() {
-        let input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-        const DEFAULT_VALUE = ".?";
-        const FORWARD_SLASH = "/";
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
         if (input === "") {
           return new RegExp(DEFAULT_VALUE);
         }
-        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-          return new RegExp(input.slice(1, -1));
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
         }
-        const escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
       function getXhrData(method, url, async, user, password) {
@@ -26329,47 +27208,51 @@
         if (propsToMatch === "" || propsToMatch === "*") {
           return true;
         }
-        let isMatched;
-        const parsedData = parseMatchProps(propsToMatch);
-        if (!validateParsedData(parsedData)) {
+        var isMatched;
+        var parsedData = parseMatchProps(propsToMatch);
+        if (!isValidParsedData(parsedData)) {
           logMessage(source, "Invalid parameter: ".concat(propsToMatch));
           isMatched = false;
         } else {
-          const matchData = getMatchPropsData(parsedData);
-          isMatched = Object.keys(matchData).every(function (matchKey) {
-            const matchValue = matchData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && matchValue.test(requestData[matchKey]);
+          var matchData = getMatchPropsData(parsedData);
+          var matchKeys = Object.keys(matchData);
+          isMatched = matchKeys.every(function (matchKey) {
+            var matchValue = matchData[matchKey];
+            var dataValue = requestData[matchKey];
+            return Object.prototype.hasOwnProperty.call(requestData, matchKey) && typeof dataValue === "string" && (matchValue === null || matchValue === void 0 ? void 0 : matchValue.test(dataValue));
           });
         }
         return isMatched;
       }
       function getMatchPropsData(data) {
-        const matchData = {};
-        Object.keys(data).forEach(function (key) {
+        var matchData = {};
+        var dataKeys = Object.keys(data);
+        dataKeys.forEach(function (key) {
           matchData[key] = toRegExp(data[key]);
         });
         return matchData;
       }
       function getRequestProps() {
-        return ["url", "method", "headers", "body", "mode", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal"];
+        return ["url", "method", "headers", "body", "credentials", "cache", "redirect", "referrer", "referrerPolicy", "integrity", "keepalive", "signal", "mode"];
       }
-      function validateParsedData(data) {
+      function isValidParsedData(data) {
         return Object.values(data).every(function (value) {
           return isValidStrPattern(value);
         });
       }
       function parseMatchProps(propsToMatchStr) {
-        const PROPS_DIVIDER = " ";
-        const PAIRS_MARKER = ":";
-        const LEGAL_MATCH_PROPS = getRequestProps();
-        const propsObj = {};
-        const props = propsToMatchStr.split(PROPS_DIVIDER);
+        var PROPS_DIVIDER = " ";
+        var PAIRS_MARKER = ":";
+        var isRequestProp = function isRequestProp(prop) {
+          return getRequestProps().includes(prop);
+        };
+        var propsObj = {};
+        var props = propsToMatchStr.split(PROPS_DIVIDER);
         props.forEach(function (prop) {
-          const dividerInd = prop.indexOf(PAIRS_MARKER);
-          const key = prop.slice(0, dividerInd);
-          const hasLegalMatchProp = LEGAL_MATCH_PROPS.includes(key);
-          if (hasLegalMatchProp) {
-            const value = prop.slice(dividerInd + 1);
+          var dividerInd = prop.indexOf(PAIRS_MARKER);
+          var key = prop.slice(0, dividerInd);
+          if (isRequestProp(key)) {
+            var value = prop.slice(dividerInd + 1);
             propsObj[key] = value;
           } else {
             propsObj.url = prop;
@@ -26378,12 +27261,12 @@
         return propsObj;
       }
       function isValidStrPattern(input) {
-        const FORWARD_SLASH = "/";
-        let str = escapeRegExp(input);
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
         if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
           str = input.slice(1, -1);
         }
-        let isValid;
+        var isValid;
         try {
           isValid = new RegExp(str);
           isValid = true;
@@ -26395,14 +27278,14 @@
       function escapeRegExp(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
-      const updatedArgs = args ? [].concat(source).concat(args) : [source];
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         xmlPrune.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
     }
-    const scriptletsMap = {
+    var scriptletsMap = {
       "abort-current-inline-script": abortCurrentInlineScript,
       "abort-current-script.js": abortCurrentInlineScript,
       "ubo-abort-current-script.js": abortCurrentInlineScript,
@@ -26645,7 +27528,7 @@
     };
 
     /**
-     * @typedef {Object} Source Scriptlet properties.
+     * @typedef {object} Source Scriptlet properties.
      * @property {string} name Scriptlet name.
      * @property {Array<string>} args Arguments for scriptlet function.
      * @property {'extension'|'corelibs'|'test'} engine Defines the final form of scriptlet string presentation.
@@ -26667,25 +27550,25 @@
       if (!validator.isValidScriptletName(source.name)) {
         return null;
       }
-      const scriptletFunction = getScriptletFunction(source.name);
+      var scriptletFunction = getScriptletFunction(source.name);
       // In case isValidScriptletName check will pass invalid scriptlet name,
       // for example when there is a bad alias
       if (typeof scriptletFunction !== 'function') {
         throw new Error("Error: cannot invoke scriptlet with name: '".concat(source.name, "'"));
       }
-      const scriptletFunctionString = scriptletFunction.toString();
-      const result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(scriptletFunctionString) : passSourceAndProps(source, scriptletFunctionString);
+      var scriptletFunctionString = scriptletFunction.toString();
+      var result = source.engine === 'corelibs' || source.engine === 'test' ? wrapInNonameFunc(scriptletFunctionString) : passSourceAndProps(source, scriptletFunctionString);
       return result;
     }
 
     /**
      * Scriptlets variable
      *
-     * @returns {Object} object with methods:
+     * @returns {object} object with methods:
      * `invoke` method receives one argument with `Source` type
      * `validate` method receives one argument with `String` type
      */
-    const scriptletsObject = function () {
+    var scriptletsObject = function () {
       return {
         invoke: getScriptletCode,
         getScriptletFunction,

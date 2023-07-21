@@ -2253,12 +2253,14 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
 - `name` — required, cookie name to be set
 - `value` — required, cookie value; possible values:
     - number `>= 0 && <= 15`
-    - one of the predefined constants:
-        - `true` / `True`
-        - `false` / `False`
-        - `yes` / `Yes` / `Y`
-        - `no`
-        - `ok` / `OK`
+    - one of the predefined constants in any case variation:
+        - `true`
+        - `false`
+        - `yes` / `y`
+        - `no` / `n`
+        - `ok`
+        - `accept`/ `reject`
+        - `allow` / `deny`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -2295,12 +2297,14 @@ example.org#%#//scriptlet('set-cookie', name, value[, path])
 - `name` — required, cookie name to be set
 - `value` — required, cookie value; possible values:
     - number `>= 0 && <= 15`
-    - one of the predefined constants:
-        - `true` / `True`
-        - `false` / `False`
-        - `yes` / `Yes` / `Y`
-        - `no`
-        - `ok` / `OK`
+    - one of the predefined constants in any case variation:
+        - `true`
+        - `false`
+        - `yes` / `y`
+        - `no` / `n`
+        - `ok`
+        - `accept`/ `reject`
+        - `allow` / `deny`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -2329,6 +2333,8 @@ example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
 Adds specified key and its value to localStorage object, or updates the value of the key if it already exists.
 Scriptlet won't set item if storage is full.
 
+To remove item from localStorage use `$remove$` as a value.
+
 ### Syntax
 
 ```text
@@ -2348,6 +2354,7 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
         - `''` — empty string
         - `yes`
         - `no`
+        - `$remove$` — remove specific item from localStorage
 
 ### Examples
 
@@ -2355,6 +2362,9 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
 example.org#%#//scriptlet('set-local-storage-item', 'player.live.current.mute', 'false')
 
 example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1')
+
+! Removes the item with key 'foo' from local storage
+example.org#%#//scriptlet('set-local-storage-item', 'foo', '$remove$')
 ```
 
 [Scriptlet source](../src/scriptlets/set-local-storage-item.js)
@@ -2387,6 +2397,8 @@ example.org#%#//scriptlet('set-popads-dummy')
 Adds specified key and its value to sessionStorage object, or updates the value of the key if it already exists.
 Scriptlet won't set item if storage is full.
 
+To remove item from sessionStorage use `$remove$` as a value.
+
 ### Syntax
 
 ```text
@@ -2406,6 +2418,7 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
         - `''` — empty string
         - `yes`
         - `no`
+        - `$remove$` — remove specific item from sessionStorage
 
 ### Examples
 
@@ -2413,6 +2426,9 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
 example.org#%#//scriptlet('set-session-storage-item', 'player.live.current.mute', 'false')
 
 example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '1')
+
+! Removes the item with key 'foo' from session storage
+example.org#%#//scriptlet('set-session-storage-item', 'foo', '$remove$')
 ```
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)
