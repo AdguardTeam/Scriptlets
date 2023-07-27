@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: add @added tag to the files with specific version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [v1.9.58] - 2023-07-27
+
+### Fixed
+
+- escape commas in the params during conversion to ubo rules
+  [#343](https://github.com/AdguardTeam/Scriptlets/issues/343)
+
 ## [v1.9.57] - 2023-07-21
 
 ### Added
@@ -206,6 +213,7 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
     - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
 
 
+[v1.9.58]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.57...v1.9.58
 [v1.9.57]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.37...v1.9.57
 [v1.9.37]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.7...v1.9.37
 [v1.9.7]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.1...v1.9.7
