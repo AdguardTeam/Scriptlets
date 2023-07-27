@@ -71,8 +71,6 @@ module.exports = {
             },
             extends: [
                 'airbnb-typescript/base',
-                'plugin:@typescript-eslint/eslint-recommended',
-                'plugin:@typescript-eslint/recommended',
             ],
             rules: {
                 'jsdoc/require-param-type': 0,

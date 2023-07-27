@@ -278,6 +278,11 @@ describe('Test scriptlet api methods', () => {
                 actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyObj')",
                 expected: 'example.org##+js(set-constant, adUnits, {})',
             },
+            {
+                // Escapes commas in params
+                actual: String.raw`example.com#%#//scriptlet('adjust-setInterval', ',dataType:_', '1000', '0.02')`,
+                expected: String.raw`example.com##+js(nano-setInterval-booster, \,dataType:_, 1000, 0.02)`,
+            },
         ];
         test.each(testCases)('$actual', ({ actual, expected }) => {
             expect(convertAdgScriptletToUbo(actual)).toStrictEqual(expected);

@@ -65,8 +65,6 @@ const REMOVE_ATTR_METHOD = 'removeAttr';
 const REMOVE_CLASS_METHOD = 'removeClass';
 const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
 const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
-const ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
-const ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
 const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
 /**
@@ -376,14 +374,19 @@ export const convertAdgScriptletToUbo = (rule: string): string | undefined => {
             && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD
                 || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
             preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
-        } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME)
-            && parsedParams[1] && parsedParams[1].includes(COMMA_SEPARATOR)) {
-            preparedParams = [
-                parsedParams[0],
-                replaceAll(parsedParams[1], COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR),
-            ];
         } else {
             preparedParams = parsedParams;
+        }
+
+        if (preparedParams && preparedParams.length > 0) {
+            // escape all commas in params
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/185
+            preparedParams = preparedParams.map((param) => {
+                if (param.includes(COMMA_SEPARATOR)) {
+                    return replaceAll(param, COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR);
+                }
+                return param;
+            });
         }
 
         // object of name and aliases for the Adg-scriptlet
