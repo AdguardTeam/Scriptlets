@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.57
+ * Version 1.9.58
  */
 
 (function () {
@@ -10393,8 +10393,6 @@
     var REMOVE_CLASS_METHOD = 'removeClass';
     var REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
     var REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
-    var ADG_REMOVE_ATTR_NAME = REMOVE_ATTR_ALIASES[0];
-    var ADG_REMOVE_CLASS_NAME = REMOVE_CLASS_ALIASES[0];
     var REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
     /**
@@ -10696,10 +10694,18 @@
         // https://github.com/AdguardTeam/Scriptlets/issues/109
         && (parsedParams[0] === ADG_PREVENT_FETCH_WILDCARD || parsedParams[0] === ADG_PREVENT_FETCH_EMPTY_STRING)) {
           preparedParams = [UBO_NO_FETCH_IF_WILDCARD];
-        } else if ((parsedName === ADG_REMOVE_ATTR_NAME || parsedName === ADG_REMOVE_CLASS_NAME) && parsedParams[1] && parsedParams[1].includes(COMMA_SEPARATOR)) {
-          preparedParams = [parsedParams[0], replaceAll(parsedParams[1], COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR)];
         } else {
           preparedParams = parsedParams;
+        }
+        if (preparedParams && preparedParams.length > 0) {
+          // escape all commas in params
+          // https://github.com/AdguardTeam/FiltersCompiler/issues/185
+          preparedParams = preparedParams.map(function (param) {
+            if (param.includes(COMMA_SEPARATOR)) {
+              return replaceAll(param, COMMA_SEPARATOR, ESCAPED_COMMA_SEPARATOR);
+            }
+            return param;
+          });
         }
 
         // object of name and aliases for the Adg-scriptlet
