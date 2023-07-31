@@ -346,10 +346,11 @@ export const convertScriptletToAdg = (rule: string): string[] => {
 };
 
 /**
- * Converts UBO scriptlet rule to AdGuard one
+ * Converts AdGuard scriptlet rule to UBO syntax.
  *
  * @param rule AdGuard scriptlet rule
  * @returns UBO scriptlet rule
+ * or undefined if `rule` is not valid AdGuard scriptlet rule.
  */
 export const convertAdgScriptletToUbo = (rule: string): string | undefined => {
     let res;
