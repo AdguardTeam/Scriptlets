@@ -11,6 +11,7 @@ import {
     convertUboRedirectToAdg,
     convertAbpRedirectToAdg,
     convertRedirectToAdg,
+    convertRedirectNameToAdg,
     convertAdgRedirectToUbo,
 } from '../helpers/converter';
 
@@ -76,5 +77,6 @@ export const redirects = {
     convertUboRedirectToAdg,
     convertAbpRedirectToAdg,
     convertRedirectToAdg,
+    convertRedirectNameToAdg,
     convertAdgRedirectToUbo,
 };

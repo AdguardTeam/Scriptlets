@@ -407,6 +407,16 @@ redirects.convertRedirectToAdg(rule);
 
 ```javascript
 /**
+ * Converts a redirect name to ADG compatible one, if possible
+ *
+ * @param {string} name Redirect name to convert
+ * @returns {string|undefined} Converted ADG compatible redirect name or `undefined` if the redirect isn't supported
+ */
+redirects.convertRedirectNameToAdg(rule);
+```
+
+```javascript
+/**
  * Converts Adg redirect rule to Ubo syntax.
  * No matter $redirect or $redirect-rule modifier is used
  * @param {string} rule — Adg rule

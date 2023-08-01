@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: add @added tag to the files with specific version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [v1.9.61] - 2023-08-01
+
+### Added
+
+- add `convertRedirectNameToAdg()` method to convert redirect names to ADG
+  [#346](https://github.com/AdguardTeam/Scriptlets/issues/346)
+
 ## [v1.9.58] - 2023-07-27
 
 ### Fixed

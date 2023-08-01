@@ -67,6 +67,8 @@ const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
 const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
 const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
 
+const ABP_RESOURCE_MARKER = 'abp-resource:';
+
 /**
  * Possible rule origins.
  */
@@ -656,4 +658,35 @@ export const convertAdgRedirectToUbo = (rule: string): string => {
         .join(COMMA_SEPARATOR);
 
     return `${basePart}$${uboModifiers}`;
+};
+
+/**
+ * Converts a redirect name to ADG compatible one, if possible
+ *
+ * @param name Redirect name to convert
+ * @returns Converted ADG compatible redirect name or `undefined` if the redirect isn't supported
+ */
+export const convertRedirectNameToAdg = (name: string): string | undefined => {
+    let nameToCheck = name.trim();
+
+    // Check if the redirect is already ADG compatible
+    if (validator.REDIRECT_RULE_TYPES.ADG.compatibility[nameToCheck]) {
+        return nameToCheck;
+    }
+
+    // Convert uBO redirects to ADG
+    if (validator.REDIRECT_RULE_TYPES.UBO.compatibility[nameToCheck]) {
+        return validator.REDIRECT_RULE_TYPES.UBO.compatibility[nameToCheck];
+    }
+
+    // Convert ABP redirects to ADG
+    // AGTree parses '$rewrite=abp-resource:blank-js' as 'rewrite' modifier with
+    // 'abp-resource:blank-js' value. So at this point we have to check if the
+    // redirect name starts with 'abp-resource:' and remove it if it does.
+    if (nameToCheck.startsWith(ABP_RESOURCE_MARKER)) {
+        nameToCheck = nameToCheck.slice(ABP_RESOURCE_MARKER.length).trim();
+    }
+
+    // This also returns `undefined` if the redirect isn't supported
+    return validator.REDIRECT_RULE_TYPES.ABP.compatibility[nameToCheck];
 };

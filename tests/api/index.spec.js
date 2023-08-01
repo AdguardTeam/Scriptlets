@@ -4,6 +4,7 @@ import {
     convertRedirectToAdg,
     convertAdgRedirectToUbo,
     isValidScriptletRule,
+    convertRedirectNameToAdg,
 } from '../../src/helpers/converter';
 
 import validator from '../../src/helpers/validator';
@@ -678,6 +679,55 @@ describe('Test redirects api methods', () => {
             expect(() => {
                 convertAdgRedirectToUbo(rule);
             }).toThrow(NO_UBO_CONVERSION_ERROR);
+        });
+    });
+
+    describe('convertRedirectNameToAdg', () => {
+        test.each([
+            // Should return undefined if the redirect name doesn't exist
+            {
+                actual: 'this-redirect-name-does-not-exist',
+                expected: undefined,
+            },
+
+            // Should return the original redirect name if its already an ADG redirect name
+            // (i.e. leave ADG redirect names unchanged)
+            {
+                actual: '1x1-transparent.gif',
+                expected: '1x1-transparent.gif',
+            },
+
+            // Should convert uBO -> ADG
+            {
+                actual: '1x1.gif',
+                expected: '1x1-transparent.gif',
+            },
+            {
+                actual: 'nobab.js',
+                expected: 'prevent-bab',
+            },
+            // Valid uBO redirect name that aren't supported by ADG
+            {
+                actual: 'outbrain-widget.js',
+                expected: undefined,
+            },
+
+            // Should convert ABP -> ADG
+            {
+                actual: '1x1-transparent-gif',
+                expected: '1x1-transparent.gif',
+            },
+            {
+                actual: 'blank-css',
+                expected: 'noopcss',
+            },
+            // Should handle the case where the redirect name starts with 'abp-resource:'
+            {
+                actual: 'abp-resource:blank-js',
+                expected: 'noopjs',
+            },
+        ])('$actual', ({ actual, expected }) => {
+            expect(convertRedirectNameToAdg(actual)).toStrictEqual(expected);
         });
     });
 });
