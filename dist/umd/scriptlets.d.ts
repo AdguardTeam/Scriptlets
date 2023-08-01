@@ -190,5 +190,12 @@ declare module '@adguard/scriptlets' {
          * @param rule
          */
         convertRedirectToAdg(rule: string): string;
+
+        /**
+         * Converts a redirect name to AdGuard one
+         *
+         * @param name
+         */
+        convertRedirectNameToAdg(name: string): string | undefined;
     };
 }
