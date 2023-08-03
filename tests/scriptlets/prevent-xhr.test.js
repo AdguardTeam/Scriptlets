@@ -696,6 +696,7 @@ if (isSupported) {
 
         xhr1.onload = () => {
             assert.strictEqual(xhr1.readyState, 4, 'Response done');
+            assert.ok(xhr1.responseURL.includes(URL_TO_PASS.substring(1)), 'Origianl URL mocked');
             assert.ok(xhr1.response, 'Response data exists');
             assert.strictEqual(window.hit, undefined, 'hit should not fire');
             done();
@@ -703,8 +704,59 @@ if (isSupported) {
 
         xhr2.onload = () => {
             assert.strictEqual(xhr2.readyState, 4, 'Response done');
+            assert.ok(xhr2.responseURL.includes(URL_TO_BLOCK.substring(1)), 'Origianl URL mocked');
             assert.strictEqual(typeof xhr2.responseText, 'string', 'Response text mocked');
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            clearGlobalProps('hit');
+            done();
+        };
+
+        xhr1.send();
+        // use timeout to avoid hit collisions
+        setTimeout(() => xhr2.send(), 10);
+    });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/347
+    test('Works correctly with different parallel XHR requests and blocked request', async (assert) => {
+        const METHOD = 'GET';
+        // advert.js does not exist, it imitate blocked request
+        const URL_TO_BLOCK = `${FETCH_OBJECTS_PATH}/advert.js`;
+        const URL_TO_PASS = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['advert.js'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async(2);
+
+        const xhr1 = new XMLHttpRequest();
+        const xhr2 = new XMLHttpRequest();
+
+        xhr1.open(METHOD, URL_TO_BLOCK);
+        xhr2.open(METHOD, URL_TO_PASS);
+
+        xhr1.onload = () => {
+            const responseHeader = xhr1.getResponseHeader('date');
+            const responseHeaders = xhr1.getAllResponseHeaders();
+
+            assert.strictEqual(xhr1.readyState, 4, 'Response done');
+            assert.ok(responseHeaders.length === 0, 'Response header is empty');
+            assert.strictEqual(responseHeader, null, 'Response header date returns null');
+            assert.strictEqual(typeof xhr1.responseText, 'string', 'Response text');
+            assert.ok(xhr1.responseText.length === 0, 'Response text is empty');
+            assert.ok(xhr1.responseURL.includes(URL_TO_BLOCK.substring(1)), 'Origianl URL mocked');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+
+        xhr2.onload = () => {
+            const responseHeader = xhr2.getResponseHeader('date');
+            const responseHeaders = xhr2.getAllResponseHeaders();
+
+            assert.strictEqual(xhr2.readyState, 4, 'Response done');
+            assert.ok(responseHeaders.length > 0, 'Response header contains data');
+            assert.ok(responseHeader.length > 0, 'Response header date is not empty');
+            assert.ok(xhr2.responseURL.includes(URL_TO_PASS.substring(1)), 'Origianl URL mocked');
+            assert.strictEqual(typeof xhr2.responseText, 'string', 'Response text mocked');
             clearGlobalProps('hit');
             done();
         };

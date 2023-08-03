@@ -112,6 +112,8 @@ export function preventXHR(source, propsToMatch, customResponseText) {
 
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
+    const nativeGetResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
+    const nativeGetAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
 
     let xhrData;
     let modifiedResponse = '';
@@ -128,6 +130,9 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             hit(source);
         } else if (matchRequestProps(source, propsToMatch, xhrData)) {
             thisArg.shouldBePrevented = true;
+            // Add xhrData to thisArg to keep original values in case of multiple requests
+            // https://github.com/AdguardTeam/Scriptlets/issues/347
+            thisArg.xhrData = xhrData;
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later;
@@ -194,7 +199,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
                 readyState: { value: readyState, writable: false },
                 statusText: { value: statusText, writable: false },
                 // If the request is blocked, responseURL is an empty string
-                responseURL: { value: responseURL || xhrData.url, writable: false },
+                responseURL: { value: responseURL || thisArg.xhrData.url, writable: false },
                 responseXML: { value: responseXML, writable: false },
                 // modified values
                 status: { value: 200, writable: false },
@@ -217,7 +222,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             hit(source);
         });
 
-        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+        nativeOpen.apply(forgedRequest, [thisArg.xhrData.method, thisArg.xhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
@@ -246,6 +251,9 @@ export function preventXHR(source, propsToMatch, customResponseText) {
      * @returns {string|null} Header value or null if header is not set.
      */
     const getHeaderWrapper = (target, thisArg, args) => {
+        if (!thisArg.shouldBePrevented) {
+            return nativeGetResponseHeader.apply(thisArg, args);
+        }
         if (!thisArg.collectedHeaders.length) {
             return null;
         }
@@ -270,6 +278,9 @@ export function preventXHR(source, propsToMatch, customResponseText) {
      * @returns {string} All headers as a string. For no headers an empty string is returned.
      */
     const getAllHeadersWrapper = (target, thisArg) => {
+        if (!thisArg.shouldBePrevented) {
+            return nativeGetAllResponseHeaders.call(thisArg);
+        }
         if (!thisArg.collectedHeaders.length) {
             return '';
         }
