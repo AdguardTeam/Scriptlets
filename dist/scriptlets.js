@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.61
+ * Version 1.9.62
  */
 
 (function () {
@@ -6886,6 +6886,8 @@
       }
       var nativeOpen = window.XMLHttpRequest.prototype.open;
       var nativeSend = window.XMLHttpRequest.prototype.send;
+      var nativeGetResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
+      var nativeGetAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
       var xhrData;
       var modifiedResponse = '';
       var modifiedResponseText = '';
@@ -6899,6 +6901,9 @@
           hit(source);
         } else if (matchRequestProps(source, propsToMatch, xhrData)) {
           thisArg.shouldBePrevented = true;
+          // Add xhrData to thisArg to keep original values in case of multiple requests
+          // https://github.com/AdguardTeam/Scriptlets/issues/347
+          thisArg.xhrData = xhrData;
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later;
@@ -6966,7 +6971,7 @@
             },
             // If the request is blocked, responseURL is an empty string
             responseURL: {
-              value: responseURL || xhrData.url,
+              value: responseURL || thisArg.xhrData.url,
               writable: false
             },
             responseXML: {
@@ -6999,7 +7004,7 @@
           }, 1);
           hit(source);
         });
-        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+        nativeOpen.apply(forgedRequest, [thisArg.xhrData.method, thisArg.xhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
@@ -7026,6 +7031,9 @@
        * @returns {string|null} Header value or null if header is not set.
        */
       var getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
+        if (!thisArg.shouldBePrevented) {
+          return nativeGetResponseHeader.apply(thisArg, args);
+        }
         if (!thisArg.collectedHeaders.length) {
           return null;
         }
@@ -7048,6 +7056,9 @@
        * @returns {string} All headers as a string. For no headers an empty string is returned.
        */
       var getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
+        if (!thisArg.shouldBePrevented) {
+          return nativeGetAllResponseHeaders.call(thisArg);
+        }
         if (!thisArg.collectedHeaders.length) {
           return '';
         }
@@ -22736,6 +22747,8 @@
         }
         var nativeOpen = window.XMLHttpRequest.prototype.open;
         var nativeSend = window.XMLHttpRequest.prototype.send;
+        var nativeGetResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
+        var nativeGetAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
         var xhrData;
         var modifiedResponse = "";
         var modifiedResponseText = "";
@@ -22746,6 +22759,7 @@
             hit(source);
           } else if (matchRequestProps(source, propsToMatch, xhrData)) {
             thisArg.shouldBePrevented = true;
+            thisArg.xhrData = xhrData;
           }
           if (thisArg.shouldBePrevented) {
             thisArg.collectedHeaders = [];
@@ -22797,7 +22811,7 @@
                 writable: false
               },
               responseURL: {
-                value: responseURL || xhrData.url,
+                value: responseURL || thisArg.xhrData.url,
                 writable: false
               },
               responseXML: {
@@ -22827,7 +22841,7 @@
             }, 1);
             hit(source);
           });
-          nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
+          nativeOpen.apply(forgedRequest, [thisArg.xhrData.method, thisArg.xhrData.url]);
           thisArg.collectedHeaders.forEach(function (header) {
             var name = header[0];
             var value = header[1];
@@ -22841,6 +22855,9 @@
           return undefined;
         };
         var getHeaderWrapper = function getHeaderWrapper(target, thisArg, args) {
+          if (!thisArg.shouldBePrevented) {
+            return nativeGetResponseHeader.apply(thisArg, args);
+          }
           if (!thisArg.collectedHeaders.length) {
             return null;
           }
@@ -22852,6 +22869,9 @@
           return matchedHeader ? matchedHeader[1] : null;
         };
         var getAllHeadersWrapper = function getAllHeadersWrapper(target, thisArg) {
+          if (!thisArg.shouldBePrevented) {
+            return nativeGetAllResponseHeaders.call(thisArg);
+          }
           if (!thisArg.collectedHeaders.length) {
             return "";
           }
