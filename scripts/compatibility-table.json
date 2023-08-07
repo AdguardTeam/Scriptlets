@@ -280,6 +280,9 @@
         },
         {
             "ubo": "trusted-set-local-storage-item.js"
+        },
+        {
+            "ubo": "trusted-replace-fetch-response.js"
         }
     ],
     "redirects": [

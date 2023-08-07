@@ -88,6 +88,7 @@
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
+|  | trusted-replace-fetch-response.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table
