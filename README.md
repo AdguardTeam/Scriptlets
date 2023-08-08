@@ -13,9 +13,41 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
     - [Syntax](#redirect-syntax)
     - [Available redirect resources](./wiki/about-redirects.md#redirect-resources)
     - [Redirect resources compatibility table](./wiki/compatibility-table.md#redirects)
-- [How to build](#how-to-build)
-- [How to test](#how-to-test)
-- [How to update wiki](#how-to-update-wiki)
+- [Development](#development)
+    - [How to build](#how-to-build)
+    - [How to test](#how-to-test)
+    - [How to update wiki](#how-to-update-wiki)
+- [Usage](#usage)
+    - [CoreLibs](#corelibs)
+    - [NPM module](#npm-module)
+- [API description](#api-description)
+    - [Scriptlets](#scriptlets-api-methods)
+        - [`invoke()`](#scriptlets-api--invoke)
+        - [`getScriptletFunction()`](#scriptlets-api--getScriptletFunction)
+        - [`isValidScriptletName()`](#scriptlets-api--isValidScriptletName)
+        - [`isValidScriptletRule()`](#scriptlets-api--isValidScriptletRule)
+        <!-- markdownlint-disable-next-line -->
+        - [`isAdgScriptletRule()`, `isUboScriptletRule()`, `isAbpSnippetRule()`](#scriptlets-api--is-Abg-Ubo-Abp-ScriptletRule)
+        - [`convertUboToAdg()`](#scriptlets-api--convertUboToAdg)
+        - [`convertAbpToAdg()`](#scriptlets-api--convertAbpToAdg)
+        - [`convertScriptletToAdg()`](#scriptlets-api--convertScriptletToAdg)
+        - [`convertAdgToUbo()`](#scriptlets-api--convertAdgToUbo)
+    - [Redirect resources](#redirects_api-methods)
+        - [`getCode()`](#redirects-api--getCode)
+        - [`isAdgRedirectRule()`](#redirects-api--isAdgRedirectRule)
+        - [`isValidAdgRedirectRule()`](#redirects-api--isValidAdgRedirectRule)
+        - [`isAdgRedirectCompatibleWithUbo()`](#redirects-api--isAdgRedirectCompatibleWithUbo)
+        - [`isUboRedirectCompatibleWithAdg()`](#redirects-api--isUboRedirectCompatibleWithAdg)
+        - [`isAbpRedirectCompatibleWithAdg()`](#redirects-api--isAbpRedirectCompatibleWithAdg)
+        - [`convertUboRedirectToAdg()`](#redirects-api--convertUboRedirectToAdg)
+        - [`convertAbpRedirectToAdg()`](#redirects-api--convertAbpRedirectToAdg)
+        - [`convertRedirectToAdg()`](#redirects-api--convertRedirectToAdg)
+        - [`convertRedirectNameToAdg()`](#redirects-api--convertRedirectNameToAdg)
+        - [`convertAdgRedirectToUbo()`](#redirects-api--convertAdgRedirectToUbo)
+        - [`getRedirectFilename()`](#redirects-api--getRedirectFilename)
+        - [Redirects class](#redirects-api--redirects-class)
+        - [`getRedirect()`](#redirects-api--getRedirect)
+        - [`isBlocking()`](#redirects-api--isBlocking)
 - [Browser compatibility](#browser-compatibility)
 - [Projects using Scriptlets](#used-by)
 
@@ -128,7 +160,9 @@ See the list of [available redirect resources](./wiki/about-redirects.md#redirec
 
 * * *
 
-## <a name="how-to-build"></a> How to build
+## <a name="development"></a> Development
+
+### <a name="how-to-build"></a> How to build
 
 Install dependencies:
 
@@ -182,351 +216,7 @@ yarn link @adguard/tsurlfilter
 yarn dev
 ```
 
-### Build output
-
-#### Scriptlets library
-
-You are welcome to use scriptlets and redirect resources as a CJS module.
-They can be imported from `dist/cjs/scriptlets.cjs.js`:
-
-```javascript
-const scriptlets = require('scriptlets');
-const { redirects } = require('scriptlets');
-
-```
-
-And also there is a module at `dist/scriptlets.js`
-which has been exported to a global variable `scriptlets` with such methods:
-
-```javascript
-/**
- * Returns scriptlet code by `source`.
- *
- * @param {Source} source Scriptlet properties.
- *
- * @returns {string|null} Scriptlet code.
- * @throws An error on unknown scriptlet name.
- */
-scriptlets.invoke(source);
-```
-
-where:
-
-```javascript
-/**
- * @typedef {object} Source — Scriptlet properties.
- * @property {string} name — Scriptlet name.
- * @property {Array<string>} args — Arguments for scriptlet function.
- * @property {'extension'|'corelibs'} engine — Defines the final form of scriptlet string presentation.
- * @property {string} [version] — Extension version.
- * @property {boolean} [verbose] — Flag to enable debug information printing to console.
- * @property {string} [ruleText] — Source rule text, needed for debug purposes.
- * @property {string} [domainName] — Domain name where scriptlet is applied, needed for debug purposes.
- */
-```
-
-```javascript
-/**
- * Returns scriptlet function by `name`.
- *
- * @param {string} name Scriptlet name
- *
- * @returns {Function} — Scriptlet function.
- */
-scriptlets.getScriptletFunction(name);
-```
-
-```javascript
-/**
- * Checks whether the `name` is valid scriptlet name.
- * Uses cache for better performance.
- *
- * @param {string} name — Scriptlet name
- * @returns {boolean} — True if scriptlet name is valid.
- */
-scriptlets.isValidScriptletName(name);
-```
-
-```javascript
-/**
- * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
- * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
- * by converting them into ADG syntax, and after that checks the name.
- *
- * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
- * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
- *
- * @param {string} ruleText — Any scriptlet rule — ADG or UBO or ABP.
- *
- * @returns {boolean} — True if scriptlet name is valid in rule.
- */
-scriptlets.isValidScriptletRule(input);
-```
-
-```javascript
-/**
- * Checks if the `rule` is AdGuard / Ubo / Abp scriptlet rule
- * @param {string} rule — any rule
- * @returns {boolean}
- */
-scriptlets.isAdgScriptletRule(rule);
-scriptlets.isUboScriptletRule(rule);
-scriptlets.isAbpSnippetRule(rule);
-```
-
-```javascript
-/**
- * Converts Ubo scriptlet rule to AdGuard
- * @param {string} rule — Ubo rule
- * @returns {string[]} — array with single AdGuard scriptlet rule
- */
-scriptlets.convertUboToAdg(rule);
-```
-
-> Note that parameters in UBO rule should be separated by comma + space. Otherwise, the rule is not valid.
-
-```javascript
-/**
- * Converts Abp snippet rule to AdGuard
- * @param {string} rule — Abp rule
- * @returns {string[]} — array with AdGuard scriptlet rule or rules if Abp-rule has few snippets in one line
- */
-scriptlets.convertAbpToAdg(rule);
-```
-
-```javascript
-/**
- * Converts any scriptlet rule into AdGuard syntax rule.
- * Comment is returned as is.
- *
- * @param {string} rule — Scriptlet rule.
- *
- * @returns {string[]} — Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
- * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
- */
-scriptlets.convertScriptletToAdg(rule);
-```
-
-```javascript
-/**
- * Converts AdGuard scriptlet rule to UBO one
- * @param {string} rule — AdGuard scriptlet rule
- * @returns {string} — UBO scriptlet rule
- */
-scriptlets.convertAdgToUbo(rule);
-```
-
-
-##### <a name="redirects_api-methods"></a> Imported `redirects` methods
-
-```javascript
-/**
- * Returns redirects code
- * @param {Source} source
- * @returns {string}
- */
-redirects.getCode(source);
-```
-
-```javascript
-/**
- * Checks whether the `rule` is AdGuard redirect resource rule.
- * Discards comments and JS rules and checks whether the `rule` has $redirect or $redirect-rule modifier
- * @param {string} rule
- */
-redirects.isAdgRedirectRule(rule)
-```
-
-```javascript
-/**
- * Checks whether the `rule` is **valid** AdGuard redirect resource rule.
- * No matter $redirect or $redirect-rule
- * @param {string} rule
- * @returns {boolean}
- */
-redirects.isValidAdgRedirectRule(rule);
-```
-
-```javascript
-/**
- * Checks whether the AdGuard redirect `rule` has Ubo analog.
- * Needed for Adg->Ubo conversion. No matter $redirect or $redirect-rule modifier is used
- * @param {string} rule — AdGuard rule
- * @returns {boolean} — true if the rule can be converted to Ubo syntax
- */
-redirects.isAdgRedirectCompatibleWithUbo(rule);
-```
-
-```javascript
-/**
- * Checks if the Ubo redirect `rule` has AdGuard analog.
- * Needed for Ubo->Adg conversion. No matter $redirect or $redirect-rule modifier is used
- * @param {string} rule — Ubo rule
- * @returns {boolean} — true if the rule can be converted to AdGuard syntax
- */
-redirects.isUboRedirectCompatibleWithAdg(rule);
-```
-
-```javascript
-/**
- * Checks whether the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
- * @param {string} rule — Abp rule
- * @returns {boolean} — true if the rule can be converted to AdGuard syntax
- */
-redirects.isAbpRedirectCompatibleWithAdg(rule);
-```
-
-```javascript
-/**
- * Converts Ubo redirect resource rule to AdGuard syntax.
- * No matter $redirect or $redirect-rule modifier is used
- * @param {string} rule — Ubo rule
- * @returns {string} — Adg rule
- */
-redirects.convertUboRedirectToAdg(rule);
-```
-
-```javascript
-/**
- * Converts Abp redirect resource rule to AdGuard syntax
- * @param {string} rule — Abp rule
- * @returns {string} — Adg rule
- */
-redirects.convertAbpRedirectToAdg(rule);
-```
-
-```javascript
-/**
- * Checks whether the `rule` is any redirect rule and converts it to AdGuard syntax.
- * No matter $redirect or $redirect-rule modifier is used
- * @param {string} rule — any resource rule
- * @returns {string} — valid Adguard redirect resource rule
- */
-redirects.convertRedirectToAdg(rule);
-```
-
-```javascript
-/**
- * Converts a redirect name to ADG compatible one, if possible
- *
- * @param {string} name Redirect name to convert
- * @returns {string|undefined} Converted ADG compatible redirect name or `undefined` if the redirect isn't supported
- */
-redirects.convertRedirectNameToAdg(rule);
-```
-
-```javascript
-/**
- * Converts Adg redirect rule to Ubo syntax.
- * No matter $redirect or $redirect-rule modifier is used
- * @param {string} rule — Adg rule
- * @returns {string} — Ubo rule
- */
-redirects.convertAdgRedirectToUbo(rule);
-```
-
-```javascript
-/**
- * For a given name or alias of redirect returns the corresponding filename
- * @param {string} name — name or alias of redirect
- * @returns {string} — Redirect's filename with extension
- */
-redirects.getRedirectFilename(name);
-```
-
-
-#### Corelibs library
-
-`dist/scriptlets.corelibs.json`
-
-File example
-
-```json
-{
-    "version": "1.0.0",
-    "scriptlets": [
-        {
-            "names": [
-                "abort-on-property-read",
-                "ubo-abort-on-property-read.js",
-                "abp-abort-on-property-read"
-            ],
-            "scriptlet": "function() { ...code... }"
-        },
-    ]
-}
-```
-
-Schema:
-
-```json
-{
-    "type": "object",
-    "properties": {
-        "version": {
-            "type": "string"
-        },
-        "scriptlets": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "names": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "scriptlet": {
-                        "type": "string"
-                    }
-                },
-            }
-        }
-    }
-}
-```
-
-#### Redirects library
-
-```text
-dist/redirects.js
-dist/redirects.yml
-```
-
-Creates a global variable `Redirects`.
-
-```javascript
-// Usage
-
-/**
- * Converts rawYaml into JS object with sources titles used as keys
- */
-const redirects = new Redirects(rawYaml)
-
-/**
- * Returns redirect source object by title
- */
-const redirect = redirect.getRedirect('noopjs');
-
-/**
- * Check if redirect is blocking, e.g. click2load.html
- */
-const isBlocking = redirect.isBlocking('click2load.html');
-
-/**
- * Redirect — object with following props
- * {
- *      title: 1x1-transparent.gif
- *      comment: http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever
- *      contentType: image/gif;base64
- *      content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
- * }
- */
-```
-
-
-## <a name="how-to-test"></a> How to test
+### <a name="how-to-test"></a> How to test
 
 Some tests are run in QUnit, some in Jest.
 
@@ -586,7 +276,7 @@ yarn browserstack
 
 Tests run by `jest` should be named `.spec.js`, so they will be not included in the `QUnit` tests.
 
-### Debugging
+#### Debugging
 
 Use `debugger;` statement where you need it, run
 
@@ -597,15 +287,425 @@ yarn test
 and open needed HTML file from `tests/dist` in your browser with devtools
 
 
-## <a name="how-to-update-wiki"></a> How to update wiki
+### <a name="how-to-update-wiki"></a> How to update wiki
 
 There are two scripts to update wiki:
 
 1. `yarn wiki:build-table` — checks compatibility data updates and updates the compatibility table.
     Should be run manually while the release preparation.
-2. `yarn wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`.
+1. `yarn wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`.
     They are being generated from JSDoc-type comments of corresponding scriptlets and redirects source files
     due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
+
+## <a name="usage"></a> Usage
+
+### <a name="corelibs"></a> CoreLibs
+
+For CoreLibs usage you should use `dist/scriptlets.corelibs.json` and `dist/redirects.json`.
+
+File example:
+
+```json
+{
+    "version": "1.0.0",
+    "scriptlets": [
+        {
+            "names": [
+                "abort-on-property-read",
+                "ubo-abort-on-property-read.js",
+                "abp-abort-on-property-read"
+            ],
+            "scriptlet": "function() { ...code... }"
+        },
+    ]
+}
+```
+
+Schema:
+
+```json
+{
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "string"
+        },
+        "scriptlets": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "names": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "scriptlet": {
+                        "type": "string"
+                    }
+                },
+            }
+        }
+    }
+}
+```
+
+### <a name="npm-module"></a> NPM module
+
+#### Installation
+
+```bash
+yarn add @adguard/scriptlets
+```
+
+```bash
+npm install @adguard/scriptlets
+```
+
+
+## <a name="api-description"></a> API description
+
+### <a name="scriptlets-library"></a> Scriptlets library
+
+#### <a name="scriptlets-api-methods"></a> Scriptlets API methods
+
+You are welcome to use scriptlets and redirect resources as a CJS module.
+They can be imported from `dist/cjs/scriptlets.cjs.js`:
+
+```javascript
+const scriptlets = require('scriptlets');
+const { redirects } = require('scriptlets');
+
+```
+
+And also there is a module at `dist/scriptlets.js`
+which has been exported to a global variable `scriptlets` with such methods:
+
+##### <a name="scriptlets-api--invoke"></a> `invoke()`
+
+```javascript
+/**
+ * Returns scriptlet code by `source`.
+ *
+ * @param {Source} source Scriptlet properties.
+ *
+ * @returns {string|null} Scriptlet code.
+ * @throws An error on unknown scriptlet name.
+ */
+scriptlets.invoke(source);
+```
+
+where:
+
+```javascript
+/**
+ * @typedef {Object} Source — Scriptlet properties.
+ * @property {string} name — Scriptlet name.
+ * @property {Array<string>} args — Arguments for scriptlet function.
+ * @property {'extension'|'corelibs'} engine — Defines the final form of scriptlet string presentation.
+ * @property {string} [version] — Extension version.
+ * @property {boolean} [verbose] — Flag to enable debug information printing to console.
+ * @property {string} [ruleText] — Source rule text, needed for debug purposes.
+ * @property {string} [domainName] — Domain name where scriptlet is applied, needed for debug purposes.
+ */
+```
+
+##### <a name="scriptlets-api--getScriptletFunction"></a> `getScriptletFunction()`
+
+```javascript
+/**
+ * Returns scriptlet function by `name`.
+ *
+ * @param {string} name Scriptlet name
+ *
+ * @returns {Function} — Scriptlet function.
+ */
+scriptlets.getScriptletFunction(name);
+```
+
+##### <a name="scriptlets-api--isValidScriptletName"></a> `isValidScriptletName()`
+
+```javascript
+/**
+ * Checks whether the `name` is valid scriptlet name.
+ * Uses cache for better performance.
+ *
+ * @param {string} name — Scriptlet name
+ * @returns {boolean} — True if scriptlet name is valid.
+ */
+scriptlets.isValidScriptletName(name);
+```
+
+##### <a name="scriptlets-api--isValidScriptletRule"></a> `isValidScriptletRule()`
+
+```javascript
+/**
+ * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
+ * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
+ * by converting them into ADG syntax, and after that checks the name.
+ *
+ * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
+ * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
+ *
+ * @param {string} ruleText — Any scriptlet rule — ADG or UBO or ABP.
+ *
+ * @returns {boolean} — True if scriptlet name is valid in rule.
+ */
+scriptlets.isValidScriptletRule(input);
+```
+
+
+<!-- markdownlint-disable-next-line -->
+##### <a name="scriptlets-api--is-Abg-Ubo-Abp-ScriptletRule"></a> `isAdgScriptletRule()`, `isUboScriptletRule()`, `isAbpSnippetRule()`
+
+```javascript
+/**
+ * Checks if the `rule` is AdGuard / Ubo / Abp scriptlet rule
+ * @param {string} rule — any rule
+ * @returns {boolean}
+ */
+scriptlets.isAdgScriptletRule(rule);
+scriptlets.isUboScriptletRule(rule);
+scriptlets.isAbpSnippetRule(rule);
+```
+
+##### <a name="scriptlets-api--convertUboToAdg"></a> `convertUboToAdg()`
+
+```javascript
+/**
+ * Converts Ubo scriptlet rule to AdGuard
+ * @param {string} rule — Ubo rule
+ * @returns {string[]} — array with single AdGuard scriptlet rule
+ */
+scriptlets.convertUboToAdg(rule);
+```
+
+> Note that parameters in UBO rule should be separated by comma + space. Otherwise, the rule is not valid.
+
+##### <a name="scriptlets-api--convertAbpToAdg"></a> `convertAbpToAdg()`
+
+```javascript
+/**
+ * Converts Abp snippet rule to AdGuard
+ * @param {string} rule — Abp rule
+ * @returns {string[]} — array with AdGuard scriptlet rule or rules if Abp-rule has few snippets in one line
+ */
+scriptlets.convertAbpToAdg(rule);
+```
+
+##### <a name="scriptlets-api--convertScriptletToAdg"></a> `convertScriptletToAdg()`
+
+```javascript
+/**
+ * Converts any scriptlet rule into AdGuard syntax rule.
+ * Comment is returned as is.
+ *
+ * @param {string} rule — Scriptlet rule.
+ *
+ * @returns {string[]} — Array of AdGuard scriptlet rules: one array item for ADG and UBO or few items for ABP.
+ * For the ADG `rule`, validates its syntax and returns an empty array if it is invalid.
+ */
+scriptlets.convertScriptletToAdg(rule);
+```
+
+##### <a name="scriptlets-api--convertAdgToUbo"></a> `convertAdgToUbo()`
+
+```javascript
+/**
+ * Converts AdGuard scriptlet rule to UBO one
+ * @param {string} rule — AdGuard scriptlet rule
+ * @returns {string} — UBO scriptlet rule
+ */
+scriptlets.convertAdgToUbo(rule);
+```
+
+
+#### <a name="redirects_api-methods"></a> Redirects API methods
+
+```javascript
+import { redirects } from '@adguard/scriptlets';
+```
+
+##### <a name="redirects-api--getCode"></a> `getCode()`
+
+```javascript
+/**
+ * Returns redirects code
+ * @param {Source} source
+ * @returns {string}
+ */
+redirects.getCode(source);
+```
+
+##### <a name="redirects-api--isAdgRedirectRule"></a> `isAdgRedirectRule()`
+
+```javascript
+/**
+ * Checks whether the `rule` is AdGuard redirect resource rule.
+ * Discards comments and JS rules and checks whether the `rule` has $redirect or $redirect-rule modifier
+ * @param {string} rule
+ */
+redirects.isAdgRedirectRule(rule)
+```
+
+##### <a name="redirects-api--isValidAdgRedirectRule"></a> `isValidAdgRedirectRule()`
+
+```javascript
+/**
+ * Checks whether the `rule` is **valid** AdGuard redirect resource rule.
+ * No matter $redirect or $redirect-rule
+ * @param {string} rule
+ * @returns {boolean}
+ */
+redirects.isValidAdgRedirectRule(rule);
+```
+
+##### <a name="redirects-api--isAdgRedirectCompatibleWithUbo"></a> `isAdgRedirectCompatibleWithUbo()`
+
+```javascript
+/**
+ * Checks whether the AdGuard redirect `rule` has Ubo analog.
+ * Needed for Adg->Ubo conversion. No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — AdGuard rule
+ * @returns {boolean} — true if the rule can be converted to Ubo syntax
+ */
+redirects.isAdgRedirectCompatibleWithUbo(rule);
+```
+
+##### <a name="redirects-api--isUboRedirectCompatibleWithAdg"></a> `isUboRedirectCompatibleWithAdg()`
+
+```javascript
+/**
+ * Checks if the Ubo redirect `rule` has AdGuard analog.
+ * Needed for Ubo->Adg conversion. No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — Ubo rule
+ * @returns {boolean} — true if the rule can be converted to AdGuard syntax
+ */
+redirects.isUboRedirectCompatibleWithAdg(rule);
+```
+
+##### <a name="redirects-api--isAbpRedirectCompatibleWithAdg"></a> `isAbpRedirectCompatibleWithAdg()`
+
+```javascript
+/**
+ * Checks whether the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
+ * @param {string} rule — Abp rule
+ * @returns {boolean} — true if the rule can be converted to AdGuard syntax
+ */
+redirects.isAbpRedirectCompatibleWithAdg(rule);
+```
+
+##### <a name="redirects-api--convertUboRedirectToAdg"></a> `convertUboRedirectToAdg()`
+
+```javascript
+/**
+ * Converts Ubo redirect resource rule to AdGuard syntax.
+ * No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — Ubo rule
+ * @returns {string} — Adg rule
+ */
+redirects.convertUboRedirectToAdg(rule);
+```
+
+##### <a name="redirects-api--convertAbpRedirectToAdg"></a> `convertAbpRedirectToAdg()`
+
+```javascript
+/**
+ * Converts Abp redirect resource rule to AdGuard syntax
+ * @param {string} rule — Abp rule
+ * @returns {string} — Adg rule
+ */
+redirects.convertAbpRedirectToAdg(rule);
+```
+
+##### <a name="redirects-api--convertRedirectToAdg"></a> `convertRedirectToAdg()`
+
+```javascript
+/**
+ * Checks whether the `rule` is any redirect rule and converts it to AdGuard syntax.
+ * No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — any resource rule
+ * @returns {string} — valid Adguard redirect resource rule
+ */
+redirects.convertRedirectToAdg(rule);
+```
+
+##### <a name="redirects-api--convertRedirectNameToAdg"></a> `convertRedirectNameToAdg()`
+
+```javascript
+/**
+ * Converts a redirect name to ADG compatible one, if possible
+ *
+ * @param {string} name Redirect name to convert
+ * @returns {string|undefined} Converted ADG compatible redirect name or `undefined` if the redirect isn't supported
+ */
+redirects.convertRedirectNameToAdg(rule);
+```
+
+##### <a name="redirects-api--convertAdgRedirectToUbo"></a> `convertAdgRedirectToUbo()`
+
+```javascript
+/**
+ * Converts Adg redirect rule to Ubo syntax.
+ * No matter $redirect or $redirect-rule modifier is used
+ * @param {string} rule — Adg rule
+ * @returns {string} — Ubo rule
+ */
+redirects.convertAdgRedirectToUbo(rule);
+```
+
+##### <a name="redirects-api--getRedirectFilename"></a> `getRedirectFilename()`
+
+```javascript
+/**
+ * For a given name or alias of redirect returns the corresponding filename
+ * @param {string} name — name or alias of redirect
+ * @returns {string} — Redirect's filename with extension
+ */
+redirects.getRedirectFilename(name);
+```
+
+##### <a name="redirects-api--redirects-class"></a> Redirects class
+
+```javascript
+import { Redirects } from '@adguard/scriptlets';
+
+/**
+ * Converts rawYaml into JS object with sources titles used as keys
+ */
+const redirects = new Redirects(rawYaml)
+```
+
+where `rawYaml` is a string with YAML content located in `dist/redirects.yml`.
+
+##### <a name="redirects-api--getRedirect"></a> `getRedirect()`
+
+```javascript
+/**
+ * Returns redirect source object by title
+ */
+const redirect = redirects.getRedirect('noopjs');
+
+/**
+ * Redirect is an object with following props:
+ * {
+ *     title: 1x1-transparent.gif
+ *     comment: http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever
+ *     contentType: image/gif;base64
+ *     content: R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
+ * }
+ */
+```
+
+##### <a name="redirects-api--isBlocking"></a> `isBlocking()`
+
+```javascript
+/**
+ * Check if redirect is blocking, e.g. click2load.html
+ */
+const isBlocking = redirect.isBlocking('click2load.html');
+```
 
 
 ## <a name="browser-compatibility"> Browser Compatibility
