@@ -128,16 +128,16 @@ AdGuard is able to redirect web requests to a local "resource".
 
 ### <a name="redirect-syntax"></a> Syntax
 
-AdGuard uses the same filtering rule syntax
-as [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect).
+AdGuard uses the same filtering rule syntax as [uBlock Origin][ubo-redirect].
 Also, it is compatible with ABP `$rewrite=abp-resource` modifier.
 
-`$redirect` is a modifier for
-[the basic filtering rules](https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-syntax)
+`$redirect` is a modifier for [the basic filtering rules][kb-basic-rules]
 so rules with this modifier support all other basic modifiers like `$domain`, `$third-party`, `$script`, etc.
 
 The value of the `$redirect` modifier must be the name of the resource that will be used for redirection.
 See the list of [available redirect resources](./wiki/about-redirects.md#redirect-resources).
+
+> Priority of `$redirect` rules is described in the [Knowledge Base][kb-redirect-priority].
 
 ### Examples
 
@@ -145,12 +145,6 @@ See the list of [available redirect resources](./wiki/about-redirects.md#redirec
   to the resource named `noopjs`.
 - `||example.org/test.mp4$media,redirect=noopmp4-1s` — requests to `example.org/test.mp4` will be redirected
   to the resource named `noopmp4-1s`.
-
-> `$redirect` rules priority is higher than the regular basic blocking rules' priority.
-> This means that if there's a basic blocking rule (even with `$important` modifier),
-> `$redirect` rule will prevail over it.
-> If there's a whitelist (`@@`) rule matching the same URL,
-> it will disable redirecting as well (unless the `$redirect` rule is also marked as `$important`).
 
 > uBlock Origin specifies additional resource name `none` that can disable other redirect rules.
 > AdGuard does not support it, use `$badfilter` to disable specific rules.
@@ -731,3 +725,7 @@ const isBlocking = redirect.isBlocking('click2load.html');
 - [AdguardForSafari](https://github.com/AdguardTeam/AdGuardForSafari) (`adguard-resources` should be updated)
 - [AdguardForiOS](https://github.com/AdguardTeam/AdguardForiOS)
   (`tsurlfilter` should be updated in `advanced-adblocker-web-extension`)
+
+[ubo-redirect]: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
+[kb-basic-rules]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
+[kb-redirect-priority]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-priorities
