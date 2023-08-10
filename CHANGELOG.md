@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: add @added tag to the files with specific version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Fixed
+
+- issue with `stack` in `json-prune` scriptlet
+  [#348](https://github.com/AdguardTeam/Scriptlets/issues/348)
+- issue with `obligatoryProps` in `json-prune` scriptlet
+  [#345](https://github.com/AdguardTeam/Scriptlets/issues/345)
 
 ## [v1.9.62] - 2023-08-04
 
@@ -227,6 +235,7 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
     - `metrika-yandex-tag` [#254](https://github.com/AdguardTeam/Scriptlets/issues/254)
     - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
 
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.62...HEAD
 [v1.9.62]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.61...v1.9.62
 [v1.9.61]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.58...v1.9.61
 [v1.9.58]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.57...v1.9.58

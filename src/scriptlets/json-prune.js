@@ -98,11 +98,7 @@ import {
  * @added v1.1.0.
  */
 /* eslint-enable max-len */
-export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
-    if (!!stack && !matchStackTrace(stack, new Error().stack)) {
-        return;
-    }
-
+export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '') {
     const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
         ? propsToRemove.split(/ +/)
         : [];
@@ -115,7 +111,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeJSONParse.apply(JSON, args);
-        return jsonPruner(source, root, prunePaths, requiredPaths);
+        return jsonPruner(source, root, prunePaths, requiredPaths, stack);
     };
 
     // JSON.parse mocking
@@ -127,7 +123,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack) {
     const responseJsonWrapper = function () {
         const promise = nativeResponseJson.apply(this);
         return promise.then((obj) => {
-            return jsonPruner(source, obj, prunePaths, requiredPaths);
+            return jsonPruner(source, obj, prunePaths, requiredPaths, stack);
         });
     };
 

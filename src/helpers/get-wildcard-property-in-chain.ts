@@ -50,6 +50,17 @@ export function getWildcardPropertyInChain(
         });
     }
 
+    // If base is an Array check elements in array
+    // https://github.com/AdguardTeam/Scriptlets/issues/345
+    if (Array.isArray(base)) {
+        base.forEach((key) => {
+            const nextBase = key;
+            if (nextBase !== undefined) {
+                getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+            }
+        });
+    }
+
     const nextBase = base[prop];
     chain = chain.slice(pos + 1);
     if (nextBase !== undefined) {

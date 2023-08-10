@@ -124,7 +124,7 @@ test('Response.json() mocking -- remove multiple mixed properties', async (asser
     done();
 });
 
-test('Response.json() mocking -- remove single properties with wildcard', async (assert) => {
+test('Response.json() mocking -- remove single properties with * for any property', async (assert) => {
     const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test05.json`;
     const inputRequest = new Request(INPUT_JSON_PATH);
 
@@ -147,7 +147,7 @@ test('Response.json() mocking -- remove single properties with wildcard', async 
     done();
 });
 
-test('Response.json() mocking -- remove single properties with wildcard', async (assert) => {
+test('Response.json() mocking -- remove single properties with [] for any array item', async (assert) => {
     const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test06.json`;
     const inputRequest = new Request(INPUT_JSON_PATH);
 
@@ -579,7 +579,7 @@ test('logs 0', (assert) => {
     assert.expect(2);
     console.log = (message) => {
         assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
-        assert.ok(message.endsWith('0'), 'should log parameters in console');
+        assert.ok(message.includes('localhost\n0\n'), 'should log parameters in console');
         nativeConsole(message);
     };
     runScriptlet('json-prune');
@@ -590,9 +590,315 @@ test('logs 10', (assert) => {
     assert.expect(2);
     console.log = (message) => {
         assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
-        assert.ok(message.endsWith('10'), 'should log parameters in console');
+        assert.ok(message.includes('localhost\n10\n'), 'should log parameters in console');
         nativeConsole(message);
     };
     runScriptlet('json-prune');
     JSON.parse(10);
+});
+
+test('check if log contains specific stack trace function', (assert) => {
+    assert.expect(2);
+    console.log = (message) => {
+        assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
+        assert.ok(message.includes('logStackFunc'), 'should log parameters in console');
+        nativeConsole(message);
+    };
+    runScriptlet('json-prune');
+    const logStackFunc = () => {
+        return JSON.parse(999);
+    };
+    logStackFunc();
+});
+
+test('removes propsToRemove + stack match function', (assert) => {
+    const testFuncStack = () => {
+        return JSON.parse('{"a":1,"b":2,"c":3}');
+    };
+    runScriptlet('json-prune', 'c', '', 'testFuncStack');
+    assert.deepEqual(
+        testFuncStack(),
+        { a: 1, b: 2 },
+        'stack match: should remove single propsToRemove',
+    );
+
+    const fewPropsStack = () => {
+        return JSON.parse('{"a":1,"b":2,"c":3}');
+    };
+    runScriptlet('json-prune', 'b c', '', 'fewPropsStack');
+    assert.deepEqual(
+        fewPropsStack(),
+        { a: 1 },
+        'stack match: should remove few propsToRemove',
+    );
+
+    const requiredInitialPropsStack = () => {
+        return JSON.parse('{"x": {"a":1, "b":2}}');
+    };
+    runScriptlet('json-prune', 'x.b', 'x.a', 'requiredInitialPropsStack');
+    assert.deepEqual(
+        requiredInitialPropsStack(),
+        { x: { a: 1 } },
+        'stack match: should remove propsToRemove if single nested requiredInitialProps is specified',
+    );
+
+    const nestedPropsStack = () => {
+        return JSON.parse('{"nested":{"a":1,"b":2,"c":3}}');
+    };
+    runScriptlet('json-prune', 'nested.c nested.b', '', 'nestedPropsStack');
+    assert.deepEqual(
+        nestedPropsStack(),
+        { nested: { a: 1 } },
+        'stack match: should remove multiple nested propsToRemove',
+    );
+});
+
+test('removes propsToRemove + stack match regex', (assert) => {
+    const regexFuncStack = () => {
+        return JSON.parse('{"a":1,"b":2,"c":3}');
+    };
+    runScriptlet('json-prune', 'c', '', '/regex.*Stack/');
+    assert.deepEqual(
+        regexFuncStack(),
+        { a: 1, b: 2 },
+        'stack match: should remove single propsToRemove',
+    );
+});
+
+test('obligatory props does not exist, do NOT prune', (assert) => {
+    runScriptlet('json-prune', 'whatever.qwerty advert', 'path.not.exist');
+    assert.deepEqual(
+        JSON.parse('{ "advert": "hello", "foo": { "bar" :1 } }'),
+        { advert: 'hello', foo: { bar: 1 } },
+        'should not remove any props',
+    );
+});
+
+test('JSON with Array, wildcard [], should remove props', (assert) => {
+    runScriptlet('json-prune', '[].foo.ads');
+    assert.deepEqual(
+        // eslint-disable-next-line
+        JSON.parse('[ {"media":"ertu", "ads":"ad_src_0"}, {"foo": { "bar": 1, "ads":"ad_src_1"} }, {"media":"yhiuo", "ads":"ad_src_2"} ]'),
+        [{ media: 'ertu', ads: 'ad_src_0' }, { foo: { bar: 1 } }, { media: 'yhiuo', ads: 'ad_src_2' }],
+        'should remove propsToRemove -- wildcard in propsToRemove for array',
+    );
+});
+
+test('JSON with Array, wildcard [] + obligatory props, should remove props', (assert) => {
+    runScriptlet('json-prune', '[].content.[].source', 'state.ready');
+
+    const expectedJson = [
+        {
+            content: [
+                { id: 0 },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    assert.deepEqual(
+        // eslint-disable-next-line
+        JSON.parse(`
+        [{"content":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}]`),
+        expectedJson,
+        'should remove propsToRemove -- wildcard in propsToRemove for array',
+    );
+});
+
+test('JSON with Array, wildcard [] + obligatory props, should remove props', (assert) => {
+    runScriptlet('json-prune', '[].content.[].source', 'state.ready');
+
+    const expectedJson = [
+        {
+            content: [
+                { id: 0 },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+        {
+            content: [
+                { id: 0 },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    assert.deepEqual(
+        // eslint-disable-next-line
+        JSON.parse(`[{"content":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}, {"content":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}]`),
+        expectedJson,
+        'should remove propsToRemove -- wildcard in propsToRemove for array',
+    );
+});
+
+test('JSON with Array, wildcard [] + obligatory props, should remove props', (assert) => {
+    runScriptlet('json-prune', '[].content2.[].source', 'state.ready');
+
+    const expectedJson = [
+        {
+            content1: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                {
+                    id: 1,
+                    source: 'example.org',
+                },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+        {
+            content2: [
+                { id: 0 },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    assert.deepEqual(
+        // eslint-disable-next-line
+        JSON.parse(`[{"content1":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}, {"content2":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}]`),
+        expectedJson,
+        'should remove propsToRemove -- wildcard in propsToRemove for array',
+    );
+});
+
+test('JSON with Array, should prune specific, should remove if obligatory props match', (assert) => {
+    runScriptlet('json-prune', '1.content2.1.source', 'state.ready');
+
+    const expectedJson = [
+        {
+            content1: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                {
+                    id: 1,
+                    source: 'example.org',
+                },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+        {
+            content2: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    assert.deepEqual(
+        // eslint-disable-next-line
+        JSON.parse(`[{"content1":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}, {"content2":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}]`),
+        expectedJson,
+        'should remove propsToRemove -- wildcard in propsToRemove for array',
+    );
+});
+
+test('JSON with Array and empty Array as first element, should remove if obligatory props match', (assert) => {
+    runScriptlet('json-prune', '2.content2.1.source', 'state.ready');
+
+    const expectedJson = [
+        [],
+        {
+            content1: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                {
+                    id: 1,
+                    source: 'example.org',
+                },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+        {
+            content2: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    assert.deepEqual(
+        // eslint-disable-next-line
+        JSON.parse(`[[],{"content1":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}, {"content2":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}]`),
+        expectedJson,
+        'should remove propsToRemove -- wildcard in propsToRemove for array',
+    );
+});
+
+test('JSON with Array and empty Array as first element, should remove', (assert) => {
+    runScriptlet('json-prune', '2.content2.1.source');
+
+    const expectedJson = [
+        [],
+        {
+            content1: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                {
+                    id: 1,
+                    source: 'example.org',
+                },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+        {
+            content2: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    assert.deepEqual(
+        // eslint-disable-next-line
+        JSON.parse(`[[],{"content1":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}, {"content2":[{"id":0,"source":"example.com"},{"id":1,"source":"example.org"}],"state":{"ready":true}}]`),
+        expectedJson,
+        'should remove propsToRemove -- wildcard in propsToRemove for array',
+    );
 });

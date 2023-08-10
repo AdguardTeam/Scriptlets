@@ -2,6 +2,7 @@ import { hit } from './hit';
 import { getWildcardPropertyInChain } from './get-wildcard-property-in-chain';
 import { logMessage } from './log-message';
 import { toRegExp } from './string-utils';
+import { matchStackTrace } from './match-stack';
 
 /**
  * Checks if prunning is required
@@ -18,6 +19,7 @@ export function isPruningNeeded(
     root: ChainBase,
     prunePaths: string[],
     requiredPaths: string[],
+    stack: string,
 ): boolean | undefined {
     if (!root) {
         return false;
@@ -31,13 +33,22 @@ export function isPruningNeeded(
         const matchRegex = toRegExp(requiredPaths.join(''));
         const shouldLog = matchRegex.test(rootString);
         if (shouldLog) {
-            logMessage(source, `${window.location.hostname}\n${JSON.stringify(root, null, 2)}`, true);
+            logMessage(
+                source,
+                `${window.location.hostname}\n${JSON.stringify(root, null, 2)}\nStack trace:\n${new Error().stack}`,
+                true,
+            );
             if (root && typeof root === 'object') {
                 logMessage(source, root, true, false);
             }
             shouldProcess = false;
             return shouldProcess;
         }
+    }
+
+    if (stack && !matchStackTrace(stack, new Error().stack || '')) {
+        shouldProcess = false;
+        return shouldProcess;
     }
 
     const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
@@ -49,6 +60,13 @@ export function isPruningNeeded(
 
         // if the path has wildcard, getPropertyInChain should 'look through' chain props
         const details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+
+        // Do not prune if details is an empty Array
+        // https://github.com/AdguardTeam/Scriptlets/issues/345
+        if (!details.length) {
+            shouldProcess = false;
+            return shouldProcess;
+        }
 
         // start value of 'shouldProcess' due to checking below
         shouldProcess = !hasWildcard;
@@ -85,9 +103,14 @@ export const jsonPruner = (
     root: ChainBase,
     prunePaths: string[],
     requiredPaths: string[],
+    stack: string,
 ): ArbitraryObject => {
     if (prunePaths.length === 0 && requiredPaths.length === 0) {
-        logMessage(source, `${window.location.hostname}\n${JSON.stringify(root, null, 2)}`, true);
+        logMessage(
+            source,
+            `${window.location.hostname}\n${JSON.stringify(root, null, 2)}\nStack trace:\n${new Error().stack}`,
+            true,
+        );
         if (root && typeof root === 'object') {
             logMessage(source, root, true, false);
         }
@@ -95,7 +118,7 @@ export const jsonPruner = (
     }
 
     try {
-        if (isPruningNeeded(source, root, prunePaths, requiredPaths) === false) {
+        if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack) === false) {
             return root;
         }
 
