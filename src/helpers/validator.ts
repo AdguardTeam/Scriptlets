@@ -16,6 +16,7 @@ interface AbpToAdgCompatibilityObject extends RedirectCompatibilityMap {
 
 const JS_RULE_MARKER = '#%#';
 const COMMENT_MARKER = '!';
+const UBO_REDIRECT_PRIORITY_MARKER = ':';
 
 /**
  * Checks if rule text is comment e.g. !!example.org##+js(set-constant.js, test, false)
@@ -286,7 +287,7 @@ const validAdgCompatibility = Object.fromEntries(
         }),
 );
 
-const enum RedirectRuleType {
+enum RedirectRuleType {
     ValidAdg = 'VALID_ADG',
     Adg = 'ADG',
     Ubo = 'UBO',
@@ -326,16 +327,31 @@ const parseModifiers = (rule: string): string[] => substringAfter(rule, '$').spl
 /**
  * Gets redirect resource name
  *
- * @param rule rule text
+ * @param ruleModifiers - list of rule modifiers
  * @param marker - specific Adg/Ubo or Abp redirect resources marker
  * @returns - redirect resource name
  */
-const getRedirectName = (rule: string, marker: string): string | null => {
-    const ruleModifiers = parseModifiers(rule);
+const getRedirectName = (ruleModifiers: string[], marker: string): string | null => {
     const redirectNamePart = ruleModifiers
         .find((el) => el.includes(marker));
 
-    return redirectNamePart ? substringAfter(redirectNamePart, marker) : null;
+    if (!redirectNamePart) {
+        return null;
+    }
+
+    let redirectName = substringAfter(redirectNamePart, marker);
+
+    /**
+     * Ignore UBO's redirect rule priority
+     * e.g remove ':100' from ||example.com$redirect=noopjs:100
+     * https://github.com/AdguardTeam/tsurlfilter/issues/59
+     */
+    const redirectPriorityIndex = redirectName.indexOf(UBO_REDIRECT_PRIORITY_MARKER);
+    if (redirectPriorityIndex > -1) {
+        redirectName = redirectName.substring(0, redirectPriorityIndex);
+    }
+
+    return redirectName;
 };
 
 /**
@@ -394,7 +410,10 @@ const isRedirectRuleByType = (rule: string, type: RedirectRuleType): boolean => 
             return false;
         }
 
-        const redirectName = getRedirectName(rule, marker);
+        const redirectName = getRedirectName(
+            parseModifiers(rule),
+            marker,
+        );
 
         if (!redirectName) {
             return false;
@@ -502,6 +521,8 @@ const validator = {
     parseModifiers,
     getRedirectName,
     hasValidContentType,
+    isRedirectRuleByType,
+    RedirectRuleType,
 };
 
 export default validator;

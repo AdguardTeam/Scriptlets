@@ -20,6 +20,9 @@
     "lint-staged": {
         "{src,tests,scripts}/**/*.js": [
             "eslint"
+        ],
+        "**/*.md": [
+            "markdownlint"
         ]
     },
     "author": "AdGuard",

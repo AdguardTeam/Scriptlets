@@ -453,6 +453,10 @@ describe('Test redirects api methods', () => {
     describe('convertRedirectToAdg(ubo) -> adg', () => {
         const testCases = [
             {
+                actual: '||cdn.cookielaw.org^$important,redirect=noop.js:99,script,domain=open.spotify.com',
+                expected: '||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com',
+            },
+            {
                 actual: '||example.com/banner$image,redirect=32x32-transparent.png',
                 expected: '||example.com/banner$image,redirect=32x32-transparent.png',
             },
@@ -580,6 +584,10 @@ describe('Test redirects api methods', () => {
 
     describe('convertAdgRedirectToUbo(adg-rule) -> ubo', () => {
         const validTestCases = [
+            {
+                actual: '||example.com^$script,redirect=noopjs:99',
+                expected: '||example.com^$script,redirect=noop.js',
+            },
             {
                 actual: '||example.com^$xmlhttprequest,redirect=nooptext',
                 expected: '||example.com^$xmlhttprequest,redirect=noop.txt',
@@ -729,6 +737,92 @@ describe('Test redirects api methods', () => {
         ])('$actual', ({ actual, expected }) => {
             expect(convertRedirectNameToAdg(actual)).toStrictEqual(expected);
         });
+    });
+
+    describe('getRedirectName', () => {
+        const { getRedirectName } = validator;
+        const marker = 'redirect=';
+        const fixtures = new Map([
+            [
+                ['important', 'redirect=noop.js:99', 'domain=open.spotify'],
+                'noop.js',
+            ],
+            [
+                ['important', 'redirect=noop.js'],
+                'noop.js',
+            ],
+            [
+                ['redirect=noopjs'],
+                'noopjs',
+            ],
+            [
+                ['redirect=noop-vmap1.0.xml'],
+                'noop-vmap1.0.xml',
+            ],
+        ]);
+
+        fixtures.forEach((name, modifiers) => {
+            expect(getRedirectName(modifiers, marker)).toStrictEqual(name);
+        });
+    });
+
+    describe('isRedirectRuleByType', () => {
+        const { isRedirectRuleByType, RedirectRuleType } = validator;
+        const adgRules = [
+            {
+                rule: 'example.com$redirect=noopjs',
+                isValid: true,
+            },
+            {
+                rule: 'example.com$redirect=prebid,important',
+                isValid: true,
+            },
+            {
+                rule: 'example.com$redirect=nobab2.js',
+                isValid: false,
+            },
+        ];
+
+        const uboRules = [
+            {
+                rule: 'example.com$redirect=noop.js',
+                isValid: true,
+            },
+            {
+                rule: '||cdn.cookielaw.org^$important,redirect=noop.js:99,script',
+                isValid: true,
+            },
+            {
+                rule: 'example.com$redirect=prevent-bab',
+                isValid: false,
+            },
+        ];
+
+        const abpRules = [
+            {
+                rule: 'example.com$rewrite=abp-resource:1x1-transparent-gif',
+                isValid: true,
+            },
+            {
+                rule: 'example.com$rewrite=abp-resource:1x1-transparent.gif',
+                isValid: false,
+            },
+            {
+                rule: 'example.com$redirect=1x1-transparent.gif',
+                isValid: false,
+            },
+        ];
+
+        const testRuleTypes = (rules, ruleType) => {
+            rules.forEach(({ rule, isValid }) => {
+                const result = isRedirectRuleByType(rule, ruleType);
+                expect(result).toBe(isValid);
+            });
+        };
+
+        testRuleTypes(adgRules, RedirectRuleType.ValidAdg);
+        testRuleTypes(uboRules, RedirectRuleType.Ubo);
+        testRuleTypes(abpRules, RedirectRuleType.Abp);
     });
 });
 

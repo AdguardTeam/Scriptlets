@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- conversion of UBO's redirect priority to the converter.
+
 ### Fixed
 
-- issue with `stack` in `json-prune` scriptlet
-  [#348](https://github.com/AdguardTeam/Scriptlets/issues/348)
-- issue with `obligatoryProps` in `json-prune` scriptlet
-  [#345](https://github.com/AdguardTeam/Scriptlets/issues/345)
+- issue with `stack` in `json-prune` scriptlet [#348](https://github.com/AdguardTeam/Scriptlets/issues/348)
+- issue with `obligatoryProps` in `json-prune` scriptlet [#345](https://github.com/AdguardTeam/Scriptlets/issues/345)
 
 ## [v1.9.62] - 2023-08-04
 

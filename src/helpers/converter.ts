@@ -544,12 +544,14 @@ export const convertUboRedirectToAdg = (rule: string): string => {
     const adgModifiers = uboModifiers
         .map((modifier, index) => {
             if (index === uboMarkerData.index) {
-                const uboName = substringAfter(modifier, uboMarkerData.marker);
-                const adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
-                const adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER
-                    ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker
-                    : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
-                return `${adgMarker}${adgName}`;
+                const uboName = validator.getRedirectName([modifier], uboMarkerData.marker);
+                if (uboName) {
+                    const adgName = validator.REDIRECT_RULE_TYPES.UBO.compatibility[uboName];
+                    const adgMarker = uboMarkerData.marker === validator.ADG_UBO_REDIRECT_RULE_MARKER
+                        ? validator.REDIRECT_RULE_TYPES.ADG.redirectRuleMarker
+                        : validator.REDIRECT_RULE_TYPES.ADG.redirectMarker;
+                    return `${adgMarker}${adgName}`;
+                }
             }
             if (modifier === UBO_XHR_TYPE) {
                 return ADG_XHR_TYPE;
@@ -615,6 +617,9 @@ export const convertRedirectToAdg = (rule: string): string | undefined => {
  *    e.g. ||ad.com^$redirect=<name>,important  ->>  ||ad.com^$redirect=<name>,important,script
  * 3. Replaces Adg redirect name by Ubo analog
  *
+ * Note: if adg redirect uses UBO's priority syntax, it will be lost on conversion, e.g:
+ * ||example.com$redirect=noopjs:99 => ||example.com$redirect=noop.js
+ *
  * @param rule adg rule
  * @returns converted ubo rule
  * @throws on incompatible rule
@@ -629,7 +634,11 @@ export const convertAdgRedirectToUbo = (rule: string): string => {
 
     const adgMarkerData = getMarkerData(adgModifiers, validator.REDIRECT_RULE_TYPES.ADG, rule);
 
-    const adgRedirectName = adgModifiers[adgMarkerData.index].slice(adgMarkerData.marker.length);
+    const adgRedirectName = validator.getRedirectName(adgModifiers, adgMarkerData.marker);
+
+    if (!adgRedirectName) {
+        throw new Error(`Unable to convert for uBO - no valid redirect name in rule: ${rule}`);
+    }
 
     if (!validator.hasValidContentType(rule)) {
         // add missed source types as content type modifiers
