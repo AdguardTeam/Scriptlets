@@ -32,7 +32,7 @@ import {
  * example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
  * ```
  *
- * - `propsToMatch` — optional, selector of elements which will be removed from XML
+ * - `propsToMatch` — optional, XPath or selector of elements which will be removed from XML
  * - `optionalProp` — optional, selector of elements that must occur in XML document
  * - `urlToMatch` — optional, string or regular expression for matching the request's URL
  *
@@ -58,6 +58,17 @@ import {
  *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
  *     ```
+ *
+ * 1. Remove `Period` tag whose `id` contains `pre-roll` and remove `duration` attribute from the `Period` tag
+ *    by using XPath expression
+ *
+ *     <!-- markdownlint-disable line-length -->
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('xml-prune', 'xpath(//*[name()="Period"][contains(@id, "pre-roll") and contains(@id, "-ad-")] | //*[name()="Period"]/@duration)')
+ *     ```
+ *
+ *     <!-- markdownlint-enable line-length -->
  *
  * 1. Call with no arguments will log response payload and URL at the console
  *
@@ -91,6 +102,49 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
+    const XPATH_MARKER = 'xpath(';
+    const isXpath = propsToRemove && propsToRemove.startsWith(XPATH_MARKER);
+
+    /**
+     * Checks if the document node from the XML document contains propsToRemove
+     * if so, returns an array with matched elements, otherwise returns an empty array
+     *
+     * @param {Node} contextNode - document node from XML document
+     * @returns {Array}
+     */
+    const getXPathElements = (contextNode) => {
+        const matchedElements = [];
+        try {
+            const elementsToRemove = propsToRemove.slice(XPATH_MARKER.length, -1);
+            const xpathResult = contextNode.evaluate(
+                elementsToRemove,
+                contextNode,
+                null,
+                XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+                null,
+            );
+            for (let i = 0; i < xpathResult.snapshotLength; i += 1) {
+                matchedElements.push(xpathResult.snapshotItem(i));
+            }
+        } catch (ex) {
+            const message = `Invalid XPath parameter: ${propsToRemove}\n${ex}`;
+            logMessage(source, message);
+        }
+        return matchedElements;
+    };
+
+    const xPathPruning = (xPathElements) => {
+        xPathElements.forEach((element) => {
+            // ELEMENT_NODE
+            if (element.nodeType === 1) {
+                element.remove();
+                // ATTRIBUTE_NODE
+            } else if (element.nodeType === 2) {
+                element.ownerElement.removeAttribute(element.nodeName);
+            }
+        });
+    };
+
     const isXML = (text) => {
         // It's necessary to check the type of 'text'
         // because 'text' is obtained from the xhr/fetch response,
@@ -117,7 +171,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
             return false;
         }
         const docXML = createXMLDocument(response);
-        return !!docXML.querySelector(propsToRemove);
+        return isXpath ? getXPathElements(docXML) : !!docXML.querySelector(propsToRemove);
     };
 
     const pruneXML = (text) => {
@@ -134,14 +188,18 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
             shouldPruneResponse = false;
             return text;
         }
-        const elems = xmlDoc.querySelectorAll(propsToRemove);
-        if (!elems.length) {
+        const elements = isXpath ? getXPathElements(xmlDoc) : xmlDoc.querySelectorAll(propsToRemove);
+        if (!elements.length) {
             shouldPruneResponse = false;
             return text;
         }
-        elems.forEach((elem) => {
-            elem.remove();
-        });
+        if (isXpath) {
+            xPathPruning(elements);
+        } else {
+            elements.forEach((elem) => {
+                elem.remove();
+            });
+        }
         const serializer = new XMLSerializer();
         text = serializer.serializeToString(xmlDoc);
         return text;

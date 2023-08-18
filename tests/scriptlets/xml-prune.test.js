@@ -413,4 +413,96 @@ if (!isSupported) {
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
+
+    test('fetch - XPath remove ads ', async (assert) => {
+        const MATCH_DATA = ['xpath(//*[name()="Period"][contains(@id, "pre-roll") and contains(@id, "-ad-")])'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'));
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch - XPath remove attribute from element 1', async (assert) => {
+        const MATCH_DATA = ['xpath(//*[name()="Period"]/@duration)'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+        assert.notOk(responseMPD.includes('duration'));
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch - XPath remove attribute from element 2', async (assert) => {
+        const MATCH_DATA = ['xpath(//*[name()="Period"]//*[name()="AdaptationSet"]/@contentType)'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+        assert.notOk(responseMPD.includes('contentType'));
+        assert.ok(responseMPD.includes('segmentAlignment'));
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch - XPath remove attribute from element + optional argument', async (assert) => {
+        const MATCH_DATA = 'xpath(//*[name()="Period"]/@duration)';
+        const OPTIONAL_MATCH = 'AdaptationSet';
+        const MATCH_URL = '.mpd';
+        const scriptletArgs = [MATCH_DATA, OPTIONAL_MATCH, MATCH_URL];
+
+        runScriptlet(name, scriptletArgs);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+        assert.notOk(responseMPD.includes('duration'));
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch - XPath remove element and attribute from element', async (assert) => {
+        // eslint-disable-next-line max-len
+        const MATCH_DATA = ['xpath(//*[name()="Period"][contains(@id, "pre-roll") and contains(@id, "-ad-")] | //*[name()="Period"]/@duration)'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'));
+        assert.notOk(responseMPD.includes('duration'));
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch - invalid XPath', async (assert) => {
+        const MATCH_DATA = ['xpath({})'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+
+        assert.ok(responseMPD.includes('pre-roll-1-ad-1'));
+        assert.strictEqual(window.hit, undefined, 'should not hit');
+        done();
+    });
 }
