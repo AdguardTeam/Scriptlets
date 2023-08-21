@@ -2450,7 +2450,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#xml-prunejs-
 example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch]]])
 ```
 
-- `propsToMatch` — optional, selector of elements which will be removed from XML
+- `propsToMatch` — optional, XPath or selector of elements which will be removed from XML
 - `optionalProp` — optional, selector of elements that must occur in XML document
 - `urlToMatch` — optional, string or regular expression for matching the request's URL
 
@@ -2476,6 +2476,17 @@ example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch
     ```adblock
     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
     ```
+
+1. Remove `Period` tag whose `id` contains `pre-roll` and remove `duration` attribute from the `Period` tag
+   by using XPath expression
+
+    <!-- markdownlint-disable line-length -->
+
+    ```adblock
+    example.org#%#//scriptlet('xml-prune', 'xpath(//*[name()="Period"][contains(@id, "pre-roll") and contains(@id, "-ad-")] | //*[name()="Period"]/@duration)')
+    ```
+
+    <!-- markdownlint-enable line-length -->
 
 1. Call with no arguments will log response payload and URL at the console
 
