@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: add @added tag to the files with specific version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.9.70] - 2023-08-21
 
 ### Added
 
@@ -239,7 +239,7 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
     - `metrika-yandex-tag` [#254](https://github.com/AdguardTeam/Scriptlets/issues/254)
     - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.62...HEAD
+[v1.9.70]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.62...v1.9.70
 [v1.9.62]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.61...v1.9.62
 [v1.9.61]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.58...v1.9.61
 [v1.9.58]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.57...v1.9.58
