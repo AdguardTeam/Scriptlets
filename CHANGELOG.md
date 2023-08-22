@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - support for `XPath` in `xml-prune` scriptlet
   [#325](https://github.com/AdguardTeam/Scriptlets/issues/325)
-- conversion of UBO's redirect priority to the converter.
+- conversion of [UBO's $redirect priority](https://github.com/AdguardTeam/tsurlfilter/issues/59) to the converter
 
 ### Fixed
 
