@@ -283,6 +283,9 @@
         },
         {
             "ubo": "trusted-replace-fetch-response.js"
+        },
+        {
+            "ubo": "json-prune-fetch-response.js"
         }
     ],
     "redirects": [

@@ -20,6 +20,24 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-set-cookie.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
 test('Set cookie with valid value', (assert) => {
     let cName = '__test-cookie_OK';
     let cValue = 'OK';

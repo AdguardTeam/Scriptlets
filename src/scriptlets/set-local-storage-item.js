@@ -17,6 +17,9 @@ import {
  *
  * To remove item from localStorage use `$remove$` as a value.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-local-storage-itemjs-
+ *
  * ### Syntax
  *
  * ```text
@@ -78,6 +81,10 @@ export function setLocalStorageItem(source, key, value) {
 
 setLocalStorageItem.names = [
     'set-local-storage-item',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-local-storage-item.js',
+    'ubo-set-local-storage-item.js',
+    'ubo-set-local-storage-item',
 ];
 
 setLocalStorageItem.injections = [

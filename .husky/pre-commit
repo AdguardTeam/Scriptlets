@@ -15,5 +15,13 @@ if ([[ `git diff --cached --name-only --diff-filter=ACM` == *"dist/"* ]] && [[ !
     exit 1
 fi
 
+# remind about scriptlet aliases or compatibility-redirects.ts
+# if scripts/compatibility-table.json was changed
+if ([[ `git diff --cached --name-only --diff-filter=ACM` == *"scripts/compatibility-table.json"* ]]); then
+    echo "\033[33;1mWARNING!\033[0m"
+    echo "\033[33mPlease make sure not just compatibility-table.json is updated\033[0m"
+    echo "\033[33mbut scriptlet aliases or compatibility-redirects.ts are updated as well\033[0m"
+fi
+
 yarn lint-staged
 yarn test

@@ -15,6 +15,9 @@ import {
  * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
  * and after that and after that on DOM tree changes.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-attrjs-
+ *
  * ### Syntax
  *
  * ```text
@@ -123,6 +126,10 @@ export function setAttr(source, selector, attr, value = '') {
 
 setAttr.names = [
     'set-attr',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-attr.js',
+    'ubo-set-attr.js',
+    'ubo-set-attr',
 ];
 
 setAttr.injections = [

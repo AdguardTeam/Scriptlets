@@ -29,6 +29,24 @@ function changeAttr(elem, attr) {
     elem.setAttribute(attr, 'not-test-value');
 }
 
+test('Checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboParams = {
+        name: 'ubo-set-attr.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
 test('selector + attr + eligible number', (assert) => {
     createHit();
     const attr = 'test-attr';

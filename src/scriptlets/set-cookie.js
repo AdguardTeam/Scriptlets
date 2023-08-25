@@ -18,6 +18,9 @@ import {
  * @description
  * Sets a cookie with the specified name, value, and path.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
+ *
  * ### Syntax
  *
  * ```text
@@ -79,6 +82,10 @@ export function setCookie(source, name, value, path = '/') {
 
 setCookie.names = [
     'set-cookie',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-cookie.js',
+    'ubo-set-cookie.js',
+    'ubo-set-cookie',
 ];
 
 setCookie.injections = [

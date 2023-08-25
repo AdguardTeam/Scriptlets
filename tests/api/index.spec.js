@@ -179,6 +179,18 @@ describe('Test scriptlet api methods', () => {
                 actual: 'example.com##+js(remove-class, blur, , stay)',
                 expected: "example.com#%#//scriptlet('ubo-remove-class.js', 'blur', '', 'stay')",
             },
+            {
+                actual: 'example.com##+js(set-cookie, CookieConsent, true)',
+                expected: "example.com#%#//scriptlet('ubo-set-cookie.js', 'CookieConsent', 'true')",
+            },
+            {
+                actual: 'example.com##+js(set-local-storage-item, gdpr_popup, true)',
+                expected: "example.com#%#//scriptlet('ubo-set-local-storage-item.js', 'gdpr_popup', 'true')",
+            },
+            {
+                actual: 'example.com##+js(set-session-storage-item, acceptCookies, false)',
+                expected: "example.com#%#//scriptlet('ubo-set-session-storage-item.js', 'acceptCookies', 'false')",
+            },
         ];
         test.each(validTestCases)('$actual', ({ actual, expected }) => {
             expect(convertScriptletToAdg(actual)[0]).toStrictEqual(expected);
@@ -268,6 +280,18 @@ describe('Test scriptlet api methods', () => {
             {
                 actual: 'example.com#%#//scriptlet(\'close-window\')',
                 expected: 'example.com##+js(window-close-if)',
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-cookie', 'CookieConsent', 'true')",
+                expected: 'example.com##+js(set-cookie, CookieConsent, true)',
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-local-storage-item', 'gdpr_popup', 'true')",
+                expected: 'example.com##+js(set-local-storage-item, gdpr_popup, true)',
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-session-storage-item', 'acceptCookies', 'false')",
+                expected: 'example.com##+js(set-session-storage-item, acceptCookies, false)',
             },
             {
                 // emptyArr as set-constant parameter

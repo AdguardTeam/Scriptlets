@@ -27,7 +27,7 @@ import {
  * Using it without parameters prevents all `window.open` calls.
  *
  * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-window-open-ifjs-
  *
  * ### Syntax
  *
@@ -186,6 +186,9 @@ preventWindowOpen.names = [
     'nowoif.js',
     'ubo-nowoif.js',
     'ubo-nowoif',
+    'no-window-open-if.js',
+    'ubo-no-window-open-if.js',
+    'ubo-no-window-open-if',
 ];
 
 preventWindowOpen.injections = [

@@ -17,6 +17,9 @@ import {
  *
  * To remove item from sessionStorage use `$remove$` as a value.
  *
+ * Related UBO scriptlet:
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-session-storage-itemjs-
+ *
  * ### Syntax
  *
  * ```text
@@ -78,6 +81,10 @@ export function setSessionStorageItem(source, key, value) {
 
 setSessionStorageItem.names = [
     'set-session-storage-item',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-session-storage-item.js',
+    'ubo-set-session-storage-item.js',
+    'ubo-set-session-storage-item',
 ];
 
 setSessionStorageItem.injections = [

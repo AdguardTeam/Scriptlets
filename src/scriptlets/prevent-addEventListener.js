@@ -16,6 +16,9 @@ import {
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
  *
+ * Related ABP snippet:
+ * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/prevent-listener.js
+ *
  * ### Syntax
  *
  * ```text
@@ -100,6 +103,7 @@ preventAddEventListener.names = [
     'ubo-aeld.js',
     'ubo-addEventListener-defuser',
     'ubo-aeld',
+    'abp-prevent-listener',
 ];
 
 preventAddEventListener.injections = [

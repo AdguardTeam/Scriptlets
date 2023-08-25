@@ -26,6 +26,24 @@ if (isSafariBrowser()) {
         assert.ok(true, 'does not work in Safari 10 while browserstack auto tests run');
     });
 } else {
+    test('Checking if alias name works', (assert) => {
+        const adgParams = {
+            name,
+            engine: 'test',
+            verbose: true,
+        };
+        const uboParams = {
+            name: 'ubo-set-session-storage-item.js',
+            engine: 'test',
+            verbose: true,
+        };
+
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByUboParams = window.scriptlets.invoke(uboParams);
+
+        assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+    });
+
     test('Set sessionStorage key with valid value', (assert) => {
         let cName = '__test-item_true';
         let cValue = 'true';

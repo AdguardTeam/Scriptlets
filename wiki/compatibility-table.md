@@ -89,6 +89,7 @@
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
 |  | trusted-replace-fetch-response.js |  |
+|  | json-prune-fetch-response.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table
