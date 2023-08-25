@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.70
+ * Version 1.9.72
  */
 
 (function (factory) {
@@ -3333,7 +3333,7 @@
      * Using it without parameters prevents all `window.open` calls.
      *
      * Related UBO scriptlet:
-     * https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-window-open-ifjs-
      *
      * ### Syntax
      *
@@ -3494,7 +3494,7 @@
     }
     preventWindowOpen$1.names = ['prevent-window-open',
     // aliases are needed for matching the related scriptlet converted into our syntax
-    'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif'];
+    'window.open-defuser.js', 'ubo-window.open-defuser.js', 'ubo-window.open-defuser', 'nowoif.js', 'ubo-nowoif.js', 'ubo-nowoif', 'no-window-open-if.js', 'ubo-no-window-open-if.js', 'ubo-no-window-open-if'];
     preventWindowOpen$1.injections = [hit, isValidStrPattern, escapeRegExp, isValidMatchStr, toRegExp, nativeIsNaN, parseMatchArg, handleOldReplacement, createDecoy, getPreventGetter, noopNull, logMessage, noopFunc, trueFunc, substringBefore, substringAfter$1];
 
     /* eslint-disable max-len */
@@ -4127,7 +4127,7 @@
     }
     removeCookie$1.names = ['remove-cookie',
     // aliases are needed for matching the related scriptlet converted into our syntax
-    'cookie-remover.js', 'ubo-cookie-remover.js', 'ubo-cookie-remover'];
+    'cookie-remover.js', 'ubo-cookie-remover.js', 'ubo-cookie-remover', 'remove-cookie.js', 'ubo-remove-cookie.js', 'ubo-remove-cookie', 'abp-cookie-remover'];
     removeCookie$1.injections = [toRegExp, hit];
 
     /* eslint-disable max-len */
@@ -4139,6 +4139,9 @@
      *
      * Related UBO scriptlet:
      * https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
+     *
+     * Related ABP snippet:
+     * https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/prevent-listener.js
      *
      * ### Syntax
      *
@@ -4217,7 +4220,7 @@
     }
     preventAddEventListener$1.names = ['prevent-addEventListener',
     // aliases are needed for matching the related scriptlet converted into our syntax
-    'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld'];
+    'addEventListener-defuser.js', 'ubo-addEventListener-defuser.js', 'aeld.js', 'ubo-aeld.js', 'ubo-addEventListener-defuser', 'ubo-aeld', 'abp-prevent-listener'];
     preventAddEventListener$1.injections = [hit, toRegExp, validateType, validateListener, listenerToString];
 
     /* eslint-disable consistent-return, no-eval */
@@ -5208,6 +5211,9 @@
      * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
      * and after that and after that on DOM tree changes.
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-attrjs-
+     *
      * ### Syntax
      *
      * ```text
@@ -5307,7 +5313,9 @@
       setAttr();
       observeDOMChanges(setAttr, true);
     }
-    setAttr$1.names = ['set-attr'];
+    setAttr$1.names = ['set-attr',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-attr.js', 'ubo-set-attr.js', 'ubo-set-attr'];
     setAttr$1.injections = [hit, observeDOMChanges, nativeIsNaN,
     // following helpers should be imported and injected
     // because they are used by helpers above
@@ -5996,6 +6004,9 @@
      * @description
      * Sets a cookie with the specified name, value, and path.
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
+     *
      * ### Syntax
      *
      * ```text
@@ -6052,7 +6063,9 @@
       hit(source);
       document.cookie = cookieToSet;
     }
-    setCookie$1.names = ['set-cookie'];
+    setCookie$1.names = ['set-cookie',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-cookie.js', 'ubo-set-cookie.js', 'ubo-set-cookie'];
     setCookie$1.injections = [hit, logMessage, nativeIsNaN, isCookieSetWithValue, getLimitedCookieValue, concatCookieNameValuePath, isValidCookiePath, getCookiePath];
 
     /**
@@ -6458,6 +6471,9 @@
      *
      * To remove item from localStorage use `$remove$` as a value.
      *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-local-storage-itemjs-
+     *
      * ### Syntax
      *
      * ```text
@@ -6515,7 +6531,9 @@
       }
       hit(source);
     }
-    setLocalStorageItem$1.names = ['set-local-storage-item'];
+    setLocalStorageItem$1.names = ['set-local-storage-item',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-local-storage-item.js', 'ubo-set-local-storage-item.js', 'ubo-set-local-storage-item'];
     setLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
@@ -6527,6 +6545,9 @@
      * Scriptlet won't set item if storage is full.
      *
      * To remove item from sessionStorage use `$remove$` as a value.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-session-storage-itemjs-
      *
      * ### Syntax
      *
@@ -6585,7 +6606,9 @@
       }
       hit(source);
     }
-    setSessionStorageItem$1.names = ['set-session-storage-item'];
+    setSessionStorageItem$1.names = ['set-session-storage-item',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-session-storage-item.js', 'ubo-set-session-storage-item.js', 'ubo-set-session-storage-item'];
     setSessionStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue];
 
     /* eslint-disable max-len */
@@ -27623,6 +27646,7 @@
       "ubo-aeld.js": preventAddEventListener,
       "ubo-addEventListener-defuser": preventAddEventListener,
       "ubo-aeld": preventAddEventListener,
+      "abp-prevent-listener": preventAddEventListener,
       "prevent-adfly": preventAdfly,
       "adfly-defuser.js": preventAdfly,
       "ubo-adfly-defuser.js": preventAdfly,
@@ -27692,6 +27716,9 @@
       "nowoif.js": preventWindowOpen,
       "ubo-nowoif.js": preventWindowOpen,
       "ubo-nowoif": preventWindowOpen,
+      "no-window-open-if.js": preventWindowOpen,
+      "ubo-no-window-open-if.js": preventWindowOpen,
+      "ubo-no-window-open-if": preventWindowOpen,
       "prevent-xhr": preventXHR,
       "no-xhr-if.js": preventXHR,
       "ubo-no-xhr-if.js": preventXHR,
@@ -27714,6 +27741,10 @@
       "cookie-remover.js": removeCookie,
       "ubo-cookie-remover.js": removeCookie,
       "ubo-cookie-remover": removeCookie,
+      "remove-cookie.js": removeCookie,
+      "ubo-remove-cookie.js": removeCookie,
+      "ubo-remove-cookie": removeCookie,
+      "abp-cookie-remover": removeCookie,
       "remove-in-shadow-dom": removeInShadowDom,
       "remove-node-text": removeNodeText,
       "remove-node-text.js": removeNodeText,
@@ -27723,6 +27754,9 @@
       "ubo-remove-node-text": removeNodeText,
       "ubo-rmnt": removeNodeText,
       "set-attr": setAttr,
+      "set-attr.js": setAttr,
+      "ubo-set-attr.js": setAttr,
+      "ubo-set-attr": setAttr,
       "set-constant": setConstant,
       "set-constant.js": setConstant,
       "ubo-set-constant.js": setConstant,
@@ -27732,13 +27766,22 @@
       "ubo-set": setConstant,
       "abp-override-property-read": setConstant,
       "set-cookie": setCookie,
+      "set-cookie.js": setCookie,
+      "ubo-set-cookie.js": setCookie,
+      "ubo-set-cookie": setCookie,
       "set-cookie-reload": setCookieReload,
       "set-local-storage-item": setLocalStorageItem,
+      "set-local-storage-item.js": setLocalStorageItem,
+      "ubo-set-local-storage-item.js": setLocalStorageItem,
+      "ubo-set-local-storage-item": setLocalStorageItem,
       "set-popads-dummy": setPopadsDummy,
       "popads-dummy.js": setPopadsDummy,
       "ubo-popads-dummy.js": setPopadsDummy,
       "ubo-popads-dummy": setPopadsDummy,
       "set-session-storage-item": setSessionStorageItem,
+      "set-session-storage-item.js": setSessionStorageItem,
+      "ubo-set-session-storage-item.js": setSessionStorageItem,
+      "ubo-set-session-storage-item": setSessionStorageItem,
       "trusted-click-element": trustedClickElement,
       "trusted-replace-fetch-response": trustedReplaceFetchResponse,
       "trusted-replace-node-text": trustedReplaceNodeText,

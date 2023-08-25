@@ -970,6 +970,9 @@ Prevents adding event listeners for the specified events and callbacks.
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-defuserjs-
 
+Related ABP snippet:
+https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/prevent-listener.js
+
 ### Syntax
 
 ```text
@@ -1631,7 +1634,7 @@ Prevents `window.open` calls when URL either matches or not matches the specifie
 Using it without parameters prevents all `window.open` calls.
 
 Related UBO scriptlet:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#windowopen-defuserjs-
+https://github.com/gorhill/uBlock/wiki/Resources-Library#no-window-open-ifjs-
 
 ### Syntax
 
@@ -2068,6 +2071,9 @@ If matched, the whole text will be removed. Case sensitive.
 Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
 and after that and after that on DOM tree changes.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#set-attrjs-
+
 ### Syntax
 
 ```text
@@ -2288,6 +2294,9 @@ example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
 
 Sets a cookie with the specified name, value, and path.
 
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
+
 ### Syntax
 
 ```text
@@ -2334,6 +2343,9 @@ Adds specified key and its value to localStorage object, or updates the value of
 Scriptlet won't set item if storage is full.
 
 To remove item from localStorage use `$remove$` as a value.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#set-local-storage-itemjs-
 
 ### Syntax
 
@@ -2398,6 +2410,9 @@ Adds specified key and its value to sessionStorage object, or updates the value 
 Scriptlet won't set item if storage is full.
 
 To remove item from sessionStorage use `$remove$` as a value.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#set-session-storage-itemjs-
 
 ### Syntax
 
