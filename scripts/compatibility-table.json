@@ -286,6 +286,12 @@
         },
         {
             "ubo": "json-prune-fetch-response.js"
+        },
+        {
+            "ubo": "json-prune-xhr-response.js"
+        },
+        {
+            "ubo": "trusted-replace-xhr-response.js"
         }
     ],
     "redirects": [

@@ -90,6 +90,8 @@
 |  | trusted-set-local-storage-item.js |  |
 |  | trusted-replace-fetch-response.js |  |
 |  | json-prune-fetch-response.js |  |
+|  | json-prune-xhr-response.js |  |
+|  | trusted-replace-xhr-response.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table
