@@ -483,4 +483,273 @@ if (!isSupported) {
 
         clearGlobalProps('funcProp');
     });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    test('Check overriden value - array', (assert) => {
+        runScriptletFromTag('pageData.__banners.0.commercial.mediaUrl', '');
+        const done = assert.async();
+        window.pageData = {
+            __banners: [{
+                commercial: {
+                    mediaUrl: 'test',
+                },
+            }, {
+                commercial: {
+                    mediaUrl: 'test',
+                },
+            }],
+        };
+
+        setTimeout(() => {
+            window.pageData.__banners = [{
+                commercial: {
+                    mediaUrl: 'test',
+                },
+            }, {
+                commercial: {
+                    mediaUrl: 'test',
+                },
+            }];
+        }, 50);
+
+        setTimeout(() => {
+            const result = window.pageData.__banners[0].commercial.mediaUrl;
+            assert.strictEqual(result, '', 'pageData.__banners.0.commercial.mediaUrl was set to empty string');
+            done();
+            clearGlobalProps('pageData');
+        }, 100);
+    });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    test('Check overriden - array 2', (assert) => {
+        runScriptletFromTag('pageData.__banners.0.commercial.mediaUrl', '');
+        const done = assert.async();
+        window.pageData = {
+            __banners: [{
+                commercial: {
+                    mediaUrl: 'test',
+                    jumpUrl: 'test',
+                    title: 'test',
+                    notChange: 'test',
+                    update: false,
+                },
+            }, {
+                commercial: {
+                    mediaUrl: 'test',
+                },
+            }],
+        };
+
+        setTimeout(() => {
+            window.pageData.__banners = [{
+                commercial: {
+                    mediaUrl: 'test',
+                    jumpUrl: 'test1',
+                    title: 'test1',
+                    notChange: 'test',
+                    asdf: 'test',
+                    update: true,
+                },
+            }, {
+                commercial: {
+                    mediaUrl: 'test',
+                    foo: 1,
+                },
+            }];
+        }, 50);
+
+        setTimeout(() => {
+            // Should be changed
+            const result1 = window.pageData.__banners[0].commercial.mediaUrl;
+            assert.strictEqual(result1, '', 'pageData.__banners.0.commercial.mediaUrl was set to empty string');
+            // Should NOT be changed by scriptlet
+            const result2 = window.pageData.__banners[0].commercial.jumpUrl;
+            const result3 = window.pageData.__banners[0].commercial.title;
+            const result4 = window.pageData.__banners[0].commercial.notChange;
+            const result5 = window.pageData.__banners[0].commercial.asdf;
+            const result6 = window.pageData.__banners[0].commercial.update;
+            const result7 = window.pageData.__banners[1].commercial.mediaUrl;
+            const result8 = window.pageData.__banners[1].commercial.foo;
+            // eslint-disable-next-line max-len
+            assert.strictEqual(result2, 'test1', 'pageData.__banners.0.commercial.jumpUrl was not changed by scriptlet');
+            assert.strictEqual(result3, 'test1', 'pageData.__banners.0.commercial.title was not changed by scriptlet');
+            assert.strictEqual(result4, 'test', 'pageData.__banners.0.commercial.notChange was not changed');
+            assert.strictEqual(result5, 'test', 'pageData.__banners.0.commercial.asdf was not changed');
+            assert.strictEqual(result6, true, 'pageData.__banners.0.commercial.update was not changed by scriptlet');
+            assert.strictEqual(result7, 'test', 'pageData.__banners.1.commercial.mediaUrl was not changed');
+            assert.strictEqual(result8, 1, 'pageData.__banners.1.commercial.foo was not changed');
+            done();
+            clearGlobalProps('pageData');
+        }, 100);
+    });
+
+    // Fixing this issue will require synchronization between the scriptlets
+    // TODO: uncomment test when synchronization between the scriptlets is added
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    // test('Check overriden few values - array', (assert) => {
+    //     runScriptletFromTag('pageData.__banners.0.commercial.mediaUrl', '');
+    //     runScriptletFromTag('pageData.__banners.0.commercial.jumpUrl', '');
+    //     runScriptletFromTag('pageData.__banners.0.commercial.title', '');
+    //     runScriptletFromTag('abcd.__banners.0.commercial.update', '');
+    //     const done = assert.async();
+    //     window.pageData = {
+    //         __banners: [{
+    //             commercial: {
+    //                 mediaUrl: 'test',
+    //                 jumpUrl: 'test',
+    //                 title: 'test',
+    //                 notChange: 'test',
+    //                 update: false,
+    //             },
+    //         }, {
+    //             commercial: {
+    //                 mediaUrl: 'test',
+    //             },
+    //         }],
+    //     };
+
+    //     setTimeout(() => {
+    //         window.pageData.__banners = [{
+    //             commercial: {
+    //                 mediaUrl: 'test',
+    //                 jumpUrl: 'test',
+    //                 title: 'test',
+    //                 notChange: 'test',
+    //                 asdf: 'test',
+    //                 update: true,
+    //             },
+    //         }, {
+    //             commercial: {
+    //                 mediaUrl: 'test',
+    //                 foo: 1,
+    //             },
+    //         }];
+    //     }, 50);
+
+    //     setTimeout(() => {
+    //         // Should be changed
+    //         const result1 = window.pageData.__banners[0].commercial.mediaUrl;
+    //         const result2 = window.pageData.__banners[0].commercial.jumpUrl;
+    //         const result3 = window.pageData.__banners[0].commercial.title;
+    //         assert.strictEqual(result1, '', 'pageData.__banners.0.commercial.mediaUrl was set to empty string');
+    //         assert.strictEqual(result2, '', 'pageData.__banners.0.commercial.jumpUrl was set to empty string');
+    //         assert.strictEqual(result3, '', 'pageData.__banners.0.commercial.title was set to empty string');
+    //         // Should NOT be changed by scriptlet
+    //         const result4 = window.pageData.__banners[0].commercial.notChange;
+    //         const result5 = window.pageData.__banners[0].commercial.asdf;
+    //         const result6 = window.pageData.__banners[0].commercial.update;
+    //         const result7 = window.pageData.__banners[1].commercial.mediaUrl;
+    //         const result8 = window.pageData.__banners[1].commercial.foo;
+    //         assert.strictEqual(result4, 'test', 'pageData.__banners.0.commercial.notChange was not changed');
+    //         assert.strictEqual(result5, 'test', 'pageData.__banners.0.commercial.asdf was not changed');
+    //         assert.strictEqual(result6, true, 'pageData.__banners.0.commercial.update was not changed by scriptlet');
+    //         assert.strictEqual(result7, 'test', 'pageData.__banners.1.commercial.mediaUrl was not changed');
+    //         assert.strictEqual(result8, 1, 'pageData.__banners.1.commercial.foo was not changed');
+    //         done();
+    //         clearGlobalProps('pageData');
+    //     }, 100);
+    // });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    test('Check overriden value - object', (assert) => {
+        runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+        window.foo = function name() { };
+        window.foo.prototype = { bar: 1 };
+        window.foo.prototype.abc = {
+            qwerty: true,
+        };
+        const result = window.foo.prototype.abc.qwerty;
+        assert.strictEqual(result, false, 'foo.prototype.abc.qwerty was set to false');
+        clearGlobalProps('foo');
+    });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    test('Override value 2 times - object', (assert) => {
+        runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+        window.foo = function name() { };
+        window.foo.prototype = { bar: 1 };
+        window.foo.prototype.abc = {
+            boo: true,
+        };
+        window.foo.prototype.abc = {
+            qwerty: true,
+        };
+        const result = window.foo.prototype.abc.qwerty;
+        assert.strictEqual(result, false, 'foo.prototype.abc.qwerty was set to false');
+        clearGlobalProps('foo');
+    });
+
+    // Fixing this issue will require synchronization between the scriptlets
+    // TODO: uncomment test when synchronization between the scriptlets is added
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    // test('Check overriden few values - object', (assert) => {
+    //     runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+    //     runScriptletFromTag('foo.prototype.bar', '0');
+    //     window.foo = function name() { };
+    //     window.foo.prototype = { bar: 1 };
+    //     window.foo.prototype.abc = {
+    //         qwerty: true,
+    //     };
+    //     const result1 = window.foo.prototype.abc.qwerty;
+    //     const result2 = window.foo.prototype.bar;
+    //     assert.strictEqual(result1, false, 'foo.prototype.abc.qwerty was set to false');
+    //     assert.strictEqual(result2, 0, 'foo.prototype.bar was set to 0');
+    //     clearGlobalProps('foo');
+    // });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    test('Check overriden value - object + similar object which should not be overriden', (assert) => {
+        runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+        window.foo = function name() { };
+        window.foo.prototype = { bar: 1 };
+        window.foo.prototype.abc = {
+            qwerty: true,
+        };
+        window.foo.prototype.zxc = {
+            abc: {
+                qwerty: true,
+            },
+        };
+        const result1 = window.foo.prototype.abc.qwerty;
+        assert.strictEqual(result1, false, 'foo.prototype.abc.qwerty was set to false');
+        const result2 = window.foo.prototype.zxc.abc.qwerty;
+        assert.strictEqual(result2, true, 'foo.prototype.zxc.abc.qwerty was not changed');
+        clearGlobalProps('foo');
+    });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/330
+    test('Check overriden value - object, do not overwrite', (assert) => {
+        runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+        runScriptletFromTag('baz.prototype.not.qwerty', 'false');
+        window.baz = function name() { };
+        window.baz.prototype = { bar: 1 };
+        window.baz.prototype.abc = {
+            qwerty: true,
+        };
+        const result = window.baz.prototype.abc.qwerty;
+        assert.strictEqual(result, true, 'baz.prototype.abc.qwerty was not changed');
+        clearGlobalProps('baz');
+    });
+
+    test('Check if Object.prototype.<property> has been overwriten', (assert) => {
+        runScriptletFromTag('Object.prototype.withAds', 'false');
+        let result;
+        (() => {
+            const testFunc = function test() { };
+            testFunc.prototype.withAds = true;
+            result = testFunc.prototype.withAds;
+            testFunc();
+        })();
+        assert.strictEqual(result, false, 'Object.prototype.withAds was set to false');
+    });
+
+    test('Check if property chain has been created', (assert) => {
+        runScriptletFromTag('ads', 'noopFunc');
+        runScriptletFromTag('ads.videoAd', 'noopFunc');
+        runScriptletFromTag('ads.videoAd.loadModule', 'trueFunc');
+        assert.strictEqual(typeof window.ads === 'function', true, 'ads was set to function');
+        assert.strictEqual(typeof window.ads.videoAd === 'function', true, 'ads.videoAd was set to function');
+        // eslint-disable-next-line max-len
+        assert.strictEqual(window.ads.videoAd.loadModule(), true, 'ads.videoAd.loadModule was set to function which returns true');
+    });
 }
