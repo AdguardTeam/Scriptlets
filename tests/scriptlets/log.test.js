@@ -25,3 +25,22 @@ test('log scriptlet', (assert) => {
 
     runScriptlet(name, TEST_ARGS);
 });
+
+test('checking if alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+
+    const abpParams = {
+        name: 'abp-log',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByAbpParams = window.scriptlets.invoke(abpParams);
+
+    assert.strictEqual(codeByAdgParams, codeByAbpParams, 'abp name - ok');
+});

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ABP alias for the `log` scriptlet
+
 ### Fixed
 
 - issue with not overriding value in `set-constant` (only partially, for cases where single scriptlet is used)
