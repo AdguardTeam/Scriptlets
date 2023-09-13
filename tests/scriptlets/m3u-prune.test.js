@@ -15,6 +15,9 @@ const M3U8_OBJECTS_PATH_03 = './test-files/manifestM3U8-03.m3u8';
 // From sbs.com - https://github.com/AdguardTeam/AdguardFilters/issues/88692
 // https://regex101.com/r/Kxtnng/1
 const M3U8_OBJECTS_PATH_04 = './test-files/manifestM3U8-04.m3u8';
+// https://github.com/AdguardTeam/Scriptlets/issues/354
+const M3U8_OBJECTS_CR = './test-files/manifestM3U8-carriage-return.m3u8';
+
 const nativeFetch = fetch;
 const nativeXhrOpen = XMLHttpRequest.prototype.open;
 const nativeConsole = console.log;
@@ -350,6 +353,25 @@ if (!isSupported) {
         assert.notOk(
             responseM3U8.includes('#EXT-X-VMAP-AD-BREAK'),
             'check if "#EXT-X-VMAP-AD-BREAK" has been removed',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('fetch - remove ads carriage return', async (assert) => {
+        const M3U8_PATH = M3U8_OBJECTS_CR;
+        const MATCH_DATA = 'advert.com';
+
+        runScriptlet(name, [MATCH_DATA]);
+
+        const done = assert.async();
+
+        const response = await fetch(M3U8_PATH);
+        const responseM3U8 = await response.text();
+
+        assert.notOk(
+            responseM3U8.includes('advert.com'),
+            'check if "advert.com" has been removed',
         );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();

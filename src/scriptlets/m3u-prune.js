@@ -307,7 +307,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '') {
      */
     // TODO: make it compatible with $hls modifier
     const pruneM3U = (text) => {
-        let lines = text.split(/\n\r|\n|\r/);
+        let lines = text.split(/\r?\n/);
 
         if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
             lines = pruneVmapBlock(lines);

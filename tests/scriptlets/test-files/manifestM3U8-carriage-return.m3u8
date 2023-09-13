@@ -1,0 +1,15 @@
+#EXTM3U
+#EXT-X-VERSION:4
+#EXT-X-TARGETDURATION:6
+#EXT-X-MEDIA-SEQUENCE:1
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXTINF:5.005,
+https://advert.com/foo.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:6,
+https://example.com/segment1.ts
+#EXTINF:6,
+https://example.com/segment2.ts
+#EXTINF:6,
+https://example.com/segment3.ts
+#EXT-X-DISCONTINUITY
