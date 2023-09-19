@@ -31,7 +31,7 @@
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
 | [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) | prevent-listener |
-| [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js |  |
+| [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js (removed) |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
