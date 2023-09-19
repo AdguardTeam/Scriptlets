@@ -262,6 +262,69 @@ if (isSupported) {
         // use timeout to avoid hit collisions
         setTimeout(() => xhr2.send(), 1);
     });
+
+    test('Matched, string pattern, 2 separated scriptlets for the same request, test headers', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const HEADER_NAME_1 = 'first-header';
+        const HEADER_VALUE_1 = 'foo';
+        const HEADER_NAME_2 = 'second-header';
+        const HEADER_VALUE_2 = 'bar';
+        const HEADER_NAME_3 = 'test-header';
+        const HEADER_VALUE_3 = '123';
+        const PATTERN_1 = 'a1';
+        const REPLACEMENT_1 = 'qwerty';
+        const MATCH_DATA_1 = [PATTERN_1, REPLACEMENT_1, `${URL} method:${METHOD}`];
+
+        const PATTERN_2 = 'test';
+        const REPLACEMENT_2 = 'asdfgh';
+        const MATCH_DATA_2 = [PATTERN_2, REPLACEMENT_2, `${URL} method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA_1);
+        runScriptlet(name, MATCH_DATA_2);
+
+        const done1 = assert.async();
+        const done2 = assert.async();
+
+        const xhr1 = new XMLHttpRequest();
+        const xhr2 = new XMLHttpRequest();
+
+        xhr1.open(METHOD, URL);
+        xhr2.open(METHOD, URL);
+
+        xhr1.setRequestHeader(HEADER_NAME_1, HEADER_VALUE_1);
+        xhr2.setRequestHeader(HEADER_NAME_1, HEADER_VALUE_1);
+
+        xhr1.setRequestHeader(HEADER_NAME_2, HEADER_VALUE_2);
+        xhr2.setRequestHeader(HEADER_NAME_2, HEADER_VALUE_2);
+
+        xhr1.setRequestHeader(HEADER_NAME_3, HEADER_VALUE_3);
+        xhr2.setRequestHeader(HEADER_NAME_3, HEADER_VALUE_3);
+        xhr1.setRequestHeader(HEADER_NAME_3, HEADER_VALUE_3);
+        xhr2.setRequestHeader(HEADER_NAME_3, HEADER_VALUE_3);
+
+        xhr1.onload = () => {
+            xhr1.getAllResponseHeaders();
+            assert.strictEqual(xhr1.readyState, 4, 'Response done');
+            assert.notOk(xhr1.response.includes(PATTERN_1), 'Response has been modified');
+            assert.ok(xhr1.response.includes(REPLACEMENT_1), 'Response text has been modified');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done1();
+        };
+
+        xhr2.onload = () => {
+            assert.strictEqual(xhr2.readyState, 4, 'Response done');
+            assert.notOk(xhr2.response.includes(PATTERN_2), 'Response has been modified');
+            assert.ok(xhr2.response.includes(REPLACEMENT_2), 'Response text has been modified');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done2();
+        };
+
+        xhr1.send();
+        setTimeout(() => xhr2.send(), 1);
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

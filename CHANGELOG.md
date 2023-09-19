@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with adding the same header value in `trusted-replace-xhr-response` scriptlet
+  when it is used multiple times for the same request [#359](https://github.com/AdguardTeam/Scriptlets/issues/359)
 - issue with not pruning in `m3u-prune` scriptlet if file contains carriage return
   [#354](https://github.com/AdguardTeam/Scriptlets/issues/354)
 - issue with not overriding value in `set-constant` (only partially, for cases where single scriptlet is used)

@@ -121,10 +121,12 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
 
         if (matchRequestProps(source, propsToMatch, xhrData)) {
             thisArg.shouldBePrevented = true;
+            thisArg.headersReceived = !!thisArg.headersReceived;
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (thisArg.shouldBePrevented) {
+        if (thisArg.shouldBePrevented && !thisArg.headersReceived) {
+            thisArg.headersReceived = true;
             thisArg.collectedHeaders = [];
             const setRequestHeaderWrapper = (target, thisArg, args) => {
                 // Collect headers

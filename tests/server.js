@@ -17,6 +17,20 @@ const server = {
             }
 
             fs.readFile(path.join(__dirname, 'dist', filename), (err, data) => {
+                // Required for test for trusted-replace-xhr-response
+                // Checks if specific request header contains the same value few times
+                // https://github.com/AdguardTeam/Scriptlets/issues/359
+                if (filename?.includes('/test-files/test01.json')) {
+                    const firstHeader = req.headers['first-header'];
+                    const secondHeader = req.headers['second-header'];
+                    if ((firstHeader && firstHeader.includes('foo, foo'))
+                        || (secondHeader && secondHeader.includes('bar, bar'))) {
+                        const error = 'Bad request: multiple values in header are not allowed.';
+                        res.writeHead(400);
+                        res.end(JSON.stringify(error));
+                        return;
+                    }
+                }
                 if (err) {
                     console.log(err.message);
                     res.writeHead(404);
