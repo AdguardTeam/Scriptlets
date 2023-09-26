@@ -1,4 +1,7 @@
-name: Build Scriptlets
+name: Test Scriptlets
+
+env:
+  NODE_VERSION: 18
 
 on:
   push:
@@ -16,10 +19,13 @@ jobs:
       - name: Use Node.jobs
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: yarn install
         run: yarn install
+
+      - name: yarn lint
+        run: yarn lint
 
       - name: yarn test
         run: yarn test
@@ -42,7 +48,7 @@ jobs:
     steps:
       - name: Conclusion
         uses: technote-space/workflow-conclusion-action@v3
-      - name: Send Slack notif
+      - name: Send Slack notification
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ env.WORKFLOW_CONCLUSION }}
