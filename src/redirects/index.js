@@ -19,6 +19,7 @@ import * as redirectsList from './redirects-list';
 
 import Redirects from './redirects';
 
+// eslint-disable-next-line import/no-unresolved
 import { redirectsMap } from '../../tmp/redirects-map';
 
 /**
