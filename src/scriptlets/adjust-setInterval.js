@@ -108,8 +108,11 @@ adjustSetInterval.names = [
     'ubo-nano-setInterval-booster.js',
     'nano-sib.js',
     'ubo-nano-sib.js',
+    'adjust-setInterval.js',
+    'ubo-adjust-setInterval.js',
     'ubo-nano-setInterval-booster',
     'ubo-nano-sib',
+    'ubo-adjust-setInterval',
 ];
 
 adjustSetInterval.injections = [

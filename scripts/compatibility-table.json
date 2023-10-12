@@ -21,15 +21,15 @@
         },
         {
             "adg": "adjust-setInterval",
-            "ubo": "nano-setInterval-booster.js (nano-sib.js)"
+            "ubo": "adjust-setInterval.js (nano-setInterval-booster.js, nano-sib.js)"
         },
         {
             "adg": "adjust-setTimeout",
-            "ubo": "nano-setTimeout-booster.js (nano-stb.js)"
+            "ubo": "adjust-setTimeout.js (nano-setTimeout-booster.js, nano-stb.js)"
         },
         {
             "adg": "close-window",
-            "ubo": "window-close-if.js"
+            "ubo": "close-window.js (window-close-if.js)"
         },
         {
             "adg": "debug-current-inline-script"
@@ -116,7 +116,7 @@
         },
         {
             "adg": "prevent-refresh",
-            "ubo": "refresh-defuser.js"
+            "ubo": "prevent-refresh.js (refresh-defuser.js)"
         },
         {
             "adg": "prevent-requestAnimationFrame",
@@ -292,6 +292,12 @@
         },
         {
             "ubo": "trusted-replace-xhr-response.js"
+        },
+        {
+            "ubo": "multiup.js"
+        },
+        {
+            "ubo": "prevent-canvas.js"
         }
     ],
     "redirects": [

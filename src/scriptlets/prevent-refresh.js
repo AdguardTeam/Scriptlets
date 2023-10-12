@@ -120,9 +120,12 @@ preventRefresh.names = [
     // Aliases are needed for matching the related scriptlet converted into our syntax
     // These are used by UBO rules syntax
     // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
+    'prevent-refresh.js',
     'refresh-defuser.js',
     'refresh-defuser',
     // Prefix 'ubo-' is required to run converted rules
+    'ubo-prevent-refresh.js',
+    'ubo-prevent-refresh',
     'ubo-refresh-defuser.js',
     'ubo-refresh-defuser',
 ];

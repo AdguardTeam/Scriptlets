@@ -12,9 +12,9 @@
 | [abort-on-property-read](../wiki/about-scriptlets.md#abort-on-property-read) | abort-on-property-read.js (aopr.js) | abort-on-property-read |
 | [abort-on-property-write](../wiki/about-scriptlets.md#abort-on-property-write) | abort-on-property-write.js (aopw.js) | abort-on-property-write |
 | [abort-on-stack-trace](../wiki/about-scriptlets.md#abort-on-stack-trace) | abort-on-stack-trace.js (aost.js) |  |
-| [adjust-setInterval](../wiki/about-scriptlets.md#adjust-setInterval) | nano-setInterval-booster.js (nano-sib.js) |  |
-| [adjust-setTimeout](../wiki/about-scriptlets.md#adjust-setTimeout) | nano-setTimeout-booster.js (nano-stb.js) |  |
-| [close-window](../wiki/about-scriptlets.md#close-window) | window-close-if.js |  |
+| [adjust-setInterval](../wiki/about-scriptlets.md#adjust-setInterval) | adjust-setInterval.js (nano-setInterval-booster.js, nano-sib.js) |  |
+| [adjust-setTimeout](../wiki/about-scriptlets.md#adjust-setTimeout) | adjust-setTimeout.js (nano-setTimeout-booster.js, nano-stb.js) |  |
+| [close-window](../wiki/about-scriptlets.md#close-window) | close-window.js (window-close-if.js) |  |
 | [debug-current-inline-script](../wiki/about-scriptlets.md#debug-current-inline-script) |  |  |
 | [debug-on-property-read](../wiki/about-scriptlets.md#debug-on-property-read) |  |  |
 | [debug-on-property-write](../wiki/about-scriptlets.md#debug-on-property-write) |  |  |
@@ -38,7 +38,7 @@
 | [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js (prevent-fetch.js) |  |
 | [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | no-xhr-if.js (prevent-xhr.js) |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
-| [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | refresh-defuser.js |  |
+| [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | prevent-refresh.js (refresh-defuser.js) |  |
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js) |  |
 | [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js) |  |
 | [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js) |  |
@@ -92,6 +92,8 @@
 |  | json-prune-fetch-response.js |  |
 |  | json-prune-xhr-response.js |  |
 |  | trusted-replace-xhr-response.js |  |
+|  | multiup.js |  |
+|  | prevent-canvas.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

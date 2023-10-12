@@ -85,9 +85,13 @@ export function forceWindowClose(source, path = '') {
 
 forceWindowClose.names = [
     'close-window',
+    // aliases are needed for matching the related scriptlet converted into our syntax
     'window-close-if.js',
     'ubo-window-close-if.js',
     'ubo-window-close-if',
+    'close-window.js',
+    'ubo-close-window.js',
+    'ubo-close-window',
 ];
 
 forceWindowClose.injections = [
