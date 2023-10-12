@@ -112,13 +112,14 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
     }
     const shouldLog = pattern === '' && replacement === '';
 
+    const nativeRequestClone = Request.prototype.clone;
     const nativeFetch = fetch;
 
     let shouldReplace = false;
     let fetchData;
 
     const handlerWrapper = (target, thisArg, args) => {
-        fetchData = getFetchData(args);
+        fetchData = getFetchData(args, nativeRequestClone);
 
         if (shouldLog) {
             // log if no propsToMatch given

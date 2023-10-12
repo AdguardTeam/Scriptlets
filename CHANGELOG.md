@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with `trusted-replace-fetch-response` scriptlet in case if data URL was used and properties was set by
+  `Object.defineProperty` to deceive scriptlet [#367](https://github.com/AdguardTeam/Scriptlets/issues/367)
 - issue with adding the same header value in `trusted-replace-xhr-response` scriptlet
   when it is used multiple times for the same request [#359](https://github.com/AdguardTeam/Scriptlets/issues/359)
 - issue with not pruning in `m3u-prune` scriptlet if file contains carriage return

@@ -253,4 +253,50 @@ if (!isSupported) {
         assert.strictEqual(url, urlExpected, 'response prop is copied');
         done();
     });
+
+    test('Data URL request, URL set by Object.defineProperty, content should NOT be replaced', async (assert) => {
+        const JSON_CONTENT = '{"adPlacements":true,"playerAds":true,}';
+        const BASE64 = btoa(JSON_CONTENT);
+        const DATA_REQUEST = `data:application/json;base64,${BASE64}`;
+        const REQUEST = new Request(DATA_REQUEST);
+        Object.defineProperty(REQUEST, 'url', {
+            get() {
+                return 'https://www.example.org/ad_url_test';
+            },
+        });
+        Object.defineProperty(REQUEST, 'method', {
+            get() {
+                return 'POST';
+            },
+        });
+        Object.defineProperty(REQUEST, 'bodyUsed', {
+            get() {
+                return !0;
+            },
+        });
+        Object.defineProperty(REQUEST, 'mode', {
+            get() {
+                return 'same-origin';
+            },
+        });
+        Object.defineProperty(REQUEST, 'body', {
+            get() {
+                return new ReadableStream();
+            },
+        });
+
+        const done = assert.async();
+
+        const PATTERN = 'adPlacements';
+        const REPLACEMENT = '';
+        const PROPS_TO_MATCH = 'ad_url_test';
+        runScriptlet(name, [PATTERN, REPLACEMENT, PROPS_TO_MATCH]);
+
+        const response = await fetch(REQUEST);
+        const actualTextContent = await response.text();
+
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+        assert.strictEqual(actualTextContent, JSON_CONTENT, 'Content is intact');
+        done();
+    });
 }

@@ -118,6 +118,8 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         return;
     }
 
+    const nativeRequestClone = Request.prototype.clone;
+
     let strResponseBody;
     if (responseBody === '' || responseBody === 'emptyObj') {
         strResponseBody = '{}';
@@ -146,7 +148,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
 
     const handlerWrapper = async (target, thisArg, args) => {
         let shouldPrevent = false;
-        const fetchData = getFetchData(args);
+        const fetchData = getFetchData(args, nativeRequestClone);
         if (typeof propsToMatch === 'undefined') {
             logMessage(source, `fetch( ${objectToString(fetchData)} )`, true);
             hit(source);

@@ -77,18 +77,23 @@ export const getRequestData = (request: Request): Partial<Request> => {
  * @param args fetch args
  * @returns data object
  */
-export const getFetchData = (args: [FetchResource, RequestInit]) => {
+export const getFetchData = (args: [FetchResource, RequestInit], nativeRequestClone: Function) => {
     const fetchPropsObj: Record<string, unknown> = {};
 
+    const resource = args[0];
     let fetchUrl: FetchResource;
     let fetchInit: RequestInit;
-    if (args[0] instanceof Request) {
+    if (resource instanceof Request) {
+        // Get real properties in case if data URL was used
+        // and properties were set by Object.defineProperty
+        // https://github.com/AdguardTeam/Scriptlets/issues/367
+        const realData = nativeRequestClone.call(resource);
         // if Request passed to fetch, it will be in array
-        const requestData = getRequestData(args[0]);
+        const requestData = getRequestData(realData);
         fetchUrl = requestData.url as string;
         fetchInit = requestData;
     } else {
-        fetchUrl = args[0]; // eslint-disable-line prefer-destructuring
+        fetchUrl = resource; // eslint-disable-line prefer-destructuring
         fetchInit = args[1]; // eslint-disable-line prefer-destructuring
     }
 
