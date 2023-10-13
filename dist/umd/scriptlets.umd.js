@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.72
+ * Version 1.9.83
  */
 
 (function (factory) {
@@ -1874,17 +1874,22 @@
      * @param args fetch args
      * @returns data object
      */
-    var getFetchData = function getFetchData(args) {
+    var getFetchData = function getFetchData(args, nativeRequestClone) {
       var fetchPropsObj = {};
+      var resource = args[0];
       var fetchUrl;
       var fetchInit;
-      if (args[0] instanceof Request) {
+      if (resource instanceof Request) {
+        // Get real properties in case if data URL was used
+        // and properties were set by Object.defineProperty
+        // https://github.com/AdguardTeam/Scriptlets/issues/367
+        var realData = nativeRequestClone.call(resource);
         // if Request passed to fetch, it will be in array
-        var requestData = getRequestData(args[0]);
+        var requestData = getRequestData(realData);
         fetchUrl = requestData.url;
         fetchInit = requestData;
       } else {
-        fetchUrl = args[0]; // eslint-disable-line prefer-destructuring
+        fetchUrl = resource; // eslint-disable-line prefer-destructuring
         fetchInit = args[1]; // eslint-disable-line prefer-destructuring
       }
 
@@ -3939,6 +3944,30 @@
             if (prevSetter !== undefined) {
               prevSetter(a);
             }
+            // Set a proxy trap to observe changes
+            // This is a partial fix and only works with a single scriptlet,
+            // a full fix requires synchronisation between the scriptlets
+            // TODO: add proper fix when synchronisation between scriptlets is added
+            // https://github.com/AdguardTeam/Scriptlets/issues/330
+            if (a instanceof Object) {
+              // Get properties which should be checked and remove first one
+              // because it's current object
+              var propertiesToCheck = property.split('.').slice(1);
+              a = new Proxy(a, {
+                get: function get(target, propertyKey, val) {
+                  // Check if object contains required property, if so
+                  // check if current value is equal to constantValue, if not, set it to constantValue
+                  propertiesToCheck.reduce(function (object, currentProp, index, array) {
+                    var currentObj = object === null || object === void 0 ? void 0 : object[currentProp];
+                    if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
+                      object[currentProp] = constantValue;
+                    }
+                    return currentObj || object;
+                  }, target);
+                  return Reflect.get(target, propertyKey, val);
+                }
+              });
+            }
             handler.set(a);
           }
         });
@@ -4472,6 +4501,9 @@
      * A simple scriptlet which only purpose is to print arguments to console.
      * This scriptlet can be helpful for debugging and troubleshooting other scriptlets.
      *
+     * Related ABP source:
+     * https://gitlab.com/eyeo/snippets/-/blob/main/source/introspection/log.js
+     *
      * ### Examples
      *
      * ```adblock
@@ -4487,7 +4519,7 @@
       console.log(args); // eslint-disable-line no-console
     }
 
-    log$1.names = ['log'];
+    log$1.names = ['log', 'abp-log'];
 
     /* eslint-disable no-eval, no-extra-bind */
 
@@ -5611,7 +5643,7 @@
     }
     adjustSetInterval$1.names = ['adjust-setInterval',
     // aliases are needed for matching the related scriptlet converted into our syntax
-    'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib'];
+    'nano-setInterval-booster.js', 'ubo-nano-setInterval-booster.js', 'nano-sib.js', 'ubo-nano-sib.js', 'adjust-setInterval.js', 'ubo-adjust-setInterval.js', 'ubo-nano-setInterval-booster', 'ubo-nano-sib', 'ubo-adjust-setInterval'];
     adjustSetInterval$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage,
     // following helpers should be injected as helpers above use them
     nativeIsNaN, nativeIsFinite, getMatchDelay, shouldMatchAnyDelay];
@@ -5707,7 +5739,7 @@
     }
     adjustSetTimeout$1.names = ['adjust-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
-    'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
+    'adjust-setTimeout.js', 'ubo-adjust-setTimeout.js', 'nano-setTimeout-booster.js', 'ubo-nano-setTimeout-booster.js', 'nano-stb.js', 'ubo-nano-stb.js', 'ubo-adjust-setTimeout', 'ubo-nano-setTimeout-booster', 'ubo-nano-stb'];
     adjustSetTimeout$1.injections = [hit, isValidCallback, toRegExp, getBoostMultiplier, isDelayMatched, logMessage,
     // following helpers should be injected as helpers above use them
     nativeIsNaN, nativeIsFinite, getMatchDelay, shouldMatchAnyDelay];
@@ -6400,6 +6432,7 @@
       if (typeof fetch === 'undefined' || typeof Proxy === 'undefined' || typeof Response === 'undefined') {
         return;
       }
+      var nativeRequestClone = Request.prototype.clone;
       var strResponseBody;
       if (responseBody === '' || responseBody === 'emptyObj') {
         strResponseBody = '{}';
@@ -6422,7 +6455,7 @@
       }
       var handlerWrapper = async function handlerWrapper(target, thisArg, args) {
         var shouldPrevent = false;
-        var fetchData = getFetchData(args);
+        var fetchData = getFetchData(args, nativeRequestClone);
         if (typeof propsToMatch === 'undefined') {
           logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
           hit(source);
@@ -7223,7 +7256,9 @@
         }
       }
     }
-    forceWindowClose$1.names = ['close-window', 'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if'];
+    forceWindowClose$1.names = ['close-window',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'window-close-if.js', 'ubo-window-close-if.js', 'ubo-window-close-if', 'close-window.js', 'ubo-close-window.js', 'ubo-close-window'];
     forceWindowClose$1.injections = [hit, toRegExp, logMessage];
 
     /* eslint-disable max-len */
@@ -7340,9 +7375,9 @@
     // Aliases are needed for matching the related scriptlet converted into our syntax
     // These are used by UBO rules syntax
     // https://github.com/gorhill/uBlock/wiki/Resources-Library#general-purpose-scriptlets
-    'refresh-defuser.js', 'refresh-defuser',
+    'prevent-refresh.js', 'refresh-defuser.js', 'refresh-defuser',
     // Prefix 'ubo-' is required to run converted rules
-    'ubo-refresh-defuser.js', 'ubo-refresh-defuser'];
+    'ubo-prevent-refresh.js', 'ubo-prevent-refresh', 'ubo-refresh-defuser.js', 'ubo-refresh-defuser'];
     preventRefresh$1.injections = [hit, getNumberFromString, logMessage, nativeIsNaN];
 
     /* eslint-disable max-len, consistent-return */
@@ -7677,10 +7712,12 @@
         }
         if (matchRequestProps(source, propsToMatch, xhrData)) {
           thisArg.shouldBePrevented = true;
+          thisArg.headersReceived = !!thisArg.headersReceived;
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (thisArg.shouldBePrevented) {
+        if (thisArg.shouldBePrevented && !thisArg.headersReceived) {
+          thisArg.headersReceived = true;
           thisArg.collectedHeaders = [];
           var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
             // Collect headers
@@ -8434,7 +8471,7 @@
        */
       // TODO: make it compatible with $hls modifier
       var pruneM3U = function pruneM3U(text) {
-        var lines = text.split(/\n\r|\n|\r/);
+        var lines = text.split(/\r?\n/);
         if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
           lines = pruneVmapBlock(lines);
           return lines.filter(function (l) {
@@ -8967,11 +9004,12 @@
         return;
       }
       var shouldLog = pattern === '' && replacement === '';
+      var nativeRequestClone = Request.prototype.clone;
       var nativeFetch = fetch;
       var shouldReplace = false;
       var fetchData;
       var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-        fetchData = getFetchData(args);
+        fetchData = getFetchData(args, nativeRequestClone);
         if (shouldLog) {
           // log if no propsToMatch given
           logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
@@ -20212,7 +20250,7 @@
           return isM3U(text) && regexp.test(text);
         };
         var pruneM3U = function pruneM3U(text) {
-          var lines = text.split(/\n\r|\n|\r/);
+          var lines = text.split(/\r?\n/);
           if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
             lines = pruneVmapBlock(lines);
             return lines.filter(function (l) {
@@ -21522,6 +21560,7 @@
         if (typeof fetch === "undefined" || typeof Proxy === "undefined" || typeof Response === "undefined") {
           return;
         }
+        var nativeRequestClone = Request.prototype.clone;
         var strResponseBody;
         if (responseBody === "" || responseBody === "emptyObj") {
           strResponseBody = "{}";
@@ -21542,7 +21581,7 @@
         }
         var handlerWrapper = async function handlerWrapper(target, thisArg, args) {
           var shouldPrevent = false;
-          var fetchData = getFetchData(args);
+          var fetchData = getFetchData(args, nativeRequestClone);
           if (typeof propsToMatch === "undefined") {
             logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
             hit(source);
@@ -21601,16 +21640,18 @@
           window.__debug(source);
         }
       }
-      function getFetchData(args) {
+      function getFetchData(args, nativeRequestClone) {
         var fetchPropsObj = {};
+        var resource = args[0];
         var fetchUrl;
         var fetchInit;
-        if (args[0] instanceof Request) {
-          var requestData = getRequestData(args[0]);
+        if (resource instanceof Request) {
+          var realData = nativeRequestClone.call(resource);
+          var requestData = getRequestData(realData);
           fetchUrl = requestData.url;
           fetchInit = requestData;
         } else {
-          fetchUrl = args[0];
+          fetchUrl = resource;
           fetchInit = args[1];
         }
         fetchPropsObj.url = fetchUrl;
@@ -24375,6 +24416,21 @@
               if (prevSetter !== undefined) {
                 prevSetter(a);
               }
+              if (a instanceof Object) {
+                var propertiesToCheck = property.split(".").slice(1);
+                a = new Proxy(a, {
+                  get: function get(target, propertyKey, val) {
+                    propertiesToCheck.reduce(function (object, currentProp, index, array) {
+                      var currentObj = object === null || object === void 0 ? void 0 : object[currentProp];
+                      if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
+                        object[currentProp] = constantValue;
+                      }
+                      return currentObj || object;
+                    }, target);
+                    return Reflect.get(target, propertyKey, val);
+                  }
+                });
+              }
               handler.set(a);
             }
           });
@@ -25601,11 +25657,12 @@
           return;
         }
         var shouldLog = pattern === "" && replacement === "";
+        var nativeRequestClone = Request.prototype.clone;
         var nativeFetch = fetch;
         var shouldReplace = false;
         var fetchData;
         var handlerWrapper = function handlerWrapper(target, thisArg, args) {
-          fetchData = getFetchData(args);
+          fetchData = getFetchData(args, nativeRequestClone);
           if (shouldLog) {
             logMessage(source, "fetch( ".concat(objectToString(fetchData), " )"), true);
             hit(source);
@@ -25715,16 +25772,18 @@
         }
         nativeConsole("".concat(name, ": ").concat(message));
       }
-      function getFetchData(args) {
+      function getFetchData(args, nativeRequestClone) {
         var fetchPropsObj = {};
+        var resource = args[0];
         var fetchUrl;
         var fetchInit;
-        if (args[0] instanceof Request) {
-          var requestData = getRequestData(args[0]);
+        if (resource instanceof Request) {
+          var realData = nativeRequestClone.call(resource);
+          var requestData = getRequestData(realData);
           fetchUrl = requestData.url;
           fetchInit = requestData;
         } else {
-          fetchUrl = args[0];
+          fetchUrl = resource;
           fetchInit = args[1];
         }
         fetchPropsObj.url = fetchUrl;
@@ -26087,8 +26146,10 @@
           }
           if (matchRequestProps(source, propsToMatch, xhrData)) {
             thisArg.shouldBePrevented = true;
+            thisArg.headersReceived = !!thisArg.headersReceived;
           }
-          if (thisArg.shouldBePrevented) {
+          if (thisArg.shouldBePrevented && !thisArg.headersReceived) {
+            thisArg.headersReceived = true;
             thisArg.collectedHeaders = [];
             var setRequestHeaderWrapper = function setRequestHeaderWrapper(target, thisArg, args) {
               thisArg.collectedHeaders.push(args);
@@ -27581,13 +27642,19 @@
       "ubo-nano-setInterval-booster.js": adjustSetInterval,
       "nano-sib.js": adjustSetInterval,
       "ubo-nano-sib.js": adjustSetInterval,
+      "adjust-setInterval.js": adjustSetInterval,
+      "ubo-adjust-setInterval.js": adjustSetInterval,
       "ubo-nano-setInterval-booster": adjustSetInterval,
       "ubo-nano-sib": adjustSetInterval,
+      "ubo-adjust-setInterval": adjustSetInterval,
       "adjust-setTimeout": adjustSetTimeout,
+      "adjust-setTimeout.js": adjustSetTimeout,
+      "ubo-adjust-setTimeout.js": adjustSetTimeout,
       "nano-setTimeout-booster.js": adjustSetTimeout,
       "ubo-nano-setTimeout-booster.js": adjustSetTimeout,
       "nano-stb.js": adjustSetTimeout,
       "ubo-nano-stb.js": adjustSetTimeout,
+      "ubo-adjust-setTimeout": adjustSetTimeout,
       "ubo-nano-setTimeout-booster": adjustSetTimeout,
       "ubo-nano-stb": adjustSetTimeout,
       "debug-current-inline-script": debugCurrentInlineScript,
@@ -27606,6 +27673,9 @@
       "window-close-if.js": forceWindowClose,
       "ubo-window-close-if.js": forceWindowClose,
       "ubo-window-close-if": forceWindowClose,
+      "close-window.js": forceWindowClose,
+      "ubo-close-window.js": forceWindowClose,
+      "ubo-close-window": forceWindowClose,
       "hide-in-shadow-dom": hideInShadowDom,
       "inject-css-in-shadow-dom": injectCssInShadowDom,
       "json-prune": jsonPrune,
@@ -27614,6 +27684,7 @@
       "ubo-json-prune": jsonPrune,
       "abp-json-prune": jsonPrune,
       log: log,
+      "abp-log": log,
       "log-addEventListener": logAddEventListener,
       "addEventListener-logger.js": logAddEventListener,
       "ubo-addEventListener-logger.js": logAddEventListener,
@@ -27672,8 +27743,11 @@
       "ubo-popads.net.js": preventPopadsNet,
       "ubo-popads.net": preventPopadsNet,
       "prevent-refresh": preventRefresh,
+      "prevent-refresh.js": preventRefresh,
       "refresh-defuser.js": preventRefresh,
       "refresh-defuser": preventRefresh,
+      "ubo-prevent-refresh.js": preventRefresh,
+      "ubo-prevent-refresh": preventRefresh,
       "ubo-refresh-defuser.js": preventRefresh,
       "ubo-refresh-defuser": preventRefresh,
       "prevent-requestAnimationFrame": preventRequestAnimationFrame,
