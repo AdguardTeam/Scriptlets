@@ -94,6 +94,11 @@
 |  | trusted-replace-xhr-response.js |  |
 |  | multiup.js |  |
 |  | prevent-canvas.js |  |
+|  | set-cookie-reload.js |  |
+|  | trusted-set-cookie-reload.js |  |
+|  | trusted-click-element.js |  |
+|  | trusted-prune-inbound-object.js |  |
+|  | trusted-prune-outbound-object.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

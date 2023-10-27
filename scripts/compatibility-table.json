@@ -298,6 +298,21 @@
         },
         {
             "ubo": "prevent-canvas.js"
+        },
+        {
+            "ubo": "set-cookie-reload.js"
+        },
+        {
+            "ubo": "trusted-set-cookie-reload.js"
+        },
+        {
+            "ubo": "trusted-click-element.js"
+        },
+        {
+            "ubo": "trusted-prune-inbound-object.js"
+        },
+        {
+            "ubo": "trusted-prune-outbound-object.js"
         }
     ],
     "redirects": [
