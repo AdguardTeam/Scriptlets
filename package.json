@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "1.9.83",
+    "version": "1.9.84",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "build": "babel-node -x .js,.ts scripts/build.js",
