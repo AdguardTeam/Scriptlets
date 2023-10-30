@@ -271,7 +271,10 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
                 return false;
             }
 
-            base[prop] = constantValue;
+            if (base[prop]) {
+                base[prop] = constantValue;
+            }
+
             if (origDescriptor.set instanceof Function) {
                 prevSetter = origDescriptor.set;
             }

@@ -752,4 +752,47 @@ if (!isSupported) {
         // eslint-disable-next-line max-len
         assert.strictEqual(window.ads.videoAd.loadModule(), true, 'ads.videoAd.loadModule was set to function which returns true');
     });
+
+    test('Test for reassignment 1', (assert) => {
+        runScriptletFromTag('zxcv.test.bar.qw', 'trueFunc');
+        const funcOne = () => 1;
+        window.zxcv = {};
+        // Reassign
+        window.zxcv = {};
+        window.zxcv.mnb = true;
+        window.zxcv.test = {
+            bar: {
+                qw: funcOne,
+            },
+        };
+        const result = window.zxcv.test.bar.qw();
+        assert.strictEqual(window.zxcv.mnb, true, 'redefined correctly');
+        assert.strictEqual(result, true, 'redefined correctly by scriptlet');
+        clearGlobalProps('zxcv');
+    });
+
+    test('Test for reassignment 2', (assert) => {
+        runScriptletFromTag('WO.adblock.useAdblocker', 'false');
+
+        window.WO = window.WO || {};
+        window.WO.strings = window.WO.strings || {};
+        // Reassign
+        window.WO = window.WO || {};
+        window.WO.strings = window.WO.strings || {};
+        window.WO.test = 1;
+        window.WO.adblock = {
+            useAdblocker: true,
+        };
+        assert.strictEqual(window.WO.test, 1, 'WO.test redefined correctly');
+        assert.strictEqual(window.WO.adblock.useAdblocker, false, 'WO.adblock.useAdblocker set to false by scriptlet');
+        clearGlobalProps('WO');
+    });
+
+    test('Should not set', (assert) => {
+        runScriptletFromTag('something.start.stop', 'false');
+
+        window.something = window.something || {};
+        assert.strictEqual(window.something.start, undefined, 'something.start was not set');
+        clearGlobalProps('something');
+    });
 }
