@@ -36,8 +36,13 @@ import {
  *         - `yes` / `y`
  *         - `no` / `n`
  *         - `ok`
- *         - `accept`/ `reject`
- *         - `allow` / `deny`
+ *         - `on` / `off`
+ *         - `accept`/ `accepted` / `notaccepted`
+ *         - `reject` / `rejected`
+ *         - `allow` / `allowed`
+ *         - `disallow` / `deny`
+ *         - `enable` / `enabled`
+ *         - `disable` / `disabled`
  * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all
