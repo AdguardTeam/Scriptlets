@@ -47,21 +47,25 @@ export const getLimitedStorageItemValue = (value: string): StorageItemValue | nu
         throw new Error('Invalid value');
     }
 
+    const allowedStorageValues = new Set([
+        'undefined',
+        'false',
+        'true',
+        'null',
+        '',
+        'yes',
+        'no',
+        'on',
+        'off',
+    ]);
+
     let validValue;
-    if (value === 'undefined') {
-        validValue = undefined;
-    } else if (value === 'false') {
-        validValue = false;
-    } else if (value === 'true') {
-        validValue = true;
-    } else if (value === 'null') {
-        validValue = null;
+    if (allowedStorageValues.has(value.toLowerCase())) {
+        validValue = value;
     } else if (value === 'emptyArr') {
         validValue = '[]';
     } else if (value === 'emptyObj') {
         validValue = '{}';
-    } else if (value === '') {
-        validValue = '';
     } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
         if (nativeIsNaN(validValue)) {
@@ -70,10 +74,6 @@ export const getLimitedStorageItemValue = (value: string): StorageItemValue | nu
         if (Math.abs(validValue) > 32767) {
             throw new Error('Invalid value');
         }
-    } else if (value === 'yes') {
-        validValue = 'yes';
-    } else if (value === 'no') {
-        validValue = 'no';
     } else if (value === '$remove$') {
         validValue = '$remove$';
     } else {

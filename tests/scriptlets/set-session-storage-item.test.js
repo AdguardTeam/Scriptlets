@@ -114,6 +114,27 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
         assert.strictEqual(window.sessionStorage.getItem(cName), 'no', 'sessionStorage item has been set');
         clearStorageItem(cName);
+
+        cName = '__test-item_on';
+        cValue = 'on';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'on', 'sessionStorage item has been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_ON';
+        cValue = 'ON';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'ON', 'sessionStorage item has been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_off';
+        cValue = 'off';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'off', 'sessionStorage item has been set');
+        clearStorageItem(cName);
     });
 }
 

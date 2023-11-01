@@ -29,7 +29,7 @@ import {
  * - `key` — required, key name to be set.
  * - `value` — required, key value; possible values:
  *     - positive decimal integer `<= 32767`
- *     - one of the predefined constants:
+ *     - one of the predefined constants in any case variation:
  *         - `undefined`
  *         - `false`
  *         - `true`
@@ -39,6 +39,8 @@ import {
  *         - `''` — empty string
  *         - `yes`
  *         - `no`
+ *         - `on`
+ *         - `off`
  *         - `$remove$` — remove specific item from localStorage
  *
  * ### Examples

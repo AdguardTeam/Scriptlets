@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- new values to `set-local-storage-item` and `set-session-storage-item` scriptlets: `on`, `off`
+  [#366](https://github.com/AdguardTeam/Scriptlets/issues/366)
+
 ### Fixed
 
 - issue with setting values to wrong properties in `set-constant` scriptlet
