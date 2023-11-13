@@ -155,6 +155,8 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
         return;
     }
 
+    let isProxyTrapSet = false;
+
     const emptyArr = noopArray();
     const emptyObj = noopObject();
 
@@ -297,20 +299,23 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
                     // Get properties which should be checked and remove first one
                     // because it's current object
                     const propertiesToCheck = property.split('.').slice(1);
-                    a = new Proxy(a, {
-                        get: (target, propertyKey, val) => {
-                            // Check if object contains required property, if so
-                            // check if current value is equal to constantValue, if not, set it to constantValue
-                            propertiesToCheck.reduce((object, currentProp, index, array) => {
-                                const currentObj = object?.[currentProp];
-                                if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
-                                    object[currentProp] = constantValue;
-                                }
-                                return currentObj || object;
-                            }, target);
-                            return Reflect.get(target, propertyKey, val);
-                        },
-                    });
+                    if (!isProxyTrapSet) {
+                        isProxyTrapSet = true;
+                        a = new Proxy(a, {
+                            get: (target, propertyKey, val) => {
+                                // Check if object contains required property, if so
+                                // check if current value is equal to constantValue, if not, set it to constantValue
+                                propertiesToCheck.reduce((object, currentProp, index, array) => {
+                                    const currentObj = object?.[currentProp];
+                                    if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
+                                        object[currentProp] = constantValue;
+                                    }
+                                    return currentObj || object;
+                                }, target);
+                                return Reflect.get(target, propertyKey, val);
+                            },
+                        });
+                    }
                 }
                 handler.set(a);
             },

@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with setting proxy trap every time when property is accessed in `set-constant` scriptlet
+  [#380](https://github.com/AdguardTeam/Scriptlets/issues/380)
 - issue with `stack` in `evaldata-prune` scriptlet [#378](https://github.com/AdguardTeam/Scriptlets/issues/378)
 - issue with setting values to wrong properties in `set-constant` scriptlet
   [#373](https://github.com/AdguardTeam/Scriptlets/issues/373)
