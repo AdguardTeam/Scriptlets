@@ -91,7 +91,7 @@ import {
  *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', '', 'bar', '')
  *     ```
  *
- * @added unknown.
+ * @added v1.9.91.
  */
 /* eslint-enable max-len */
 export function trustedPruneInboundObject(source, functionName, propsToRemove, requiredInitialProps, stack = '') {

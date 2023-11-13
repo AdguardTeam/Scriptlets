@@ -103,7 +103,7 @@ and each of them should match the syntax. Possible `name`s:
 
 ## <a id="trusted-prune-inbound-object"></a> ⚡️ trusted-prune-inbound-object
 
-> Added in unknown.
+> Added in v1.9.91.
 
 Removes listed properties from the result of calling specific function (if payload contains `Object`)
 and returns to the caller.
