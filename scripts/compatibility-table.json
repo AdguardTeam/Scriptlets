@@ -144,7 +144,7 @@
         },
         {
             "adg": "remove-cookie",
-            "ubo": "cookie-remover.js (remove-cookie.js)",
+            "ubo": "remove-cookie.js (cookie-remover.js)",
             "abp": "cookie-remover"
         },
         {
