@@ -6,6 +6,7 @@ import {
     toRegExp,
     isPruningNeeded,
     jsonPruner,
+    getPrunePath,
     // following helpers are needed for helpers above
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
@@ -96,20 +97,17 @@ import {
  */
 /* eslint-enable max-len */
 export function evalDataPrune(source, propsToRemove, requiredInitialProps, stack) {
-    if (!!stack && !matchStackTrace(stack, new Error().stack)) {
-        return;
-    }
-    const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
-        ? propsToRemove.split(/ +/)
-        : [];
-    const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== ''
-        ? requiredInitialProps.split(/ +/)
-        : [];
+    const prunePaths = getPrunePath(propsToRemove);
+    const requiredPaths = getPrunePath(requiredInitialProps);
+
+    const nativeObjects = {
+        nativeStringify: window.JSON.stringify,
+    };
 
     const evalWrapper = (target, thisArg, args) => {
         let data = Reflect.apply(target, thisArg, args);
         if (typeof data === 'object') {
-            data = jsonPruner(source, data, prunePaths, requiredPaths);
+            data = jsonPruner(source, data, prunePaths, requiredPaths, stack, nativeObjects);
         }
         return data;
     };
@@ -137,6 +135,7 @@ evalDataPrune.injections = [
     toRegExp,
     isPruningNeeded,
     jsonPruner,
+    getPrunePath,
     // following helpers are needed for helpers above
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,

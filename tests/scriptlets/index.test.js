@@ -54,3 +54,4 @@ import './trusted-set-constant.test';
 import './inject-css-in-shadow-dom.test';
 import './remove-node-text.test';
 import './trusted-replace-node-text.test';
+import './trusted-prune-inbound-object.test';

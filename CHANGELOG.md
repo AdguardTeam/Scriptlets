@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- new `trusted-prune-inbound-object` scriptlet [#372](https://github.com/AdguardTeam/Scriptlets/issues/372)
 - new values to `set-cookie` scriptlet: `on`, `off`, `accepted`, `notaccepted`, `rejected`, `allowed`,
   `disallow`, `enable`, `enabled`, `disable`, `disabled` [#375](https://github.com/AdguardTeam/Scriptlets/issues/375)
 - new values to `set-local-storage-item` and `set-session-storage-item` scriptlets: `on`, `off`
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- issue with `stack` in `evaldata-prune` scriptlet [#378](https://github.com/AdguardTeam/Scriptlets/issues/378)
 - issue with setting values to wrong properties in `set-constant` scriptlet
   [#373](https://github.com/AdguardTeam/Scriptlets/issues/373)
 

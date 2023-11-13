@@ -5,6 +5,7 @@ import {
     logMessage,
     isPruningNeeded,
     jsonPruner,
+    getPrunePath,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
@@ -99,19 +100,19 @@ import {
  */
 /* eslint-enable max-len */
 export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '') {
-    const prunePaths = propsToRemove !== undefined && propsToRemove !== ''
-        ? propsToRemove.split(/ +/)
-        : [];
-    const requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== ''
-        ? requiredInitialProps.split(/ +/)
-        : [];
+    const prunePaths = getPrunePath(propsToRemove);
+    const requiredPaths = getPrunePath(requiredInitialProps);
+
+    const nativeObjects = {
+        nativeStringify: window.JSON.stringify,
+    };
 
     const nativeJSONParse = JSON.parse;
     const jsonParseWrapper = (...args) => {
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeJSONParse.apply(JSON, args);
-        return jsonPruner(source, root, prunePaths, requiredPaths, stack);
+        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
     };
 
     // JSON.parse mocking
@@ -123,7 +124,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
     const responseJsonWrapper = function () {
         const promise = nativeResponseJson.apply(this);
         return promise.then((obj) => {
-            return jsonPruner(source, obj, prunePaths, requiredPaths, stack);
+            return jsonPruner(source, obj, prunePaths, requiredPaths, stack, nativeObjects);
         });
     };
 
@@ -152,6 +153,7 @@ jsonPrune.injections = [
     logMessage,
     isPruningNeeded,
     jsonPruner,
+    getPrunePath,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,

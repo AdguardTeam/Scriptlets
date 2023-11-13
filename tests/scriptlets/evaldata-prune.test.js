@@ -169,18 +169,26 @@ test('does NOT remove propsToRemove if invoked without parameter propsToRemove a
 });
 
 test('removes propsToRemove + stack match', (assert) => {
-    const stackMatch = 'evaldata-prune';
+    const firstStackMatch = 'testForFirstStackMatch';
+    const secondStackMatch = 'testForSecondStackMatch';
 
-    runScriptlet(name, ['c', '', stackMatch]);
+    runScriptlet(name, ['c', '', firstStackMatch]);
+
+    const testForFirstStackMatch = () => eval({ a: 1, b: 2, c: 3 });
+    const firstResult = testForFirstStackMatch();
+
     assert.deepEqual(
-        eval({ a: 1, b: 2, c: 3 }),
+        firstResult,
         { a: 1, b: 2 },
         'stack match: should remove single propsToRemove',
     );
 
-    runScriptlet(name, ['nested.c nested.b', '', stackMatch]);
+    runScriptlet(name, ['nested.c nested.b', '', secondStackMatch]);
+    const testForSecondStackMatch = () => eval({ nested: { a: 1, b: 2, c: 3 } });
+    const secondResult = testForSecondStackMatch();
+
     assert.deepEqual(
-        eval({ nested: { a: 1, b: 2, c: 3 } }),
+        secondResult,
         { nested: { a: 1 } },
         'stack match: should remove multiple nested propsToRemove',
     );

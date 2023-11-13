@@ -60,3 +60,4 @@ export * from './inject-css-in-shadow-dom';
 export * from './remove-node-text';
 export * from './trusted-replace-node-text';
 export * from './evaldata-prune';
+export * from './trusted-prune-inbound-object';
