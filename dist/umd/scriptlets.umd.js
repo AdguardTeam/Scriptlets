@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.83
+ * Version 1.9.91
  */
 
 (function (factory) {
@@ -959,7 +959,7 @@
       if (!value) {
         return null;
       }
-      var allowedCookieValues = new Set(['true', 'false', 'yes', 'y', 'no', 'n', 'ok', 'accept', 'reject', 'allow', 'deny']);
+      var allowedCookieValues = new Set(['true', 'false', 'yes', 'y', 'no', 'n', 'ok', 'on', 'off', 'accept', 'accepted', 'notaccepted', 'reject', 'rejected', 'allow', 'allowed', 'disallow', 'deny', 'enable', 'enabled', 'disable', 'disabled']);
       var validValue;
       if (allowedCookieValues.has(value.toLowerCase())) {
         validValue = value;
@@ -1674,22 +1674,25 @@
      * @param root object which should be pruned or logged
      * @param prunePaths array with string of space-separated property chains to remove
      * @param requiredPaths array with string of space-separated propertiy chains
+     * @param stack string which should be matched by stack trace
+     * @param nativeObjects reference to native objects, required for a trusted-prune-inbound-object to fix infinite loop
      * which must be all present for the pruning to occur
      * @returns true if prunning is required
      */
-    function isPruningNeeded(source, root, prunePaths, requiredPaths, stack) {
+    function isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
       if (!root) {
         return false;
       }
+      var nativeStringify = nativeObjects.nativeStringify;
       var shouldProcess;
 
       // Only log hostname and matched JSON payload if only second argument is present
       if (prunePaths.length === 0 && requiredPaths.length > 0) {
-        var rootString = JSON.stringify(root);
+        var rootString = nativeStringify(root);
         var matchRegex = toRegExp(requiredPaths.join(''));
         var shouldLog = matchRegex.test(rootString);
         if (shouldLog) {
-          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
           if (root && typeof root === 'object') {
             logMessage(source, root, true, false);
           }
@@ -1749,19 +1752,22 @@
      * @param root object which should be pruned or logged
      * @param prunePaths array with string of space-separated properties to remove
      * @param requiredPaths array with string of space-separated properties
+     * @param stack string which should be matched by stack trace
+     * @param nativeObjects reference to native objects, required for a trusted-prune-inbound-object to fix infinite loop
      * which must be all present for the pruning to occur
      * @returns pruned root
      */
-    var jsonPruner = function jsonPruner(source, root, prunePaths, requiredPaths, stack) {
+    var jsonPruner = function jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
+      var nativeStringify = nativeObjects.nativeStringify;
       if (prunePaths.length === 0 && requiredPaths.length === 0) {
-        logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+        logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
         if (root && typeof root === 'object') {
           logMessage(source, root, true, false);
         }
         return root;
       }
       try {
-        if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack) === false) {
+        if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) === false) {
           return root;
         }
 
@@ -1780,6 +1786,18 @@
         logMessage(source, e);
       }
       return root;
+    };
+
+    /**
+     * Checks if props is a string and returns array of properties
+     * or empty array if props is not a string
+     *
+     * @param props string of space-separated properties or undefined
+     * @returns array of properties or empty array if props is not a string
+     */
+    var getPrunePath = function getPrunePath(props) {
+      var validPropsString = typeof props === 'string' && props !== undefined && props !== '';
+      return validPropsString ? props.split(/ +/) : [];
     };
 
     /**
@@ -2027,21 +2045,14 @@
       if (typeof value !== 'string') {
         throw new Error('Invalid value');
       }
+      var allowedStorageValues = new Set(['undefined', 'false', 'true', 'null', '', 'yes', 'no', 'on', 'off']);
       var validValue;
-      if (value === 'undefined') {
-        validValue = undefined;
-      } else if (value === 'false') {
-        validValue = false;
-      } else if (value === 'true') {
-        validValue = true;
-      } else if (value === 'null') {
-        validValue = null;
+      if (allowedStorageValues.has(value.toLowerCase())) {
+        validValue = value;
       } else if (value === 'emptyArr') {
         validValue = '[]';
       } else if (value === 'emptyObj') {
         validValue = '{}';
-      } else if (value === '') {
-        validValue = '';
       } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
         if (nativeIsNaN(validValue)) {
@@ -2050,10 +2061,6 @@
         if (Math.abs(validValue) > 32767) {
           throw new Error('Invalid value');
         }
-      } else if (value === 'yes') {
-        validValue = 'yes';
-      } else if (value === 'no') {
-        validValue = 'no';
       } else if (value === '$remove$') {
         validValue = '$remove$';
       } else {
@@ -3823,6 +3830,7 @@
       if (!property || !matchStackTrace(stack, new Error().stack)) {
         return;
       }
+      var isProxyTrapSet = false;
       var emptyArr = noopArray();
       var emptyObj = noopObject();
       var constantValue;
@@ -3930,7 +3938,9 @@
             logMessage(source, message);
             return false;
           }
-          base[prop] = constantValue;
+          if (base[prop]) {
+            base[prop] = constantValue;
+          }
           if (origDescriptor.set instanceof Function) {
             prevSetter = origDescriptor.set;
           }
@@ -3953,20 +3963,23 @@
               // Get properties which should be checked and remove first one
               // because it's current object
               var propertiesToCheck = property.split('.').slice(1);
-              a = new Proxy(a, {
-                get: function get(target, propertyKey, val) {
-                  // Check if object contains required property, if so
-                  // check if current value is equal to constantValue, if not, set it to constantValue
-                  propertiesToCheck.reduce(function (object, currentProp, index, array) {
-                    var currentObj = object === null || object === void 0 ? void 0 : object[currentProp];
-                    if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
-                      object[currentProp] = constantValue;
-                    }
-                    return currentObj || object;
-                  }, target);
-                  return Reflect.get(target, propertyKey, val);
-                }
-              });
+              if (!isProxyTrapSet) {
+                isProxyTrapSet = true;
+                a = new Proxy(a, {
+                  get: function get(target, propertyKey, val) {
+                    // Check if object contains required property, if so
+                    // check if current value is equal to constantValue, if not, set it to constantValue
+                    propertiesToCheck.reduce(function (object, currentProp, index, array) {
+                      var currentObj = object === null || object === void 0 ? void 0 : object[currentProp];
+                      if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
+                        object[currentProp] = constantValue;
+                      }
+                      return currentObj || object;
+                    }, target);
+                    return Reflect.get(target, propertyKey, val);
+                  }
+                });
+              }
             }
             handler.set(a);
           }
@@ -5877,8 +5890,11 @@
     /* eslint-enable max-len */
     function jsonPrune$1(source, propsToRemove, requiredInitialProps) {
       var stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-      var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      var prunePaths = getPrunePath(propsToRemove);
+      var requiredPaths = getPrunePath(requiredInitialProps);
+      var nativeObjects = {
+        nativeStringify: window.JSON.stringify
+      };
       var nativeJSONParse = JSON.parse;
       var jsonParseWrapper = function jsonParseWrapper() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -5887,7 +5903,7 @@
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         var root = nativeJSONParse.apply(JSON, args);
-        return jsonPruner(source, root, prunePaths, requiredPaths, stack);
+        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
       };
 
       // JSON.parse mocking
@@ -5898,7 +5914,7 @@
       var responseJsonWrapper = function responseJsonWrapper() {
         var promise = nativeResponseJson.apply(this);
         return promise.then(function (obj) {
-          return jsonPruner(source, obj, prunePaths, requiredPaths, stack);
+          return jsonPruner(source, obj, prunePaths, requiredPaths, stack, nativeObjects);
         });
       };
 
@@ -5912,7 +5928,7 @@
     jsonPrune$1.names = ['json-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js', 'ubo-json-prune.js', 'ubo-json-prune', 'abp-json-prune'];
-    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, isPruningNeeded, jsonPruner,
+    jsonPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, isPruningNeeded, jsonPruner, getPrunePath,
     // following helpers are needed for helpers above
     toRegExp, getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
 
@@ -6054,8 +6070,13 @@
      *         - `yes` / `y`
      *         - `no` / `n`
      *         - `ok`
-     *         - `accept`/ `reject`
-     *         - `allow` / `deny`
+     *         - `on` / `off`
+     *         - `accept`/ `accepted` / `notaccepted`
+     *         - `reject` / `rejected`
+     *         - `allow` / `allowed`
+     *         - `disallow` / `deny`
+     *         - `enable` / `enabled`
+     *         - `disable` / `disabled`
      * - `path` — optional, cookie path, defaults to `/`; possible values:
      *     - `/` — root path
      *     - `none` — to set no path at all
@@ -6516,7 +6537,7 @@
      * - `key` — required, key name to be set.
      * - `value` — required, key value; possible values:
      *     - positive decimal integer `<= 32767`
-     *     - one of the predefined constants:
+     *     - one of the predefined constants in any case variation:
      *         - `undefined`
      *         - `false`
      *         - `true`
@@ -6526,6 +6547,8 @@
      *         - `''` — empty string
      *         - `yes`
      *         - `no`
+     *         - `on`
+     *         - `off`
      *         - `$remove$` — remove specific item from localStorage
      *
      * ### Examples
@@ -6591,7 +6614,7 @@
      * - `key` — required, key name to be set.
      * - `value` — required, key value; possible values:
      *     - positive decimal integer `<= 32767`
-     *     - one of the predefined constants:
+     *     - one of the predefined constants in any case variation:
      *         - `undefined`
      *         - `false`
      *         - `true`
@@ -6601,6 +6624,8 @@
      *         - `''` — empty string
      *         - `yes`
      *         - `no`
+     *         - `on`
+     *         - `off`
      *         - `$remove$` — remove specific item from sessionStorage
      *
      * ### Examples
@@ -9797,15 +9822,15 @@
      */
     /* eslint-enable max-len */
     function evalDataPrune$1(source, propsToRemove, requiredInitialProps, stack) {
-      if (!!stack && !matchStackTrace(stack, new Error().stack)) {
-        return;
-      }
-      var prunePaths = propsToRemove !== undefined && propsToRemove !== '' ? propsToRemove.split(/ +/) : [];
-      var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== '' ? requiredInitialProps.split(/ +/) : [];
+      var prunePaths = getPrunePath(propsToRemove);
+      var requiredPaths = getPrunePath(requiredInitialProps);
+      var nativeObjects = {
+        nativeStringify: window.JSON.stringify
+      };
       var evalWrapper = function evalWrapper(target, thisArg, args) {
         var data = Reflect.apply(target, thisArg, args);
         if (typeof data === 'object') {
-          data = jsonPruner(source, data, prunePaths, requiredPaths);
+          data = jsonPruner(source, data, prunePaths, requiredPaths, stack, nativeObjects);
         }
         return data;
       };
@@ -9818,9 +9843,128 @@
     evalDataPrune$1.names = ['evaldata-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'evaldata-prune.js', 'ubo-evaldata-prune.js', 'ubo-evaldata-prune'];
-    evalDataPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, toRegExp, isPruningNeeded, jsonPruner,
+    evalDataPrune$1.injections = [hit, matchStackTrace, getWildcardPropertyInChain, logMessage, toRegExp, isPruningNeeded, jsonPruner, getPrunePath,
     // following helpers are needed for helpers above
     getNativeRegexpTest, shouldAbortInlineOrInjectedScript];
+
+    /* eslint-disable max-len */
+    /**
+     * @trustedScriptlet trusted-prune-inbound-object
+     *
+     * @description
+     * Removes listed properties from the result of calling specific function (if payload contains `Object`)
+     * and returns to the caller.
+     *
+     * Related UBO scriptlet:
+     * https://github.com/gorhill/uBlock/commit/1c9da227d7
+     *
+     * ### Syntax
+     *
+     * ```text
+     * example.org#%#//scriptlet('trusted-prune-inbound-object', functionName[, propsToRemove [, obligatoryProps [, stack]]])
+     * ```
+     *
+     * - `functionName` — required, the name of the function to trap, it must have an object as an argument
+     * - `propsToRemove` — optional, string of space-separated properties to remove
+     * - `obligatoryProps` — optional, string of space-separated properties
+     *   which must be all present for the pruning to occur
+     * - `stack` — optional, string or regular expression that must match the current function call stack trace;
+     *   if regular expression is invalid it will be skipped
+     *
+     * > Note please that you can use wildcard `*` for chain property name,
+     * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
+     *
+     * ### Examples
+     *
+     * 1. Removes property `example` from the payload of the Object.getOwnPropertyNames call
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.getOwnPropertyNames', 'example')
+     *     ```
+     *
+     *     For instance, the following call will return `['one']`
+     *
+     *     ```html
+     *     Object.getOwnPropertyNames({ one: 1, example: true })
+     *     ```
+     *
+     * 2. Removes property `ads` from the payload of the Object.keys call
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.keys', 'ads')
+     *     ```
+     *
+     *     For instance, the following call will return `['one', 'two']`
+     *
+     *     ```html
+     *     Object.keys({ one: 1, two: 2, ads: true })
+     *     ```
+     *
+     * 3. Removes property `foo.bar` from the payload of the JSON.stringify call
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar')
+     *     ```
+     *
+     *     For instance, the following call will return `'{"foo":{"a":2},"b":3}'`
+     *
+     *     ```html
+     *     JSON.stringify({ foo: { bar: 1, a: 2 }, b: 3 })
+     *     ```
+     *
+     * 4. Removes property `foo.bar` from the payload of the JSON.stringify call if its error stack trace contains `test.js`
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar', '', 'test.js')
+     *     ```
+     *
+     * 5. Call with only first and third argument will log the current hostname and matched payload at the console
+     *
+     *     ```adblock
+     *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', '', 'bar', '')
+     *     ```
+     *
+     * @added unknown.
+     */
+    /* eslint-enable max-len */
+    function trustedPruneInboundObject$1(source, functionName, propsToRemove, requiredInitialProps) {
+      var stack = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+      if (!functionName) {
+        return;
+      }
+      var nativeObjects = {
+        nativeStringify: window.JSON.stringify
+      };
+      var _getPropertyInChain = getPropertyInChain(window, functionName),
+        base = _getPropertyInChain.base,
+        prop = _getPropertyInChain.prop;
+      if (!base || !prop || typeof base[prop] !== 'function') {
+        var message = "".concat(functionName, " is not a function");
+        logMessage(source, message);
+        return;
+      }
+      var prunePaths = getPrunePath(propsToRemove);
+      var requiredPaths = getPrunePath(requiredInitialProps);
+      var objectWrapper = function objectWrapper(target, thisArg, args) {
+        var data = args[0];
+        if (typeof data === 'object') {
+          data = jsonPruner(source, data, prunePaths, requiredPaths, stack, nativeObjects);
+          args[0] = data;
+        }
+        return Reflect.apply(target, thisArg, args);
+      };
+      var objectHandler = {
+        apply: objectWrapper
+      };
+      base[prop] = new Proxy(base[prop], objectHandler);
+    }
+    trustedPruneInboundObject$1.names = ['trusted-prune-inbound-object'
+    // trusted scriptlets support no aliases
+    ];
+
+    trustedPruneInboundObject$1.injections = [hit, matchStackTrace, getPropertyInChain, getWildcardPropertyInChain, logMessage, isPruningNeeded, jsonPruner, getPrunePath,
+    // following helpers are needed for helpers above
+    toRegExp, getNativeRegexpTest, shouldAbortInlineOrInjectedScript, isEmptyObject];
 
     /**
      * This file must export all scriptlets which should be accessible
@@ -9879,6 +10023,7 @@
         setPopadsDummy: setPopadsDummy$1,
         setSessionStorageItem: setSessionStorageItem$1,
         trustedClickElement: trustedClickElement$1,
+        trustedPruneInboundObject: trustedPruneInboundObject$1,
         trustedReplaceFetchResponse: trustedReplaceFetchResponse$1,
         trustedReplaceNodeText: trustedReplaceNodeText$1,
         trustedReplaceXhrResponse: trustedReplaceXhrResponse$1,
@@ -18697,15 +18842,15 @@
     }
     function evalDataPrune(source, args) {
       function evalDataPrune(source, propsToRemove, requiredInitialProps, stack) {
-        if (!!stack && !matchStackTrace(stack, new Error().stack)) {
-          return;
-        }
-        var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
-        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
+        var prunePaths = getPrunePath(propsToRemove);
+        var requiredPaths = getPrunePath(requiredInitialProps);
+        var nativeObjects = {
+          nativeStringify: window.JSON.stringify
+        };
         var evalWrapper = function evalWrapper(target, thisArg, args) {
           var data = Reflect.apply(target, thisArg, args);
           if (typeof data === "object") {
-            data = jsonPruner(source, data, prunePaths, requiredPaths);
+            data = jsonPruner(source, data, prunePaths, requiredPaths, stack, nativeObjects);
           }
           return data;
         };
@@ -18854,17 +18999,18 @@
         var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(escaped);
       }
-      function isPruningNeeded(source, root, prunePaths, requiredPaths, stack) {
+      function isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
         if (!root) {
           return false;
         }
+        var nativeStringify = nativeObjects.nativeStringify;
         var shouldProcess;
         if (prunePaths.length === 0 && requiredPaths.length > 0) {
-          var rootString = JSON.stringify(root);
+          var rootString = nativeStringify(root);
           var matchRegex = toRegExp(requiredPaths.join(""));
           var shouldLog = matchRegex.test(rootString);
           if (shouldLog) {
-            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+            logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
             if (root && typeof root === "object") {
               logMessage(source, root, true, false);
             }
@@ -18906,16 +19052,17 @@
         }
         return shouldProcess;
       }
-      function jsonPruner(source, root, prunePaths, requiredPaths, stack) {
+      function jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
+        var nativeStringify = nativeObjects.nativeStringify;
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
           if (root && typeof root === "object") {
             logMessage(source, root, true, false);
           }
           return root;
         }
         try {
-          if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack) === false) {
+          if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) === false) {
             return root;
           }
           prunePaths.forEach(function (path) {
@@ -18931,6 +19078,10 @@
           logMessage(source, e);
         }
         return root;
+      }
+      function getPrunePath(props) {
+        var validPropsString = typeof props === "string" && props !== undefined && props !== "";
+        return validPropsString ? props.split(/ +/) : [];
       }
       function getNativeRegexpTest() {
         var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
@@ -19403,15 +19554,18 @@
     function jsonPrune(source, args) {
       function jsonPrune(source, propsToRemove, requiredInitialProps) {
         var stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
-        var prunePaths = propsToRemove !== undefined && propsToRemove !== "" ? propsToRemove.split(/ +/) : [];
-        var requiredPaths = requiredInitialProps !== undefined && requiredInitialProps !== "" ? requiredInitialProps.split(/ +/) : [];
+        var prunePaths = getPrunePath(propsToRemove);
+        var requiredPaths = getPrunePath(requiredInitialProps);
+        var nativeObjects = {
+          nativeStringify: window.JSON.stringify
+        };
         var nativeJSONParse = JSON.parse;
         var jsonParseWrapper = function jsonParseWrapper() {
           for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
           var root = nativeJSONParse.apply(JSON, args);
-          return jsonPruner(source, root, prunePaths, requiredPaths, stack);
+          return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
         };
         jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
         JSON.parse = jsonParseWrapper;
@@ -19419,7 +19573,7 @@
         var responseJsonWrapper = function responseJsonWrapper() {
           var promise = nativeResponseJson.apply(this);
           return promise.then(function (obj) {
-            return jsonPruner(source, obj, prunePaths, requiredPaths, stack);
+            return jsonPruner(source, obj, prunePaths, requiredPaths, stack, nativeObjects);
           });
         };
         if (typeof Response === "undefined") {
@@ -19532,17 +19686,18 @@
         }
         nativeConsole("".concat(name, ": ").concat(message));
       }
-      function isPruningNeeded(source, root, prunePaths, requiredPaths, stack) {
+      function isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
         if (!root) {
           return false;
         }
+        var nativeStringify = nativeObjects.nativeStringify;
         var shouldProcess;
         if (prunePaths.length === 0 && requiredPaths.length > 0) {
-          var rootString = JSON.stringify(root);
+          var rootString = nativeStringify(root);
           var matchRegex = toRegExp(requiredPaths.join(""));
           var shouldLog = matchRegex.test(rootString);
           if (shouldLog) {
-            logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+            logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
             if (root && typeof root === "object") {
               logMessage(source, root, true, false);
             }
@@ -19584,16 +19739,17 @@
         }
         return shouldProcess;
       }
-      function jsonPruner(source, root, prunePaths, requiredPaths, stack) {
+      function jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
+        var nativeStringify = nativeObjects.nativeStringify;
         if (prunePaths.length === 0 && requiredPaths.length === 0) {
-          logMessage(source, "".concat(window.location.hostname, "\n").concat(JSON.stringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
           if (root && typeof root === "object") {
             logMessage(source, root, true, false);
           }
           return root;
         }
         try {
-          if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack) === false) {
+          if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) === false) {
             return root;
           }
           prunePaths.forEach(function (path) {
@@ -19609,6 +19765,10 @@
           logMessage(source, e);
         }
         return root;
+      }
+      function getPrunePath(props) {
+        var validPropsString = typeof props === "string" && props !== undefined && props !== "";
+        return validPropsString ? props.split(/ +/) : [];
       }
       function toRegExp() {
         var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -24310,6 +24470,7 @@
         if (!property || !matchStackTrace(stack, new Error().stack)) {
           return;
         }
+        var isProxyTrapSet = false;
         var emptyArr = noopArray();
         var emptyObj = noopObject();
         var constantValue;
@@ -24402,7 +24563,9 @@
               logMessage(source, message);
               return false;
             }
-            base[prop] = constantValue;
+            if (base[prop]) {
+              base[prop] = constantValue;
+            }
             if (origDescriptor.set instanceof Function) {
               prevSetter = origDescriptor.set;
             }
@@ -24418,18 +24581,21 @@
               }
               if (a instanceof Object) {
                 var propertiesToCheck = property.split(".").slice(1);
-                a = new Proxy(a, {
-                  get: function get(target, propertyKey, val) {
-                    propertiesToCheck.reduce(function (object, currentProp, index, array) {
-                      var currentObj = object === null || object === void 0 ? void 0 : object[currentProp];
-                      if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
-                        object[currentProp] = constantValue;
-                      }
-                      return currentObj || object;
-                    }, target);
-                    return Reflect.get(target, propertyKey, val);
-                  }
-                });
+                if (!isProxyTrapSet) {
+                  isProxyTrapSet = true;
+                  a = new Proxy(a, {
+                    get: function get(target, propertyKey, val) {
+                      propertiesToCheck.reduce(function (object, currentProp, index, array) {
+                        var currentObj = object === null || object === void 0 ? void 0 : object[currentProp];
+                        if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
+                          object[currentProp] = constantValue;
+                        }
+                        return currentObj || object;
+                      }, target);
+                      return Reflect.get(target, propertyKey, val);
+                    }
+                  });
+                }
               }
               handler.set(a);
             }
@@ -24837,7 +25003,7 @@
         if (!value) {
           return null;
         }
-        var allowedCookieValues = new Set(["true", "false", "yes", "y", "no", "n", "ok", "accept", "reject", "allow", "deny"]);
+        var allowedCookieValues = new Set(["true", "false", "yes", "y", "no", "n", "ok", "on", "off", "accept", "accepted", "notaccepted", "reject", "rejected", "allow", "allowed", "disallow", "deny", "enable", "enabled", "disable", "disabled"]);
         var validValue;
         if (allowedCookieValues.has(value.toLowerCase())) {
           validValue = value;
@@ -24970,7 +25136,7 @@
         if (!value) {
           return null;
         }
-        var allowedCookieValues = new Set(["true", "false", "yes", "y", "no", "n", "ok", "accept", "reject", "allow", "deny"]);
+        var allowedCookieValues = new Set(["true", "false", "yes", "y", "no", "n", "ok", "on", "off", "accept", "accepted", "notaccepted", "reject", "rejected", "allow", "allowed", "disallow", "deny", "enable", "enabled", "disable", "disabled"]);
         var validValue;
         if (allowedCookieValues.has(value.toLowerCase())) {
           validValue = value;
@@ -25104,21 +25270,14 @@
         if (typeof value !== "string") {
           throw new Error("Invalid value");
         }
+        var allowedStorageValues = new Set(["undefined", "false", "true", "null", "", "yes", "no", "on", "off"]);
         var validValue;
-        if (value === "undefined") {
-          validValue = undefined;
-        } else if (value === "false") {
-          validValue = false;
-        } else if (value === "true") {
-          validValue = true;
-        } else if (value === "null") {
-          validValue = null;
+        if (allowedStorageValues.has(value.toLowerCase())) {
+          validValue = value;
         } else if (value === "emptyArr") {
           validValue = "[]";
         } else if (value === "emptyObj") {
           validValue = "{}";
-        } else if (value === "") {
-          validValue = "";
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
           if (nativeIsNaN(validValue)) {
@@ -25127,10 +25286,6 @@
           if (Math.abs(validValue) > 32767) {
             throw new Error("Invalid value");
           }
-        } else if (value === "yes") {
-          validValue = "yes";
-        } else if (value === "no") {
-          validValue = "no";
         } else if (value === "$remove$") {
           validValue = "$remove$";
         } else {
@@ -25292,21 +25447,14 @@
         if (typeof value !== "string") {
           throw new Error("Invalid value");
         }
+        var allowedStorageValues = new Set(["undefined", "false", "true", "null", "", "yes", "no", "on", "off"]);
         var validValue;
-        if (value === "undefined") {
-          validValue = undefined;
-        } else if (value === "false") {
-          validValue = false;
-        } else if (value === "true") {
-          validValue = true;
-        } else if (value === "null") {
-          validValue = null;
+        if (allowedStorageValues.has(value.toLowerCase())) {
+          validValue = value;
         } else if (value === "emptyArr") {
           validValue = "[]";
         } else if (value === "emptyObj") {
           validValue = "{}";
-        } else if (value === "") {
-          validValue = "";
         } else if (/^\d+$/.test(value)) {
           validValue = parseFloat(value);
           if (nativeIsNaN(validValue)) {
@@ -25315,10 +25463,6 @@
           if (Math.abs(validValue) > 32767) {
             throw new Error("Invalid value");
           }
-        } else if (value === "yes") {
-          validValue = "yes";
-        } else if (value === "no") {
-          validValue = "no";
         } else if (value === "$remove$") {
           validValue = "$remove$";
         } else {
@@ -25640,6 +25784,382 @@
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
         trustedClickElement.apply(this, updatedArgs);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    function trustedPruneInboundObject(source, args) {
+      function trustedPruneInboundObject(source, functionName, propsToRemove, requiredInitialProps) {
+        var stack = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
+        if (!functionName) {
+          return;
+        }
+        var nativeObjects = {
+          nativeStringify: window.JSON.stringify
+        };
+        var _getPropertyInChain = getPropertyInChain(window, functionName),
+          base = _getPropertyInChain.base,
+          prop = _getPropertyInChain.prop;
+        if (!base || !prop || typeof base[prop] !== "function") {
+          var message = "".concat(functionName, " is not a function");
+          logMessage(source, message);
+          return;
+        }
+        var prunePaths = getPrunePath(propsToRemove);
+        var requiredPaths = getPrunePath(requiredInitialProps);
+        var objectWrapper = function objectWrapper(target, thisArg, args) {
+          var data = args[0];
+          if (typeof data === "object") {
+            data = jsonPruner(source, data, prunePaths, requiredPaths, stack, nativeObjects);
+            args[0] = data;
+          }
+          return Reflect.apply(target, thisArg, args);
+        };
+        var objectHandler = {
+          apply: objectWrapper
+        };
+        base[prop] = new Proxy(base[prop], objectHandler);
+      }
+      function hit(source) {
+        if (source.verbose !== true) {
+          return;
+        }
+        try {
+          var log = console.log.bind(console);
+          var trace = console.trace.bind(console);
+          var prefix = source.ruleText || "";
+          if (source.domainName) {
+            var AG_SCRIPTLET_MARKER = "#%#//";
+            var UBO_SCRIPTLET_MARKER = "##+js";
+            var ruleStartIndex;
+            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
+            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
+              ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
+            }
+            var rulePart = source.ruleText.slice(ruleStartIndex);
+            prefix = "".concat(source.domainName).concat(rulePart);
+          }
+          log("".concat(prefix, " trace start"));
+          if (trace) {
+            trace();
+          }
+          log("".concat(prefix, " trace end"));
+        } catch (e) {}
+        if (typeof window.__debug === "function") {
+          window.__debug(source);
+        }
+      }
+      function matchStackTrace(stackMatch, stackTrace) {
+        if (!stackMatch || stackMatch === "") {
+          return true;
+        }
+        if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
+          return true;
+        }
+        var stackRegexp = toRegExp(stackMatch);
+        var refinedStackTrace = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        }).join("\n");
+        return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
+      }
+      function getPropertyInChain(base, chain) {
+        var pos = chain.indexOf(".");
+        if (pos === -1) {
+          return {
+            base: base,
+            prop: chain
+          };
+        }
+        var prop = chain.slice(0, pos);
+        if (base === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+        if ((base instanceof Object || typeof base === "object") && isEmptyObject(base)) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+        if (nextBase === null) {
+          return {
+            base: base,
+            prop: prop,
+            chain: chain
+          };
+        }
+        if (nextBase !== undefined) {
+          return getPropertyInChain(nextBase, chain);
+        }
+        Object.defineProperty(base, prop, {
+          configurable: true
+        });
+        return {
+          base: base,
+          prop: prop,
+          chain: chain
+        };
+      }
+      function getWildcardPropertyInChain(base, chain) {
+        var lookThrough = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var output = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+        var pos = chain.indexOf(".");
+        if (pos === -1) {
+          if (chain === "*" || chain === "[]") {
+            for (var key in base) {
+              if (Object.prototype.hasOwnProperty.call(base, key)) {
+                output.push({
+                  base: base,
+                  prop: key
+                });
+              }
+            }
+          } else {
+            output.push({
+              base: base,
+              prop: chain
+            });
+          }
+          return output;
+        }
+        var prop = chain.slice(0, pos);
+        var shouldLookThrough = prop === "[]" && Array.isArray(base) || prop === "*" && base instanceof Object;
+        if (shouldLookThrough) {
+          var nextProp = chain.slice(pos + 1);
+          var baseKeys = Object.keys(base);
+          baseKeys.forEach(function (key) {
+            var item = base[key];
+            getWildcardPropertyInChain(item, nextProp, lookThrough, output);
+          });
+        }
+        if (Array.isArray(base)) {
+          base.forEach(function (key) {
+            var nextBase = key;
+            if (nextBase !== undefined) {
+              getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+            }
+          });
+        }
+        var nextBase = base[prop];
+        chain = chain.slice(pos + 1);
+        if (nextBase !== undefined) {
+          getWildcardPropertyInChain(nextBase, chain, lookThrough, output);
+        }
+        return output;
+      }
+      function logMessage(source, message) {
+        var forced = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var convertMessageToString = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+        var name = source.name,
+          verbose = source.verbose;
+        if (!forced && !verbose) {
+          return;
+        }
+        var nativeConsole = console.log;
+        if (!convertMessageToString) {
+          nativeConsole("".concat(name, ":"), message);
+          return;
+        }
+        nativeConsole("".concat(name, ": ").concat(message));
+      }
+      function isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
+        if (!root) {
+          return false;
+        }
+        var nativeStringify = nativeObjects.nativeStringify;
+        var shouldProcess;
+        if (prunePaths.length === 0 && requiredPaths.length > 0) {
+          var rootString = nativeStringify(root);
+          var matchRegex = toRegExp(requiredPaths.join(""));
+          var shouldLog = matchRegex.test(rootString);
+          if (shouldLog) {
+            logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+            if (root && typeof root === "object") {
+              logMessage(source, root, true, false);
+            }
+            shouldProcess = false;
+            return shouldProcess;
+          }
+        }
+        if (stack && !matchStackTrace(stack, new Error().stack || "")) {
+          shouldProcess = false;
+          return shouldProcess;
+        }
+        var wildcardSymbols = [".*.", "*.", ".*", ".[].", "[].", ".[]"];
+        var _loop = function _loop() {
+          var requiredPath = requiredPaths[i];
+          var lastNestedPropName = requiredPath.split(".").pop();
+          var hasWildcard = wildcardSymbols.some(function (symbol) {
+            return requiredPath.includes(symbol);
+          });
+          var details = getWildcardPropertyInChain(root, requiredPath, hasWildcard);
+          if (!details.length) {
+            shouldProcess = false;
+            return {
+              v: shouldProcess
+            };
+          }
+          shouldProcess = !hasWildcard;
+          for (var j = 0; j < details.length; j += 1) {
+            var hasRequiredProp = typeof lastNestedPropName === "string" && details[j].base[lastNestedPropName] !== undefined;
+            if (hasWildcard) {
+              shouldProcess = hasRequiredProp || shouldProcess;
+            } else {
+              shouldProcess = hasRequiredProp && shouldProcess;
+            }
+          }
+        };
+        for (var i = 0; i < requiredPaths.length; i += 1) {
+          var _ret = _loop();
+          if (typeof _ret === "object") return _ret.v;
+        }
+        return shouldProcess;
+      }
+      function jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects) {
+        var nativeStringify = nativeObjects.nativeStringify;
+        if (prunePaths.length === 0 && requiredPaths.length === 0) {
+          logMessage(source, "".concat(window.location.hostname, "\n").concat(nativeStringify(root, null, 2), "\nStack trace:\n").concat(new Error().stack), true);
+          if (root && typeof root === "object") {
+            logMessage(source, root, true, false);
+          }
+          return root;
+        }
+        try {
+          if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) === false) {
+            return root;
+          }
+          prunePaths.forEach(function (path) {
+            var ownerObjArr = getWildcardPropertyInChain(root, path, true);
+            ownerObjArr.forEach(function (ownerObj) {
+              if (ownerObj !== undefined && ownerObj.base) {
+                delete ownerObj.base[ownerObj.prop];
+                hit(source);
+              }
+            });
+          });
+        } catch (e) {
+          logMessage(source, e);
+        }
+        return root;
+      }
+      function getPrunePath(props) {
+        var validPropsString = typeof props === "string" && props !== undefined && props !== "";
+        return validPropsString ? props.split(/ +/) : [];
+      }
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
+        }
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      function getNativeRegexpTest() {
+        var descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, "test");
+        var nativeRegexTest = descriptor === null || descriptor === void 0 ? void 0 : descriptor.value;
+        if (descriptor && typeof descriptor.value === "function") {
+          return nativeRegexTest;
+        }
+        throw new Error("RegExp.prototype.test is not a function");
+      }
+      function shouldAbortInlineOrInjectedScript(stackMatch, stackTrace) {
+        var INLINE_SCRIPT_STRING = "inlineScript";
+        var INJECTED_SCRIPT_STRING = "injectedScript";
+        var INJECTED_SCRIPT_MARKER = "<anonymous>";
+        var isInlineScript = function isInlineScript(match) {
+          return match.includes(INLINE_SCRIPT_STRING);
+        };
+        var isInjectedScript = function isInjectedScript(match) {
+          return match.includes(INJECTED_SCRIPT_STRING);
+        };
+        if (!(isInlineScript(stackMatch) || isInjectedScript(stackMatch))) {
+          return false;
+        }
+        var documentURL = window.location.href;
+        var pos = documentURL.indexOf("#");
+        if (pos !== -1) {
+          documentURL = documentURL.slice(0, pos);
+        }
+        var stackSteps = stackTrace.split("\n").slice(2).map(function (line) {
+          return line.trim();
+        });
+        var stackLines = stackSteps.map(function (line) {
+          var stack;
+          var getStackTraceURL = /(.*?@)?(\S+)(:\d+):\d+\)?$/.exec(line);
+          if (getStackTraceURL) {
+            var _stackURL, _stackURL2;
+            var stackURL = getStackTraceURL[2];
+            if ((_stackURL = stackURL) !== null && _stackURL !== void 0 && _stackURL.startsWith("(")) {
+              stackURL = stackURL.slice(1);
+            }
+            if ((_stackURL2 = stackURL) !== null && _stackURL2 !== void 0 && _stackURL2.startsWith(INJECTED_SCRIPT_MARKER)) {
+              var _stackFunction;
+              stackURL = INJECTED_SCRIPT_STRING;
+              var stackFunction = getStackTraceURL[1] !== undefined ? getStackTraceURL[1].slice(0, -1) : line.slice(0, getStackTraceURL.index).trim();
+              if ((_stackFunction = stackFunction) !== null && _stackFunction !== void 0 && _stackFunction.startsWith("at")) {
+                stackFunction = stackFunction.slice(2).trim();
+              }
+              stack = "".concat(stackFunction, " ").concat(stackURL).trim();
+            } else {
+              stack = stackURL;
+            }
+          } else {
+            stack = line;
+          }
+          return stack;
+        });
+        if (stackLines) {
+          for (var index = 0; index < stackLines.length; index += 1) {
+            if (isInlineScript(stackMatch) && documentURL === stackLines[index]) {
+              return true;
+            }
+            if (isInjectedScript(stackMatch) && stackLines[index].startsWith(INJECTED_SCRIPT_STRING)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      function isEmptyObject(obj) {
+        return Object.keys(obj).length === 0 && !obj.prototype;
+      }
+      var updatedArgs = args ? [].concat(source).concat(args) : [source];
+      try {
+        trustedPruneInboundObject.apply(this, updatedArgs);
       } catch (e) {
         console.log(e);
       }
@@ -27857,6 +28377,7 @@
       "ubo-set-session-storage-item.js": setSessionStorageItem,
       "ubo-set-session-storage-item": setSessionStorageItem,
       "trusted-click-element": trustedClickElement,
+      "trusted-prune-inbound-object": trustedPruneInboundObject,
       "trusted-replace-fetch-response": trustedReplaceFetchResponse,
       "trusted-replace-node-text": trustedReplaceNodeText,
       "trusted-replace-xhr-response": trustedReplaceXhrResponse,

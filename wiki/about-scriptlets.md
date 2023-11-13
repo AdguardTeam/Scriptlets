@@ -2315,8 +2315,13 @@ example.org#%#//scriptlet('set-cookie', name, value[, path])
         - `yes` / `y`
         - `no` / `n`
         - `ok`
-        - `accept`/ `reject`
-        - `allow` / `deny`
+        - `on` / `off`
+        - `accept`/ `accepted` / `notaccepted`
+        - `reject` / `rejected`
+        - `allow` / `allowed`
+        - `disallow` / `deny`
+        - `enable` / `enabled`
+        - `disable` / `disabled`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -2359,7 +2364,7 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
 - `key` — required, key name to be set.
 - `value` — required, key value; possible values:
     - positive decimal integer `<= 32767`
-    - one of the predefined constants:
+    - one of the predefined constants in any case variation:
         - `undefined`
         - `false`
         - `true`
@@ -2369,6 +2374,8 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
         - `''` — empty string
         - `yes`
         - `no`
+        - `on`
+        - `off`
         - `$remove$` — remove specific item from localStorage
 
 ### Examples
@@ -2426,7 +2433,7 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
 - `key` — required, key name to be set.
 - `value` — required, key value; possible values:
     - positive decimal integer `<= 32767`
-    - one of the predefined constants:
+    - one of the predefined constants in any case variation:
         - `undefined`
         - `false`
         - `true`
@@ -2436,6 +2443,8 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
         - `''` — empty string
         - `yes`
         - `no`
+        - `on`
+        - `off`
         - `$remove$` — remove specific item from sessionStorage
 
 ### Examples

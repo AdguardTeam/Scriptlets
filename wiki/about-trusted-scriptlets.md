@@ -1,6 +1,7 @@
 # <a id="trusted-scriptlets"></a> Available Trusted Scriptlets
 
 - [trusted-click-element](#trusted-click-element)
+- [trusted-prune-inbound-object](#trusted-prune-inbound-object)
 - [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 - [trusted-replace-node-text](#trusted-replace-node-text)
 - [trusted-replace-xhr-response](#trusted-replace-xhr-response)
@@ -97,6 +98,86 @@ and each of them should match the syntax. Possible `name`s:
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-click-element.js)
+
+* * *
+
+## <a id="trusted-prune-inbound-object"></a> ⚡️ trusted-prune-inbound-object
+
+> Added in unknown.
+
+Removes listed properties from the result of calling specific function (if payload contains `Object`)
+and returns to the caller.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/commit/1c9da227d7
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('trusted-prune-inbound-object', functionName[, propsToRemove [, obligatoryProps [, stack]]])
+```
+
+- `functionName` — required, the name of the function to trap, it must have an object as an argument
+- `propsToRemove` — optional, string of space-separated properties to remove
+- `obligatoryProps` — optional, string of space-separated properties
+  which must be all present for the pruning to occur
+- `stack` — optional, string or regular expression that must match the current function call stack trace;
+  if regular expression is invalid it will be skipped
+
+> Note please that you can use wildcard `*` for chain property name,
+> e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
+
+### Examples
+
+1. Removes property `example` from the payload of the Object.getOwnPropertyNames call
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.getOwnPropertyNames', 'example')
+    ```
+
+    For instance, the following call will return `['one']`
+
+    ```html
+    Object.getOwnPropertyNames({ one: 1, example: true })
+    ```
+
+2. Removes property `ads` from the payload of the Object.keys call
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.keys', 'ads')
+    ```
+
+    For instance, the following call will return `['one', 'two']`
+
+    ```html
+    Object.keys({ one: 1, two: 2, ads: true })
+    ```
+
+3. Removes property `foo.bar` from the payload of the JSON.stringify call
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar')
+    ```
+
+    For instance, the following call will return `'{"foo":{"a":2},"b":3}'`
+
+    ```html
+    JSON.stringify({ foo: { bar: 1, a: 2 }, b: 3 })
+    ```
+
+4. Removes property `foo.bar` from the payload of the JSON.stringify call if its error stack trace contains `test.js`
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar', '', 'test.js')
+    ```
+
+5. Call with only first and third argument will log the current hostname and matched payload at the console
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', '', 'bar', '')
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-prune-inbound-object.js)
 
 * * *
 
