@@ -99,6 +99,7 @@
 |  | trusted-click-element.js |  |
 |  | trusted-prune-inbound-object.js |  |
 |  | trusted-prune-outbound-object.js |  |
+|  | trusted-set-session-storage-item.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

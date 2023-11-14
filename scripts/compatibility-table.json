@@ -313,6 +313,9 @@
         },
         {
             "ubo": "trusted-prune-outbound-object.js"
+        },
+        {
+            "ubo": "trusted-set-session-storage-item.js"
         }
     ],
     "redirects": [
