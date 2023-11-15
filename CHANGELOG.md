@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- regular expression support for removing items in `set-local-storage-item` and `set-session-storage-item` scriptlets
+  [#256](https://github.com/AdguardTeam/Scriptlets/issues/256)
 - ability to set proxy trap in `set-constant` scriptlet [#330](https://github.com/AdguardTeam/Scriptlets/issues/330)
 
 ## [v1.9.91] - 2023-11-13

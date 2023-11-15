@@ -178,4 +178,66 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has been removed');
         clearStorageItem(iName);
     });
+
+    test('Remove item from localStorage - regexp', (assert) => {
+        const iName = '/__test-.*_regexp/';
+        const iValue = '$remove$';
+        const firstRegexpStorageItem = '__test-first_item_remove_regexp';
+        const secondRegexpStorageItem = '__test-second_item_remove_regexp';
+
+        localStorage.setItem(firstRegexpStorageItem, '1');
+        localStorage.setItem(secondRegexpStorageItem, '2');
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(
+            window.localStorage.getItem(firstRegexpStorageItem),
+            null,
+            'localStorage item has been removed',
+        );
+        assert.strictEqual(
+            window.localStorage.getItem(secondRegexpStorageItem),
+            null,
+            'localStorage item has been removed',
+        );
+        clearStorageItem(firstRegexpStorageItem);
+        clearStorageItem(secondRegexpStorageItem);
+    });
+
+    test('Remove item from localStorage - regexp with flag i', (assert) => {
+        const iName = '/^__test-.*_regexp_case-insensitive/i';
+        const iValue = '$remove$';
+        const caseInsensitiveRegexpStorageItem = '__test-first_item_remove_regexp_CASE-inSensitive';
+
+        localStorage.setItem(caseInsensitiveRegexpStorageItem, 'abc');
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(
+            window.localStorage.getItem(caseInsensitiveRegexpStorageItem),
+            null,
+            'localStorage item has been removed',
+        );
+        clearStorageItem(caseInsensitiveRegexpStorageItem);
+    });
+
+    test('Remove item from localStorage - not regexp, starts with forward slash', (assert) => {
+        const iName = '/__test-';
+        const iValue = '$remove$';
+
+        localStorage.setItem(iName, '1');
+        // should not be removed
+        localStorage.setItem('/__test-2', '2');
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), null, 'localStorage item has been removed');
+        assert.strictEqual(
+            window.localStorage.getItem('/__test-2'),
+            '2',
+            'not matched localStorage item should not be removed',
+        );
+        clearStorageItem(iName);
+        clearStorageItem('/__test-2');
+    });
 }

@@ -5,6 +5,10 @@ import {
     setStorageItem,
     removeStorageItem,
     getLimitedStorageItemValue,
+    // following helpers are needed for helpers above
+    isValidStrPattern,
+    toRegExp,
+    escapeRegExp,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -26,7 +30,8 @@ import {
  * example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
  * ```
  *
- * - `key` — required, key name to be set.
+ * - `key` — required, key name to be set. Should be a string for setting,
+ *   but it also can be a regular expression for removing items from localStorage.
  * - `value` — required, key value; possible values:
  *     - positive decimal integer `<= 32767`
  *     - one of the predefined constants in any case variation:
@@ -52,6 +57,9 @@ import {
  *
  * ! Removes the item with key 'foo' from local storage
  * example.org#%#//scriptlet('set-local-storage-item', 'foo', '$remove$')
+ *
+ * ! Removes from local storage all items whose key matches the regular expression `/mp_.*_mixpanel/`
+ * example.org#%#//scriptlet('set-local-storage-item', '/mp_.*_mixpanel/', '$remove$')
  * ```
  *
  * @added v1.4.3.
@@ -96,4 +104,8 @@ setLocalStorageItem.injections = [
     setStorageItem,
     removeStorageItem,
     getLimitedStorageItemValue,
+    // following helpers are needed for helpers above
+    isValidStrPattern,
+    toRegExp,
+    escapeRegExp,
 ];

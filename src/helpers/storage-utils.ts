@@ -1,5 +1,6 @@
 import { nativeIsNaN } from './number-utils';
 import { logMessage } from './log-message';
+import { isValidStrPattern, toRegExp } from './string-utils';
 
 /**
  * Sets item to a specified storage, if storage isn't full.
@@ -29,7 +30,19 @@ export const setStorageItem = (source: Source, storage: Storage, key: string, va
  */
 export const removeStorageItem = (source: Source, storage: Storage, key: string): void => {
     try {
-        storage.removeItem(key);
+        if (key.startsWith('/')
+        && (key.endsWith('/') || key.endsWith('/i'))
+        && isValidStrPattern(key)) {
+            const regExpKey = toRegExp(key);
+            const storageKeys = Object.keys(storage);
+            storageKeys.forEach((storageKey) => {
+                if (regExpKey.test(storageKey)) {
+                    storage.removeItem(storageKey);
+                }
+            });
+        } else {
+            storage.removeItem(key);
+        }
     } catch (e) {
         const message = `Unable to remove storage item due to: ${(e as Error).message}`;
         logMessage(source, message);

@@ -136,46 +136,108 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.sessionStorage.getItem(cName), 'off', 'sessionStorage item has been set');
         clearStorageItem(cName);
     });
+
+    test('Set sessionStorage key with invalid value', (assert) => {
+        let cName = '__test-item_arrayItem';
+        let cValue = '["item"]';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_object';
+        cValue = '{"key":value"}';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_str';
+        cValue = 'test_string';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_bigInt';
+        cValue = '999999';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
+        clearStorageItem(cName);
+    });
+
+    test('Remove item from sessionStorage', (assert) => {
+        const cName = '__test-item_remove';
+        const cValue = '$remove$';
+
+        sessionStorage.setItem(cName, 'true');
+
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has been removed');
+        clearStorageItem(cName);
+    });
+
+    test('Remove item from sessionStorage - regexp', (assert) => {
+        const iName = '/__test-.*_regexp/';
+        const iValue = '$remove$';
+        const firstRegexpStorageItem = '__test-first_item_remove_regexp';
+        const secondRegexpStorageItem = '__test-second_item_remove_regexp';
+
+        sessionStorage.setItem(firstRegexpStorageItem, '1');
+        sessionStorage.setItem(secondRegexpStorageItem, '2');
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(
+            window.sessionStorage.getItem(firstRegexpStorageItem),
+            null,
+            'sessionStorage item has been removed',
+        );
+        assert.strictEqual(
+            window.sessionStorage.getItem(secondRegexpStorageItem),
+            null,
+            'sessionStorage item has been removed',
+        );
+        clearStorageItem(firstRegexpStorageItem);
+        clearStorageItem(secondRegexpStorageItem);
+    });
+
+    test('Remove item from sessionStorage - regexp with flag i', (assert) => {
+        const iName = '/^__test-.*_regexp_case-insensitive/i';
+        const iValue = '$remove$';
+        const caseInsensitiveRegexpStorageItem = '__test-first_item_remove_regexp_CASE-inSensitive';
+
+        sessionStorage.setItem(caseInsensitiveRegexpStorageItem, 'abc');
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(
+            window.sessionStorage.getItem(caseInsensitiveRegexpStorageItem),
+            null,
+            'sessionStorage item has been removed',
+        );
+        clearStorageItem(caseInsensitiveRegexpStorageItem);
+    });
+
+    test('Remove item from sessionStorage - not regexp, starts with forward slash', (assert) => {
+        const iName = '/__test-';
+        const iValue = '$remove$';
+
+        sessionStorage.setItem(iName, '1');
+        // should not be removed
+        sessionStorage.setItem('/__test-2', '2');
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(iName), null, 'sessionStorage item has been removed');
+        assert.strictEqual(
+            window.sessionStorage.getItem('/__test-2'),
+            '2',
+            'not matched sessionStorage item should not be removed',
+        );
+        clearStorageItem(iName);
+        clearStorageItem('/__test-2');
+    });
 }
-
-test('Set sessionStorage key with invalid value', (assert) => {
-    let cName = '__test-item_arrayItem';
-    let cValue = '["item"]';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
-    clearStorageItem(cName);
-
-    cName = '__test-item_object';
-    cValue = '{"key":value"}';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
-    clearStorageItem(cName);
-
-    cName = '__test-item_str';
-    cValue = 'test_string';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
-    clearStorageItem(cName);
-
-    cName = '__test-item_bigInt';
-    cValue = '999999';
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
-    assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has not been set');
-    clearStorageItem(cName);
-});
-
-test('Remove item from sessionStorage', (assert) => {
-    const cName = '__test-item_remove';
-    const cValue = '$remove$';
-
-    sessionStorage.setItem(cName, 'true');
-
-    runScriptlet(name, [cName, cValue]);
-    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-    assert.strictEqual(window.sessionStorage.getItem(cName), null, 'sessionStorage item has been removed');
-    clearStorageItem(cName);
-});
