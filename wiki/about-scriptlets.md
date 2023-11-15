@@ -2171,7 +2171,7 @@ https://github.com/adblockplus/adblockpluscore/blob/adblockpluschrome-3.9.4/lib/
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('set-constant', property, value[, stack])
+example.org#%#//scriptlet('set-constant', property, value[, stack,[ valueWrapper[, setProxyTrap]]])
 ```
 
 - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
@@ -2202,6 +2202,7 @@ example.org#%#//scriptlet('set-constant', property, value[, stack])
     - `asCallback` – function returning callback, that would return value
     - `asResolved` – Promise that would resolve with value
     - `asRejected` – Promise that would reject with value
+- `setProxyTrap` – optional, boolean, if set to true, proxy trap will be set on the object
 
 ### Examples
 
@@ -2239,6 +2240,15 @@ example.org#%#//scriptlet('set-constant', 'document.fourth', 'yes', '', 'asFunct
 example.org#%#//scriptlet('set-constant', 'document.fifth', '42', '', 'asRejected')
 
 ✔ document.fifth.catch((reason) => reason === 42) // promise rejects with specified number
+```
+
+```adblock
+! Any access to `window.foo.bar` will return `false` and the proxy trap will be set on the `foo` object
+! It may be required in the case when `foo` object is overwritten by website script
+! Related to this issue - https://github.com/AdguardTeam/Scriptlets/issues/330
+example.org#%#//scriptlet('set-constant', 'foo.bar', 'false', '', '', 'true')
+
+✔ window.foo.bar === false
 ```
 
 [Scriptlet source](../src/scriptlets/set-constant.js)
@@ -2361,7 +2371,8 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#set-local-storage-itemj
 example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
 ```
 
-- `key` — required, key name to be set.
+- `key` — required, key name to be set. Should be a string for setting,
+  but it also can be a regular expression for removing items from localStorage.
 - `value` — required, key value; possible values:
     - positive decimal integer `<= 32767`
     - one of the predefined constants in any case variation:
@@ -2387,6 +2398,9 @@ example.org#%#//scriptlet('set-local-storage-item', 'exit-intent-marketing', '1'
 
 ! Removes the item with key 'foo' from local storage
 example.org#%#//scriptlet('set-local-storage-item', 'foo', '$remove$')
+
+! Removes from local storage all items whose key matches the regular expression `/mp_.*_mixpanel/`
+example.org#%#//scriptlet('set-local-storage-item', '/mp_.*_mixpanel/', '$remove$')
 ```
 
 [Scriptlet source](../src/scriptlets/set-local-storage-item.js)
@@ -2430,7 +2444,8 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#set-session-storage-ite
 example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
 ```
 
-- `key` — required, key name to be set.
+- `key` — required, key name to be set. Should be a string for setting,
+  but it also can be a regular expression for removing items from localStorage.
 - `value` — required, key value; possible values:
     - positive decimal integer `<= 32767`
     - one of the predefined constants in any case variation:
@@ -2456,6 +2471,9 @@ example.org#%#//scriptlet('set-session-storage-item', 'exit-intent-marketing', '
 
 ! Removes the item with key 'foo' from session storage
 example.org#%#//scriptlet('set-session-storage-item', 'foo', '$remove$')
+
+! Removes from session storage all items whose key matches the regular expression `/mp_.*_mixpanel/`
+example.org#%#//scriptlet('set-session-storage-item', '/mp_.*_mixpanel/', '$remove$')
 ```
 
 [Scriptlet source](../src/scriptlets/set-session-storage-item.js)

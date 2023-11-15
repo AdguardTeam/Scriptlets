@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.91
+ * Version 1.9.96
  */
 
 (function (factory) {
@@ -2028,7 +2028,17 @@
      */
     var removeStorageItem = function removeStorageItem(source, storage, key) {
       try {
-        storage.removeItem(key);
+        if (key.startsWith('/') && (key.endsWith('/') || key.endsWith('/i')) && isValidStrPattern(key)) {
+          var regExpKey = toRegExp(key);
+          var storageKeys = Object.keys(storage);
+          storageKeys.forEach(function (storageKey) {
+            if (regExpKey.test(storageKey)) {
+              storage.removeItem(storageKey);
+            }
+          });
+        } else {
+          storage.removeItem(key);
+        }
       } catch (e) {
         var message = "Unable to remove storage item due to: ".concat(e.message);
         logMessage(source, message);
@@ -3726,7 +3736,7 @@
      * ### Syntax
      *
      * ```text
-     * example.org#%#//scriptlet('set-constant', property, value[, stack])
+     * example.org#%#//scriptlet('set-constant', property, value[, stack,[ valueWrapper[, setProxyTrap]]])
      * ```
      *
      * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
@@ -3757,6 +3767,7 @@
      *     - `asCallback` – function returning callback, that would return value
      *     - `asResolved` – Promise that would resolve with value
      *     - `asRejected` – Promise that would reject with value
+     * - `setProxyTrap` – optional, boolean, if set to true, proxy trap will be set on the object
      *
      * ### Examples
      *
@@ -3796,12 +3807,22 @@
      * ✔ document.fifth.catch((reason) => reason === 42) // promise rejects with specified number
      * ```
      *
+     * ```adblock
+     * ! Any access to `window.foo.bar` will return `false` and the proxy trap will be set on the `foo` object
+     * ! It may be required in the case when `foo` object is overwritten by website script
+     * ! Related to this issue - https://github.com/AdguardTeam/Scriptlets/issues/330
+     * example.org#%#//scriptlet('set-constant', 'foo.bar', 'false', '', '', 'true')
+     *
+     * ✔ window.foo.bar === false
+     * ```
+     *
      * @added v1.0.4.
      */
     /* eslint-enable max-len */
     function setConstant$1(source, property, value) {
       var stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
       var valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+      var setProxyTrap = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
       var uboAliases = ['set-constant.js', 'ubo-set-constant.js', 'set.js', 'ubo-set.js', 'ubo-set-constant', 'ubo-set'];
 
       /**
@@ -3963,7 +3984,7 @@
               // Get properties which should be checked and remove first one
               // because it's current object
               var propertiesToCheck = property.split('.').slice(1);
-              if (!isProxyTrapSet) {
+              if (setProxyTrap && !isProxyTrapSet) {
                 isProxyTrapSet = true;
                 a = new Proxy(a, {
                   get: function get(target, propertyKey, val) {
@@ -6534,7 +6555,8 @@
      * example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
      * ```
      *
-     * - `key` — required, key name to be set.
+     * - `key` — required, key name to be set. Should be a string for setting,
+     *   but it also can be a regular expression for removing items from localStorage.
      * - `value` — required, key value; possible values:
      *     - positive decimal integer `<= 32767`
      *     - one of the predefined constants in any case variation:
@@ -6560,6 +6582,9 @@
      *
      * ! Removes the item with key 'foo' from local storage
      * example.org#%#//scriptlet('set-local-storage-item', 'foo', '$remove$')
+     *
+     * ! Removes from local storage all items whose key matches the regular expression `/mp_.*_mixpanel/`
+     * example.org#%#//scriptlet('set-local-storage-item', '/mp_.*_mixpanel/', '$remove$')
      * ```
      *
      * @added v1.4.3.
@@ -6590,7 +6615,9 @@
     setLocalStorageItem$1.names = ['set-local-storage-item',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-local-storage-item.js', 'ubo-set-local-storage-item.js', 'ubo-set-local-storage-item'];
-    setLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue];
+    setLocalStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue,
+    // following helpers are needed for helpers above
+    isValidStrPattern, toRegExp, escapeRegExp];
 
     /* eslint-disable max-len */
     /**
@@ -6611,7 +6638,8 @@
      * example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
      * ```
      *
-     * - `key` — required, key name to be set.
+     * - `key` — required, key name to be set. Should be a string for setting,
+     *   but it also can be a regular expression for removing items from localStorage.
      * - `value` — required, key value; possible values:
      *     - positive decimal integer `<= 32767`
      *     - one of the predefined constants in any case variation:
@@ -6637,6 +6665,9 @@
      *
      * ! Removes the item with key 'foo' from session storage
      * example.org#%#//scriptlet('set-session-storage-item', 'foo', '$remove$')
+     *
+     * ! Removes from session storage all items whose key matches the regular expression `/mp_.*_mixpanel/`
+     * example.org#%#//scriptlet('set-session-storage-item', '/mp_.*_mixpanel/', '$remove$')
      * ```
      *
      * @added v1.4.3.
@@ -6667,7 +6698,9 @@
     setSessionStorageItem$1.names = ['set-session-storage-item',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-session-storage-item.js', 'ubo-set-session-storage-item.js', 'ubo-set-session-storage-item'];
-    setSessionStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue];
+    setSessionStorageItem$1.injections = [hit, logMessage, nativeIsNaN, setStorageItem, removeStorageItem, getLimitedStorageItemValue,
+    // following helpers are needed for helpers above
+    isValidStrPattern, toRegExp, escapeRegExp];
 
     /* eslint-disable max-len */
     /**
@@ -9924,7 +9957,7 @@
      *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', '', 'bar', '')
      *     ```
      *
-     * @added unknown.
+     * @added v1.9.91.
      */
     /* eslint-enable max-len */
     function trustedPruneInboundObject$1(source, functionName, propsToRemove, requiredInitialProps) {
@@ -24460,6 +24493,7 @@
       function setConstant(source, property, value) {
         var stack = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
         var valueWrapper = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
+        var setProxyTrap = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
         var uboAliases = ["set-constant.js", "ubo-set-constant.js", "set.js", "ubo-set.js", "ubo-set-constant", "ubo-set"];
         if (uboAliases.includes(source.name)) {
           if (stack.length !== 1 && !getNumberFromString(stack)) {
@@ -24581,7 +24615,7 @@
               }
               if (a instanceof Object) {
                 var propertiesToCheck = property.split(".").slice(1);
-                if (!isProxyTrapSet) {
+                if (setProxyTrap && !isProxyTrapSet) {
                   isProxyTrapSet = true;
                   a = new Proxy(a, {
                     get: function get(target, propertyKey, val) {
@@ -25260,7 +25294,17 @@
       }
       function removeStorageItem(source, storage, key) {
         try {
-          storage.removeItem(key);
+          if (key.startsWith("/") && (key.endsWith("/") || key.endsWith("/i")) && isValidStrPattern(key)) {
+            var regExpKey = toRegExp(key);
+            var storageKeys = Object.keys(storage);
+            storageKeys.forEach(function (storageKey) {
+              if (regExpKey.test(storageKey)) {
+                storage.removeItem(storageKey);
+              }
+            });
+          } else {
+            storage.removeItem(key);
+          }
         } catch (e) {
           var message = "Unable to remove storage item due to: ".concat(e.message);
           logMessage(source, message);
@@ -25292,6 +25336,59 @@
           throw new Error("Invalid value");
         }
         return validValue;
+      }
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+        var isValid;
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+        return isValid;
+      }
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
+        }
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
@@ -25437,7 +25534,17 @@
       }
       function removeStorageItem(source, storage, key) {
         try {
-          storage.removeItem(key);
+          if (key.startsWith("/") && (key.endsWith("/") || key.endsWith("/i")) && isValidStrPattern(key)) {
+            var regExpKey = toRegExp(key);
+            var storageKeys = Object.keys(storage);
+            storageKeys.forEach(function (storageKey) {
+              if (regExpKey.test(storageKey)) {
+                storage.removeItem(storageKey);
+              }
+            });
+          } else {
+            storage.removeItem(key);
+          }
         } catch (e) {
           var message = "Unable to remove storage item due to: ".concat(e.message);
           logMessage(source, message);
@@ -25469,6 +25576,59 @@
           throw new Error("Invalid value");
         }
         return validValue;
+      }
+      function isValidStrPattern(input) {
+        var FORWARD_SLASH = "/";
+        var str = escapeRegExp(input);
+        if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
+          str = input.slice(1, -1);
+        }
+        var isValid;
+        try {
+          isValid = new RegExp(str);
+          isValid = true;
+        } catch (e) {
+          isValid = false;
+        }
+        return isValid;
+      }
+      function toRegExp() {
+        var input = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+        var DEFAULT_VALUE = ".?";
+        var FORWARD_SLASH = "/";
+        if (input === "") {
+          return new RegExp(DEFAULT_VALUE);
+        }
+        var delimiterIndex = input.lastIndexOf(FORWARD_SLASH);
+        var flagsPart = input.substring(delimiterIndex + 1);
+        var regExpPart = input.substring(0, delimiterIndex + 1);
+        var isValidRegExpFlag = function isValidRegExpFlag(flag) {
+          if (!flag) {
+            return false;
+          }
+          try {
+            new RegExp("", flag);
+            return true;
+          } catch (ex) {
+            return false;
+          }
+        };
+        var getRegExpFlags = function getRegExpFlags(regExpStr, flagsStr) {
+          if (regExpStr.startsWith(FORWARD_SLASH) && regExpStr.endsWith(FORWARD_SLASH) && !regExpStr.endsWith("\\/") && isValidRegExpFlag(flagsStr)) {
+            return flagsStr;
+          }
+          return "";
+        };
+        var flags = getRegExpFlags(regExpPart, flagsPart);
+        if (input.startsWith(FORWARD_SLASH) && input.endsWith(FORWARD_SLASH) || flags) {
+          var regExpInput = flags ? regExpPart : input;
+          return new RegExp(regExpInput.slice(1, -1), flags);
+        }
+        var escaped = input.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(escaped);
+      }
+      function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
       try {
