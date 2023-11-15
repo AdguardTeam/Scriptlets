@@ -43,7 +43,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('set-constant', property, value[, stack])
+ * example.org#%#//scriptlet('set-constant', property, value[, stack,[ valueWrapper[, setProxyTrap]]])
  * ```
  *
  * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
@@ -74,6 +74,7 @@ import {
  *     - `asCallback` – function returning callback, that would return value
  *     - `asResolved` – Promise that would resolve with value
  *     - `asRejected` – Promise that would reject with value
+ * - `setProxyTrap` – optional, boolean, if set to true, proxy trap will be set on the object
  *
  * ### Examples
  *
@@ -113,10 +114,19 @@ import {
  * ✔ document.fifth.catch((reason) => reason === 42) // promise rejects with specified number
  * ```
  *
+ * ```adblock
+ * ! Any access to `window.foo.bar` will return `false` and the proxy trap will be set on the `foo` object
+ * ! It may be required in the case when `foo` object is overwritten by website script
+ * ! Related to this issue - https://github.com/AdguardTeam/Scriptlets/issues/330
+ * example.org#%#//scriptlet('set-constant', 'foo.bar', 'false', '', '', 'true')
+ *
+ * ✔ window.foo.bar === false
+ * ```
+ *
  * @added v1.0.4.
  */
 /* eslint-enable max-len */
-export function setConstant(source, property, value, stack = '', valueWrapper = '') {
+export function setConstant(source, property, value, stack = '', valueWrapper = '', setProxyTrap = false) {
     const uboAliases = [
         'set-constant.js',
         'ubo-set-constant.js',
@@ -299,7 +309,7 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
                     // Get properties which should be checked and remove first one
                     // because it's current object
                     const propertiesToCheck = property.split('.').slice(1);
-                    if (!isProxyTrapSet) {
+                    if (setProxyTrap && !isProxyTrapSet) {
                         isProxyTrapSet = true;
                         a = new Proxy(a, {
                             get: (target, propertyKey, val) => {

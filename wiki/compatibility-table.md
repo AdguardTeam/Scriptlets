@@ -84,7 +84,6 @@
 |  |  | race |
 |  | window.name-defuser.js |  |
 |  | spoof-css.js |  |
-|  | replace-node-text.js (rpnt.js) |  |
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
@@ -100,6 +99,7 @@
 |  | trusted-prune-inbound-object.js |  |
 |  | trusted-prune-outbound-object.js |  |
 |  | trusted-set-session-storage-item.js |  |
+|  | trusted-replace-node-text.js (trusted-rpnt.js, replace-node-text.js, rpnt.js) |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

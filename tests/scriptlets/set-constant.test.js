@@ -486,7 +486,7 @@ if (!isSupported) {
 
     // https://github.com/AdguardTeam/Scriptlets/issues/330
     test('Check overriden value - array', (assert) => {
-        runScriptletFromTag('pageData.__banners.0.commercial.mediaUrl', '');
+        runScriptletFromTag('pageData.__banners.0.commercial.mediaUrl', '', '', '', 'true');
         const done = assert.async();
         window.pageData = {
             __banners: [{
@@ -522,7 +522,7 @@ if (!isSupported) {
 
     // https://github.com/AdguardTeam/Scriptlets/issues/330
     test('Check overriden - array 2', (assert) => {
-        runScriptletFromTag('pageData.__banners.0.commercial.mediaUrl', '');
+        runScriptletFromTag('pageData.__banners.0.commercial.mediaUrl', '', '', '', 'true');
         const done = assert.async();
         window.pageData = {
             __banners: [{
@@ -652,7 +652,7 @@ if (!isSupported) {
 
     // https://github.com/AdguardTeam/Scriptlets/issues/330
     test('Check overriden value - object', (assert) => {
-        runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+        runScriptletFromTag('foo.prototype.abc.qwerty', 'false', '', '', 'true');
         window.foo = function name() { };
         window.foo.prototype = { bar: 1 };
         window.foo.prototype.abc = {
@@ -665,7 +665,7 @@ if (!isSupported) {
 
     // https://github.com/AdguardTeam/Scriptlets/issues/330
     test('Override value 2 times - object', (assert) => {
-        runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+        runScriptletFromTag('foo.prototype.abc.qwerty', 'false', '', '', 'true');
         window.foo = function name() { };
         window.foo.prototype = { bar: 1 };
         window.foo.prototype.abc = {
@@ -699,7 +699,7 @@ if (!isSupported) {
 
     // https://github.com/AdguardTeam/Scriptlets/issues/330
     test('Check overriden value - object + similar object which should not be overriden', (assert) => {
-        runScriptletFromTag('foo.prototype.abc.qwerty', 'false');
+        runScriptletFromTag('foo.prototype.abc.qwerty', 'false', '', '', 'true');
         window.foo = function name() { };
         window.foo.prototype = { bar: 1 };
         window.foo.prototype.abc = {
@@ -754,7 +754,7 @@ if (!isSupported) {
     });
 
     test('Test for reassignment 1', (assert) => {
-        runScriptletFromTag('zxcv.test.bar.qw', 'trueFunc');
+        runScriptletFromTag('zxcv.test.bar.qw', 'trueFunc', '', '', 'true');
         const funcOne = () => 1;
         window.zxcv = {};
         // Reassign
@@ -772,7 +772,7 @@ if (!isSupported) {
     });
 
     test('Test for reassignment 2', (assert) => {
-        runScriptletFromTag('WO.adblock.useAdblocker', 'false');
+        runScriptletFromTag('WO.adblock.useAdblocker', 'false', '', '', 'true');
 
         window.WO = window.WO || {};
         window.WO.strings = window.WO.strings || {};
@@ -797,7 +797,7 @@ if (!isSupported) {
     });
 
     test('Check if proxy was not set many times', (assert) => {
-        runScriptletFromTag('proxy.test.abc', 'trueFunc');
+        runScriptletFromTag('proxy.test.abc', 'trueFunc', '', '', 'true');
 
         // Expected number of calls to getOwnPropertyDescriptor
         const EXPECTED_NUMBER = 4;
