@@ -413,7 +413,8 @@
             "abp": "blank-js"
         },
         {
-            "adg": "noopjson"
+            "adg": "noopjson",
+            "ubo": "noop.json"
         },
         {
             "adg": "nooptext",

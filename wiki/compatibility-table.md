@@ -129,7 +129,7 @@
 | [noopcss](../wiki/about-redirects.md#noopcss) | noop.css | blank-css |
 | [noopframe](../wiki/about-redirects.md#noopframe) | noop.html | blank-html |
 | [noopjs](../wiki/about-redirects.md#noopjs) | noop.js | blank-js |
-| [noopjson](../wiki/about-redirects.md#noopjson) |  |  |
+| [noopjson](../wiki/about-redirects.md#noopjson) | noop.json |  |
 | [nooptext](../wiki/about-redirects.md#nooptext) | noop.txt | blank-text |
 | [noopmp3-0.1s](../wiki/about-redirects.md#noopmp3-0.1s) | noop-0.1s.mp3 | blank-mp3 |
 | [noopmp4-1s](../wiki/about-redirects.md#noopmp4-1s) | noop-1s.mp4 | blank-mp4 |

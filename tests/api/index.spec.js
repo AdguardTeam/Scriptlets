@@ -738,6 +738,10 @@ describe('Test redirects api methods', () => {
                 actual: 'nobab.js',
                 expected: 'prevent-bab',
             },
+            {
+                actual: 'noop.json',
+                expected: 'noopjson',
+            },
             // Valid uBO redirect name that aren't supported by ADG
             {
                 actual: 'outbrain-widget.js',

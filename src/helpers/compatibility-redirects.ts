@@ -120,6 +120,7 @@ const redirects: RedirectCompatibilityMap[] = [
     },
     {
         adg: 'noopjson',
+        ubo: 'noop.json',
     },
     {
         adg: 'nooptext',

@@ -127,6 +127,8 @@
     ```adblock
     ||example.org/geo/location$xmlhttprequest,redirect=noopjson
     ```
+  aliases:
+    - noop.json
   file: noopjson.json
   contentType: application/json
   content: '{}'
