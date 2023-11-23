@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `setPrivacySettings()` method to `googletagservices-gpt` redirect
+  [#344](https://github.com/AdguardTeam/Scriptlets/issues/344)
 - UBO alias `noop.json` for `noopjson` redirect
 
 ## [v1.9.96] - 2023-11-15

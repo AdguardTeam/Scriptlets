@@ -151,3 +151,12 @@ test('Test updateTargetingFromMap', (assert) => {
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });
+
+test('Test setPrivacySettings', (assert) => {
+    runRedirect(name);
+
+    const setPrivacySettings = window.googletag.pubads().setPrivacySettings({});
+    assert.ok(window.googletag, 'window.googletag have been created');
+    assert.strictEqual(typeof setPrivacySettings, 'object', 'setPrivacySettings has been mocked');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+});

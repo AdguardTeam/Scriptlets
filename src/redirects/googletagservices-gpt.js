@@ -303,6 +303,7 @@ export function GoogleTagServicesGpt(source) {
         setCookieOptions: noopThis,
         setForceSafeFrame: noopThis,
         setLocation: noopThis,
+        setPrivacySettings: noopThis,
         setPublisherProvidedId: noopThis,
         setRequestNonPersonalizedAds: noopThis,
         setSafeFrameConfig: noopThis,
