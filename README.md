@@ -21,17 +21,20 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
     - [CoreLibs](#corelibs)
     - [NPM module](#npm-module)
 - [API description](#api-description)
-    - [Scriptlets](#scriptlets-api-methods)
-        - [`invoke()`](#scriptlets-api--invoke)
-        - [`getScriptletFunction()`](#scriptlets-api--getScriptletFunction)
-        - [`isValidScriptletName()`](#scriptlets-api--isValidScriptletName)
-        - [`isValidScriptletRule()`](#scriptlets-api--isValidScriptletRule)
-        <!-- markdownlint-disable-next-line -->
-        - [`isAdgScriptletRule()`, `isUboScriptletRule()`, `isAbpSnippetRule()`](#scriptlets-api--is-Abg-Ubo-Abp-ScriptletRule)
-        - [`convertUboToAdg()`](#scriptlets-api--convertUboToAdg)
-        - [`convertAbpToAdg()`](#scriptlets-api--convertAbpToAdg)
-        - [`convertScriptletToAdg()`](#scriptlets-api--convertScriptletToAdg)
-        - [`convertAdgToUbo()`](#scriptlets-api--convertAdgToUbo)
+    - [Scriptlets](#scriptlets-api)
+        - [Methods](#scriptlets-api-methods)
+            - [`invoke()`](#scriptlets-api--invoke)
+            - [`getScriptletFunction()`](#scriptlets-api--getScriptletFunction)
+            - [`isValidScriptletName()`](#scriptlets-api--isValidScriptletName)
+            - [`isValidScriptletRule()`](#scriptlets-api--isValidScriptletRule)
+            <!-- markdownlint-disable-next-line -->
+            - [`isAdgScriptletRule()`, `isUboScriptletRule()`, `isAbpSnippetRule()`](#scriptlets-api--is-Abg-Ubo-Abp-ScriptletRule)
+            - [`convertUboToAdg()`](#scriptlets-api--convertUboToAdg)
+            - [`convertAbpToAdg()`](#scriptlets-api--convertAbpToAdg)
+            - [`convertScriptletToAdg()`](#scriptlets-api--convertScriptletToAdg)
+            - [`convertAdgToUbo()`](#scriptlets-api--convertAdgToUbo)
+        - [Properties](#scriptlets-api-properties)
+            - [`SCRIPTLETS_VERSION`](#scriptlets-api--version)
     - [Redirect resources](#redirects_api-methods)
         - [`getCode()`](#redirects-api--getCode)
         - [`isAdgRedirectRule()`](#redirects-api--isAdgRedirectRule)
@@ -362,7 +365,7 @@ npm install @adguard/scriptlets
 
 ### <a name="scriptlets-library"></a> Scriptlets library
 
-#### <a name="scriptlets-api-methods"></a> Scriptlets API methods
+#### <a name="scriptlets-api"></a> Scriptlets API
 
 You are welcome to use scriptlets and redirect resources as a CJS module.
 They can be imported from `dist/cjs/scriptlets.cjs.js`:
@@ -375,6 +378,8 @@ const { redirects } = require('scriptlets');
 
 And also there is a module at `dist/scriptlets.js`
 which has been exported to a global variable `scriptlets` with such methods:
+
+#### <a name="scriptlets-api-methods"></a> Methods
 
 ##### <a name="scriptlets-api--invoke"></a> `invoke()`
 
@@ -514,6 +519,13 @@ scriptlets.convertScriptletToAdg(rule);
 scriptlets.convertAdgToUbo(rule);
 ```
 
+#### <a name="scriptlets-api-properties"></a> Properties
+
+##### <a name="scriptlets-api--version"></a> `SCRIPTLETS_VERSION`
+
+type: `string`
+
+Current version of scriptlets library.
 
 #### <a name="redirects_api-methods"></a> Redirects API methods
 

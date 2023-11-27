@@ -8,6 +8,7 @@ import {
     convertScriptletToAdg,
     convertAdgScriptletToUbo,
 } from '../helpers/converter';
+import { version } from '../../package.json';
 
 // next module should be built and put in the tmp directory before building this module
 // eslint-disable-next-line import/no-unresolved,import/extensions
@@ -72,6 +73,7 @@ const scriptletsObject = (() => {
         convertScriptletToAdg,
         convertAdgToUbo: convertAdgScriptletToUbo,
         redirects,
+        SCRIPTLETS_VERSION: version,
     };
 })();
 

@@ -429,9 +429,11 @@ async function checkForABPRedirectsUpdates() {
             .filter((item) => !!item)
             .join();
         const message = `
-            Some sources were changed.
+            Some sources were changed:
             ${removed.length ? `Removed: ${removed}.` : ''}
             ${added.length ? `Added: ${added}.` : ''}
+
+            Update compatibility tables.
         `;
 
         throw new Error(message);

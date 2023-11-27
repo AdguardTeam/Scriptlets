@@ -1,4 +1,5 @@
 import resolve from '@rollup/plugin-node-resolve';
+import json from '@rollup/plugin-json';
 import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy';
@@ -27,6 +28,7 @@ const FOOTER = `
 `;
 
 const commonPlugins = [
+    json(),
     resolve({ extensions: ['.js', '.ts'] }),
     commonjs({
         include: path.resolve(__dirname, './node_modules/**'),

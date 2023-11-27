@@ -1,6 +1,11 @@
 declare module '@adguard/scriptlets' {
 
     /**
+     * Scriptlets version
+     */
+    const SCRIPTLETS_VERSION: string;
+
+    /**
      * Scriptlet properties
      */
     interface IConfiguration {
