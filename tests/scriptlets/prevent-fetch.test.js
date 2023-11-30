@@ -280,6 +280,20 @@ if (!isSupported) {
         done();
     });
 
+    test('simple fetch - returns empty string', async (assert) => {
+        const INPUT_JSON_PATH_1 = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const inputRequest1 = new Request(INPUT_JSON_PATH_1);
+
+        runScriptlet(name, ['test01', 'emptyStr']);
+        const done = assert.async();
+
+        const response = await fetch(inputRequest1);
+        const parsedData = await response.text();
+        assert.strictEqual(parsedData, '', 'Response is empty string');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('simple fetch - valid response type', async (assert) => {
         const OPAQUE_RESPONSE_TYPE = 'opaque';
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
@@ -310,6 +324,25 @@ if (!isSupported) {
         const response = await fetch(INPUT_JSON_PATH, init);
 
         assert.strictEqual(response.type, OPAQUE_RESPONSE_TYPE, 'Response type is set');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - opaque response type', async (assert) => {
+        const OPAQUE_RESPONSE_TYPE = 'opaque';
+        // blocked_request.json doesn't exist,
+        // it's required for test for blocked requests
+        const BLOCKED_REQUEST = `${FETCH_OBJECTS_PATH}/blocked_request.json`;
+
+        runScriptlet(name, ['blocked_request', '', OPAQUE_RESPONSE_TYPE]);
+        const done = assert.async();
+
+        const response = await fetch(BLOCKED_REQUEST);
+
+        assert.strictEqual(response.type, OPAQUE_RESPONSE_TYPE, 'Response type is set');
+        assert.strictEqual(response.status, 0, 'Response status is set to 0');
+        assert.strictEqual(response.statusText, '', 'Response statusText is set to empty string');
+        assert.strictEqual(response.body, null, 'Response body is set to null');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });

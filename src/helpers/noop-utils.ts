@@ -108,6 +108,17 @@ export const noopPromiseResolve = (
         type: { value: responseType },
     });
 
+    // In the case if responseType is opaque
+    // mock response' body, status & statusText to avoid adb checks
+    // https://github.com/AdguardTeam/Scriptlets/issues/364
+    if (responseType === 'opaque') {
+        Object.defineProperties(response, {
+            body: { value: null },
+            status: { value: 0 },
+            statusText: { value: '' },
+        });
+    }
+
     // eslint-disable-next-line consistent-return
     return Promise.resolve(response);
 };

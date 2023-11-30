@@ -47,6 +47,7 @@ import {
  *   defaults to `emptyObj`. Possible values:
  *     - `emptyObj` — empty object
  *     - `emptyArr` — empty array
+ *     - `emptyStr` — empty string
  * - `responseType` — optional, string for defining response type,
  *   original response type is used if not specified. Possible values:
  *     - `default`
@@ -125,6 +126,8 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         strResponseBody = '{}';
     } else if (responseBody === 'emptyArr') {
         strResponseBody = '[]';
+    } else if (responseBody === 'emptyStr') {
+        strResponseBody = '';
     } else {
         logMessage(source, `Invalid responseBody parameter: '${responseBody}'`);
         return;

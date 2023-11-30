@@ -11,10 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `emptyStr` value for `responseBody` in `prevent-fetch` scriptlet
+  [#364](https://github.com/AdguardTeam/Scriptlets/issues/364)
 - `setPrivacySettings()` method to `googletagservices-gpt` redirect
   [#344](https://github.com/AdguardTeam/Scriptlets/issues/344)
 - UBO alias `noop.json` for `noopjson` redirect
 - library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
+
+### Changed
+
+- `prevent-fetch` scriptlet, if `responseType` is set to `opaque` then now response `body` is set to `null`,
+  `status` is set to `0` and `statusText` is set to `''` [#364](https://github.com/AdguardTeam/Scriptlets/issues/364)
 
 ## [v1.9.96] - 2023-11-15
 
