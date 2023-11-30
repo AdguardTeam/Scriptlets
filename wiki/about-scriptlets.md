@@ -1162,6 +1162,7 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
   defaults to `emptyObj`. Possible values:
     - `emptyObj` — empty object
     - `emptyArr` — empty array
+    - `emptyStr` — empty string
 - `responseType` — optional, string for defining response type,
   original response type is used if not specified. Possible values:
     - `default`

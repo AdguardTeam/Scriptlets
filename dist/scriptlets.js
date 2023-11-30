@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.96
+ * Version 1.9.101
  */
 
 (function () {
@@ -1183,6 +1183,23 @@
           value: responseType
         }
       });
+
+      // In the case if responseType is opaque
+      // mock response' body, status & statusText to avoid adb checks
+      // https://github.com/AdguardTeam/Scriptlets/issues/364
+      if (responseType === 'opaque') {
+        Object.defineProperties(response, {
+          body: {
+            value: null
+          },
+          status: {
+            value: 0
+          },
+          statusText: {
+            value: ''
+          }
+        });
+      }
 
       // eslint-disable-next-line consistent-return
       return Promise.resolve(response);
@@ -6402,6 +6419,7 @@
      *   defaults to `emptyObj`. Possible values:
      *     - `emptyObj` — empty object
      *     - `emptyArr` — empty array
+     *     - `emptyStr` — empty string
      * - `responseType` — optional, string for defining response type,
      *   original response type is used if not specified. Possible values:
      *     - `default`
@@ -6478,6 +6496,8 @@
         strResponseBody = '{}';
       } else if (responseBody === 'emptyArr') {
         strResponseBody = '[]';
+      } else if (responseBody === 'emptyStr') {
+        strResponseBody = '';
       } else {
         logMessage(source, "Invalid responseBody parameter: '".concat(responseBody, "'"));
         return;
@@ -10158,7 +10178,8 @@
       ubo: 'noop.js',
       abp: 'blank-js'
     }, {
-      adg: 'noopjson'
+      adg: 'noopjson',
+      ubo: 'noop.json'
     }, {
       adg: 'nooptext',
       ubo: 'noop.txt',
@@ -11999,6 +12020,7 @@
         setCookieOptions: noopThis,
         setForceSafeFrame: noopThis,
         setLocation: noopThis,
+        setPrivacySettings: noopThis,
         setPublisherProvidedId: noopThis,
         setRequestNonPersonalizedAds: noopThis,
         setSafeFrameConfig: noopThis,
@@ -16895,6 +16917,7 @@
       "noop.js": "noopjs.js",
       "blank-js": "noopjs.js",
       noopjson: "noopjson.json",
+      "noop.json": "noopjson.json",
       nooptext: "nooptext.js",
       "noop.txt": "nooptext.js",
       "blank-text": "nooptext.js",
@@ -17043,6 +17066,8 @@
       convertRedirectNameToAdg,
       convertAdgRedirectToUbo
     };
+
+    var version = "1.9.101";
 
     function abortCurrentInlineScript(source, args) {
       function abortCurrentInlineScript(source, property, search) {
@@ -20841,6 +20866,19 @@
             value: responseType
           }
         });
+        if (responseType === "opaque") {
+          Object.defineProperties(response, {
+            body: {
+              value: null
+            },
+            status: {
+              value: 0
+            },
+            statusText: {
+              value: ""
+            }
+          });
+        }
         return Promise.resolve(response);
       }
       var updatedArgs = args ? [].concat(source).concat(args) : [source];
@@ -21757,6 +21795,8 @@
           strResponseBody = "{}";
         } else if (responseBody === "emptyArr") {
           strResponseBody = "[]";
+        } else if (responseBody === "emptyStr") {
+          strResponseBody = "";
         } else {
           logMessage(source, "Invalid responseBody parameter: '".concat(responseBody, "'"));
           return;
@@ -21922,6 +21962,19 @@
             value: responseType
           }
         });
+        if (responseType === "opaque") {
+          Object.defineProperties(response, {
+            body: {
+              value: null
+            },
+            status: {
+              value: 0
+            },
+            statusText: {
+              value: ""
+            }
+          });
+        }
         return Promise.resolve(response);
       }
       function modifyResponse(origResponse) {
@@ -24788,6 +24841,19 @@
             value: responseType
           }
         });
+        if (responseType === "opaque") {
+          Object.defineProperties(response, {
+            body: {
+              value: null
+            },
+            status: {
+              value: 0
+            },
+            statusText: {
+              value: ""
+            }
+          });
+        }
         return Promise.resolve(response);
       }
       function getPropertyInChain(base, chain) {
@@ -28606,7 +28672,8 @@
         convertAbpToAdg: convertAbpSnippetToAdg,
         convertScriptletToAdg,
         convertAdgToUbo: convertAdgScriptletToUbo,
-        redirects
+        redirects,
+        SCRIPTLETS_VERSION: version
       };
     }();
 
