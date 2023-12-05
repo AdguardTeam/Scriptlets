@@ -162,7 +162,7 @@ test('Test eventCallback mocking', (assert) => {
 test('Test .push(data) mocking', (assert) => {
     // emulate API
     window.dataLayer = [];
-    window.dataLayer.push = () => {};
+    window.dataLayer.push = () => { };
     const gtag = (data) => {
         window.dataLayer.push(data);
     };
@@ -233,4 +233,42 @@ test('Test callback mocking', (assert) => {
     gtag(data);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+});
+
+test('Test ga queued commands', (assert) => {
+    let firstScriptExecuted = false;
+    let secondScriptExecuted = false;
+
+    function gaFunction(...args) {
+        window.ga.q = window.ga.q || [];
+        window.ga.q.push(args);
+    }
+
+    window.ga = window.ga || gaFunction;
+
+    window.ga('create', 'UA-32789052-1', 'auto');
+
+    window.ga('send', 'pageview', {
+        page: '/',
+        hitCallback: () => {
+            firstScriptExecuted = true;
+        },
+    });
+
+    window.ga('event', 'pageview', {
+        page: '/test',
+        hitCallback: () => {
+            secondScriptExecuted = true;
+        },
+    });
+
+    runRedirect(name);
+
+    const done = assert.async();
+
+    setTimeout(() => {
+        assert.strictEqual(firstScriptExecuted, true, 'first hitCallback executed');
+        assert.strictEqual(secondScriptExecuted, true, 'second hitCallback executed');
+        done();
+    }, 20);
 });

@@ -34,6 +34,8 @@ export function GoogleAnalytics(source) {
     proto.send = noopFunc;
 
     const googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+    const queue = window[googleAnalyticsName]?.q;
+
     // a -- fake arg for 'ga.length < 1' antiadblock checking
     // eslint-disable-next-line no-unused-vars
     function ga(a) {
@@ -69,6 +71,14 @@ export function GoogleAnalytics(source) {
     ga.remove = noopFunc;
     ga.loaded = true;
     window[googleAnalyticsName] = ga;
+
+    if (Array.isArray(queue)) {
+        const push = (arg) => {
+            ga(...arg);
+        };
+        queue.push = push;
+        queue.forEach(push);
+    }
 
     const { dataLayer, google_optimize } = window; // eslint-disable-line camelcase
     if (dataLayer instanceof Object === false) {
