@@ -476,7 +476,7 @@
             "ubo": "popads-dummy.js"
         },
         {
-            "ubo": "addthis_widget.js"
+            "ubo": "addthis_widget.js (removed)"
         },
         {
             "ubo": "amazon_ads.js"
@@ -504,10 +504,10 @@
             "ubo": "hd-main.js"
         },
         {
-            "ubo": "ligatus_angular-tag.js"
+            "ubo": "ligatus_angular-tag.js (removed)"
         },
         {
-            "ubo": "monkeybroker.js"
+            "ubo": "monkeybroker.js (removed)"
         },
         {
             "ubo": "outbrain-widget.js"
@@ -519,7 +519,7 @@
             "ubo": "noeval.js"
         },
         {
-            "ubo": "mxpnl_mixpanel.js"
+            "ubo": "mxpnl_mixpanel.js (removed)"
         },
         {
             "ubo": "noop-0.5s.mp3"

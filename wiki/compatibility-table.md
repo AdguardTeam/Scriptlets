@@ -145,7 +145,7 @@
 | [prevent-popads-net](../wiki/about-redirects.md#prevent-popads-net) | popads.js |  |
 | [scorecardresearch-beacon](../wiki/about-redirects.md#scorecardresearch-beacon) | scorecardresearch_beacon.js |  |
 | [set-popads-dummy](../wiki/about-redirects.md#set-popads-dummy) | popads-dummy.js |  |
-|  | addthis_widget.js |  |
+|  | addthis_widget.js (removed) |  |
 |  | amazon_ads.js |  |
 |  | ampproject_v0.js |  |
 |  | chartbeat.js |  |
@@ -154,10 +154,10 @@
 |  | google-analytics_cx_api.js |  |
 |  | google-analytics_inpage_linkid.js |  |
 |  | hd-main.js |  |
-|  | ligatus_angular-tag.js |  |
-|  | monkeybroker.js |  |
+|  | ligatus_angular-tag.js (removed) |  |
+|  | monkeybroker.js (removed) |  |
 |  | outbrain-widget.js |  |
 |  | window.open-defuser.js (removed) |  |
 |  | noeval.js |  |
-|  | mxpnl_mixpanel.js |  |
+|  | mxpnl_mixpanel.js (removed) |  |
 |  | noop-0.5s.mp3 |  |
