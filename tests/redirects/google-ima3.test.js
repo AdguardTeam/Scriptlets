@@ -37,7 +37,7 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('Ima mocked', (assert) => {
-    assert.expect(28);
+    assert.expect(29);
 
     runRedirect(name);
 
@@ -113,4 +113,118 @@ test('Ima - check if DAI API is not discarded by the redirect', (assert) => {
 
     // other properties should be discarded
     assert.strictEqual(window.google.ima.bar, undefined, 'window.google.ima.bar is undefined');
+});
+
+test('Ima - omidAccessModeRules', (assert) => {
+    runRedirect(name);
+
+    const adConfig = () => {
+        const adObj = {
+            adHeight: 250,
+            adWidth: 300,
+            config: {
+                adContainerSelector: '#ad-container',
+            },
+        };
+        return adObj;
+    };
+
+    const AdsRequest = new window.google.ima.AdsRequest();
+    AdsRequest.linearAdSlotWidth = adConfig().adWidth;
+    AdsRequest.linearAdSlotHeight = adConfig().adHeight;
+    AdsRequest.nonLinearAdSlotWidth = adConfig().adWidth;
+    AdsRequest.nonLinearAdSlotHeight = adConfig().adHeight / 3;
+    AdsRequest.omidAccessModeRules = {};
+    // eslint-disable-next-line max-len
+    AdsRequest.omidAccessModeRules[window.google.ima.OmidVerificationVendor.GOOGLE] = window.google.ima.OmidAccessMode.FULL;
+    // eslint-disable-next-line max-len
+    AdsRequest.omidAccessModeRules[window.google.ima.OmidVerificationVendor.OTHER] = window.google.ima.OmidAccessMode.FULL;
+
+    assert.strictEqual(
+        window.google.ima.OmidVerificationVendor.GOOGLE,
+        9,
+        'OmidVerificationVendor.OTHER is equal to 9',
+    );
+    assert.strictEqual(
+        window.google.ima.OmidVerificationVendor.OTHER,
+        1,
+        'OmidVerificationVendor.OTHER is equal to 1',
+    );
+});
+
+test('Ima - getInnerError', (assert) => {
+    runRedirect(name);
+
+    const adError = new window.google.ima.AdError();
+    const innerError = adError.getInnerError();
+
+    const errorCode = innerError === null ? null : innerError.getErrorCode();
+
+    assert.strictEqual(errorCode, null, 'innerError is set to null');
+});
+
+test('Ima - AdDisplayContainer create element', (assert) => {
+    runRedirect(name);
+
+    const adContainer = document.createElement('div');
+    adContainer.classList.add('ad-container');
+    document.body.appendChild(adContainer);
+    const adDisplayContainer = new window.google.ima.AdDisplayContainer(adContainer);
+    const adDiv = adContainer.querySelector('div');
+
+    assert.strictEqual(typeof adDisplayContainer === 'object', true, 'adDisplayContainer is an object');
+    assert.ok(adDiv, 'adDiv exists');
+});
+
+test('Ima - EventHandler bind context', (assert) => {
+    const done = assert.async();
+
+    runRedirect(name);
+
+    let testPassed = false;
+
+    const ima = function ima() { };
+    ima.adErrorTest = function adErrorTest() {
+        testPassed = true;
+    };
+
+    ima.adDisplayContainer = function createAdContainer() {
+        this.adDisplayContainer = new window.google.ima.AdDisplayContainer(this.adContainer, this.videoTag);
+        this.adDisplayContainer.initialize();
+    };
+    ima.createAdLoader = function adLoader() {
+        this.adsLoader = new window.google.ima.AdsLoader(this.adDisplayContainer);
+        this.adsLoader.addEventListener(
+            window.google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+            this.onAdsManagerLoaded,
+            !1,
+            this,
+        );
+        this.adsLoader.addEventListener(
+            window.google.ima.AdErrorEvent.Type.AD_ERROR,
+            this.onAdError,
+            !1,
+            this,
+        );
+        ima.requestAds();
+    };
+    ima.onAdsManagerLoaded = function adsManager() { };
+    ima.onAdError = function adError() {
+        this.adErrorTest();
+    };
+    ima.requestAds = function requestAds() {
+        this.adsLoader.requestAds(this.createAdsRequest());
+    };
+    ima.createAdsRequest = function adsRequest() {
+        const adsRequest = new window.google.ima.AdsRequest();
+        adsRequest.adTagUrl = '';
+        return adsRequest;
+    };
+
+    ima.createAdLoader();
+
+    requestAnimationFrame(() => {
+        assert.strictEqual(testPassed, true, 'testPassed set to true');
+        done();
+    });
 });

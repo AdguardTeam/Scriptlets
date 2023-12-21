@@ -11,8 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `OmidVerificationVendor` object to `google-ima3` redirect
+  [#353](https://github.com/AdguardTeam/Scriptlets/issues/353)
 - `ga.q` (queued commands) to `google-analytics` redirect
   [#355](https://github.com/AdguardTeam/Scriptlets/issues/355)
+
+### Fixed
+
+- `addEventListener` in `EventHandler` in `google-ima3` redirect, now it binds context to callback
+  [#353](https://github.com/AdguardTeam/Scriptlets/issues/353)
+- `AdDisplayContainer` constructor in `google-ima3` redirect, now it adds div element to container
+  [#353](https://github.com/AdguardTeam/Scriptlets/issues/353)
+- `getInnerError` method in `google-ima3` redirect, now it returns `null`
+  [#353](https://github.com/AdguardTeam/Scriptlets/issues/353)
 
 ## [v1.9.101] - 2023-11-30
 

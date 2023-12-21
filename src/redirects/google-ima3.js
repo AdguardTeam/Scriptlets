@@ -28,7 +28,14 @@ export function GoogleIma3(source) {
 
     const ima = {};
 
-    const AdDisplayContainer = function () { };
+    const AdDisplayContainer = function (containerElement) {
+        const divElement = document.createElement('div');
+        divElement.style.setProperty('display', 'none', 'important');
+        divElement.style.setProperty('visibility', 'collapse', 'important');
+        if (containerElement) {
+            containerElement.appendChild(divElement);
+        }
+    };
     AdDisplayContainer.prototype.destroy = noopFunc;
     AdDisplayContainer.prototype.initialize = noopFunc;
 
@@ -118,8 +125,8 @@ export function GoogleIma3(source) {
     const EventHandler = function () {
         this.listeners = new Map();
         this._dispatch = function (e) {
-            const listeners = this.listeners.get(e.type) || [];
-            // eslint-disable-next-line no-restricted-syntax
+            let listeners = this.listeners.get(e.type);
+            listeners = listeners ? listeners.values() : [];
             for (const listener of Array.from(listeners)) {
                 try {
                     listener(e);
@@ -128,14 +135,28 @@ export function GoogleIma3(source) {
                 }
             }
         };
-        this.addEventListener = function (t, c) {
-            if (!this.listeners.has(t)) {
-                this.listeners.set(t, new Set());
+        this.addEventListener = function (types, callback, options, context) {
+            if (!Array.isArray(types)) {
+                types = [types];
             }
-            this.listeners.get(t).add(c);
+
+            for (let i = 0; i < types.length; i += 1) {
+                const type = types[i];
+                if (!this.listeners.has(type)) {
+                    this.listeners.set(type, new Map());
+                }
+                this.listeners.get(type).set(callback, callback.bind(context || this));
+            }
         };
-        this.removeEventListener = function (t, c) {
-            this.listeners.get(t)?.delete(c);
+        this.removeEventListener = function (types, callback) {
+            if (!Array.isArray(types)) {
+                types = [types];
+            }
+
+            for (let i = 0; i < types.length; i += 1) {
+                const type = types[i];
+                this.listeners.get(type)?.delete(callback);
+            }
         };
     };
 
@@ -253,6 +274,14 @@ export function GoogleIma3(source) {
         getTotalAds: () => 1,
     };
 
+    const UniversalAdIdInfo = function () { };
+    UniversalAdIdInfo.prototype.getAdIdRegistry = function () {
+        return '';
+    };
+    UniversalAdIdInfo.prototype.getAdIsValue = function () {
+        return '';
+    };
+
     const Ad = function () { };
     Ad.prototype = {
         pi: new AdPodInfo(),
@@ -276,7 +305,7 @@ export function GoogleIma3(source) {
         getTraffickingParametersString: () => '',
         getUiElements: () => [''],
         getUniversalAdIdRegistry: () => 'unknown',
-        getUniversalAdIds: () => [''],
+        getUniversalAdIds: () => [new UniversalAdIdInfo()],
         getUniversalAdIdValue: () => 'unknown',
         getVastMediaBitrate: () => 0,
         getVastMediaHeight: () => 0,
@@ -309,7 +338,9 @@ export function GoogleIma3(source) {
             return this.errorCode;
         };
 
-        this.getInnerError = function () { };
+        this.getInnerError = function () {
+            return null;
+        };
 
         this.getMessage = function () {
             return this.message;
@@ -433,11 +464,9 @@ export function GoogleIma3(source) {
     AdCuePoints.prototype = {
         getCuePoints: () => [],
         getAdIdRegistry: () => '',
-        getAdIsValue: () => '',
+        getAdIdValue: () => '',
     };
     const AdProgressData = noopFunc;
-
-    const UniversalAdIdInfo = function () { };
 
     Object.assign(ima, {
         AdCuePoints,
@@ -461,6 +490,26 @@ export function GoogleIma3(source) {
             DOMAIN: 'domain',
             FULL: 'full',
             LIMITED: 'limited',
+        },
+        OmidVerificationVendor: {
+            1: 'OTHER',
+            2: 'MOAT',
+            3: 'DOUBLEVERIFY',
+            4: 'INTEGRAL_AD_SCIENCE',
+            5: 'PIXELATE',
+            6: 'NIELSEN',
+            7: 'COMSCORE',
+            8: 'MEETRICS',
+            9: 'GOOGLE',
+            OTHER: 1,
+            MOAT: 2,
+            DOUBLEVERIFY: 3,
+            INTEGRAL_AD_SCIENCE: 4,
+            PIXELATE: 5,
+            NIELSEN: 6,
+            COMSCORE: 7,
+            MEETRICS: 8,
+            GOOGLE: 9,
         },
         settings: new ImaSdkSettings(),
         UiElements: {
