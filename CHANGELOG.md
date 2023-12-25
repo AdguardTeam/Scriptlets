@@ -1,13 +1,13 @@
 # Scriptlets and Redirect Resources Changelog
 
 All notable changes to this project will be documented in this file.
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
 <!-- TODO: add @added tag to the files with specific version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.9.105] - 2023-12-25
 
 ### Added
 
@@ -326,7 +326,7 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
     - `metrika-yandex-tag` [#254](https://github.com/AdguardTeam/Scriptlets/issues/254)
     - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.101...HEAD
+[v1.9.105]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.101...v1.9.105
 [v1.9.101]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.96...v1.9.101
 [v1.9.96]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.91...v1.9.96
 [v1.9.91]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.83...v1.9.91
@@ -347,3 +347,6 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
 [v1.7.13]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.10...v1.7.13
 [v1.7.10]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.3...v1.7.10
 [v1.7.3]: https://github.com/AdguardTeam/Scriptlets/compare/v1.6.55...v1.7.3
+
+[Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
+[Semantic Versioning]: https://semver.org/spec/v2.0.0.html
