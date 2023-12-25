@@ -1,7 +1,7 @@
 
 /**
  * AdGuard Scriptlets
- * Version 1.9.101
+ * Version 1.9.105
  */
 
 (function () {
@@ -11384,6 +11384,7 @@
      * @added v1.0.10.
      */
     function GoogleAnalytics(source) {
+      var _window$googleAnalyti;
       // eslint-disable-next-line func-names
       var Tracker = function Tracker() {}; // constructor
       var proto = Tracker.prototype;
@@ -11391,6 +11392,8 @@
       proto.set = noopFunc;
       proto.send = noopFunc;
       var googleAnalyticsName = window.GoogleAnalyticsObject || 'ga';
+      var queue = (_window$googleAnalyti = window[googleAnalyticsName]) === null || _window$googleAnalyti === void 0 ? void 0 : _window$googleAnalyti.q;
+
       // a -- fake arg for 'ga.length < 1' antiadblock checking
       // eslint-disable-next-line no-unused-vars
       function ga(a) {
@@ -11427,6 +11430,13 @@
       ga.remove = noopFunc;
       ga.loaded = true;
       window[googleAnalyticsName] = ga;
+      if (Array.isArray(queue)) {
+        var push = function push(arg) {
+          ga(...arg);
+        };
+        queue.push = push;
+        queue.forEach(push);
+      }
       var _window = window,
         dataLayer = _window.dataLayer,
         google_optimize = _window.google_optimize; // eslint-disable-line camelcase
@@ -12774,7 +12784,14 @@
       var _window$google$ima;
       var VERSION = '3.453.0';
       var ima = {};
-      var AdDisplayContainer = function AdDisplayContainer() {};
+      var AdDisplayContainer = function AdDisplayContainer(containerElement) {
+        var divElement = document.createElement('div');
+        divElement.style.setProperty('display', 'none', 'important');
+        divElement.style.setProperty('visibility', 'collapse', 'important');
+        if (containerElement) {
+          containerElement.appendChild(divElement);
+        }
+      };
       AdDisplayContainer.prototype.destroy = noopFunc;
       AdDisplayContainer.prototype.initialize = noopFunc;
       var ImaSdkSettings = function ImaSdkSettings() {};
@@ -12884,8 +12901,8 @@
       var EventHandler = function EventHandler() {
         this.listeners = new Map();
         this._dispatch = function (e) {
-          var listeners = this.listeners.get(e.type) || [];
-          // eslint-disable-next-line no-restricted-syntax
+          var listeners = this.listeners.get(e.type);
+          listeners = listeners ? listeners.values() : [];
           for (var _i = 0, _Array$from = Array.from(listeners); _i < _Array$from.length; _i++) {
             var listener = _Array$from[_i];
             try {
@@ -12895,15 +12912,27 @@
             }
           }
         };
-        this.addEventListener = function (t, c) {
-          if (!this.listeners.has(t)) {
-            this.listeners.set(t, new Set());
+        this.addEventListener = function (types, callback, options, context) {
+          if (!Array.isArray(types)) {
+            types = [types];
           }
-          this.listeners.get(t).add(c);
+          for (var i = 0; i < types.length; i += 1) {
+            var type = types[i];
+            if (!this.listeners.has(type)) {
+              this.listeners.set(type, new Map());
+            }
+            this.listeners.get(type).set(callback, callback.bind(context || this));
+          }
         };
-        this.removeEventListener = function (t, c) {
-          var _this$listeners$get;
-          (_this$listeners$get = this.listeners.get(t)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(c);
+        this.removeEventListener = function (types, callback) {
+          if (!Array.isArray(types)) {
+            types = [types];
+          }
+          for (var i = 0; i < types.length; i += 1) {
+            var _this$listeners$get;
+            var type = types[i];
+            (_this$listeners$get = this.listeners.get(type)) === null || _this$listeners$get === void 0 ? void 0 : _this$listeners$get.delete(callback);
+          }
         };
       };
       var AdsManager = new EventHandler();
@@ -13033,6 +13062,13 @@
           return 1;
         }
       };
+      var UniversalAdIdInfo = function UniversalAdIdInfo() {};
+      UniversalAdIdInfo.prototype.getAdIdRegistry = function () {
+        return '';
+      };
+      UniversalAdIdInfo.prototype.getAdIsValue = function () {
+        return '';
+      };
       var Ad = function Ad() {};
       Ad.prototype = {
         pi: new AdPodInfo(),
@@ -13097,7 +13133,7 @@
           return 'unknown';
         },
         getUniversalAdIds: function getUniversalAdIds() {
-          return [''];
+          return [new UniversalAdIdInfo()];
         },
         getUniversalAdIdValue: function getUniversalAdIdValue() {
           return 'unknown';
@@ -13157,7 +13193,9 @@
         this.getErrorCode = function () {
           return this.errorCode;
         };
-        this.getInnerError = function () {};
+        this.getInnerError = function () {
+          return null;
+        };
         this.getMessage = function () {
           return this.message;
         };
@@ -13277,12 +13315,11 @@
         getAdIdRegistry: function getAdIdRegistry() {
           return '';
         },
-        getAdIsValue: function getAdIsValue() {
+        getAdIdValue: function getAdIdValue() {
           return '';
         }
       };
       var AdProgressData = noopFunc;
-      var UniversalAdIdInfo = function UniversalAdIdInfo() {};
       Object.assign(ima, {
         AdCuePoints,
         AdDisplayContainer,
@@ -13305,6 +13342,26 @@
           DOMAIN: 'domain',
           FULL: 'full',
           LIMITED: 'limited'
+        },
+        OmidVerificationVendor: {
+          1: 'OTHER',
+          2: 'MOAT',
+          3: 'DOUBLEVERIFY',
+          4: 'INTEGRAL_AD_SCIENCE',
+          5: 'PIXELATE',
+          6: 'NIELSEN',
+          7: 'COMSCORE',
+          8: 'MEETRICS',
+          9: 'GOOGLE',
+          OTHER: 1,
+          MOAT: 2,
+          DOUBLEVERIFY: 3,
+          INTEGRAL_AD_SCIENCE: 4,
+          PIXELATE: 5,
+          NIELSEN: 6,
+          COMSCORE: 7,
+          MEETRICS: 8,
+          GOOGLE: 9
         },
         settings: new ImaSdkSettings(),
         UiElements: {
@@ -17067,7 +17124,7 @@
       convertAdgRedirectToUbo
     };
 
-    var version = "1.9.101";
+    var version = "1.9.105";
 
     function abortCurrentInlineScript(source, args) {
       function abortCurrentInlineScript(source, property, search) {
