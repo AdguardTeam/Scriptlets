@@ -33,6 +33,7 @@
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) | prevent-listener |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js (removed) |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
+| [prevent-element-src-loading](../wiki/about-scriptlets.md#prevent-element-src-loading) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
 | [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js (prevent-fetch.js) |  |
@@ -87,7 +88,7 @@
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
-|  | trusted-replace-fetch-response.js |  |
+|  | trusted-replace-fetch-response.js (trusted-rpfr.js) |  |
 |  | json-prune-fetch-response.js |  |
 |  | json-prune-xhr-response.js |  |
 |  | trusted-replace-xhr-response.js |  |

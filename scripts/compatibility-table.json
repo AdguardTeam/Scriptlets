@@ -97,6 +97,9 @@
             "adg": "prevent-bab"
         },
         {
+            "adg": "prevent-element-src-loading"
+        },
+        {
             "adg": "prevent-eval-if",
             "ubo": "noeval-if.js (prevent-eval-if.js)"
         },
@@ -279,7 +282,7 @@
             "ubo": "trusted-set-local-storage-item.js"
         },
         {
-            "ubo": "trusted-replace-fetch-response.js"
+            "ubo": "trusted-replace-fetch-response.js (trusted-rpfr.js)"
         },
         {
             "ubo": "json-prune-fetch-response.js"
