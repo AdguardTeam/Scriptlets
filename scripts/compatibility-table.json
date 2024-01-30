@@ -108,7 +108,7 @@
         },
         {
             "adg": "prevent-fetch",
-            "ubo": "no-fetch-if.js (prevent-fetch.js)"
+            "ubo": "prevent-fetch.js (no-fetch-if.js)"
         },
         {
             "adg": "prevent-xhr",
@@ -319,6 +319,12 @@
         },
         {
             "ubo": "trusted-replace-node-text.js (trusted-rpnt.js, replace-node-text.js, rpnt.js)"
+        },
+        {
+            "ubo": "remove-cache-storage-item.js"
+        },
+        {
+            "ubo": "trusted-replace-argument.js"
         }
     ],
     "redirects": [

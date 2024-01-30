@@ -31,8 +31,8 @@ import {
  * - `value` — required, cookie value; possible values:
  *     - number `>= 0 && <= 15`
  *     - one of the predefined constants in any case variation:
- *         - `true`
- *         - `false`
+ *         - `true` / `t`
+ *         - `false` / `f`
  *         - `yes` / `y`
  *         - `no` / `n`
  *         - `ok`
@@ -43,6 +43,7 @@ import {
  *         - `disallow` / `deny`
  *         - `enable` / `enabled`
  *         - `disable` / `disabled`
+ *         - `necessary` / `required`
  * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all

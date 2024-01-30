@@ -34,10 +34,8 @@ Build:
             yarn install
 
             # build docs to lint them later
-            # 1. check compatibility table updates and build it
-            yarn wiki:build-table
-            # 2. build other wiki docs
-            yarn wiki:build-docs
+            # check compatibility table updates and build it and build wiki docs
+            yarn wiki
 
             yarn test
             yarn build

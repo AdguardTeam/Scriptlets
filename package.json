@@ -12,6 +12,7 @@
         "lint:md": "markdownlint .",
         "lint-staged": "lint-staged",
         "prepare": "husky install",
+        "wiki": "yarn wiki:build-table && yarn wiki:build-docs",
         "wiki:build-table": "node ./scripts/check-sources-updates.js && node ./scripts/build-compatibility-table.js",
         "wiki:build-docs": "node scripts/build-docs.js",
         "prepublishOnly": "yarn build",

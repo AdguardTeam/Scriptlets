@@ -62,7 +62,9 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
 
     const allowedCookieValues = new Set([
         'true',
+        't',
         'false',
+        'f',
         'yes',
         'y',
         'no',
@@ -83,6 +85,8 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
         'enabled',
         'disable',
         'disabled',
+        'necessary',
+        'required',
     ]);
 
     let validValue;

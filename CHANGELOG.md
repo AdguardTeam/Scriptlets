@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: add @added tag to the files with specific version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## Unreleased
+
+### Added
+
+- New values `t`, `f`, `necessary`, `required` for `set-cookie` and `set-cookie-reload`
+  [#379](https://github.com/AdguardTeam/Scriptlets/issues/379)
+
 ## [v1.9.105] - 2023-12-25
 
 ### Added
