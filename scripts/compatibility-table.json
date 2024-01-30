@@ -270,6 +270,7 @@
             "ubo": "window.name-defuser.js"
         },
         {
+            "adg": "spoof-css",
             "ubo": "spoof-css.js"
         },
         {

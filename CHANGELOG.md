@@ -7,10 +7,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: add @added tag to the files with specific version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## Unreleased
+## [Unreleased]
 
 ### Added
 
+- `spoof-css` scriptlet [#317](https://github.com/AdguardTeam/Scriptlets/issues/317)
 - New values `t`, `f`, `necessary`, `required` for `set-cookie` and `set-cookie-reload`
   [#379](https://github.com/AdguardTeam/Scriptlets/issues/379)
 
@@ -333,6 +334,7 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
     - `metrika-yandex-tag` [#254](https://github.com/AdguardTeam/Scriptlets/issues/254)
     - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
 
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.105...HEAD
 [v1.9.105]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.101...v1.9.105
 [v1.9.101]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.96...v1.9.101
 [v1.9.96]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.91...v1.9.96

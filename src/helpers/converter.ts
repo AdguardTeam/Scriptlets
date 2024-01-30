@@ -61,8 +61,10 @@ const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 const ESCAPED_COMMA_SEPARATOR = '\\,';
 const COMMA_SEPARATOR = ',';
 
+const SPOOF_CSS_METHOD = 'spoofCSS';
 const REMOVE_ATTR_METHOD = 'removeAttr';
 const REMOVE_CLASS_METHOD = 'removeClass';
+const SPOOF_CSS_ALIASES = scriptletList[SPOOF_CSS_METHOD].names;
 const REMOVE_ATTR_ALIASES = scriptletList[REMOVE_ATTR_METHOD].names;
 const REMOVE_CLASS_ALIASES = scriptletList[REMOVE_CLASS_METHOD].names;
 const REMOVE_ATTR_CLASS_APPLYING = ['asap', 'stay', 'complete'];
@@ -157,7 +159,7 @@ const validateRemoveAttrClassArgs = (parsedArgs: string[]): string[] => {
     // https://github.com/AdguardTeam/Scriptlets/issues/133
     const lastArg = restArgs.pop() as string; // https://github.com/microsoft/TypeScript/issues/30406
     let applying;
-    // check the last parsed arg for matching possible 'applying' vale
+    // check the last parsed arg for matching possible 'applying' value
     if (REMOVE_ATTR_CLASS_APPLYING.some((el) => lastArg.includes(el))) {
         applying = lastArg;
     } else {
@@ -178,6 +180,25 @@ const validateRemoveAttrClassArgs = (parsedArgs: string[]): string[] => {
         ? [name, value, selector, applying]
         : [name, value, selector];
     return validArgs;
+};
+
+/**
+ * Convert uBO spoof-css scriptlet selectors argument to AdGuard syntax
+ *
+ * @param parsedArgs scriptlet arguments
+ * @returns converted args
+ */
+const convertSpoofCssArgs = (parsedArgs: string[]): string[] => {
+    const [name, selectors, ...restArgs] = parsedArgs;
+    // in uBO selectors are separated by escaped commas
+    // so it's necessary to replace it with just commas
+    const selector = replaceAll(
+        selectors,
+        ESCAPED_COMMA_SEPARATOR,
+        COMMA_SEPARATOR,
+    );
+    const convertedArgs = [name, selector, ...restArgs];
+    return convertedArgs;
 };
 
 /**
@@ -204,6 +225,10 @@ export const convertUboScriptletToAdg = (rule: string): string[] => {
 
     if (REMOVE_ATTR_ALIASES.includes(scriptletName) || REMOVE_CLASS_ALIASES.includes(scriptletName)) {
         parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
+    }
+
+    if (SPOOF_CSS_ALIASES.includes(scriptletName)) {
+        parsedArgs = convertSpoofCssArgs(parsedArgs);
     }
 
     const args = parsedArgs

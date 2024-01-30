@@ -36,7 +36,7 @@
 | [prevent-element-src-loading](../wiki/about-scriptlets.md#prevent-element-src-loading) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
-| [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | no-fetch-if.js (prevent-fetch.js) |  |
+| [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | prevent-fetch.js (no-fetch-if.js) |  |
 | [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | no-xhr-if.js (prevent-xhr.js) |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
 | [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | prevent-refresh.js (refresh-defuser.js) |  |
@@ -84,7 +84,7 @@
 |  |  | trace |
 |  |  | race |
 |  | window.name-defuser.js |  |
-|  | spoof-css.js |  |
+| [spoof-css](../wiki/about-scriptlets.md#spoof-css) | spoof-css.js |  |
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
@@ -101,6 +101,7 @@
 |  | trusted-prune-outbound-object.js |  |
 |  | trusted-set-session-storage-item.js |  |
 |  | trusted-replace-node-text.js (trusted-rpnt.js, replace-node-text.js, rpnt.js) |  |
+|  | trusted-replace-argument.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

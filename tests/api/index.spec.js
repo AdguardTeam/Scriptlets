@@ -191,6 +191,15 @@ describe('Test scriptlet api methods', () => {
                 actual: 'example.com##+js(set-session-storage-item, acceptCookies, false)',
                 expected: "example.com#%#//scriptlet('ubo-set-session-storage-item.js', 'acceptCookies', 'false')",
             },
+            {
+                actual: 'example.com##+js(spoof-css, .advert, display, block)',
+                expected: "example.com#%#//scriptlet('ubo-spoof-css.js', '.advert', 'display', 'block')",
+            },
+            {
+                actual: 'example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)',
+                // eslint-disable-next-line max-len
+                expected: "example.com#%#//scriptlet('ubo-spoof-css.js', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
+            },
         ];
         test.each(validTestCases)('$actual', ({ actual, expected }) => {
             expect(convertScriptletToAdg(actual)[0]).toStrictEqual(expected);
@@ -307,6 +316,15 @@ describe('Test scriptlet api methods', () => {
                 // Escapes commas in params
                 actual: String.raw`example.com#%#//scriptlet('adjust-setInterval', ',dataType:_', '1000', '0.02')`,
                 expected: String.raw`example.com##+js(nano-setInterval-booster, \,dataType:_, 1000, 0.02)`,
+            },
+            {
+                actual: "example.com#%#//scriptlet('spoof-css', '.advert', 'display', 'block')",
+                expected: 'example.com##+js(spoof-css, .advert, display, block)',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "example.com#%#//scriptlet('spoof-css', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
+                expected: 'example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)',
             },
         ];
         test.each(testCases)('$actual', ({ actual, expected }) => {
