@@ -59,7 +59,7 @@
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
-|  | golem.de.js |  |
+|  | golem.de.js (removed) |  |
 |  | href-sanitizer.js |  |
 |  | call-nothrow.js |  |
 |  |  | abort-on-iframe-property-read |
@@ -101,6 +101,7 @@
 |  | trusted-prune-outbound-object.js |  |
 |  | trusted-set-session-storage-item.js |  |
 |  | trusted-replace-node-text.js (trusted-rpnt.js, replace-node-text.js, rpnt.js) |  |
+|  | remove-cache-storage-item.js |  |
 |  | trusted-replace-argument.js |  |
 
 
