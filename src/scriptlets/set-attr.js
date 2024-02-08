@@ -1,10 +1,14 @@
 import {
-    hit,
+    setAttributeBySelector,
     observeDOMChanges,
     nativeIsNaN,
+    convertTypeToString,
     // following helpers should be imported and injected
     // because they are used by helpers above
+    defaultAttributeSetter,
+    logMessage,
     throttle,
+    hit,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -12,8 +16,8 @@ import {
  * @scriptlet set-attr
  *
  * @description
- * Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
- * and after that and after that on DOM tree changes.
+ * Sets attribute with permitted value on the specified elements. This scriptlet runs once when the page loads
+ * and after that on DOM tree changes.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-attrjs-
@@ -26,10 +30,11 @@ import {
  *
  * - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
  * - `attr` — required, attribute to be set
- * - `value` — the value to assign to the attribute, defaults to ''. Possible values:
+ * - `value` — optional, the value to assign to the attribute, defaults to ''. Possible values:
  *     - `''` — empty string
  *     - positive decimal integer `<= 32767`
  *     - `true` / `false` in any case variation
+ *     - `[attribute-name]` copy the value from attribute `attribute-name` on the same element.
  *
  * ### Examples
  *
@@ -41,16 +46,22 @@ import {
  *
  *     ```html
  *     <!-- before -->
- *     <a class="class">Some text</div>
+ *     <div>
+ *         <a>Another text</a>
+ *         <a class="class">Some text</a>
+ *     </div>
  *
  *     <!-- after -->
- *     <a class="class" test-attribute="0">Some text</div>
+ *     <div>
+ *         <a>Another text</a>
+ *         <a class="class" test-attribute="0">Some text</a>
+ *     </div>
  *     ```
  *
  * 1. Set attribute without value
  *
  *     ```adblock
- *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute')
+ *     example.org#%#//scriptlet('set-attr', 'a.class', 'test-attribute')
  *     ```
  *
  *     ```html
@@ -64,7 +75,7 @@ import {
  * 1. Set attribute value to `TRUE`
  *
  *     ```adblock
- *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'TRUE')
+ *     example.org#%#//scriptlet('set-attr', 'a.class', 'test-attribute', 'TRUE')
  *     ```
  *
  *     ```html
@@ -78,7 +89,7 @@ import {
  * 1. Set attribute value to `fAlse`
  *
  *     ```adblock
- *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'fAlse')
+ *     example.org#%#//scriptlet('set-attr', 'a.class', 'test-attribute', 'fAlse')
  *     ```
  *
  *     ```html
@@ -87,6 +98,20 @@ import {
  *
  *     <!-- after -->
  *     <a class="class" test-attribute="fAlse">Some text</div>
+ *     ```
+ *
+ * 1. Copy attribute value from the target element
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('set-attr', 'iframe[data-cur]', 'href', '[data-cur]')
+ *     ```
+ *
+ *     ```html
+ *     <!-- before -->
+ *     <iframe data-cur="good-url.com" href="bad-url.org"></iframe>
+ *
+ *     <!-- after -->
+ *     <iframe data-cur="good-url.com" href="good-url.com"></iframe>
  *     ```
  *
  * @added v1.5.0.
@@ -99,29 +124,37 @@ export function setAttr(source, selector, attr, value = '') {
 
     const allowedValues = ['true', 'false'];
 
-    // Drop strings that cant be parsed into number, negative numbers and numbers below 32767
-    if (value.length !== 0
-        && (nativeIsNaN(parseInt(value, 10))
-            || parseInt(value, 10) < 0
-            || parseInt(value, 10) > 32767)
-        && !allowedValues.includes(value.toLowerCase())) {
+    const shouldCopyValue = value.startsWith('[') && value.endsWith(']');
+
+    const isValidValue = value.length === 0
+        || (!nativeIsNaN(parseInt(value, 10))
+            && parseInt(value, 10) > 0
+            && parseInt(value, 10) < 32767)
+        || allowedValues.includes(value.toLowerCase());
+
+    if (!shouldCopyValue && !isValidValue) {
+        logMessage(source, `Invalid attribute value provided: '${convertTypeToString(value)}'`);
         return;
     }
 
-    const setAttr = () => {
-        const nodes = [].slice.call(document.querySelectorAll(selector));
-        let set = false;
-        nodes.forEach((node) => {
-            node.setAttribute(attr, value);
-            set = true;
-        });
-        if (set) {
-            hit(source);
-        }
-    };
+    /**
+     * Defining value extraction logic here allows us to remove
+     * excessive `shouldCopyValue` checks in observer callback.
+     * Setting plain value is a default behavior.
+     */
+    let attributeHandler;
+    if (shouldCopyValue) {
+        attributeHandler = (elem, attr, value) => {
+            const valueToCopy = elem.getAttribute(value.slice(1, -1));
+            if (valueToCopy === null) {
+                logMessage(source, `No element attribute found to copy value from: ${value}`);
+            }
+            elem.setAttribute(attr, valueToCopy);
+        };
+    }
 
-    setAttr();
-    observeDOMChanges(setAttr, true);
+    setAttributeBySelector(source, selector, attr, value, attributeHandler);
+    observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value, attributeHandler), true);
 }
 
 setAttr.names = [
@@ -133,10 +166,14 @@ setAttr.names = [
 ];
 
 setAttr.injections = [
-    hit,
+    setAttributeBySelector,
     observeDOMChanges,
     nativeIsNaN,
+    convertTypeToString,
     // following helpers should be imported and injected
     // because they are used by helpers above
+    defaultAttributeSetter,
+    logMessage,
     throttle,
+    hit,
 ];

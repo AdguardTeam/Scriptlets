@@ -59,6 +59,7 @@ module.exports = {
         'jsdoc/require-jsdoc': 0,
         'jsdoc/require-param': 0,
         'jsdoc/require-param-description': 0,
+        'jsdoc/require-returns': 'off',
         'jsdoc/require-returns-description': 0,
     },
     overrides: [

@@ -5,6 +5,7 @@
 export * from './add-event-listener-utils';
 export * from './adjust-set-utils';
 export * from './array-utils';
+export * from './attribute-utils';
 export * from './cookie-utils';
 export * from './noop-utils';
 export * from './number-utils';

@@ -4,30 +4,57 @@ import { runScriptlet, clearGlobalProps } from '../helpers';
 const { test, module } = QUnit;
 const name = 'set-attr';
 
-const afterEach = () => {
-    clearGlobalProps('hit', '__debug');
+const TARGET_ELEM_ID = 'target';
+const MISMATCH_ELEM_ID = 'mismatch';
+const TARGET_ATTR_NAME = 'test-attr';
+const TARGET_ELEM_BAIT_ATTR = 'another-attr-value';
+
+let context;
+let testCaseCount = 0;
+
+const createElement = (id) => {
+    const elem = document.createElement('div');
+    elem.id = id;
+    document.body.appendChild(elem);
+    return elem;
 };
 
-module(name, { afterEach });
+const createContext = () => {
+    // This prevents multiple observers from tinkering with other tests
+    testCaseCount += 1;
 
-const createHit = () => {
+    const targetUID = `${TARGET_ELEM_ID}-${testCaseCount}`;
+    const mismatchUID = `${MISMATCH_ELEM_ID}-${testCaseCount}`;
+
+    return {
+        targetSelector: `#${targetUID}`,
+        targetElem: createElement(targetUID),
+        mismatchElem: createElement(mismatchUID),
+        changeTargetAttribute(attributeName) {
+            return this.targetElem.setAttribute(attributeName, TARGET_ELEM_BAIT_ATTR);
+        },
+    };
+};
+
+const clearContext = () => {
+    context.targetElem.remove();
+    context.mismatchElem.remove();
+    context = null;
+};
+
+const beforeEach = () => {
+    context = createContext();
     window.__debug = () => {
         window.hit = 'FIRED';
     };
 };
 
-const createElem = (className) => {
-    const elem = document.createElement('div');
-    if (className) {
-        elem.classList.add(className);
-    }
-    document.body.appendChild(elem);
-    return elem;
+const afterEach = () => {
+    clearContext();
+    clearGlobalProps('hit', '__debug');
 };
 
-function changeAttr(elem, attr) {
-    elem.setAttribute(attr, 'not-test-value');
-}
+module(name, { beforeEach, afterEach });
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -48,205 +75,191 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('selector + attr + eligible number', (assert) => {
-    createHit();
-    const attr = 'test-attr';
     const value = '1234';
-    const matchClassName = 'testClass';
-    const mismatchClassName = 'none';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
 
-    const matchElem = createElem(matchClassName);
-    const mismatchElem = createElem(mismatchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr, value];
     runScriptlet(name, scriptletArgs);
 
-    assert.ok(matchElem.getAttribute(attr), `Attr ${attr} added to selector-matched element`);
-    assert.ok(matchElem.getAttribute(attr) === value, `New attr value ${value} is correct`);
-    assert.notOk(mismatchElem.getAttribute(attr), `Attr ${attr} is not added to mismatch element`);
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr value ${value} is correct`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
 
-    assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps('hit');
 
-    const done = assert.async();
+    context.changeTargetAttribute(TARGET_ATTR_NAME);
 
-    changeAttr(matchElem, attr);
+    const done = assert.async();
     setTimeout(() => {
-        assert.ok(matchElem.getAttribute(attr) === value, `New attr val ${value} is still correct`);
-        assert.strictEqual(window.hit, 'FIRED');
-        // Clean up test elements
-        matchElem.remove();
-        mismatchElem.remove();
+        assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr val ${value} is still correct`);
+        assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
         done();
     }, 30);
 });
 
 test('selector + attr + empty string', (assert) => {
-    createHit();
-    const attr = 'test-attr';
     const value = '';
-    const matchClassName = 'testClass';
-    const mismatchClassName = 'none';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
 
-    const matchElem = createElem(matchClassName);
-    const mismatchElem = createElem(mismatchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr, value];
     runScriptlet(name, scriptletArgs);
 
-    // Have to revert state here, as getAttribute returns value '' that evaluates to false
-    assert.ok(!matchElem.getAttribute(attr), `Attr ${attr} added to selector-matched element`);
-    assert.ok(matchElem.getAttribute(attr) === value, `New attr value ${value} is correct`);
-    assert.notOk(mismatchElem.getAttribute(attr), `Attr ${attr} is not added to mismatch element`);
-
-    assert.strictEqual(window.hit, 'FIRED');
-    matchElem.remove();
-    mismatchElem.remove();
-    clearGlobalProps('hit');
-});
-
-test('selector + attr + empty string', (assert) => {
-    createHit();
-    const attr = 'test-attr';
-    const matchClassName = 'testClass';
-    const mismatchClassName = 'none';
-
-    const matchElem = createElem(matchClassName);
-    const mismatchElem = createElem(mismatchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr];
-    runScriptlet(name, scriptletArgs);
-
-    // Have to revert state here, as getAttribute returns value '' that evaluates to false
-    assert.ok(!matchElem.getAttribute(attr), `Attr ${attr} added to selector-matched element`);
-    /* eslint-disable-next-line  quotes */
-    assert.ok(matchElem.getAttribute(attr) === '', `New attr value '' is correct`);
-    assert.notOk(mismatchElem.getAttribute(attr), `Attr ${attr} is not added to mismatch element`);
-
-    assert.strictEqual(window.hit, 'FIRED');
-    matchElem.remove();
-    mismatchElem.remove();
-    clearGlobalProps('hit');
-});
-
-test('selector + attr + negative number', (assert) => {
-    createHit();
-    const attr = 'test-attr';
-    const value = '-100';
-    const matchClassName = 'testClass';
-
-    const matchElem = createElem(matchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr, value];
-    runScriptlet(name, scriptletArgs);
-
-    assert.notOk(matchElem.getAttribute(attr), `Attr ${attr} is not added`);
-
-    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
-    clearGlobalProps('hit');
-    // Clean up test elements
-    matchElem.remove();
-});
-
-test('selector + attr + too big of a number', (assert) => {
-    createHit();
-    const attr = 'test-attr';
-    const value = '33000';
-    const matchClassName = 'testClass';
-
-    const matchElem = createElem(matchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr, value];
-    runScriptlet(name, scriptletArgs);
-
-    assert.notOk(matchElem.getAttribute(attr), `Attr ${attr} is not added`);
-
-    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
-    clearGlobalProps('hit');
-    // Clean up test elements
-    matchElem.remove();
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr value ${value} is correct`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
 });
 
 test('selector + attr + true', (assert) => {
-    createHit();
-    const attr = 'test-attr-true';
     const value = 'true';
-    const matchClassName = 'testClassTrue';
-    const mismatchClassName = 'none';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
 
-    const matchElem = createElem(matchClassName);
-    const mismatchElem = createElem(mismatchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr, value];
     runScriptlet(name, scriptletArgs);
 
-    assert.ok(matchElem.getAttribute(attr), `Attr ${attr} added to selector-matched element`);
-    assert.ok(matchElem.getAttribute(attr) === value, `New attr value ${value} is correct`);
-    assert.notOk(mismatchElem.getAttribute(attr), `Attr ${attr} is not added to mismatch element`);
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr value ${value} is correct`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
 
-    assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps('hit');
 
-    const done = assert.async();
+    context.changeTargetAttribute(TARGET_ATTR_NAME);
 
-    changeAttr(matchElem, attr);
+    const done = assert.async();
     setTimeout(() => {
-        assert.ok(matchElem.getAttribute(attr) === value, `New attr val ${value} is still correct`);
-        assert.strictEqual(window.hit, 'FIRED');
-        // Clean up test elements
-        matchElem.remove();
-        mismatchElem.remove();
+        assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr val ${value} is still correct`);
+        assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
         done();
     }, 30);
 });
 
 test('selector + attr + False', (assert) => {
-    createHit();
-    const attr = 'test-attr-False';
     const value = 'False';
-    const matchClassName = 'testClassFalse';
-    const mismatchClassName = 'none';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
 
-    const matchElem = createElem(matchClassName);
-    const mismatchElem = createElem(mismatchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr, value];
     runScriptlet(name, scriptletArgs);
 
-    assert.ok(matchElem.getAttribute(attr), `Attr ${attr} added to selector-matched element`);
-    assert.ok(matchElem.getAttribute(attr) === value, `New attr value ${value} is correct`);
-    assert.notOk(mismatchElem.getAttribute(attr), `Attr ${attr} is not added to mismatch element`);
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr value ${value} is correct`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
 
-    assert.strictEqual(window.hit, 'FIRED');
     clearGlobalProps('hit');
 
-    const done = assert.async();
+    context.changeTargetAttribute(TARGET_ATTR_NAME);
 
-    changeAttr(matchElem, attr);
+    const done = assert.async();
     setTimeout(() => {
-        assert.ok(matchElem.getAttribute(attr) === value, `New attr val ${value} is still correct`);
-        assert.strictEqual(window.hit, 'FIRED');
-        // Clean up test elements
-        matchElem.remove();
-        mismatchElem.remove();
+        assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr val ${value} is still correct`);
+        assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
         done();
     }, 30);
 });
 
-test('selector + attr + not allowed string', (assert) => {
-    createHit();
-    const attr = 'test-attr';
-    const value = 'trueNotAllowed';
-    const matchClassName = 'testClassNotAllowed';
+test('selector + attr + negative number', (assert) => {
+    const value = '-100';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
 
-    const matchElem = createElem(matchClassName);
-
-    const scriptletArgs = [`.${matchClassName}`, attr, value];
     runScriptlet(name, scriptletArgs);
 
-    assert.notOk(matchElem.getAttribute(attr), `Attr ${attr} is not added`);
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), null, `Attr ${TARGET_ATTR_NAME} is not added`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element either`,
+    );
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
 
-    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
+test('selector + attr + too big of a number', (assert) => {
+    const value = '33000';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
+
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), null, `Attr ${TARGET_ATTR_NAME} is not added`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element either`,
+    );
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('selector + attr + not allowed string', (assert) => {
+    const value = 'trueNotAllowed';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
+
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), null, `Attr ${TARGET_ATTR_NAME} is not added`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element either`,
+    );
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('copying another attribute value', (assert) => {
+    const ANOTHER_ATTRIBUTE_NAME = 'another-attr';
+    const ANOTHER_ATTRIBUTE_VALUE = '1234';
+    const SPECIAL_VALUE = `[${ANOTHER_ATTRIBUTE_NAME}]`;
+
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, SPECIAL_VALUE];
+
+    targetElem.setAttribute(ANOTHER_ATTRIBUTE_NAME, ANOTHER_ATTRIBUTE_VALUE);
+
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(
+        targetElem.getAttribute(TARGET_ATTR_NAME),
+        ANOTHER_ATTRIBUTE_VALUE,
+        `Value ${ANOTHER_ATTRIBUTE_VALUE} has been copied correctly`,
+    );
+    assert.strictEqual(
+        targetElem.getAttribute(ANOTHER_ATTRIBUTE_NAME),
+        ANOTHER_ATTRIBUTE_VALUE,
+        'Another attribute is intact',
+    );
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
+
     clearGlobalProps('hit');
-    // Clean up test elements
-    matchElem.remove();
+
+    context.changeTargetAttribute(TARGET_ATTR_NAME);
+
+    const done = assert.async();
+    setTimeout(() => {
+        assert.strictEqual(
+            targetElem.getAttribute(TARGET_ATTR_NAME),
+            ANOTHER_ATTRIBUTE_VALUE,
+            `New attr val ${ANOTHER_ATTRIBUTE_VALUE} is still correct`,
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
+        done();
+    }, 30);
 });
