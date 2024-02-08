@@ -201,6 +201,7 @@
             "ubo": "href-sanitizer.js"
         },
         {
+            "adg": "call-nothrow",
             "ubo": "call-nothrow.js"
         },
         {

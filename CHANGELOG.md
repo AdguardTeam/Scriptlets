@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `call-nothrow` scriptlet [#333](https://github.com/AdguardTeam/Scriptlets/issues/333)
 - `spoof-css` scriptlet [#317](https://github.com/AdguardTeam/Scriptlets/issues/317)
 - New values `t`, `f`, `necessary`, `required` for `set-cookie` and `set-cookie-reload`
   [#379](https://github.com/AdguardTeam/Scriptlets/issues/379)

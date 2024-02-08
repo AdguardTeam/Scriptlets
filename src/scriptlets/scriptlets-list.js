@@ -62,3 +62,4 @@ export * from './trusted-replace-node-text';
 export * from './evaldata-prune';
 export * from './trusted-prune-inbound-object';
 export * from './spoof-css';
+export * from './call-nothrow';

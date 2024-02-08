@@ -61,7 +61,7 @@
 |  | alert-buster.js |  |
 |  | golem.de.js (removed) |  |
 |  | href-sanitizer.js |  |
-|  | call-nothrow.js |  |
+| [call-nothrow](../wiki/about-scriptlets.md#call-nothrow) | call-nothrow.js |  |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
 |  |  | freeze-element |
