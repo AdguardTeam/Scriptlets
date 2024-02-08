@@ -3,7 +3,7 @@ import {
     toRegExp,
 } from './string-utils';
 import { ADG_SCRIPTLET_MASK } from './parse-rule';
-import * as scriptletsList from '../scriptlets/scriptlets-list';
+import * as scriptletListRaw from '../scriptlets/scriptlets-list';
 import redirects from './compatibility-redirects';
 
 interface UboToAdgCompatibilityObject extends RedirectCompatibilityMap {
@@ -99,7 +99,7 @@ const isAbpSnippetRule = (rule: string): boolean => {
  * @returns Array of all scriptlet objects.
  */
 const getScriptletsObjList = () => {
-    return Object.values(scriptletsList as ScriptletstList);
+    return Object.values(scriptletListRaw);
 };
 
 /**
@@ -110,18 +110,16 @@ const getScriptletsObjList = () => {
  * @returns {Function} Scriptlet function.
  */
 const getScriptletByName = (name: string, scriptlets: Scriptlet[]): Scriptlet | undefined => {
-    if (!scriptlets) {
-        scriptlets = getScriptletsObjList();
-    }
-    return scriptlets
-        .find((s) => {
-            return s.names
-                // full match name checking
-                && (s.names.includes(name)
-                    // or check ubo alias name without '.js' at the end
-                    || (!name.endsWith('.js') && s.names.includes(`${name}.js`))
-                );
-        });
+    const allScriptletsFns = scriptlets || getScriptletsObjList();
+
+    return allScriptletsFns.find((s) => {
+        return s.names
+            // full match name checking
+            && (s.names.includes(name)
+                // or check ubo alias name without '.js' at the end
+                || (!name.endsWith('.js') && s.names.includes(`${name}.js`))
+            );
+    });
 };
 
 const scriptletObjects = getScriptletsObjList();

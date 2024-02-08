@@ -1,7 +1,7 @@
 import { throttle } from './throttle';
 
 /**
- * DOM tree changes observer. Used for 'remove-attr' and 'remove-class' scriptlets
+ * DOM tree changes observer.
  *
  * @param callback function to call on each mutation
  * @param observeAttrs if observer should observe attributes changes

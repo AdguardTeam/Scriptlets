@@ -13,7 +13,9 @@ import validator from './validator';
 
 import { ADG_SCRIPTLET_MASK, parseRule } from './parse-rule';
 
-import * as scriptletList from '../scriptlets/scriptlets-list';
+import * as scriptletListRaw from '../scriptlets/scriptlets-list';
+
+const scriptletList: ScriptletsList = scriptletListRaw;
 
 type AdgScriptletObject = {
     name: string;
@@ -420,7 +422,7 @@ export const convertAdgScriptletToUbo = (rule: string): string | undefined => {
         // object of name and aliases for the Adg-scriptlet
         const scriptletNames = Object.keys(scriptletList);
         const adgScriptletObject = scriptletNames
-            .map((name) => (scriptletList as ScriptletstList)[name])
+            .map((name) => scriptletList[name])
             .map((scriptlet) => {
                 const [name, ...aliases] = scriptlet.names;
                 return { name, aliases };

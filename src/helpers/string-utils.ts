@@ -312,19 +312,21 @@ export const objectToString = (obj: ArbitraryObject): string => {
         return String(obj);
     }
 
-    return isEmptyObject(obj)
-        ? '{}'
-        : Object.entries(obj)
-            .map((pair) => {
-                const key = pair[0];
-                const value = pair[1];
-                let recordValueStr = value;
-                if (value instanceof Object) {
-                    recordValueStr = `{ ${objectToString(value as ArbitraryObject)} }`;
-                }
-                return `${key}:"${recordValueStr}"`;
-            })
-            .join(' ');
+    if (isEmptyObject(obj)) {
+        return '{}';
+    }
+
+    return Object.entries(obj)
+        .map((pair) => {
+            const key = pair[0];
+            const value = pair[1];
+            let recordValueStr = value;
+            if (value instanceof Object) {
+                recordValueStr = `{ ${objectToString(value as ArbitraryObject)} }`;
+            }
+            return `${key}:"${recordValueStr}"`;
+        })
+        .join(' ');
 };
 
 /**
@@ -334,20 +336,18 @@ export const objectToString = (obj: ArbitraryObject): string => {
  * @returns type's string representation
  */
 export const convertTypeToString = (value: unknown): string => {
-    let output;
     if (typeof value === 'undefined') {
-        output = 'undefined';
-    } else if (typeof value === 'object') {
+        return 'undefined';
+    }
+    if (typeof value === 'object') {
         if (value === null) {
-            output = 'null';
-        } else {
-            output = objectToString(value as Record<string, unknown>);
+            return 'null';
         }
-    } else {
-        output = value.toString();
+
+        return objectToString(value as ArbitraryObject);
     }
 
-    return output;
+    return (value as Pick<Object, 'toString'>).toString();
 };
 
 /**
@@ -403,11 +403,11 @@ export function generateRandomResponse(customResponseText: string): string | nul
     }
 
     const LENGTH_RANGE_LIMIT = 500 * 1000;
-    if ((rangeMax as number) > LENGTH_RANGE_LIMIT) {
+    if ((rangeMax) > LENGTH_RANGE_LIMIT) {
         return null;
     }
 
-    const length = getRandomIntInclusive((rangeMin as number), (rangeMax as number));
+    const length = getRandomIntInclusive((rangeMin), (rangeMax));
     customResponse = getRandomStrByLength(length);
     return customResponse;
 }

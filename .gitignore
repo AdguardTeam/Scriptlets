@@ -11,4 +11,7 @@ output.md
 tests/dist
 browserstack.err
 local.log
+
+# linters cache
 .eslintcache
+tsconfig.tsbuildinfo

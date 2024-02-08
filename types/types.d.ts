@@ -9,7 +9,7 @@ interface Source {
 }
 
 type ArbitraryObject = { [key: string | symbol | number]: unknown };
-type ArbitraryFunction = (...args: unknown[]) => unknown;
+type ArbitraryFunction = (...args: any[]) => unknown;
 type NoopFunc = () => void;
 type TrueFunc = () => true;
 type Helper = ArbitraryFunction;
@@ -20,14 +20,14 @@ interface PageFunction {
 }
 
 interface Scriptlet extends PageFunction {
-    (source: Source, ...args: Array<string | number>): void;
+    (source: Source, ...args: any[]): void;
 }
 
 interface Redirect extends PageFunction {
     (source: Source): void;
 }
 
-type ScriptletstList = Record<string, Scriptlet>;
+type ScriptletsList = Record<string, Scriptlet>;
 
 type ChainBase = {
     [key: string]: ChainBase;

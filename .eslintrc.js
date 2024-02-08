@@ -24,7 +24,7 @@ module.exports = {
         'import/resolver': {
             typescript: {
                 alwaysTryTypes: true,
-                project: 'tsconfig.eslint.json',
+                project: 'tsconfig.json',
             },
         },
     },
@@ -67,7 +67,7 @@ module.exports = {
             parser: '@typescript-eslint/parser',
             parserOptions: {
                 tsconfigRootDir: path.join(__dirname),
-                project: 'tsconfig.eslint.json',
+                project: 'tsconfig.json',
             },
             extends: [
                 'airbnb-typescript/base',

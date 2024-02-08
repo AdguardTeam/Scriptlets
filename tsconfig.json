@@ -3,9 +3,15 @@
         "target": "esnext",
         "moduleResolution": "node",
         "allowJs": true,
+        "skipLibCheck": true,
         "noEmit": true,
         "strict": true,
         "lib":["DOM"],
+        "incremental": true,
         "esModuleInterop": true,
-    }
+    },
+    "exclude": [
+        "node_modules",
+        "dist",
+    ],
 }
