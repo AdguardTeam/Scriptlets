@@ -24,6 +24,7 @@ export * from './string-utils';
 export * from './log-message';
 export * from './create-on-error-handler';
 export * from './get-descriptor-addon';
+export * from './get-error-message';
 export * from './get-property-in-chain';
 export * from './get-wildcard-property-in-chain';
 export * from './hit';

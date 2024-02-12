@@ -82,7 +82,7 @@ export const getAddedNodes = (mutations: MutationRecord[]): Node[] => {
  */
 export const observeDocumentWithTimeout = (
     callback: MutationCallback,
-    options: MutationObserverInit,
+    options: MutationObserverInit = { subtree: true, childList: true },
     timeout = 10000,
 ): void => {
     const documentObserver = new MutationObserver((mutations, observer) => {

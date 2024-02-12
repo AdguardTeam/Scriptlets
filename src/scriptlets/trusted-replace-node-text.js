@@ -133,10 +133,7 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
     }
 
     // and newly added nodes
-    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes), {
-        childList: true,
-        subtree: true,
-    });
+    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes));
 }
 
 trustedReplaceNodeText.names = [

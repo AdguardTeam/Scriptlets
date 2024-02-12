@@ -64,3 +64,4 @@ export * from './trusted-prune-inbound-object';
 export * from './trusted-set-attr';
 export * from './spoof-css';
 export * from './call-nothrow';
+export * from './trusted-create-element';

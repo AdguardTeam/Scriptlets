@@ -106,10 +106,7 @@ export function removeNodeText(source, nodeName, textMatch) {
     }
 
     // and newly added nodes
-    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes), {
-        childList: true,
-        subtree: true,
-    });
+    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes));
 }
 
 removeNodeText.names = [

@@ -13,8 +13,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `call-nothrow` scriptlet [#333](https://github.com/AdguardTeam/Scriptlets/issues/333)
 - `spoof-css` scriptlet [#317](https://github.com/AdguardTeam/Scriptlets/issues/317)
+- `trusted-create-element` scriptlet [#278](https://github.com/AdguardTeam/Scriptlets/issues/278)
 - `trusted-set-attr` scriptlet [#281](https://github.com/AdguardTeam/Scriptlets/issues/281)
 - Ability of `set-attr` to set an attribute value as a copy of another attribute value of the same element.
+- UBO alias for `set-cookie-reload` scriptlet [#332](https://github.com/AdguardTeam/Scriptlets/issues/332)
 - New values `t`, `f`, `necessary`, `required` for `set-cookie` and `set-cookie-reload`
   [#379](https://github.com/AdguardTeam/Scriptlets/issues/379)
 
