@@ -5,6 +5,7 @@
 - [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 - [trusted-replace-node-text](#trusted-replace-node-text)
 - [trusted-replace-xhr-response](#trusted-replace-xhr-response)
+- [trusted-set-attr](#trusted-set-attr)
 - [trusted-set-constant](#trusted-set-constant)
 - [trusted-set-cookie-reload](#trusted-set-cookie-reload)
 - [trusted-set-cookie](#trusted-set-cookie)
@@ -387,6 +388,91 @@ example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-replace-xhr-response.js)
+
+* * *
+
+## <a id="trusted-set-attr"></a> ⚡️ trusted-set-attr
+
+> Added in v1.10.1.
+
+Sets attribute with arbitrary value on the specified elements. This scriptlet runs once when the page loads
+and after that on DOM tree changes.
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('trusted-set-attr', selector, attr[, value])
+```
+
+- `selector` — required, CSS selector, specifies DOM nodes to set attributes on
+- `attr` — required, attribute to be set
+- `value` — optional, the value to assign to the attribute, defaults to ''.
+
+### Examples
+
+1. Set attribute by selector
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-attr', 'div.class > a.class', 'test-attribute', '[true, true]')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a>Another text</a>
+        <a class="class">Some text</a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a>Another text</a>
+        <a class="class" test-attribute="[true, true]">Some text</a>
+    </div>
+    ```
+
+1. Set attribute without value
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-attr', 'a.class', 'test-attribute')
+    ```
+
+    ```html
+    <!-- before -->
+    <a class="class">Some text</div>
+
+    <!-- after -->
+    <a class="class" test-attribute>Some text</div>
+    ```
+
+1. Set attribute value to `MTIzNTY=`
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-attr', 'a.class', 'test-attribute', 'MTIzNTY=')
+    ```
+
+    ```html
+    <!-- before -->
+    <a class="class">Some text</div>
+
+    <!-- after -->
+    <a class="class" test-attribute="MTIzNTY=">Some text</div>
+    ```
+
+1. Set attribute value to `{ playback: false }`
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-attr', 'a.class', 'test-attribute', '{ playback: false }')
+    ```
+
+    ```html
+    <!-- before -->
+    <a class="class">Some text</div>
+
+    <!-- after -->
+    <a class="class" test-attribute="{ playback: false }">Some text</div>
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-set-attr.js)
 
 * * *
 

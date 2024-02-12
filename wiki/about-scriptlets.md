@@ -6,6 +6,7 @@
 - [abort-on-stack-trace](#abort-on-stack-trace)
 - [adjust-setInterval](#adjust-setinterval)
 - [adjust-setTimeout](#adjust-settimeout)
+- [call-nothrow](#call-nothrow)
 - [close-window](#close-window)
 - [debug-current-inline-script](#debug-current-inline-script)
 - [debug-on-property-read](#debug-on-property-read)
@@ -50,6 +51,7 @@
 - [set-local-storage-item](#set-local-storage-item)
 - [set-popads-dummy](#set-popads-dummy)
 - [set-session-storage-item](#set-session-storage-item)
+- [spoof-css](#spoof-css)
 - [xml-prune](#xml-prune)
 
 * * *
@@ -388,6 +390,54 @@ example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, bo
     ```
 
 [Scriptlet source](../src/scriptlets/adjust-setTimeout.js)
+
+* * *
+
+## <a id="call-nothrow"></a> ⚡️ call-nothrow
+
+> Added in v1.10.1.
+
+Prevents an exception from being thrown and returns undefined when a specific function is called.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#call-nothrowjs-
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('call-nothrow', functionName)
+```
+
+- `functionName` — required, the name of the function to trap
+
+### Examples
+
+1. Prevents an exception from being thrown when `Object.defineProperty` is called:
+
+    ```adblock
+    example.org#%#//scriptlet('call-nothrow', 'Object.defineProperty')
+    ```
+
+    For instance, the following call normally throws an error, but the scriptlet catches it and returns undefined:
+
+    ```javascript
+    Object.defineProperty(window, 'foo', { value: true });
+    Object.defineProperty(window, 'foo', { value: false });
+    ```
+
+2. Prevents an exception from being thrown when `JSON.parse` is called:
+
+    ```adblock
+    example.org#%#//scriptlet('call-nothrow', 'JSON.parse')
+    ```
+
+    For instance, the following call normally throws an error, but the scriptlet catches it and returns undefined:
+
+    ```javascript
+    JSON.parse('foo');
+    ```
+
+[Scriptlet source](../src/scriptlets/call-nothrow.js)
 
 * * *
 
@@ -2072,8 +2122,8 @@ If matched, the whole text will be removed. Case sensitive.
 
 > Added in v1.5.0.
 
-Sets the specified attribute on the specified elements. This scriptlet runs once when the page loads
-and after that and after that on DOM tree changes.
+Sets attribute with permitted value on the specified elements. This scriptlet runs once when the page loads
+and after that on DOM tree changes.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#set-attrjs-
@@ -2086,10 +2136,11 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 
 - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
 - `attr` — required, attribute to be set
-- `value` — the value to assign to the attribute, defaults to ''. Possible values:
+- `value` — optional, the value to assign to the attribute, defaults to ''. Possible values:
     - `''` — empty string
     - positive decimal integer `<= 32767`
     - `true` / `false` in any case variation
+    - `[attribute-name]` copy the value from attribute `attribute-name` on the same element.
 
 ### Examples
 
@@ -2101,16 +2152,22 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 
     ```html
     <!-- before -->
-    <a class="class">Some text</div>
+    <div>
+        <a>Another text</a>
+        <a class="class">Some text</a>
+    </div>
 
     <!-- after -->
-    <a class="class" test-attribute="0">Some text</div>
+    <div>
+        <a>Another text</a>
+        <a class="class" test-attribute="0">Some text</a>
+    </div>
     ```
 
 1. Set attribute without value
 
     ```adblock
-    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute')
+    example.org#%#//scriptlet('set-attr', 'a.class', 'test-attribute')
     ```
 
     ```html
@@ -2124,7 +2181,7 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 1. Set attribute value to `TRUE`
 
     ```adblock
-    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'TRUE')
+    example.org#%#//scriptlet('set-attr', 'a.class', 'test-attribute', 'TRUE')
     ```
 
     ```html
@@ -2138,7 +2195,7 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 1. Set attribute value to `fAlse`
 
     ```adblock
-    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', 'fAlse')
+    example.org#%#//scriptlet('set-attr', 'a.class', 'test-attribute', 'fAlse')
     ```
 
     ```html
@@ -2147,6 +2204,20 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 
     <!-- after -->
     <a class="class" test-attribute="fAlse">Some text</div>
+    ```
+
+1. Copy attribute value from the target element
+
+    ```adblock
+    example.org#%#//scriptlet('set-attr', 'iframe[data-cur]', 'href', '[data-cur]')
+    ```
+
+    ```html
+    <!-- before -->
+    <iframe data-cur="good-url.com" href="bad-url.org"></iframe>
+
+    <!-- after -->
+    <iframe data-cur="good-url.com" href="good-url.com"></iframe>
     ```
 
 [Scriptlet source](../src/scriptlets/set-attr.js)
@@ -2274,13 +2345,19 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
 - `value` — required, cookie value; possible values:
     - number `>= 0 && <= 15`
     - one of the predefined constants in any case variation:
-        - `true`
-        - `false`
+        - `true` / `t`
+        - `false` / `f`
         - `yes` / `y`
         - `no` / `n`
         - `ok`
-        - `accept`/ `reject`
-        - `allow` / `deny`
+        - `on` / `off`
+        - `accept`/ `accepted` / `notaccepted`
+        - `reject` / `rejected`
+        - `allow` / `allowed`
+        - `disallow` / `deny`
+        - `enable` / `enabled`
+        - `disable` / `disabled`
+        - `necessary` / `required`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -2321,8 +2398,8 @@ example.org#%#//scriptlet('set-cookie', name, value[, path])
 - `value` — required, cookie value; possible values:
     - number `>= 0 && <= 15`
     - one of the predefined constants in any case variation:
-        - `true`
-        - `false`
+        - `true` / `t`
+        - `false` / `f`
         - `yes` / `y`
         - `no` / `n`
         - `ok`
@@ -2333,6 +2410,7 @@ example.org#%#//scriptlet('set-cookie', name, value[, path])
         - `disallow` / `deny`
         - `enable` / `enabled`
         - `disable` / `disabled`
+        - `necessary` / `required`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -2481,9 +2559,56 @@ example.org#%#//scriptlet('set-session-storage-item', '/mp_.*_mixpanel/', '$remo
 
 * * *
 
+## <a id="spoof-css"></a> ⚡️ spoof-css
+
+> Added in v1.10.1.
+
+Spoof CSS property value when `getComputedStyle()` or `getBoundingClientRect()` methods is called.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#spoof-cssjs-
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('spoof-css', selectors, cssNameProperty, cssNameValue)
+```
+
+- `selectors` — string of comma-separated selectors to match
+- `cssPropertyName` — CSS property name
+- `cssPropertyValue` — CSS property value
+
+> Call with `debug` as `cssPropertyName` and `truthy` value as `cssPropertyValue` will trigger debugger statement
+> when `getComputedStyle()` or `getBoundingClientRect()` methods is called.
+> It may be useful for debugging but it is not allowed for prod versions of filter lists.
+
+### Examples
+
+1. Spoof CSS property value `display` to `block` for all elements with class `adsbygoogle`:
+
+    ```adblock
+    example.org#%#//scriptlet('spoof-css', '.adsbygoogle', 'display', 'block')
+    ```
+
+2. Spoof CSS property value `height` to `100` for all elements with class `adsbygoogle` and `advert`:
+
+    ```adblock
+    example.org#%#//scriptlet('spoof-css', '.adsbygoogle, .advert', 'height', '100')
+    ```
+
+3. To invoke debugger statement:
+
+    ```adblock
+    example.org#%#//scriptlet('spoof-css', '.adsbygoogle', 'debug', 'true')
+    ```
+
+[Scriptlet source](../src/scriptlets/spoof-css.js)
+
+* * *
+
 ## <a id="xml-prune"></a> ⚡️ xml-prune
 
-> Added in 1.7.3.
+> Added in v1.7.3.
 
 Removes an element from the specified XML.
 
