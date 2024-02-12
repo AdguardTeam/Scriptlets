@@ -14,6 +14,7 @@
 | [abort-on-stack-trace](../wiki/about-scriptlets.md#abort-on-stack-trace) | abort-on-stack-trace.js (aost.js) |  |
 | [adjust-setInterval](../wiki/about-scriptlets.md#adjust-setInterval) | adjust-setInterval.js (nano-setInterval-booster.js, nano-sib.js) |  |
 | [adjust-setTimeout](../wiki/about-scriptlets.md#adjust-setTimeout) | adjust-setTimeout.js (nano-setTimeout-booster.js, nano-stb.js) |  |
+| [call-nothrow](../wiki/about-scriptlets.md#call-nothrow) | call-nothrow.js |  |
 | [close-window](../wiki/about-scriptlets.md#close-window) | close-window.js (window-close-if.js) |  |
 | [debug-current-inline-script](../wiki/about-scriptlets.md#debug-current-inline-script) |  |  |
 | [debug-on-property-read](../wiki/about-scriptlets.md#debug-on-property-read) |  |  |
@@ -51,17 +52,17 @@
 | [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-cookie](../wiki/about-scriptlets.md#set-cookie) | set-cookie.js |  |
-| [set-cookie-reload](../wiki/about-scriptlets.md#set-cookie-reload) |  |  |
+| [set-cookie-reload](../wiki/about-scriptlets.md#set-cookie-reload) | set-cookie-reload.js |  |
 | [set-local-storage-item](../wiki/about-scriptlets.md#set-local-storage-item) | set-local-storage-item.js |  |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
 | [set-session-storage-item](../wiki/about-scriptlets.md#set-session-storage-item) | set-session-storage-item.js |  |
+| [spoof-css](../wiki/about-scriptlets.md#spoof-css) | spoof-css.js |  |
 | [xml-prune](../wiki/about-scriptlets.md#xml-prune) | xml-prune.js |  |
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
 |  | golem.de.js (removed) |  |
 |  | href-sanitizer.js |  |
-| [call-nothrow](../wiki/about-scriptlets.md#call-nothrow) | call-nothrow.js |  |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
 |  |  | freeze-element |
@@ -84,7 +85,6 @@
 |  |  | trace |
 |  |  | race |
 |  | window.name-defuser.js |  |
-| [spoof-css](../wiki/about-scriptlets.md#spoof-css) | spoof-css.js |  |
 |  | trusted-set-constant.js (trusted-set.js) |  |
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
@@ -94,7 +94,6 @@
 |  | trusted-replace-xhr-response.js |  |
 |  | multiup.js |  |
 |  | prevent-canvas.js |  |
-|  | set-cookie-reload.js |  |
 |  | trusted-set-cookie-reload.js |  |
 |  | trusted-click-element.js |  |
 |  | trusted-prune-inbound-object.js |  |

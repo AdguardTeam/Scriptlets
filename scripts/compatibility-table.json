@@ -28,6 +28,10 @@
             "ubo": "adjust-setTimeout.js (nano-setTimeout-booster.js, nano-stb.js)"
         },
         {
+            "adg": "call-nothrow",
+            "ubo": "call-nothrow.js"
+        },
+        {
             "adg": "close-window",
             "ubo": "close-window.js (window-close-if.js)"
         },
@@ -168,7 +172,8 @@
             "ubo": "set-cookie.js"
         },
         {
-            "adg": "set-cookie-reload"
+            "adg": "set-cookie-reload",
+            "ubo": "set-cookie-reload.js"
         },
         {
             "adg": "set-local-storage-item",
@@ -180,6 +185,10 @@
         {
             "adg": "set-session-storage-item",
             "ubo": "set-session-storage-item.js"
+        },
+        {
+            "adg": "spoof-css",
+            "ubo": "spoof-css.js"
         },
         {
             "adg": "xml-prune",
@@ -199,10 +208,6 @@
         },
         {
             "ubo": "href-sanitizer.js"
-        },
-        {
-            "adg": "call-nothrow",
-            "ubo": "call-nothrow.js"
         },
         {
             "abp": "abort-on-iframe-property-read"
@@ -271,10 +276,6 @@
             "ubo": "window.name-defuser.js"
         },
         {
-            "adg": "spoof-css",
-            "ubo": "spoof-css.js"
-        },
-        {
             "ubo": "trusted-set-constant.js (trusted-set.js)"
         },
         {
@@ -300,9 +301,6 @@
         },
         {
             "ubo": "prevent-canvas.js"
-        },
-        {
-            "ubo": "set-cookie-reload.js"
         },
         {
             "ubo": "trusted-set-cookie-reload.js"

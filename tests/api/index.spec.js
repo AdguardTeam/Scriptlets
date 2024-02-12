@@ -184,6 +184,10 @@ describe('Test scriptlet api methods', () => {
                 expected: "example.com#%#//scriptlet('ubo-set-cookie.js', 'CookieConsent', 'true')",
             },
             {
+                actual: 'example.com##+js(set-cookie-reload, isSet, 1)',
+                expected: "example.com#%#//scriptlet('ubo-set-cookie-reload.js', 'isSet', '1')",
+            },
+            {
                 actual: 'example.com##+js(set-local-storage-item, gdpr_popup, true)',
                 expected: "example.com#%#//scriptlet('ubo-set-local-storage-item.js', 'gdpr_popup', 'true')",
             },
@@ -325,6 +329,10 @@ describe('Test scriptlet api methods', () => {
                 // eslint-disable-next-line max-len
                 actual: "example.com#%#//scriptlet('spoof-css', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
                 expected: 'example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)',
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-cookie-reload', 'consent', 'true')",
+                expected: 'example.com##+js(set-cookie-reload, consent, true)',
             },
         ];
         test.each(testCases)('$actual', ({ actual, expected }) => {

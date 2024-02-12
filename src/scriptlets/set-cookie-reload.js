@@ -95,6 +95,10 @@ export function setCookieReload(source, name, value, path = '/') {
 
 setCookieReload.names = [
     'set-cookie-reload',
+    // aliases are needed for matching the related scriptlet converted into our syntax
+    'set-cookie-reload.js',
+    'ubo-set-cookie-reload.js',
+    'ubo-set-cookie-reload',
 ];
 
 setCookieReload.injections = [
