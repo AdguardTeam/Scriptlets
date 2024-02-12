@@ -82,7 +82,7 @@ import {
  *     example.org#%#//scriptlet('xml-prune', '', '', '.mpd')
  *     ```
  *
- * @added 1.7.3.
+ * @added v1.7.3.
  */
 /* eslint-enable max-len */
 

@@ -51,7 +51,7 @@ import {
  *     JSON.parse('foo');
  *     ```
  *
- * @added unknown.
+ * @added v1.10.1.
  */
 /* eslint-enable max-len */
 export function callNoThrow(source, functionName) {

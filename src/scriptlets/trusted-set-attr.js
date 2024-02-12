@@ -92,7 +92,7 @@ import {
  *     <a class="class" test-attribute="{ playback: false }">Some text</div>
  *     ```
  *
- * @added unknown.
+ * @added v1.10.1.
  */
 /* eslint-enable max-len */
 export function trustedSetAttr(source, selector, attr, value = '') {

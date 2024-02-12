@@ -47,7 +47,7 @@ import {
  *     ```
  *
  *
- * @added unknown.
+ * @added v1.10.1.
  */
 /* eslint-enable max-len */
 

@@ -4,10 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
-<!-- TODO: add @added tag to the files with specific version -->
+<!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.10.1] - 2024-02-12
 
 ### Added
 
@@ -339,7 +339,7 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
     - `metrika-yandex-tag` [#254](https://github.com/AdguardTeam/Scriptlets/issues/254)
     - `googlesyndication-adsbygoogle` [#252](https://github.com/AdguardTeam/Scriptlets/issues/252)
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.105...HEAD
+[v1.10.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.105...v1.10.1
 [v1.9.105]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.101...v1.9.105
 [v1.9.101]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.96...v1.9.101
 [v1.9.96]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.91...v1.9.96

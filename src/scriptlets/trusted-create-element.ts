@@ -64,7 +64,7 @@ import type { ParsedAttributePair } from '../helpers/attribute-utils';
  *     example.com#%#//scriptlet('trusted-create-element', '.container > article', 'p', '', 'Hello world!', 5000)
  *     ```
  *
- * @added unknown.
+ * @added v1.10.1.
  */
 /* eslint-enable max-len */
 export function trustedCreateElement(
