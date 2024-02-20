@@ -9,6 +9,20 @@ import {
 
 import validator from '../../src/helpers/validator';
 
+describe('checks that allowlist script rules are valid', () => {
+    it('correctly validates allowlist script rules', () => {
+        expect(isValidScriptletRule('#@%#//scriptlet()')).toBeTruthy();
+        expect(isValidScriptletRule('#@%#//scriptlet("set-cookie")')).toBeTruthy();
+        expect(isValidScriptletRule('#@%#//scriptlet("set-cookie")')).toBeTruthy();
+        expect(isValidScriptletRule("#@%#//scriptlet('')")).toBeFalsy();
+        expect(isValidScriptletRule('#@%#//scriptlet("")')).toBeFalsy();
+        expect(isValidScriptletRule('#@#+js()')).toBeTruthy();
+        expect(isValidScriptletRule("#@#+js('')")).toBeFalsy();
+        expect(isValidScriptletRule('#@#+js("")')).toBeFalsy();
+        expect(isValidScriptletRule('||delivery.tf1.fr/pub')).toBeFalsy();
+    });
+});
+
 describe('Test scriptlet api methods', () => {
     describe('isValidScriptletRule()', () => {
         const validRules = [
@@ -83,9 +97,11 @@ describe('Test scriptlet api methods', () => {
             expect(convertScriptletToAdg(actual)[0]).toStrictEqual(expected);
         });
 
-        // invalid syntax rule
-        const invalidRule = "example.org#%#//scriptlet('abort-on-property-read', I10C')";
-        expect(convertScriptletToAdg(invalidRule).length).toBe(0);
+        it('validates invalid scriptlet rule', () => {
+            // invalid syntax rule
+            const invalidRule = "example.org#%#//scriptlet('abort-on-property-read', I10C')";
+            expect(convertScriptletToAdg(invalidRule).length).toBe(0);
+        });
     });
 
     describe('convertScriptletToAdg(ubo-rule) -> adg', () => {
@@ -253,91 +269,97 @@ describe('Test scriptlet api methods', () => {
     });
 
     describe('convertAdgScriptletToUbo(adg-rule) -> ubo', () => {
-        const testCases = [
-            {
-                actual: 'example.org#%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
-                expected: 'example.org##+js(no-setTimeout-if, [native code], 8000)',
-            },
-            {
-                // '' as set-constant parameter
-                actual: 'example.org#%#//scriptlet(\'set-constant\', \'config.ads.desktopAd\', \'\')',
-                expected: 'example.org##+js(set-constant, config.ads.desktopAd, \'\')',
-            },
-            {
-                // multiple selectors parameter for remove-attr/class
-                // eslint-disable-next-line max-len
-                actual: 'example.org#%#//scriptlet(\'remove-class\', \'promo\', \'a.class, div#id, div > #ad > .test\')',
-                expected: 'example.org##+js(remove-class, promo, a.class\\, div#id\\, div > #ad > .test)',
-            },
-            {
-                // scriptlet with no parameters
-                actual: 'example.com#%#//scriptlet("prevent-adfly")',
-                expected: 'example.com##+js(adfly-defuser)',
-            },
-            {
-                actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
-                expected: 'example.org#@#+js(no-setTimeout-if, [native code], 8000)',
-            },
-            {
-                actual: 'example.org#%#//scriptlet("ubo-abort-on-property-read.js", "alert")',
-                expected: 'example.org##+js(abort-on-property-read, alert)',
-            },
-            {
-                actual: 'example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")',
-                expected: 'example.com##+js(abort-current-script, console.log, Hello)',
-            },
-            {
-                actual: 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')',
-                expected: 'example.com##+js(no-fetch-if, /^/)',
-            },
-            {
-                actual: 'example.com#%#//scriptlet(\'close-window\')',
-                expected: 'example.com##+js(window-close-if)',
-            },
-            {
-                actual: "example.com#%#//scriptlet('set-cookie', 'CookieConsent', 'true')",
-                expected: 'example.com##+js(set-cookie, CookieConsent, true)',
-            },
-            {
-                actual: "example.com#%#//scriptlet('set-local-storage-item', 'gdpr_popup', 'true')",
-                expected: 'example.com##+js(set-local-storage-item, gdpr_popup, true)',
-            },
-            {
-                actual: "example.com#%#//scriptlet('set-session-storage-item', 'acceptCookies', 'false')",
-                expected: 'example.com##+js(set-session-storage-item, acceptCookies, false)',
-            },
-            {
-                // emptyArr as set-constant parameter
-                actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyArr')",
-                expected: 'example.org##+js(set-constant, adUnits, [])',
-            },
-            {
-                // emptyObj as set-constant parameter
-                actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyObj')",
-                expected: 'example.org##+js(set-constant, adUnits, {})',
-            },
-            {
-                // Escapes commas in params
-                actual: String.raw`example.com#%#//scriptlet('adjust-setInterval', ',dataType:_', '1000', '0.02')`,
-                expected: String.raw`example.com##+js(nano-setInterval-booster, \,dataType:_, 1000, 0.02)`,
-            },
-            {
-                actual: "example.com#%#//scriptlet('spoof-css', '.advert', 'display', 'block')",
-                expected: 'example.com##+js(spoof-css, .advert, display, block)',
-            },
-            {
-                // eslint-disable-next-line max-len
-                actual: "example.com#%#//scriptlet('spoof-css', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
-                expected: 'example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)',
-            },
-            {
-                actual: "example.com#%#//scriptlet('set-cookie-reload', 'consent', 'true')",
-                expected: 'example.com##+js(set-cookie-reload, consent, true)',
-            },
-        ];
-        test.each(testCases)('$actual', ({ actual, expected }) => {
-            expect(convertAdgScriptletToUbo(actual)).toStrictEqual(expected);
+        describe('tests in group', () => {
+            const testCases = [
+                {
+                    actual: 'example.org#%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
+                    expected: 'example.org##+js(no-setTimeout-if, [native code], 8000)',
+                },
+                {
+                    // '' as set-constant parameter
+                    actual: 'example.org#%#//scriptlet(\'set-constant\', \'config.ads.desktopAd\', \'\')',
+                    expected: 'example.org##+js(set-constant, config.ads.desktopAd, \'\')',
+                },
+                {
+                    // multiple selectors parameter for remove-attr/class
+                    // eslint-disable-next-line max-len
+                    actual: 'example.org#%#//scriptlet(\'remove-class\', \'promo\', \'a.class, div#id, div > #ad > .test\')',
+                    expected: 'example.org##+js(remove-class, promo, a.class\\, div#id\\, div > #ad > .test)',
+                },
+                {
+                    // scriptlet with no parameters
+                    actual: 'example.com#%#//scriptlet("prevent-adfly")',
+                    expected: 'example.com##+js(adfly-defuser)',
+                },
+                {
+                    actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
+                    expected: 'example.org#@#+js(no-setTimeout-if, [native code], 8000)',
+                },
+                {
+                    actual: 'example.org#%#//scriptlet("ubo-abort-on-property-read.js", "alert")',
+                    expected: 'example.org##+js(abort-on-property-read, alert)',
+                },
+                {
+                    actual: 'example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")',
+                    expected: 'example.com##+js(abort-current-script, console.log, Hello)',
+                },
+                {
+                    actual: 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')',
+                    expected: 'example.com##+js(no-fetch-if, /^/)',
+                },
+                {
+                    actual: 'example.com#%#//scriptlet(\'close-window\')',
+                    expected: 'example.com##+js(window-close-if)',
+                },
+                {
+                    actual: "example.com#%#//scriptlet('set-cookie', 'CookieConsent', 'true')",
+                    expected: 'example.com##+js(set-cookie, CookieConsent, true)',
+                },
+                {
+                    actual: "example.com#%#//scriptlet('set-local-storage-item', 'gdpr_popup', 'true')",
+                    expected: 'example.com##+js(set-local-storage-item, gdpr_popup, true)',
+                },
+                {
+                    actual: "example.com#%#//scriptlet('set-session-storage-item', 'acceptCookies', 'false')",
+                    expected: 'example.com##+js(set-session-storage-item, acceptCookies, false)',
+                },
+                {
+                    // emptyArr as set-constant parameter
+                    actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyArr')",
+                    expected: 'example.org##+js(set-constant, adUnits, [])',
+                },
+                {
+                    // emptyObj as set-constant parameter
+                    actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyObj')",
+                    expected: 'example.org##+js(set-constant, adUnits, {})',
+                },
+                {
+                    // Escapes commas in params
+                    actual: String.raw`example.com#%#//scriptlet('adjust-setInterval', ',dataType:_', '1000', '0.02')`,
+                    expected: String.raw`example.com##+js(nano-setInterval-booster, \,dataType:_, 1000, 0.02)`,
+                },
+                {
+                    actual: "example.com#%#//scriptlet('spoof-css', '.advert', 'display', 'block')",
+                    expected: 'example.com##+js(spoof-css, .advert, display, block)',
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: "example.com#%#//scriptlet('spoof-css', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
+                    expected: 'example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)',
+                },
+                {
+                    actual: "example.com#%#//scriptlet('set-cookie-reload', 'consent', 'true')",
+                    expected: 'example.com##+js(set-cookie-reload, consent, true)',
+                },
+            ];
+            test.each(testCases)('$actual', ({ actual, expected }) => {
+                expect(convertAdgScriptletToUbo(actual)).toStrictEqual(expected);
+            });
         });
+    });
+    it('converts empty scriptlets', () => {
+        expect(convertAdgScriptletToUbo('example.org#@%#//scriptlet()')).toStrictEqual('example.org#@#+js()');
+        expect(convertAdgScriptletToUbo('#@%#//scriptlet()')).toStrictEqual('#@#+js()');
     });
 });
 

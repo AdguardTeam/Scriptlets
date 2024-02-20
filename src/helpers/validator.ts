@@ -147,9 +147,15 @@ const scriptletNameValidationCache = new Map();
  * Uses cache for better performance.
  *
  * @param name Scriptlet name.
- * @returns true if scriptlet name is a valid one.
+ * @returns True if scriptlet name is a valid one or an empty string,
+ * otherwise false.
  */
-const isValidScriptletName = (name: string): boolean => {
+const isValidScriptletName = (name: string | null): boolean => {
+    // empty name is used for allowlist scriptlets. e.g.
+    // - '#@%#//scriptlet()'
+    if (name === '') {
+        return true;
+    }
     if (!name) {
         return false;
     }

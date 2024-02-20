@@ -336,18 +336,20 @@ export const objectToString = (obj: ArbitraryObject): string => {
  * @returns type's string representation
  */
 export const convertTypeToString = (value: unknown): string => {
+    let output;
     if (typeof value === 'undefined') {
-        return 'undefined';
-    }
-    if (typeof value === 'object') {
+        output = 'undefined';
+    } else if (typeof value === 'object') {
         if (value === null) {
-            return 'null';
+            output = 'null';
+        } else {
+            output = objectToString(value as Record<string, unknown>);
         }
-
-        return objectToString(value as ArbitraryObject);
+    } else {
+        output = String(value);
     }
 
-    return (value as Pick<Object, 'toString'>).toString();
+    return output;
 };
 
 /**

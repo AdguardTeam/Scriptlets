@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Changed
+
+- Validation of scriptlet rules with no name and args for multiple scriptlet exception rules [#377]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...HEAD
+[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+
 ## [v1.10.1] - 2024-02-12
 
 ### Added

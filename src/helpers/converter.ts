@@ -25,7 +25,7 @@ type AdgScriptletObject = {
 /**
  * AdGuard scriptlet rule
  */
-const ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.+\)/;
+const ADGUARD_SCRIPTLET_MASK_REG = /#@?%#\/\/scriptlet\(.*\)/;
 // eslint-disable-next-line no-template-curly-in-string
 const ADGUARD_SCRIPTLET_TEMPLATE = '${domains}#%#//scriptlet(${args})';
 // eslint-disable-next-line no-template-curly-in-string
@@ -221,9 +221,24 @@ export const convertUboScriptletToAdg = (rule: string): string[] => {
     }
     const argsStr = getStringInBraces(rule);
     let parsedArgs = splitArgs(argsStr);
-    const scriptletName = parsedArgs[0].includes(UBO_SCRIPTLET_JS_ENDING)
-        ? `ubo-${parsedArgs[0]}`
-        : `ubo-${parsedArgs[0]}${UBO_SCRIPTLET_JS_ENDING}`;
+    let scriptletName = '';
+    const possibleName = parsedArgs[0];
+    if (!possibleName) {
+        scriptletName = '';
+        const adgRule = replacePlaceholders(
+            template,
+            { domains, args: scriptletName },
+        );
+        // empty string can be a valid scriptlet name in scriptlet exception rule
+        // https://github.com/AdguardTeam/Scriptlets/issues/377
+        return [adgRule];
+    }
+
+    if (possibleName.includes(UBO_SCRIPTLET_JS_ENDING)) {
+        scriptletName = `ubo-${parsedArgs[0]}`;
+    } else {
+        scriptletName = `ubo-${parsedArgs[0]}${UBO_SCRIPTLET_JS_ENDING}`;
+    }
 
     if (REMOVE_ATTR_ALIASES.includes(scriptletName) || REMOVE_CLASS_ALIASES.includes(scriptletName)) {
         parsedArgs = validateRemoveAttrClassArgs(parsedArgs);
@@ -247,6 +262,7 @@ export const convertUboScriptletToAdg = (rule: string): string[] => {
         })
         .map((arg) => wrapInSingleQuotes(arg))
         .join(`${COMMA_SEPARATOR} `);
+
     const adgRule = replacePlaceholders(
         template,
         { domains, args },
@@ -387,6 +403,24 @@ export const convertAdgScriptletToUbo = (rule: string): string | undefined => {
     if (validator.isAdgScriptletRule(rule)) {
         const { name: parsedName, args: parsedParams } = parseRule(rule);
 
+        const matchResult = rule.match(ADGUARD_SCRIPTLET_MASK_REG);
+        const mask = Array.isArray(matchResult) ? matchResult[0] : null;
+        let template;
+        if (mask?.includes('@')) {
+            template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
+        } else {
+            template = UBO_SCRIPTLET_TEMPLATE;
+        }
+        const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
+
+        if (!parsedName) {
+            const uboRule = replacePlaceholders(
+                template,
+                { domains, args: '' },
+            );
+            return uboRule;
+        }
+
         let preparedParams;
         if (parsedName === ADG_SET_CONSTANT_NAME
             // https://github.com/AdguardTeam/FiltersCompiler/issues/102
@@ -437,15 +471,6 @@ export const convertAdgScriptletToUbo = (rule: string): string | undefined => {
                 .find((alias) => alias.includes(UBO_ALIAS_NAME_MARKER));
 
             if (uboAlias) {
-                const matchResult = rule.match(ADGUARD_SCRIPTLET_MASK_REG);
-                const mask = Array.isArray(matchResult) ? matchResult[0] : null;
-                let template;
-                if (mask?.includes('@')) {
-                    template = UBO_SCRIPTLET_EXCEPTION_TEMPLATE;
-                } else {
-                    template = UBO_SCRIPTLET_TEMPLATE;
-                }
-                const domains = getBeforeRegExp(rule, ADGUARD_SCRIPTLET_MASK_REG);
                 const uboName = uboAlias
                     .replace(UBO_ALIAS_NAME_MARKER, '')
                     // '.js' in the Ubo scriptlet name can be omitted
@@ -476,6 +501,9 @@ export const convertAdgScriptletToUbo = (rule: string): string | undefined => {
  * @returns Scriptlet name or null.
  */
 const getAdgScriptletName = (rule: string): string | null => {
+    if (rule.includes(`${ADG_SCRIPTLET_MASK}()`)) {
+        return '';
+    }
     // get substring after '#//scriptlet('
     let buffer = substringAfter(rule, `${ADG_SCRIPTLET_MASK}(`);
     if (!buffer) {
@@ -524,7 +552,7 @@ export const isValidScriptletRule = (ruleText: string): boolean => {
     // if at least one of them is not valid - whole `ruleText` is not valid too
     const isValid = rulesArray.every((rule) => {
         const name = getAdgScriptletName(rule);
-        return name && validator.isValidScriptletName(name);
+        return validator.isValidScriptletName(name);
     });
 
     return isValid;

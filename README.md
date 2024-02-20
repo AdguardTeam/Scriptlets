@@ -4,6 +4,8 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 
 - [Scriptlets](#scriptlets)
     - [Syntax](#scriptlet-syntax)
+        - [Blocking rules](#scriptlet-syntax--blocking)
+        - [Exception rules](#scriptlet-syntax--exceptions)
     - [Available scriptlets](./wiki/about-scriptlets.md#scriptlets)
     - [Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)
     - [Trusted scriptlets](#trusted-scriptlets)
@@ -65,12 +67,15 @@ Please note, that in order to achieve cross-blocker compatibility, we also suppo
 
 ### <a name="scriptlet-syntax"></a> Syntax
 
+#### <a name="scriptlet-syntax--blocking"></a> Blocking rules
+
 ```text
-rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
+[domains]#%#//scriptlet(name[, arguments])
 ```
 
-- `scriptletName` (mandatory) is a name of the scriptlet from AdGuard's scriptlets library
-- `arguments` (optional) a list of `String` arguments (no other types of arguments are supported)
+- `domains` — optional, a list of domains where the rule should be applied;
+- `name` — required, a name of the scriptlet from AdGuard's scriptlets library;
+- `arguments` — optional, a list of `String` arguments (no other types of arguments are supported).
 
 > **Remarks**
 >
@@ -86,20 +91,57 @@ rule = [domains]  "#%#//scriptlet(" scriptletName arguments ")"
 >         - `'prop['nested']'`
 >         - `"prop["nested"]"`
 >
-> - You can use either single or double quotes for the scriptlet name and arguments.
+> - Scriptlet `name` and each of the `arguments` should be wrapped in quotes.
+> You can use either single or double quotes for the scriptlet name and arguments.
 > Single quote is recommended but not for cases when its usage makes readability worse,
 > e.g. `".css('display','block');"` is more preferred then `'.css(\'display\',\'block\');'`.
 
+#### <a name="scriptlet-syntax--exceptions"></a> Exception rules
 
-#### Example
-
-```adblock
-example.org#%#//scriptlet('abort-on-property-read', 'alert')
-example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
+```text
+[domains]#@%#//scriptlet([name])
 ```
 
-This rule applies the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains,
-and passes one argument to it (`alert`).
+- `domains` — optional, a list of domains where the rule should be applied;
+- `name` — optional, a name of the scriptlet to except from the applying.
+  If not set, all scriptlets will not be applied.
+
+#### Examples
+
+1. Apply the `abort-on-property-read` scriptlet on all pages of `example.org` and its subdomains,
+   and passes one argument to it (`alert`):
+
+    ```adblock
+    example.org#%#//scriptlet('abort-on-property-read', 'alert')
+    ```
+
+1. Remove the `branding` class from all `div[class^="inner"]` elements
+   on all pages of `example.org` and its subdomains:
+
+    ```adblock
+    example.org#%#//scriptlet('remove-class', 'branding', 'div[class^="inner"]')
+    ```
+
+1. Apply `set-constant` and `set-cookie` on any webpage,
+   but because of specific scriptlet exception rule
+   only `set-constant` scriptlet will be applied on `example.org` and its subdomains:
+
+    ```adblock
+    #%#//scriptlet('set-constant', 'adList', 'emptyArr')
+    #%#//scriptlet('set-cookie', 'accepted', 'true')
+    example.org#@%#//scriptlet('set-cookie')
+    ```
+
+1. Apply `adjust-setInterval` on any webpage,
+   and `set-local-storage-item` on all pages of `example.com` and its subdomains,
+   but there is also multiple scriptlet exception rule,
+   so no scriptlet rules will be applied on `example.com` and its subdomains:
+
+    ```adblock
+    #%#//scriptlet('adjust-setInterval', 'count', '*', '0.001')
+    example.com#%#//scriptlet('set-local-storage-item', 'ALLOW_COOKIES', 'false')
+    example.com#@%#//scriptlet()
+    ```
 
 - **[Scriptlets list](./wiki/about-scriptlets.md#scriptlets)**
 - **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**

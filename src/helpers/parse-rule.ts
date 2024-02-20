@@ -12,7 +12,12 @@ interface TransitionHelper {
 }
 
 type ParsedRule = {
-    name: string;
+    /**
+     * An empty string "" is used for unnamed scriptlets, e.g., "#@%#//scriptlet()". It is utilized for allowlisting
+     * scriptlets.
+     * Null is used in cases where the name could not be parsed.
+     */
+    name: string | null;
     args: string[];
 };
 
@@ -111,6 +116,15 @@ const substringAfter = (str: string, separator: string) => {
  */
 export const parseRule = (ruleText: string): ParsedRule => {
     ruleText = substringAfter(ruleText, ADG_SCRIPTLET_MASK);
+
+    // in the case of allowlist scriptlet, the rule name is empty string
+    if (ruleText === '()') {
+        return {
+            name: '',
+            args: [],
+        };
+    }
+
     /**
      * Transition function: the current index position in start, end or between params
      *
@@ -200,7 +214,7 @@ export const parseRule = (ruleText: string): ParsedRule => {
 
     const args = saver.getAll();
     return {
-        name: args[0],
+        name: args[0] === '' ? null : args[0],
         args: args.slice(1),
     };
 };
