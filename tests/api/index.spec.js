@@ -220,6 +220,11 @@ describe('Test scriptlet api methods', () => {
                 // eslint-disable-next-line max-len
                 expected: "example.com#%#//scriptlet('ubo-spoof-css.js', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
             },
+            // https://github.com/AdguardTeam/Scriptlets/issues/404
+            {
+                actual: 'example.com##+js(set-local-storage-item, mode, $remove$)',
+                expected: "example.com#%#//scriptlet('ubo-set-local-storage-item.js', 'mode', '$remove$')",
+            },
         ];
         test.each(validTestCases)('$actual', ({ actual, expected }) => {
             expect(convertScriptletToAdg(actual)[0]).toStrictEqual(expected);
@@ -350,6 +355,11 @@ describe('Test scriptlet api methods', () => {
                 {
                     actual: "example.com#%#//scriptlet('set-cookie-reload', 'consent', 'true')",
                     expected: 'example.com##+js(set-cookie-reload, consent, true)',
+                },
+                // https://github.com/AdguardTeam/Scriptlets/issues/404
+                {
+                    actual: "example.com#%#//scriptlet('set-local-storage-item', 'mode', '$remove$')",
+                    expected: 'example.com##+js(set-local-storage-item, mode, $remove$)',
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {

@@ -258,6 +258,10 @@ export const convertUboScriptletToAdg = (rule: string): string[] => {
             if (arg === '$') {
                 outputArg = '$$';
             }
+            // https://github.com/AdguardTeam/Scriptlets/issues/404
+            if (arg === '$remove$') {
+                outputArg = '$$remove$$';
+            }
             return outputArg;
         })
         .map((arg) => wrapInSingleQuotes(arg))

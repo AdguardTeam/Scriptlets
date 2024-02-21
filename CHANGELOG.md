@@ -13,7 +13,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Validation of scriptlet rules with no name and args for multiple scriptlet exception rules [#377]
 
+### Fixed
+
+- UBO→ADG conversion of `$remove$` scriptlet param [#404]
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...HEAD
+[#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
 ## [v1.10.1] - 2024-02-12
