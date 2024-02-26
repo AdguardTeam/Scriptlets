@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- `href-sanitizer` scriptlet [#327]
+
 ### Changed
 
 - Validation of scriptlet rules with no name and args for multiple scriptlet exception rules [#377]
@@ -20,6 +24,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...HEAD
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+[#327]: https://github.com/AdguardTeam/Scriptlets/issues/327
 
 ## [v1.10.1] - 2024-02-12
 

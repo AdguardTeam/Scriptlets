@@ -65,3 +65,4 @@ export * from './trusted-set-attr';
 export * from './spoof-css';
 export * from './call-nothrow';
 export * from './trusted-create-element';
+export * from './href-sanitizer';

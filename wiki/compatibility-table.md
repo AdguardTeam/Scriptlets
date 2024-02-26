@@ -62,7 +62,7 @@
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
 |  | golem.de.js (removed) |  |
-|  | href-sanitizer.js |  |
+| [href-sanitizer](../wiki/about-scriptlets.md#href-sanitizer) | href-sanitizer.js |  |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
 |  |  | freeze-element |
