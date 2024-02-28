@@ -20,9 +20,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Fixed
 
 - UBO→ADG conversion of `$remove$` scriptlet param [#404]
+- `set-constant` scriptlet not setting a constant over falsy values [#403]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...HEAD
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
+[#403]: https://github.com/AdguardTeam/Scriptlets/issues/403
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 [#327]: https://github.com/AdguardTeam/Scriptlets/issues/327
 

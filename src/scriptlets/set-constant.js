@@ -317,7 +317,7 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
                                 // check if current value is equal to constantValue, if not, set it to constantValue
                                 propertiesToCheck.reduce((object, currentProp, index, array) => {
                                     const currentObj = object?.[currentProp];
-                                    if (currentObj && index === array.length - 1 && currentObj !== constantValue) {
+                                    if (index === array.length - 1 && currentObj !== constantValue) {
                                         object[currentProp] = constantValue;
                                     }
                                     return currentObj || object;

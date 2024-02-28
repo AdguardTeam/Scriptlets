@@ -800,7 +800,7 @@ if (!isSupported) {
         runScriptletFromTag('proxy.test.abc', 'trueFunc', '', '', 'true');
 
         // Expected number of calls to getOwnPropertyDescriptor
-        const EXPECTED_NUMBER = 4;
+        const EXPECTED_NUMBER = 5;
 
         let number = 0;
         window.proxy = window.proxy || {};
@@ -814,7 +814,7 @@ if (!isSupported) {
 
         window.proxy = new Proxy(window.proxy, handler);
 
-        // Access object 100 times, if getOwnPropertyDescriptor was called more than 4 times
+        // Access object 100 times, if getOwnPropertyDescriptor was called more than 5 times
         // it means that proxy was set more than once
         for (let index = 0; index < 100; index += 1) {
             if (number > EXPECTED_NUMBER) {
@@ -829,5 +829,25 @@ if (!isSupported) {
         assert.strictEqual(result, true, 'proxy.test.abc set to true by scriptlet');
         assert.strictEqual(number, EXPECTED_NUMBER, `getOwnPropertyDescriptor was called ${EXPECTED_NUMBER} times`);
         clearGlobalProps('proxy');
+    });
+
+    test('setting constant over falsy value inside an object prop', (assert) => {
+        runScriptletFromTag('foo.bar.test', 'true', '', '', 'true');
+
+        window.foo = {
+            bar: {
+                abc: {},
+            },
+        };
+
+        assert.strictEqual(window.foo.bar.test, true, 'Successfully changed falsy prop value');
+
+        window.foo.bar = {
+            abc: {},
+            test: false,
+        };
+
+        assert.strictEqual(window.foo.bar.test, true, 'Successfully changed falsy prop value');
+        clearGlobalProps('foo');
     });
 }
