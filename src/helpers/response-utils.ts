@@ -43,3 +43,40 @@ export const modifyResponse = (
 
     return modifiedResponse;
 };
+
+/**
+ * Create new Response object using original response' properties
+ * and given text as body content
+ *
+ * @param response original response to copy properties from
+ * @param textContent text to set as body content
+ */
+export const forgeResponse = (response: Response, textContent: string): Response => {
+    const {
+        bodyUsed,
+        headers,
+        ok,
+        redirected,
+        status,
+        statusText,
+        type,
+        url,
+    } = response;
+
+    const forgedResponse = new Response(textContent, {
+        status,
+        statusText,
+        headers,
+    });
+
+    // Manually set properties which can't be set by Response constructor
+    Object.defineProperties(forgedResponse, {
+        url: { value: url },
+        type: { value: type },
+        ok: { value: ok },
+        bodyUsed: { value: bodyUsed },
+        redirected: { value: redirected },
+    });
+
+    return forgedResponse;
+};

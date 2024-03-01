@@ -289,6 +289,7 @@
             "ubo": "trusted-replace-fetch-response.js (trusted-rpfr.js)"
         },
         {
+            "adg": "json-prune-fetch-response",
             "ubo": "json-prune-fetch-response.js"
         },
         {

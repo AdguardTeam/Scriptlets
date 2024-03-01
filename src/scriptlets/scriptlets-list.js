@@ -66,3 +66,4 @@ export * from './spoof-css';
 export * from './call-nothrow';
 export * from './trusted-create-element';
 export * from './href-sanitizer';
+export * from './json-prune-fetch-response';

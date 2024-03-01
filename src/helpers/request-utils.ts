@@ -1,6 +1,6 @@
 import { toRegExp, isValidStrPattern } from './string-utils';
 
-type FetchResource = Request | URL | string;
+export type FetchResource = Request | URL | string;
 
 /**
  * Aggregates fetch and XMLHttpRequest.open arguments

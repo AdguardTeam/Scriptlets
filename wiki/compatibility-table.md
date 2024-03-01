@@ -89,7 +89,7 @@
 |  | trusted-set-cookie.js |  |
 |  | trusted-set-local-storage-item.js |  |
 |  | trusted-replace-fetch-response.js (trusted-rpfr.js) |  |
-|  | json-prune-fetch-response.js |  |
+| [json-prune-fetch-response](../wiki/about-scriptlets.md#json-prune-fetch-response) | json-prune-fetch-response.js |  |
 |  | json-prune-xhr-response.js |  |
 |  | trusted-replace-xhr-response.js |  |
 |  | multiup.js |  |

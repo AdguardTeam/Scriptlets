@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `json-prune-fetch-response` scriptlet [#361]
 - `href-sanitizer` scriptlet [#327]
 
 ### Changed
@@ -26,6 +27,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#403]: https://github.com/AdguardTeam/Scriptlets/issues/403
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+[#361]: https://github.com/AdguardTeam/Scriptlets/issues/361
 [#327]: https://github.com/AdguardTeam/Scriptlets/issues/327
 
 ## [v1.10.1] - 2024-02-12

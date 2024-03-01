@@ -4,6 +4,7 @@ import {
     getFetchData,
     objectToString,
     matchRequestProps,
+    forgeResponse,
     // following helpers should be imported and injected
     // because they are used by helpers above
     toRegExp,
@@ -134,44 +135,6 @@ export function trustedReplaceFetchResponse(source, pattern = '', replacement = 
             return Reflect.apply(target, thisArg, args);
         }
 
-        /**
-         * Create new Response object using original response' properties
-         * and given text as body content
-         *
-         * @param {Response} response original response to copy properties from
-         * @param {string} textContent text to set as body content
-         * @returns {Response}
-         */
-        const forgeResponse = (response, textContent) => {
-            const {
-                bodyUsed,
-                headers,
-                ok,
-                redirected,
-                status,
-                statusText,
-                type,
-                url,
-            } = response;
-
-            const forgedResponse = new Response(textContent, {
-                status,
-                statusText,
-                headers,
-            });
-
-            // Manually set properties which can't be set by Response constructor
-            Object.defineProperties(forgedResponse, {
-                url: { value: url },
-                type: { value: type },
-                ok: { value: ok },
-                bodyUsed: { value: bodyUsed },
-                redirected: { value: redirected },
-            });
-
-            return forgedResponse;
-        };
-
         // eslint-disable-next-line prefer-spread
         return nativeFetch.apply(null, args)
             .then((response) => {
@@ -216,6 +179,7 @@ trustedReplaceFetchResponse.injections = [
     getFetchData,
     objectToString,
     matchRequestProps,
+    forgeResponse,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
