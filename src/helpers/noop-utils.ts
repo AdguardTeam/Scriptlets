@@ -73,6 +73,20 @@ export const throwFunc = (): void => {
 };
 
 /**
+ * Function returns Promise.resolve()
+ *
+ * @returns promise which resolves to void
+ */
+export const noopResolveVoid = (): Promise<void> => Promise.resolve(undefined);
+
+/**
+ * Function returns Promise.resolve(null)
+ *
+ * @returns promise which resolves to null
+ */
+export const noopResolveNull = (): Promise<null> => Promise.resolve(null);
+
+/**
  * Function returns Promise.reject()
  *
  * @returns rejected Promise
