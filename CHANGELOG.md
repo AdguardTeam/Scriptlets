@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `json-prune-fetch-response` scriptlet [#361]
 - `href-sanitizer` scriptlet [#327]
 - `no-protected-audience` scriptlet [#395]
+- multiple redirects can be used as scriptlets [#300]:
+    - `didomi-loader`
 
 ### Changed
 
@@ -33,6 +35,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 [#361]: https://github.com/AdguardTeam/Scriptlets/issues/361
 [#327]: https://github.com/AdguardTeam/Scriptlets/issues/327
+[#300]: https://github.com/AdguardTeam/Scriptlets/issues/300
+
 
 ## [v1.10.1] - 2024-02-12
 

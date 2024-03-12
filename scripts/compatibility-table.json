@@ -45,6 +45,9 @@
             "adg": "debug-on-property-write"
         },
         {
+            "adg": "didomi-loader"
+        },
+        {
             "adg": "dir-string"
         },
         {
@@ -360,6 +363,9 @@
         {
             "adg": "click2load.html",
             "ubo": "click2load.html"
+        },
+        {
+            "adg": "didomi-loader"
         },
         {
             "adg": "fingerprintjs2",
