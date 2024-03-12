@@ -27,26 +27,37 @@ export const getCookiePath = (rawPath: string): string => {
 /**
  * Combines input cookie name, value, and path into string.
  *
- * @param rawName name argument of *set-cookie-* scriptlets
+ * @param name name argument of *set-cookie-* scriptlets
  * @param rawValue value argument of *set-cookie-* scriptlets
  * @param rawPath path argument of *set-cookie-* scriptlets
- * @param shouldEncode if cookie's name and value should be encoded
+ * @param shouldEncodeValue if cookie value should be encoded. Default is `true`
+ *
  * @returns string OR `null` if name or value is invalid
  */
 export const concatCookieNameValuePath = (
-    rawName: string,
+    name: string,
     rawValue: string,
     rawPath: string,
-    shouldEncode = true,
+    shouldEncodeValue = true,
 ) => {
     const COOKIE_BREAKER = ';';
+
     // semicolon will cause the cookie to break
-    if (!shouldEncode && (rawName.includes(COOKIE_BREAKER) || `${rawValue}`.includes(COOKIE_BREAKER))) {
+    if ((!shouldEncodeValue && `${rawValue}`.includes(COOKIE_BREAKER))
+        || name.includes(COOKIE_BREAKER)) {
         return null;
     }
-    const name = shouldEncode ? encodeURIComponent(rawName) : rawName;
-    const value = shouldEncode ? encodeURIComponent(rawValue) : rawValue;
-    return `${name}=${value}; ${getCookiePath(rawPath)};`;
+
+    const value = shouldEncodeValue ? encodeURIComponent(rawValue) : rawValue;
+
+    let resultCookie = `${name}=${value}`;
+
+    const path = getCookiePath(rawPath);
+    if (path) {
+        resultCookie += `; ${path}`;
+    }
+
+    return resultCookie;
 };
 
 /**

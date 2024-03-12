@@ -48,8 +48,10 @@ import {
  *     - `/` — root path
  *     - `none` — to set no path at all
  *
- * > Note that the scriptlet encodes cookie names and values,
- * > e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+ * > Note that the scriptlet does not encode a cookie name,
+ * > e.g. name 'a:b' will be set as 'a:b' and not as 'a%3Ab'.
+ * >
+ * > Also if a cookie name includes `;`, the cookie will not be set since this may cause the cookie to break.
  *
  * ### Examples
  *

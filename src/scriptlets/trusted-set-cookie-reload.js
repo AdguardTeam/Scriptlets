@@ -122,7 +122,7 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
         }
 
         const expires = Date.now() + parsedOffsetMs;
-        cookieToSet += ` expires=${new Date(expires).toUTCString()};`;
+        cookieToSet += `; expires=${new Date(expires).toUTCString()}`;
     }
 
     document.cookie = cookieToSet;

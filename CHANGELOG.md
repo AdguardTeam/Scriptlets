@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Changed
 
 - Validation of scriptlet rules with no name and args for multiple scriptlet exception rules [#377]
+- Cookie name is not encoded by cookie setting scriptlets [#408]
 
 ### Fixed
 
@@ -25,6 +26,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `set-constant` scriptlet not setting a constant over falsy values [#403]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...HEAD
+[#408]: https://github.com/AdguardTeam/Scriptlets/issues/408
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#403]: https://github.com/AdguardTeam/Scriptlets/issues/403
 [#395]: https://github.com/AdguardTeam/Scriptlets/issues/395
