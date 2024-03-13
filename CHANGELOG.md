@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
     - `google-ima3`
     - `googlesyndication-adsbygoogle`
     - `googletagservices-gpt`
+    - `metrika-yandex-tag`
+    - `metrika-yandex-watch`
 
 ### Changed
 

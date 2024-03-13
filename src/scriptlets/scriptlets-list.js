@@ -79,3 +79,5 @@ export * from './google-analytics-ga';
 export * from './google-ima3';
 export * from './googlesyndication-adsbygoogle';
 export * from './googletagservices-gpt';
+export * from './metrika-yandex-tag';
+export * from './metrika-yandex-watch';
