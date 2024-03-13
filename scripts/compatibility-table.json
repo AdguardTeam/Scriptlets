@@ -48,6 +48,12 @@
             "adg": "didomi-loader"
         },
         {
+            "adg": "fingerprintjs2"
+        },
+        {
+            "adg": "fingerprintjs3"
+        },
+        {
             "adg": "dir-string"
         },
         {
@@ -372,7 +378,7 @@
             "ubo": "fingerprint2.js"
         },
         {
-            "adg": "fingerprint3js",
+            "adg": "fingerprintjs3",
             "ubo": "fingerprint3.js"
         },
         {

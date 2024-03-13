@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `no-protected-audience` scriptlet [#395]
 - multiple redirects can be used as scriptlets [#300]:
     - `didomi-loader`
+    - `fingerprintjs2`
+    - `fingerprintjs3`
 
 ### Changed
 
