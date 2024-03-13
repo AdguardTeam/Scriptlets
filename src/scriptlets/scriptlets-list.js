@@ -70,6 +70,7 @@ export * from './json-prune-fetch-response';
 export * from './no-protected-audience';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
+export * from './amazon-apstag';
 export * from './didomi-loader';
 export * from './fingerprintjs2';
 export * from './fingerprintjs3';

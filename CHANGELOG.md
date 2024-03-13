@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `href-sanitizer` scriptlet [#327]
 - `no-protected-audience` scriptlet [#395]
 - multiple redirects can be used as scriptlets [#300]:
+    - `amazon-apstag`
     - `didomi-loader`
     - `fingerprintjs2`
     - `fingerprintjs3`

@@ -45,6 +45,9 @@
             "adg": "debug-on-property-write"
         },
         {
+            "adg": "amazon-apstag"
+        },
+        {
             "adg": "didomi-loader"
         },
         {
