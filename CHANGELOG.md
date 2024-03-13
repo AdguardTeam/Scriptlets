@@ -19,6 +19,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
     - `didomi-loader`
     - `fingerprintjs2`
     - `fingerprintjs3`
+    - `google-analytics`
+    - `google-analytics-ga`
+    - `google-ima3`
+    - `googlesyndication-adsbygoogle`
+    - `googletagservices-gpt`
 
 ### Changed
 

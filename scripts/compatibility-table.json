@@ -57,6 +57,21 @@
             "adg": "fingerprintjs3"
         },
         {
+            "adg": "google-analytics"
+        },
+        {
+            "adg": "google-analytics-ga"
+        },
+        {
+            "adg": "google-ima3"
+        },
+        {
+            "adg": "googlesyndication-adsbygoogle"
+        },
+        {
+            "adg": "googletagservices-gpt"
+        },
+        {
             "adg": "dir-string"
         },
         {

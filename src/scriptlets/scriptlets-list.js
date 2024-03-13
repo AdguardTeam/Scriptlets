@@ -74,3 +74,8 @@ export * from './amazon-apstag';
 export * from './didomi-loader';
 export * from './fingerprintjs2';
 export * from './fingerprintjs3';
+export * from './google-analytics';
+export * from './google-analytics-ga';
+export * from './google-ima3';
+export * from './googlesyndication-adsbygoogle';
+export * from './googletagservices-gpt';
