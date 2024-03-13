@@ -22,6 +22,7 @@ import {
  * @added unknown.
  */
 export function noProtectedAudience(source: Source) {
+    // Prevent XMLDocuments from being tampered with generic scriptlet rule
     if (Document instanceof Object === false) {
         return;
     }

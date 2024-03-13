@@ -468,6 +468,9 @@
             "adg": "noopvast-3.0"
         },
         {
+            "adg": "no-protected-audience"
+        },
+        {
             "adg": "pardot-1.0"
         },
         {
