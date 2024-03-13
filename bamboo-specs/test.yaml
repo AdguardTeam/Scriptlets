@@ -32,7 +32,7 @@ Build:
             ls -alt
 
             # FIXME: remove
-            echo "process.env:" && process.env
+            echo "process.env:" && process.env.CI == 'true'
 
             yarn install
 
