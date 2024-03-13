@@ -26,6 +26,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
     - `googletagservices-gpt`
     - `metrika-yandex-tag`
     - `metrika-yandex-watch`
+    - `naver-wcslog`
+    - `pardot-1.0`
+    - `prebid`
+    - `scorecardresearch-beacon`
 
 ### Changed
 

@@ -72,6 +72,27 @@
             "adg": "googletagservices-gpt"
         },
         {
+            "adg": "metrika-yandex-watch"
+        },
+        {
+            "adg": "metrika-yandex-tag"
+        },
+        {
+            "adg": "naver-wcslog"
+        },
+        {
+            "adg": "no-protected-audience"
+        },
+        {
+            "adg": "pardot-1.0"
+        },
+        {
+            "adg": "prebid"
+        },
+        {
+            "adg": "scorecardresearch-beacon"
+        },
+        {
             "adg": "dir-string"
         },
         {
@@ -483,13 +504,13 @@
             "adg": "noopvast-3.0"
         },
         {
-            "adg": "no-protected-audience"
+            "adg": "noopvast-4.0"
         },
         {
             "adg": "pardot-1.0"
         },
         {
-            "adg": "noopvast-4.0"
+            "adg": "prebid"
         },
         {
             "adg": "prebid-ads",
