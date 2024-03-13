@@ -31,6 +31,9 @@ Build:
             set -x
             ls -alt
 
+            # FIXME: remove
+            echo "process.env:" && process.env
+
             yarn install
 
             # build docs to lint them later
