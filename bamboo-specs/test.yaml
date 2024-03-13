@@ -25,14 +25,12 @@ Build:
         force-clean-build: 'true'
     - script:
         interpreter: SHELL
+        environment: HUSKY=0
         scripts:
           - |-
             set -e
             set -x
             ls -alt
-
-            # FIXME: remove
-            echo "process.env:" && process.env.CI == 'true'
 
             yarn install
 
