@@ -48,6 +48,7 @@ import {
  *     - string or regular expression for matching the URL passed to fetch call;
  *       empty string, wildcard `*` or invalid regular expression will match all fetch calls
  *     - colon-separated pairs `name:value` where
+ *         <!-- markdownlint-disable-next-line line-length -->
  *         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
  *         - `value` is string or regular expression for matching the value of the option passed to fetch call;
  *           invalid regular expression will cause any value matching

@@ -19,11 +19,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
     - `didomi-loader`
     - `fingerprintjs2`
     - `fingerprintjs3`
+    - `gemius`
     - `google-analytics`
     - `google-analytics-ga`
     - `google-ima3`
     - `googlesyndication-adsbygoogle`
     - `googletagservices-gpt`
+    - `matomo`
     - `metrika-yandex-tag`
     - `metrika-yandex-watch`
     - `naver-wcslog`

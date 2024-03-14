@@ -1,0 +1,18 @@
+import { Gemius } from '../redirects/gemius';
+
+/**
+ * @scriptlet gemius
+ *
+ * @description
+ * Mocks Gemius Analytics.
+ * https://flowplayer.com/developers/plugins/gemius
+ *
+ * ### Examples
+ *
+ * ```adblock
+ * example.org#%#//scriptlet('gemius')
+ * ```
+ *
+ * @added unknown.
+ */
+export { Gemius };

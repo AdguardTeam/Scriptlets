@@ -20,14 +20,14 @@ const writeFile = async (filePath, content) => {
 };
 
 /**
- * Gets list of `.js` files in directory
+ * Gets list of `.js` and `.ts` files in directory.
  *
  * @param {string} relativeDirPath relative path to directory
  * @returns {string[]} array of file names
  */
 const getFilesList = (relativeDirPath) => {
     return fs.readdirSync(path.resolve(__dirname, relativeDirPath), { encoding: 'utf8' })
-        .filter((el) => el.includes('.js'));
+        .filter((el) => el.includes('.js') || el.includes('.ts'));
 };
 
 /**

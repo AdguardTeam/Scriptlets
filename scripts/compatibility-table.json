@@ -51,10 +51,24 @@
             "adg": "didomi-loader"
         },
         {
+            "adg": "dir-string"
+        },
+        {
+            "adg": "disable-newtab-links",
+            "ubo": "disable-newtab-links.js"
+        },
+        {
+            "adg": "evaldata-prune",
+            "ubo": "evaldata-prune.js"
+        },
+        {
             "adg": "fingerprintjs2"
         },
         {
             "adg": "fingerprintjs3"
+        },
+        {
+            "adg": "gemius"
         },
         {
             "adg": "google-analytics"
@@ -70,38 +84,6 @@
         },
         {
             "adg": "googletagservices-gpt"
-        },
-        {
-            "adg": "metrika-yandex-watch"
-        },
-        {
-            "adg": "metrika-yandex-tag"
-        },
-        {
-            "adg": "naver-wcslog"
-        },
-        {
-            "adg": "no-protected-audience"
-        },
-        {
-            "adg": "pardot-1.0"
-        },
-        {
-            "adg": "prebid"
-        },
-        {
-            "adg": "scorecardresearch-beacon"
-        },
-        {
-            "adg": "dir-string"
-        },
-        {
-            "adg": "disable-newtab-links",
-            "ubo": "disable-newtab-links.js"
-        },
-        {
-            "adg": "evaldata-prune",
-            "ubo": "evaldata-prune.js"
         },
         {
             "adg": "json-prune",
@@ -127,6 +109,18 @@
             "ubo": "m3u-prune.js"
         },
         {
+            "adg": "matomo"
+        },
+        {
+            "adg": "metrika-yandex-watch"
+        },
+        {
+            "adg": "metrika-yandex-tag"
+        },
+        {
+            "adg": "naver-wcslog"
+        },
+        {
             "adg": "noeval"
         },
         {
@@ -134,7 +128,16 @@
             "ubo": "nowebrtc.js"
         },
         {
+            "adg": "no-protected-audience"
+        },
+        {
             "adg": "no-topics"
+        },
+        {
+            "adg": "pardot-1.0"
+        },
+        {
+            "adg": "prebid"
         },
         {
             "adg": "prevent-addEventListener",
@@ -205,6 +208,9 @@
         {
             "adg": "remove-node-text",
             "ubo": "remove-node-text.js (rmnt.js)"
+        },
+        {
+            "adg": "scorecardresearch-beacon"
         },
         {
             "adg": "set-attr",
