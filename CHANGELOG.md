@@ -14,7 +14,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `json-prune-fetch-response` scriptlet [#361]
 - `href-sanitizer` scriptlet [#327]
 - `no-protected-audience` scriptlet [#395]
-- multiple redirects can be used as scriptlets [#300]:
+- Domain value for setting cookie scriptlets [#389]
+- Multiple redirects can be used as scriptlets [#300]:
     - `amazon-apstag`
     - `didomi-loader`
     - `fingerprintjs2`
@@ -48,6 +49,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#403]: https://github.com/AdguardTeam/Scriptlets/issues/403
 [#395]: https://github.com/AdguardTeam/Scriptlets/issues/395
+[#389]: https://github.com/AdguardTeam/Scriptlets/issues/389
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 [#361]: https://github.com/AdguardTeam/Scriptlets/issues/361
 [#327]: https://github.com/AdguardTeam/Scriptlets/issues/327

@@ -4,7 +4,7 @@ import {
     nativeIsNaN,
     isCookieSetWithValue,
     getLimitedCookieValue,
-    concatCookieNameValuePath,
+    serializeCookie,
     isValidCookiePath,
     // following helpers should be imported and injected
     // because they are used by helpers above
@@ -16,7 +16,7 @@ import {
  * @scriptlet set-cookie
  *
  * @description
- * Sets a cookie with the specified name, value, and path.
+ * Sets a cookie with the specified name, value, path, and domain.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
@@ -24,7 +24,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('set-cookie', name, value[, path])
+ * example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
  * ```
  *
  * - `name` — required, cookie name to be set
@@ -47,6 +47,8 @@ import {
  * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all
+ * - `domain` — optional, cookie domain, if not set origin will be set as domain,
+ *              if the domain does not match the origin, the cookie will not be set
  *
  * > Note that the scriptlet does not encode a cookie name,
  * > e.g. name 'a:b' will be set as 'a:b' and not as 'a%3Ab'.
@@ -61,12 +63,14 @@ import {
  * example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
  *
  * example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
+ *
+ * example.org#%#//scriptlet('set-cookie-reload', 'test', '1', 'none', 'example.org')
  * ```
  *
  * @added v1.2.3.
  */
 /* eslint-enable max-len */
-export function setCookie(source, name, value, path = '/') {
+export function setCookie(source, name, value, path = '/', domain = '') {
     const validValue = getLimitedCookieValue(value);
     if (validValue === null) {
         logMessage(source, `Invalid cookie value: '${validValue}'`);
@@ -78,7 +82,12 @@ export function setCookie(source, name, value, path = '/') {
         return;
     }
 
-    const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+    if (!document.location.origin.includes(domain)) {
+        logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
+        return;
+    }
+
+    const cookieToSet = serializeCookie(name, validValue, path, domain);
     if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
@@ -102,7 +111,7 @@ setCookie.injections = [
     nativeIsNaN,
     isCookieSetWithValue,
     getLimitedCookieValue,
-    concatCookieNameValuePath,
+    serializeCookie,
     isValidCookiePath,
     getCookiePath,
 ];

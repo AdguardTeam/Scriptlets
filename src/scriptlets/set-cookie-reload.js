@@ -4,7 +4,7 @@ import {
     nativeIsNaN,
     isCookieSetWithValue,
     getLimitedCookieValue,
-    concatCookieNameValuePath,
+    serializeCookie,
     isValidCookiePath,
     // following helpers should be imported and injected
     // because they are used by helpers above
@@ -15,14 +15,14 @@ import {
  * @scriptlet set-cookie-reload
  *
  * @description
- * Sets a cookie with the specified name and value, and path,
+ * Sets a cookie with the specified name and value, path, and domain,
  * and reloads the current page after the cookie setting.
  * If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
  *
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
+ * example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
  * ```
  *
  * - `name` — required, cookie name to be set
@@ -45,6 +45,8 @@ import {
  * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all
+ * - `domain` — optional, cookie domain, if not set origin will be set as domain,
+ *              if the domain does not match the origin, the cookie will not be set
  *
  * > Note that the scriptlet does not encode a cookie name,
  * > e.g. name 'a:b' will be set as 'a:b' and not as 'a%3Ab'.
@@ -59,11 +61,13 @@ import {
  * example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
  *
  * example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
+ *
+ * example.org#%#//scriptlet('set-cookie-reload', 'test', '1', 'none', 'example.org')
  * ```
  *
  * @added v1.3.14.
  */
-export function setCookieReload(source, name, value, path = '/') {
+export function setCookieReload(source, name, value, path = '/', domain = '') {
     if (isCookieSetWithValue(document.cookie, name, value)) {
         return;
     }
@@ -79,7 +83,12 @@ export function setCookieReload(source, name, value, path = '/') {
         return;
     }
 
-    const cookieToSet = concatCookieNameValuePath(name, validValue, path);
+    if (!document.location.origin.includes(domain)) {
+        logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
+        return;
+    }
+
+    const cookieToSet = serializeCookie(name, validValue, path, domain);
     if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
@@ -109,7 +118,7 @@ setCookieReload.injections = [
     nativeIsNaN,
     isCookieSetWithValue,
     getLimitedCookieValue,
-    concatCookieNameValuePath,
+    serializeCookie,
     isValidCookiePath,
     getCookiePath,
 ];

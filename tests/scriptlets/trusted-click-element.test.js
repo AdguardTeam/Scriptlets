@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import { runScriptlet, clearGlobalProps } from '../helpers';
-import { concatCookieNameValuePath } from '../../src/helpers';
+import { serializeCookie } from '../../src/helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-click-element';
@@ -204,7 +204,7 @@ test('Multiple elements clicked, non-ordered render', (assert) => {
 
 test('extraMatch - single cookie match, matched', (assert) => {
     const cookieKey1 = 'first';
-    const cookieData = concatCookieNameValuePath(cookieKey1, 'true', '/');
+    const cookieData = serializeCookie(cookieKey1, 'true', '/');
     document.cookie = cookieData;
     const EXTRA_MATCH_STR = `cookie:${cookieKey1}`;
 
@@ -232,7 +232,7 @@ test('extraMatch - single cookie match, matched', (assert) => {
 test('extraMatch - single cookie match, not matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieKey2 = 'second';
-    const cookieData = concatCookieNameValuePath(cookieKey1, 'true', '/');
+    const cookieData = serializeCookie(cookieKey1, 'true', '/');
     document.cookie = cookieData;
     const EXTRA_MATCH_STR = `cookie:${cookieKey2}`;
 
@@ -260,7 +260,7 @@ test('extraMatch - single cookie match, not matched', (assert) => {
 test('extraMatch - string+regex cookie input, matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieVal1 = 'true';
-    const cookieData1 = concatCookieNameValuePath(cookieKey1, cookieVal1, '/');
+    const cookieData1 = serializeCookie(cookieKey1, cookieVal1, '/');
     document.cookie = cookieData1;
     const EXTRA_MATCH_STR = 'cookie:/firs/=true';
 
@@ -341,13 +341,13 @@ test('extraMatch - single localStorage match, not matched', (assert) => {
 test('extraMatch - complex string+regex cookie input & whitespaces & comma in regex, matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieVal1 = 'true';
-    const cookieData1 = concatCookieNameValuePath(cookieKey1, cookieVal1, '/');
+    const cookieData1 = serializeCookie(cookieKey1, cookieVal1, '/');
     const cookieKey2 = 'sec';
     const cookieVal2 = '1-1';
-    const cookieData2 = concatCookieNameValuePath(cookieKey2, cookieVal2, '/');
+    const cookieData2 = serializeCookie(cookieKey2, cookieVal2, '/');
     const cookieKey3 = 'third';
     const cookieVal3 = 'true';
-    const cookieData3 = concatCookieNameValuePath(cookieKey3, cookieVal3, '/');
+    const cookieData3 = serializeCookie(cookieKey3, cookieVal3, '/');
 
     document.cookie = cookieData1;
     document.cookie = cookieData2;
@@ -378,7 +378,7 @@ test('extraMatch - complex string+regex cookie input & whitespaces & comma in re
 
 test('extraMatch - single cookie match + single localStorage match, matched', (assert) => {
     const cookieKey1 = 'cookieMatch';
-    const cookieData = concatCookieNameValuePath(cookieKey1, 'true', '/');
+    const cookieData = serializeCookie(cookieKey1, 'true', '/');
     document.cookie = cookieData;
     const itemName = 'itemMatch';
     window.localStorage.setItem(itemName, 'value');
@@ -433,7 +433,7 @@ test('extraMatch - single cookie revert, click', (assert) => {
 test('extraMatch - single cookie with value revert match, should click', (assert) => {
     const cookieKey = 'clickValue';
     const cookieVal = 'true';
-    const cookieData = concatCookieNameValuePath(cookieKey, cookieVal, '/');
+    const cookieData = serializeCookie(cookieKey, cookieVal, '/');
     document.cookie = cookieData;
     const EXTRA_MATCH_STR = `!cookie:${cookieKey}=false`;
 
@@ -460,7 +460,7 @@ test('extraMatch - single cookie with value revert match, should click', (assert
 
 test('extraMatch - single cookie revert match, should not click', (assert) => {
     const cookieKey = 'doNotClick';
-    const cookieData = concatCookieNameValuePath(cookieKey, 'true', '/');
+    const cookieData = serializeCookie(cookieKey, 'true', '/');
     document.cookie = cookieData;
     const EXTRA_MATCH_STR = `!cookie:${cookieKey}`;
 
@@ -488,7 +488,7 @@ test('extraMatch - single cookie revert match, should not click', (assert) => {
 test('extraMatch - single cookie with value revert match, should not click', (assert) => {
     const cookieKey = 'doNotClickValue';
     const cookieVal = 'true';
-    const cookieData = concatCookieNameValuePath(cookieKey, cookieVal, '/');
+    const cookieData = serializeCookie(cookieKey, cookieVal, '/');
     document.cookie = cookieData;
     const EXTRA_MATCH_STR = `!cookie:${cookieKey}=${cookieVal}`;
 
@@ -591,13 +591,13 @@ test('extraMatch - single cookie match + single localStorage match, revert - cli
 test('extraMatch - complex string+regex cookie input&whitespaces&comma in regex, revert should not click', (assert) => {
     const cookieKey1 = 'first';
     const cookieVal1 = 'true';
-    const cookieData1 = concatCookieNameValuePath(cookieKey1, cookieVal1, '/');
+    const cookieData1 = serializeCookie(cookieKey1, cookieVal1, '/');
     const cookieKey2 = 'sec';
     const cookieVal2 = '1-1';
-    const cookieData2 = concatCookieNameValuePath(cookieKey2, cookieVal2, '/');
+    const cookieData2 = serializeCookie(cookieKey2, cookieVal2, '/');
     const cookieKey3 = 'third';
     const cookieVal3 = 'true';
-    const cookieData3 = concatCookieNameValuePath(cookieKey3, cookieVal3, '/');
+    const cookieData3 = serializeCookie(cookieKey3, cookieVal3, '/');
 
     document.cookie = cookieData1;
     document.cookie = cookieData2;

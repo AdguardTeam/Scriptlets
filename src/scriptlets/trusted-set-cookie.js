@@ -3,7 +3,7 @@ import {
     logMessage,
     nativeIsNaN,
     isCookieSetWithValue,
-    concatCookieNameValuePath,
+    serializeCookie,
     isValidCookiePath,
     parseKeywordValue,
     getTrustedCookieOffsetMs,
@@ -18,12 +18,13 @@ import {
  *
  * @description
  * Sets a cookie with arbitrary name and value,
- * and with optional ability to offset cookie attribute 'expires' and set path.
+ * and with optional ability to offset cookie attribute 'expires', set path
+ * and set domain.
  *
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
+ * example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path[, domain]]])
  * ```
  *
  * - `name` — required, cookie name to be set
@@ -40,6 +41,8 @@ import {
  * - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all
+ * - `domain` — optional, cookie domain, if not set origin will be set as domain,
+ *              if the domain does not match the origin, the cookie will not be set
  *
  * > Note that the scriptlet does not encode cookie names and values.
  * > As a result, if a cookie's name or value includes `;`,
@@ -76,13 +79,18 @@ import {
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
+ *
+ * 1. Set cookie with domain
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none', 'example.org')
  *     ```
  *
  * @added v1.7.3.
  */
 /* eslint-enable max-len */
 
-export function trustedSetCookie(source, name, value, offsetExpiresSec = '', path = '/') {
+export function trustedSetCookie(source, name, value, offsetExpiresSec = '', path = '/', domain = '') {
     if (typeof name === 'undefined') {
         logMessage(source, 'Cookie name should be specified');
         return;
@@ -99,12 +107,18 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
         return;
     }
 
-    let cookieToSet = concatCookieNameValuePath(name, parsedValue, path, false);
+    if (!document.location.origin.includes(domain)) {
+        logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
+        return;
+    }
+
+    let cookieToSet = serializeCookie(name, parsedValue, path, domain, false);
     if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
     }
 
+    // TODO: Move this concat to serializeCookie
     if (offsetExpiresSec) {
         const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
 
@@ -131,7 +145,7 @@ trustedSetCookie.injections = [
     logMessage,
     nativeIsNaN,
     isCookieSetWithValue,
-    concatCookieNameValuePath,
+    serializeCookie,
     isValidCookiePath,
     getTrustedCookieOffsetMs,
     parseKeywordValue,

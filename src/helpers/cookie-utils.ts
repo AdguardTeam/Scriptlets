@@ -30,14 +30,16 @@ export const getCookiePath = (rawPath: string): string => {
  * @param name name argument of *set-cookie-* scriptlets
  * @param rawValue value argument of *set-cookie-* scriptlets
  * @param rawPath path argument of *set-cookie-* scriptlets
+ * @param domainValue domain argument of *set-cookie-* scriptlets
  * @param shouldEncodeValue if cookie value should be encoded. Default is `true`
  *
  * @returns string OR `null` if name or value is invalid
  */
-export const concatCookieNameValuePath = (
+export const serializeCookie = (
     name: string,
     rawValue: string,
     rawPath: string,
+    domainValue = '',
     shouldEncodeValue = true,
 ) => {
     const COOKIE_BREAKER = ';';
@@ -55,6 +57,10 @@ export const concatCookieNameValuePath = (
     const path = getCookiePath(rawPath);
     if (path) {
         resultCookie += `; ${path}`;
+    }
+
+    if (domainValue) {
+        resultCookie += `; domain=${domainValue}`;
     }
 
     return resultCookie;
