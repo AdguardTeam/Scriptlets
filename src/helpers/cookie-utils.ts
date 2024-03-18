@@ -114,7 +114,7 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
         if (nativeIsNaN(validValue)) {
             return null;
         }
-        if (Math.abs(validValue) < 0 || Math.abs(validValue) > 15) {
+        if (Math.abs(validValue) < 0 || Math.abs(validValue) > 32767) {
             return null;
         }
     } else {

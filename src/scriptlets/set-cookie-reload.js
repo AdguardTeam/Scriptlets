@@ -27,7 +27,7 @@ import {
  *
  * - `name` — required, cookie name to be set
  * - `value` — required, cookie value; possible values:
- *     - number `>= 0 && <= 15`
+ *     - positive decimal integer `<= 32767`
  *     - one of the predefined constants in any case variation:
  *         - `true` / `t`
  *         - `false` / `f`

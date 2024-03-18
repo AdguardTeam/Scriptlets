@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Validation of scriptlet rules with no name and args for multiple scriptlet exception rules [#377]
 - Cookie name is not encoded by cookie setting scriptlets [#408]
+- Increased the possible numeric value up to `32767` for `set-cookie` and `set-cookie-reload` scriptlets [#388]
 
 ### Fixed
 
@@ -50,6 +51,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#403]: https://github.com/AdguardTeam/Scriptlets/issues/403
 [#395]: https://github.com/AdguardTeam/Scriptlets/issues/395
 [#389]: https://github.com/AdguardTeam/Scriptlets/issues/389
+[#388]: https://github.com/AdguardTeam/Scriptlets/issues/388
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 [#361]: https://github.com/AdguardTeam/Scriptlets/issues/361
 [#327]: https://github.com/AdguardTeam/Scriptlets/issues/327
