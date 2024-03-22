@@ -10,7 +10,12 @@ import * as redirectsList from '../src/redirects/redirects-list';
 import { version } from '../package.json';
 import { rollupStandard } from './rollup-runners';
 import { writeFile, getDataFromFiles } from './helpers';
-import { redirectsFilenames, REDIRECTS_SRC_RELATIVE_DIR_PATH } from './constants';
+import {
+    redirectsFilenames,
+    REDIRECTS_SRC_RELATIVE_DIR_PATH,
+    DIST_DIR_NAME,
+    CORELIBS_REDIRECTS_FILE_NAME,
+} from './constants';
 import {
     redirectsListConfig,
     click2LoadConfig,
@@ -18,12 +23,11 @@ import {
 } from '../rollup.config';
 
 const FILE_NAME = 'redirects.yml';
-const CORELIBS_FILE_NAME = 'redirects.json';
-const PATH_TO_DIST = './dist';
+const PATH_TO_DIST = `./${DIST_DIR_NAME}`;
 
 const RESULT_PATH = path.resolve(PATH_TO_DIST, FILE_NAME);
 const REDIRECT_FILES_PATH = path.resolve(PATH_TO_DIST, 'redirect-files');
-const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_FILE_NAME);
+const CORELIBS_RESULT_PATH = path.resolve(PATH_TO_DIST, CORELIBS_REDIRECTS_FILE_NAME);
 
 // TODO: check if constants may be used
 const STATIC_REDIRECTS_PATH = './src/redirects/static-redirects.yml';

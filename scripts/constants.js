@@ -51,6 +51,10 @@ const NON_REDIRECTS_FILES = [
 const redirectsFilenames = getFilesList(REDIRECTS_SRC_RELATIVE_DIR_PATH)
     .filter((el) => !NON_REDIRECTS_FILES.includes(el));
 
+const DIST_DIR_NAME = 'dist';
+const CORELIBS_SCRIPTLETS_FILE_NAME = 'scriptlets.corelibs.json';
+const CORELIBS_REDIRECTS_FILE_NAME = 'redirects.json';
+
 module.exports = {
     REMOVED_MARKER,
     COMPATIBILITY_TABLE_DATA_PATH,
@@ -60,4 +64,7 @@ module.exports = {
     scriptletsFilenames,
     trustedScriptletsFilenames,
     redirectsFilenames,
+    DIST_DIR_NAME,
+    CORELIBS_SCRIPTLETS_FILE_NAME,
+    CORELIBS_REDIRECTS_FILE_NAME,
 };

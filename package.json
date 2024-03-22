@@ -4,6 +4,7 @@
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "build": "babel-node -x .js,.ts scripts/build.js",
+        "postbuild": "babel-node -x .js,.ts scripts/check-corelibs-dist.js",
         "test": "yarn test:jest && yarn test:qunit",
         "browserstack": "yarn test --build && node browserstack.js",
         "test:qunit": "babel-node -x .js,.ts scripts/test.js",

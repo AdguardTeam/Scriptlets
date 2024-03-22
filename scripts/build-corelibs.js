@@ -5,6 +5,9 @@ import { minify } from 'terser';
 import * as scriptletList from '../src/scriptlets/scriptlets-list';
 import { version } from '../package.json';
 import { writeFile } from './helpers';
+import { DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME } from './constants';
+
+const corelibsScriptletsPath = path.join(__dirname, '../', DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME);
 
 const buildCorelibsJson = async () => {
     // eslint-disable-next-line import/no-unresolved,global-require
@@ -38,6 +41,6 @@ const buildCorelibsJson = async () => {
 export const buildScriptletsForCorelibs = async () => {
     console.log('Start building corelibs...');
     const json = await buildCorelibsJson();
-    await writeFile(path.resolve(__dirname, '../dist/scriptlets.corelibs.json'), json, 'utf8');
+    await writeFile(corelibsScriptletsPath, json, 'utf8');
     console.log('Corelibs built');
 };
