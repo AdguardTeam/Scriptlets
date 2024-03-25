@@ -145,7 +145,7 @@ if (!isSupported) {
         };
 
         // not setting constant to illegalNumber
-        runScriptletFromTag(illegalProp, 32768);
+        runScriptletFromTag(illegalProp, '32768');
         assert.strictEqual(window[illegalProp], undefined);
         clearGlobalProps(illegalProp);
 
@@ -231,18 +231,18 @@ if (!isSupported) {
 
     test('values with same types are not overwritten, values with different types are overwritten', (assert) => {
         const property = 'customProperty';
-        const firstValue = 10;
-        const anotherValue = 100;
-        const anotherTypeValue = true;
+        const firstValue = '10';
+        const anotherValue = '100';
+        const anotherTypeValue = 'true';
 
         runScriptletFromTag(property, firstValue);
-        assert.strictEqual(window[property], firstValue);
+        assert.strictEqual(window[property], Number(firstValue), 'initial value is set');
 
         addSetPropTag(property, anotherValue);
-        assert.strictEqual(window[property], firstValue, 'values with same types are not overwritten');
+        assert.strictEqual(window[property], Number(firstValue), 'values with same types are not overwritten');
 
         addSetPropTag(property, anotherTypeValue);
-        assert.strictEqual(window[property], anotherTypeValue, 'values with different types are overwritten');
+        assert.strictEqual(window[property], true, 'values with different types are overwritten');
 
         clearGlobalProps(property);
     });

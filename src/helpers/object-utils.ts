@@ -43,3 +43,13 @@ export function setPropertyAccess(
     Object.defineProperty(object, property, descriptor);
     return true;
 }
+
+/**
+ * Checks whether the value is an arbitrary object
+ *
+ * @param value arbitrary value
+ * @returns true, if value is an arbitrary object
+ */
+export function isArbitraryObject(value: unknown): value is ArbitraryObject {
+    return value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof RegExp);
+}

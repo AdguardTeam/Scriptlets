@@ -436,6 +436,10 @@ export function inferValue(value: string): unknown {
         return NaN;
     }
 
+    if (value.startsWith('/') && value.endsWith('/')) {
+        return toRegExp(value);
+    }
+
     // Number class constructor works 2 times faster than JSON.parse
     // and wont interpret mixed inputs like '123asd' as parseFloat would
     const MAX_ALLOWED_NUM = 32767;

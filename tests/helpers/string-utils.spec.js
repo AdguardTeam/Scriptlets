@@ -192,5 +192,20 @@ describe('Test string utils', () => {
             const actual = 'NaN';
             expect(Number.isNaN(inferValue(actual))).toBeTruthy();
         });
+
+        test('too big of a number', () => {
+            const actual = (32767 + 1).toString();
+            expect(() => inferValue(actual)).toThrow('number values bigger than 32767 are not allowed');
+        });
+
+        test('string to regexp', () => {
+            const actual = '/[a-z]{1,9}/';
+            const expected = /[a-z]{1,9}/;
+
+            const res = inferValue(actual);
+            expect(res).toStrictEqual(expected);
+            expect(res instanceof RegExp).toBeTruthy();
+            expect(res.toString()).toStrictEqual(actual);
+        });
     });
 });

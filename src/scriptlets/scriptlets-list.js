@@ -68,6 +68,7 @@ export * from './trusted-create-element';
 export * from './href-sanitizer';
 export * from './json-prune-fetch-response';
 export * from './no-protected-audience';
+export * from './trusted-suppress-native-method';
 export * from './json-prune-xhr-response';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
