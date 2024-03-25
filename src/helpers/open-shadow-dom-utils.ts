@@ -70,3 +70,36 @@ export const pierceShadowDom = (
     const innerHosts = flatten<HTMLElement>(innerHostsAcc);
     return { targets, innerHosts };
 };
+
+type QueryFunc = typeof document.querySelector;
+
+/**
+ * Retrieves the first Element that matches the selector, with the ability
+ * to select elements from inside open shadow-dom.
+ *
+ * @param selector A DOMString containing one or more selectors to match.
+ * Supports `>>>` combinator to split the selector into shadow host selector,
+ * to find the element containing shadow root, and shadow root selector, to find the element inside shadow dom.
+ * @param context The Element or Document which is the context for the query.
+ * @param context.querySelector The querySelector function to use.
+ * @returns The first Element within the document that matches the specified selector, or null if no matches are found.
+ */
+export function queryShadowSelector(
+    selector: string,
+    context: { querySelector: QueryFunc } = document.documentElement,
+): ReturnType<QueryFunc> {
+    const SHADOW_COMBINATOR = ' >>> ';
+    const pos = selector.indexOf(SHADOW_COMBINATOR);
+    if (pos === -1) {
+        return context.querySelector(selector);
+    }
+
+    const shadowHostSelector = selector.slice(0, pos).trim();
+    const elem = context.querySelector(shadowHostSelector);
+    if (!elem || !elem.shadowRoot) {
+        return null;
+    }
+
+    const shadowRootSelector = selector.slice(pos + SHADOW_COMBINATOR.length).trim();
+    return queryShadowSelector(shadowRootSelector, elem.shadowRoot);
+}

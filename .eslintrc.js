@@ -46,6 +46,7 @@ module.exports = {
         'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
         'no-constant-condition': ['error', { checkLoops: false }],
         // jsdoc rules
+        'jsdoc/check-param-names': 'error',
         'jsdoc/check-tag-names': ['error', {
             definedTags: [
                 'scriptlet',

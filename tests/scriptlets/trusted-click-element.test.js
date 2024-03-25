@@ -659,8 +659,11 @@ test('Test - wait for an element to click', (assert) => {
 
     runScriptlet(name, [selectorsString]);
 
+    const panels = [];
+
     setTimeout(() => {
-        createPanel();
+        const panel = createPanel();
+        panels.push(panel);
     }, 100);
 
     setTimeout(() => {
@@ -670,12 +673,39 @@ test('Test - wait for an element to click', (assert) => {
     }, 101);
 
     setTimeout(() => {
-        createPanel();
+        const panel = createPanel();
+        panels.push(panel);
     }, 102);
 
     setTimeout(() => {
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
-        removePanel();
+        panels.forEach((panel) => panel.remove());
         done();
     }, 200);
+});
+
+// https://github.com/AdguardTeam/AdguardFilters/issues/152341
+test('Open shadow dom element clicked', (assert) => {
+    const ELEM_COUNT = 1;
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> div > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString]);
+
+    const panel = createPanel();
+    const shadowRoot = panel.attachShadow({ mode: 'open' });
+    const div = document.createElement('div');
+    const clickable = createClickable(1);
+    div.appendChild(clickable);
+    shadowRoot.appendChild(div);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
 });

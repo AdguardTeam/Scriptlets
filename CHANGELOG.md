@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `json-prune-xhr-response` scriptlet [#360]
 - `href-sanitizer` scriptlet [#327]
 - `no-protected-audience` scriptlet [#395]
+- the ability for `trusted-click-element` scriptlet to click inside open shadow doms [#323]
 - Domain value for setting cookie scriptlets [#389]
 - Multiple redirects can now be used as scriptlets [#300]:
     - `amazon-apstag`
@@ -59,6 +60,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#361]: https://github.com/AdguardTeam/Scriptlets/issues/361
 [#360]: https://github.com/AdguardTeam/Scriptlets/issues/360
 [#327]: https://github.com/AdguardTeam/Scriptlets/issues/327
+[#323]: https://github.com/AdguardTeam/Scriptlets/issues/323
 [#300]: https://github.com/AdguardTeam/Scriptlets/issues/300
 
 

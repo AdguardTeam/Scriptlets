@@ -5,6 +5,7 @@ import {
     throttle,
     logMessage,
     parseMatchArg,
+    queryShadowSelector,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -21,8 +22,8 @@ import {
  * ```text
  * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay]])
  * ```
- *
- * - `selectors` — required, string with query selectors delimited by comma
+ * <!-- markdownlint-disable-next-line line-length -->
+ * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
  * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`;
  * can be set as `name:key[=value]` where `value` is optional.
  * If `cookie`/`localStorage` starts with `!` then the element will only be clicked
@@ -32,6 +33,8 @@ import {
  *     - `cookie` — test string or regex against cookies on a page
  *     - `localStorage` — check if localStorage item is present
  * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
+ *
+ * <!-- markdownlint-disable line-length -->
  *
  * ### Examples
  *
@@ -79,8 +82,6 @@ import {
  *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
  *     ```
  *
- *     <!-- markdownlint-enable line-length -->
- *
  * 1. Click element only if cookie with name `cmpconsent` does not exist
  *
  *     ```adblock
@@ -92,6 +93,14 @@ import {
  *     ```adblock
  *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:consent, !localStorage:promo')
  *     ```
+ *
+ * 1. Click element inside open shadow DOM, which could be selected by `div > button`, but is inside shadow host element with host element selected by `article .container`
+ *
+ *    ```adblock
+ *    example.com#%#//scriptlet('trusted-click-element', 'article .container > div#host >>> div > button')
+ *    ```
+ *
+ * <!-- markdownlint-enable line-length -->
  *
  * @added v1.7.3.
  */
@@ -280,7 +289,7 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
             if (!selector) {
                 return;
             }
-            const element = document.querySelector(selector);
+            const element = queryShadowSelector(selector);
             if (!element) {
                 return;
             }
@@ -331,4 +340,5 @@ trustedClickElement.injections = [
     throttle,
     logMessage,
     parseMatchArg,
+    queryShadowSelector,
 ];
