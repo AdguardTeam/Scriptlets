@@ -10,6 +10,10 @@ type SharedRequestData<T> = {
     [key in LegalRequestProp]?: T;
 };
 
+export interface XMLHttpRequestSharedRequestData<T> extends SharedRequestData<T> {
+    async: boolean | string;
+}
+
 /**
  * Object which is populated with request data from scriptlet arguments
  */

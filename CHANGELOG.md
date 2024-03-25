@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - `json-prune-fetch-response` scriptlet [#361]
+- `json-prune-xhr-response` scriptlet [#360]
 - `href-sanitizer` scriptlet [#327]
 - `no-protected-audience` scriptlet [#395]
 - Domain value for setting cookie scriptlets [#389]
@@ -54,6 +55,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#388]: https://github.com/AdguardTeam/Scriptlets/issues/388
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 [#361]: https://github.com/AdguardTeam/Scriptlets/issues/361
+[#360]: https://github.com/AdguardTeam/Scriptlets/issues/360
 [#327]: https://github.com/AdguardTeam/Scriptlets/issues/327
 [#300]: https://github.com/AdguardTeam/Scriptlets/issues/300
 

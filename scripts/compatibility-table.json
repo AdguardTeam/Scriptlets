@@ -347,6 +347,7 @@
             "ubo": "json-prune-fetch-response.js"
         },
         {
+            "adg": "json-prune-xhr-response",
             "ubo": "json-prune-xhr-response.js"
         },
         {
