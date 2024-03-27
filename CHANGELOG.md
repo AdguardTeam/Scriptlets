@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- the ability for `prevent-fetch` scriptlet to set `cors` as a response type [#394]
 - `trusted-suppress-native-method` scriptlet [#383]
 - `json-prune-fetch-response` scriptlet [#361]
 - `json-prune-xhr-response` scriptlet [#360]
@@ -53,6 +54,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#403]: https://github.com/AdguardTeam/Scriptlets/issues/403
 [#395]: https://github.com/AdguardTeam/Scriptlets/issues/395
+[#394]: https://github.com/AdguardTeam/Scriptlets/issues/394
 [#389]: https://github.com/AdguardTeam/Scriptlets/issues/389
 [#388]: https://github.com/AdguardTeam/Scriptlets/issues/388
 [#383]: https://github.com/AdguardTeam/Scriptlets/issues/383

@@ -50,7 +50,8 @@ import {
  *     - `emptyStr` — empty string
  * - `responseType` — optional, string for defining response type,
  *   original response type is used if not specified. Possible values:
- *     - `default`
+ *     - `basic`
+ *     - `cors`
  *     - `opaque`
  *
  * > Usage with no arguments will log fetch calls to browser console;
@@ -136,7 +137,8 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
     const isResponseTypeSpecified = typeof responseType !== 'undefined';
     const isResponseTypeSupported = (responseType) => {
         const SUPPORTED_TYPES = [
-            'default',
+            'basic',
+            'cors',
             'opaque',
         ];
         return SUPPORTED_TYPES.includes(responseType);
@@ -148,6 +150,28 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         logMessage(source, `Invalid responseType parameter: '${responseType}'`);
         return;
     }
+
+    /**
+     * Get the response type based on the given request object.
+     *
+     * @param {Request} request - The request object.
+     * @returns {string|undefined} The response type or undefined.
+     */
+    const getResponseType = (request) => {
+        try {
+            const { mode } = request;
+            if (mode === undefined || mode === 'cors' || mode === 'no-cors') {
+                const fetchURL = new URL(request.url);
+                if (fetchURL.origin === document.location.origin) {
+                    return 'basic';
+                }
+                return mode === 'no-cors' ? 'opaque' : 'cors';
+            }
+        } catch (error) {
+            logMessage(source, `Could not determine response type: ${error}`);
+        }
+        return undefined;
+    };
 
     const handlerWrapper = async (target, thisArg, args) => {
         let shouldPrevent = false;
@@ -162,24 +186,26 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
 
         if (shouldPrevent) {
             hit(source);
+            let finalResponseType;
             try {
+                finalResponseType = responseType || getResponseType(fetchData);
                 const origResponse = await Reflect.apply(target, thisArg, args);
                 // In the case of apps, the blocked request has status 500
                 // and no error is thrown, so it's necessary to check response.ok
                 // https://github.com/AdguardTeam/Scriptlets/issues/334
                 if (!origResponse.ok) {
-                    return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+                    return noopPromiseResolve(strResponseBody, fetchData.url, finalResponseType);
                 }
                 return modifyResponse(
                     origResponse,
                     {
                         body: strResponseBody,
-                        type: responseType,
+                        type: finalResponseType,
                     },
                 );
             } catch (ex) {
                 // https://github.com/AdguardTeam/Scriptlets/issues/334
-                return noopPromiseResolve(strResponseBody, fetchData.url, responseType);
+                return noopPromiseResolve(strResponseBody, fetchData.url, finalResponseType);
             }
         }
 

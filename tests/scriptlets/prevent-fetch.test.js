@@ -441,4 +441,80 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
+
+    test('simple fetch - cors response type', async (assert) => {
+        const CORS_RESPONSE_TYPE = 'cors';
+        // blocked_request.json doesn't exist,
+        // it's required for test for blocked requests
+        const BLOCKED_REQUEST = `${FETCH_OBJECTS_PATH}/blocked_request.json`;
+
+        runScriptlet(name, ['blocked_request', '', CORS_RESPONSE_TYPE]);
+        const done = assert.async();
+
+        const response = await fetch(BLOCKED_REQUEST);
+
+        assert.strictEqual(response.type, CORS_RESPONSE_TYPE, 'Response type is set');
+        assert.strictEqual(response.url, BLOCKED_REQUEST, `Response URL is ${BLOCKED_REQUEST}`);
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - cors response type, empty string', async (assert) => {
+        const EXPECTED_RESPONSE_TYPE = 'cors';
+        const EXPECTED_RESPONSE_REDIRECTED = false;
+        const EXPECTED_RESPONSE_STATUS = 200;
+        const URL_PATH = '//127.0.0.1/pagead/js/adsbygoogle.js';
+        const inputRequest = new Request(URL_PATH);
+
+        runScriptlet(name, ['adsbygoogle', 'emptyStr']);
+        const done = assert.async();
+
+        const response = await fetch(inputRequest);
+        const parsedData = await response.text();
+
+        assert.strictEqual(response.type, EXPECTED_RESPONSE_TYPE, `Response type is ${EXPECTED_RESPONSE_TYPE}`);
+        assert.ok(response.url.endsWith(URL_PATH), `Response URL is ${URL_PATH}`);
+        assert.notOk(response.body === null, 'Response body is NOT null');
+        assert.strictEqual(
+            response.redirected,
+            EXPECTED_RESPONSE_REDIRECTED,
+            `Response redirected is ${EXPECTED_RESPONSE_REDIRECTED}`,
+        );
+        assert.strictEqual(response.status, EXPECTED_RESPONSE_STATUS, `Response status is ${EXPECTED_RESPONSE_STATUS}`);
+        assert.strictEqual(parsedData, '', 'Response is empty string');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - opaque response type, empty string', async (assert) => {
+        const EXPECTED_RESPONSE_TYPE = 'opaque';
+        const EXPECTED_RESPONSE_REDIRECTED = false;
+        const EXPECTED_RESPONSE_STATUS = 0;
+        const URL_PATH = '//127.0.0.1/pagead/js/adsbygoogle.js';
+        const options = {
+            method: 'HEAD',
+            mode: 'no-cors',
+        };
+        const inputRequest = new Request(URL_PATH, options);
+
+        runScriptlet(name, ['adsbygoogle', 'emptyStr']);
+        const done = assert.async();
+
+        const response = await fetch(inputRequest);
+        const parsedData = await response.text();
+
+        assert.strictEqual(response.type, EXPECTED_RESPONSE_TYPE, `Response type is ${EXPECTED_RESPONSE_TYPE}`);
+        assert.strictEqual(response.url, '', 'Response URL is empty string');
+        assert.strictEqual(response.body, null, 'Response body is set to null');
+        assert.strictEqual(
+            response.redirected,
+            EXPECTED_RESPONSE_REDIRECTED,
+            `Response redirected is ${EXPECTED_RESPONSE_REDIRECTED}`,
+        );
+        assert.strictEqual(response.status, EXPECTED_RESPONSE_STATUS, `Response status is ${EXPECTED_RESPONSE_STATUS}`);
+        assert.strictEqual(response.statusText, '', 'Response statusText is set to empty string');
+        assert.strictEqual(parsedData, '', 'Response is empty string');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
 }
