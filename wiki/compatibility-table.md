@@ -19,18 +19,35 @@
 | [debug-current-inline-script](../wiki/about-scriptlets.md#debug-current-inline-script) |  |  |
 | [debug-on-property-read](../wiki/about-scriptlets.md#debug-on-property-read) |  |  |
 | [debug-on-property-write](../wiki/about-scriptlets.md#debug-on-property-write) |  |  |
+| [amazon-apstag](../wiki/about-scriptlets.md#amazon-apstag) |  |  |
+| [didomi-loader](../wiki/about-scriptlets.md#didomi-loader) |  |  |
 | [dir-string](../wiki/about-scriptlets.md#dir-string) |  |  |
 | [disable-newtab-links](../wiki/about-scriptlets.md#disable-newtab-links) | disable-newtab-links.js |  |
 | [evaldata-prune](../wiki/about-scriptlets.md#evaldata-prune) | evaldata-prune.js |  |
+| [fingerprintjs2](../wiki/about-scriptlets.md#fingerprintjs2) |  |  |
+| [fingerprintjs3](../wiki/about-scriptlets.md#fingerprintjs3) |  |  |
+| [gemius](../wiki/about-scriptlets.md#gemius) |  |  |
+| [google-analytics](../wiki/about-scriptlets.md#google-analytics) |  |  |
+| [google-analytics-ga](../wiki/about-scriptlets.md#google-analytics-ga) |  |  |
+| [google-ima3](../wiki/about-scriptlets.md#google-ima3) |  |  |
+| [googlesyndication-adsbygoogle](../wiki/about-scriptlets.md#googlesyndication-adsbygoogle) |  |  |
+| [googletagservices-gpt](../wiki/about-scriptlets.md#googletagservices-gpt) |  |  |
 | [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js | json-prune |
 | [log](../wiki/about-scriptlets.md#log) |  | log |
 | [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) | addEventListener-logger.js (aell.js) (removed) |  |
 | [log-eval](../wiki/about-scriptlets.md#log-eval) |  |  |
 | [log-on-stack-trace](../wiki/about-scriptlets.md#log-on-stack-trace) |  |  |
 | [m3u-prune](../wiki/about-scriptlets.md#m3u-prune) | m3u-prune.js |  |
+| [matomo](../wiki/about-scriptlets.md#matomo) |  |  |
+| [metrika-yandex-watch](../wiki/about-scriptlets.md#metrika-yandex-watch) |  |  |
+| [metrika-yandex-tag](../wiki/about-scriptlets.md#metrika-yandex-tag) |  |  |
+| [naver-wcslog](../wiki/about-scriptlets.md#naver-wcslog) |  |  |
 | [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
 | [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
+| [no-protected-audience](../wiki/about-scriptlets.md#no-protected-audience) |  |  |
 | [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
+| [pardot-1.0](../wiki/about-scriptlets.md#pardot-1.0) |  |  |
+| [prebid](../wiki/about-scriptlets.md#prebid) |  |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) | prevent-listener |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js (removed) |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
@@ -49,6 +66,7 @@
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
 | [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | remove-cookie.js (cookie-remover.js) | cookie-remover |
 | [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (rmnt.js) |  |
+| [scorecardresearch-beacon](../wiki/about-scriptlets.md#scorecardresearch-beacon) |  |  |
 | [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-cookie](../wiki/about-scriptlets.md#set-cookie) | set-cookie.js |  |
@@ -90,7 +108,7 @@
 |  | trusted-set-local-storage-item.js |  |
 |  | trusted-replace-fetch-response.js (trusted-rpfr.js) |  |
 | [json-prune-fetch-response](../wiki/about-scriptlets.md#json-prune-fetch-response) | json-prune-fetch-response.js |  |
-|  | json-prune-xhr-response.js |  |
+| [json-prune-xhr-response](../wiki/about-scriptlets.md#json-prune-xhr-response) | json-prune-xhr-response.js |  |
 |  | trusted-replace-xhr-response.js |  |
 |  | multiup.js |  |
 |  | prevent-canvas.js |  |
@@ -115,8 +133,9 @@
 | [amazon-apstag](../wiki/about-redirects.md#amazon-apstag) | amazon_apstag.js |  |
 | [ati-smarttag](../wiki/about-redirects.md#ati-smarttag) |  |  |
 | [click2load.html](../wiki/about-redirects.md#click2load.html) | click2load.html |  |
+| [didomi-loader](../wiki/about-redirects.md#didomi-loader) |  |  |
 | [fingerprintjs2](../wiki/about-redirects.md#fingerprintjs2) | fingerprint2.js |  |
-| [fingerprint3js](../wiki/about-redirects.md#fingerprint3js) | fingerprint3.js |  |
+| [fingerprintjs3](../wiki/about-redirects.md#fingerprintjs3) | fingerprint3.js |  |
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
 | [google-ima3](../wiki/about-redirects.md#google-ima3) | google-ima.js |  |
@@ -138,8 +157,9 @@
 | [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.0.xml |  |
 | [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) |  |  |
 | [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) |  |  |
-| [pardot-1.0](../wiki/about-redirects.md#pardot-1.0) |  |  |
 | [noopvast-4.0](../wiki/about-redirects.md#noopvast-4.0) |  |  |
+| [pardot-1.0](../wiki/about-redirects.md#pardot-1.0) |  |  |
+| [prebid](../wiki/about-redirects.md#prebid) |  |  |
 | [prebid-ads](../wiki/about-redirects.md#prebid-ads) | prebid-ads.js |  |
 | [prevent-bab](../wiki/about-redirects.md#prevent-bab) | nobab.js |  |
 | [prevent-bab2](../wiki/about-redirects.md#prevent-bab2) | nobab2.js |  |
