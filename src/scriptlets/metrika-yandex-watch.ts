@@ -13,6 +13,6 @@ import { metrikaYandexWatch } from '../redirects/metrika-yandex-watch';
  * example.org#%#//scriptlet('metrika-yandex-watch')
  * ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export { metrikaYandexWatch };

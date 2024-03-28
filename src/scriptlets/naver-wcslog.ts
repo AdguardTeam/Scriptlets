@@ -12,6 +12,6 @@ import { NaverWcslog } from '../redirects/naver-wcslog';
  * example.org#%#//scriptlet('naver-wcslog')
  * ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export { NaverWcslog };

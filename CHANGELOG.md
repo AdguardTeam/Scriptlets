@@ -7,17 +7,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.10.25] - 2024-03-28
 
 ### Added
 
-- the ability for `prevent-fetch` scriptlet to set `cors` as a response type [#394]
 - `trusted-suppress-native-method` scriptlet [#383]
 - `json-prune-fetch-response` scriptlet [#361]
 - `json-prune-xhr-response` scriptlet [#360]
 - `href-sanitizer` scriptlet [#327]
 - `no-protected-audience` scriptlet [#395]
-- the ability for `trusted-click-element` scriptlet to click inside open shadow doms [#323]
+- The ability for `prevent-fetch` scriptlet to set `cors` as a response type [#394]
+- The ability for `trusted-click-element` scriptlet to click inside open shadow doms [#323]
 - Domain value for setting cookie scriptlets [#389]
 - Multiple redirects can now be used as scriptlets [#300]:
     - `amazon-apstag`
@@ -49,7 +49,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - UBO→ADG conversion of `$remove$` scriptlet param [#404]
 - `set-constant` scriptlet not setting a constant over falsy values [#403]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...HEAD
+[v1.10.25]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...v1.10.25
 [#408]: https://github.com/AdguardTeam/Scriptlets/issues/408
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#403]: https://github.com/AdguardTeam/Scriptlets/issues/403

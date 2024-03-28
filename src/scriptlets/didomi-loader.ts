@@ -13,6 +13,6 @@ import { DidomiLoader } from '../redirects/didomi-loader';
  * example.org#%#//scriptlet('didomi-loader')
  * ```
  *
- * @added unknown.
+ * @added v1.10.25.
  */
 export { DidomiLoader };

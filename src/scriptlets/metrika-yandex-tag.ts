@@ -13,6 +13,6 @@ import { metrikaYandexTag } from '../redirects/metrika-yandex-tag';
  * example.org#%#//scriptlet('metrika-yandex-tag')
  * ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export { metrikaYandexTag };

@@ -12,6 +12,6 @@ import { AmazonApstag } from '../redirects/amazon-apstag';
  * example.org#%#//scriptlet('amazon-apstag')
  * ```
  *
- * @added unknown.
+ * @added v1.10.25.
  */
 export { AmazonApstag };

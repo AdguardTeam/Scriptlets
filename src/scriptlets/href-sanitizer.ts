@@ -88,7 +88,7 @@ import {
  *     </div>
  *     ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 
 export function hrefSanitizer(

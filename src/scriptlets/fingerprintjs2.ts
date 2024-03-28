@@ -13,6 +13,6 @@ import { Fingerprintjs2 } from '../redirects/fingerprintjs2';
  * example.org#%#//scriptlet('fingerprintjs2')
  * ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export { Fingerprintjs2 };

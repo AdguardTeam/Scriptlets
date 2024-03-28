@@ -19,7 +19,7 @@ import {
  * example.org#%#//scriptlet('no-protected-audience')
  * ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export function noProtectedAudience(source: Source) {
     // Prevent XMLDocuments from being tampered with generic scriptlet rule

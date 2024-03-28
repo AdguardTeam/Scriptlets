@@ -12,6 +12,6 @@ import { GoogleAnalytics } from '../redirects/google-analytics';
  * example.org#%#//scriptlet('google-analytics')
  * ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export { GoogleAnalytics };

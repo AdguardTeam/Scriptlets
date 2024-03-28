@@ -11,6 +11,6 @@ import { ScoreCardResearchBeacon } from '../redirects/scorecardresearch-beacon';
  * example.org#%#//scriptlet('scorecardresearch-beacon')
  * ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export { ScoreCardResearchBeacon };

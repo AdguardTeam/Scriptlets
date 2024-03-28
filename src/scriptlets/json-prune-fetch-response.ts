@@ -113,7 +113,7 @@ import {
  *     example.org#%#//scriptlet('json-prune-fetch-response')
  *     ```
  *
- * @added unknown.
+ * v1.10.25.
  */
 export function jsonPruneFetchResponse(
     source: Source,
