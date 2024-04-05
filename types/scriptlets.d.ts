@@ -169,6 +169,14 @@ declare module '@adguard/scriptlets' {
         isAdgRedirectRule(rule: string): boolean;
 
         /**
+         * Checks if the specified redirect resource is compatible with AdGuard
+         *
+         * @param redirectName - Redirect resource name to check
+         * @returns - true if the redirect resource is compatible with AdGuard
+         */
+        isRedirectResourceCompatibleWithAdg(redirectName: string): boolean;
+
+        /**
          * Checks if the `rule` is **valid** AdGuard redirect resource rule
          *
          * @param rule

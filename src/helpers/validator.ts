@@ -441,6 +441,16 @@ const isValidAdgRedirectRule = (rule: string): boolean => {
 };
 
 /**
+ * Checks if the specified redirect resource is compatible with AdGuard
+ *
+ * @param redirectName - Redirect resource name to check
+ * @returns - true if the redirect resource is compatible with AdGuard
+ */
+export const isRedirectResourceCompatibleWithAdg = (redirectName: string): boolean => {
+    return Object.keys(validAdgCompatibility).includes(redirectName);
+};
+
+/**
  * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
  *
  * @param rule - AdGuard rule text
@@ -519,6 +529,7 @@ const validator = {
     ABSENT_SOURCE_TYPE_REPLACEMENT,
     isAdgRedirectRule,
     isValidAdgRedirectRule,
+    isRedirectResourceCompatibleWithAdg,
     isAdgRedirectCompatibleWithUbo,
     isUboRedirectCompatibleWithAdg,
     isAbpRedirectCompatibleWithAdg,

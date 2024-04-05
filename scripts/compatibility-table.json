@@ -382,6 +382,9 @@
         },
         {
             "ubo": "trusted-replace-argument.js"
+        },
+        {
+            "ubo": "trusted-replace-outbound-text.js"
         }
     ],
     "redirects": [

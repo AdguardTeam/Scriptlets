@@ -120,6 +120,7 @@
 |  | trusted-replace-node-text.js (trusted-rpnt.js, replace-node-text.js, rpnt.js) |  |
 |  | remove-cache-storage-item.js |  |
 |  | trusted-replace-argument.js |  |
+|  | trusted-replace-outbound-text.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

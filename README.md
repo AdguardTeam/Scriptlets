@@ -41,6 +41,7 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
         - [`getCode()`](#redirects-api--getCode)
         - [`isAdgRedirectRule()`](#redirects-api--isAdgRedirectRule)
         - [`isValidAdgRedirectRule()`](#redirects-api--isValidAdgRedirectRule)
+        - [`isRedirectResourceCompatibleWithAdg()`](#redirects-api--isRedirectResourceCompatibleWithAdg)
         - [`isAdgRedirectCompatibleWithUbo()`](#redirects-api--isAdgRedirectCompatibleWithUbo)
         - [`isUboRedirectCompatibleWithAdg()`](#redirects-api--isUboRedirectCompatibleWithAdg)
         - [`isAbpRedirectCompatibleWithAdg()`](#redirects-api--isAbpRedirectCompatibleWithAdg)
@@ -607,6 +608,18 @@ redirects.isAdgRedirectRule(rule)
  * @returns {boolean}
  */
 redirects.isValidAdgRedirectRule(rule);
+```
+
+##### <a name="redirects-api--isRedirectResourceCompatibleWithAdg"></a> `isRedirectResourceCompatibleWithAdg()`
+
+```javascript
+/**
+ * Checks if the specified redirect resource is compatible with AdGuard
+ *
+ * @param redirectName - Redirect resource name to check
+ * @returns true if the redirect resource is compatible with AdGuard
+ */
+redirects.isRedirectResourceCompatibleWithAdg(redirectName);
 ```
 
 ##### <a name="redirects-api--isAdgRedirectCompatibleWithUbo"></a> `isAdgRedirectCompatibleWithUbo()`

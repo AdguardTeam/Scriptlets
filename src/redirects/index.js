@@ -72,6 +72,7 @@ export const redirects = {
     getCode: getRedirectCode,
     isAdgRedirectRule: validator.isAdgRedirectRule,
     isValidAdgRedirectRule: validator.isValidAdgRedirectRule,
+    isRedirectResourceCompatibleWithAdg: validator.isRedirectResourceCompatibleWithAdg,
     isAdgRedirectCompatibleWithUbo: validator.isAdgRedirectCompatibleWithUbo,
     isUboRedirectCompatibleWithAdg: validator.isUboRedirectCompatibleWithAdg,
     isAbpRedirectCompatibleWithAdg: validator.isAbpRedirectCompatibleWithAdg,

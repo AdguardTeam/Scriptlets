@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## Unreleased
+
+### Added
+
+- `isRedirectResourceCompatibleWithAdg()` method to check compatibility of redirect resources with AdGuard
+  without needing the full rule text [#420]
+
+[#420]: https://github.com/AdguardTeam/Scriptlets/issues/420
+
+
 ## [v1.10.25] - 2024-03-28
 
 ### Added

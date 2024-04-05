@@ -410,6 +410,24 @@ describe('Test redirects api methods', () => {
         });
     });
 
+    describe('isRedirectResourceCompatibleWithAdg()', () => {
+        const validRedirectNames = [
+            'noopvast-4.0', // adg only
+            'empty', // adg/ubo
+        ];
+        test.each(validRedirectNames)('%s', (name) => {
+            expect(validator.isRedirectResourceCompatibleWithAdg(name)).toBeTruthy();
+        });
+
+        const invalidRedirectNames = [
+            'outbrain-widget.js', // ubo only
+            'blank-css', // name abp-only
+        ];
+        test.each(invalidRedirectNames)('%s', (name) => {
+            expect(validator.isRedirectResourceCompatibleWithAdg(name)).toBeFalsy();
+        });
+    });
+
     describe('isValidAdgRedirectRule()', () => {
         const validRules = [
             '||example.org$xmlhttprequest,redirect=noopvast-2.0',
