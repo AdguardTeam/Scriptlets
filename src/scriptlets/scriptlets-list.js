@@ -70,6 +70,7 @@ export * from './json-prune-fetch-response';
 export * from './no-protected-audience';
 export * from './trusted-suppress-native-method';
 export * from './json-prune-xhr-response';
+export * from './trusted-dispatch-event';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
 export * from './amazon-apstag';
