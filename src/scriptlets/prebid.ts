@@ -13,6 +13,6 @@ import { Prebid } from '../redirects/prebid';
  * example.org#%#//scriptlet('prebid')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { Prebid };

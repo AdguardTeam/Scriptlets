@@ -12,6 +12,6 @@ import { GoogleAnalyticsGa } from '../redirects/google-analytics-ga';
  * example.org#%#//scriptlet('google-analytics-ga')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { GoogleAnalyticsGa };

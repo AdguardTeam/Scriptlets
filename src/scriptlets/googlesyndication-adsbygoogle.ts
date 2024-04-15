@@ -12,6 +12,6 @@ import { GoogleSyndicationAdsByGoogle } from '../redirects/googlesyndication-ads
  * example.org#%#//scriptlet('googlesyndication-adsbygoogle')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { GoogleSyndicationAdsByGoogle };

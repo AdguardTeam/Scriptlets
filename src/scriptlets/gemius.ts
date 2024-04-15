@@ -13,6 +13,6 @@ import { Gemius } from '../redirects/gemius';
  * example.org#%#//scriptlet('gemius')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { Gemius };

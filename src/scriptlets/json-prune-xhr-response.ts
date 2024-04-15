@@ -110,7 +110,7 @@ import {
  *     example.org#%#//scriptlet('json-prune-xhr-response')
  *     ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 
 interface CustomXMLHttpRequest extends XMLHttpRequest {

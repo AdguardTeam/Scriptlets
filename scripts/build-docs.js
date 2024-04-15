@@ -49,7 +49,8 @@ const aboutTrustedScriptletsPath = path.resolve(
 /**
  * Collects required comments from files
  *
- * @returns {object} describing object for scriptlets and redirects
+ * @returns {object} describing object for scriptlets, trustedScriptlets, and redirects
+ * @throws {Error} If {@link getDataFromFiles} throws an error.
  */
 const manageDataFromFiles = () => {
     const dataFromScriptletsFiles = getDataFromFiles(
@@ -130,6 +131,7 @@ ${description}${EOL}
  * Generates markdown list and describing text for static redirect resources
  *
  * @returns {MarkdownData}
+ * @throws {Error} If some crucial data is missing.
  */
 const getMarkdownDataForStaticRedirects = () => {
     const staticRedirects = fs.readFileSync(path.resolve(__dirname, staticRedirectsPath), { encoding: 'utf8' });
@@ -168,6 +170,7 @@ ${description}${EOL}
  * Generates markdown list and describing text for blocking redirect resources, i.e click2load.html
  *
  * @returns {MarkdownData}
+ * @throws {Error} If some crucial data is missing.
  */
 const getMarkdownDataForBlockingRedirects = () => {
     const BLOCKING_REDIRECTS_SOURCE_SUB_DIR = 'blocking-redirects';
@@ -208,6 +211,8 @@ ${description}${EOL}
 
 /**
  * Builds about wiki pages for scriptlets and redirects
+ *
+ * @throws {Error} If wiki pages cannot be created. The reason is logged before throwing.
  */
 const buildWikiAboutPages = () => {
     try {
@@ -228,7 +233,6 @@ ${scriptletsMarkdownData.body}`;
             scriptletsPageContent,
         );
 
-        // eslint-disable-next-line max-len
         const trustedScriptletsPageContent = `# <a id="trusted-scriptlets"></a> Available Trusted Scriptlets${EOL}
 ${trustedScriptletsMarkdownData.list}${EOL}* * *${EOL}
 ${trustedScriptletsMarkdownData.body}`;
@@ -237,11 +241,9 @@ ${trustedScriptletsMarkdownData.body}`;
             trustedScriptletsPageContent,
         );
 
-        /* eslint-disable max-len */
         const redirectsPageContent = `# <a id="redirect-resources"></a> Available Redirect resources${EOL}
 ${staticRedirectsMarkdownData.list}${redirectsMarkdownData.list}${blockingRedirectsMarkdownData.list}${EOL}* * *${EOL}
 ${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}${blockingRedirectsMarkdownData.body}`;
-        /* eslint-enable max-len */
         fs.writeFileSync(
             path.resolve(__dirname, aboutRedirectsPath),
             redirectsPageContent,
@@ -249,6 +251,7 @@ ${staticRedirectsMarkdownData.body}${redirectsMarkdownData.body}${blockingRedire
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(e.message);
+        throw new Error('Cannot create wiki pages.');
     }
 };
 

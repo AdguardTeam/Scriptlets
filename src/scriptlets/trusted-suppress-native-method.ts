@@ -98,7 +98,7 @@ import {
  *
  *     <!-- markdownlint-enable line-length -->
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 /* eslint-enable max-len */
 export function trustedSuppressNativeMethod(

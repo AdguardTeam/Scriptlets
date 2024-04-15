@@ -9,15 +9,16 @@ import {
  * Dispatches a custom event on a specified target.
  *
  * ### Syntax
+ *
  * ```text
  * example.org#%#//scriptlet('trusted-dispatch-event', event[, target])
  * ```
  *
  * - `event` — required, name of the event to dispatch
  * - `target` — optional, target on which event will be invoked. Possible values:
- *   - CSS selector — dispatch event on the element with the specified selector
- *   - `window` — dispatch event on the window object
- *   - if not set, then "document" is used — it's default value
+ *     - CSS selector — dispatch event on the element with the specified selector
+ *     - `window` — dispatch event on the window object
+ *     - if not set, then "document" is used — it's default value
  *
  * ### Examples
  *

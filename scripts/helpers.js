@@ -44,7 +44,9 @@ const getFilesList = (relativeDirPath) => {
  * In one file might be comments describing scriptlet and redirect as well.
  *
  * @param {string} filePath absolute path to file
+ *
  * @returns {CommentTag[]}
+ * @throws {Error} If there is no description comment found in file, or more than one such comment found.
  */
 const getDescribingCommentTags = (filePath) => {
     const fileContent = fs.readFileSync(filePath, { encoding: 'utf8' });
@@ -92,7 +94,9 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
  *
  * @param {CommentTag[]} commentTags parsed tags from describing comment
  * @param {string} source relative path to file
- * @returns {DescribingCommentData}
+ *
+ * @returns {DescribingCommentData} JSDoc comment data.
+ * @throws {Error} If `@added` tag is missing
  */
 const prepareCommentsData = (commentTags, source) => {
     const [typeTag, descriptionTag, addedTag] = commentTags;
@@ -115,7 +119,9 @@ const prepareCommentsData = (commentTags, source) => {
  *
  * @param {string[]} filesList list of files in directory
  * @param {string} relativeDirPath relative path to directory
+ *
  * @returns {DescribingCommentData}
+ * @throws {Error} if {@link getDescribingCommentTags} or {@link prepareCommentsData} throws an error.
  */
 const getDataFromFiles = (filesList, relativeDirPath) => {
     const pathToDir = path.resolve(__dirname, relativeDirPath);

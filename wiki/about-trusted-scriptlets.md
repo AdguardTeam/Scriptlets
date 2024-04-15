@@ -1,6 +1,7 @@
 # <a id="trusted-scriptlets"></a> Available Trusted Scriptlets
 
 - [trusted-click-element](#trusted-click-element)
+- [trusted-create-element](#trusted-create-element)
 - [trusted-prune-inbound-object](#trusted-prune-inbound-object)
 - [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 - [trusted-replace-node-text](#trusted-replace-node-text)
@@ -10,6 +11,7 @@
 - [trusted-set-cookie-reload](#trusted-set-cookie-reload)
 - [trusted-set-cookie](#trusted-set-cookie)
 - [trusted-set-local-storage-item](#trusted-set-local-storage-item)
+- [trusted-suppress-native-method](#trusted-suppress-native-method)
 
 * * *
 
@@ -26,8 +28,8 @@ Deactivates after all elements have been clicked or by 10s timeout.
 ```text
 example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay]])
 ```
-
-- `selectors` — required, string with query selectors delimited by comma
+<!-- markdownlint-disable-next-line line-length -->
+- `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
 - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`;
 can be set as `name:key[=value]` where `value` is optional.
 If `cookie`/`localStorage` starts with `!` then the element will only be clicked
@@ -37,6 +39,8 @@ and each of them should match the syntax. Possible `name`s:
     - `cookie` — test string or regex against cookies on a page
     - `localStorage` — check if localStorage item is present
 - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
+
+<!-- markdownlint-disable line-length -->
 
 ### Examples
 
@@ -84,8 +88,6 @@ and each of them should match the syntax. Possible `name`s:
     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
     ```
 
-    <!-- markdownlint-enable line-length -->
-
 1. Click element only if cookie with name `cmpconsent` does not exist
 
     ```adblock
@@ -98,7 +100,73 @@ and each of them should match the syntax. Possible `name`s:
     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:consent, !localStorage:promo')
     ```
 
+1. Click element inside open shadow DOM, which could be selected by `div > button`, but is inside shadow host element with host element selected by `article .container`
+
+   ```adblock
+   example.com#%#//scriptlet('trusted-click-element', 'article .container > div#host >>> div > button')
+   ```
+
+<!-- markdownlint-enable line-length -->
+
 [Scriptlet source](../src/scriptlets/trusted-click-element.js)
+
+* * *
+
+## <a id="trusted-create-element"></a> ⚡️ trusted-create-element
+
+> Added in v1.10.1.
+
+Creates an element with specified attributes and text content, and appends it to the specified parent element.
+
+### Syntax
+
+```text
+example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, attributePairs[, textContent[, cleanupDelayMs]]]) <!-- markdownlint-disable-line line-length -->
+```
+
+- `parentSelector` — required, CSS selector of the parent element to append the created element to.
+- `tagName` — required, tag name of the created element.
+- `attributePairs` — optional, space-separated list of attribute name and value pairs separated by `=`.
+  Value can be omitted. If value is set, it should be wrapped in quotes.
+  If quotes are needed inside value, they should be escaped with backslash.
+  Defaults to no attributes.
+- `textContent` — optional, text content of the created element. Defaults to empty string.
+- `cleanupDelayMs` — optional, delay in milliseconds before the created element is removed from the DOM.
+  Defaults to no cleanup.
+
+### Examples
+
+1. Create a div element with a single attribute
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-create-element', 'body', 'div', 'data-cur="1"')
+    ```
+
+1. Create a div element with text content
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-create-element', 'body', 'div', '', 'Hello world!')
+    ```
+
+1. Create a button element with multiple attributes, including attribute without value, and text content
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-create-element', 'body', 'button', 'disabled aria-hidden="true" style="width: 0px"', 'Press here') <!-- markdownlint-disable-line line-length -->
+    ```
+
+1. Create a button element with an attribute whose value contains quotes
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-create-element', 'body', 'button', 'data="a\\"quote"')
+    ```
+
+1. Create a paragraph element with text content and remove it after 5 seconds
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-create-element', '.container > article', 'p', '', 'Hello world!', 5000)
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-create-element.ts)
 
 * * *
 
@@ -546,14 +614,15 @@ example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
 > Added in v1.7.10.
 
 Sets a cookie with arbitrary name and value,
-and with optional ability to offset cookie attribute 'expires' and set path.
+and with optional ability to offset cookie attribute 'expires', set path
+and set domain.
 Also reloads the current page after the cookie setting.
 If reloading option is not needed, use the [`trusted-set-cookie` scriptlet](#trusted-set-cookie).
 
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path]])
+example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpiresSec[, path[, domain]]])
 ```
 
 - `name` — required, cookie name to be set
@@ -570,6 +639,8 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpir
 - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
+- `domain` — optional, cookie domain, if not set origin will be set as domain,
+             if the domain does not match the origin, the cookie will not be set
 
 > Note that the scriptlet does not encode cookie names and values.
 > As a result, if a cookie's name or value includes `;`,
@@ -607,6 +678,12 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpir
     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none')
     ```
 
+1. Set cookie with domain
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', 'decline', '', 'none', 'example.org')
+    ```
+
 [Scriptlet source](../src/scriptlets/trusted-set-cookie-reload.js)
 
 * * *
@@ -616,12 +693,13 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpir
 > Added in v1.7.3.
 
 Sets a cookie with arbitrary name and value,
-and with optional ability to offset cookie attribute 'expires' and set path.
+and with optional ability to offset cookie attribute 'expires', set path
+and set domain.
 
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path]])
+example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[, path[, domain]]])
 ```
 
 - `name` — required, cookie name to be set
@@ -638,6 +716,8 @@ example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[,
 - `path` — optional, argument for setting cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
+- `domain` — optional, cookie domain, if not set origin will be set as domain,
+             if the domain does not match the origin, the cookie will not be set
 
 > Note that the scriptlet does not encode cookie names and values.
 > As a result, if a cookie's name or value includes `;`,
@@ -674,6 +754,11 @@ example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[,
 
     ```adblock
     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none')
+
+1. Set cookie with domain
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', 'decline', '', 'none', 'example.org')
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-set-cookie.js)
@@ -733,6 +818,85 @@ example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-set-local-storage-item.js)
+
+* * *
+
+## <a id="trusted-suppress-native-method"></a> ⚡️ trusted-suppress-native-method
+
+> Added in v1.10.25.
+
+Prevents a call of a given native method, matching the call by incoming arguments.
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('trusted-suppress-native-method', methodPath, signatureStr[, how[, stack]])
+```
+
+<!-- markdownlint-disable line-length -->
+
+- `methodPath` – required, string path to a native method (joined with `.` if needed). The property must be attached to `window`.
+- `signatureStr` –  required, string of `|`-separated argument matchers.
+Supported value types with corresponding matchers:
+
+    - string – exact string, part of the string or regexp pattern. Empty string `""` to match an empty string. Regexp patterns inside object matchers are not supported.
+    - number, boolean, null, undefined – exact value,
+
+    - object – partial of the object with the values as mentioned above, i.e by another object, that includes property names and values to be matched,
+    - array – partial of the array with the values to be included in the incoming array, without considering the order of values.
+
+To ignore specific argument, explicitly use whitespace as a matcher, e.g `' | |{"prop":"val"}'` to skip matching first and second arguments.
+
+<!-- markdownlint-enable line-length -->
+
+- `how` – optional, string, one of the following:
+    - `abort` – default, aborts the call by throwing an error,
+    - `prevent` – replaces the method call with the call of an empty function.
+- `stack` — optional, string or regular expression that must match the current function call stack trace.
+
+### Examples
+<!-- markdownlint-disable-next-line line-length -->
+1. Prevent `localStorage.setItem('test-key', 'test-value')` call matching first argument by regexp pattern and the second one by substring:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-suppress-native-method', 'localStorage.setItem', '/key/|"value"', 'prevent')
+    ```
+
+1. Abort `obj.hasOwnProperty('test')` call matching the first argument:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-suppress-native-method', 'Object.prototype.hasOwnProperty', '"test"')
+    ```
+
+1. Prevent `Node.prototype.appendChild` call on element with the id `test-id` by object matcher:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-suppress-native-method', 'Node.prototype.appendChild', '{"id":"str"}', 'prevent')
+    ```
+
+1. Abort all `document.querySelectorAll` calls with `div` as the first argument:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-suppress-native-method', 'Document.prototype.querySelectorAll', '"div"')
+    ```
+
+1. Abort `Array.prototype.concat([1, 'str', true, null])` calls by matching array argument contents:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-suppress-native-method', 'Array.prototype.concat', '[1, "str", true]')
+    ```
+
+1. Use `stack` argument to match by the call, while also matching the second argument:
+
+    <!-- markdownlint-disable line-length -->
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-suppress-native-method', 'sessionStorage.setItem', ' |"item-value"', 'abort', 'someFuncName')
+    ```
+
+    <!-- markdownlint-enable line-length -->
+
+[Scriptlet source](../src/scriptlets/trusted-suppress-native-method.ts)
 
 * * *
 

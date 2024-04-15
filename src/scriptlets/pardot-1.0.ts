@@ -14,6 +14,6 @@ import { Pardot } from '../redirects/pardot-1.0';
  * example.org#%#//scriptlet('pardot-1.0')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { Pardot };

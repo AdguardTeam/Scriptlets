@@ -12,6 +12,6 @@ import { Matomo } from '../redirects/matomo';
  * example.org#%#//scriptlet('matomo')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { Matomo };

@@ -12,6 +12,6 @@ import { GoogleTagServicesGpt } from '../redirects/googletagservices-gpt';
  * example.org#%#//scriptlet('googletagservices-gpt')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { GoogleTagServicesGpt };

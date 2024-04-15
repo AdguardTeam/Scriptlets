@@ -6,25 +6,45 @@
 - [abort-on-stack-trace](#abort-on-stack-trace)
 - [adjust-setInterval](#adjust-setinterval)
 - [adjust-setTimeout](#adjust-settimeout)
+- [amazon-apstag](#amazon-apstag)
 - [call-nothrow](#call-nothrow)
 - [close-window](#close-window)
 - [debug-current-inline-script](#debug-current-inline-script)
 - [debug-on-property-read](#debug-on-property-read)
 - [debug-on-property-write](#debug-on-property-write)
+- [didomi-loader](#didomi-loader)
 - [dir-string](#dir-string)
 - [disable-newtab-links](#disable-newtab-links)
 - [evaldata-prune](#evaldata-prune)
+- [fingerprintjs2](#fingerprintjs2)
+- [fingerprintjs3](#fingerprintjs3)
+- [gemius](#gemius)
+- [google-analytics-ga](#google-analytics-ga)
+- [google-analytics](#google-analytics)
+- [google-ima3](#google-ima3)
+- [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
+- [googletagservices-gpt](#googletagservices-gpt)
 - [hide-in-shadow-dom](#hide-in-shadow-dom)
+- [href-sanitizer](#href-sanitizer)
 - [inject-css-in-shadow-dom](#inject-css-in-shadow-dom)
+- [json-prune-fetch-response](#json-prune-fetch-response)
+- [json-prune-xhr-response](#json-prune-xhr-response)
 - [json-prune](#json-prune)
 - [log-addEventListener](#log-addeventlistener)
 - [log-eval](#log-eval)
 - [log-on-stack-trace](#log-on-stack-trace)
 - [log](#log)
 - [m3u-prune](#m3u-prune)
+- [matomo](#matomo)
+- [metrika-yandex-tag](#metrika-yandex-tag)
+- [metrika-yandex-watch](#metrika-yandex-watch)
+- [naver-wcslog](#naver-wcslog)
+- [no-protected-audience](#no-protected-audience)
 - [no-topics](#no-topics)
 - [noeval](#noeval)
 - [nowebrtc](#nowebrtc)
+- [pardot-1.0](#pardot-1.0)
+- [prebid](#prebid)
 - [prevent-addEventListener](#prevent-addeventlistener)
 - [prevent-adfly](#prevent-adfly)
 - [prevent-bab](#prevent-bab)
@@ -44,6 +64,7 @@
 - [remove-cookie](#remove-cookie)
 - [remove-in-shadow-dom](#remove-in-shadow-dom)
 - [remove-node-text](#remove-node-text)
+- [scorecardresearch-beacon](#scorecardresearch-beacon)
 - [set-attr](#set-attr)
 - [set-constant](#set-constant)
 - [set-cookie-reload](#set-cookie-reload)
@@ -393,6 +414,22 @@ example.org#%#//scriptlet('adjust-setTimeout'[, matchCallback [, matchDelay[, bo
 
 * * *
 
+## <a id="amazon-apstag"></a> ⚡️ amazon-apstag
+
+> Added in v1.10.25.
+
+Mocks Amazon's apstag.js
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('amazon-apstag')
+```
+
+[Scriptlet source](../src/scriptlets/amazon-apstag.ts)
+
+* * *
+
 ## <a id="call-nothrow"></a> ⚡️ call-nothrow
 
 > Added in v1.10.1.
@@ -537,6 +574,23 @@ example.org#%#//scriptlet('debug-on-property-write', 'test')
 
 * * *
 
+## <a id="didomi-loader"></a> ⚡️ didomi-loader
+
+> Added in v1.10.25.
+
+Mocks Didomi's CMP loader script.
+https://developers.didomi.io/
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('didomi-loader')
+```
+
+[Scriptlet source](../src/scriptlets/didomi-loader.ts)
+
+* * *
+
 ## <a id="dir-string"></a> ⚡️ dir-string
 
 > Added in v1.0.4.
@@ -669,6 +723,137 @@ example.org#%#//scriptlet('evaldata-prune'[, propsToRemove [, obligatoryProps [,
 
 * * *
 
+## <a id="fingerprintjs2"></a> ⚡️ fingerprintjs2
+
+> Added in v1.10.25.
+
+Mocks FingerprintJS v2
+https://github.com/fingerprintjs
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('fingerprintjs2')
+```
+
+[Scriptlet source](../src/scriptlets/fingerprintjs2.ts)
+
+* * *
+
+## <a id="fingerprintjs3"></a> ⚡️ fingerprintjs3
+
+> Added in v1.10.25.
+
+Mocks FingerprintJS v3
+https://github.com/fingerprintjs
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('fingerprintjs3')
+```
+
+[Scriptlet source](../src/scriptlets/fingerprintjs3.ts)
+
+* * *
+
+## <a id="gemius"></a> ⚡️ gemius
+
+> Added in v1.10.25.
+
+Mocks Gemius Analytics.
+https://flowplayer.com/developers/plugins/gemius
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('gemius')
+```
+
+[Scriptlet source](../src/scriptlets/gemius.ts)
+
+* * *
+
+## <a id="google-analytics-ga"></a> ⚡️ google-analytics-ga
+
+> Added in v1.10.25.
+
+Mocks old Google Analytics API.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('google-analytics-ga')
+```
+
+[Scriptlet source](../src/scriptlets/google-analytics-ga.ts)
+
+* * *
+
+## <a id="google-analytics"></a> ⚡️ google-analytics
+
+> Added in v1.10.25.
+
+Mocks Google's Analytics and Tag Manager APIs.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('google-analytics')
+```
+
+[Scriptlet source](../src/scriptlets/google-analytics.ts)
+
+* * *
+
+## <a id="google-ima3"></a> ⚡️ google-ima3
+
+> Added in v1.10.25.
+
+Mocks the IMA SDK of Google.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('google-ima3')
+```
+
+[Scriptlet source](../src/scriptlets/google-ima3.ts)
+
+* * *
+
+## <a id="googlesyndication-adsbygoogle"></a> ⚡️ googlesyndication-adsbygoogle
+
+> Added in v1.10.25.
+
+Mocks Google AdSense API.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('googlesyndication-adsbygoogle')
+```
+
+[Scriptlet source](../src/scriptlets/googlesyndication-adsbygoogle.ts)
+
+* * *
+
+## <a id="googletagservices-gpt"></a> ⚡️ googletagservices-gpt
+
+> Added in v1.10.25.
+
+Mocks Google Publisher Tag API.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('googletagservices-gpt')
+```
+
+[Scriptlet source](../src/scriptlets/googletagservices-gpt.ts)
+
+* * *
+
 ## <a id="hide-in-shadow-dom"></a> ⚡️ hide-in-shadow-dom
 
 > Added in v1.3.0.
@@ -699,6 +884,91 @@ example.com#%#//scriptlet('hide-in-shadow-dom', '.contact-fab')
 ```
 
 [Scriptlet source](../src/scriptlets/hide-in-shadow-dom.js)
+
+* * *
+
+## <a id="href-sanitizer"></a> ⚡️ href-sanitizer
+
+> Added in v1.10.25.
+
+Set the `href` attribute to a value found in text content of the targeted `a` element,
+or in an attribute of the targeted `a` element,
+or in a URL parameter of the targeted `a` element's `href` attribute.
+This scriptlet runs once when the page loads and after that on DOM tree changes.
+
+Related UBO scriptlet:
+https://github.com/uBlockOrigin/uBlock-issues/wiki/Resources-Library#href-sanitizerjs-
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('href-sanitizer', selector[, attribute])
+```
+
+- `selector` — required, a CSS selector to match the elements to be sanitized,
+  which should be anchor elements (`<a>`) with `href` attribute.
+- `attribute` — optional, default to `text`:
+    - `text` — use the text content of the matched element,
+    - `[attribute-name]` copy the value from attribute `attribute-name` on the same element,
+    - `?parameter` copy the value from URL parameter `parameter` of the same element's `href` attribute.
+
+### Examples
+
+1. Set the `href` attribute to a value found in text content of the targeted `a` element:
+
+    ```adblock
+    example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a href="https://foo.com/bar">https://example.org/test?foo</a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a href="https://example.org/test?foo">https://example.org/test?foo</a>
+    </div>
+    ```
+
+2. Set the `href` attribute to a value found in an attribute of the targeted `a` element:
+
+    ```adblock
+    example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[data-href]')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a href="https://foo.com/bar" data-href="https://example.org/test?foo"></a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a href="https://example.org/test?foo" data-href="https://example.org/test?foo"></a>
+    </div>
+    ```
+
+3. Set the `href` attribute to a value found in a URL parameter of the targeted `a` element's `href` attribute:
+
+    ```adblock
+    example.org#%#//scriptlet('href-sanitizer', 'a[href*="tracker.com"]', '?redirect')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a href="https://tracker.com/foo?redirect=https://example.org/"></a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a href="https://example.org/"></a>
+    </div>
+    ```
+
+[Scriptlet source](../src/scriptlets/href-sanitizer.ts)
 
 * * *
 
@@ -734,6 +1004,187 @@ example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
     ```
 
 [Scriptlet source](../src/scriptlets/inject-css-in-shadow-dom.js)
+
+* * *
+
+## <a id="json-prune-fetch-response"></a> ⚡️ json-prune-fetch-response
+
+> Added in v1.10.25.
+
+Removes specified properties from the JSON response of a fetch call.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/commit/749cec0f095f659d6c0b90eb89b729e9deb07c87
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
+```
+
+- `propsToRemove` — optional, string of space-separated properties to remove
+- `obligatoryProps` — optional, string of space-separated properties
+  which must be all present for the pruning to occur
+- `propsToMatch` — optional, string of space-separated properties to match; possible props:
+    - string or regular expression for matching the URL passed to fetch call;
+      empty string, wildcard `*` or invalid regular expression will match all fetch calls
+    - colon-separated pairs `name:value` where
+        <!-- markdownlint-disable-next-line line-length -->
+        - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+        - `value` is string or regular expression for matching the value of the option passed to fetch call;
+          invalid regular expression will cause any value matching
+- `stack` — optional, string or regular expression that must match the current function call stack trace;
+  if regular expression is invalid it will be skipped
+
+> Note please that you can use wildcard `*` for chain property name,
+> e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
+
+> Usage with with only propsToMatch argument will log fetch calls to browser console.
+> It may be useful for debugging but it is not allowed for prod versions of filter lists.
+
+> Scriptlet does nothing if response body can't be converted to JSON.
+
+### Examples
+
+1. Removes property `example` from the JSON response of any fetch call
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', 'example')
+    ```
+
+    For instance, if the JSON response of a fetch call is:
+
+    ```js
+    {one: 1, example: true}
+    ```
+
+    then the response will be modified to:
+
+    ```js
+    {one: 1}
+    ```
+
+2. A property in a list of properties can be a chain of properties
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', 'a.b', 'ads.url.first')
+    ```
+
+3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', 'content.json')
+    ```
+
+4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', '', 'test.js')
+    ```
+
+5. A property in a list of properties can be a chain of properties with wildcard in it
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', 'content.*.media.src', 'content.*.media.ad')
+    ```
+
+6. Log all JSON responses of a fetch call
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response')
+    ```
+
+[Scriptlet source](../src/scriptlets/json-prune-fetch-response.ts)
+
+* * *
+
+## <a id="json-prune-xhr-response"></a> ⚡️ json-prune-xhr-response
+
+> Added in v1.10.25.
+
+Removes specified properties from the JSON response of a `XMLHttpRequest` call.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/commit/3152896d428c54c76cfd66c3da110bd4d6506cbc
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
+```
+
+- `propsToRemove` — optional, string of space-separated properties to remove
+- `obligatoryProps` — optional, string of space-separated properties
+  which must be all present for the pruning to occur
+- `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
+    - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+    - colon-separated pairs `name:value` where
+        - `name` — string or regular expression for matching XMLHttpRequest property name
+        - `value` — string or regular expression for matching the value of the option
+          passed to `XMLHttpRequest.open()` call
+- `stack` — optional, string or regular expression that must match the current function call stack trace;
+  if regular expression is invalid it will be skipped
+
+> Note please that you can use wildcard `*` for chain property name,
+> e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
+
+> Usage with with only propsToMatch argument will log XMLHttpRequest calls to browser console.
+> It may be useful for debugging but it is not allowed for prod versions of filter lists.
+
+> Scriptlet does nothing if response body can't be converted to JSON.
+
+### Examples
+
+1. Removes property `example` from the JSON response of any XMLHttpRequest call
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', 'example')
+    ```
+
+    For instance, if the JSON response of a XMLHttpRequest call is:
+
+    ```js
+    {one: 1, example: true}
+    ```
+
+    then the response will be modified to:
+
+    ```js
+    {one: 1}
+    ```
+
+2. A property in a list of properties can be a chain of properties
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', 'a.b', 'ads.url.first')
+    ```
+
+3. Removes property `content.ad` from the JSON response of a XMLHttpRequest call if URL contains `content.json`
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', 'content.ad', '', 'content.json')
+    ```
+
+4. Removes property `content.ad` from the JSON response of a XMLHttpRequest call
+if its error stack trace contains `test.js`
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', 'content.ad', '', '', 'test.js')
+    ```
+
+5. A property in a list of properties can be a chain of properties with wildcard in it
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', 'content.*.media.src', 'content.*.media.ad')
+    ```
+
+6. Log all JSON responses of a XMLHttpRequest call
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response')
+    ```
+
+[Scriptlet source](../src/scriptlets/json-prune-xhr-response.ts)
 
 * * *
 
@@ -954,6 +1405,89 @@ example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
 
 * * *
 
+## <a id="matomo"></a> ⚡️ matomo
+
+> Added in v1.10.25.
+
+Mocks the piwik.js file of Matomo (formerly Piwik).
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('matomo')
+```
+
+[Scriptlet source](../src/scriptlets/matomo.ts)
+
+* * *
+
+## <a id="metrika-yandex-tag"></a> ⚡️ metrika-yandex-tag
+
+> Added in v1.10.25.
+
+Mocks Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/method-reference.html
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('metrika-yandex-tag')
+```
+
+[Scriptlet source](../src/scriptlets/metrika-yandex-tag.ts)
+
+* * *
+
+## <a id="metrika-yandex-watch"></a> ⚡️ metrika-yandex-watch
+
+> Added in v1.10.25.
+
+Mocks the old Yandex Metrika API.
+https://yandex.ru/support/metrica/objects/_method-reference.html
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('metrika-yandex-watch')
+```
+
+[Scriptlet source](../src/scriptlets/metrika-yandex-watch.ts)
+
+* * *
+
+## <a id="naver-wcslog"></a> ⚡️ naver-wcslog
+
+> Added in v1.10.25.
+
+Mocks wcslog.js of Naver Analytics.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('naver-wcslog')
+```
+
+[Scriptlet source](../src/scriptlets/naver-wcslog.ts)
+
+* * *
+
+## <a id="no-protected-audience"></a> ⚡️ no-protected-audience
+
+> Added in v1.10.25.
+
+Prevents using the Protected Audience API.
+https://wicg.github.io/turtledove/
+
+### Syntax
+
+```adblock
+example.org#%#//scriptlet('no-protected-audience')
+```
+
+[Scriptlet source](../src/scriptlets/no-protected-audience.ts)
+
+* * *
+
 ## <a id="no-topics"></a> ⚡️ no-topics
 
 > Added in v1.6.18.
@@ -1011,6 +1545,41 @@ example.org#%#//scriptlet('nowebrtc')
 ```
 
 [Scriptlet source](../src/scriptlets/nowebrtc.js)
+
+* * *
+
+## <a id="pardot-1.0"></a> ⚡️ pardot-1.0
+
+> Added in v1.10.25.
+
+Mocks the pd.js file of Salesforce.
+https://pi.pardot.com/pd.js
+https://developer.salesforce.com/docs/marketing/pardot/overview
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('pardot-1.0')
+```
+
+[Scriptlet source](../src/scriptlets/pardot-1.0.ts)
+
+* * *
+
+## <a id="prebid"></a> ⚡️ prebid
+
+> Added in v1.10.25.
+
+Mocks the prebid.js header bidding suit.
+https://docs.prebid.org/
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('prebid')
+```
+
+[Scriptlet source](../src/scriptlets/prebid.ts)
 
 * * *
 
@@ -1215,7 +1784,8 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
     - `emptyStr` — empty string
 - `responseType` — optional, string for defining response type,
   original response type is used if not specified. Possible values:
-    - `default`
+    - `basic`
+    - `cors`
     - `opaque`
 
 > Usage with no arguments will log fetch calls to browser console;
@@ -2118,6 +2688,21 @@ If matched, the whole text will be removed. Case sensitive.
 
 * * *
 
+## <a id="scorecardresearch-beacon"></a> ⚡️ scorecardresearch-beacon
+
+> Added in v1.10.25.
+
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('scorecardresearch-beacon')
+```
+
+[Scriptlet source](../src/scriptlets/scorecardresearch-beacon.ts)
+
+* * *
+
 ## <a id="set-attr"></a> ⚡️ set-attr
 
 > Added in v1.5.0.
@@ -2331,19 +2916,19 @@ example.org#%#//scriptlet('set-constant', 'foo.bar', 'false', '', '', 'true')
 
 > Added in v1.3.14.
 
-Sets a cookie with the specified name and value, and path,
+Sets a cookie with the specified name and value, path, and domain,
 and reloads the current page after the cookie setting.
 If reloading option is not needed, use [set-cookie](#set-cookie) scriptlet.
 
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
+example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
 ```
 
 - `name` — required, cookie name to be set
 - `value` — required, cookie value; possible values:
-    - number `>= 0 && <= 15`
+    - positive decimal integer `<= 32767`
     - one of the predefined constants in any case variation:
         - `true` / `t`
         - `false` / `f`
@@ -2361,9 +2946,13 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path])
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
+- `domain` — optional, cookie domain, if not set origin will be set as domain,
+             if the domain does not match the origin, the cookie will not be set
 
-> Note that the scriptlet encodes cookie names and values,
-> e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+> Note that the scriptlet does not encode a cookie name,
+> e.g. name 'a:b' will be set as 'a:b' and not as 'a%3Ab'.
+>
+> Also if a cookie name includes `;`, the cookie will not be set since this may cause the cookie to break.
 
 ### Examples
 
@@ -2373,6 +2962,8 @@ example.org#%#//scriptlet('set-cookie-reload', 'checking', 'ok')
 example.org#%#//scriptlet('set-cookie-reload', 'gdpr-settings-cookie', '1')
 
 example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
+
+example.org#%#//scriptlet('set-cookie-reload', 'test', '1', 'none', 'example.org')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie-reload.js)
@@ -2383,7 +2974,7 @@ example.org#%#//scriptlet('set-cookie-reload', 'cookie-set', 'true', 'none')
 
 > Added in v1.2.3.
 
-Sets a cookie with the specified name, value, and path.
+Sets a cookie with the specified name, value, path, and domain.
 
 Related UBO scriptlet:
 https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
@@ -2391,12 +2982,12 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#set-cookiejs-
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('set-cookie', name, value[, path])
+example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
 ```
 
 - `name` — required, cookie name to be set
 - `value` — required, cookie value; possible values:
-    - number `>= 0 && <= 15`
+    - positive decimal integer `<= 32767`
     - one of the predefined constants in any case variation:
         - `true` / `t`
         - `false` / `f`
@@ -2414,9 +3005,13 @@ example.org#%#//scriptlet('set-cookie', name, value[, path])
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
+- `domain` — optional, cookie domain, if not set origin will be set as domain,
+             if the domain does not match the origin, the cookie will not be set
 
-> Note that the scriptlet encodes cookie names and values,
-> e.g value `"{ test: 'value'}"` becomes `%7B%20test%3A%20'value'%7D`.
+> Note that the scriptlet does not encode a cookie name,
+> e.g. name 'a:b' will be set as 'a:b' and not as 'a%3Ab'.
+>
+> Also if a cookie name includes `;`, the cookie will not be set since this may cause the cookie to break.
 
 ### Examples
 
@@ -2426,6 +3021,8 @@ example.org#%#//scriptlet('set-cookie', 'CookieConsent', '1')
 example.org#%#//scriptlet('set-cookie', 'gdpr-settings-cookie', 'true')
 
 example.org#%#//scriptlet('set-cookie', 'cookie_consent', 'ok', 'none')
+
+example.org#%#//scriptlet('set-cookie-reload', 'test', '1', 'none', 'example.org')
 ```
 
 [Scriptlet source](../src/scriptlets/set-cookie.js)

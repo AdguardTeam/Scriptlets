@@ -12,6 +12,6 @@ import { GoogleIma3 } from '../redirects/google-ima3';
  * example.org#%#//scriptlet('google-ima3')
  * ```
  *
- * v1.10.25.
+ * @added v1.10.25.
  */
 export { GoogleIma3 };
