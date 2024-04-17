@@ -35,9 +35,11 @@ declare module '@adguard/scriptlets' {
         verbose: boolean;
 
         /**
-         * Source rule text is used for debugging purposes
+         * Source rule text is used for debugging purposes.
+         *
+         * @deprecated since it is not used in the code anymore.
          */
-        ruleText: string;
+        ruleText?: string;
 
         /**
          * Domain name, used to improve logging

@@ -448,7 +448,7 @@ where:
  * @property {'extension'|'corelibs'} engine — Defines the final form of scriptlet string presentation.
  * @property {string} [version] — Extension version.
  * @property {boolean} [verbose] — Flag to enable debug information printing to console.
- * @property {string} [ruleText] — Source rule text, needed for debug purposes.
+ * @property {string} [ruleText] — Deprecated: Source rule text, needed for debug purposes.
  * @property {string} [domainName] — Domain name where scriptlet is applied, needed for debug purposes.
  */
 ```
@@ -494,7 +494,7 @@ scriptlets.isValidScriptletName(name);
  *
  * @returns {boolean} — True if scriptlet name is valid in rule.
  */
-scriptlets.isValidScriptletRule(input);
+scriptlets.isValidScriptletRule(ruleText);
 ```
 
 

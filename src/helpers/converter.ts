@@ -568,7 +568,7 @@ export const isValidScriptletRule = (ruleText: string): boolean => {
  * @param modifiers rule modifiers
  * @param redirectsData validator.REDIRECT_RULE_TYPES.(UBO|ADG)
  * @param rule rule string
- * @returns merker data object
+ * @returns marker data object
  */
 const getMarkerData = (modifiers: string[], redirectsData: RedirectsData, rule: string): MarkerData => {
     const { redirectRuleMarker, redirectMarker } = redirectsData;

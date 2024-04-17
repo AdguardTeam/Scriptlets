@@ -22,22 +22,11 @@ export const hit = (source: Source) => {
         const log = console.log.bind(console);
         const trace = console.trace.bind(console);
 
-        let prefix = source.ruleText || '';
-
+        let prefix = '';
         if (source.domainName) {
-            const AG_SCRIPTLET_MARKER = '#%#//';
-            const UBO_SCRIPTLET_MARKER = '##+js';
-            let ruleStartIndex;
-            if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
-                ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-            } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
-                ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-            }
-            // delete all domains from ruleText and leave just rule part
-            const rulePart = source.ruleText.slice(ruleStartIndex);
-            // prepare applied scriptlet rule for specific domain
-            prefix = `${source.domainName}${rulePart}`;
+            prefix += `${source.domainName}`;
         }
+        prefix += `#%#//scriptlet('${source.name}', '${source.args.join(', ')}')`;
 
         log(`${prefix} trace start`);
         if (trace) {

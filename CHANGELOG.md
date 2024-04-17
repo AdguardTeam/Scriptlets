@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   without needing the full rule text [#420]
 - `trusted-dispatch-event` scriptlet [#382]
 
+### Deprecated
+
+- `ruleText` option in the `IConfiguration`
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...HEAD
 [#420]: https://github.com/AdguardTeam/Scriptlets/issues/420
 [#382]: https://github.com/AdguardTeam/Scriptlets/issues/382
