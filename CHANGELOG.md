@@ -19,7 +19,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `ruleText` option in the `IConfiguration`
 
+### Fixed
+
+- `set-attr` value cannot be set to minimum `0` and maximum `32767` possible value [#425]
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...HEAD
+[#425]: https://github.com/AdguardTeam/Scriptlets/issues/425
 [#420]: https://github.com/AdguardTeam/Scriptlets/issues/420
 [#382]: https://github.com/AdguardTeam/Scriptlets/issues/382
 

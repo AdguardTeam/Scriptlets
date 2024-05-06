@@ -128,8 +128,8 @@ export function setAttr(source, selector, attr, value = '') {
 
     const isValidValue = value.length === 0
         || (!nativeIsNaN(parseInt(value, 10))
-            && parseInt(value, 10) > 0
-            && parseInt(value, 10) < 32767)
+            && parseInt(value, 10) >= 0
+            && parseInt(value, 10) <= 32767)
         || allowedValues.includes(value.toLowerCase());
 
     if (!shouldCopyValue && !isValidValue) {
