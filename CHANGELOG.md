@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `isRedirectResourceCompatibleWithAdg()` method to check compatibility of redirect resources with AdGuard
   without needing the full rule text [#420]
 - `trusted-replace-outbound-text` scriptlet [#410]
+- ability to click on the element with specified text in `trusted-click-element` scriptlet [#409]
 - `trusted-dispatch-event` scriptlet [#382]
 
 ### Deprecated
@@ -28,6 +29,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#425]: https://github.com/AdguardTeam/Scriptlets/issues/425
 [#420]: https://github.com/AdguardTeam/Scriptlets/issues/420
 [#410]: https://github.com/AdguardTeam/Scriptlets/issues/410
+[#409]: https://github.com/AdguardTeam/Scriptlets/issues/409
 [#382]: https://github.com/AdguardTeam/Scriptlets/issues/382
 
 ## [v1.10.25] - 2024-03-28

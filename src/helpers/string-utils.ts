@@ -50,10 +50,11 @@ export const escapeRegExp = (str: string): string => str.replace(/[.*+?^${}()|[\
  * if string contains valid regexp flags it will be converted to regexp with flags
  * TODO think about nested dependencies, but be careful with dependency loops
  *
- * @param input literal string or regexp pattern; defaults to '' (empty string)
+ * @param rawInput literal string or regexp pattern; defaults to '' (empty string)
  * @returns regular expression; defaults to /.?/
  */
-export const toRegExp = (input: RawStrPattern = ''): RegExp => {
+export const toRegExp = (rawInput?: RawStrPattern | null): RegExp => {
+    const input = rawInput || '';
     const DEFAULT_VALUE = '.?';
     const FORWARD_SLASH = '/';
     if (input === '') {
