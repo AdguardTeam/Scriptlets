@@ -123,6 +123,7 @@ export function trustedClickElement(
         return;
     }
 
+    const SHADOW_COMBINATOR = ' >>> ';
     const OBSERVER_TIMEOUT_MS = 10000;
     const THROTTLE_DELAY_MS = 20;
     const STATIC_CLICK_DELAY_MS = 150;
@@ -135,6 +136,27 @@ export function trustedClickElement(
     const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:)/;
 
     const sleep = (delayMs: number) => new Promise((resolve) => setTimeout(resolve, delayMs));
+
+    // If shadow combinator is present in selector, then override attachShadow and set mode to 'open'
+    if (selectors.includes(SHADOW_COMBINATOR)) {
+        const attachShadowWrapper = (
+            target: typeof Element.prototype.attachShadow,
+            thisArg: Element,
+            argumentsList: any[],
+        ) => {
+            const mode = argumentsList[0]?.mode;
+            if (mode === 'closed') {
+                argumentsList[0].mode = 'open';
+            }
+            return Reflect.apply(target, thisArg, argumentsList);
+        };
+
+        const attachShadowHandler = {
+            apply: attachShadowWrapper,
+        };
+
+        window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
+    }
 
     let parsedDelay;
     if (delay) {

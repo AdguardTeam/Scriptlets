@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- ability to click element in closed shadow root in `trusted-click-element` scriptlet [#423]
 - `isRedirectResourceCompatibleWithAdg()` method to check compatibility of redirect resources with AdGuard
   without needing the full rule text [#420]
 - `trusted-replace-outbound-text` scriptlet [#410]
@@ -27,6 +28,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...HEAD
 [#425]: https://github.com/AdguardTeam/Scriptlets/issues/425
+[#423]: https://github.com/AdguardTeam/Scriptlets/issues/423
 [#420]: https://github.com/AdguardTeam/Scriptlets/issues/420
 [#410]: https://github.com/AdguardTeam/Scriptlets/issues/410
 [#409]: https://github.com/AdguardTeam/Scriptlets/issues/409
