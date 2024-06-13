@@ -110,7 +110,7 @@ import {
  *
  * <!-- markdownlint-enable line-length -->
  *
- * @added unknown.
+ * @added v1.11.1.
  */
 /* eslint-enable max-len */
 export function trustedReplaceOutboundText(

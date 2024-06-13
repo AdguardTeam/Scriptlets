@@ -7,16 +7,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.11.1] - 2024-06-13
 
 ### Added
 
+- `trusted-dispatch-event` scriptlet [#382]
+- `trusted-replace-outbound-text` scriptlet [#410]
+- ability to click on the element with specified text in `trusted-click-element` scriptlet [#409]
 - ability to click element in closed shadow root in `trusted-click-element` scriptlet [#423]
 - `isRedirectResourceCompatibleWithAdg()` method to check compatibility of redirect resources with AdGuard
   without needing the full rule text [#420]
-- `trusted-replace-outbound-text` scriptlet [#410]
-- ability to click on the element with specified text in `trusted-click-element` scriptlet [#409]
-- `trusted-dispatch-event` scriptlet [#382]
 
 ### Deprecated
 
@@ -26,7 +26,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `set-attr` value cannot be set to minimum `0` and maximum `32767` possible value [#425]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...HEAD
+[v1.11.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...v1.11.1
 [#425]: https://github.com/AdguardTeam/Scriptlets/issues/425
 [#423]: https://github.com/AdguardTeam/Scriptlets/issues/423
 [#420]: https://github.com/AdguardTeam/Scriptlets/issues/420

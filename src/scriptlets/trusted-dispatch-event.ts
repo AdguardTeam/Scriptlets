@@ -40,7 +40,7 @@ import {
  *     example.org#%#//scriptlet('trusted-dispatch-event', 'load', 'window')
  *     ```
  *
- * @added unknown.
+ * @added v1.11.1.
  */
 
 export function trustedDispatchEvent(
