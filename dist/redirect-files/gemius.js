@@ -18,19 +18,11 @@
         try {
             var log = console.log.bind(console);
             var trace = console.trace.bind(console);
-            var prefix = source.ruleText || "";
+            var prefix = "";
             if (source.domainName) {
-                var AG_SCRIPTLET_MARKER = "#%#//";
-                var UBO_SCRIPTLET_MARKER = "##+js";
-                var ruleStartIndex;
-                if (source.ruleText.includes(AG_SCRIPTLET_MARKER)) {
-                    ruleStartIndex = source.ruleText.indexOf(AG_SCRIPTLET_MARKER);
-                } else if (source.ruleText.includes(UBO_SCRIPTLET_MARKER)) {
-                    ruleStartIndex = source.ruleText.indexOf(UBO_SCRIPTLET_MARKER);
-                }
-                var rulePart = source.ruleText.slice(ruleStartIndex);
-                prefix = "".concat(source.domainName).concat(rulePart);
+                prefix += "".concat(source.domainName);
             }
+            prefix += "#%#//scriptlet('".concat(source.name, "', '").concat(source.args.join(", "), "')");
             log("".concat(prefix, " trace start"));
             if (trace) {
                 trace();

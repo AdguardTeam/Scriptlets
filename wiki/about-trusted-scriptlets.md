@@ -2,9 +2,11 @@
 
 - [trusted-click-element](#trusted-click-element)
 - [trusted-create-element](#trusted-create-element)
+- [trusted-dispatch-event](#trusted-dispatch-event)
 - [trusted-prune-inbound-object](#trusted-prune-inbound-object)
 - [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 - [trusted-replace-node-text](#trusted-replace-node-text)
+- [trusted-replace-outbound-text](#trusted-replace-outbound-text)
 - [trusted-replace-xhr-response](#trusted-replace-xhr-response)
 - [trusted-set-attr](#trusted-set-attr)
 - [trusted-set-constant](#trusted-set-constant)
@@ -30,14 +32,16 @@ example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, dela
 ```
 <!-- markdownlint-disable-next-line line-length -->
 - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
-- `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`;
+- `extraMatch` — optional, extra condition to check on a page;
+   allows to match `cookie`, `localStorage` and specified text;
 can be set as `name:key[=value]` where `value` is optional.
 If `cookie`/`localStorage` starts with `!` then the element will only be clicked
-if specified cookie/localStorage item does not exist.
+if specified `cookie`/`localStorage` item does not exist.
 Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma
-and each of them should match the syntax. Possible `name`s:
+and each of them should match the syntax. Possible `names`:
     - `cookie` — test string or regex against cookies on a page
     - `localStorage` — check if localStorage item is present
+    - `containsText` — check if clicked element contains specified text
 - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
 
 <!-- markdownlint-disable line-length -->
@@ -88,6 +92,12 @@ and each of them should match the syntax. Possible `name`s:
     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
     ```
 
+1. Click element only if clicked element contains text `Accept cookie`
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-click-element', 'button', 'containsText:Accept cookie')
+    ```
+
 1. Click element only if cookie with name `cmpconsent` does not exist
 
     ```adblock
@@ -108,7 +118,7 @@ and each of them should match the syntax. Possible `name`s:
 
 <!-- markdownlint-enable line-length -->
 
-[Scriptlet source](../src/scriptlets/trusted-click-element.js)
+[Scriptlet source](../src/scriptlets/trusted-click-element.ts)
 
 * * *
 
@@ -167,6 +177,48 @@ example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, at
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-create-element.ts)
+
+* * *
+
+## <a id="trusted-dispatch-event"></a> ⚡️ trusted-dispatch-event
+
+> Added in v1.11.1.
+
+Dispatches a custom event on a specified target.
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('trusted-dispatch-event', event[, target])
+```
+
+- `event` — required, name of the event to dispatch
+- `target` — optional, target on which event will be invoked. Possible values:
+    - CSS selector — dispatch event on the element with the specified selector
+    - `window` — dispatch event on the window object
+    - if not set, then "document" is used — it's default value
+
+### Examples
+
+1. Dispatches a custom event "click" on the document.
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-dispatch-event', 'click')
+    ```
+
+2. Dispatches a custom event "submit" on the element with the class "test".
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-dispatch-event', 'submit', '.test')
+    ```
+
+3. Dispatches a custom event "load" on the window object.
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-dispatch-event', 'load', 'window')
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-dispatch-event.ts)
 
 * * *
 
@@ -386,6 +438,108 @@ If matched, the whole text will be removed. Case sensitive.
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-replace-node-text.js)
+
+* * *
+
+## <a id="trusted-replace-outbound-text"></a> ⚡️ trusted-replace-outbound-text
+
+> Added in v1.11.1.
+
+Replace the text in the outbound function call.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/commit/21e1ee30ee36c1b9a7a3c9f43ac97e52d8e79661
+
+### Syntax
+
+<!-- markdownlint-disable line-length -->
+```text
+example.org#%#//scriptlet('trusted-replace-outbound-text', methodPath[, textToReplace[, replacement[, decodeMethod[, stack[, logContent]]]]])
+```
+<!-- markdownlint-enable line-length -->
+
+- `methodPath` — required, the name of the function to trap, it must have an object as an argument.
+  Call with only `methodPath` as an argument will log all text content of the specified function to console,
+  but only if function call returns a string, otherwise it will log information that content is not a string.
+- `textToReplace` — optional, string or regular expression which should be replaced.
+  By default it's set to `''`. If it's not set to other value and `logContent` is set, it will log the original content.
+- `replacement` — optional, string which replace the matched text.
+  By default it's set to '', so matched content will removed.
+- `decodeMethod` — optional, string which specifies the method used to decode the content.
+  For now supported value is 'base64'. By default it's set to `''` and no decoding is performed.
+  If it's set and `logContent` is also set and `textToReplace` and `replacement` are not set,
+  then it will log the decoded content.
+- `stack` — optional, string or regular expression that must match the current function call stack trace.
+  If regular expression is invalid it will be skipped.
+- `logContent` — optional, if set to any value, the original and modified content will be logged.
+  By default it's set to '' and no content will be logged.
+
+> Logging content may be useful for debugging but it is not allowed for prod versions of filter lists.
+
+### Examples
+
+<!-- markdownlint-disable line-length -->
+
+1. Replace `foo` with 'bar' from the payload of the atob call:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', 'foo', 'bar')
+    ```
+
+    For instance, the following call will return `bar`
+
+    ```html
+    const text = btoa('foo');
+    atob(text);
+    ```
+
+1. Replace `disable_ads:false` with 'disable_ads:true' from the payload of the `Array.prototype.join` if content is encoded in base64:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-outbound-text', 'Array.prototype.join', 'disable_ads:false', 'disable_ads:true', 'base64')
+    ```
+
+    For instance, the following call will return `ZGlzYWJsZV9hZHM6dHJ1ZQ==` which is `'disable_ads:true'` after decoding
+
+    ```html
+    const arrayBase64 = ['ZGlzYWJsZV9h','ZHM6ZmFsc2U=']; // `ZGlzYWJsZV9hZHM6ZmFsc2U=` after decoding is `disable_ads:false`
+    arrayBase64.join('');
+    ```
+
+1. Replace `"loadAds":true` with `"loadAds":false` from the payload of the JSON.stringify if the stack trace contains `testStackFunction`:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-outbound-text', 'JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction')
+    ```
+
+    For instance, the following call will return `'{"loadAds":false,"content":"bar"}'`
+
+    ```html
+    const testStackFunction = () => JSON.stringify({ loadAds: true, content: 'bar' });
+    testStackFunction();
+    ```
+
+1. Call with `decodeMethod` and `logContent` arguments will log original and decoded text content of the specified function:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-outbound-text', 'Array.prototype.join', '', '', 'base64' , '', 'true')
+    ```
+
+1. Call with only first argument will log text content of the specified function:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob')
+    ```
+
+1. Call with `logContent` argument will log original and modified text content of the specified function:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', 'foo', 'bar', '', '', 'true')
+    ```
+
+<!-- markdownlint-enable line-length -->
+
+[Scriptlet source](../src/scriptlets/trusted-replace-outbound-text.ts)
 
 * * *
 
