@@ -42,6 +42,9 @@ import {
  *         - `name` — string or regular expression for matching XMLHttpRequest property name
  *         - `value` — string or regular expression for matching the value of the option
  *           passed to `XMLHttpRequest.open()` call
+ * - `verbose` — optional, boolean, if set to 'true' will log original and modified text content of XMLHttpRequests.
+ *
+ * > `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -77,16 +80,22 @@ import {
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/') <!-- markdownlint-disable-line line-length -->
  *     ```
  *
- * 1. Remove all text content of  all XMLHttpRequests for example.com
+ * 1. Remove all text content of all XMLHttpRequests for example.com
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
  *     ```
  *
+ * 1. Replace "foo" text content with "bar" of all XMLHttpRequests for example.com and log original and modified text content <!-- markdownlint-disable-line line-length -->
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'foo', 'bar', 'example.com', 'true')
+ *     ```
+ *
  * @added v1.7.3.
  */
 /* eslint-enable max-len */
-export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch = '') {
+export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch = '', verbose = false) {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
@@ -101,6 +110,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     }
 
     const shouldLog = pattern === '' && replacement === '';
+    const shouldLogContent = verbose === 'true';
 
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
@@ -182,7 +192,13 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 ? /(\n|.)*/
                 : toRegExp(pattern);
 
+            if (shouldLogContent) {
+                logMessage(source, `Original text content: ${content}`);
+            }
             const modifiedContent = content.replace(patternRegexp, replacement);
+            if (shouldLogContent) {
+                logMessage(source, `Modified text content: ${modifiedContent}`);
+            }
 
             // Manually put required values into target XHR object
             // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied

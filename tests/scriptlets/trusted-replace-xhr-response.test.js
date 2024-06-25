@@ -85,6 +85,43 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('Matched, string pattern log', async (assert) => {
+        assert.expect(6);
+
+        console.log = (...args) => {
+            if (args.length === 1 && args[0].includes('Original text content:')) {
+                assert.ok(args[0].includes('Original text content: {\n    "a1": 1,\n'), 'should log text in console');
+            }
+            if (args.length === 1 && args[0].includes('Modified text content:')) {
+                assert.ok(args[0].includes('Modified text content: foo bar'), 'should log text in console');
+            }
+            nativeConsole(...args);
+        };
+
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const PATTERN = '*';
+        const REPLACEMENT = 'foo bar';
+        const VERBOSE = 'true';
+        const MATCH_DATA = [PATTERN, REPLACEMENT, `${URL} method:${METHOD}`, VERBOSE];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.notOk(xhr.response.includes(PATTERN), 'Response has been modified');
+            assert.ok(xhr.response.includes(REPLACEMENT), 'Response text has been modified');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('Matched, regex pattern', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;

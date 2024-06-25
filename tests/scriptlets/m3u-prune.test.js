@@ -338,6 +338,55 @@ if (!isSupported) {
         done();
     });
 
+    test('fetch match URL - remove ads 1 and log', async (assert) => {
+        assert.expect(8);
+
+        console.log = (...args) => {
+            if (args.length === 1 && args[0].includes('Original M3U content:')) {
+                assert.ok(args[0].includes('tvessaiprod.nbcuni.com/video/'), 'should log original text in console');
+            }
+            if (args.length === 1 && args[0].includes('Modified M3U content:')) {
+                assert.notOk(args[0].includes('tvessaiprod.nbcuni.com/video/'), 'should log modified text in console');
+            }
+            nativeConsole(...args);
+        };
+
+        const M3U8_PATH = M3U8_OBJECTS_PATH_01;
+        const MATCH_DATA = 'tvessaiprod.nbcuni.com/video/';
+        const MATCH_URL = '.m3u8';
+        const VERBOSE = 'true';
+        const scriptletArgs = [MATCH_DATA, MATCH_URL, VERBOSE];
+
+        runScriptlet(name, scriptletArgs);
+
+        const done = assert.async();
+
+        const response = await fetch(M3U8_PATH);
+        const responseM3U8 = await response.text();
+        assert.notOk(
+            responseM3U8.includes('tvessaiprod.nbcuni.com/video/'),
+            'check if "tvessaiprod.nbcuni.com/video/" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.includes('#EXT-X-CUE:TYPE="SpliceOut"'),
+            'check if "#EXT-X-CUE:TYPE="SpliceOut"" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.includes('#EXT-X-CUE-IN'),
+            'check if "#EXT-X-CUE-IN" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.includes('#EXT-X-ASSET:CAID'),
+            'check if "#EXT-X-ASSET:CAID" has been removed',
+        );
+        assert.notOk(
+            responseM3U8.includes('#EXT-X-SCTE35:'),
+            'check if "#EXT-X-SCTE35:" has been removed',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('fetch match URL - remove ads 2', async (assert) => {
         const M3U8_PATH = M3U8_OBJECTS_PATH_02;
         const MATCH_DATA = 'VMAP-AD-BREAK';

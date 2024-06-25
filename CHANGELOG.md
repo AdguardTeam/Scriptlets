@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- ability to log original and modified content in `trusted-replace-node-text`, `xml-prune`, `m3u-prune`,
+  `trusted-replace-fetch-response` and `trusted-replace-xhr-response` scriptlets [#411]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...HEAD
+[#411]: https://github.com/AdguardTeam/Scriptlets/issues/411
+
 ## [v1.11.1] - 2024-06-13
 
 ### Added

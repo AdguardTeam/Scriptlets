@@ -35,6 +35,9 @@ import {
  * - `propsToMatch` — optional, XPath or selector of elements which will be removed from XML
  * - `optionalProp` — optional, selector of elements that must occur in XML document
  * - `urlToMatch` — optional, string or regular expression for matching the request's URL
+ * - `verbose` — optional, boolean, if set to 'true' will log original and modified XML content
+ *
+ * > `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * > Usage with no arguments will log response payload and URL to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -57,6 +60,12 @@ import {
  *
  *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
+ *     ```
+ *
+ * 1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd` and log content
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd', 'true')
  *     ```
  *
  * 1. Remove `Period` tag whose `id` contains `pre-roll` and remove `duration` attribute from the `Period` tag
@@ -86,7 +95,7 @@ import {
  */
 /* eslint-enable max-len */
 
-export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = '') {
+export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = '', verbose = false) {
     // do nothing if browser does not support Reflect, fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -99,6 +108,8 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
     }
 
     let shouldPruneResponse = false;
+
+    const shouldLogContent = verbose === 'true';
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
@@ -193,12 +204,22 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
             shouldPruneResponse = false;
             return text;
         }
+        if (shouldLogContent) {
+            // It's necessary to clone the XML document because xmlDoc is logged with removed elements
+            const cloneXmlDoc = xmlDoc.cloneNode(true);
+            logMessage(source, 'Original xml:');
+            logMessage(source, cloneXmlDoc, true, false);
+        }
         if (isXpath) {
             xPathPruning(elements);
         } else {
             elements.forEach((elem) => {
                 elem.remove();
             });
+        }
+        if (shouldLogContent) {
+            logMessage(source, 'Modified xml:');
+            logMessage(source, xmlDoc, true, false);
         }
         const serializer = new XMLSerializer();
         text = serializer.serializeToString(xmlDoc);
