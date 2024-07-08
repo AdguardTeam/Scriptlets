@@ -14,25 +14,32 @@ declare global {
  * for logging scriptlets
  */
 export const hit = (source: Source) => {
-    if (source.verbose !== true) {
+    const ADGUARD_PREFIX = '[AdGuard]';
+    if (!source.verbose) {
         return;
     }
 
     try {
-        const log = console.log.bind(console);
         const trace = console.trace.bind(console);
 
-        let prefix = '';
-        if (source.domainName) {
-            prefix += `${source.domainName}`;
+        let label = `${ADGUARD_PREFIX} `;
+        if (source.engine === 'corelibs') {
+            // rule text will be available for corelibs
+            label += source.ruleText;
+        } else {
+            if (source.domainName) {
+                label += `${source.domainName}`;
+            }
+            if (source.args) {
+                label += `#%#//scriptlet('${source.name}', '${source.args.join("', '")}')`;
+            } else {
+                label += `#%#//scriptlet('${source.name}')`;
+            }
         }
-        prefix += `#%#//scriptlet('${source.name}', '${source.args.join(', ')}')`;
 
-        log(`${prefix} trace start`);
         if (trace) {
-            trace();
+            trace(label);
         }
-        log(`${prefix} trace end`);
     } catch (e) {
         // try catch for Edge 15
         // In according to this issue https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/14495220/

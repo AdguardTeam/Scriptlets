@@ -14,8 +14,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - ability to log original and modified content in `trusted-replace-node-text`, `xml-prune`, `m3u-prune`,
   `trusted-replace-fetch-response` and `trusted-replace-xhr-response` scriptlets [#411]
 
+### Changed
+
+- Log message format [CoreLibs#180]
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...HEAD
 [#411]: https://github.com/AdguardTeam/Scriptlets/issues/411
+[CoreLibs#180]: https://github.com/AdguardTeam/CoreLibs/issues/180
 
 ## [v1.11.1] - 2024-06-13
 
