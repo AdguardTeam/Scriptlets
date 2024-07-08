@@ -104,6 +104,8 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
         'disabled',
         'necessary',
         'required',
+        'hide',
+        'hidden',
     ]);
 
     let validValue;

@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- new values to `set-cookie` and `set-cookie-reload` scriptlets: `hide`, `hidden` [#433]
 - new values to `set-local-storage-item` and `set-session-storage-item` scriptlets:
   `accept`, `accepted`, `reject`, `rejected` [#429]
 - ability to log original and modified content in `trusted-replace-node-text`, `xml-prune`, `m3u-prune`,
@@ -21,6 +22,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Log message format [CoreLibs#180]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...HEAD
+[#433]: https://github.com/AdguardTeam/Scriptlets/issues/433
 [#429]: https://github.com/AdguardTeam/Scriptlets/issues/429
 [#411]: https://github.com/AdguardTeam/Scriptlets/issues/411
 [CoreLibs#180]: https://github.com/AdguardTeam/CoreLibs/issues/180
