@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.11.6] - 2024-07-08
 
 ### Added
 
@@ -21,7 +21,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Log message format [CoreLibs#180]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...HEAD
+[v1.11.6]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...v1.11.6
 [#433]: https://github.com/AdguardTeam/Scriptlets/issues/433
 [#429]: https://github.com/AdguardTeam/Scriptlets/issues/429
 [#411]: https://github.com/AdguardTeam/Scriptlets/issues/411
