@@ -1371,6 +1371,9 @@ example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
 - `propsToRemove` — optional, string or regular expression
   to match the URL line (segment) which will be removed alongside with its tags
 - `urlToMatch` — optional, string or regular expression for matching the request's URL
+- `verbose` — optional, boolean, if set to 'true' will log original and modified M3U content
+
+> `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
 
 > Usage with no arguments will log response payload and URL to browser console;
 > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -1387,6 +1390,12 @@ example.org#%#//scriptlet('m3u-prune'[, propsToRemove[, urlToMatch]])
 
     ```adblock
     example.org#%#//scriptlet('m3u-prune', 'example.com/video/', '.m3u8')
+    ```
+
+1. Removes a line which contains `example.com/video/`, only if request's URL contains `.m3u8` and log content
+
+    ```adblock
+    example.org#%#//scriptlet('m3u-prune', 'example.com/video/', '.m3u8', 'true')
     ```
 
 1. Call with no arguments will log response payload and URL at the console
@@ -2943,6 +2952,7 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
         - `enable` / `enabled`
         - `disable` / `disabled`
         - `necessary` / `required`
+        - `hide` / `hidden`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3002,6 +3012,7 @@ example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
         - `enable` / `enabled`
         - `disable` / `disabled`
         - `necessary` / `required`
+        - `hide` / `hidden`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3063,6 +3074,10 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
         - `no`
         - `on`
         - `off`
+        - `accept`
+        - `accepted`
+        - `reject`
+        - `rejected`
         - `$remove$` — remove specific item from localStorage
 
 ### Examples
@@ -3136,6 +3151,10 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
         - `no`
         - `on`
         - `off`
+        - `accept`
+        - `accepted`
+        - `reject`
+        - `rejected`
         - `$remove$` — remove specific item from sessionStorage
 
 ### Examples
@@ -3221,6 +3240,9 @@ example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch
 - `propsToMatch` — optional, XPath or selector of elements which will be removed from XML
 - `optionalProp` — optional, selector of elements that must occur in XML document
 - `urlToMatch` — optional, string or regular expression for matching the request's URL
+- `verbose` — optional, boolean, if set to 'true' will log original and modified XML content
+
+> `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
 
 > Usage with no arguments will log response payload and URL to browser console;
 > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -3243,6 +3265,12 @@ example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch
 
     ```adblock
     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
+    ```
+
+1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd` and log content
+
+    ```adblock
+    example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd', 'true')
     ```
 
 1. Remove `Period` tag whose `id` contains `pre-roll` and remove `duration` attribute from the `Period` tag

@@ -329,6 +329,10 @@ If set, `replacement` is required. Possible values:
         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
         - `value` is string or regular expression for matching the value of the option passed to fetch call;
           invalid regular expression will cause any value matching
+<!-- markdownlint-disable-next-line line-length -->
+- `verbose` — optional, boolean, if set to 'true' will log original and modified text content of fetch responses.
+
+> `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
 
 > Usage with no arguments will log fetch calls to browser console;
 > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -376,6 +380,12 @@ If set, `replacement` is required. Possible values:
     example.org#%#//scriptlet('trusted-replace-fetch-response', '*', '', 'example.com')
     ```
 
+1. Replace "foo" text content with "bar" of all fetch responses for example.com and log original and modified text content <!-- markdownlint-disable-line line-length -->
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-fetch-response', 'foo', 'bar', 'example.com', 'true')
+    ```
+
 [Scriptlet source](../src/scriptlets/trusted-replace-fetch-response.js)
 
 * * *
@@ -398,6 +408,9 @@ Must target lowercased node names, e.g `div` instead of `DIV`.
 If matched, the whole text will be removed. Case sensitive.
 - `pattern` — required, string or regexp for matching contents of `node.textContent` that should be replaced.
 - `replacement` — required, string to replace text content matched by `pattern`.
+- `...extraArgs` — optional, string, if includes 'verbose' will log original and modified text content.
+
+> `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
 
 ### Examples
 
@@ -435,6 +448,12 @@ If matched, the whole text will be removed. Case sensitive.
     <qrce3>s0me other text</qrce3> // text content has changed
     <qrce3>text</qrce3>
     <span>some text</span>
+    ```
+
+3. Replace node's text content and log original and modified text content:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-node-text', 'div', 'some', 'text', 'other text', 'verbose')
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-replace-node-text.js)
@@ -568,6 +587,9 @@ example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[
         - `name` — string or regular expression for matching XMLHttpRequest property name
         - `value` — string or regular expression for matching the value of the option
           passed to `XMLHttpRequest.open()` call
+- `verbose` — optional, boolean, if set to 'true' will log original and modified text content of XMLHttpRequests.
+
+> `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
 > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -603,10 +625,16 @@ example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[
     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/') <!-- markdownlint-disable-line line-length -->
     ```
 
-1. Remove all text content of  all XMLHttpRequests for example.com
+1. Remove all text content of all XMLHttpRequests for example.com
 
     ```adblock
     example.org#%#//scriptlet('trusted-replace-xhr-response', '*', '', 'example.com')
+    ```
+
+1. Replace "foo" text content with "bar" of all XMLHttpRequests for example.com and log original and modified text content <!-- markdownlint-disable-line line-length -->
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-xhr-response', 'foo', 'bar', 'example.com', 'true')
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-replace-xhr-response.js)
