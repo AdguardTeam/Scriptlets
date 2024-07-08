@@ -30,9 +30,11 @@ export const setStorageItem = (source: Source, storage: Storage, key: string, va
  */
 export const removeStorageItem = (source: Source, storage: Storage, key: string): void => {
     try {
-        if (key.startsWith('/')
-        && (key.endsWith('/') || key.endsWith('/i'))
-        && isValidStrPattern(key)) {
+        if (
+            key.startsWith('/')
+            && (key.endsWith('/') || key.endsWith('/i'))
+            && isValidStrPattern(key)
+        ) {
             const regExpKey = toRegExp(key);
             const storageKeys = Object.keys(storage);
             storageKeys.forEach((storageKey) => {
@@ -70,6 +72,10 @@ export const getLimitedStorageItemValue = (value: string): StorageItemValue | nu
         'no',
         'on',
         'off',
+        'accept',
+        'accepted',
+        'reject',
+        'rejected',
     ]);
 
     let validValue;

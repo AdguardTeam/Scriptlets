@@ -135,6 +135,34 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
         assert.strictEqual(window.localStorage.getItem(iName), 'off', 'localStorage item has been set');
         clearStorageItem(iName);
+
+        iName = '__test-item_accept';
+        iValue = 'accept';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), 'accept', 'localStorage item has been set');
+        clearStorageItem(iName);
+
+        iName = '__test-item_accepted';
+        iValue = 'accepted';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), 'accepted', 'localStorage item has been set');
+        clearStorageItem(iName);
+
+        iName = '__test-item_reject';
+        iValue = 'reject';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), 'reject', 'localStorage item has been set');
+        clearStorageItem(iName);
+
+        iName = '__test-item_rejected';
+        iValue = 'rejected';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), 'rejected', 'localStorage item has been set');
+        clearStorageItem(iName);
     });
 
     test('Set localStorage key with invalid value', (assert) => {
