@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- `trusted-set-session-storage-item` scriptlet [#426]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...HEAD
+[#426]: https://github.com/AdguardTeam/Scriptlets/issues/426
+
 ## [v1.11.6] - 2024-07-08
 
 ### Added
