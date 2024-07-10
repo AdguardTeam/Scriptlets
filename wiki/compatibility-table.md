@@ -121,6 +121,7 @@
 |  | remove-cache-storage-item.js |  |
 |  | trusted-replace-argument.js |  |
 |  | trusted-replace-outbound-text.js |  |
+|  | trusted-suppress-native-method.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

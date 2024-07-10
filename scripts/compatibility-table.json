@@ -385,6 +385,9 @@
         },
         {
             "ubo": "trusted-replace-outbound-text.js"
+        },
+        {
+            "ubo": "trusted-suppress-native-method.js"
         }
     ],
     "redirects": [
