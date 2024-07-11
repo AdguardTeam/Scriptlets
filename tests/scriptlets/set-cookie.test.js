@@ -66,8 +66,10 @@ const cookies = [
     ['__test-cookie_disabled', 'disabled'],
     ['__test-cookie_necessary', 'necessary'],
     ['__test-cookie_required', 'required'],
-    ['__test-cookie_required', 'hide'],
-    ['__test-cookie_required', 'hidden'],
+    ['__test-cookie_hide', 'hide'],
+    ['__test-cookie_hidden', 'hidden'],
+    ['__test-cookie_essential', 'essential'],
+    ['__test-cookie_nonessential', 'nonessential'],
 ];
 
 test.each('Set cookie with valid value', cookies, (assert, [cName, cValue]) => {

@@ -43,6 +43,7 @@ import {
  *         - `disable` / `disabled`
  *         - `necessary` / `required`
  *         - `hide` / `hidden`
+ *         - `essential` / `nonessential`
  * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all

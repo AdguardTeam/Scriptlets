@@ -11,9 +11,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- new values to `set-cookie` and `set-cookie-reload` scriptlets: `essential`, `nonessential` [#436]
 - `trusted-set-session-storage-item` scriptlet [#426]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...HEAD
+[#436]: https://github.com/AdguardTeam/Scriptlets/issues/436
 [#426]: https://github.com/AdguardTeam/Scriptlets/issues/426
 
 ## [v1.11.6] - 2024-07-08
