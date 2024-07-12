@@ -77,6 +77,42 @@ test('Set cookie with current time value', (assert) => {
     clearCookie(cName);
 });
 
+test('Set cookie with current date value', (assert) => {
+    const cName = '__test-cookie_current_date';
+    const cValue = '$currentDate$';
+
+    runScriptlet(name, [cName, cValue]);
+
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName), true, 'Cookie name has been set');
+
+    const cookieValue = parseCookieString(document.cookie)[cName];
+    const currentDate = Date();
+    // Check only first 4 parts of the date (e.g. 'Tue Nov 08 2022')
+    const dateToCheck = currentDate.split(' ', 4).join(' ');
+
+    assert.ok(cookieValue.startsWith(dateToCheck), 'Cookie value has been set to current date');
+    clearCookie(cName);
+});
+
+test('Set cookie with current ISO time value', (assert) => {
+    const cName = '__test-cookie_current_iso_date';
+    const cValue = '$currentISODate$';
+
+    runScriptlet(name, [cName, cValue]);
+
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(document.cookie.includes(cName), true, 'Cookie name has been set');
+
+    const cookieValue = parseCookieString(document.cookie)[cName];
+    const currentIsoTime = new Date().toISOString();
+    // Check only the date part of the ISO time (e.g. '2022-11-08')
+    const isoTimeToCheck = currentIsoTime.split('T')[0];
+
+    assert.ok(cookieValue.startsWith(isoTimeToCheck), 'Cookie value has been set to current ISO time');
+    clearCookie(cName);
+});
+
 test('Set cookie with expires', (assert) => {
     const cName = '__test-cookie_expires';
     const cValue = 'expires';

@@ -26,6 +26,8 @@ import {
  *     - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
  *     - `$currentDate$` keyword for setting string representation of the current date and time,
  *       corresponds to `Date()` and `(new Date).toString()` calls
+ *     - `$currentISODate$` keyword for setting current date in the date time string format,
+ *       corresponds to `(new Date).toISOString()` call, e.g '2022-11-08T13:53:19.650Z'
  *
  * ### Examples
  *

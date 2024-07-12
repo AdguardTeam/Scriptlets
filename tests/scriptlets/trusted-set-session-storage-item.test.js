@@ -137,4 +137,21 @@ if (isSafariBrowser()) {
 
         clearStorageItem(iName);
     });
+
+    test('Set sessionStorage item with $currentISODate$ keyword value', (assert) => {
+        const iName = '__test-item_current_iso_date';
+        const iValue = '$currentISODate$';
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+
+        const value = sessionStorage.getItem(iName);
+        const currentIsoTime = new Date().toISOString();
+        // Check only the date part of the ISO time (e.g. '2022-11-08')
+        const isoTimeToCheck = currentIsoTime.split('T')[0];
+
+        assert.ok(value.startsWith(isoTimeToCheck), 'Item value has been set to current ISO time');
+
+        clearStorageItem(iName);
+    });
 }

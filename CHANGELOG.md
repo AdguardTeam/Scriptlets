@@ -11,10 +11,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `$currentISODate$` as a new possible value to `set-cookie`, `set-cookie-reload`,
+  `set-local-storage-item` and `set-session-storage-item` scriptlets [#435]
 - new values to `set-cookie` and `set-cookie-reload` scriptlets: `essential`, `nonessential` [#436]
 - `trusted-set-session-storage-item` scriptlet [#426]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...HEAD
+[#435]: https://github.com/AdguardTeam/Scriptlets/issues/435
 [#436]: https://github.com/AdguardTeam/Scriptlets/issues/436
 [#426]: https://github.com/AdguardTeam/Scriptlets/issues/426
 
