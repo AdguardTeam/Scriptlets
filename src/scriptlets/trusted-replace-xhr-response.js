@@ -76,9 +76,13 @@ import {
  *
  * 1. Replace text content of XMLHttpRequests matching by URL regex and request methods
  *
+ *     <!-- markdownlint-disable line-length -->
+ *
  *     ```adblock
- *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/') <!-- markdownlint-disable-line line-length -->
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
  *     ```
+ *
+ *    <!-- markdownlint-enable line-length -->
  *
  * 1. Remove all text content of all XMLHttpRequests for example.com
  *

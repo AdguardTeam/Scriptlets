@@ -18,9 +18,13 @@ import type { ParsedAttributePair } from '../helpers/attribute-utils';
  *
  * ### Syntax
  *
+ * <!-- markdownlint-disable line-length -->
+ *
  * ```text
- * example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, attributePairs[, textContent[, cleanupDelayMs]]]) <!-- markdownlint-disable-line line-length -->
+ * example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, attributePairs[, textContent[, cleanupDelayMs]]])
  * ```
+ *
+ * <!-- markdownlint-enable line-length -->
  *
  * - `parentSelector` — required, CSS selector of the parent element to append the created element to.
  * - `tagName` — required, tag name of the created element.
@@ -48,9 +52,13 @@ import type { ParsedAttributePair } from '../helpers/attribute-utils';
  *
  * 1. Create a button element with multiple attributes, including attribute without value, and text content
  *
+ *     <!-- markdownlint-disable line-length -->
+ *
  *     ```adblock
- *     example.com#%#//scriptlet('trusted-create-element', 'body', 'button', 'disabled aria-hidden="true" style="width: 0px"', 'Press here') <!-- markdownlint-disable-line line-length -->
+ *     example.com#%#//scriptlet('trusted-create-element', 'body', 'button', 'disabled aria-hidden="true" style="width: 0px"', 'Press here')
  *     ```
+ *
+ *     <!-- markdownlint-enable line-length -->
  *
  * 1. Create a button element with an attribute whose value contains quotes
  *
@@ -61,7 +69,7 @@ import type { ParsedAttributePair } from '../helpers/attribute-utils';
  * 1. Create a paragraph element with text content and remove it after 5 seconds
  *
  *     ```adblock
- *     example.com#%#//scriptlet('trusted-create-element', '.container > article', 'p', '', 'Hello world!', 5000)
+ *     example.com#%#//scriptlet('trusted-create-element', '.container > article', 'p', '', 'Hello world!', '5000')
  *     ```
  *
  * @added v1.10.1.

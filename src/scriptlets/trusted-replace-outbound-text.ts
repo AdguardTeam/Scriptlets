@@ -93,7 +93,7 @@ import {
  * 1. Call with `decodeMethod` and `logContent` arguments will log original and decoded text content of the specified function:
  *
  *     ```adblock
- *     example.org#%#//scriptlet('trusted-replace-outbound-text', 'Array.prototype.join', '', '', 'base64' , '', 'true')
+ *     example.org#%#//scriptlet('trusted-replace-outbound-text', 'Array.prototype.join', '', '', 'base64', '', 'true')
  *     ```
  *
  * 1. Call with only first argument will log text content of the specified function:
