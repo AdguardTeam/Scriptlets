@@ -347,14 +347,12 @@ export function trustedClickElement(
     };
 
     /**
-     * Query all selectors from queue on each mutation
-     * Each selector is swapped to null in selectorsSequence on founding corresponding element
+     * Processes a sequence of selectors, handling elements found in DOM (and shadow DOM),
+     * and updates the sequence.
      *
-     * We start looking for elements before possible delay is over, to avoid cases
-     * when delay is getting off after the last mutation took place.
-     *
+     * @returns {string[]} The updated selectors sequence, with fulfilled selectors set to null.
      */
-    const findElements = (mutations: MutationRecord[], observer: MutationObserver) => {
+    const fulfillAndHandleSelectors = () => {
         const fulfilledSelectors: string[] = [];
         selectorsSequence.forEach((selector, i) => {
             if (!selector) {
@@ -376,6 +374,20 @@ export function trustedClickElement(
                 : selector;
         });
 
+        return selectorsSequence;
+    };
+
+    /**
+     * Queries all selectors from queue on each mutation
+     *
+     * We start looking for elements before possible delay is over, to avoid cases
+     * when delay is getting off after the last mutation took place.
+     *
+     */
+    const findElements = (mutations: MutationRecord[], observer: MutationObserver) => {
+        // TODO: try to make the function cleaner — avoid usage of selectorsSequence from the outer scope
+        selectorsSequence = fulfillAndHandleSelectors();
+
         // Disconnect observer after finding all elements
         const allSelectorsFulfilled = selectorsSequence.every((selector) => selector === null);
         if (allSelectorsFulfilled) {
@@ -383,13 +395,49 @@ export function trustedClickElement(
         }
     };
 
-    const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
-    observer.observe(document.documentElement, {
-        attributes: true,
-        childList: true,
-        subtree: true,
-    });
+    /**
+     * Initializes a `MutationObserver` to watch for changes in the DOM.
+     * The observer is set up to monitor changes in attributes, child nodes, and subtree.
+     * A timeout is set to disconnect the observer if no elements are found within the specified time.
+     */
+    const initializeMutationObserver = () => {
+        const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+        observer.observe(document.documentElement, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+        });
 
+        // Set timeout to disconnect observer if elements are not found within the specified time
+        setTimeout(() => observer.disconnect(), OBSERVER_TIMEOUT_MS);
+    };
+
+    /**
+     * Checks if elements are already present in the DOM.
+     * If elements are found, they are clicked.
+     * If elements are not found, the observer is initialized.
+     */
+    const checkInitialElements = () => {
+        const foundElements = selectorsSequence.every((selector) => {
+            if (!selector) {
+                return false;
+            }
+            const element = queryShadowSelector(selector);
+            return !!element;
+        });
+        if (foundElements) {
+            // Click previously collected elements
+            fulfillAndHandleSelectors();
+        } else {
+            // Initialize MutationObserver if elements were not found initially
+            initializeMutationObserver();
+        }
+    };
+
+    // Run the initial check
+    checkInitialElements();
+
+    // If there's a delay before clicking elements, use a timeout
     if (parsedDelay) {
         setTimeout(() => {
             // Click previously collected elements
@@ -397,8 +445,6 @@ export function trustedClickElement(
             canClick = true;
         }, parsedDelay);
     }
-
-    setTimeout(() => observer.disconnect(), OBSERVER_TIMEOUT_MS);
 }
 
 trustedClickElement.names = [

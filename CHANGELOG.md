@@ -16,10 +16,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - new values to `set-cookie` and `set-cookie-reload` scriptlets: `essential`, `nonessential` [#436]
 - `trusted-set-session-storage-item` scriptlet [#426]
 
+### Fixed
+
+- `trusted-click-element` scriptlet does not click on an element that is already in the DOM [#437]
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...HEAD
 [#435]: https://github.com/AdguardTeam/Scriptlets/issues/435
 [#436]: https://github.com/AdguardTeam/Scriptlets/issues/436
 [#426]: https://github.com/AdguardTeam/Scriptlets/issues/426
+[#437]: https://github.com/AdguardTeam/Scriptlets/issues/437
 
 ## [v1.11.6] - 2024-07-08
 

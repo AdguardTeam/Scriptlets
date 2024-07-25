@@ -57,17 +57,37 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('Single element clicked', (assert) => {
+test('Element already in DOM is clicked', (assert) => {
     const ELEM_COUNT = 1;
-    // Check elements for being clicked and hit func execution
     const ASSERTIONS = ELEM_COUNT + 1;
     assert.expect(ASSERTIONS);
     const done = assert.async();
 
     const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
 
     runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('Element added to DOM is clicked', (assert) => {
+    const ELEM_COUNT = 1;
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+
+    const done = assert.async();
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
     const panel = createPanel();
+
+    runScriptlet(name, [selectorsString]);
+
     const clickable = createClickable(1);
     panel.appendChild(clickable);
 
@@ -76,6 +96,42 @@ test('Single element clicked', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 150);
+});
+
+test('Multiple elements clicked - one element loaded before scriptlet, rest added later', (assert) => {
+    const CLICK_ORDER = [1, 2, 3];
+    // Assert elements for being clicked, hit func execution & click order
+    const ASSERTIONS = CLICK_ORDER.length + 2;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = createSelectorsString(CLICK_ORDER);
+
+    const panel = createPanel();
+
+    const clickables = [];
+    const clickable1 = createClickable(1);
+    panel.appendChild(clickable1);
+    clickables.push(clickable1);
+
+    runScriptlet(name, [selectorsString]);
+
+    const clickable2 = createClickable(2);
+    panel.appendChild(clickable2);
+    clickables.push(clickable2);
+
+    const clickable3 = createClickable(3);
+    panel.appendChild(clickable3);
+    clickables.push(clickable3);
+
+    setTimeout(() => {
+        clickables.forEach((clickable) => {
+            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        });
+        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 400);
 });
 
 test('Single element clicked, delay is set', (assert) => {
