@@ -18,9 +18,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- issue with re-adding element after removing it in `trusted-create-element` scriptlet [#434]
 - `trusted-click-element` scriptlet does not click on an element that is already in the DOM [#437]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...HEAD
+[#434]: https://github.com/AdguardTeam/Scriptlets/issues/434
 [#435]: https://github.com/AdguardTeam/Scriptlets/issues/435
 [#436]: https://github.com/AdguardTeam/Scriptlets/issues/436
 [#426]: https://github.com/AdguardTeam/Scriptlets/issues/426

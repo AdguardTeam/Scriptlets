@@ -191,6 +191,35 @@ test('element cleanup by timeout', (assert) => {
     }, cleanupDelayMs + 10);
 });
 
+test('element cleanup by timeout, check if element was not added again', (assert) => {
+    // If element is re-added in a loop, then it will stuck on this test
+
+    const childTagName = 'SPAN';
+    const cleanupDelayMs = 100;
+
+    runScriptlet(name, [ROOT_SELECTOR, childTagName, '', '', cleanupDelayMs]);
+
+    const done = assert.async();
+
+    let child;
+    let children;
+    const rootElement = createRoot(ROOT_ID);
+
+    setTimeout(() => {
+        children = rootElement.children;
+        // eslint-disable-next-line prefer-destructuring
+        child = children[0];
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        assert.strictEqual(children.length, 1, 'Only specified child was appended');
+        assert.strictEqual(child.tagName, childTagName, 'Tag name is set correctly');
+    }, cleanupDelayMs / 2);
+
+    setTimeout(() => {
+        assert.strictEqual(children.length, 0, 'Child element was removed after timeout');
+        done();
+    }, cleanupDelayMs + 10);
+});
+
 test('running scriptlet before root element is created', (assert) => {
     const childTagName = 'div';
 

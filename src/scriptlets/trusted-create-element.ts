@@ -128,6 +128,8 @@ export function trustedCreateElement(
 
     let timerId: ReturnType<typeof setTimeout>;
 
+    let elementRemoved = false;
+
     /**
      * Finds parent element by `parentElSelector` and appends the `el` element to it.
      *
@@ -168,6 +170,7 @@ export function trustedCreateElement(
         if (!nativeIsNaN(removeElDelayMs)) {
             timerId = setTimeout(() => {
                 el.remove();
+                elementRemoved = true;
                 clearTimeout(timerId);
             }, removeElDelayMs);
         }
@@ -177,7 +180,7 @@ export function trustedCreateElement(
 
     if (!findParentAndAppendEl(parentSelector, element, cleanupDelayMs)) {
         observeDocumentWithTimeout((mutations, observer) => {
-            if (findParentAndAppendEl(parentSelector, element, cleanupDelayMs)) {
+            if (elementRemoved || findParentAndAppendEl(parentSelector, element, cleanupDelayMs)) {
                 observer.disconnect();
             }
         });
