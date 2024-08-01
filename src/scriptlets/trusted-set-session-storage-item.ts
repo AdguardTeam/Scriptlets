@@ -65,7 +65,7 @@ import {
  *     example.org#%#//scriptlet('trusted-set-session-storage-item', 'ppu_main_none', '')
  *     ```
  *
- * @added unknown.
+ * @added v1.11.16.
  */
 /* eslint-enable max-len */
 

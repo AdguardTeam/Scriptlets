@@ -7,21 +7,21 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.11.16] - 2024-08-01
 
 ### Added
 
+- `trusted-set-session-storage-item` scriptlet [#426]
+- new values to `set-cookie` and `set-cookie-reload` scriptlets: `essential`, `nonessential` [#436]
 - `$currentISODate$` as a new possible value to `set-cookie`, `set-cookie-reload`,
   `set-local-storage-item` and `set-session-storage-item` scriptlets [#435]
-- new values to `set-cookie` and `set-cookie-reload` scriptlets: `essential`, `nonessential` [#436]
-- `trusted-set-session-storage-item` scriptlet [#426]
 
 ### Fixed
 
 - issue with re-adding element after removing it in `trusted-create-element` scriptlet [#434]
 - `trusted-click-element` scriptlet does not click on an element that is already in the DOM [#437]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...HEAD
+[v1.11.16]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...v1.11.16
 [#434]: https://github.com/AdguardTeam/Scriptlets/issues/434
 [#435]: https://github.com/AdguardTeam/Scriptlets/issues/435
 [#436]: https://github.com/AdguardTeam/Scriptlets/issues/436
