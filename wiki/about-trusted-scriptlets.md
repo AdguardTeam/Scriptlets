@@ -13,6 +13,7 @@
 - [trusted-set-cookie-reload](#trusted-set-cookie-reload)
 - [trusted-set-cookie](#trusted-set-cookie)
 - [trusted-set-local-storage-item](#trusted-set-local-storage-item)
+- [trusted-set-session-storage-item](#trusted-set-session-storage-item)
 - [trusted-suppress-native-method](#trusted-suppress-native-method)
 
 * * *
@@ -130,9 +131,13 @@ Creates an element with specified attributes and text content, and appends it to
 
 ### Syntax
 
+<!-- markdownlint-disable line-length -->
+
 ```text
-example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, attributePairs[, textContent[, cleanupDelayMs]]]) <!-- markdownlint-disable-line line-length -->
+example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, attributePairs[, textContent[, cleanupDelayMs]]])
 ```
+
+<!-- markdownlint-enable line-length -->
 
 - `parentSelector` — required, CSS selector of the parent element to append the created element to.
 - `tagName` — required, tag name of the created element.
@@ -160,9 +165,13 @@ example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, at
 
 1. Create a button element with multiple attributes, including attribute without value, and text content
 
+    <!-- markdownlint-disable line-length -->
+
     ```adblock
-    example.com#%#//scriptlet('trusted-create-element', 'body', 'button', 'disabled aria-hidden="true" style="width: 0px"', 'Press here') <!-- markdownlint-disable-line line-length -->
+    example.com#%#//scriptlet('trusted-create-element', 'body', 'button', 'disabled aria-hidden="true" style="width: 0px"', 'Press here')
     ```
+
+    <!-- markdownlint-enable line-length -->
 
 1. Create a button element with an attribute whose value contains quotes
 
@@ -173,7 +182,7 @@ example.com#%#//scriptlet('trusted-create-element', parentSelector, tagName[, at
 1. Create a paragraph element with text content and remove it after 5 seconds
 
     ```adblock
-    example.com#%#//scriptlet('trusted-create-element', '.container > article', 'p', '', 'Hello world!', 5000)
+    example.com#%#//scriptlet('trusted-create-element', '.container > article', 'p', '', 'Hello world!', '5000')
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-create-element.ts)
@@ -398,14 +407,14 @@ Replaces text in text content of matched DOM nodes.
 
 ### Syntax
 
-```adblock
+```text
 example.org#%#//scriptlet('trusted-replace-node-text', nodeName, textMatch, pattern, replacement)
 ```
 
 - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
 Must target lowercased node names, e.g `div` instead of `DIV`.
 - `textMatch` — required, string or RegExp to match against node's text content.
-If matched, the whole text will be removed. Case sensitive.
+If matched, the `pattern` will be replaced by the `replacement`. Case sensitive.
 - `pattern` — required, string or regexp for matching contents of `node.textContent` that should be replaced.
 - `replacement` — required, string to replace text content matched by `pattern`.
 - `...extraArgs` — optional, string, if includes 'verbose' will log original and modified text content.
@@ -541,7 +550,7 @@ example.org#%#//scriptlet('trusted-replace-outbound-text', methodPath[, textToRe
 1. Call with `decodeMethod` and `logContent` arguments will log original and decoded text content of the specified function:
 
     ```adblock
-    example.org#%#//scriptlet('trusted-replace-outbound-text', 'Array.prototype.join', '', '', 'base64' , '', 'true')
+    example.org#%#//scriptlet('trusted-replace-outbound-text', 'Array.prototype.join', '', '', 'base64', '', 'true')
     ```
 
 1. Call with only first argument will log text content of the specified function:
@@ -621,9 +630,13 @@ example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[
 
 1. Replace text content of XMLHttpRequests matching by URL regex and request methods
 
+    <!-- markdownlint-disable line-length -->
+
     ```adblock
-    example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/') <!-- markdownlint-disable-line line-length -->
+    example.org#%#//scriptlet('trusted-replace-xhr-response', '/#EXT-X-VMAP-AD-BREAK[\s\S]*?/', '#EXT-X-ENDLIST', '/\.m3u8/ method:/GET|HEAD/')
     ```
+
+   <!-- markdownlint-enable line-length -->
 
 1. Remove all text content of all XMLHttpRequests for example.com
 
@@ -813,6 +826,8 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpir
     - empty string for no value
     - `$now$` keyword for setting current time in ms, e.g 1667915146503
     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+    - `$currentISODate$` keyword for setting current date in the date time string format,
+      e.g '2022-11-08T13:53:19.650Z'
 - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
   defaults to no offset. Possible values:
     - positive integer in seconds
@@ -890,6 +905,8 @@ example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[,
     - empty string for no value
     - `$now$` keyword for setting current time in ms, e.g 1667915146503
     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+    - `$currentISODate$` keyword for setting current date in the date time string format,
+      e.g '2022-11-08T13:53:19.650Z'
 - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
   defaults to no offset. Possible values:
     - positive integer in seconds
@@ -966,6 +983,8 @@ example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
     - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
     - `$currentDate$` keyword for setting string representation of the current date and time,
       corresponds to `Date()` and `(new Date).toString()` calls
+    - `$currentISODate$` keyword for setting current date in the date time string format,
+      corresponds to `(new Date).toISOString()` call, e.g '2022-11-08T13:53:19.650Z'
 
 ### Examples
 
@@ -1000,6 +1019,68 @@ example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-set-local-storage-item.js)
+
+* * *
+
+## <a id="trusted-set-session-storage-item"></a> ⚡️ trusted-set-session-storage-item
+
+> Added in v1.11.16.
+
+Adds item with arbitrary key and value to sessionStorage object, or updates the value of the key if it already exists.
+Scriptlet won't set item if storage is full.
+
+### Syntax
+
+```adblock
+example.com#%#//scriptlet('trusted-set-session-storage-item', 'key', 'value')
+```
+
+- `key` — required, key name to be set.
+- `value` — required, key value; possible values:
+    - arbitrary value
+    - `$now$` keyword for setting current time in ms, corresponds to `Date.now()` and `(new Date).getTime()` calls
+    - `$currentDate$` keyword for setting string representation of the current date and time,
+      corresponds to `Date()` and `(new Date).toString()` calls
+    - `$currentISODate$` keyword for setting current date in the date time string format,
+      corresponds to `(new Date).toISOString()` call, e.g '2022-11-08T13:53:19.650Z'
+
+### Examples
+
+1. Set session storage item
+
+    <!-- markdownlint-disable line-length -->
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'player.live.current.mute', 'false')
+
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'COOKIE_CONSENTS', '{"preferences":3,"flag":false}')
+
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'providers', '[16364,88364]')
+
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'providers', '{"providers":[123,456],"consent":"all"}')
+    ```
+
+    <!-- markdownlint-enable line-length -->
+
+1. Set item with current time since unix epoch in ms
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'player.live.current.play', '$now$')
+    ```
+
+1. Set item with current date, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'player.live.current.play', '$currentDate$')
+    ```
+
+1. Set item without value
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'ppu_main_none', '')
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-set-session-storage-item.ts)
 
 * * *
 
