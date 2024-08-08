@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- support for matching line number in `abort-on-stack-trace` scriptlet
+  when `inlineScript` or `injectedScript` option is used [#439]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...HEAD
+[#439]: https://github.com/AdguardTeam/Scriptlets/issues/439
+
 ## [v1.11.16] - 2024-08-01
 
 ### Added

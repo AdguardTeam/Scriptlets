@@ -317,6 +317,71 @@ test('abort Math.random, injected script', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
+test('abort Math.ceil, injected script with line number', (assert) => {
+    const property = 'Math.ceil';
+    const stackMatch = 'injectedScript:1';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    window.testPassed = false;
+    const scriptElement = document.createElement('script');
+    scriptElement.type = 'text/javascript';
+    // set window.testPassed to true if script is aborted
+    // eslint-disable-next-line max-len
+    scriptElement.innerText = 'try { Math.ceil(2.1); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
+    document.body.appendChild(scriptElement);
+    scriptElement.parentNode.removeChild(scriptElement);
+
+    assert.strictEqual(window.testPassed, true, 'testPassed set to true, script has been aborted');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('abort Math.floor, injected script with line number regexp', (assert) => {
+    const property = 'Math.floor';
+    const stackMatch = '/injectedScript:\\d:\\d/';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    window.testPassed = false;
+    const scriptElement = document.createElement('script');
+    scriptElement.type = 'text/javascript';
+    // set window.testPassed to true if script is aborted
+    // eslint-disable-next-line max-len
+    scriptElement.innerText = 'try { Math.floor(1.1); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
+    document.body.appendChild(scriptElement);
+    scriptElement.parentNode.removeChild(scriptElement);
+
+    assert.strictEqual(window.testPassed, true, 'testPassed set to true, script has been aborted');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('abort Math.pow, injected script with line number regexp, two scripts abort only first', (assert) => {
+    const property = 'Math.pow';
+    const stackMatch = '/injectedScript:\\d:1/';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    window.testPassed = false;
+    const scriptElement1 = document.createElement('script');
+    scriptElement1.type = 'text/javascript';
+    // set window.testPassed to true if script is aborted
+    // eslint-disable-next-line max-len
+    scriptElement1.innerText = 'try { Math.pow(2, 2); } catch(error) { window.testPassed = true; console.log("Script aborted:", error); }';
+    document.body.appendChild(scriptElement1);
+    scriptElement1.parentNode.removeChild(scriptElement1);
+
+    const scriptElement2 = document.createElement('script');
+    scriptElement2.type = 'text/javascript';
+    // This script should not be aborted, so set window.testPassed to false if script is aborted
+    // eslint-disable-next-line max-len
+    scriptElement2.innerText = 'try { (()=>{ const test1 = 1; const test2 = 2; const test3 = 3; const test4 = Math.pow(2, 2); })() } catch(error) { window.testPassed = false; }';
+    document.body.appendChild(scriptElement2);
+    scriptElement2.parentNode.removeChild(scriptElement2);
+
+    assert.strictEqual(window.testPassed, true, 'testPassed set to true, only first script has been aborted');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
 test('abort String.fromCharCode, inline script', (assert) => {
     const property = 'String.fromCharCode';
     const stackMatch = 'inlineScript';
@@ -327,6 +392,46 @@ test('abort String.fromCharCode, inline script', (assert) => {
         /ReferenceError/,
         'Reference error thrown when trying to access property String.fromCharCode',
     );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('abort String.fromCodePoint, inline script line number regexp', (assert) => {
+    const property = 'String.fromCodePoint';
+    const stackMatch = '/inlineScript:\\d/';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+    assert.throws(
+        () => String.fromCodePoint(65),
+        /ReferenceError/,
+        'Reference error thrown when trying to access property String.fromCodePoint',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('abort JSON.parse, inline script line number regexp, two scripts abort only second', (assert) => {
+    const property = 'JSON.parse';
+    const stackMatch = '/inlineScript:33/';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    let obj = {};
+
+    // This should not be aborted
+    try {
+        obj = JSON.parse('{"test":true}');
+    } catch (error) {
+        /* empty */
+    }
+
+    assert.throws(
+        () => {
+            const objString = '{}';
+            JSON.parse(objString);
+        },
+        /ReferenceError/,
+        'Reference error thrown when trying to access property JSON.parse',
+    );
+    assert.strictEqual(obj.test, true, 'obj.test is true');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
