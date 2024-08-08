@@ -35,6 +35,9 @@ import {
  * - `propsToRemove` — optional, string or regular expression
  *   to match the URL line (segment) which will be removed alongside with its tags
  * - `urlToMatch` — optional, string or regular expression for matching the request's URL
+ * - `verbose` — optional, boolean, if set to 'true' will log original and modified M3U content
+ *
+ * > `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * > Usage with no arguments will log response payload and URL to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -53,6 +56,12 @@ import {
  *     example.org#%#//scriptlet('m3u-prune', 'example.com/video/', '.m3u8')
  *     ```
  *
+ * 1. Removes a line which contains `example.com/video/`, only if request's URL contains `.m3u8` and log content
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('m3u-prune', 'example.com/video/', '.m3u8', 'true')
+ *     ```
+ *
  * 1. Call with no arguments will log response payload and URL at the console
  *
  *     ```adblock
@@ -69,7 +78,7 @@ import {
  */
 /* eslint-enable max-len */
 
-export function m3uPrune(source, propsToRemove, urlToMatch = '') {
+export function m3uPrune(source, propsToRemove, urlToMatch = '', verbose = false) {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -82,6 +91,8 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '') {
     }
 
     let shouldPruneResponse = false;
+
+    const shouldLogContent = verbose === 'true';
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
@@ -307,16 +318,23 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '') {
      */
     // TODO: make it compatible with $hls modifier
     const pruneM3U = (text) => {
+        if (shouldLogContent) {
+            logMessage(source, `Original M3U content:\n${text}`);
+        }
+
         let lines = text.split(/\r?\n/);
 
         if (text.includes(COMCAST_AD_MARKER.VMAP_AD_BREAK)) {
             lines = pruneVmapBlock(lines);
-            return lines.filter((l) => !!l).join('\n');
+            lines = lines.filter((l) => !!l).join('\n');
+            if (shouldLogContent) {
+                logMessage(source, `Modified M3U content:\n${lines}`);
+            }
+            return lines;
         }
 
         lines = pruneSegments(lines);
-
-        return lines
+        lines = lines
             .map((line, index, array) => {
                 if (typeof line === 'undefined') {
                     return line;
@@ -329,6 +347,12 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '') {
             })
             .filter((l) => !!l)
             .join('\n');
+
+        if (shouldLogContent) {
+            logMessage(source, `Modified M3U content:\n${lines}`);
+        }
+
+        return lines;
     };
 
     const nativeOpen = window.XMLHttpRequest.prototype.open;

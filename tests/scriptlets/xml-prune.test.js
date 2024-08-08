@@ -165,6 +165,42 @@ if (!isSupported) {
         done();
     });
 
+    test('fetch match URL - remove ads and log', async (assert) => {
+        assert.expect(4);
+
+        console.log = (...args) => {
+            if (args.length === 2 && args[1] instanceof XMLDocument) {
+                const xmlDocument = args[1];
+                const serializer = new XMLSerializer();
+                const text = serializer.serializeToString(xmlDocument);
+                if (text.includes('MPD') && text.includes('pre-roll-')) {
+                    assert.ok(text.includes('Period id="pre-roll-1-ad-1"'), 'should log original text in console');
+                }
+                if (text.includes('MPD') && !text.includes('pre-roll-')) {
+                    assert.notOk(text.includes('Period id="pre-roll-1-ad-1"'), 'should log modififed text in console');
+                }
+            }
+            nativeConsole(...args);
+        };
+
+        const MATCH_DATA = "Period[id*='-ad-']";
+        const OPTIONAL_MATCH = '';
+        const MATCH_URL = '.mpd';
+        const VERBOSE = 'true';
+        const scriptletArgs = [MATCH_DATA, OPTIONAL_MATCH, MATCH_URL, VERBOSE];
+
+        runScriptlet(name, scriptletArgs);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'));
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('fetch match URL, match optional argument - remove ads', async (assert) => {
         const MATCH_DATA = "Period[id*='-ad-']";
         const OPTIONAL_MATCH = 'AdaptationSet';

@@ -101,6 +101,38 @@ test('selector + attr + eligible number', (assert) => {
     }, 30);
 });
 
+test('selector + attr + 0 (minimum possible value)', (assert) => {
+    const value = '0';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
+
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr value ${value} is correct`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
+});
+
+test('selector + attr + 32767 (maximum possible value)', (assert) => {
+    const value = '32767';
+    const { targetSelector, targetElem, mismatchElem } = context;
+    const scriptletArgs = [targetSelector, TARGET_ATTR_NAME, value];
+
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), value, `New attr value ${value} is correct`);
+    assert.strictEqual(
+        mismatchElem.getAttribute(TARGET_ATTR_NAME),
+        null,
+        `Attr ${TARGET_ATTR_NAME} is not added to mismatch element`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
+});
+
 test('selector + attr + empty string', (assert) => {
     const value = '';
     const { targetSelector, targetElem, mismatchElem } = context;

@@ -35,9 +35,11 @@ declare module '@adguard/scriptlets' {
         verbose: boolean;
 
         /**
-         * Source rule text is used for debugging purposes
+         * Source rule text is used for debugging purposes.
+         *
+         * @deprecated since it is not used in the code anymore.
          */
-        ruleText: string;
+        ruleText?: string;
 
         /**
          * Domain name, used to improve logging
@@ -167,6 +169,14 @@ declare module '@adguard/scriptlets' {
          * @param rule
          */
         isAdgRedirectRule(rule: string): boolean;
+
+        /**
+         * Checks if the specified redirect resource is compatible with AdGuard
+         *
+         * @param redirectName - Redirect resource name to check
+         * @returns - true if the redirect resource is compatible with AdGuard
+         */
+        isRedirectResourceCompatibleWithAdg(redirectName: string): boolean;
 
         /**
          * Checks if the `rule` is **valid** AdGuard redirect resource rule

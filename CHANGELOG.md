@@ -11,16 +11,78 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- support for matching line number in `abort-on-stack-trace` scriptlet
+  when `inlineScript` or `injectedScript` option is used [#439]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...HEAD
+[#439]: https://github.com/AdguardTeam/Scriptlets/issues/439
+
+## [v1.11.16] - 2024-08-01
+
+### Added
+
+- `trusted-set-session-storage-item` scriptlet [#426]
+- new values to `set-cookie` and `set-cookie-reload` scriptlets: `essential`, `nonessential` [#436]
+- `$currentISODate$` as a new possible value to `set-cookie`, `set-cookie-reload`,
+  `set-local-storage-item` and `set-session-storage-item` scriptlets [#435]
+
+### Fixed
+
+- issue with re-adding element after removing it in `trusted-create-element` scriptlet [#434]
+- `trusted-click-element` scriptlet does not click on an element that is already in the DOM [#437]
+
+[v1.11.16]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...v1.11.16
+[#434]: https://github.com/AdguardTeam/Scriptlets/issues/434
+[#435]: https://github.com/AdguardTeam/Scriptlets/issues/435
+[#436]: https://github.com/AdguardTeam/Scriptlets/issues/436
+[#426]: https://github.com/AdguardTeam/Scriptlets/issues/426
+[#437]: https://github.com/AdguardTeam/Scriptlets/issues/437
+
+## [v1.11.6] - 2024-07-08
+
+### Added
+
+- new values to `set-cookie` and `set-cookie-reload` scriptlets: `hide`, `hidden` [#433]
+- new values to `set-local-storage-item` and `set-session-storage-item` scriptlets:
+  `accept`, `accepted`, `reject`, `rejected` [#429]
+- ability to log original and modified content in `trusted-replace-node-text`, `xml-prune`, `m3u-prune`,
+  `trusted-replace-fetch-response` and `trusted-replace-xhr-response` scriptlets [#411]
+
+### Changed
+
+- Log message format [CoreLibs#180]
+
+[v1.11.6]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...v1.11.6
+[#433]: https://github.com/AdguardTeam/Scriptlets/issues/433
+[#429]: https://github.com/AdguardTeam/Scriptlets/issues/429
+[#411]: https://github.com/AdguardTeam/Scriptlets/issues/411
+[CoreLibs#180]: https://github.com/AdguardTeam/CoreLibs/issues/180
+
+## [v1.11.1] - 2024-06-13
+
+### Added
+
+- `trusted-dispatch-event` scriptlet [#382]
+- `trusted-replace-outbound-text` scriptlet [#410]
+- ability to click on the element with specified text in `trusted-click-element` scriptlet [#409]
+- ability to click element in closed shadow root in `trusted-click-element` scriptlet [#423]
 - `isRedirectResourceCompatibleWithAdg()` method to check compatibility of redirect resources with AdGuard
   without needing the full rule text [#420]
-- `trusted-dispatch-event` scriptlet [#382]
 
 ### Deprecated
 
 - `ruleText` option in the `IConfiguration`
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...HEAD
+### Fixed
+
+- `set-attr` value cannot be set to minimum `0` and maximum `32767` possible value [#425]
+
+[v1.11.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...v1.11.1
+[#425]: https://github.com/AdguardTeam/Scriptlets/issues/425
+[#423]: https://github.com/AdguardTeam/Scriptlets/issues/423
 [#420]: https://github.com/AdguardTeam/Scriptlets/issues/420
+[#410]: https://github.com/AdguardTeam/Scriptlets/issues/410
+[#409]: https://github.com/AdguardTeam/Scriptlets/issues/409
 [#382]: https://github.com/AdguardTeam/Scriptlets/issues/382
 
 ## [v1.10.25] - 2024-03-28

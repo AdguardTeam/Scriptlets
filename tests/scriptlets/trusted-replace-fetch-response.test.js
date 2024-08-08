@@ -179,6 +179,41 @@ if (!isSupported) {
         done();
     });
 
+    test('Match request by url and method, replace text content and log', async (assert) => {
+        assert.expect(4);
+
+        console.log = (...args) => {
+            if (args.length === 1 && args[0].includes('Original text content:')) {
+                assert.ok(args[0].includes('Original text content: {\n    "a1": 1,\n'), 'should log text in console');
+            }
+            if (args.length === 1 && args[0].includes('Modified text content:')) {
+                assert.ok(args[0].includes('Modified text content: foo bar'), 'should log text in console');
+            }
+            nativeConsole(...args);
+        };
+
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const TEST_METHOD = 'GET';
+        const init = {
+            method: TEST_METHOD,
+        };
+
+        const done = assert.async();
+
+        const PATTERN = '*';
+        const REPLACEMENT = 'foo bar';
+        const PROPS_TO_MATCH = 'test01 method:GET';
+        const VERBOSE = 'true';
+        runScriptlet(name, [PATTERN, REPLACEMENT, PROPS_TO_MATCH, VERBOSE]);
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualTextContent = await response.text();
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.strictEqual(actualTextContent, 'foo bar', 'Content is removed');
+        done();
+    });
+
     test('Unmatched request\'s content is not modified', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
         const TEST_METHOD = 'GET';

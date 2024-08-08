@@ -24,14 +24,16 @@ import {
  * ```
  * <!-- markdownlint-disable-next-line line-length -->
  * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
- * - `extraMatch` — optional, extra condition to check on a page; allows to match `cookie` and `localStorage`;
+ * - `extraMatch` — optional, extra condition to check on a page;
+ *    allows to match `cookie`, `localStorage` and specified text;
  * can be set as `name:key[=value]` where `value` is optional.
  * If `cookie`/`localStorage` starts with `!` then the element will only be clicked
- * if specified cookie/localStorage item does not exist.
+ * if specified `cookie`/`localStorage` item does not exist.
  * Multiple conditions are allowed inside one `extraMatch` but they should be delimited by comma
- * and each of them should match the syntax. Possible `name`s:
+ * and each of them should match the syntax. Possible `names`:
  *     - `cookie` — test string or regex against cookies on a page
  *     - `localStorage` — check if localStorage item is present
+ *     - `containsText` — check if clicked element contains specified text
  * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
  *
  * <!-- markdownlint-disable line-length -->
@@ -82,6 +84,12 @@ import {
  *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], input[type="submit"][value="akkoord"]', 'cookie:cmpconsent, localStorage:promo', '250')
  *     ```
  *
+ * 1. Click element only if clicked element contains text `Accept cookie`
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button', 'containsText:Accept cookie')
+ *     ```
+ *
  * 1. Click element only if cookie with name `cmpconsent` does not exist
  *
  *     ```adblock
@@ -105,26 +113,54 @@ import {
  * @added v1.7.3.
  */
 /* eslint-enable max-len */
-export function trustedClickElement(source, selectors, extraMatch = '', delay = NaN) {
+export function trustedClickElement(
+    source: Source,
+    selectors: string,
+    extraMatch = '',
+    delay = NaN,
+) {
     if (!selectors) {
         return;
     }
 
+    const SHADOW_COMBINATOR = ' >>> ';
     const OBSERVER_TIMEOUT_MS = 10000;
     const THROTTLE_DELAY_MS = 20;
     const STATIC_CLICK_DELAY_MS = 150;
     const COOKIE_MATCH_MARKER = 'cookie:';
     const LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
+    const TEXT_MATCH_MARKER = 'containsText:';
     const SELECTORS_DELIMITER = ',';
     const COOKIE_STRING_DELIMITER = ';';
     // Regex to split match pairs by commas, avoiding the ones included in regexes
-    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:)/;
+    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:)/;
 
-    const sleep = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs));
+    const sleep = (delayMs: number) => new Promise((resolve) => setTimeout(resolve, delayMs));
+
+    // If shadow combinator is present in selector, then override attachShadow and set mode to 'open'
+    if (selectors.includes(SHADOW_COMBINATOR)) {
+        const attachShadowWrapper = (
+            target: typeof Element.prototype.attachShadow,
+            thisArg: Element,
+            argumentsList: any[],
+        ) => {
+            const mode = argumentsList[0]?.mode;
+            if (mode === 'closed') {
+                argumentsList[0].mode = 'open';
+            }
+            return Reflect.apply(target, thisArg, argumentsList);
+        };
+
+        const attachShadowHandler = {
+            apply: attachShadowWrapper,
+        };
+
+        window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
+    }
 
     let parsedDelay;
     if (delay) {
-        parsedDelay = parseInt(delay, 10);
+        parsedDelay = parseInt(String(delay), 10);
         const isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
         if (!isValidDelay) {
             // eslint-disable-next-line max-len
@@ -136,8 +172,9 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
 
     let canClick = !parsedDelay;
 
-    const cookieMatches = [];
-    const localStorageMatches = [];
+    const cookieMatches: string[] = [];
+    const localStorageMatches: string[] = [];
+    let textMatches = '';
     let isInvertedMatchCookie = false;
     let isInvertedMatchLocalStorage = false;
 
@@ -161,6 +198,11 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
                 const localStorageMatch = matchValue.replace(LOCAL_STORAGE_MATCH_MARKER, '');
                 localStorageMatches.push(localStorageMatch);
             }
+            if (matchStr.includes(TEXT_MATCH_MARKER)) {
+                const { matchValue } = parseMatchArg(matchStr);
+                const textMatch = matchValue.replace(TEXT_MATCH_MARKER, '');
+                textMatches = textMatch;
+            }
         });
     }
 
@@ -179,8 +221,8 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
             const valueMatch = parsedCookieMatches[key] ? toRegExp(parsedCookieMatches[key]) : null;
             const keyMatch = toRegExp(key);
 
-            return cookieKeys.some((key) => {
-                const keysMatched = keyMatch.test(key);
+            return cookieKeys.some((cookieKey) => {
+                const keysMatched = keyMatch.test(cookieKey);
                 if (!keysMatched) {
                     return false;
                 }
@@ -190,7 +232,13 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
                     return true;
                 }
 
-                return valueMatch.test(parsedCookies[key]);
+                const parsedCookieValue = parsedCookies[cookieKey];
+
+                if (!parsedCookieValue) {
+                    return false;
+                }
+
+                return valueMatch.test(parsedCookieValue);
             });
         });
 
@@ -213,6 +261,26 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         }
     }
 
+    const textMatchRegexp = textMatches ? toRegExp(textMatches) : null;
+
+    /**
+     * Checks if an element contains the specified text.
+     *
+     * @param element - The element to check.
+     * @param matchRegexp - The text to match.
+     * @returns True if the element contains the specified text, otherwise false.
+     */
+    const doesElementContainText = (
+        element: Element,
+        matchRegexp: RegExp,
+    ): boolean => {
+        const { textContent } = element;
+        if (!textContent) {
+            return false;
+        }
+        return matchRegexp.test(textContent);
+    };
+
     /**
      * Create selectors array and swap selectors to null on finding it's element
      *
@@ -221,17 +289,17 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
      * - always know on what index corresponding element should be put
      * - prevent selectors from being queried multiple times
      */
-    let selectorsSequence = selectors
+    let selectorsSequence: Array<string | null> = selectors
         .split(SELECTORS_DELIMITER)
         .map((selector) => selector.trim());
 
-    const createElementObj = (element) => {
+    const createElementObj = (element: any): Object => {
         return {
             element: element || null,
             clicked: false,
         };
     };
-    const elementsSequence = Array(selectorsSequence.length).fill(createElementObj());
+    const elementsSequence = Array(selectorsSequence.length).fill(createElementObj(null));
 
     /**
      * Go through elementsSequence from left to right, clicking on found elements
@@ -253,6 +321,9 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
             }
             // Skip already clicked elements
             if (!elementObj.clicked) {
+                if (textMatchRegexp && !doesElementContainText(elementObj.element, textMatchRegexp)) {
+                    continue;
+                }
                 elementObj.element.click();
                 elementObj.clicked = true;
             }
@@ -266,7 +337,7 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         }
     };
 
-    const handleElement = (element, i) => {
+    const handleElement = (element: Element, i: number) => {
         const elementObj = createElementObj(element);
         elementsSequence[i] = elementObj;
 
@@ -276,15 +347,13 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
     };
 
     /**
-     * Query all selectors from queue on each mutation
-     * Each selector is swapped to null in selectorsSequence on founding corresponding element
+     * Processes a sequence of selectors, handling elements found in DOM (and shadow DOM),
+     * and updates the sequence.
      *
-     * We start looking for elements before possible delay is over, to avoid cases
-     * when delay is getting off after the last mutation took place.
-     *
+     * @returns {string[]} The updated selectors sequence, with fulfilled selectors set to null.
      */
-    const findElements = (mutations, observer) => {
-        const fulfilledSelectors = [];
+    const fulfillAndHandleSelectors = () => {
+        const fulfilledSelectors: string[] = [];
         selectorsSequence.forEach((selector, i) => {
             if (!selector) {
                 return;
@@ -300,8 +369,24 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
 
         // selectorsSequence should be modified after the loop to not break loop indexation
         selectorsSequence = selectorsSequence.map((selector) => {
-            return fulfilledSelectors.includes(selector) ? null : selector;
+            return selector && fulfilledSelectors.includes(selector)
+                ? null
+                : selector;
         });
+
+        return selectorsSequence;
+    };
+
+    /**
+     * Queries all selectors from queue on each mutation
+     *
+     * We start looking for elements before possible delay is over, to avoid cases
+     * when delay is getting off after the last mutation took place.
+     *
+     */
+    const findElements = (mutations: MutationRecord[], observer: MutationObserver) => {
+        // TODO: try to make the function cleaner — avoid usage of selectorsSequence from the outer scope
+        selectorsSequence = fulfillAndHandleSelectors();
 
         // Disconnect observer after finding all elements
         const allSelectorsFulfilled = selectorsSequence.every((selector) => selector === null);
@@ -310,13 +395,49 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
         }
     };
 
-    const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
-    observer.observe(document.documentElement, {
-        attributes: true,
-        childList: true,
-        subtree: true,
-    });
+    /**
+     * Initializes a `MutationObserver` to watch for changes in the DOM.
+     * The observer is set up to monitor changes in attributes, child nodes, and subtree.
+     * A timeout is set to disconnect the observer if no elements are found within the specified time.
+     */
+    const initializeMutationObserver = () => {
+        const observer = new MutationObserver(throttle(findElements, THROTTLE_DELAY_MS));
+        observer.observe(document.documentElement, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+        });
 
+        // Set timeout to disconnect observer if elements are not found within the specified time
+        setTimeout(() => observer.disconnect(), OBSERVER_TIMEOUT_MS);
+    };
+
+    /**
+     * Checks if elements are already present in the DOM.
+     * If elements are found, they are clicked.
+     * If elements are not found, the observer is initialized.
+     */
+    const checkInitialElements = () => {
+        const foundElements = selectorsSequence.every((selector) => {
+            if (!selector) {
+                return false;
+            }
+            const element = queryShadowSelector(selector);
+            return !!element;
+        });
+        if (foundElements) {
+            // Click previously collected elements
+            fulfillAndHandleSelectors();
+        } else {
+            // Initialize MutationObserver if elements were not found initially
+            initializeMutationObserver();
+        }
+    };
+
+    // Run the initial check
+    checkInitialElements();
+
+    // If there's a delay before clicking elements, use a timeout
     if (parsedDelay) {
         setTimeout(() => {
             // Click previously collected elements
@@ -324,8 +445,6 @@ export function trustedClickElement(source, selectors, extraMatch = '', delay = 
             canClick = true;
         }, parsedDelay);
     }
-
-    setTimeout(() => observer.disconnect(), OBSERVER_TIMEOUT_MS);
 }
 
 trustedClickElement.names = [

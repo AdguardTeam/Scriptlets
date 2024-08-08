@@ -5,6 +5,7 @@ import {
     replaceNodeText,
     isTargetNode,
     parseNodeTextParams,
+    logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
     hit,
@@ -22,16 +23,19 @@ import {
  *
  * ### Syntax
  *
- * ```adblock
+ * ```text
  * example.org#%#//scriptlet('trusted-replace-node-text', nodeName, textMatch, pattern, replacement)
  * ```
  *
  * - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
  * Must target lowercased node names, e.g `div` instead of `DIV`.
  * - `textMatch` — required, string or RegExp to match against node's text content.
- * If matched, the whole text will be removed. Case sensitive.
+ * If matched, the `pattern` will be replaced by the `replacement`. Case sensitive.
  * - `pattern` — required, string or regexp for matching contents of `node.textContent` that should be replaced.
  * - `replacement` — required, string to replace text content matched by `pattern`.
+ * - `...extraArgs` — optional, string, if includes 'verbose' will log original and modified text content.
+ *
+ * > `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * ### Examples
  *
@@ -71,6 +75,12 @@ import {
  *     <span>some text</span>
  *     ```
  *
+ * 3. Replace node's text content and log original and modified text content:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-node-text', 'div', 'some', 'text', 'other text', 'verbose')
+ *     ```
+ *
  * @added v1.9.37.
  */
 /* eslint-enable max-len */
@@ -100,6 +110,8 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
         }
     }
 
+    const shouldLog = extraArgs.includes('verbose');
+
     const {
         selector,
         nodeNameMatch,
@@ -123,7 +135,19 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
             textContentMatch,
         );
         if (shouldReplace) {
+            if (shouldLog) {
+                const originalText = node.textContent;
+                if (originalText) {
+                    logMessage(source, `Original text content: ${originalText}`);
+                }
+            }
             replaceNodeText(source, node, patternMatch, replacement);
+            if (shouldLog) {
+                const modifiedText = node.textContent;
+                if (modifiedText) {
+                    logMessage(source, `Modified text content: ${modifiedText}`);
+                }
+            }
         }
     });
 
@@ -148,6 +172,7 @@ trustedReplaceNodeText.injections = [
     replaceNodeText,
     isTargetNode,
     parseNodeTextParams,
+    logMessage,
     // following helpers should be imported and injected
     // because they are used by helpers above
     hit,

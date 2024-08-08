@@ -135,6 +135,34 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
         assert.strictEqual(window.sessionStorage.getItem(cName), 'off', 'sessionStorage item has been set');
         clearStorageItem(cName);
+
+        cName = '__test-item_accept';
+        cValue = 'accept';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'accept', 'sessionStorage item has been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_accepted';
+        cValue = 'accepted';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'accepted', 'sessionStorage item has been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_reject';
+        cValue = 'reject';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'reject', 'sessionStorage item has been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_rejected';
+        cValue = 'rejected';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'rejected', 'sessionStorage item has been set');
+        clearStorageItem(cName);
     });
 
     test('Set sessionStorage key with invalid value', (assert) => {

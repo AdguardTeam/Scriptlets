@@ -55,6 +55,7 @@ export * from './trusted-set-cookie';
 export * from './trusted-set-cookie-reload';
 export * from './trusted-replace-fetch-response';
 export * from './trusted-set-local-storage-item';
+export * from './trusted-set-session-storage-item';
 export * from './trusted-set-constant';
 export * from './inject-css-in-shadow-dom';
 export * from './remove-node-text';
@@ -71,6 +72,7 @@ export * from './no-protected-audience';
 export * from './trusted-suppress-native-method';
 export * from './json-prune-xhr-response';
 export * from './trusted-dispatch-event';
+export * from './trusted-replace-outbound-text';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
 export * from './amazon-apstag';

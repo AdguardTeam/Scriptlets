@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle, max-len */
+/* eslint-disable no-underscore-dangle, no-console, max-len */
 import { runScriptlet, clearGlobalProps } from '../helpers';
 
 const { test, module } = QUnit;
@@ -12,9 +12,12 @@ const beforeEach = () => {
     };
 };
 
+const nativeConsole = console.log;
+
 const afterEach = () => {
     elements.forEach((element) => element.remove());
     clearGlobalProps('hit', '__debug');
+    console.log = nativeConsole;
 };
 
 module(name, { beforeEach, afterEach });
@@ -107,6 +110,51 @@ test('arguments correctly reorganizing for ubo replace-node-text.js', (assert) =
      * function replaceNodeText(nodeName, pattern, replacement, ...extraArgs) {...}
      */
     runScriptlet(uboAlias, [nodeName, pattern, replacement, 'condition', textMatch]);
+
+    const nodeAfter = addNode('div', text);
+    const safeNodeAfter = addNode('span', text);
+    setTimeout(() => {
+        assert.strictEqual(nodeAfter.textContent, expectedText, 'text content should be modified');
+        assert.strictEqual(nodeBefore.textContent, expectedText, 'text content should be modified');
+
+        assert.strictEqual(safeNodeAfter.textContent, text, 'non-matched node should not be affected');
+        assert.strictEqual(safeNodeBefore.textContent, text, 'non-matched node should not be affected');
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+        done();
+    }, 1);
+});
+
+test('Log content', (assert) => {
+    // There are 7 "asserts" in test but node is modified two times
+    // so it's logged twice, that's why 9 is expected
+    assert.expect(9);
+
+    console.log = (...args) => {
+        if (args.length === 1 && args[0].includes('foo log')) {
+            assert.ok(args[0].includes('foo log'), 'should log text in console');
+        }
+        if (args.length === 1 && args[0].includes('bar log')) {
+            assert.ok(args[0].includes('bar log'), 'should log text in console');
+        }
+        nativeConsole(...args);
+    };
+
+    const done = assert.async();
+
+    const nodeName = 'div';
+    const textMatch = 'log';
+    const pattern = 'foo';
+    const replacement = 'bar';
+    const verbose = 'verbose';
+
+    const text = 'foo log';
+    const expectedText = 'bar log';
+
+    const nodeBefore = addNode('div', text);
+    const safeNodeBefore = addNode('a', text);
+
+    runScriptlet(name, [nodeName, textMatch, pattern, replacement, verbose]);
 
     const nodeAfter = addNode('div', text);
     const safeNodeAfter = addNode('span', text);

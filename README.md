@@ -75,8 +75,8 @@ Please note, that in order to achieve cross-blocker compatibility, we also suppo
 ```
 
 - `domains` — optional, a list of domains where the rule should be applied;
-- `name` — required, a name of the scriptlet from AdGuard's scriptlets library;
-- `arguments` — optional, a list of `String` arguments (no other types of arguments are supported).
+- `name` — required, a name of the scriptlet from AdGuard Scriptlets library;
+- `arguments` — optional, a list of `string` arguments (no other types of arguments are supported).
 
 > **Remarks**
 >
@@ -100,12 +100,13 @@ Please note, that in order to achieve cross-blocker compatibility, we also suppo
 #### <a name="scriptlet-syntax--exceptions"></a> Exception rules
 
 ```text
-[domains]#@%#//scriptlet([name])
+[domains]#@%#//scriptlet([name[, arguments]])
 ```
 
 - `domains` — optional, a list of domains where the rule should be applied;
-- `name` — optional, a name of the scriptlet to except from the applying.
-  If not set, all scriptlets will not be applied.
+- `name` — optional, a name of the scriptlet to except from the applying;
+  if not set, all scriptlets will not be applied;
+- `arguments` — optional, a list of `string` arguments to match the same blocking rule and disable it.
 
 #### Examples
 
