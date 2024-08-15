@@ -37,6 +37,10 @@ module.exports = {
         'no-shadow': 0,
         'no-bitwise': 0,
         'no-new': 0,
+        'function-call-argument-newline': [
+            'error',
+            'consistent',
+        ],
         'import/prefer-default-export': 0,
         'no-continue': 0,
         'no-await-in-loop': 0,

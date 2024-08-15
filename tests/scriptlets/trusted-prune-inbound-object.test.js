@@ -74,14 +74,16 @@ test('removes propsToRemove - Object.getOwnPropertyNames, Object.keys , eval', (
     runScriptlet(name, ['Object.getOwnPropertyNames', 'c']);
     assert.deepEqual(
         Object.getOwnPropertyNames({ a: 1, b: 2, c: 3 }),
-        ['a', 'b'], 'should remove single propsToRemove',
+        ['a', 'b'],
+        'should remove single propsToRemove',
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 
     runScriptlet(name, ['Object.keys', 'ads foo']);
     assert.deepEqual(
         Object.keys({ q: 1, ads: true, foo: 'bar' }),
-        ['q'], 'should remove multiple propsToRemove',
+        ['q'],
+        'should remove multiple propsToRemove',
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 
@@ -89,7 +91,8 @@ test('removes propsToRemove - Object.getOwnPropertyNames, Object.keys , eval', (
     assert.deepEqual(
         // eslint-disable-next-line no-eval
         eval({ q: 1, ads: true, foo: 'bar' }),
-        { q: 1 }, 'should remove multiple propsToRemove',
+        { q: 1 },
+        'should remove multiple propsToRemove',
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });

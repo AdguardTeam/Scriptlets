@@ -200,7 +200,8 @@ test('removes nested propsToRemove', (assert) => {
     );
     runScriptlet('json-prune', 'nested.b nested.inner.x');
     assert.deepEqual(JSON.parse('{"nested":{"a":1,"b":2,"inner":{"x":true,"y":false}}}'),
-        { nested: { a: 1, inner: { y: false } } }, 'should remove multiple nested propsToRemove');
+        { nested: { a: 1, inner: { y: false } } },
+        'should remove multiple nested propsToRemove');
     runScriptlet('json-prune', 'nested.b.b1');
     assert.deepEqual(
         JSON.parse('{"nested":{"a":1,"b":{"b1":11,"b2":22}}}'),
@@ -218,7 +219,8 @@ test('can NOT remove nested propsToRemove if parental parameter is absent in the
     );
     runScriptlet('json-prune', 'nested.b inner.x');
     assert.deepEqual(JSON.parse('{"messed":{"a":1,"b":2,"inner":{"x":true,"y":false}}}'),
-        { messed: { a: 1, b: 2, inner: { x: true, y: false } } }, 'should NOT remove multiple nested propsToRemove');
+        { messed: { a: 1, b: 2, inner: { x: true, y: false } } },
+        'should NOT remove multiple nested propsToRemove');
     runScriptlet('json-prune', 'test.a.bb');
     assert.deepEqual(JSON.parse('{"nested":true}'), { nested: true }, `should NOT remove any nested propsToRemove
         and should NOT fail while operating propsToRemove with 2 or more levels of nesting`);
@@ -241,7 +243,8 @@ test('can NOT remove any propsToRemove if requiredInitialProps are absent in the
     assert.deepEqual(JSON.parse('{"w":0, "z":1, "y":2, "x":3}'),
         {
             w: 0, z: 1, y: 2, x: 3,
-        }, 'should remove propsToRemove if one of requiredInitialProps is absent');
+        },
+        'should remove propsToRemove if one of requiredInitialProps is absent');
 });
 
 test('can NOT remove any propsToRemove if single nested requiredInitialProps is absent', (assert) => {
