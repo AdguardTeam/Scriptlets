@@ -1,42 +1,19 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    PANEL_ID,
+    CLICKABLE_NAME,
+    createSelectorsString,
+    createPanel,
+    removePanel,
+    createClickable,
+} from '../helpers';
+
 import { serializeCookie } from '../../src/helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-click-element';
-
-const PANEL_ID = 'panel';
-const CLICKABLE_NAME = 'clickable';
-const SELECTORS_DELIMITER = ',';
-
-// Generate selectors for each clickable element
-const createSelectorsString = (clickOrder) => {
-    const selectors = clickOrder.map((elemNum) => `#${PANEL_ID} > #${CLICKABLE_NAME}${elemNum}`);
-    return selectors.join(SELECTORS_DELIMITER);
-};
-
-// Create clickable element with it's count as id and assertion as onclick
-const createClickable = (elementNum, text = '') => {
-    const clickableId = `${CLICKABLE_NAME}${elementNum}`;
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = clickableId;
-    checkbox.textContent = text;
-    checkbox.onclick = (e) => {
-        e.currentTarget.setAttribute('clicked', true);
-        window.clickOrder.push(elementNum);
-    };
-    return checkbox;
-};
-
-const createPanel = () => {
-    const panel = document.createElement('div');
-    panel.id = PANEL_ID;
-    document.body.appendChild(panel);
-    return panel;
-};
-
-const removePanel = () => document.getElementById('panel').remove();
 
 const clearCookie = (cName) => {
     // Without "path=/;" cookie is not removed

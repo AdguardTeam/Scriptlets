@@ -20,7 +20,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay]])
+ * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay[, reload]]])
  * ```
  * <!-- markdownlint-disable-next-line line-length -->
  * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
@@ -35,6 +35,13 @@ import {
  *     - `localStorage` — check if localStorage item is present
  *     - `containsText` — check if clicked element contains specified text
  * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
+ *             Must be a number less than 10000 ms (10s)
+ * - `reload` — optional, string with reloadAfterClick marker and optional value. Possible values:
+ *     - `reloadAfterClick` - reloads the page after all elements have been clicked,
+ *        with default delay — 500ms
+ *     - colon-separated pair `reloadAfterClick:value` where
+ *         - `value` — time delay in milliseconds before reloading the page, after all elements
+ *            have been clicked. Must be a number less than 10000 ms (10s)
  *
  * <!-- markdownlint-disable line-length -->
  *
@@ -108,6 +115,12 @@ import {
  *    example.com#%#//scriptlet('trusted-click-element', 'article .container > div#host >>> div > button')
  *    ```
  *
+ * 1. Click elements after 1000ms delay and reload page after all elements have been clicked with 200ms delay
+ *
+ *    ```adblock
+ *    example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '1000', 'reloadAfterClick:200')
+ *    ```
+ *
  * <!-- markdownlint-enable line-length -->
  *
  * @added v1.7.3.
@@ -118,6 +131,7 @@ export function trustedClickElement(
     selectors: string,
     extraMatch = '',
     delay = NaN,
+    reload = '',
 ) {
     if (!selectors) {
         return;
@@ -127,11 +141,14 @@ export function trustedClickElement(
     const OBSERVER_TIMEOUT_MS = 10000;
     const THROTTLE_DELAY_MS = 20;
     const STATIC_CLICK_DELAY_MS = 150;
+    const STATIC_RELOAD_DELAY_MS = 500;
     const COOKIE_MATCH_MARKER = 'cookie:';
     const LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
     const TEXT_MATCH_MARKER = 'containsText:';
+    const RELOAD_ON_FINAL_CLICK_MARKER = 'reloadAfterClick';
     const SELECTORS_DELIMITER = ',';
     const COOKIE_STRING_DELIMITER = ';';
+    const COLON = ':';
     // Regex to split match pairs by commas, avoiding the ones included in regexes
     const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:)/;
 
@@ -301,24 +318,66 @@ export function trustedClickElement(
     };
     const elementsSequence = Array(selectorsSequence.length).fill(createElementObj(null));
 
+    // Flag indicating if the reload is set
+    let shouldReloadAfterClick: boolean = false;
+    // Value used for reload timing
+    let reloadDelayMs: number = STATIC_RELOAD_DELAY_MS;
+
+    if (reload) {
+        // split reload option by colon
+        const [reloadMarker, reloadValue] = reload.split(COLON);
+
+        if (reloadMarker !== RELOAD_ON_FINAL_CLICK_MARKER) {
+            logMessage(source, `Passed reload option '${reload}' is invalid`);
+            return;
+        }
+
+        // if reload value is set, will be used as a delay
+        // if reload value is not set, default value will be used
+        if (reloadValue) {
+            const passedReload = Number(reloadValue);
+
+            // check if passed reload value is a number
+            if (Number.isNaN(passedReload)) {
+                logMessage(source, `Passed reload delay value '${passedReload}' is invalid`);
+                return;
+            }
+
+            // check if passed reload value is less than 10s
+            if (passedReload > OBSERVER_TIMEOUT_MS) {
+                // eslint-disable-next-line max-len
+                logMessage(source, `Passed reload delay value '${passedReload}' is bigger than maximum ${OBSERVER_TIMEOUT_MS} ms`);
+                return;
+            }
+
+            reloadDelayMs = passedReload;
+        }
+
+        shouldReloadAfterClick = true;
+    }
+
     /**
      * Go through elementsSequence from left to right, clicking on found elements
      *
      * Element should not be clicked if it is already clicked,
      * or a previous element is not found or clicked yet
      */
+    let canReload = true;
     const clickElementsBySequence = async () => {
         for (let i = 0; i < elementsSequence.length; i += 1) {
             const elementObj = elementsSequence[i];
+
             // Add a delay between clicks to every element except the first one
             // https://github.com/AdguardTeam/Scriptlets/issues/284
             if (i >= 1) {
                 await sleep(STATIC_CLICK_DELAY_MS);
             }
+
             // Stop clicking if that pos element is not found yet
             if (!elementObj.element) {
                 break;
             }
+
             // Skip already clicked elements
             if (!elementObj.clicked) {
                 if (textMatchRegexp && !doesElementContainText(elementObj.element, textMatchRegexp)) {
@@ -331,8 +390,14 @@ export function trustedClickElement(
 
         const allElementsClicked = elementsSequence
             .every((elementObj) => elementObj.clicked === true);
+
         if (allElementsClicked) {
-            // At this stage observer is already disconnected
+            if (shouldReloadAfterClick && canReload) {
+                canReload = false;
+                setTimeout(() => {
+                    window.location.reload();
+                }, reloadDelayMs);
+            }
             hit(source);
         }
     };

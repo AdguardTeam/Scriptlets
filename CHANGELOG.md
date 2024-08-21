@@ -11,11 +11,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `reload` option for `trusted-click-element` scriptlet [#301]
 - support for matching line number in `abort-on-stack-trace` scriptlet
   when `inlineScript` or `injectedScript` option is used [#439]
 - new values to `set-cookie` and `set-cookie-reload` scriptlets: `checked`, `unchecked` [#444]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...HEAD
+[#301]: https://github.com/AdguardTeam/Scriptlets/issues/301
 [#439]: https://github.com/AdguardTeam/Scriptlets/issues/439
 [#444]: https://github.com/AdguardTeam/Scriptlets/issues/444
 
