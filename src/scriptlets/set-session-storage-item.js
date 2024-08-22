@@ -50,6 +50,8 @@ import {
  *         - `accepted`
  *         - `reject`
  *         - `rejected`
+ *         - `allowed`
+ *         - `denied`
  *         - `$remove$` — remove specific item from sessionStorage
  *
  * ### Examples

@@ -15,11 +15,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - support for matching line number in `abort-on-stack-trace` scriptlet
   when `inlineScript` or `injectedScript` option is used [#439]
 - new values to `set-cookie` and `set-cookie-reload` scriptlets: `checked`, `unchecked` [#444]
+- new values to `set-local-storage-item` and `set-session-storage-item` scriptlets:
+  `allowed`, `denied` [#445]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...HEAD
 [#301]: https://github.com/AdguardTeam/Scriptlets/issues/301
 [#439]: https://github.com/AdguardTeam/Scriptlets/issues/439
 [#444]: https://github.com/AdguardTeam/Scriptlets/issues/444
+[#445]: https://github.com/AdguardTeam/Scriptlets/issues/445
 
 ## [v1.11.16] - 2024-08-01
 
