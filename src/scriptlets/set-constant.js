@@ -21,6 +21,8 @@ import {
     getNativeRegexpTest,
     setPropertyAccess,
     toRegExp,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -456,4 +458,6 @@ setConstant.injections = [
     getNativeRegexpTest,
     setPropertyAccess,
     toRegExp,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

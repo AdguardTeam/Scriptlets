@@ -20,6 +20,8 @@ import {
     isStringMatched,
     isArrayMatched,
     isObjectMatched,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -230,4 +232,6 @@ trustedSuppressNativeMethod.injections = [
     isStringMatched,
     isArrayMatched,
     isObjectMatched,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

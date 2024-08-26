@@ -12,6 +12,8 @@ import {
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     isEmptyObject,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -148,4 +150,6 @@ trustedPruneInboundObject.injections = [
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     isEmptyObject,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

@@ -1,6 +1,6 @@
 import { toRegExp } from './string-utils';
 import { shouldAbortInlineOrInjectedScript } from './script-source-utils';
-import { getNativeRegexpTest } from './regexp-utils';
+import { getNativeRegexpTest, backupRegExpValues, restoreRegExpValues } from './regexp-utils';
 
 /**
  * Checks if the stackTrace contains stackRegexp
@@ -15,7 +15,12 @@ export const matchStackTrace = (stackMatch: string | undefined, stackTrace: stri
         return true;
     }
 
+    const regExpValues = backupRegExpValues();
+
     if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
+        if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
+            restoreRegExpValues(regExpValues);
+        }
         return true;
     }
 
@@ -26,5 +31,8 @@ export const matchStackTrace = (stackMatch: string | undefined, stackTrace: stri
         .map((line) => line.trim()) // trim the lines
         .join('\n');
 
+    if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
+        restoreRegExpValues(regExpValues);
+    }
     return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
 };

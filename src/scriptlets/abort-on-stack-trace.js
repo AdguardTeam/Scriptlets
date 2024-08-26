@@ -14,6 +14,8 @@ import {
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -170,4 +172,6 @@ abortOnStackTrace.injections = [
     isEmptyObject,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

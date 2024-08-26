@@ -10,6 +10,8 @@ import {
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -158,4 +160,6 @@ jsonPrune.injections = [
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

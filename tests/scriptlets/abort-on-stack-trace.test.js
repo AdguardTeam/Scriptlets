@@ -492,3 +492,41 @@ test('abort RegExp, matches stack', (assert) => {
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('abort document.createElement, matches stack', (assert) => {
+    const property = 'document.createElement';
+    const stackMatch = 'Object.createElemenTest';
+    const scriptletArgs = [property, stackMatch];
+    let testPassed = false;
+
+    runScriptlet(name, scriptletArgs);
+
+    function testCreateElement() {
+        const regExp = /(\w+)\s(\w+)/;
+        const string = 'div a';
+        const testString = string.replace(regExp, '$2, $1');
+        const div = document.createElement(RegExp.$1);
+        div.textContent = testString;
+        testPassed = true;
+    }
+
+    const matchTestCreateElement = {
+        createElemenTest: () => {
+            const regExp = /(\w+)\s(\w+)/;
+            const string = 'div a';
+            const testString = string.replace(regExp, '$2, $1');
+            const div = document.createElement(RegExp.$1);
+            div.textContent = testString;
+        },
+    };
+
+    testCreateElement();
+
+    assert.throws(
+        matchTestCreateElement.createElemenTest,
+        /ReferenceError/,
+        `Reference error thrown when trying to access property ${property}`,
+    );
+    assert.strictEqual(testPassed, true, 'testPassed set to true');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

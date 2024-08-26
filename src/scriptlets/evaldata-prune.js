@@ -10,6 +10,8 @@ import {
     // following helpers are needed for helpers above
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -139,4 +141,6 @@ evalDataPrune.injections = [
     // following helpers are needed for helpers above
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

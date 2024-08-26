@@ -24,6 +24,8 @@ import {
     getWildcardPropertyInChain,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /**
@@ -224,4 +226,6 @@ jsonPruneFetchResponse.injections = [
     getWildcardPropertyInChain,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

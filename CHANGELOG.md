@@ -18,7 +18,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - new values to `set-local-storage-item` and `set-session-storage-item` scriptlets:
   `allowed`, `denied` [#445]
 
+### Fixed
+
+- issue with modyfing `RegExp.$1, …, RegExp.$9` values
+  in `log-on-stack-trace` and `abort-on-stack-trace` scriptlets [#384]
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...HEAD
+[#384]: https://github.com/AdguardTeam/Scriptlets/issues/384
 [#301]: https://github.com/AdguardTeam/Scriptlets/issues/301
 [#439]: https://github.com/AdguardTeam/Scriptlets/issues/439
 [#444]: https://github.com/AdguardTeam/Scriptlets/issues/444

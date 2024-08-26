@@ -111,3 +111,32 @@ test('works with an empty object in chain', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('logs specific message, test RegExp.$1', (assert) => {
+    const scriptletArgs = ['document.createElement'];
+    let testPassed = false;
+    let functionLogged = false;
+    const testCreateElement = () => {
+        const regExp = /(\w+)\s(\w+)/;
+        const string = 'div a';
+        const testString = string.replace(regExp, '$2, $1');
+        const div = document.createElement(RegExp.$1);
+        div.textContent = testString;
+        testPassed = true;
+    };
+    runScriptlet(name, scriptletArgs);
+
+    console.table = new Proxy(console.table, {
+        apply(target, thisArg, args) {
+            if (args[0]?.testCreateElement?.length > 0) {
+                functionLogged = true;
+            }
+            return target.apply(thisArg, args);
+        },
+    });
+    testCreateElement();
+
+    assert.strictEqual(testPassed, true, 'testPassed set to true');
+    assert.strictEqual(functionLogged, true, 'functionLogged set to true');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

@@ -21,6 +21,8 @@ import {
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -278,4 +280,6 @@ trustedSetConstant.injections = [
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

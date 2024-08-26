@@ -6,6 +6,8 @@ import {
     // following helpers should be imported and injected
     // because they are used by helpers above
     isEmptyObject,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -37,6 +39,8 @@ export function logOnStacktrace(source, property) {
     }
 
     const refineStackTrace = (stackString) => {
+        const regExpValues = backupRegExpValues();
+
         // Split stack trace string by lines and remove first two elements ('Error' and getter call)
         // Remove '    at ' at the start of each string
         const stackSteps = stackString.split('\n').slice(2).map((line) => line.replace(/ {4}at /, ''));
@@ -68,6 +72,11 @@ export function logOnStacktrace(source, property) {
             /* eslint-disable-next-line prefer-destructuring */
             logInfoObject[pair[0]] = pair[1];
         });
+
+        if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
+            restoreRegExpValues(regExpValues);
+        }
+
         return logInfoObject;
     };
 
@@ -120,4 +129,6 @@ logOnStacktrace.injections = [
     hit,
     logMessage,
     isEmptyObject,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];

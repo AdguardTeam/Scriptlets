@@ -9,6 +9,8 @@ import {
     getNativeRegexpTest,
     toRegExp,
     isEmptyObject,
+    backupRegExpValues,
+    restoreRegExpValues,
 } from '../helpers/index';
 
 /* eslint-disable max-len */
@@ -295,4 +297,6 @@ trustedReplaceOutboundText.injections = [
     getNativeRegexpTest,
     toRegExp,
     isEmptyObject,
+    backupRegExpValues,
+    restoreRegExpValues,
 ];
