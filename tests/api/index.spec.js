@@ -771,6 +771,10 @@ describe('Test redirects api methods', () => {
                 // eslint-disable-next-line max-len
                 expected: '||ad.example.com^$redirect-rule=noop.txt,important,image,media,subdocument,stylesheet,script,xmlhttprequest,other',
             },
+            {
+                actual: '||example.com/ad/vmap/*$xmlhttprequest,redirect-rule=noopvast-2.0',
+                expected: '||example.com/ad/vmap/*$xmlhttprequest,redirect-rule=noop-vast2.xml',
+            },
         ];
         test.each(validTestCases)('$actual', ({ actual, expected }) => {
             expect(convertAdgRedirectToUbo(actual)).toStrictEqual(expected);
@@ -778,9 +782,7 @@ describe('Test redirects api methods', () => {
 
         const NO_UBO_CONVERSION_ERROR = 'Unable to convert for uBO';
         const invalidRules = [
-            '||example.com/ad/vmap/*$xmlhttprequest,redirect=noopvast-2.0',
             '||example.com/ad/vmap/*$redirect=scorecardresearch-beacon',
-            '||example.com/ad/vmap/*$xmlhttprequest,redirect-rule=noopvast-2.0',
             '||example.com/ad/vmap/*$redirect-rule=scorecardresearch-beacon',
         ];
         test.each(invalidRules)('%s', (rule) => {
@@ -860,8 +862,8 @@ describe('Test redirects api methods', () => {
                 'noopjs',
             ],
             [
-                ['redirect=noop-vmap1.0.xml'],
-                'noop-vmap1.0.xml',
+                ['redirect=noop-vmap1.xml'],
+                'noop-vmap1.xml',
             ],
         ]);
 

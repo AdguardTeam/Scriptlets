@@ -176,6 +176,9 @@
     ||example.org/vmap01.xml$xmlhttprequest,redirect=noopvmap-1.0
     ```
   aliases:
+    # ubo redirect name
+    - noop-vmap1.xml
+    # old ubo redirect name for backward compatibility
     - noop-vmap1.0.xml
   file: noopvmap01.xml
   contentType: text/xml
@@ -191,6 +194,8 @@
     ```adblock
     ||example.org/vast02.xml^$xmlhttprequest,redirect=noopvast-2.0
     ```
+  aliases:
+    - noop-vast2.xml
   file: noopvast02.xml
   contentType: text/xml
   content: <VAST version="2.0"></VAST>
@@ -205,6 +210,8 @@
     ```adblock
     ||example.org/vast03.xml^$xmlhttprequest,redirect=noopvast-3.0
     ```
+  aliases:
+    - noop-vast3.xml
   file: noopvast03.xml
   contentType: text/xml
   content: <VAST version="3.0"></VAST>
@@ -219,6 +226,8 @@
     ```adblock
     ||example.org/vast04.xml^$xmlhttprequest,redirect=noopvast-4.0
     ```
+  aliases:
+    - noop-vast4.xml
   file: noopvast04.xml
   contentType: text/xml
   content: <VAST version="4.0"></VAST>

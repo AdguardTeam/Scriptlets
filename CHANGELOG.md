@@ -17,10 +17,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - new values to `set-cookie` and `set-cookie-reload` scriptlets: `checked`, `unchecked` [#444]
 - new values to `set-local-storage-item` and `set-session-storage-item` scriptlets:
   `allowed`, `denied` [#445]
+- UBO aliases `noop-vast2.xml`, `noop-vast3.xml`, and `noop-vast4.xml` for correspondent AdGuard redirects.
+
+### Changed
+
+- UBO alias `noop-vmap1.0.xml` for `noopvmap-1.0` redirect is replaced by `noop-vmap1.xml`
 
 ### Fixed
 
-- issue with modyfing `RegExp.$1, …, RegExp.$9` values
+- issue with modifying `RegExp.$1, …, RegExp.$9` values
   in `log-on-stack-trace` and `abort-on-stack-trace` scriptlets [#384]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...HEAD

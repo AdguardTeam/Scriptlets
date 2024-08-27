@@ -139,16 +139,19 @@ const redirects: RedirectCompatibilityMap[] = [
     },
     {
         adg: 'noopvmap-1.0',
-        ubo: 'noop-vmap1.0.xml',
+        ubo: 'noop-vmap1.xml',
     },
     {
         adg: 'noopvast-2.0',
+        ubo: 'noop-vast2.xml',
     },
     {
         adg: 'noopvast-3.0',
+        ubo: 'noop-vast3.xml',
     },
     {
         adg: 'noopvast-4.0',
+        ubo: 'noop-vast4.xml',
     },
     {
         adg: 'prebid',
