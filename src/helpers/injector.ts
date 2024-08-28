@@ -12,17 +12,35 @@ export function attachDependencies(scriptlet: Scriptlet | Redirect): string {
 }
 
 /**
- * Add scriptlet call to existing code
+ * Wraps a scriptlet call within an existing code block to ensure it executes only once per unique context.
  *
- * @param scriptlet scriptlet func
- * @param code scriptlet's string representation
- * @returns wrapped scriptlet call
+ * This function constructs a wrapper around the provided scriptlet function and its corresponding code block.
+ * It uses a unique identifier to prevent the scriptlet from being executed multiple times in the same context.
+ *
+ * @param scriptlet - The scriptlet function to be executed.
+ * @param code - The string representation of the scriptlet's code.
+ * @returns A string that represents the wrapped scriptlet call, ensuring it executes only once per unique context.
  */
 export function addCall(scriptlet: Scriptlet, code: string): string {
-    return `${code}
+    return `
+    const flag = 'done';
+    const uniqueIdentifier = source.uniqueId + source.name + '_' + (Array.isArray(args) ? args.join('_') : '');
+    // Check if the scriptlet has already been executed using the unique identifier
+    if (source.uniqueId) {
+        if (Window.prototype.toString[uniqueIdentifier] === flag) { return; }
+    }
+    ${code}
     const updatedArgs = args ? [].concat(source).concat(args) : [source];
     try {
         ${scriptlet.name}.apply(this, updatedArgs);
+        if (source.uniqueId) {
+            Object.defineProperty(Window.prototype.toString, uniqueIdentifier, {
+                value: flag,
+                enumerable: false,
+                writable: false,
+                configurable: false
+            });
+        }
     } catch (e) {
         console.log(e);
     }`;

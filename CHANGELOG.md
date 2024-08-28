@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - new values to `set-local-storage-item` and `set-session-storage-item` scriptlets:
   `allowed`, `denied` [#445]
 - UBO aliases `noop-vast2.xml`, `noop-vast3.xml`, and `noop-vast4.xml` for correspondent AdGuard redirects.
+- new field `uniqueId` to scriptlet configuration, allowing scriptlets to be executed only once per context
 
 ### Changed
 

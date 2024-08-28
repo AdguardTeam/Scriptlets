@@ -451,6 +451,8 @@ where:
  * @property {boolean} [verbose] — Flag to enable debug information printing to console.
  * @property {string} [ruleText] — Deprecated: Source rule text, needed for debug purposes.
  * @property {string} [domainName] — Domain name where scriptlet is applied, needed for debug purposes.
+ * @property {string} [uniqueId] — Optional unique identifier for a scriptlet instance.
+ * Used to ensure the scriptlet is executed only once per context by tracking its execution status.
  */
 ```
 
