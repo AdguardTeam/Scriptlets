@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.11.27] - 2024-08-29
 
 ### Added
 
@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - new values to `set-cookie` and `set-cookie-reload` scriptlets: `checked`, `unchecked` [#444]
 - new values to `set-local-storage-item` and `set-session-storage-item` scriptlets:
   `allowed`, `denied` [#445]
-- UBO aliases `noop-vast2.xml`, `noop-vast3.xml`, and `noop-vast4.xml` for correspondent AdGuard redirects.
+- UBO aliases `noop-vast2.xml`, `noop-vast3.xml`, and `noop-vast4.xml` for correspondent AdGuard redirects
 - new field `uniqueId` to scriptlet configuration, allowing scriptlets to be executed only once per context
 
 ### Changed
@@ -29,7 +29,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - issue with modifying `RegExp.$1, …, RegExp.$9` values
   in `log-on-stack-trace` and `abort-on-stack-trace` scriptlets [#384]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...HEAD
+[v1.11.27]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...v1.11.27
 [#384]: https://github.com/AdguardTeam/Scriptlets/issues/384
 [#301]: https://github.com/AdguardTeam/Scriptlets/issues/301
 [#439]: https://github.com/AdguardTeam/Scriptlets/issues/439
