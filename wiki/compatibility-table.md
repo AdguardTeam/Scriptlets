@@ -156,10 +156,10 @@
 | [nooptext](../wiki/about-redirects.md#nooptext) | noop.txt | blank-text |
 | [noopmp3-0.1s](../wiki/about-redirects.md#noopmp3-0.1s) | noop-0.1s.mp3 | blank-mp3 |
 | [noopmp4-1s](../wiki/about-redirects.md#noopmp4-1s) | noop-1s.mp4 | blank-mp4 |
-| [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.0.xml |  |
-| [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) |  |  |
-| [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) |  |  |
-| [noopvast-4.0](../wiki/about-redirects.md#noopvast-4.0) |  |  |
+| [noopvmap-1.0](../wiki/about-redirects.md#noopvmap-1.0) | noop-vmap1.xml |  |
+| [noopvast-2.0](../wiki/about-redirects.md#noopvast-2.0) | noop-vast2.xml |  |
+| [noopvast-3.0](../wiki/about-redirects.md#noopvast-3.0) | noop-vast3.xml |  |
+| [noopvast-4.0](../wiki/about-redirects.md#noopvast-4.0) | noop-vast4.xml |  |
 | [pardot-1.0](../wiki/about-redirects.md#pardot-1.0) |  |  |
 | [prebid](../wiki/about-redirects.md#prebid) |  |  |
 | [prebid-ads](../wiki/about-redirects.md#prebid-ads) | prebid-ads.js |  |

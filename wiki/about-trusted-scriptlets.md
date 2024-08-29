@@ -29,7 +29,7 @@ Deactivates after all elements have been clicked or by 10s timeout.
 ### Syntax
 
 ```text
-example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay]])
+example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay[, reload]]])
 ```
 <!-- markdownlint-disable-next-line line-length -->
 - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
@@ -44,6 +44,13 @@ and each of them should match the syntax. Possible `names`:
     - `localStorage` — check if localStorage item is present
     - `containsText` — check if clicked element contains specified text
 - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
+            Must be a number less than 10000 ms (10s)
+- `reload` — optional, string with reloadAfterClick marker and optional value. Possible values:
+    - `reloadAfterClick` - reloads the page after all elements have been clicked,
+       with default delay — 500ms
+    - colon-separated pair `reloadAfterClick:value` where
+        - `value` — time delay in milliseconds before reloading the page, after all elements
+           have been clicked. Must be a number less than 10000 ms (10s)
 
 <!-- markdownlint-disable line-length -->
 
@@ -115,6 +122,12 @@ and each of them should match the syntax. Possible `names`:
 
    ```adblock
    example.com#%#//scriptlet('trusted-click-element', 'article .container > div#host >>> div > button')
+   ```
+
+1. Click elements after 1000ms delay and reload page after all elements have been clicked with 200ms delay
+
+   ```adblock
+   example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '1000', 'reloadAfterClick:200')
    ```
 
 <!-- markdownlint-enable line-length -->

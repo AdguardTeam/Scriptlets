@@ -2954,6 +2954,7 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
         - `necessary` / `required`
         - `hide` / `hidden`
         - `essential` / `nonessential`
+        - `checked` / `unchecked`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3015,6 +3016,7 @@ example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
         - `necessary` / `required`
         - `hide` / `hidden`
         - `essential` / `nonessential`
+        - `checked` / `unchecked`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3080,6 +3082,8 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
         - `accepted`
         - `reject`
         - `rejected`
+        - `allowed`
+        - `denied`
         - `$remove$` — remove specific item from localStorage
 
 ### Examples
@@ -3157,6 +3161,8 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
         - `accepted`
         - `reject`
         - `rejected`
+        - `allowed`
+        - `denied`
         - `$remove$` — remove specific item from sessionStorage
 
 ### Examples
