@@ -42,6 +42,18 @@ describe('serializeCookie', () => {
                 actual: ['test', '1', '', 'example.com'],
                 expected: 'test=1; domain=example.com',
             },
+            {
+                actual: ['__Host-prefix', 'host_prefix', ''],
+                expected: '__Host-prefix=host_prefix; path=/; secure',
+            },
+            {
+                actual: ['__Host-prefix_domain', 'host_prefix_domain', '', 'example.com'],
+                expected: '__Host-prefix_domain=host_prefix_domain; path=/; secure',
+            },
+            {
+                actual: ['__Secure-prefix', 'secure_prefix', ''],
+                expected: '__Secure-prefix=secure_prefix; secure',
+            },
         ])('$actual -> $expected', ({ actual, expected }) => {
             expect(serializeCookie(...actual)).toBe(expected);
         });

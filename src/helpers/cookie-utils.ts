@@ -42,6 +42,8 @@ export const serializeCookie = (
     domainValue = '',
     shouldEncodeValue = true,
 ) => {
+    const HOST_PREFIX = '__Host-';
+    const SECURE_PREFIX = '__Secure-';
     const COOKIE_BREAKER = ';';
 
     // semicolon will cause the cookie to break
@@ -54,9 +56,28 @@ export const serializeCookie = (
 
     let resultCookie = `${name}=${value}`;
 
+    if (name.startsWith(HOST_PREFIX)) {
+        // Cookie with "__Host-" prefix requires "secure" flag, path must be "/",
+        // and must not have a domain specified
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
+        // https://github.com/AdguardTeam/Scriptlets/issues/448
+        resultCookie += '; path=/; secure';
+        if (domainValue) {
+            // eslint-disable-next-line no-console
+            console.debug(
+                `Domain value: "${domainValue}" has been ignored, because is not allowed for __Host- prefixed cookies`,
+            );
+        }
+        return resultCookie;
+    }
     const path = getCookiePath(rawPath);
     if (path) {
         resultCookie += `; ${path}`;
+    }
+
+    if (name.startsWith(SECURE_PREFIX)) {
+        // Cookie with "__Secure-" prefix requires "secure" flag
+        resultCookie += '; secure';
     }
 
     if (domainValue) {
