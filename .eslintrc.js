@@ -66,6 +66,7 @@ module.exports = {
         'jsdoc/require-param-description': 0,
         'jsdoc/require-returns': 'off',
         'jsdoc/require-returns-description': 0,
+        'jsdoc/no-defaults': 0,
     },
     overrides: [
         {

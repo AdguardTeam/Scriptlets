@@ -9,7 +9,7 @@ environments:
 
 npmjs:
   docker:
-    image: adguard/puppeteer-runner:18.2--1
+    image: adguard/puppeteer-runner:23.3--1
     volumes:
       ${system.YARN_DIR}: "${bamboo.cacheYarn}"
   triggers: [ ]

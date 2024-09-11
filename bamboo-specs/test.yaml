@@ -5,7 +5,7 @@ plan:
   key: SCRIPTLETSTEST
   name: scriptlets - test new
 variables:
-  dockerPuppeteer: adguard/puppeteer-runner:18.2--1
+  dockerPuppeteer: adguard/puppeteer-runner:23.3--1
 
 stages:
   - Build:

@@ -1,7 +1,7 @@
 name: Github Release
 
 env:
-  NODE_VERSION: 18
+  NODE_VERSION: 20
 
 # Workflow need write access to the repository to create a GitHub release
 permissions:
@@ -32,10 +32,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
@@ -64,26 +64,22 @@ jobs:
 
   notify:
     name: Send Slack notification
-    needs:
-      - release
-
+    needs: release
+    # Note: 'always()' is needed to run the notify job even if the test job was failed
     if:
-      ${{ always() &&
-        (
-          github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch'
-        )
+      ${{
+        always() &&
+        github.repository == 'AdguardTeam/Scriptlets' &&
+        (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
       }}
     runs-on: ubuntu-latest
     steps:
-      - name: Conclusion
-        uses: technote-space/workflow-conclusion-action@v3
-
       - name: Send Slack notification
         uses: 8398a7/action-slack@v3
         with:
-          status: ${{ env.WORKFLOW_CONCLUSION }}
-          fields: workflow, repo, message, commit, author, eventName, ref
+          status: ${{ needs.release.result }}
+          fields: workflow, repo, message, commit, author, eventName, ref, job
+          job_name: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

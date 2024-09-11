@@ -127,6 +127,9 @@ test('Set cookie with expires', (assert) => {
     const done = assert.async();
 
     setTimeout(() => {
+        // It looks like Chrome is caching `document.cookie` and value is not updated,
+        // so as a workaround we remove dummy cookie to force update of `document.cookie`
+        clearCookie('dummyCookie');
         assert.strictEqual(document.cookie.includes(cName), false, 'Cookie name has been deleted');
         assert.strictEqual(document.cookie.includes(cValue), false, 'Cookie value has been deleted');
         clearCookie(cName);

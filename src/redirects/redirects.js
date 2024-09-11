@@ -24,7 +24,7 @@ class Redirects {
      * Converts rawYaml into JS object with sources titles used as keys
      *
      * @param {string} rawYaml
-     * @returns {Object<Redirect>} - return object with titles in the keys and RedirectSources
+     * @returns {Redirect} - return object with titles in the keys and RedirectSources
      * in the values
      */
     constructor(rawYaml) {
