@@ -54,6 +54,75 @@ test('creating empty div', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
+test('creating two elements', async (assert) => {
+    const childTagName1 = 'div';
+    const childTagName2 = 'span';
+
+    runScriptlet(name, [ROOT_SELECTOR, childTagName1]);
+    runScriptlet(name, [ROOT_SELECTOR, childTagName2]);
+
+    const { children } = createRoot(ROOT_ID);
+
+    assert.strictEqual(children.length, 0, 'Parent element has no children yet');
+
+    const done = assert.async();
+
+    // Wait for elements to be added
+    setTimeout(() => {
+        assert.strictEqual(children.length, 2, 'Only specified children were appended');
+
+        const child1 = children[0];
+        const child2 = children[1];
+
+        assert.strictEqual(child1.tagName.toLowerCase(), childTagName1, 'Tag name is set correctly');
+        assert.strictEqual(child1.textContent, '', 'Text content is set correctly');
+        assert.strictEqual(child1.attributes.length, 0, 'No attributes were set');
+
+        assert.strictEqual(child2.tagName.toLowerCase(), childTagName2, 'Tag name is set correctly');
+        assert.strictEqual(child2.textContent, '', 'Text content is set correctly');
+        assert.strictEqual(child2.attributes.length, 0, 'No attributes were set');
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+
+        done();
+    }, 10);
+});
+
+test('creating two elements - one inside another', async (assert) => {
+    const childTagName1 = 'div';
+    const childTagName2 = 'div';
+    const child2ClassName = 'adsbygoogle';
+
+    runScriptlet(name, [ROOT_SELECTOR, childTagName1]);
+    runScriptlet(name, [`${ROOT_SELECTOR} > ${childTagName1}`, childTagName2, `class="${child2ClassName}"`]);
+
+    const { children } = createRoot(ROOT_ID);
+
+    assert.strictEqual(children.length, 0, 'Parent element has no children yet');
+
+    const done = assert.async();
+
+    // Wait for elements to be added
+    setTimeout(() => {
+        assert.strictEqual(children.length, 1, 'Only specified children were appended');
+
+        const child1 = children[0];
+        const child2 = child1.querySelector('div.adsbygoogle');
+
+        assert.strictEqual(child1.tagName.toLowerCase(), childTagName1, 'Tag name is set correctly');
+        assert.strictEqual(child1.textContent, '', 'Text content is set correctly');
+        assert.strictEqual(child1.attributes.length, 0, 'No attributes were set');
+
+        assert.strictEqual(child2.tagName.toLowerCase(), childTagName2, 'Tag name is set correctly');
+        assert.strictEqual(child2.textContent, '', 'Text content is set correctly');
+        assert.strictEqual(child2.classList.contains('adsbygoogle'), true, '"adsbygoogle" class is set correctly');
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+
+        done();
+    }, 10);
+});
+
 test('setting text content', (assert) => {
     const { children } = createRoot(ROOT_ID);
 

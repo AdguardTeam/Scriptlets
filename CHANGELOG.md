@@ -11,10 +11,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- issue with re-adding element on every DOM change in `trusted-create-element` scriptlet [#450]
 - setting cookie which name has special prefix `__Host-` or `__Secure-` by
   `trusted-set-cookie` and `trusted-set-cookie-reload` scriptlets [#448]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.27...HEAD
+[#450]: https://github.com/AdguardTeam/Scriptlets/issues/450
 [#448]: https://github.com/AdguardTeam/Scriptlets/issues/448
 
 ## [v1.11.27] - 2024-08-29

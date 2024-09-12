@@ -128,6 +128,7 @@ export function trustedCreateElement(
 
     let timerId: ReturnType<typeof setTimeout>;
 
+    let elementCreated = false;
     let elementRemoved = false;
 
     /**
@@ -157,10 +158,13 @@ export function trustedCreateElement(
         }
 
         try {
-            parentEl.append(el);
+            if (!parentEl.contains(el)) {
+                parentEl.append(el);
+            }
             if (el instanceof HTMLIFrameElement && el.contentWindow) {
                 el.contentWindow.name = IFRAME_WINDOW_NAME;
             }
+            elementCreated = true;
             hit(source);
         } catch (e) {
             logError(`Cannot append child to parent by selector '${parentElSelector}'`, e);
@@ -180,7 +184,7 @@ export function trustedCreateElement(
 
     if (!findParentAndAppendEl(parentSelector, element, cleanupDelayMs)) {
         observeDocumentWithTimeout((mutations, observer) => {
-            if (elementRemoved || findParentAndAppendEl(parentSelector, element, cleanupDelayMs)) {
+            if (elementRemoved || elementCreated || findParentAndAppendEl(parentSelector, element, cleanupDelayMs)) {
                 observer.disconnect();
             }
         });
