@@ -97,7 +97,7 @@ export function preventBab(source) {
 
 preventBab.names = [
     'prevent-bab',
-    // there is no aliases for this scriptlet
+    // there are no aliases for this scriptlet
 ];
 
 preventBab.injections = [hit];

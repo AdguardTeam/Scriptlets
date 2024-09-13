@@ -85,39 +85,14 @@ import {
  */
 /* eslint-enable max-len */
 export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, replacement, ...extraArgs) {
-    const uboAliases = [
-        'replace-node-text.js',
-        'rpnt.js',
-        'sed.js',
-    ];
-
-    /**
-     * UBO replaceNodeText scriptlet has different signature:
-     * function replaceNodeText(nodeName, pattern, replacement, ...extraArgs) {...}
-     *
-     * with extra params being passed as ['paramname', paramvalue]
-     */
-    if (uboAliases.includes(source.name)) {
-        replacement = pattern;
-        pattern = textMatch;
-        // eslint-disable-next-line prefer-destructuring, prefer-rest-params
-        for (let i = 0; i < extraArgs.length; i += 1) {
-            const arg = extraArgs[i];
-            if (arg === 'condition') {
-                textMatch = extraArgs[i + 1];
-                break;
-            }
-        }
-    }
-
-    const shouldLog = extraArgs.includes('verbose');
-
     const {
         selector,
         nodeNameMatch,
         textContentMatch,
         patternMatch,
     } = parseNodeTextParams(nodeName, textMatch, pattern);
+
+    const shouldLog = extraArgs.includes('verbose');
 
     /**
      * Handles nodes by removing text content of matched nodes

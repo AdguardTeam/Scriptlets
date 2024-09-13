@@ -34,7 +34,7 @@
 | [googletagservices-gpt](../wiki/about-scriptlets.md#googletagservices-gpt) |  |  |
 | [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js | json-prune |
 | [log](../wiki/about-scriptlets.md#log) |  | log |
-| [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) | addEventListener-logger.js (aell.js) (removed) |  |
+| [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) |  |  |
 | [log-eval](../wiki/about-scriptlets.md#log-eval) |  |  |
 | [log-on-stack-trace](../wiki/about-scriptlets.md#log-on-stack-trace) |  |  |
 | [m3u-prune](../wiki/about-scriptlets.md#m3u-prune) | m3u-prune.js |  |
@@ -49,7 +49,7 @@
 | [pardot-1.0](../wiki/about-scriptlets.md#pardot-1.0) |  |  |
 | [prebid](../wiki/about-scriptlets.md#prebid) |  |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) | prevent-listener |
-| [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) | adfly-defuser.js (removed) |  |
+| [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) |  |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
 | [prevent-element-src-loading](../wiki/about-scriptlets.md#prevent-element-src-loading) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
@@ -79,7 +79,6 @@
 |  | webrtc-if.js |  |
 |  | overlay-buster.js |  |
 |  | alert-buster.js |  |
-|  | golem.de.js (removed) |  |
 | [href-sanitizer](../wiki/about-scriptlets.md#href-sanitizer) | href-sanitizer.js |  |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
@@ -169,7 +168,6 @@
 | [prevent-popads-net](../wiki/about-redirects.md#prevent-popads-net) | popads.js |  |
 | [scorecardresearch-beacon](../wiki/about-redirects.md#scorecardresearch-beacon) | scorecardresearch_beacon.js |  |
 | [set-popads-dummy](../wiki/about-redirects.md#set-popads-dummy) | popads-dummy.js |  |
-|  | addthis_widget.js (removed) |  |
 |  | amazon_ads.js |  |
 |  | ampproject_v0.js |  |
 |  | chartbeat.js |  |
@@ -178,10 +176,6 @@
 |  | google-analytics_cx_api.js |  |
 |  | google-analytics_inpage_linkid.js |  |
 |  | hd-main.js |  |
-|  | ligatus_angular-tag.js (removed) |  |
-|  | monkeybroker.js (removed) |  |
 |  | outbrain-widget.js |  |
-|  | window.open-defuser.js (removed) |  |
 |  | noeval.js |  |
-|  | mxpnl_mixpanel.js (removed) |  |
 |  | noop-0.5s.mp3 |  |

@@ -21,6 +21,7 @@ import { preventBab as preventBabScriptlet } from '../scriptlets/prevent-bab';
  * @added v1.3.19.
  */
 const preventBab = preventBabScriptlet;
+
 preventBab.names = [
     'prevent-bab',
     // list of prevent-bab redirect aliases

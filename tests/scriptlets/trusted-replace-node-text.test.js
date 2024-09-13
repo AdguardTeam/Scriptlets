@@ -90,41 +90,6 @@ test('using matchers as regexes', (assert) => {
     }, 1);
 });
 
-test('arguments correctly reorganizing for ubo replace-node-text.js', (assert) => {
-    const done = assert.async();
-    const uboAlias = 'rpnt.js';
-
-    const nodeName = 'div';
-    const textMatch = 'content!';
-    const pattern = 'content';
-    const replacement = 'replaced';
-
-    const text = 'content!1';
-    const expectedText = 'replaced!1';
-
-    const nodeBefore = addNode('div', text);
-    const safeNodeBefore = addNode('a', text);
-
-    /**
-     * UBO replaceNodeText scriptlet has different signature:
-     * function replaceNodeText(nodeName, pattern, replacement, ...extraArgs) {...}
-     */
-    runScriptlet(uboAlias, [nodeName, pattern, replacement, 'condition', textMatch]);
-
-    const nodeAfter = addNode('div', text);
-    const safeNodeAfter = addNode('span', text);
-    setTimeout(() => {
-        assert.strictEqual(nodeAfter.textContent, expectedText, 'text content should be modified');
-        assert.strictEqual(nodeBefore.textContent, expectedText, 'text content should be modified');
-
-        assert.strictEqual(safeNodeAfter.textContent, text, 'non-matched node should not be affected');
-        assert.strictEqual(safeNodeBefore.textContent, text, 'non-matched node should not be affected');
-
-        assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
-        done();
-    }, 1);
-});
-
 test('Log content', (assert) => {
     // There are 7 "asserts" in test but node is modified two times
     // so it's logged twice, that's why 9 is expected

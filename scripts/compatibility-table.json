@@ -95,8 +95,7 @@
             "abp": "log"
         },
         {
-            "adg": "log-addEventListener",
-            "ubo": "addEventListener-logger.js (aell.js) (removed)"
+            "adg": "log-addEventListener"
         },
         {
             "adg": "log-eval"
@@ -145,8 +144,7 @@
             "abp": "prevent-listener"
         },
         {
-            "adg": "prevent-adfly",
-            "ubo": "adfly-defuser.js (removed)"
+            "adg": "prevent-adfly"
         },
         {
             "adg": "prevent-bab"
@@ -256,9 +254,6 @@
         },
         {
             "ubo": "alert-buster.js"
-        },
-        {
-            "ubo": "golem.de.js (removed)"
         },
         {
             "adg": "href-sanitizer",
@@ -557,9 +552,6 @@
             "ubo": "popads-dummy.js"
         },
         {
-            "ubo": "addthis_widget.js (removed)"
-        },
-        {
             "ubo": "amazon_ads.js"
         },
         {
@@ -585,22 +577,10 @@
             "ubo": "hd-main.js"
         },
         {
-            "ubo": "ligatus_angular-tag.js (removed)"
-        },
-        {
-            "ubo": "monkeybroker.js (removed)"
-        },
-        {
             "ubo": "outbrain-widget.js"
         },
         {
-            "ubo": "window.open-defuser.js (removed)"
-        },
-        {
             "ubo": "noeval.js"
-        },
-        {
-            "ubo": "mxpnl_mixpanel.js (removed)"
         },
         {
             "ubo": "noop-0.5s.mp3"

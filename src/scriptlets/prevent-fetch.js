@@ -222,6 +222,9 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
 preventFetch.names = [
     'prevent-fetch',
     // aliases are needed for matching the related scriptlet converted into our syntax
+    'prevent-fetch.js',
+    'ubo-prevent-fetch.js',
+    'ubo-prevent-fetch',
     'no-fetch-if.js',
     'ubo-no-fetch-if.js',
     'ubo-no-fetch-if',

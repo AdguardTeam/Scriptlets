@@ -293,8 +293,8 @@ describe('Test scriptlet api methods', () => {
                 },
                 {
                     // scriptlet with no parameters
-                    actual: 'example.com#%#//scriptlet("prevent-adfly")',
-                    expected: 'example.com##+js(adfly-defuser)',
+                    actual: 'example.com#%#//scriptlet("prevent-fab-3.2.0")',
+                    expected: 'example.com##+js(nofab)',
                 },
                 {
                     actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
@@ -310,7 +310,7 @@ describe('Test scriptlet api methods', () => {
                 },
                 {
                     actual: 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')',
-                    expected: 'example.com##+js(no-fetch-if, /^/)',
+                    expected: 'example.com##+js(prevent-fetch, /^/)',
                 },
                 {
                     actual: 'example.com#%#//scriptlet(\'close-window\')',

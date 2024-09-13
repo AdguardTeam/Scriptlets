@@ -90,10 +90,7 @@ export function preventAdfly(source) {
 
 preventAdfly.names = [
     'prevent-adfly',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'adfly-defuser.js',
-    'ubo-adfly-defuser.js',
-    'ubo-adfly-defuser',
+    // there are no aliases for this scriptlet
 ];
 
 preventAdfly.injections = [

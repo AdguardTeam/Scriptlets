@@ -16,24 +16,6 @@ const afterEach = () => {
 
 module(name, { beforeEach, afterEach });
 
-test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        name: 'ubo-adfly-defuser.js',
-        engine: 'test',
-        verbose: true,
-    };
-
-    const codeByAdgParams = window.scriptlets.invoke(adgParams);
-    const codeByUboParams = window.scriptlets.invoke(uboParams);
-
-    assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
-});
-
 test('ag works', (assert) => {
     assert.expect(2);
     const nativeDefineProperty = Object.defineProperty;
