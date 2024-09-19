@@ -113,65 +113,67 @@ describe('Test scriptlet api methods', () => {
             {
                 // no space between parameters
                 actual: 'example.org##+js(aopr,__ad)',
-                expected: 'example.org#%#//scriptlet(\'ubo-aopr.js\', \'__ad\')',
+                expected: 'example.org#%#//scriptlet(\'ubo-aopr\', \'__ad\')',
             },
             {
                 // '$' as parameter
                 actual: 'example.org##+js(abort-current-inline-script, $, popup)',
-                expected: 'example.org#%#//scriptlet(\'ubo-abort-current-inline-script.js\', \'$\', \'popup\')',
+                expected: 'example.org#%#//scriptlet(\'ubo-abort-current-inline-script\', \'$\', \'popup\')',
             },
             {
                 // '' as set-constant parameter
                 actual: 'example.org##+js(set-constant, config.ads.desktopAd, \'\')',
-                expected: 'example.org#%#//scriptlet(\'ubo-set-constant.js\', \'config.ads.desktopAd\', \'\')',
+                expected: 'example.org#%#//scriptlet(\'ubo-set-constant\', \'config.ads.desktopAd\', \'\')',
             },
             {
                 // multiple selectors for remove-attr/class
                 // eslint-disable-next-line max-len
                 actual: 'example.com##+js(ra, href, area[href*="discord-app.com/"]\\, area[href*="facebook.com/"]\\, area[href*="instagram.com/"])',
                 // eslint-disable-next-line max-len
-                expected: 'example.com#%#//scriptlet(\'ubo-ra.js\', \'href\', \'area[href*="discord-app.com/"], area[href*="facebook.com/"], area[href*="instagram.com/"]\')',
+                expected: 'example.com#%#//scriptlet(\'ubo-ra\', \'href\', \'area[href*="discord-app.com/"], area[href*="facebook.com/"], area[href*="instagram.com/"]\')',
             },
             {
                 // empty selector and specified applying for remove-attr/class
                 actual: 'example.com##+js(rc, cookie--not-set, , stay)',
-                expected: "example.com#%#//scriptlet('ubo-rc.js', 'cookie--not-set', '', 'stay')",
+                expected: "example.com#%#//scriptlet('ubo-rc', 'cookie--not-set', '', 'stay')",
             },
             {
                 // specified selectors and applying for remove-attr/class
                 actual: 'memo-book.pl##+js(rc, .locked, body\\, html, stay)',
-                expected: "memo-book.pl#%#//scriptlet('ubo-rc.js', '.locked', 'body, html', 'stay')",
+                expected: "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
             },
             {
                 // specified selectors and applying for remove-attr/class - one backslash
                 // eslint-disable-next-line no-useless-escape
                 actual: 'memo-book.pl##+js(rc, .locked, body\, html, stay)',
-                expected: "memo-book.pl#%#//scriptlet('ubo-rc.js', '.locked', 'body, html', 'stay')",
+                expected: "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
             },
             {
                 // just two args for remove-attr/class
                 actual: 'example.com##+js(ra, onselectstart)',
-                expected: "example.com#%#//scriptlet('ubo-ra.js', 'onselectstart')",
+                expected: "example.com#%#//scriptlet('ubo-ra', 'onselectstart')",
             },
             {
                 // double quotes in scriptlet parameter
                 actual: 'example.com#@#+js(remove-attr.js, href, a[data-st-area="back"])',
-                expected: 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="back"]\')',
+                // eslint-disable-next-line max-len
+                expected: String.raw`example.com#@%#//scriptlet('ubo-remove-attr.js', 'href', 'a[data-st-area="back"]')`,
             },
             {
                 // the same but with single quotes
                 actual: 'example.com#@#+js(remove-attr.js, href, a[data-st-area=\'back\'])',
-                expected: 'example.com#@%#//scriptlet(\'ubo-remove-attr.js\', \'href\', \'a[data-st-area="back"]\')',
+                // eslint-disable-next-line max-len
+                expected: String.raw`example.com#@%#//scriptlet('ubo-remove-attr.js', 'href', 'a[data-st-area=\'back\']')`,
             },
             {
                 // name without '.js' at the end
                 actual: 'example.org##+js(addEventListener-defuser, load, 2000)',
-                expected: 'example.org#%#//scriptlet(\'ubo-addEventListener-defuser.js\', \'load\', \'2000\')',
+                expected: 'example.org#%#//scriptlet(\'ubo-addEventListener-defuser\', \'load\', \'2000\')',
             },
             {
                 // short form of name
                 actual: 'example.org##+js(nano-stb, timeDown)',
-                expected: 'example.org#%#//scriptlet(\'ubo-nano-stb.js\', \'timeDown\')',
+                expected: 'example.org#%#//scriptlet(\'ubo-nano-stb\', \'timeDown\')',
             },
             {
                 actual: 'example.org#@#+js(setTimeout-defuser.js, [native code], 8000)',
@@ -183,47 +185,47 @@ describe('Test scriptlet api methods', () => {
             },
             {
                 actual: 'example.org#@#+js(aopw, notDetected)',
-                expected: 'example.org#@%#//scriptlet(\'ubo-aopw.js\', \'notDetected\')',
+                expected: 'example.org#@%#//scriptlet(\'ubo-aopw\', \'notDetected\')',
             },
             {
                 // wildcard tld
                 actual: 'example.*##+js(abort-on-stack-trace, Object.prototype.parallax, window.onload)',
                 // eslint-disable-next-line max-len
-                expected: 'example.*#%#//scriptlet(\'ubo-abort-on-stack-trace.js\', \'Object.prototype.parallax\', \'window.onload\')',
+                expected: 'example.*#%#//scriptlet(\'ubo-abort-on-stack-trace\', \'Object.prototype.parallax\', \'window.onload\')',
             },
             {
                 actual: 'example.com##+js(remove-class, blur, , stay)',
-                expected: "example.com#%#//scriptlet('ubo-remove-class.js', 'blur', '', 'stay')",
+                expected: "example.com#%#//scriptlet('ubo-remove-class', 'blur', '', 'stay')",
             },
             {
                 actual: 'example.com##+js(set-cookie, CookieConsent, true)',
-                expected: "example.com#%#//scriptlet('ubo-set-cookie.js', 'CookieConsent', 'true')",
+                expected: "example.com#%#//scriptlet('ubo-set-cookie', 'CookieConsent', 'true')",
             },
             {
                 actual: 'example.com##+js(set-cookie-reload, isSet, 1)',
-                expected: "example.com#%#//scriptlet('ubo-set-cookie-reload.js', 'isSet', '1')",
+                expected: "example.com#%#//scriptlet('ubo-set-cookie-reload', 'isSet', '1')",
             },
             {
                 actual: 'example.com##+js(set-local-storage-item, gdpr_popup, true)',
-                expected: "example.com#%#//scriptlet('ubo-set-local-storage-item.js', 'gdpr_popup', 'true')",
+                expected: "example.com#%#//scriptlet('ubo-set-local-storage-item', 'gdpr_popup', 'true')",
             },
             {
                 actual: 'example.com##+js(set-session-storage-item, acceptCookies, false)',
-                expected: "example.com#%#//scriptlet('ubo-set-session-storage-item.js', 'acceptCookies', 'false')",
+                expected: "example.com#%#//scriptlet('ubo-set-session-storage-item', 'acceptCookies', 'false')",
             },
             {
                 actual: 'example.com##+js(spoof-css, .advert, display, block)',
-                expected: "example.com#%#//scriptlet('ubo-spoof-css.js', '.advert', 'display', 'block')",
+                expected: "example.com#%#//scriptlet('ubo-spoof-css', '.advert', 'display', 'block')",
             },
             {
                 actual: 'example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)',
                 // eslint-disable-next-line max-len
-                expected: "example.com#%#//scriptlet('ubo-spoof-css.js', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
+                expected: "example.com#%#//scriptlet('ubo-spoof-css', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
             },
             // https://github.com/AdguardTeam/Scriptlets/issues/404
             {
                 actual: 'example.com##+js(set-local-storage-item, mode, $remove$)',
-                expected: "example.com#%#//scriptlet('ubo-set-local-storage-item.js', 'mode', '$remove$')",
+                expected: "example.com#%#//scriptlet('ubo-set-local-storage-item', 'mode', '$remove$')",
             },
         ];
         test.each(validTestCases)('$actual', ({ actual, expected }) => {
@@ -294,7 +296,7 @@ describe('Test scriptlet api methods', () => {
                 {
                     // scriptlet with no parameters
                     actual: 'example.com#%#//scriptlet("prevent-fab-3.2.0")',
-                    expected: 'example.com##+js(nofab)',
+                    expected: 'example.com##+js(prevent-fab-3.2.0)',
                 },
                 {
                     actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
@@ -314,7 +316,7 @@ describe('Test scriptlet api methods', () => {
                 },
                 {
                     actual: 'example.com#%#//scriptlet(\'close-window\')',
-                    expected: 'example.com##+js(window-close-if)',
+                    expected: 'example.com##+js(close-window)',
                 },
                 {
                     actual: "example.com#%#//scriptlet('set-cookie', 'CookieConsent', 'true')",
@@ -341,7 +343,7 @@ describe('Test scriptlet api methods', () => {
                 {
                     // Escapes commas in params
                     actual: String.raw`example.com#%#//scriptlet('adjust-setInterval', ',dataType:_', '1000', '0.02')`,
-                    expected: String.raw`example.com##+js(nano-setInterval-booster, \,dataType:_, 1000, 0.02)`,
+                    expected: String.raw`example.com##+js(adjust-setInterval, \,dataType:_, 1000, 0.02)`,
                 },
                 {
                     actual: "example.com#%#//scriptlet('spoof-css', '.advert', 'display', 'block')",
@@ -421,7 +423,7 @@ describe('Test redirects api methods', () => {
 
         const invalidRedirectNames = [
             'outbrain-widget.js', // ubo only
-            'blank-css', // name abp-only
+            'stylesheet', // ubo only
         ];
         test.each(invalidRedirectNames)('%s', (name) => {
             expect(validator.isRedirectResourceCompatibleWithAdg(name)).toBeFalsy();
@@ -448,11 +450,10 @@ describe('Test redirects api methods', () => {
         });
 
         const invalidRules = [
-            // fingerprint2.js is not a valid name for the AdGuard redirect resource
-            '||cloudflare.com/ajax/libs/fingerprintjs2/$script,redirect=fingerprint2.js,important',
+
             // ubo redirect name is not a valid adg redirect name
-            '/blockadblock.$script,redirect=nobab.js',
-            '/blockadblock.$script,redirect-rule=nobab.js',
+            '/blockadblock.$script,redirect=hd-main.js',
+            '/blockadblock.$script,redirect-rule=hd-main.js',
             // invalid adg redirect name
             '||example.com/banner$image,redirect=redirect.png',
             '||example.com/banner$image,redirect-rule=redirect.png',
@@ -464,13 +465,11 @@ describe('Test redirects api methods', () => {
 
     describe('isAdgRedirectCompatibleWithUbo()', () => {
         const validRules = [
-            '||example.orf^$media,redirect=noopmp4-1s,third-party',
+            '||example.orf^$media,redirect=noop-0.1s.mp3,third-party',
             '||example.com/log$redirect=empty',
-            '||example.com^$redirect=prevent-bab',
-            '||example.com/ad/vmap/*$xmlhttprequest,redirect=noopvmap-1.0',
-            '||example.orf^$media,redirect-rule=noopmp4-1s,third-party',
-            '||example.com^$redirect-rule=prevent-bab',
-            '||example.com/ad/vmap/*$xmlhttprequest,redirect-rule=noopvmap-1.0',
+            '||example.com^$redirect=noop-1s.mp4',
+            '||example.orf^$media,redirect-rule=noop-0.1s.mp3,third-party',
+            '||example.com^$redirect-rule=noop-1s.mp4',
         ];
         test.each(validRules)('%s', (rule) => {
             expect(validator.isAdgRedirectCompatibleWithUbo(rule)).toBeTruthy();
@@ -623,7 +622,7 @@ describe('Test redirects api methods', () => {
             },
             {
                 actual: '||googletagmanager.com/gtag/js$script,redirect-rule=googletagmanager_gtm.js',
-                expected: '||googletagmanager.com/gtag/js$script,redirect-rule=googletagmanager-gtm',
+                expected: '||googletagmanager.com/gtag/js$script,redirect-rule=google-analytics',
             },
         ];
         test.each(testCases)('$actual', ({ actual, expected }) => {
@@ -647,41 +646,6 @@ describe('Test redirects api methods', () => {
         });
     });
 
-    describe('hasValidContentType() -- needed for adg->ubo redirect conversion', () => {
-        const validRules = [
-            '||example.com^$xmlhttprequest,redirect=nooptext',
-            '||example.orf^$media,redirect=noopmp4-1s,third-party',
-            '||example.com/images/*.png$image,important,redirect=1x1-transparent.gif,domain=example.com|example.org',
-            // no source type for 'empty' is allowed
-            '||example.org^$redirect=empty,third-party',
-            // all source types for 'empty' are allowed
-            '||example.org^$script,redirect=empty,third-party',
-            // all source types for 'media' are allowed too as well
-            '||example.org^$stylesheet,media,redirect=empty,third-party',
-            // apb redirects should not be passed to adg->ubo conversion but content type is valid
-            '||example.com^$script,rewrite=abp-resource:blank-js',
-            // rules with the $redirect-rule modifier
-            '||example.com^$xmlhttprequest,redirect-rule=nooptext',
-            '||example.orf^$media,redirect-rule=noopmp4-1s,third-party',
-            '||example.com/images/*.png$image,important,redirect-rule=1x1-transparent.gif,domain=example.com|',
-            '||example.org^$redirect-rule=empty,third-party',
-            '||example.org^$script,redirect-rule=empty,third-party',
-            '||example.org^$stylesheet,media,redirect-rule=empty,third-party',
-        ];
-        test.each(validRules)('%s', (rule) => {
-            expect(validator.hasValidContentType(rule)).toBeTruthy();
-        });
-
-        const invalidRules = [
-            // no source type specified
-            '||example.com^$important,redirect=nooptext',
-            '||example.com^$important,redirect-rule=nooptext',
-        ];
-        test.each(invalidRules)('%s', (rule) => {
-            expect(validator.hasValidContentType(rule)).toBeFalsy();
-        });
-    });
-
     describe('convertAdgRedirectToUbo(adg-rule) -> ubo', () => {
         const validTestCases = [
             {
@@ -690,7 +654,7 @@ describe('Test redirects api methods', () => {
             },
             {
                 actual: '||example.com^$xmlhttprequest,redirect=nooptext',
-                expected: '||example.com^$xmlhttprequest,redirect=noop.txt',
+                expected: '||example.com^$xhr,redirect=noop.txt',
             },
             {
                 actual: '||example.com/*.css$important,redirect=noopcss',
@@ -708,7 +672,7 @@ describe('Test redirects api methods', () => {
             },
             {
                 actual: '||example.com/vast/$important,redirect=empty,~third-party',
-                expected: '||example.com/vast/$important,redirect=empty,~third-party',
+                expected: '||example.com/vast/$important,redirect=empty,~3p',
             },
             {
                 // add source type modifiers while conversion if there is no one of them
@@ -718,7 +682,7 @@ describe('Test redirects api methods', () => {
             },
             {
                 actual: '||example.com/*.mp4$important,redirect=noopmp4-1s,~third-party',
-                expected: '||example.com/*.mp4$important,redirect=noop-1s.mp4,~third-party,media',
+                expected: '||example.com/*.mp4$important,redirect=noop-1s.mp4,~3p,media',
             },
             {
                 actual: '||example.com/*.css$important,redirect=noopcss',
@@ -727,7 +691,7 @@ describe('Test redirects api methods', () => {
             {
                 actual: '||ad.example.com^$redirect=nooptext,important',
                 // eslint-disable-next-line max-len
-                expected: '||ad.example.com^$redirect=noop.txt,important,image,media,subdocument,stylesheet,script,xmlhttprequest,other',
+                expected: '||ad.example.com^$redirect=noop.txt,important,image,media,subdocument,stylesheet,script,xhr,other',
             },
             {
                 // eslint-disable-next-line max-len
@@ -738,7 +702,7 @@ describe('Test redirects api methods', () => {
             // $redirect-rule
             {
                 actual: '||example.com^$xmlhttprequest,redirect-rule=nooptext',
-                expected: '||example.com^$xmlhttprequest,redirect-rule=noop.txt',
+                expected: '||example.com^$xhr,redirect-rule=noop.txt',
             },
             {
                 // image type is supported by nooptext too
@@ -753,7 +717,7 @@ describe('Test redirects api methods', () => {
             },
             {
                 actual: '||example.com/vast/$important,redirect-rule=empty,~third-party',
-                expected: '||example.com/vast/$important,redirect-rule=empty,~third-party',
+                expected: '||example.com/vast/$important,redirect-rule=empty,~3p',
             },
             {
                 // add source type modifiers while conversion if there is no one of them
@@ -764,31 +728,16 @@ describe('Test redirects api methods', () => {
             },
             {
                 actual: '||example.com/*.mp4$important,redirect-rule=noopmp4-1s,~third-party',
-                expected: '||example.com/*.mp4$important,redirect-rule=noop-1s.mp4,~third-party,media',
+                expected: '||example.com/*.mp4$important,redirect-rule=noop-1s.mp4,~3p,media',
             },
             {
                 actual: '||ad.example.com^$redirect-rule=nooptext,important',
                 // eslint-disable-next-line max-len
-                expected: '||ad.example.com^$redirect-rule=noop.txt,important,image,media,subdocument,stylesheet,script,xmlhttprequest,other',
-            },
-            {
-                actual: '||example.com/ad/vmap/*$xmlhttprequest,redirect-rule=noopvast-2.0',
-                expected: '||example.com/ad/vmap/*$xmlhttprequest,redirect-rule=noop-vast2.xml',
+                expected: '||ad.example.com^$redirect-rule=noop.txt,important,image,media,subdocument,stylesheet,script,xhr,other',
             },
         ];
         test.each(validTestCases)('$actual', ({ actual, expected }) => {
             expect(convertAdgRedirectToUbo(actual)).toStrictEqual(expected);
-        });
-
-        const NO_UBO_CONVERSION_ERROR = 'Unable to convert for uBO';
-        const invalidRules = [
-            '||example.com/ad/vmap/*$redirect=scorecardresearch-beacon',
-            '||example.com/ad/vmap/*$redirect-rule=scorecardresearch-beacon',
-        ];
-        test.each(invalidRules)('%s', (rule) => {
-            expect(() => {
-                convertAdgRedirectToUbo(rule);
-            }).toThrow(NO_UBO_CONVERSION_ERROR);
         });
     });
 
@@ -843,92 +792,6 @@ describe('Test redirects api methods', () => {
         ])('$actual', ({ actual, expected }) => {
             expect(convertRedirectNameToAdg(actual)).toStrictEqual(expected);
         });
-    });
-
-    describe('getRedirectName', () => {
-        const { getRedirectName } = validator;
-        const marker = 'redirect=';
-        const fixtures = new Map([
-            [
-                ['important', 'redirect=noop.js:99', 'domain=open.spotify'],
-                'noop.js',
-            ],
-            [
-                ['important', 'redirect=noop.js'],
-                'noop.js',
-            ],
-            [
-                ['redirect=noopjs'],
-                'noopjs',
-            ],
-            [
-                ['redirect=noop-vmap1.xml'],
-                'noop-vmap1.xml',
-            ],
-        ]);
-
-        fixtures.forEach((name, modifiers) => {
-            expect(getRedirectName(modifiers, marker)).toStrictEqual(name);
-        });
-    });
-
-    describe('isRedirectRuleByType', () => {
-        const { isRedirectRuleByType, RedirectRuleType } = validator;
-        const adgRules = [
-            {
-                rule: 'example.com$redirect=noopjs',
-                isValid: true,
-            },
-            {
-                rule: 'example.com$redirect=prebid,important',
-                isValid: true,
-            },
-            {
-                rule: 'example.com$redirect=nobab2.js',
-                isValid: false,
-            },
-        ];
-
-        const uboRules = [
-            {
-                rule: 'example.com$redirect=noop.js',
-                isValid: true,
-            },
-            {
-                rule: '||cdn.cookielaw.org^$important,redirect=noop.js:99,script',
-                isValid: true,
-            },
-            {
-                rule: 'example.com$redirect=prevent-bab',
-                isValid: false,
-            },
-        ];
-
-        const abpRules = [
-            {
-                rule: 'example.com$rewrite=abp-resource:1x1-transparent-gif',
-                isValid: true,
-            },
-            {
-                rule: 'example.com$rewrite=abp-resource:1x1-transparent.gif',
-                isValid: false,
-            },
-            {
-                rule: 'example.com$redirect=1x1-transparent.gif',
-                isValid: false,
-            },
-        ];
-
-        const testRuleTypes = (rules, ruleType) => {
-            rules.forEach(({ rule, isValid }) => {
-                const result = isRedirectRuleByType(rule, ruleType);
-                expect(result).toBe(isValid);
-            });
-        };
-
-        testRuleTypes(adgRules, RedirectRuleType.ValidAdg);
-        testRuleTypes(uboRules, RedirectRuleType.Ubo);
-        testRuleTypes(abpRules, RedirectRuleType.Abp);
     });
 });
 

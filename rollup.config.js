@@ -5,7 +5,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy';
 import cleanup from 'rollup-plugin-cleanup';
 import generateHtml from 'rollup-plugin-generate-html';
-import path from 'path';
 import project from './package.json';
 
 const BUILD_DIST = 'dist';
@@ -30,9 +29,7 @@ const FOOTER = `
 const commonPlugins = [
     json(),
     resolve({ extensions: ['.js', '.ts'] }),
-    commonjs({
-        include: path.resolve(__dirname, './node_modules/**'),
-    }),
+    commonjs(),
     babel({
         extensions: ['.js', '.ts'],
         babelHelpers: 'runtime',

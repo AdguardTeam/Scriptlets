@@ -18,6 +18,7 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 - [Development](#development)
     - [How to build](#how-to-build)
     - [How to test](#how-to-test)
+    - [How to link packages](#how-to-link-packages)
     - [How to update wiki](#how-to-update-wiki)
 - [Usage](#usage)
     - [CoreLibs](#corelibs)
@@ -326,6 +327,20 @@ yarn test
 ```
 
 and open needed HTML file from `tests/dist` in your browser with devtools
+
+
+### <a name="how-to-link-packages"></a> How to link packages
+
+Scriptlets library relies on external packages, such as `@adguard/agtree`.
+During development, you might need to link these packages using `yarn link`.
+**When you do this, make sure to install dependencies in the `tsurlfilter` monorepo with `pnpm i --shamefully-hoist`**,
+otherwise you will encounter issues during tests and builds, because we use Babel runtime and in the nested structure,
+the program will try to resolve it from the `node_modules` folder of the linked package, not from the `node_modules`
+in the Scriptlets library.
+
+The reason behind this is that `pnpm` creates a nested `node_modules` structure,
+while `yarn` and `npm` create a flat structure. By adding `--shamefully-hoist`,
+you force `pnpm` to create a flat structure, which is required for the Babel runtime to work correctly.
 
 
 ### <a name="how-to-update-wiki"></a> How to update wiki

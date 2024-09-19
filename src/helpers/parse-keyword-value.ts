@@ -10,6 +10,7 @@
  * @returns parsed value
  */
 export const parseKeywordValue = (rawValue: string): string => {
+    // !IMPORTANT: Do not move constants outside of this function
     const NOW_VALUE_KEYWORD = '$now$';
     const CURRENT_DATE_KEYWORD = '$currentDate$';
     const CURRENT_ISO_DATE_KEYWORD = '$currentISODate$';
