@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [v1.2.2] - 2024-09-20
+## [v1.12.1] - 2024-09-20
 
 ### Added
 
@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - setting cookie which name has special prefix `__Host-` or `__Secure-` by
   `trusted-set-cookie` and `trusted-set-cookie-reload` scriptlets [#448]
 
-[v1.2.2]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.27...v1.2.2
+[v1.12.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.27...v1.12.1
 [agtree-npm]: https://www.npmjs.com/package/@adguard/agtree
 [#450]: https://github.com/AdguardTeam/Scriptlets/issues/450
 [#448]: https://github.com/AdguardTeam/Scriptlets/issues/448
