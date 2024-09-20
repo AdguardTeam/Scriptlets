@@ -4,10 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+[Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
+[Semantic Versioning]: https://semver.org/spec/v2.0.0.html
+
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v1.2.2] - 2024-09-20
 
 ### Added
 
@@ -20,7 +23,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - setting cookie which name has special prefix `__Host-` or `__Secure-` by
   `trusted-set-cookie` and `trusted-set-cookie-reload` scriptlets [#448]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.27...HEAD
+[v1.2.2]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.27...v1.2.2
 [agtree-npm]: https://www.npmjs.com/package/@adguard/agtree
 [#450]: https://github.com/AdguardTeam/Scriptlets/issues/450
 [#448]: https://github.com/AdguardTeam/Scriptlets/issues/448
@@ -535,6 +538,3 @@ prevent inline `onerror` and match `link` tag [#276](https://github.com/AdguardT
 [v1.7.13]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.10...v1.7.13
 [v1.7.10]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.3...v1.7.10
 [v1.7.3]: https://github.com/AdguardTeam/Scriptlets/compare/v1.6.55...v1.7.3
-
-[Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
-[Semantic Versioning]: https://semver.org/spec/v2.0.0.html
