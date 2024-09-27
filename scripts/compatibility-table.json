@@ -352,6 +352,7 @@
             "ubo": "multiup.js"
         },
         {
+            "adg": "prevent-canvas",
             "ubo": "prevent-canvas.js"
         },
         {

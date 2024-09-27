@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- `prevent-canvas` scriptlet [#451]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...HEAD
+[#451]: https://github.com/AdguardTeam/Scriptlets/issues/451
+
 ## [v1.12.1] - 2024-09-20
 
 ### Added

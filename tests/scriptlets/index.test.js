@@ -58,3 +58,4 @@ import './remove-node-text.test';
 import './trusted-replace-node-text.test';
 import './trusted-prune-inbound-object.test';
 import './trusted-suppress-native-method.test';
+import './prevent-canvas.test';
