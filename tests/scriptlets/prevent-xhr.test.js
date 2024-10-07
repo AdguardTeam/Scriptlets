@@ -147,6 +147,50 @@ if (isSupported) {
         assert.strictEqual(xhr.getAllResponseHeaders(), expectedAllHeaders, 'getAllResponseHeaders() is mocked');
     });
 
+    test('Args, method matched, randomize response (length:25000-30000)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['method:GET', 'length:25000-30000'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.strictEqual(typeof xhr.response, 'string', 'Response mocked');
+            assert.ok(
+                xhr.response.length > 20000,
+                `Response randomized, response length: ${xhr.response.length}`,
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Empty arg, prevent all, randomize response', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'true'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(typeof xhr.response, 'string', 'Response mocked');
+            assert.ok(xhr.response.length > 0, 'Response randomized');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('Empty arg, prevent all, randomize response text', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;

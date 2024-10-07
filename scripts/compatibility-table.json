@@ -165,7 +165,7 @@
         },
         {
             "adg": "prevent-xhr",
-            "ubo": "no-xhr-if.js (prevent-xhr.js)"
+            "ubo": "prevent-xhr.js (no-xhr-if.js)"
         },
         {
             "adg": "prevent-popads-net"
@@ -384,6 +384,15 @@
         },
         {
             "ubo": "trusted-suppress-native-method.js"
+        },
+        {
+            "ubo": "trusted-prevent-xhr.js"
+        },
+        {
+            "ubo": "trusted-prevent-dom-bypass.js"
+        },
+        {
+            "ubo": "trusted-override-element-method.js"
         }
     ],
     "redirects": [

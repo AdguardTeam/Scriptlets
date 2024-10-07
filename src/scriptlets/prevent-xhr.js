@@ -46,9 +46,9 @@ import {
  *             - `value` is string or regular expression for matching the value of the option
  *     passed to `XMLHttpRequest.open()` call
  * - `randomize` — defaults to `false` for empty responseText,
- *   optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
- *     - `true` to randomize responseText, random alphanumeric string of 10 symbols
- *     - colon-separated pair `name:value` string value to customize responseText data where
+ *   optional argument to randomize responseText and response of matched XMLHttpRequest's response; possible values:
+ *     - `true` to randomize responseText and response, random alphanumeric string of 10 symbols
+ *     - colon-separated pair `name:value` string value to customize responseText and response data where
  *         - `name` — only `length` supported for now
  *         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
  *
@@ -169,6 +169,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         if (customResponseText) {
             const randomText = generateRandomResponse(customResponseText);
             if (randomText) {
+                modifiedResponse = randomText;
                 modifiedResponseText = randomText;
             } else {
                 logMessage(source, `Invalid randomize parameter: '${customResponseText}'`);
