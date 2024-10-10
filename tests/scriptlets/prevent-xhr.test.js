@@ -46,6 +46,66 @@ if (isSupported) {
         assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
     });
 
+    test('Args, method matched, check xhr status, randomize response (length:25000-30000)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['method:GET', 'length:25000-30000'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+
+        runScriptlet(name, MATCH_DATA);
+
+        xhr.open(METHOD, URL);
+        xhr.send();
+
+        assert.strictEqual(xhr.status, 200, 'status set to 200');
+        assert.ok(xhr.response.length >= 25000, 'Response randomized');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('Check if all 4 readyState events were fired on request', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [''];
+        const done = assert.async();
+
+        runScriptlet(name, MATCH_DATA);
+
+        // track each readyState event
+        const xhrEvents = [false, false, false, false];
+
+        // track the last fired readyState to ensure no skipping
+        let lastReadyState = 0;
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = () => {
+            // ensure no states are skipped
+            assert.ok(
+                xhr.readyState >= lastReadyState,
+                `readyState moved forward from ${lastReadyState} to ${xhr.readyState}`,
+            );
+            lastReadyState = xhr.readyState;
+
+            // mark each readyState event as fired
+            xhrEvents[xhr.readyState - 1] = true;
+
+            if (xhr.readyState === 4) {
+                assert.strictEqual(xhr.responseURL, URL, 'URL mocked');
+                assert.ok(xhrEvents.every((event) => event), 'All readyState change events were fired');
+                done();
+            }
+        };
+
+        xhr.open(METHOD, URL);
+        xhr.send();
+    });
+
     test('No args, logging', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
@@ -147,7 +207,7 @@ if (isSupported) {
         assert.strictEqual(xhr.getAllResponseHeaders(), expectedAllHeaders, 'getAllResponseHeaders() is mocked');
     });
 
-    test('Args, method matched, randomize response (length:25000-30000)', async (assert) => {
+    test('Args, method matched, check different events, randomize response (length:25000-30000)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['method:GET', 'length:25000-30000'];
@@ -156,8 +216,47 @@ if (isSupported) {
 
         const done = assert.async();
 
+        let loadStartEventFired = false;
+        let progressEventFired = false;
+        let loadEventFired = false;
+        let loadEndEventFired = false;
+
+        const checkLoadEndEvent = () => {
+            assert.strictEqual(loadEndEventFired, true, 'loadend event fired');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+
+        const handleEvent = (event) => {
+            switch (event.type) {
+                case 'loadstart':
+                    loadStartEventFired = true;
+                    assert.strictEqual(event.target.readyState, 1, 'readyState is set to 1');
+                    break;
+                case 'progress':
+                    progressEventFired = true;
+                    assert.strictEqual(event.target.readyState, 3, 'readyState is set to 3');
+                    break;
+                case 'load':
+                    loadEventFired = true;
+                    assert.strictEqual(event.target.readyState, 4, 'readyState is set to 4');
+                    break;
+                case 'loadend':
+                    loadEndEventFired = true;
+                    assert.strictEqual(event.target.readyState, 4, 'readyState is set to 4');
+                    checkLoadEndEvent();
+                    break;
+                default:
+                    break;
+            }
+        };
+
         const xhr = new XMLHttpRequest();
         xhr.open(METHOD, URL);
+        const eventNames = ['loadstart', 'progress', 'load', 'loadend'];
+        eventNames.forEach((eventName) => {
+            xhr.addEventListener(eventName, handleEvent);
+        });
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(typeof xhr.response, 'string', 'Response mocked');
@@ -165,8 +264,9 @@ if (isSupported) {
                 xhr.response.length > 20000,
                 `Response randomized, response length: ${xhr.response.length}`,
             );
-            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-            done();
+            assert.strictEqual(loadStartEventFired, true, 'loadstart event fired');
+            assert.strictEqual(progressEventFired, true, 'progress event fired');
+            assert.strictEqual(loadEventFired, true, 'load event fired');
         };
         xhr.send();
     });

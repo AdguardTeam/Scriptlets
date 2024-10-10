@@ -111,7 +111,6 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     }
 
     const nativeOpen = window.XMLHttpRequest.prototype.open;
-    const nativeSend = window.XMLHttpRequest.prototype.send;
     const nativeGetResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
     const nativeGetAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
 
@@ -182,46 +181,63 @@ export function preventXHR(source, propsToMatch, customResponseText) {
          * listeners on original XHR object
          */
         const forgedRequest = new XMLHttpRequest();
-        forgedRequest.addEventListener('readystatechange', () => {
-            if (forgedRequest.readyState !== 4) {
-                return;
+
+        /**
+         * Used to manually simulate the progression of the readyState property.
+         * By using Object.defineProperty, the function ensures
+         * that the readyState can be modified and configured appropriately,
+         * while allowing the property to be writable.
+         * @param {number} state - request status number.
+         */
+        const transitionReadyState = (state) => {
+            if (state === 4) {
+                const {
+                    responseURL,
+                    responseXML,
+                } = forgedRequest;
+
+                // Mock response object
+                Object.defineProperties(thisArg, {
+                    readyState: { value: 4, writable: false },
+                    statusText: { value: 'OK', writable: false },
+                    responseURL: { value: responseURL || thisArg.xhrData.url, writable: false },
+                    responseXML: { value: responseXML, writable: false },
+                    status: { value: 200, writable: false },
+                    response: { value: modifiedResponse, writable: false },
+                    responseText: { value: modifiedResponseText, writable: false },
+                });
+                hit(source);
+            } else {
+                Object.defineProperty(thisArg, 'readyState', {
+                    value: state,
+                    writable: true,
+                    configurable: true,
+                });
             }
+            const stateEvent = new Event('readystatechange');
+            thisArg.dispatchEvent(stateEvent);
+        };
 
-            const {
-                readyState,
-                responseURL,
-                responseXML,
-                statusText,
-            } = forgedRequest;
-
-            // Mock response object
-            Object.defineProperties(thisArg, {
-                // original values
-                readyState: { value: readyState, writable: false },
-                statusText: { value: statusText, writable: false },
-                // If the request is blocked, responseURL is an empty string
-                responseURL: { value: responseURL || thisArg.xhrData.url, writable: false },
-                responseXML: { value: responseXML, writable: false },
-                // modified values
-                status: { value: 200, writable: false },
-                response: { value: modifiedResponse, writable: false },
-                responseText: { value: modifiedResponseText, writable: false },
-            });
-
-            // Mock events
-            setTimeout(() => {
-                const stateEvent = new Event('readystatechange');
-                thisArg.dispatchEvent(stateEvent);
-
-                const loadEvent = new Event('load');
-                thisArg.dispatchEvent(loadEvent);
-
-                const loadEndEvent = new Event('loadend');
-                thisArg.dispatchEvent(loadEndEvent);
-            }, 1);
-
-            hit(source);
+        // All events added to avoid problems with anti-adblockers
+        // https://github.com/AdguardTeam/Scriptlets/issues/414
+        forgedRequest.addEventListener('readystatechange', () => {
+            // simulate the lifecycle
+            transitionReadyState(1);
+            const loadStartEvent = new ProgressEvent('loadstart');
+            thisArg.dispatchEvent(loadStartEvent);
+            transitionReadyState(2);
+            transitionReadyState(3);
+            const progressEvent = new ProgressEvent('progress');
+            thisArg.dispatchEvent(progressEvent);
+            transitionReadyState(4);
         });
+
+        setTimeout(() => {
+            const loadEvent = new ProgressEvent('load');
+            thisArg.dispatchEvent(loadEvent);
+            const loadEndEvent = new ProgressEvent('loadend');
+            thisArg.dispatchEvent(loadEndEvent);
+        }, 1);
 
         nativeOpen.apply(forgedRequest, [thisArg.xhrData.method, thisArg.xhrData.url]);
 
@@ -232,12 +248,6 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             const value = header[1];
             forgedRequest.setRequestHeader(name, value);
         });
-
-        try {
-            nativeSend.call(forgedRequest, args);
-        } catch {
-            return Reflect.apply(target, thisArg, args);
-        }
 
         return undefined;
     };
