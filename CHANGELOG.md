@@ -18,11 +18,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- set response `ok` to `false` by `prevent-fetch` if response type is `opaque` [#441]
 - improve `prevent-xhr` — modify response [#415]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...HEAD
 [#451]: https://github.com/AdguardTeam/Scriptlets/issues/451
 [#415]: https://github.com/AdguardTeam/Scriptlets/issues/415
+[#441]: https://github.com/AdguardTeam/Scriptlets/issues/441
 
 ## [v1.12.1] - 2024-09-20
 

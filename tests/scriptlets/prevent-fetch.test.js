@@ -343,6 +343,7 @@ if (!isSupported) {
         assert.strictEqual(response.status, 0, 'Response status is set to 0');
         assert.strictEqual(response.statusText, '', 'Response statusText is set to empty string');
         assert.strictEqual(response.body, null, 'Response body is set to null');
+        assert.strictEqual(response.ok, false, 'Response ok is set to false');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });

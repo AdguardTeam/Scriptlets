@@ -188,7 +188,7 @@
         },
         {
             "adg": "prevent-window-open",
-            "ubo": "no-window-open-if.js (nowoif.js, prevent-window-open.js, window.open-defuser.js)"
+            "ubo": "prevent-window-open.js (nowoif.js, no-window-open-if.js, window.open-defuser.js)"
         },
         {
             "adg": "remove-attr",

@@ -117,7 +117,7 @@ export const noopPromiseResolve = (
 
     /**
      * If responseType is opaque, then by default
-     * body is null, status is 0, statusText and url are empty strings,
+     * body is null, ok is false, status is 0, statusText and url are empty strings,
      * as per https://fetch.spec.whatwg.org/#concept-filtered-response-opaque
      * It's required to mock these properties to avoid adblock detection
      * https://github.com/AdguardTeam/Scriptlets/issues/364
@@ -126,6 +126,7 @@ export const noopPromiseResolve = (
         Object.defineProperties(response, {
             body: { value: null },
             status: { value: 0 },
+            ok: { value: false },
             statusText: { value: '' },
             url: { value: '' },
             type: { value: responseType },
