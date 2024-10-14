@@ -53,6 +53,8 @@ import {
  *         - `allowed`
  *         - `denied`
  *         - `$remove$` — remove specific item from sessionStorage
+ *         - `forbidden`
+ *         - `forever`
  *
  * ### Examples
  *

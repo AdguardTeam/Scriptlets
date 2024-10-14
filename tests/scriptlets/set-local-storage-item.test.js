@@ -177,6 +177,20 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
         assert.strictEqual(window.localStorage.getItem(iName), 'denied', 'localStorage item has been set');
         clearStorageItem(iName);
+
+        iName = '__test-item_forbidden';
+        iValue = 'forbidden';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), 'forbidden', 'localStorage item has been set');
+        clearStorageItem(iName);
+
+        iName = '__test-item_forever';
+        iValue = 'forever';
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.localStorage.getItem(iName), 'forever', 'localStorage item has been set');
+        clearStorageItem(iName);
     });
 
     test('Set localStorage key with invalid value', (assert) => {

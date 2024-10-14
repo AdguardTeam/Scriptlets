@@ -78,6 +78,8 @@ export const getLimitedStorageItemValue = (value: string): StorageItemValue | nu
         'rejected',
         'allowed',
         'denied',
+        'forbidden',
+        'forever',
     ]);
 
     let validValue;

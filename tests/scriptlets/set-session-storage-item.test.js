@@ -177,6 +177,20 @@ if (isSafariBrowser()) {
         assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
         assert.strictEqual(window.sessionStorage.getItem(cName), 'denied', 'sessionStorage item has been set');
         clearStorageItem(cName);
+
+        cName = '__test-item_forbidden';
+        cValue = 'forbidden';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'forbidden', 'sessionStorage item has been set');
+        clearStorageItem(cName);
+
+        cName = '__test-item_forever';
+        cValue = 'forever';
+        runScriptlet(name, [cName, cValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+        assert.strictEqual(window.sessionStorage.getItem(cName), 'forever', 'sessionStorage item has been set');
+        clearStorageItem(cName);
     });
 
     test('Set sessionStorage key with invalid value', (assert) => {

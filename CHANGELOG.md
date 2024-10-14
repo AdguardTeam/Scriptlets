@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - `prevent-canvas` scriptlet [#451]
+- new values to `set-cookie` and `set-local-storage-item` scriptlets: `forbidden`, `forever` [#458]
 
 ### Changed
 
@@ -27,6 +28,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#415]: https://github.com/AdguardTeam/Scriptlets/issues/415
 [#414]: https://github.com/AdguardTeam/Scriptlets/issues/414
 [#441]: https://github.com/AdguardTeam/Scriptlets/issues/441
+[#458]: https://github.com/AdguardTeam/Scriptlets/issues/458
 
 ## [v1.12.1] - 2024-09-20
 

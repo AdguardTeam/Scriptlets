@@ -53,6 +53,8 @@ import {
  *         - `allowed`
  *         - `denied`
  *         - `$remove$` — remove specific item from localStorage
+ *         - `forbidden`
+ *         - `forever`
  *
  * ### Examples
  *
