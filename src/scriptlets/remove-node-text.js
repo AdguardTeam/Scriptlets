@@ -26,13 +26,14 @@ import {
  * ### Syntax
  *
  * ```adblock
- * example.org#%#//scriptlet('remove-node-text', nodeName, condition)
+ * example.org#%#//scriptlet('remove-node-text', nodeName, textMatch[, parentSelector])
  * ```
  *
  * - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
  * Must target lowercased node names, e.g `div` instead of `DIV`.
  * - `textMatch` — required, string or RegExp to match against node's text content.
  * If matched, the whole text will be removed. Case sensitive.
+ * - `parentSelector` — optional, string, CSS selector to match parent node.
  *
  * ### Examples
  *
@@ -68,10 +69,32 @@ import {
  *     <span>some text</span>
  *     ```
  *
+ * 3. Remove node's text content, matching parent node:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('remove-node-text', '#text', 'some text', '.container')
+ *     ```
+ *
+ *     ```html
+ *     <!-- before -->
+ *     <div class="container">
+ *          some text
+ *      </div>
+ *     <div class="section">
+ *          some text
+ *      </div>
+ *     <!-- after -->
+ *     <div class="container">
+ *     </div>
+ *     <div class="section">
+ *          some text
+ *      </div>
+ *     ```
+ *
  * @added v1.9.37.
  */
 /* eslint-enable max-len */
-export function removeNodeText(source, nodeName, textMatch) {
+export function removeNodeText(source, nodeName, textMatch, parentSelector) {
     const {
         selector,
         nodeNameMatch,
@@ -102,11 +125,11 @@ export function removeNodeText(source, nodeName, textMatch) {
 
     // Apply dedicated handler to already rendered nodes...
     if (document.documentElement) {
-        handleExistingNodes(selector, handleNodes);
+        handleExistingNodes(selector, handleNodes, parentSelector);
     }
 
     // and newly added nodes
-    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes));
+    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes, selector, parentSelector));
 }
 
 removeNodeText.names = [
