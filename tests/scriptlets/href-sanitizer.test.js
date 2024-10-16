@@ -4,6 +4,14 @@ import { runScriptlet, clearGlobalProps } from '../helpers';
 const { test, module } = QUnit;
 const name = 'href-sanitizer';
 
+/**
+ * Create link with href attribute and optional text and additional attribute
+ * @param {string} href - link href
+ * @param {string} text - link text
+ * @param {string} attributeName - additional attribute name
+ * @param {string} attributeValue - additional attribute value
+ * @returns {HTMLAnchorElement} - created link element
+ */
 const createElem = (href, text, attributeName, attributeValue) => {
     const a = document.createElement('a');
     a.setAttribute('href', href);
@@ -56,7 +64,107 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
-test('Santize href - text content', (assert) => {
+test('Sanitize href - no URL was found in base64', (assert) => {
+    // encoded string is 'some text, no urls'
+    const hrefWithBase64 = 'http://foo.com/#c29tZSB0ZXh0LCBubyB1cmxz';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href]';
+
+    const scriptletArgs = [selector, '[href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), hrefWithBase64, 'href has not been changed');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - no URL was found in base64 string in query parameter', (assert) => {
+    const hrefWithBase64 = 'http://www.foo.com/out/?aGVsbG9fZGFya25lc3M=&aGVsbG9fZGFya25lc3M=';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href]';
+
+    const scriptletArgs = [selector, '[href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), hrefWithBase64, 'href has not been changed');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - decode base64 string in query parameter', (assert) => {
+    const hrefWithBase64 = 'http://www.foo.com/out/?aGVsbG9fZGFya25lc3M=&aHR0cDovL2V4YW1wbGUuY29tLz92PTEyMw==';
+    const expectedHref = 'http://example.com/?v=123';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href]';
+
+    const scriptletArgs = [selector, '[href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - decode base64 string in anchor(#) of href attribute link', (assert) => {
+    const expectedHref = 'http://example.com/?v=123';
+    const hrefWithBase64 = 'http://foo.com/#aHR0cDovL2V4YW1wbGUuY29tLz92PTEyMw==';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href]';
+
+    const scriptletArgs = [selector, '[href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - decode base64 string in hashbang(#!) of href attribute link few times', (assert) => {
+    const expectedHref = 'https://www.example.com/file/123/file.rar/file';
+    const hrefWithBase64 = 'https://foo.com/#!WVVoU01HTklUVFpNZVRrelpETmpkVnBZYUdoaVdFSnpXbE0xYW1JeU1IWmFiV3h6V2xNNGVFMXFUWFphYld4eldsTTFlVmxZU1haYWJXeHpXbEU5UFE9PQ==';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href]';
+
+    const scriptletArgs = [selector, '[href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - decode base64 string in data-href attribute', (assert) => {
+    const expectedHref = 'https://example.org/';
+    const elem = createElem('https://google.com/', expectedHref, 'data-href', 'aHR0cHM6Ly9leGFtcGxlLm9yZy8=');
+    const selector = 'a[href^="https://google.com/';
+
+    const scriptletArgs = [selector, '[data-href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - decode base64 string in href attribute', (assert) => {
+    const expectedHref = 'http://example.com/?v=123';
+    const hrefWithBase64 = 'http://www.foo.com/out/?aHR0cDovL2V4YW1wbGUuY29tLz92PTEyMw==';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href*="out/?"]';
+    const scriptletArgs = [selector, '[href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized and base64 was decoded');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - base64 where link decoded in object in search query ', (assert) => {
+    const expectedHref = 'http://example.com/?v=3468';
+    const hrefWithBase64 = 'http://www.foo.com/out/?eyJsIjoiaHR0cDovL2V4YW1wbGUuY29tLz92PTM0NjgiLCJjIjoxfQ==';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href*="out/?"]';
+    const scriptletArgs = [selector, '[href]', 'base64decode'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized and base64 was decoded');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - text content', (assert) => {
     const expectedHref = 'https://example.org/';
     const elem = createElem('https://example.com/foo?redirect=https%3A%2F%2Fexample.org%2F', expectedHref);
     const selector = 'a[href*="?redirect="]';
@@ -68,7 +176,7 @@ test('Santize href - text content', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - text content, create element after running scriptlet', (assert) => {
+test('Sanitize href - text content, create element after running scriptlet', (assert) => {
     const selector = 'a[href*="foo.com"]';
     const scriptletArgs = [selector];
     runScriptlet(name, scriptletArgs);
@@ -84,7 +192,7 @@ test('Santize href - text content, create element after running scriptlet', (ass
     }, 10);
 });
 
-test('Santize href - text content special characters', (assert) => {
+test('Sanitize href - text content special characters', (assert) => {
     const expectedHref = 'https://example.com/search?q=łódź';
     const elem = createElem('https://example.org/foo', expectedHref);
     const selector = 'a[href*="//example.org"]';
@@ -96,7 +204,7 @@ test('Santize href - text content special characters', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - text content, Twitter like case', (assert) => {
+test('Sanitize href - text content, Twitter like case', (assert) => {
     const elem = createElem('https://example.com/foo', 'https://agrd.io/promo_turk_83off…'); // Link from Twitter/X
     const expectedHref = 'https://agrd.io/promo_turk_83off';
     const selector = 'a[href*="//example.com"]';
@@ -108,7 +216,7 @@ test('Santize href - text content, Twitter like case', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - query parameter 1', (assert) => {
+test('Sanitize href - query parameter 1', (assert) => {
     const elem = createElem('https://example.com/foo?redirect=https://example.org/');
     const expectedHref = 'https://example.org/';
     const selector = 'a[href*="?redirect="]';
@@ -121,7 +229,7 @@ test('Santize href - query parameter 1', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - query parameter 2', (assert) => {
+test('Sanitize href - query parameter 2', (assert) => {
     const elem = createElem('https://greenmangaming.sjv.io/c/3659980/1281797/15105?u=https://www.greenmangaming.com/games/grand-theft-auto-v-premium-edition-pc');
     const expectedHref = 'https://www.greenmangaming.com/games/grand-theft-auto-v-premium-edition-pc';
     const selector = 'a[href^="https://greenmangaming.sjv.io/c/"][href*="?u="]';
@@ -134,7 +242,7 @@ test('Santize href - query parameter 2', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - get href from attribute', (assert) => {
+test('Sanitize href - get href from attribute', (assert) => {
     const expectedHref = 'https://example.org/';
     const elem = createElem('https://foo.com/bar', '', 'data-href', expectedHref);
     const selector = 'a[href="https://foo.com/bar"]';
@@ -147,7 +255,7 @@ test('Santize href - get href from attribute', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - invalid URL', (assert) => {
+test('Sanitize href - invalid URL', (assert) => {
     const expectedHref = 'https://foo.com/bar';
     const elem = createElem(expectedHref, 'https://?');
     const selector = 'a[href="https://foo.com/bar"]';
@@ -159,7 +267,7 @@ test('Santize href - invalid URL', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - parameter, invalid URL', (assert) => {
+test('Sanitize href - parameter, invalid URL', (assert) => {
     const expectedHref = 'https://?example.com/foo?redirect=https://example.org/';
     const elem = createElem(expectedHref);
     const selector = 'a[href*="?redirect="]';
@@ -172,7 +280,7 @@ test('Santize href - parameter, invalid URL', (assert) => {
     assert.strictEqual(window.hit, 'FIRED');
 });
 
-test('Santize href - not allowed protocol', (assert) => {
+test('Sanitize href - not allowed protocol', (assert) => {
     const expectedHref = 'https://example.com/foo?redirect=javascript:alert(1)';
     const elem = createElem(expectedHref);
     const selector = 'a[href*="?redirect="]';
