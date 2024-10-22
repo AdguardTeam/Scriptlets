@@ -44,7 +44,18 @@ export const runScriptlet = (name, args, verbose = true) => {
         verbose,
     };
     const resultString = window.scriptlets.invoke(params);
-    evalWrapper(resultString);
+
+    // Create a trustedTypes policy for eval,
+    // it's required for a test with CSP "require-trusted-types-for" for "trusted-replace-node-text" scriptlet
+    if (window.trustedTypes) {
+        const policy = window.trustedTypes.createPolicy('myEscapePolicy', {
+            createScript: (string) => string,
+        });
+        const sanitizedString = policy.createScript(resultString);
+        evalWrapper(sanitizedString);
+    } else {
+        evalWrapper(resultString);
+    }
 };
 
 /**

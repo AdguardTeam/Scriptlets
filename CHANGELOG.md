@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `trusted-types` policy to `trusted-replace-node-text` scriptlet [#457]
 - `prevent-canvas` scriptlet [#451]
 - `parentSelector` option to search for nodes for `remove-node-text` scriptlet [#397]
 - `transform` option with `base64decode` value for `href-sanitizer` scriptlet [#455]
@@ -33,6 +34,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#441]: https://github.com/AdguardTeam/Scriptlets/issues/441
 [#397]: https://github.com/AdguardTeam/Scriptlets/issues/397
 [#458]: https://github.com/AdguardTeam/Scriptlets/issues/458
+[#457]: https://github.com/AdguardTeam/Scriptlets/issues/457
 
 ## [v1.12.1] - 2024-09-20
 
