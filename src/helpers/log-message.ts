@@ -1,3 +1,5 @@
+import { Source } from '../../types/types';
+
 /**
  * Conditionally logs message to console.
  * Convention is to log messages by source.verbose if such log

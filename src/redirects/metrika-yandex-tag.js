@@ -134,7 +134,7 @@ export function metrikaYandexTag(source) {
     hit(source);
 }
 
-metrikaYandexTag.names = [
+export const metrikaYandexTagNames =[
     'metrika-yandex-tag',
 ];
 

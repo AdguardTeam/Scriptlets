@@ -1,4 +1,4 @@
-interface FlagsData {
+export interface FlagsData {
     ASAP: string;
     COMPLETE: string;
     STAY: string;

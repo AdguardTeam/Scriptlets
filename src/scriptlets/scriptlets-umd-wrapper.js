@@ -1,3 +1,4 @@
+// FIXME remove
 import scriptletsObject from './index';
 
 /**

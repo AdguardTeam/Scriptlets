@@ -101,7 +101,7 @@ export function adjustSetInterval(source, matchCallback, matchDelay, boost) {
     window.setInterval = intervalWrapper;
 }
 
-adjustSetInterval.names = [
+export const adjustSetIntervalNames =[
     'adjust-setInterval',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js',

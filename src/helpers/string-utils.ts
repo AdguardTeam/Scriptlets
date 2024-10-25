@@ -5,6 +5,7 @@ import {
     getNumberFromString,
     getRandomIntInclusive,
 } from './number-utils';
+import { ArbitraryObject } from '../../types/types';
 
 /**
  * A literal string or regexp pattern wrapped in forward slashes.

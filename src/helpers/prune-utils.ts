@@ -3,6 +3,7 @@ import { getWildcardPropertyInChain } from './get-wildcard-property-in-chain';
 import { logMessage } from './log-message';
 import { toRegExp } from './string-utils';
 import { matchStackTrace } from './match-stack';
+import { ArbitraryObject, ChainBase, Source } from '../../types/types';
 
 /**
  * Checks if prunning is required

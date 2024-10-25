@@ -47,7 +47,7 @@ export function preventBab2(source) {
     hit(source);
 }
 
-preventBab2.names = [
+export const preventBab2Names =[
     'prevent-bab2',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nobab2.js',

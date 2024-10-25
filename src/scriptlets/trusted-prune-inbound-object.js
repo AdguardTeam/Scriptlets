@@ -131,7 +131,7 @@ export function trustedPruneInboundObject(source, functionName, propsToRemove, r
     base[prop] = new Proxy(base[prop], objectHandler);
 }
 
-trustedPruneInboundObject.names = [
+export const trustedPruneInboundObjectNames =[
     'trusted-prune-inbound-object',
     // trusted scriptlets support no aliases
 ];

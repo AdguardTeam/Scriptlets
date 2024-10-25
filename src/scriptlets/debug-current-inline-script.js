@@ -122,7 +122,7 @@ export function debugCurrentInlineScript(source, property, search) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-debugCurrentInlineScript.names = [
+export const debugCurrentInlineScriptNames =[
     'debug-current-inline-script',
 ];
 

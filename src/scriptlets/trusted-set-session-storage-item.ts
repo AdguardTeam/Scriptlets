@@ -5,6 +5,7 @@ import {
     setStorageItem,
     parseKeywordValue,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /* eslint-disable max-len */
 /**
@@ -91,7 +92,7 @@ export function trustedSetSessionStorageItem(
     hit(source);
 }
 
-trustedSetSessionStorageItem.names = [
+export const trustedSetSessionStorageItemNames =[
     'trusted-set-session-storage-item',
     // trusted scriptlets support no aliases
 ];

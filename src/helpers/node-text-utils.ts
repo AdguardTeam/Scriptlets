@@ -2,6 +2,7 @@ import { hit } from './hit';
 import { nodeListToArray } from './array-utils';
 import { getAddedNodes } from './observer';
 import { toRegExp } from './string-utils';
+import { Source } from '../../types/types';
 
 type NodeHandler = (nodes: Node[]) => void;
 

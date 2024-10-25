@@ -77,7 +77,7 @@ export function abortOnPropertyWrite(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-abortOnPropertyWrite.names = [
+export const abortOnPropertyWriteNames =[
     'abort-on-property-write',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-write.js',

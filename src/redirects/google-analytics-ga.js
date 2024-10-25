@@ -125,7 +125,7 @@ export function GoogleAnalyticsGa(source) {
     hit(source);
 }
 
-GoogleAnalyticsGa.names = [
+export const GoogleAnalyticsGaNames =[
     'google-analytics-ga',
     'ubo-google-analytics_ga.js',
     'google-analytics_ga.js',

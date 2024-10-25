@@ -1,5 +1,7 @@
 /* eslint-disable no-console, no-underscore-dangle */
 
+import { ArbitraryFunction, Source } from '../../types/types';
+
 declare global {
     interface Window {
         __debug?: ArbitraryFunction;

@@ -4,9 +4,9 @@ import yaml from 'js-yaml';
 import fs from 'fs-extra';
 import path from 'path';
 import { EOL } from 'os';
-
 import { minify } from 'terser';
-import * as redirectsList from '../src/redirects/redirects-list';
+
+import * as redirectsNamesLists from '../src/redirects/redirects-names-list';
 import { version } from '../package.json';
 import { rollupStandard } from './rollup-runners';
 import { writeFile, getDataFromFiles } from './helpers';
@@ -16,11 +16,7 @@ import {
     DIST_DIR_NAME,
     CORELIBS_REDIRECTS_FILE_NAME,
 } from './constants';
-import {
-    redirectsListConfig,
-    click2LoadConfig,
-    redirectsPrebuildConfig,
-} from '../rollup.config';
+import { redirectsListConfig, click2LoadConfig, redirectsPrebuildConfig } from '../rollup.config';
 
 const FILE_NAME = 'redirects.yml';
 const PATH_TO_DIST = `./${DIST_DIR_NAME}`;
@@ -94,18 +90,21 @@ const getJsRedirects = async (options = {}) => {
     const getCode = (() => {
         if (code) {
             // eslint-disable-next-line import/no-unresolved,global-require
-            const { redirects } = require('../tmp/redirects');
-            return redirects.getCode;
+            const { getRedirectCode } = require('../tmp/redirects');
+            return getRedirectCode;
         }
         return () => '';
     })();
 
-    let listOfRedirectsData = Object
-        .values(redirectsList)
-        .map((rr) => {
-            const [name, ...aliases] = rr.names;
+    const redirectNamesList = Object.entries(redirectsNamesLists);
+
+    console.log(redirectNamesList);
+
+    let listOfRedirectsData = redirectNamesList
+        .map(([key, redirectNames]) => {
+            const [name, ...aliases] = redirectNames;
             const source = {
-                name,
+                name: key.replace(/Names$/i, ''),
                 args: [],
             };
 

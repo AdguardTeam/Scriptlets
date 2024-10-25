@@ -88,7 +88,7 @@ export function preventAdfly(source) {
     }
 }
 
-preventAdfly.names = [
+export const preventAdflyNames =[
     'prevent-adfly',
     // there are no aliases for this scriptlet
 ];

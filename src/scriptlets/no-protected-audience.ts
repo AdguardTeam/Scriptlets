@@ -5,6 +5,7 @@ import {
     noopResolveVoid,
     noopResolveNull,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /**
  * @scriptlet no-protected-audience
@@ -56,7 +57,7 @@ export function noProtectedAudience(source: Source) {
     hit(source);
 }
 
-noProtectedAudience.names = [
+export const noProtectedAudienceNames =[
     'no-protected-audience',
 ];
 

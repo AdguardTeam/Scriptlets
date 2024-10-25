@@ -424,7 +424,7 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
     setChainPropAccess(window, property);
 }
 
-setConstant.names = [
+export const setConstantNames =[
     'set-constant',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js',

@@ -25,6 +25,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /**
  * @scriptlet json-prune-xhr-response
@@ -338,7 +339,7 @@ export function jsonPruneXhrResponse(
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
-jsonPruneXhrResponse.names = [
+export const jsonPruneXhrResponseNames =[
     'json-prune-xhr-response',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune-xhr-response.js',

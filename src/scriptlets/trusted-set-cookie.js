@@ -137,7 +137,7 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
     hit(source);
 }
 
-trustedSetCookie.names = [
+export const trustedSetCookieNames =[
     'trusted-set-cookie',
     // trusted scriptlets support no aliases
 ];

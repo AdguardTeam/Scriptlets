@@ -139,7 +139,7 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
     }
 }
 
-removeAttr.names = [
+export const removeAttrNames =[
     'remove-attr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js',

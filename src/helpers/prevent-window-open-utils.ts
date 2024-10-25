@@ -6,6 +6,7 @@ import {
     substringBefore,
     substringAfter,
 } from './string-utils';
+import { ArbitraryObject, NoopFunc, TrueFunc } from '../../types/types';
 
 type ReplacementResult = NoopFunc | TrueFunc | { [key: string]: NoopFunc } | undefined;
 

@@ -108,7 +108,7 @@ export function setCookieReload(source, name, value, path = '/', domain = '') {
     }
 }
 
-setCookieReload.names = [
+export const setCookieReloadNames =[
     'set-cookie-reload',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-cookie-reload.js',

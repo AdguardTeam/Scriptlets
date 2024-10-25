@@ -146,7 +146,7 @@ export function abortOnStackTrace(source, property, stack) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-abortOnStackTrace.names = [
+export const abortOnStackTraceNames =[
     'abort-on-stack-trace',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js',

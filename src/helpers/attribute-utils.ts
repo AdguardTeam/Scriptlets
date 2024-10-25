@@ -1,5 +1,6 @@
 import { logMessage } from './log-message';
 import { hit } from './hit';
+import { Source } from '../../types/types';
 
 /**
  * Sets attribute with given value to given element.

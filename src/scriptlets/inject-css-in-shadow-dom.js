@@ -78,7 +78,7 @@ export function injectCssInShadowDom(source, cssRule, hostSelector = '') {
     hijackAttachShadow(window, hostSelector, callback);
 }
 
-injectCssInShadowDom.names = [
+export const injectCssInShadowDomNames =[
     'inject-css-in-shadow-dom',
 ];
 

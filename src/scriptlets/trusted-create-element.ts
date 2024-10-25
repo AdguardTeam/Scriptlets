@@ -8,6 +8,7 @@ import {
 } from '../helpers/index';
 
 import type { ParsedAttributePair } from '../helpers/attribute-utils';
+import { Source } from '../../types/types';
 
 /* eslint-disable max-len */
 /**
@@ -191,7 +192,7 @@ export function trustedCreateElement(
     }
 }
 
-trustedCreateElement.names = [
+export const trustedCreateElementNames =[
     'trusted-create-element',
     // trusted scriptlets support no aliases
 ];

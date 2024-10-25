@@ -6,6 +6,7 @@ import {
     // because they are used by helpers above
     throttle,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /**
  * @scriptlet href-sanitizer
@@ -438,7 +439,7 @@ export function hrefSanitizer(
     }
 }
 
-hrefSanitizer.names = [
+export const hrefSanitizerNames =[
     'href-sanitizer',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'href-sanitizer.js',

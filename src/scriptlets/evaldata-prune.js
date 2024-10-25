@@ -121,7 +121,7 @@ export function evalDataPrune(source, propsToRemove, requiredInitialProps, stack
     window.eval = new Proxy(window.eval, evalHandler);
 }
 
-evalDataPrune.names = [
+export const evalDataPruneNames =[
     'evaldata-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'evaldata-prune.js',

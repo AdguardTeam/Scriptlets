@@ -1,4 +1,4 @@
-import { NaverWcslog } from '../redirects/naver-wcslog';
+import { NaverWcslog, NaverWcslogNames } from '../redirects/naver-wcslog';
 
 /**
  * @scriptlet naver-wcslog
@@ -14,4 +14,4 @@ import { NaverWcslog } from '../redirects/naver-wcslog';
  *
  * @added v1.10.25.
  */
-export { NaverWcslog };
+export { NaverWcslog, NaverWcslogNames };

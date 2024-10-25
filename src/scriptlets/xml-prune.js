@@ -406,7 +406,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
-xmlPrune.names = [
+export const xmlPruneNames =[
     'xml-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'xml-prune.js',

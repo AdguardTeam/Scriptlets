@@ -157,7 +157,7 @@ export function setAttr(source, selector, attr, value = '') {
     observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value, attributeHandler), true);
 }
 
-setAttr.names = [
+export const setAttrNames =[
     'set-attr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-attr.js',

@@ -1,5 +1,6 @@
 import { isArbitraryObject } from './object-utils';
 import { nativeIsNaN } from './number-utils';
+import { ArbitraryObject } from '../../types/types';
 
 /**
  * Matches an arbitrary value by matcher value.

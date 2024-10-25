@@ -135,7 +135,7 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
     observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes));
 }
 
-trustedReplaceNodeText.names = [
+export const trustedReplaceNodeTextNames =[
     'trusted-replace-node-text',
     // trusted scriptlets support no aliases
 ];

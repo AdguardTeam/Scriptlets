@@ -8,6 +8,7 @@ import {
     escapeRegExp,
     isValidStrPattern,
 } from '../helpers';
+import { Source } from '../../types/types';
 
 /**
  * @scriptlet prevent-canvas
@@ -85,7 +86,7 @@ export function preventCanvas(source: Source, contextType?: string) {
     );
 }
 
-preventCanvas.names = [
+export const preventCanvasNames =[
     'prevent-canvas',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'prevent-canvas.js',

@@ -1,4 +1,4 @@
-import { noeval } from '../scriptlets/noeval';
+import { noeval, noevalNames } from '../scriptlets/noeval';
 
 /**
  * @redirect noeval
@@ -23,4 +23,4 @@ import { noeval } from '../scriptlets/noeval';
  *
  * @added v1.0.4.
  */
-export { noeval };
+export { noeval, noevalNames };

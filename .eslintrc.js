@@ -67,6 +67,17 @@ module.exports = {
         'jsdoc/require-returns': 'off',
         'jsdoc/require-returns-description': 0,
         'jsdoc/no-defaults': 0,
+        'import-newlines/enforce': ['error', { items: 3, 'max-len': 120 }],
+        // Split external and internal imports with an empty line
+        'import/order': [
+            'error',
+            {
+                groups: [
+                    ['builtin', 'external'],
+                ],
+                'newlines-between': 'always',
+            },
+        ],
     },
     overrides: [
         {

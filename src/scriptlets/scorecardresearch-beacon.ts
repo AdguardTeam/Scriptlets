@@ -1,4 +1,4 @@
-import { ScoreCardResearchBeacon } from '../redirects/scorecardresearch-beacon';
+import { ScoreCardResearchBeacon, ScoreCardResearchBeaconNames } from '../redirects/scorecardresearch-beacon';
 
 /**
  * @scriptlet scorecardresearch-beacon
@@ -13,4 +13,4 @@ import { ScoreCardResearchBeacon } from '../redirects/scorecardresearch-beacon';
  *
  * @added v1.10.25.
  */
-export { ScoreCardResearchBeacon };
+export { ScoreCardResearchBeacon, ScoreCardResearchBeaconNames };

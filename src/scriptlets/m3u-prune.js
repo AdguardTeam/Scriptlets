@@ -532,7 +532,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '', verbose = false
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
-m3uPrune.names = [
+export const m3uPruneNames =[
     'm3u-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'm3u-prune.js',

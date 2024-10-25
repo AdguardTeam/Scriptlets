@@ -84,7 +84,7 @@ export function removeInShadowDom(source, selector, baseSelector) {
     observeDOMChanges(removeHandler, true);
 }
 
-removeInShadowDom.names = [
+export const removeInShadowDomNames =[
     'remove-in-shadow-dom',
 ];
 

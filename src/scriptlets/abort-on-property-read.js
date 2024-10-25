@@ -83,7 +83,7 @@ export function abortOnPropertyRead(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-abortOnPropertyRead.names = [
+export const abortOnPropertyReadNames =[
     'abort-on-property-read',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-read.js',

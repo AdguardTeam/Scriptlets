@@ -117,7 +117,7 @@ export function preventRequestAnimationFrame(source, match) {
     window.requestAnimationFrame = rafWrapper;
 }
 
-preventRequestAnimationFrame.names = [
+export const preventRequestAnimationFrameNames =[
     'prevent-requestAnimationFrame',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js',

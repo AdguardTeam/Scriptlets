@@ -6,8 +6,7 @@ import {
     isValidScriptletRule,
     convertRedirectNameToAdg,
 } from '../../src/helpers/converter';
-
-import validator from '../../src/helpers/validator';
+import validator from '../../src/validators/validator';
 
 describe('checks that allowlist script rules are valid', () => {
     it('correctly validates allowlist script rules', () => {

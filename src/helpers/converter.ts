@@ -10,7 +10,7 @@ import {
     redirectsCompatibilityTable,
 } from '@adguard/agtree';
 
-import validator from './validator';
+import { validators } from '../validators';
 import { getRuleNode, getRuleText } from './rule-helpers';
 
 /**
@@ -26,20 +26,6 @@ type FilteredConversionMethods<ExcludedMethods extends keyof typeof RuleConverte
  * Conversion method type
  */
 type ConversionMethod = (typeof RuleConverter)[FilteredConversionMethods<'convertToAbp'>];
-
-/**
- * Checks if an array of rules is an array of scriptlet rules
- *
- * @param rules Array of rules
- * @returns True if all rules are scriptlet rules
- */
-const isArrayOfScriptletRules = (rules: AnyRule[]): rules is ScriptletInjectionRule[] => {
-    return rules.every(
-        (rule) => {
-            return rule.category === RuleCategory.Cosmetic && rule.type === CosmeticRuleType.ScriptletInjectionRule;
-        },
-    );
-};
 
 /**
  * Helper function to convert a scriptlet rule to a specific syntax
@@ -123,52 +109,6 @@ export const convertAdgScriptletToUbo = (rule: string | ScriptletInjectionRule):
     } catch (e) {
         return undefined;
     }
-};
-
-/**
- * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
- * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
- * by converting them into ADG syntax, and after that checks the name.
- *
- * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
- * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
- *
- * @param rule Any scriptlet rule — ADG or UBO or ABP.
- *
- * @returns True if scriptlet name is valid in rule.
- */
-export const isValidScriptletRule = (rule: string | ScriptletInjectionRule): boolean => {
-    let ruleNodes: AnyRule[];
-
-    try {
-        ruleNodes = RuleConverter.convertToAdg(getRuleNode(rule)).result;
-    } catch (e) {
-        return false;
-    }
-
-    if (!isArrayOfScriptletRules(ruleNodes)) {
-        return false;
-    }
-
-    // checking if each of parsed scriptlets is valid
-    // if at least one of them is not valid - whole `ruleText` is not valid too
-    const isValid = ruleNodes.every((ruleNode) => {
-        const name = ruleNode.body.children[0]?.children[0]?.value;
-
-        if (!name) {
-            return ruleNode.exception;
-        }
-
-        const unquotedName = QuoteUtils.removeQuotes(name);
-
-        if (!unquotedName) {
-            return false;
-        }
-
-        return validator.isValidScriptletName(unquotedName);
-    });
-
-    return isValid;
 };
 
 /**

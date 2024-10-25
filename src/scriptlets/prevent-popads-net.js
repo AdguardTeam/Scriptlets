@@ -37,7 +37,7 @@ export function preventPopadsNet(source) {
     hit(source);
 }
 
-preventPopadsNet.names = [
+export const preventPopadsNetNames =[
     'prevent-popads-net',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'popads.net.js',

@@ -6,8 +6,6 @@ import {
     createOnErrorHandler,
     hit,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
     getDescriptorAddon,
 } from '../helpers/index';
@@ -216,7 +214,7 @@ export function abortCurrentInlineScript(source, property, search) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-abortCurrentInlineScript.names = [
+export const abortCurrentInlineScriptNames = [
     'abort-current-inline-script',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-current-script.js',

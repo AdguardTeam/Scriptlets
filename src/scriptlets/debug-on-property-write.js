@@ -64,7 +64,7 @@ export function debugOnPropertyWrite(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-debugOnPropertyWrite.names = [
+export const debugOnPropertyWriteNames =[
     'debug-on-property-write',
 ];
 

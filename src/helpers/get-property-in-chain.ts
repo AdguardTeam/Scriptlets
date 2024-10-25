@@ -1,4 +1,5 @@
 import { isEmptyObject } from './object-utils';
+import { ChainBase, ChainInfo } from '../../types/types';
 
 /**
  * Check if the property exists in the base object (recursively)

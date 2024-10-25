@@ -1,4 +1,4 @@
-import { GoogleAnalytics } from '../redirects/google-analytics';
+import { GoogleAnalytics, GoogleAnalyticsNames } from '../redirects/google-analytics';
 
 /**
  * @scriptlet google-analytics
@@ -14,4 +14,4 @@ import { GoogleAnalytics } from '../redirects/google-analytics';
  *
  * @added v1.10.25.
  */
-export { GoogleAnalytics };
+export { GoogleAnalytics, GoogleAnalyticsNames };

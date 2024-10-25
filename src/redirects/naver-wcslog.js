@@ -26,6 +26,6 @@ export function NaverWcslog(source) {
     hit(source);
 }
 
-NaverWcslog.names = ['naver-wcslog'];
+export const NaverWcslogNames = ['naver-wcslog'];
 
 NaverWcslog.injections = [hit, noopFunc];

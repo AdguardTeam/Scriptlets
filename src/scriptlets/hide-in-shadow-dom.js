@@ -85,7 +85,7 @@ export function hideInShadowDom(source, selector, baseSelector) {
     observeDOMChanges(hideHandler, true);
 }
 
-hideInShadowDom.names = [
+export const hideInShadowDomNames =[
     'hide-in-shadow-dom',
 ];
 

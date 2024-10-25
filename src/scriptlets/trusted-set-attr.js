@@ -104,7 +104,7 @@ export function trustedSetAttr(source, selector, attr, value = '') {
     observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value), true);
 }
 
-trustedSetAttr.names = [
+export const trustedSetAttrNames =[
     'trusted-set-attr',
     // trusted scriptlets support no aliases
 ];

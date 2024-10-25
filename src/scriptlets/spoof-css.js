@@ -246,7 +246,7 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
     );
 }
 
-spoofCSS.names = [
+export const spoofCSSNames =[
     'spoof-css',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'spoof-css.js',

@@ -1,4 +1,4 @@
-import { metrikaYandexTag } from '../redirects/metrika-yandex-tag';
+import { metrikaYandexTag, metrikaYandexTagNames } from '../redirects/metrika-yandex-tag';
 
 /**
  * @scriptlet metrika-yandex-tag
@@ -15,4 +15,4 @@ import { metrikaYandexTag } from '../redirects/metrika-yandex-tag';
  *
  * @added v1.10.25.
  */
-export { metrikaYandexTag };
+export { metrikaYandexTag, metrikaYandexTagNames };

@@ -177,7 +177,7 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
     window.open.toString = nativeOpen.toString.bind(nativeOpen);
 }
 
-preventWindowOpen.names = [
+export const preventWindowOpenNames =[
     'prevent-window-open',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js',

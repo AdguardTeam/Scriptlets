@@ -253,7 +253,7 @@ export function trustedSetConstant(source, property, value, stack) {
     setChainPropAccess(window, property);
 }
 
-trustedSetConstant.names = [
+export const trustedSetConstantNames =[
     'trusted-set-constant',
     // trusted scriptlets support no aliases
 ];

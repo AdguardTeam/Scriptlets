@@ -12,6 +12,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /* eslint-disable max-len */
 /**
@@ -281,7 +282,7 @@ export function trustedReplaceOutboundText(
     base[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
-trustedReplaceOutboundText.names = [
+export const trustedReplaceOutboundTextNames =[
     'trusted-replace-outbound-text',
     // trusted scriptlets support no aliases
 ];

@@ -17,6 +17,7 @@
  */
 import path from 'path';
 import { minify } from 'terser';
+
 import { addCall, attachDependencies } from '../src/helpers/injector';
 import { writeFile } from './helpers';
 
@@ -45,11 +46,22 @@ const getScriptletFunctionsString = () => {
 
     const scriptletsString = scriptletsStrings.join('\n');
 
-    const scriptletsMapString = `const scriptletsMap = {\n${scriptletsFunctions.map((scriptlet) => {
-        return scriptlet.names.map((name) => {
-            return `'${name}': ${scriptlet.name}`;
-        }).join(',\n');
-    }).join(',\n')}\n}`;
+    // eslint-disable-next-line global-require
+    const scriptletsNamesList = require('../src/scriptlets/scriptlets-names-list');
+    const scriptletNamesList = Object.entries(scriptletsNamesList);
+
+    const scriptletsMapString = `const scriptletsMap = {\n${scriptletNamesList
+        .map(([scriptletNamesKey, scriptletNames]) => {
+        // FIXME try to add scriptlet name to the exported names
+            if (scriptletNames) {
+                const scriptletName = scriptletNamesKey.replace(/Names$/i, '');
+                return scriptletNames.map((name) => {
+                    return `'${name}': ${scriptletName}`;
+                })
+                    .join(',\n');
+            }
+            return '';
+        }).filter((arg) => arg).join(',\n')}\n}`;
 
     const exportString = `var getScriptletFunction = (name) => {
         return scriptletsMap[name];

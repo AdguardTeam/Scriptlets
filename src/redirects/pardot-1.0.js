@@ -55,7 +55,7 @@ export function Pardot(source) {
     hit(source);
 }
 
-Pardot.names = ['pardot-1.0'];
+export const PardotNames = ['pardot-1.0'];
 
 Pardot.injections = [
     hit,

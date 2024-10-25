@@ -1,4 +1,7 @@
-import { GoogleSyndicationAdsByGoogle } from '../redirects/googlesyndication-adsbygoogle';
+import {
+    GoogleSyndicationAdsByGoogle,
+    GoogleSyndicationAdsByGoogleNames,
+} from '../redirects/googlesyndication-adsbygoogle';
 
 /**
  * @scriptlet googlesyndication-adsbygoogle
@@ -14,4 +17,4 @@ import { GoogleSyndicationAdsByGoogle } from '../redirects/googlesyndication-ads
  *
  * @added v1.10.25.
  */
-export { GoogleSyndicationAdsByGoogle };
+export { GoogleSyndicationAdsByGoogle, GoogleSyndicationAdsByGoogleNames };

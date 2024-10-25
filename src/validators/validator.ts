@@ -1,15 +1,22 @@
 import {
     AdblockSyntax,
+    AnyRule,
     CosmeticRuleType,
     GenericPlatform,
     modifiersCompatibilityTable,
     NetworkRuleType,
+    QuoteUtils,
     redirectsCompatibilityTable,
     RuleCategory,
-    SpecificPlatform,
+    RuleConverter,
+    ScriptletInjectionRule,
+    type SpecificPlatform,
 } from '@adguard/agtree';
-import * as scriptletListRaw from '../scriptlets/scriptlets-list';
-import { getRuleNode } from './rule-helpers';
+
+// FIXME try to get rid of this by moving names of the scriptlets separately from the scriptlets
+import * as scriptletsNamesList from '../scriptlets/scriptlets-names-list';
+import { getRuleNode } from '../helpers/rule-helpers';
+import { Scriptlet } from '../../types/types';
 
 /* ************************************************************************
  *
@@ -44,7 +51,7 @@ const isScriptletRuleForSyntax = (rule: string, syntax: AdblockSyntax): boolean 
  * @param rule - rule text
  * @returns true if given rule is adg rule
  */
-const isAdgScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Adg);
+export const isAdgScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Adg);
 
 /**
  * Checks if the `rule` is uBO scriptlet rule
@@ -52,7 +59,7 @@ const isAdgScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(r
  * @param rule rule text
  * @returns true if given rule is ubo rule
  */
-const isUboScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Ubo);
+export const isUboScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Ubo);
 
 /**
  * Checks if the `rule` is AdBlock Plus snippet
@@ -60,39 +67,43 @@ const isUboScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(r
  * @param rule rule text
  * @returns true if given rule is abp rule
  */
-const isAbpSnippetRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Abp);
+export const isAbpSnippetRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Abp);
 
+// we use it for avoiding redundant search
+let scriptletsNamesContainer: Set<string>;
 /**
  * Returns array of scriptlet objects.
  * Needed for scriptlet name validation which will check aliases names.
  *
  * @returns Array of all scriptlet objects.
  */
-const getScriptletsObjList = () => {
-    return Object.values(scriptletListRaw);
+const getScriptletsNames = (): Set<string> => {
+    if (scriptletsNamesContainer) {
+        return scriptletsNamesContainer;
+    }
+
+    scriptletsNamesContainer = new Set<string>();
+
+    const names = Object.values(scriptletsNamesList).flat();
+
+    scriptletsNamesContainer = new Set<string>(names);
+
+    return scriptletsNamesContainer;
 };
 
 /**
  * Finds scriptlet by the `name`.
  *
  * @param name Scriptlet name.
- * @param scriptlets Array of all scriptlet objects.
- * @returns {Function} Scriptlet function.
  */
-const getScriptletByName = (name: string, scriptlets: Scriptlet[]): Scriptlet | undefined => {
-    const allScriptletsFns = scriptlets || getScriptletsObjList();
-
-    return allScriptletsFns.find((s) => {
-        return s.names
-            // full match name checking
-            && (s.names.includes(name)
-                // or check ubo alias name without '.js' at the end
-                || (!name.endsWith(UBO_JS_SUFFIX) && s.names.includes(`${name}${UBO_JS_SUFFIX}`))
-            );
-    });
+const hasScriptlet = (
+    name: string,
+): boolean => {
+    const scriptletsNames = getScriptletsNames();
+    console.log(scriptletsNames);
+    return scriptletsNames.has(name)
+        || (!name.endsWith(UBO_JS_SUFFIX) && scriptletsNames.has(`${name}${UBO_JS_SUFFIX}`));
 };
-
-const scriptletObjects = getScriptletsObjList();
 
 /**
  * Checks whether the scriptlet `name` is valid by checking the scriptlet list object.
@@ -104,7 +115,7 @@ const isValidScriptletNameNotCached = (name: string): boolean => {
     if (!name) {
         return false;
     }
-    return !!getScriptletByName(name, scriptletObjects);
+    return hasScriptlet(name);
 };
 
 /**
@@ -120,7 +131,7 @@ const scriptletNameValidationCache = new Map();
  * @returns True if scriptlet name is a valid one or an empty string,
  * otherwise false.
  */
-const isValidScriptletName = (name: string | null): boolean => {
+export const isValidScriptletName = (name: string | null): boolean => {
     // empty name is used for allowlist scriptlets. e.g.
     // - '#@%#//scriptlet()'
     if (name === '') {
@@ -139,6 +150,66 @@ const isValidScriptletName = (name: string | null): boolean => {
     }
     // otherwise return cached validation result
     return scriptletNameValidationCache.get(name);
+};
+
+/**
+ * Checks if an array of rules is an array of scriptlet rules
+ *
+ * @param rules Array of rules
+ * @returns True if all rules are scriptlet rules
+ */
+const isArrayOfScriptletRules = (rules: AnyRule[]): rules is ScriptletInjectionRule[] => {
+    return rules.every(
+        (rule) => {
+            return rule.category === RuleCategory.Cosmetic && rule.type === CosmeticRuleType.ScriptletInjectionRule;
+        },
+    );
+};
+
+/**
+ * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
+ * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
+ * by converting them into ADG syntax, and after that checks the name.
+ *
+ * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
+ * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
+ *
+ * @param rule Any scriptlet rule — ADG or UBO or ABP.
+ *
+ * @returns True if scriptlet name is valid in rule.
+ */
+export const isValidScriptletRule = (rule: string | ScriptletInjectionRule): boolean => {
+    let ruleNodes: AnyRule[];
+
+    try {
+        ruleNodes = RuleConverter.convertToAdg(getRuleNode(rule)).result;
+    } catch (e) {
+        return false;
+    }
+
+    if (!isArrayOfScriptletRules(ruleNodes)) {
+        return false;
+    }
+
+    // checking if each of parsed scriptlets is valid
+    // if at least one of them is not valid - whole `ruleText` is not valid too
+    const isValid = ruleNodes.every((ruleNode) => {
+        const name = ruleNode.body.children[0]?.children[0]?.value;
+
+        if (!name) {
+            return ruleNode.exception;
+        }
+
+        const unquotedName = QuoteUtils.removeQuotes(name);
+
+        if (!unquotedName) {
+            return false;
+        }
+
+        return isValidScriptletName(unquotedName);
+    });
+
+    return isValid;
 };
 
 /* ************************************************************************
@@ -341,19 +412,3 @@ const isUboRedirectCompatibleWithAdg = (rule: string): boolean => {
 const isAbpRedirectCompatibleWithAdg = (rule: string): boolean => {
     return checkCompatibility(rule, GenericPlatform.AbpAny, GenericPlatform.AdgAny);
 };
-
-const validator = {
-    isAdgScriptletRule,
-    isUboScriptletRule,
-    isAbpSnippetRule,
-    getScriptletByName,
-    isValidScriptletName,
-    isAdgRedirectRule,
-    isValidAdgRedirectRule,
-    isRedirectResourceCompatibleWithAdg,
-    isAdgRedirectCompatibleWithUbo,
-    isUboRedirectCompatibleWithAdg,
-    isAbpRedirectCompatibleWithAdg,
-};
-
-export default validator;

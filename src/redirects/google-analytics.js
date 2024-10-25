@@ -137,7 +137,7 @@ export function GoogleAnalytics(source) {
     hit(source);
 }
 
-GoogleAnalytics.names = [
+export const GoogleAnalyticsNames = [
     'google-analytics',
     'ubo-google-analytics_analytics.js',
     'google-analytics_analytics.js',

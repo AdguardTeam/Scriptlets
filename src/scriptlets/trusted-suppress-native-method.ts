@@ -23,6 +23,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /* eslint-disable max-len */
 /**
@@ -206,7 +207,7 @@ export function trustedSuppressNativeMethod(
     base[prop] = new Proxy(nativeMethod, { apply });
 }
 
-trustedSuppressNativeMethod.names = [
+export const trustedSuppressNativeMethodNames =[
     'trusted-suppress-native-method',
 ];
 

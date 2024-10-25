@@ -47,7 +47,7 @@ export function Fingerprintjs2(source) {
     hit(source);
 }
 
-Fingerprintjs2.names = [
+export const Fingerprintjs2Names =[
     'fingerprintjs2',
     // redirect aliases are needed for conversion:
     // prefixed for us

@@ -97,7 +97,7 @@ export function setSessionStorageItem(source, key, value) {
     hit(source);
 }
 
-setSessionStorageItem.names = [
+export const setSessionStorageItemNames =[
     'set-session-storage-item',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-session-storage-item.js',

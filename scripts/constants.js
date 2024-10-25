@@ -47,6 +47,7 @@ const NON_REDIRECTS_FILES = [
     'index.js',
     'redirects.js',
     'redirects-list.js',
+    'redirects-names-list.js',
 ];
 const redirectsFilenames = getFilesList(REDIRECTS_SRC_RELATIVE_DIR_PATH)
     .filter((el) => !NON_REDIRECTS_FILES.includes(el));

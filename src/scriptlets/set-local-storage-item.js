@@ -97,7 +97,7 @@ export function setLocalStorageItem(source, key, value) {
     hit(source);
 }
 
-setLocalStorageItem.names = [
+export const setLocalStorageItemNames =[
     'set-local-storage-item',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-local-storage-item.js',

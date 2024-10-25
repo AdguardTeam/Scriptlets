@@ -94,7 +94,7 @@ export function preventAddEventListener(source, typeSearch, listenerSearch) {
     Object.defineProperty(document, 'addEventListener', descriptor);
 }
 
-preventAddEventListener.names = [
+export const preventAddEventListenerNames =[
     'prevent-addEventListener',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js',

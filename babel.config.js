@@ -10,6 +10,7 @@ module.exports = (api) => {
                         '@babel/plugin-transform-regenerator',
                         '@babel/plugin-transform-typeof-symbol',
                         '@babel/plugin-transform-computed-properties',
+                        '@babel/plugin-transform-destructuring',
                     ],
                     targets: [
                         'last 1 version',

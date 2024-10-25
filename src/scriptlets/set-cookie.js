@@ -101,7 +101,7 @@ export function setCookie(source, name, value, path = '/', domain = '') {
     document.cookie = cookieToSet;
 }
 
-setCookie.names = [
+export const setCookieNames =[
     'set-cookie',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-cookie.js',

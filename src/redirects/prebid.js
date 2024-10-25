@@ -71,6 +71,6 @@ export function Prebid(source) {
     hit(source);
 }
 
-Prebid.names = ['prebid'];
+export const PrebidNames = ['prebid'];
 
 Prebid.injections = [hit, noopFunc, noopStr, noopArray];

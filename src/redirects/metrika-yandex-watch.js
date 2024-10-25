@@ -75,7 +75,7 @@ export function metrikaYandexWatch(source) {
     hit(source);
 }
 
-metrikaYandexWatch.names = [
+export const metrikaYandexWatchNames =[
     'metrika-yandex-watch',
 ];
 

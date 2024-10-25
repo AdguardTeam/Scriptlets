@@ -219,7 +219,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
     fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
 }
 
-preventFetch.names = [
+export const preventFetchNames =[
     'prevent-fetch',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'prevent-fetch.js',

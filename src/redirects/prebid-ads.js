@@ -25,7 +25,7 @@ export function prebidAds(source) {
     hit(source);
 }
 
-prebidAds.names = [
+export const prebidAdsNames = [
     'prebid-ads',
     'ubo-prebid-ads.js',
     'prebid-ads.js',

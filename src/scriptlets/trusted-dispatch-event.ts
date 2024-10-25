@@ -1,6 +1,7 @@
 import {
     hit,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /**
  * @trustedScriptlet trusted-dispatch-event
@@ -97,7 +98,7 @@ export function trustedDispatchEvent(
     EventTarget.prototype.addEventListener = new Proxy(EventTarget.prototype.addEventListener, handler);
 }
 
-trustedDispatchEvent.names = [
+export const trustedDispatchEventNames =[
     'trusted-dispatch-event',
 ];
 

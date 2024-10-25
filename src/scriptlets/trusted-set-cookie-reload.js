@@ -157,7 +157,7 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
     }
 }
 
-trustedSetCookieReload.names = [
+export const trustedSetCookieReloadNames =[
     'trusted-set-cookie-reload',
     // trusted scriptlets support no aliases
 ];

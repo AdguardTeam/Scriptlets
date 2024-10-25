@@ -34,7 +34,7 @@ export function AmazonApstag(source) {
     hit(source);
 }
 
-AmazonApstag.names = [
+export const AmazonApstagNames =[
     'amazon-apstag',
     'ubo-amazon_apstag.js',
     'amazon_apstag.js',

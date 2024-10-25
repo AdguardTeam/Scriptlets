@@ -7,6 +7,7 @@ import {
     parseMatchArg,
     queryShadowSelector,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /* eslint-disable max-len */
 /**
@@ -512,7 +513,7 @@ export function trustedClickElement(
     }
 }
 
-trustedClickElement.names = [
+export const trustedClickElementNames =[
     'trusted-click-element',
     // trusted scriptlets support no aliases
 ];

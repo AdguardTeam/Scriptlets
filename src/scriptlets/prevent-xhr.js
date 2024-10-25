@@ -337,7 +337,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     );
 }
 
-preventXHR.names = [
+export const preventXHRNames =[
     'prevent-xhr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js',

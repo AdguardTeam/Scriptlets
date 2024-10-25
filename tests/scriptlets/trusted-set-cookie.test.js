@@ -1,10 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import { parseCookieString } from '../../src/helpers';
-import {
-    runScriptlet,
-    clearGlobalProps,
-    clearCookie,
-} from '../helpers';
+import { runScriptlet, clearGlobalProps, clearCookie } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-set-cookie';

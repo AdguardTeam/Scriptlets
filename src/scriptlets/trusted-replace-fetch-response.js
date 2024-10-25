@@ -191,7 +191,7 @@ export function trustedReplaceFetchResponse(
     fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
 }
 
-trustedReplaceFetchResponse.names = [
+export const trustedReplaceFetchResponseNames =[
     'trusted-replace-fetch-response',
     // trusted scriptlets support no aliases
 ];

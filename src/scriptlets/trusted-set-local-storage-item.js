@@ -83,7 +83,7 @@ export function trustedSetLocalStorageItem(source, key, value) {
     hit(source);
 }
 
-trustedSetLocalStorageItem.names = [
+export const trustedSetLocalStorageItemNames =[
     'trusted-set-local-storage-item',
     // trusted scriptlets support no aliases
 ];

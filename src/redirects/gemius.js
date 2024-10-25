@@ -31,7 +31,7 @@ export function Gemius(source) {
     hit(source);
 }
 
-Gemius.names = [
+export const GemiusNames =[
     'gemius',
 ];
 

@@ -1,6 +1,7 @@
 import { nativeIsNaN } from './number-utils';
 import { logMessage } from './log-message';
 import { isValidStrPattern, toRegExp } from './string-utils';
+import { Source, StorageItemValue } from '../../types/types';
 
 /**
  * Sets item to a specified storage, if storage isn't full.
@@ -8,7 +9,7 @@ import { isValidStrPattern, toRegExp } from './string-utils';
  * @param source scriptlet's configuration
  * @param storage storage instance to set item into
  * @param key storage key
- * @param  value staroge value
+ * @param  value storage value
  */
 export const setStorageItem = (source: Source, storage: Storage, key: string, value: string): void => {
     // setItem() may throw an exception if the storage is full.

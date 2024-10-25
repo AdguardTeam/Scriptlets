@@ -5,15 +5,17 @@ import {
     passSourceAndProps,
 } from '../helpers/injector';
 
-import validator from '../helpers/validator';
+// FIXME remove
+// import validator from '../validators/validator';
 
-import {
-    convertUboRedirectToAdg,
-    convertAbpRedirectToAdg,
-    convertRedirectToAdg,
-    convertRedirectNameToAdg,
-    convertAdgRedirectToUbo,
-} from '../helpers/converter';
+// FIXME remove
+// import {
+//     convertUboRedirectToAdg,
+//     convertAbpRedirectToAdg,
+//     convertRedirectToAdg,
+//     convertRedirectNameToAdg,
+//     convertAdgRedirectToUbo,
+// } from '../helpers/converter';
 
 import * as redirectsList from './redirects-list';
 
@@ -29,8 +31,10 @@ import { redirectsMap } from '../../tmp/redirects-map';
  * @returns {Function}
  */
 const getRedirectByName = (name) => {
-    const redirects = Object.keys(redirectsList).map((key) => redirectsList[key]);
-    return redirects.find((r) => r.names && r.names.includes(name));
+    return redirectsList[name];
+    // FIXME remove
+    // const redirects = Object.keys(redirectsList).map((key) => redirectsList[key]);
+    // return redirects.find((r) => r.names && r.names.includes(name));
 };
 
 /**
@@ -48,7 +52,7 @@ const getRedirectByName = (name) => {
  * @param {Source} source
  * @returns {string} redirect code
  */
-const getRedirectCode = (source) => {
+export const getRedirectCode = (source) => {
     const redirect = getRedirectByName(source.name);
     let result = attachDependencies(redirect);
     result = addCall(redirect, result);
@@ -69,16 +73,20 @@ const getRedirectFilename = (name) => {
 export const redirects = {
     Redirects,
     getRedirectFilename,
-    getCode: getRedirectCode,
-    isAdgRedirectRule: validator.isAdgRedirectRule,
-    isValidAdgRedirectRule: validator.isValidAdgRedirectRule,
-    isRedirectResourceCompatibleWithAdg: validator.isRedirectResourceCompatibleWithAdg,
-    isAdgRedirectCompatibleWithUbo: validator.isAdgRedirectCompatibleWithUbo,
-    isUboRedirectCompatibleWithAdg: validator.isUboRedirectCompatibleWithAdg,
-    isAbpRedirectCompatibleWithAdg: validator.isAbpRedirectCompatibleWithAdg,
-    convertUboRedirectToAdg,
-    convertAbpRedirectToAdg,
-    convertRedirectToAdg,
-    convertRedirectNameToAdg,
-    convertAdgRedirectToUbo,
+    // getCode: getRedirectCode,
+
+    // // FIXME move to @adguard/scriptlets/validators module
+    // isAdgRedirectRule: validator.isAdgRedirectRule,
+    // isValidAdgRedirectRule: validator.isValidAdgRedirectRule,
+    // isRedirectResourceCompatibleWithAdg: validator.isRedirectResourceCompatibleWithAdg,
+    // isAdgRedirectCompatibleWithUbo: validator.isAdgRedirectCompatibleWithUbo,
+    // isUboRedirectCompatibleWithAdg: validator.isUboRedirectCompatibleWithAdg,
+    // isAbpRedirectCompatibleWithAdg: validator.isAbpRedirectCompatibleWithAdg,
+    //
+    // // FIXME move to @adguard/scriptlets/converters module
+    // convertUboRedirectToAdg,
+    // convertAbpRedirectToAdg,
+    // convertRedirectToAdg,
+    // convertRedirectNameToAdg,
+    // convertAdgRedirectToUbo,
 };

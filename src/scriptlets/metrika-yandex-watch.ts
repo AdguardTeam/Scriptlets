@@ -1,4 +1,4 @@
-import { metrikaYandexWatch } from '../redirects/metrika-yandex-watch';
+import { metrikaYandexWatch, metrikaYandexWatchNames } from '../redirects/metrika-yandex-watch';
 
 /**
  * @scriptlet metrika-yandex-watch
@@ -15,4 +15,4 @@ import { metrikaYandexWatch } from '../redirects/metrika-yandex-watch';
  *
  * @added v1.10.25.
  */
-export { metrikaYandexWatch };
+export { metrikaYandexWatch, metrikaYandexWatchNames };

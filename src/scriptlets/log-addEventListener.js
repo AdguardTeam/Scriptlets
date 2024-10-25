@@ -64,7 +64,7 @@ export function logAddEventListener(source) {
     Object.defineProperty(document, 'addEventListener', descriptor);
 }
 
-logAddEventListener.names = [
+export const logAddEventListenerNames =[
     'log-addEventListener',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js',

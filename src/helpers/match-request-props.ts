@@ -5,6 +5,7 @@ import {
 } from './request-utils';
 import type { LegalRequestProp, MatchPropsData } from './request-utils';
 import { logMessage } from './log-message';
+import { Source } from '../../types/types';
 
 /**
  * Checks if given propsToMatch string matches with given request data

@@ -85,7 +85,7 @@ export function callNoThrow(source, functionName) {
     base[prop] = new Proxy(base[prop], objectHandler);
 }
 
-callNoThrow.names = [
+export const callNoThrowNames =[
     'call-nothrow',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'call-nothrow.js',

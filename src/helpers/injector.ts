@@ -1,3 +1,6 @@
+import { Redirect, Scriptlet } from '../../types/types';
+import { IConfiguration } from '../scriptlets';
+
 /**
  * Concat dependencies to scriptlet code
  *
@@ -68,7 +71,7 @@ export function addCall(scriptlet: Scriptlet, code: string): string {
  * @returns full scriptlet code
  */
 export function passSourceAndProps(
-    source: Source,
+    source: IConfiguration,
     code: string,
     redirect = false,
 ): string {

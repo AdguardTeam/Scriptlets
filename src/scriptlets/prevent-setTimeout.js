@@ -187,7 +187,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
     window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
 }
 
-preventSetTimeout.names = [
+export const preventSetTimeoutNames =[
     'prevent-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js

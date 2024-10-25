@@ -1,10 +1,19 @@
 import resolve from '@rollup/plugin-node-resolve';
+// FIXME check if needed
+import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
-import copy from 'rollup-plugin-copy';
+// FIXME remove
+// import copy from 'rollup-plugin-copy';
 import cleanup from 'rollup-plugin-cleanup';
 import generateHtml from 'rollup-plugin-generate-html';
+import alias from '@rollup/plugin-alias';
+import { dts } from 'rollup-plugin-dts';
+// FIXME remove
+// import { visualizer } from 'rollup-plugin-visualizer';
+import path from 'path';
+
 import project from './package.json';
 
 const BUILD_DIST = 'dist';
@@ -27,6 +36,11 @@ const FOOTER = `
 `;
 
 const commonPlugins = [
+    // FIXME remove
+    // visualizer({
+    //     emitFile: true,
+    //     filename: 'stats.html',
+    // }),
     json(),
     resolve({ extensions: ['.js', '.ts'] }),
     commonjs(),
@@ -53,29 +67,30 @@ const scriptletsIIFEConfig = {
     ],
 };
 
-const scriptletsUMDConfig = {
-    input: {
-        'scriptlets.umd': 'src/scriptlets/scriptlets-umd-wrapper.js',
-    },
-    output: {
-        dir: 'dist/umd',
-        entryFileNames: '[name].js',
-        // umd is preferred over cjs to avoid variables renaming in tsurlfilter
-        format: 'umd',
-        exports: 'named',
-        strict: false,
-        banner: BANNER,
-        footer: FOOTER,
-    },
-    plugins: [
-        ...commonPlugins,
-        copy({
-            targets: [
-                { src: 'types/scriptlets.d.ts', dest: 'dist/umd/' },
-            ],
-        }),
-    ],
-};
+// FIXME remove
+// const scriptletsUMDConfig = {
+//     input: {
+//         'scriptlets.umd': 'src/scriptlets/scriptlets-umd-wrapper.js', // FIXME remove file
+//     },
+//     output: {
+//         dir: 'dist/umd',
+//         entryFileNames: '[name].js',
+//         // umd is preferred over cjs to avoid variables renaming in tsurlfilter
+//         format: 'umd',
+//         exports: 'named',
+//         strict: false,
+//         banner: BANNER,
+//         footer: FOOTER,
+//     },
+//     plugins: [
+//         ...commonPlugins,
+//         copy({
+//             targets: [
+//                 { src: 'types/scriptlets.d.ts', dest: 'dist/umd/' },
+//             ],
+//         }),
+//     ],
+// };
 
 const scriptletsListConfig = {
     input: {
@@ -155,9 +170,82 @@ const click2LoadConfig = {
     },
 };
 
+const scriptletsCjsAndEsmConfig = {
+    input: [
+        path.resolve(__dirname, 'src/index.ts'),
+        path.resolve(__dirname, 'src/scriptlets/index.ts'),
+        path.resolve(__dirname, 'src/redirects/index.js'),
+        path.resolve(__dirname, 'src/validators/index.ts'),
+        path.resolve(__dirname, 'src/converters/index.ts'),
+    ],
+    output: [
+        {
+            dir: `${BUILD_DIST}/cjs`,
+            format: 'cjs',
+            exports: 'named',
+            sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
+        },
+        {
+            dir: `${BUILD_DIST}/esm`,
+            entryFileNames: '[name].mjs',
+            format: 'esm',
+            sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
+        },
+    ],
+    external: (id) => {
+        return (
+            /node_modules/.test(id)
+            // this was added because when agtree is linked with yarn link, its id does not contains node_modules
+            || id === '@adguard/agtree'
+            || id.startsWith('@adguard/agtree/')
+        );
+    },
+    plugins: [
+        ...commonPlugins,
+        alias({
+            entries: [
+                { find: 'scriptlets-func', replacement: path.resolve(__dirname, 'tmp/scriptlets-func.js') },
+            ],
+        }),
+    ],
+};
+
+const typesConfig = {
+    input: {
+        index: path.resolve(__dirname, 'src/index.ts'),
+        'scriptlets/index': path.resolve(__dirname, 'src/scriptlets/index.ts'),
+        'redirects/index': path.resolve(__dirname, 'src/redirects/index.js'),
+        'validators/index': path.resolve(__dirname, 'src/validators/index.ts'),
+        'converters/index': path.resolve(__dirname, 'src/converters/index.ts'),
+    },
+    output: {
+        dir: `${BUILD_DIST}/types`,
+        format: 'es',
+        preserveModules: true,
+        preserveModulesRoot: 'src',
+        entryFileNames: '[name].d.ts',
+    },
+    plugins: [
+        dts(),
+        alias({
+            entries: [
+                { find: 'scriptlets-func', replacement: path.resolve(__dirname, 'tmp/scriptlets-func.d.ts') },
+            ],
+        }),
+    ],
+};
+
+const scriptletsCjsAndEsm = [scriptletsCjsAndEsmConfig, typesConfig];
+
 export {
     scriptletsIIFEConfig,
-    scriptletsUMDConfig,
+    scriptletsCjsAndEsm,
+    // FIXME remove umd
+    // scriptletsUMDConfig,
     scriptletsListConfig,
     redirectsListConfig,
     click2LoadConfig,

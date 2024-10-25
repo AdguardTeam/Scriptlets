@@ -139,7 +139,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
     Response.prototype.json = responseJsonWrapper;
 }
 
-jsonPrune.names = [
+export const jsonPruneNames =[
     'json-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js',

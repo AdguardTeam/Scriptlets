@@ -2,10 +2,7 @@
 
 import { trustedSetCookieReload } from '../../src/scriptlets/trusted-set-cookie-reload';
 import { parseCookieString } from '../../src/helpers';
-import {
-    clearGlobalProps,
-    clearCookie,
-} from '../helpers';
+import { clearGlobalProps, clearCookie } from '../helpers';
 
 beforeEach(() => {
     window.__debug = () => {

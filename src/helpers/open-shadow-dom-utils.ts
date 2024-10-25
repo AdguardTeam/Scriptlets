@@ -30,7 +30,7 @@ export const findHostElements = (rootElement: Element | ShadowRoot | null): HTML
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/NodeList NodeList}
  */
 
-interface PierceData {
+export interface PierceData {
     targets: HTMLElement[];
     innerHosts: HTMLElement[];
 }

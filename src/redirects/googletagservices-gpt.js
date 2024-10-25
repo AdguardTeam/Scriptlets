@@ -360,7 +360,7 @@ export function GoogleTagServicesGpt(source) {
     hit(source);
 }
 
-GoogleTagServicesGpt.names = [
+export const GoogleTagServicesGptNames = [
     'googletagservices-gpt',
     'ubo-googletagservices_gpt.js',
     'googletagservices_gpt.js',

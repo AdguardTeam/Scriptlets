@@ -165,7 +165,7 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
     }
 }
 
-removeClass.names = [
+export const removeClassNames =[
     'remove-class',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-class.js',

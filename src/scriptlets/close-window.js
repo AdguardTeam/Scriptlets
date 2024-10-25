@@ -83,7 +83,7 @@ export function forceWindowClose(source, path = '') {
     }
 }
 
-forceWindowClose.names = [
+export const forceWindowCloseNames =[
     'close-window',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'window-close-if.js',

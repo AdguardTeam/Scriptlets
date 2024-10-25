@@ -265,7 +265,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
-trustedReplaceXhrResponse.names = [
+export const trustedReplaceXhrResponseNames =[
     'trusted-replace-xhr-response',
     // trusted scriptlets support no aliases
 ];

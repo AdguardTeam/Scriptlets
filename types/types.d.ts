@@ -1,4 +1,4 @@
-interface Source {
+export interface Source {
     name: string;
     args: string[];
     engine: string;

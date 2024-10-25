@@ -542,7 +542,7 @@ export function GoogleIma3(source) {
     hit(source);
 }
 
-GoogleIma3.names = [
+export const GoogleIma3Names =[
     'google-ima3',
     // prefixed name
     'ubo-google-ima.js',

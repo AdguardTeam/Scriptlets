@@ -115,7 +115,7 @@ export function preventRefresh(source, delaySec) {
     }
 }
 
-preventRefresh.names = [
+export const preventRefreshNames =[
     'prevent-refresh',
     // Aliases are needed for matching the related scriptlet converted into our syntax
     // These are used by UBO rules syntax

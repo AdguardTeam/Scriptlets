@@ -27,6 +27,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
 } from '../helpers/index';
+import { Source } from '../../types/types';
 
 /**
  * @scriptlet json-prune-fetch-response
@@ -195,7 +196,7 @@ export function jsonPruneFetchResponse(
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
-jsonPruneFetchResponse.names = [
+export const jsonPruneFetchResponseNames =[
     'json-prune-fetch-response',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune-fetch-response.js',

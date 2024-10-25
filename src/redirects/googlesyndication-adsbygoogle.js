@@ -98,7 +98,7 @@ export function GoogleSyndicationAdsByGoogle(source) {
     }
 }
 
-GoogleSyndicationAdsByGoogle.names = [
+export const GoogleSyndicationAdsByGoogleNames =[
     'googlesyndication-adsbygoogle',
     'ubo-googlesyndication_adsbygoogle.js',
     'googlesyndication_adsbygoogle.js',

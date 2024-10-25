@@ -1,4 +1,4 @@
-import { Fingerprintjs3 } from '../redirects/fingerprintjs3';
+import { Fingerprintjs3, Fingerprintjs3Names } from '../redirects/fingerprintjs3';
 
 /**
  * @scriptlet fingerprintjs3
@@ -15,4 +15,4 @@ import { Fingerprintjs3 } from '../redirects/fingerprintjs3';
  *
  * @added v1.10.25.
  */
-export { Fingerprintjs3 };
+export { Fingerprintjs3, Fingerprintjs3Names };

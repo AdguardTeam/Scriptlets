@@ -1,3 +1,5 @@
+import { ChainBase, ChainInfo } from '../../types/types';
+
 /**
  * Check if the property exists in the base object (recursively).
  * Similar to getPropertyInChain but upgraded for json-prune:

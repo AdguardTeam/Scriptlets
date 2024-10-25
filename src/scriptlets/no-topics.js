@@ -35,7 +35,7 @@ export function noTopics(source) {
     hit(source);
 }
 
-noTopics.names = [
+export const noTopicsNames =[
     'no-topics',
 ];
 

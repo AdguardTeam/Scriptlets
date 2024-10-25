@@ -1,4 +1,5 @@
 import { throttle } from './throttle';
+import { ArbitraryFunction } from '../../types/types';
 
 /**
  * DOM tree changes observer.

@@ -71,7 +71,7 @@ export function debugOnPropertyRead(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-debugOnPropertyRead.names = [
+export const debugOnPropertyReadNames =[
     'debug-on-property-read',
 ];
 debugOnPropertyRead.injections = [

@@ -1,4 +1,4 @@
-import { Matomo } from '../redirects/matomo';
+import { Matomo, MatomoNames } from '../redirects/matomo';
 
 /**
  * @scriptlet matomo
@@ -14,4 +14,4 @@ import { Matomo } from '../redirects/matomo';
  *
  * @added v1.10.25.
  */
-export { Matomo };
+export { Matomo, MatomoNames };

@@ -132,7 +132,7 @@ export function removeNodeText(source, nodeName, textMatch, parentSelector) {
     observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes, selector, parentSelector));
 }
 
-removeNodeText.names = [
+export const removeNodeTextNames =[
     'remove-node-text',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-node-text.js',

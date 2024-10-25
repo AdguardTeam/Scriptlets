@@ -226,7 +226,7 @@ export function preventElementSrcLoading(source, tagName, match) {
     preventInlineOnerror(tagName, searchRegexp);
 }
 
-preventElementSrcLoading.names = [
+export const preventElementSrcLoadingNames =[
     'prevent-element-src-loading',
 ];
 

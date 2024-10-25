@@ -103,7 +103,7 @@ export function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
     window.setTimeout = timeoutWrapper;
 }
 
-adjustSetTimeout.names = [
+export const adjustSetTimeoutNames =[
     'adjust-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'adjust-setTimeout.js',

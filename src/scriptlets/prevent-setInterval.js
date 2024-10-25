@@ -187,7 +187,7 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
     window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
 }
 
-preventSetInterval.names = [
+export const preventSetIntervalNames =[
     'prevent-setInterval',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setInterval-if.js', // new implementation of setInterval-defuser.js

@@ -15,6 +15,7 @@ const buildCorelibsJson = async () => {
 
     const scriptlets = await Promise.all(Object
         .values(scriptletList)
+        .filter((s) => s.names)
         .map(async (s) => {
             const names = [...s.names];
             const scriptlet = getScriptletFunction(s.names[0])
