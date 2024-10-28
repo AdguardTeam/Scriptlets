@@ -17,6 +17,12 @@ import {
     CORELIBS_REDIRECTS_FILE_NAME,
 } from './constants';
 import { redirectsListConfig, click2LoadConfig, redirectsPrebuildConfig } from '../rollup.config';
+import {
+    addCall,
+    attachDependencies,
+    passSourceAndProps,
+    wrapInNonameFunc
+} from '../src/helpers/injector';
 
 const FILE_NAME = 'redirects.yml';
 const PATH_TO_DIST = `./${DIST_DIR_NAME}`;
@@ -83,18 +89,45 @@ const getBlockingRedirects = async () => {
     return blockingRedirects;
 };
 
+/**
+ * Finds redirect resource by it's name
+ *
+ * @param {string} name - redirect name
+ * @returns {Function}
+ */
+const getRedirectByName = (name) => {
+    // eslint-disable-next-line global-require
+    const redirectsList = require('../tmp/redirects-list');
+    return redirectsList[name];
+    // FIXME remove
+    // const redirects = Object.keys(redirectsList).map((key) => redirectsList[key]);
+    // return redirects.find((r) => r.names && r.names.includes(name));
+};
+
+
+/**
+ * Returns redirect code by param
+ *
+ * @param {Source} source
+ * @returns {string} redirect code
+ */
+export const getRedirectCode = (source) => {
+    const redirect = getRedirectByName(source.name);
+    let result = attachDependencies(redirect);
+    result = addCall(redirect, result);
+
+    // redirect code for different sources is checked in tests
+    // so it should be just a code without any source and props passed
+    result = source.engine === 'test'
+        ? wrapInNonameFunc(result)
+        : passSourceAndProps(source, result, true);
+
+    return result;
+};
+
 const getJsRedirects = async (options = {}) => {
     const compress = options.compress ?? false;
     const code = options.code ?? true;
-
-    const getCode = (() => {
-        if (code) {
-            // eslint-disable-next-line import/no-unresolved,global-require
-            const { getRedirectCode } = require('../tmp/redirects');
-            return getRedirectCode;
-        }
-        return () => '';
-    })();
 
     const redirectNamesList = Object.entries(redirectsNamesLists);
 
@@ -108,7 +141,7 @@ const getJsRedirects = async (options = {}) => {
                 args: [],
             };
 
-            const redirect = getCode(source);
+            const redirect = getRedirectCode(source);
 
             return {
                 name,
