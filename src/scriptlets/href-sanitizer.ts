@@ -31,8 +31,12 @@ import {
  *     - `text` — use the text content of the matched element,
  *     - `[<attribute-name>]` copy the value from attribute `attribute-name` on the same element,
  *     - `?<parameter-name>` copy the value from URL parameter `parameter-name` of the same element's `href` attribute.
- * - `transform` — optional, defaults to no transforming:
+ * - `transform` — optional, defaults to no transforming. Possible values:
  *     - `base64decode` — decode the base64 string from specified attribute.
+ *     - `removeHash` — remove the hash from the URL.
+ *     - `removeParam[:<parameters>]` — remove the specified parameters from the URL,
+ *       where `<parameters>` is a comma-separated list of parameter names;
+ *       if no parameter is specified, remove all parameters.
  *
  * > Note that in the case where the discovered value does not correspond to a valid URL with the appropriate
  * > http or https protocols, the value will not be set.
@@ -111,6 +115,60 @@ import {
  *     </div>
  *     ```
  *
+ * 5. Remove the hash from the URL:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[href]', 'removeHash')
+ *     ```
+ *
+ *     ```html
+ *     <!-- before -->
+ *     <div>
+ *         <a href="http://www.foo.com/out/#aHR0cDovL2V4YW1wbGUuY29tLz92PTEyMw=="></a>
+ *     </div>
+ *
+ *     <!-- after -->
+ *     <div>
+ *         <a href="http://www.foo.com/out/"></a>
+ *     </div>
+ *     ```
+ *
+ * 6. Remove the all parameter(s) from the URL:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[href]', 'removeParam')
+ *     ```
+ *
+ *     ```html
+ *     <!-- before -->
+ *     <div>
+ *         <a href="https://foo.com/123123?utm_source=nova&utm_medium=tg&utm_campaign=main"></a>
+ *     </div>
+ *
+ *     <!-- after -->
+ *     <div>
+ *         <a href="https://foo.com/123123"></a>
+ *     </div>
+ *     ```
+ *
+ * 7. Remove the specified parameter(s) from the URL:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[href]', 'removeParam:utm_source,utm_medium')
+ *     ```
+ *
+ *     ```html
+ *     <!-- before -->
+ *     <div>
+ *         <a href="https://foo.com/123123?utm_source=nova&utm_medium=tg&utm_campaign=main"></a>
+ *     </div>
+ *
+ *     <!-- after -->
+ *     <div>
+ *         <a href="https://foo.com/123123?utm_campaign=main"></a>
+ *     </div>
+ *     ```
+ *
  * @added v1.10.25.
  */
 
@@ -125,7 +183,13 @@ export function hrefSanitizer(
         return;
     }
 
-    const BASE64_TRANSFORM_MARKER = 'base64decode';
+    // transform markers
+    const BASE64_DECODE_TRANSFORM_MARKER = 'base64decode';
+    const REMOVE_HASH_TRANSFORM_MARKER = 'removeHash';
+    const REMOVE_PARAM_TRANSFORM_MARKER = 'removeParam';
+    // separator markers
+    const MARKER_SEPARATOR = ':';
+    const COMMA = ',';
 
     // Regular expression to find not valid characters at the beginning and at the end of the string,
     // \x21-\x7e is a range that includes the ASCII characters from ! (hex 21) to ~ (hex 7E).
@@ -338,13 +402,63 @@ export function hrefSanitizer(
     };
 
     /**
+     * Removes the hash from the URL.
+     * @param url URL to remove the hash from
+     * @returns URL without the hash or empty string if no hash is found
+     */
+    const removeHash = (url: string) => {
+        const urlObj = new URL(url, window.location.origin);
+
+        if (!urlObj.hash) {
+            return '';
+        }
+
+        urlObj.hash = '';
+        return urlObj.toString();
+    };
+
+    /**
+     * Removes the specified parameter from the URL.
+     * @param url URL to remove the parameter from
+     * @param transformValue parameter value(s) to remove with marker
+     * @returns URL without the parameter(s) or empty string if no parameter is found
+     */
+    const removeParam = (url: string, transformValue: string) => {
+        const urlObj = new URL(url, window.location.origin);
+
+        // get the parameter values to remove
+        const paramNamesToRemoveStr = transformValue.split(MARKER_SEPARATOR)[1];
+
+        if (!paramNamesToRemoveStr) {
+            urlObj.search = '';
+            return urlObj.toString();
+        }
+
+        const initSearchParamsLength = urlObj.searchParams.toString().length;
+
+        const removeParams = paramNamesToRemoveStr.split(COMMA);
+        removeParams.forEach((param) => {
+            if (urlObj.searchParams.has(param)) {
+                urlObj.searchParams.delete(param);
+            }
+        });
+
+        // if the parameter(s) is not found, return empty string
+        if (initSearchParamsLength === urlObj.searchParams.toString().length) {
+            return '';
+        }
+
+        return urlObj.toString();
+    };
+
+    /**
      * Extracts the base64 part from a string.
      * If no base64 string is found, `null` is returned.
      * @param url String to extract the base64 part from.
      * @returns The base64 part of the string, or `null` if none is found.
      */
     const decodeBase64URL = (url: string) => {
-        const { search, hash } = new URL(url);
+        const { search, hash } = new URL(url, document.location.href);
 
         if (search.length > 0) {
             return decodeSearchString(search);
@@ -394,13 +508,19 @@ export function hrefSanitizer(
                     return;
                 }
                 let newHref = extractNewHref(elem, attribute);
-
                 // apply transform if specified
                 if (transform) {
-                    switch (transform) {
-                        case BASE64_TRANSFORM_MARKER:
+                    switch (true) {
+                        case transform === BASE64_DECODE_TRANSFORM_MARKER:
                             newHref = base64Decode(newHref);
                             break;
+                        case transform === REMOVE_HASH_TRANSFORM_MARKER:
+                            newHref = removeHash(newHref);
+                            break;
+                        case transform.startsWith(REMOVE_PARAM_TRANSFORM_MARKER): {
+                            newHref = removeParam(newHref, transform);
+                            break;
+                        }
                         default:
                             logMessage(source, `Invalid transform option: "${transform}"`);
                             return;

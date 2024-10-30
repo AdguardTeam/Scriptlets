@@ -212,7 +212,7 @@
         },
         {
             "adg": "set-attr",
-            "ubo": "set-attr.js"
+            "ubo": "set-attr.js (removed)"
         },
         {
             "adg": "set-constant",

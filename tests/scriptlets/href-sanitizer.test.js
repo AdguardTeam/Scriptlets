@@ -27,10 +27,12 @@ const createElem = (href, text, attributeName, attributeValue) => {
 };
 
 const removeElem = () => {
-    const elem = document.getElementById('testHref');
-    if (elem) {
-        elem.remove();
-    }
+    const elem = document.querySelectorAll('#testHref');
+    elem.forEach((el) => {
+        if (el) {
+            el.remove();
+        }
+    });
 };
 
 const beforeEach = () => {
@@ -62,6 +64,54 @@ test('Checking if alias name works', (assert) => {
     const codeByUboParams = window.scriptlets.invoke(uboParams);
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
+});
+
+test('Sanitize href - remove all parameters from href', (assert) => {
+    const expectedHref = 'https://foo.com/123123';
+    const elem = createElem('https://foo.com/123123?utm_source=nova&utm_medium=tg&utm_campaign=main');
+    const selector = 'a[href^="https://foo.com/123123"]';
+
+    const scriptletArgs = [selector, '[href]', 'removeParam'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'all params from href was removed');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - remove parameters from href', (assert) => {
+    const expectedHref = 'https://foo.com/watch?utm_campaign=main';
+    const elem = createElem('https://foo.com/watch?v=dbjPnXaacAU&pp=ygUEdGVzdA%3D%3D&utm_campaign=main');
+    const selector = 'a[href^="https://foo.com/watch"]';
+
+    const scriptletArgs = [selector, '[href]', 'removeParam:v,pp'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'v and pp params from href was removed');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - remove parameter from href', (assert) => {
+    const expectedHref = 'https://example.org/watch?v=dbjPnXaacAU';
+    const elem = createElem('https://example.org/watch?v=dbjPnXaacAU&pp=ygUEdGVzdA%3D%3D');
+    const selector = 'a[href^="https://example.org/watch"]';
+
+    const scriptletArgs = [selector, '[href]', 'removeParam:pp'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'pp param from href was removed');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('Sanitize href - remove hash', (assert) => {
+    const expectedHref = 'https://example.org/?article';
+    const elem = createElem('https://example.org/?article#utm_source=Facebook');
+    const selector = 'a[href]';
+
+    const scriptletArgs = [selector, '[href]', 'removeHash'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'hash from href was removed');
+    assert.strictEqual(window.hit, 'FIRED');
 });
 
 test('Sanitize href - no URL was found in base64', (assert) => {

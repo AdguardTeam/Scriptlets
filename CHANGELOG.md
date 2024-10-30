@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `prevent-canvas` scriptlet [#451]
 - `parentSelector` option to search for nodes for `remove-node-text` scriptlet [#397]
 - `transform` option with `base64decode` value for `href-sanitizer` scriptlet [#455]
+- `removeParam` and `removeHash` values in `transform` option  for `href-sanitizer` scriptlet [#460]
 - new values to `set-cookie` and `set-local-storage-item` scriptlets: `forbidden`, `forever` [#458]
 
 ### Changed
@@ -35,6 +36,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#397]: https://github.com/AdguardTeam/Scriptlets/issues/397
 [#458]: https://github.com/AdguardTeam/Scriptlets/issues/458
 [#457]: https://github.com/AdguardTeam/Scriptlets/issues/457
+[#460]: https://github.com/AdguardTeam/Scriptlets/issues/460
 
 ## [v1.12.1] - 2024-09-20
 
