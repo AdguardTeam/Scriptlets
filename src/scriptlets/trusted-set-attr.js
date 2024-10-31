@@ -2,8 +2,6 @@ import {
     setAttributeBySelector,
     observeDOMChanges,
     nativeIsNaN,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     defaultAttributeSetter,
     logMessage,
     throttle,
@@ -104,7 +102,7 @@ export function trustedSetAttr(source, selector, attr, value = '') {
     observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value), true);
 }
 
-export const trustedSetAttrNames =[
+export const trustedSetAttrNames = [
     'trusted-set-attr',
     // trusted scriptlets support no aliases
 ];

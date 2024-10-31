@@ -1,9 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import {
-    hit,
-    noopFunc,
-    logMessage,
-} from '../helpers/index';
+import { hit, noopFunc, logMessage } from '../helpers/index';
 
 /**
  * @redirect google-analytics-ga
@@ -125,7 +121,7 @@ export function GoogleAnalyticsGa(source) {
     hit(source);
 }
 
-export const GoogleAnalyticsGaNames =[
+export const GoogleAnalyticsGaNames = [
     'google-analytics-ga',
     'ubo-google-analytics_ga.js',
     'google-analytics_ga.js',

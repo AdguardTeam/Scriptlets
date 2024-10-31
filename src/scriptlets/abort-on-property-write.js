@@ -4,8 +4,6 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
 } from '../helpers/index';
 
@@ -77,7 +75,7 @@ export function abortOnPropertyWrite(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-export const abortOnPropertyWriteNames =[
+export const abortOnPropertyWriteNames = [
     'abort-on-property-write',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-write.js',

@@ -6,13 +6,11 @@ import {
     isTargetNode,
     parseNodeTextParams,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     hit,
     nodeListToArray,
     getAddedNodes,
     toRegExp,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -135,7 +133,7 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
     observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes));
 }
 
-export const trustedReplaceNodeTextNames =[
+export const trustedReplaceNodeTextNames = [
     'trusted-replace-node-text',
     // trusted scriptlets support no aliases
 ];

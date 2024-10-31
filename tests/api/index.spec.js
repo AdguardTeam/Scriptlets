@@ -375,42 +375,6 @@ describe('Test scriptlet api methods', () => {
 });
 
 describe('Test redirects api methods', () => {
-    describe('isAdgRedirectRule()', () => {
-        const validRules = [
-            '||example.org$xmlhttprequest,redirect=noopvast-4.0',
-            '||example.org^$xmlhttprequest,redirect=noopjson',
-            '||youtube.com/embed/$redirect=click2load.html,domain=example.org',
-            '||cloudflare.com/ajax/libs/fingerprintjs2/$script,redirect=fingerprint2.js,important',
-            // obsolete googletagmanager-gtm should be true as it is an alias for google-analytics
-            '||example.org/script.js$script,redirect=googletagmanager-gtm',
-            '||example.org/script.js$script,redirect-rule=googletagmanager-gtm',
-            // old alias for adsbygoogle redirect should be valid
-            '||example.org^$script,redirect=googlesyndication.com/adsbygoogle.js',
-            '||example.org^$script,redirect-rule=googlesyndication.com/adsbygoogle.js',
-            // rule with 'redirect=' marker should be considered as redirect rules
-            '/blockadblock.$script,redirect=nobab.js',
-            '/blockadblock.$script,redirect-rule=nobab.js',
-            // redirect name is wrong, but this one only for checking ADG redirect marker "redirect="
-            '||example.com/banner$image,redirect=redirect.png',
-            '||example.com/banner$image,redirect-rule=redirect.png',
-        ];
-        test.each(validRules)('%s', (rule) => {
-            expect(validator.isAdgRedirectRule(rule)).toBeTruthy();
-        });
-
-        const invalidRules = [
-            // js-rule with 'redirect=' should not be considered as redirect rule
-            'example.com#%#document.cookie = "app_redirect=false; path=/;";',
-            'example.com#%#document.cookie = "app_redirect-rule=false; path=/;";',
-            // basic rules with 'redirect=' are not valid redirect rules as well
-            '_redirect=*://look.$popup',
-            '_redirect-rule=*://look.$popup',
-        ];
-        test.each(invalidRules)('%s', (rule) => {
-            expect(validator.isAdgRedirectRule(rule)).toBeFalsy();
-        });
-    });
-
     describe('isRedirectResourceCompatibleWithAdg()', () => {
         const validRedirectNames = [
             'noopvast-4.0', // adg only
@@ -459,92 +423,6 @@ describe('Test redirects api methods', () => {
         ];
         test.each(invalidRules)('%s', (rule) => {
             expect(validator.isValidAdgRedirectRule(rule)).toBeFalsy();
-        });
-    });
-
-    describe('isAdgRedirectCompatibleWithUbo()', () => {
-        const validRules = [
-            '||example.orf^$media,redirect=noop-0.1s.mp3,third-party',
-            '||example.com/log$redirect=empty',
-            '||example.com^$redirect=noop-1s.mp4',
-            '||example.orf^$media,redirect-rule=noop-0.1s.mp3,third-party',
-            '||example.com^$redirect-rule=noop-1s.mp4',
-        ];
-        test.each(validRules)('%s', (rule) => {
-            expect(validator.isAdgRedirectCompatibleWithUbo(rule)).toBeTruthy();
-        });
-
-        const invalidRules = [
-            // invalid redirect name
-            '||example.orf^$media,redirect=no-mp4',
-            // rules with 'redirect=' marker in base rule part should be skipped
-            '_redirect=*://look.$popup',
-            // js-rule with 'redirect=' in it should not be considered as redirect rule
-            'example.com#%#document.cookie = "app_redirect=false; path=/;";',
-            // $redirect-rule
-            '||example.orf^$media,redirect-rule=no-mp4',
-            '_redirect-rule=*://look.$popup',
-            'example.com#%#document.cookie = "app_redirect-rule=false; path=/;";',
-        ];
-        test.each(invalidRules)('%s', (rule) => {
-            expect(validator.isAdgRedirectCompatibleWithUbo(rule)).toBeFalsy();
-        });
-    });
-
-    describe('isUboRedirectCompatibleWithAdg()', () => {
-        const validRules = [
-            '||example.orf^$media,redirect=noop-1s.mp4,third-party',
-            '||example.org^$redirect=nobab.js,third-party',
-            '||example.orf^$media,redirect-rule=noop-1s.mp4,third-party',
-            '||example.org^$redirect-rule=nobab.js,third-party',
-            '*$image,redirect-rule=1x1.gif,domain=play.example.com',
-        ];
-        test.each(validRules)('%s', (rule) => {
-            expect(validator.isUboRedirectCompatibleWithAdg(rule)).toBeTruthy();
-        });
-
-        const invalidRules = [
-            // invalid redirect name
-            '||example.orf^$media,redirect=no-mp4',
-            // js-rule with 'redirect=' in it should not be considered as redirect rule
-            'example.com#%#document.cookie = "app_redirect=false; path=/;";',
-            // rules with 'redirect=' marker in base rule part should be skipped
-            '&pub_redirect=',
-            '@@||example.com/gdpr.html?redirect=',
-            // do not break on cosmetic rules
-            'example.org##div[data-render-state] + div[class^="jsx-"][class$=" undefined"]',
-            // do not break on JS rules
-            'example.org#%#var str = /[class$=" undefined"]/; console.log(str);',
-            // $redirect-rule
-            '||example.orf^$media,redirect-rule=no-mp4',
-            '&pub_redirect-rule=',
-            '@@||example.com/gdpr.html?redirect-rule=',
-        ];
-        test.each(invalidRules)('%s', (rule) => {
-            expect(validator.isUboRedirectCompatibleWithAdg(rule)).toBeFalsy();
-        });
-    });
-
-    describe('isAbpRedirectCompatibleWithAdg()', () => {
-        const validRules = [
-            '||example.com^$script,rewrite=abp-resource:blank-js',
-        ];
-        test.each(validRules)('%s', (rule) => {
-            expect(validator.isAbpRedirectCompatibleWithAdg(rule)).toBeTruthy();
-        });
-
-        const invalidRules = [
-            // invalid abp redirect name
-            '||example.com^$script,rewrite=abp-resource:noop-js',
-            // js-rule with 'redirect=' in it should not be considered as redirect rule
-            'example.com#%#document.cookie = "app_redirect=false; path=/;";',
-            // do not break on cosmetic rules
-            'example.org##div[data-render-state] + div[class^="jsx-"][class$=" undefined"]',
-            // do not break on JS rules
-            'example.org#%#var str = /[class$=" undefined"]/; console.log(str);',
-        ];
-        test.each(invalidRules)('%s', (rule) => {
-            expect(validator.isAbpRedirectCompatibleWithAdg(rule)).toBeFalsy();
         });
     });
 

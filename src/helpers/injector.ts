@@ -1,5 +1,5 @@
 import { Redirect, Scriptlet } from '../../types/types';
-import { IConfiguration } from '../scriptlets';
+import { type IConfiguration } from '../scriptlets';
 
 /**
  * Concat dependencies to scriptlet code

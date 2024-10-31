@@ -18,8 +18,6 @@ import {
     nativeIsNaN,
     isEmptyObject,
     getNativeRegexpTest,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
@@ -253,7 +251,7 @@ export function trustedSetConstant(source, property, value, stack) {
     setChainPropAccess(window, property);
 }
 
-export const trustedSetConstantNames =[
+export const trustedSetConstantNames = [
     'trusted-set-constant',
     // trusted scriptlets support no aliases
 ];

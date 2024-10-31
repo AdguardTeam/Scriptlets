@@ -2,7 +2,6 @@ import {
     hit,
     getPropertyInChain,
     logMessage,
-    // following helpers are needed for helpers above
     isEmptyObject,
 } from '../helpers/index';
 
@@ -85,7 +84,7 @@ export function callNoThrow(source, functionName) {
     base[prop] = new Proxy(base[prop], objectHandler);
 }
 
-export const callNoThrowNames =[
+export const callNoThrowNames = [
     'call-nothrow',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'call-nothrow.js',

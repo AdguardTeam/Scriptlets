@@ -12,13 +12,8 @@ import {
 } from './build-redirects';
 import { buildTests } from './build-tests';
 import { generateHtmlTestFilename, runTasks } from './helpers';
-
 import { runQunitTests } from '../tests';
-import {
-    server,
-    port,
-    start,
-} from '../tests/server';
+import { server, port, start } from '../tests/server';
 
 const SCRIPTLETS_TYPE = 'scriptlets';
 const REDIRECTS_TYPE = 'redirects';

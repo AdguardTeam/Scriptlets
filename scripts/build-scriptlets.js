@@ -1,18 +1,5 @@
 import { rollupStandard } from './rollup-runners';
-import {
-    scriptletsCjsAndEsm,
-    // FIXME remove
-    // scriptletsIIFEConfig,
-    // FIXME remove
-    // scriptletsUMDConfig,
-    scriptletsListConfig,
-} from '../rollup.config';
-
-// FIXME remove IIFE config
-// const buildScriptletsIIFE = async () => rollupStandard(scriptletsIIFEConfig);
-
-// FIXME remove umd config
-// const buildScriptletsUMD = async () => rollupStandard(scriptletsUMDConfig);
+import { scriptletsCjsAndEsm, scriptletsListConfig } from '../rollup.config';
 
 export const buildScriptletsList = async () => rollupStandard(scriptletsListConfig);
 

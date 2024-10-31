@@ -4,14 +4,13 @@ import {
     getPropertyInChain,
     getWildcardPropertyInChain,
     logMessage,
-    // following helpers are needed for helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     toRegExp,
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 import { Source } from '../../types/types';
 
 /* eslint-disable max-len */
@@ -282,7 +281,7 @@ export function trustedReplaceOutboundText(
     base[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
-export const trustedReplaceOutboundTextNames =[
+export const trustedReplaceOutboundTextNames = [
     'trusted-replace-outbound-text',
     // trusted scriptlets support no aliases
 ];

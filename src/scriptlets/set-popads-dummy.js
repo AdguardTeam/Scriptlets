@@ -37,7 +37,7 @@ export function setPopadsDummy(source) {
     });
 }
 
-export const setPopadsDummyNames =[
+export const setPopadsDummyNames = [
     'set-popads-dummy',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'popads-dummy.js',

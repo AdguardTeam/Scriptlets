@@ -29,7 +29,7 @@ export function noeval(source) {
     }.bind();
 }
 
-export const noevalNames =[
+export const noevalNames = [
     'noeval',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval.js',

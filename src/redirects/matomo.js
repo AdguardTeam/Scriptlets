@@ -35,6 +35,6 @@ export function Matomo(source) {
     hit(source);
 }
 
-export const MatomoNames =['matomo'];
+export const MatomoNames = ['matomo'];
 
 Matomo.injections = [hit, noopFunc];

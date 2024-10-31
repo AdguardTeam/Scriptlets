@@ -15,8 +15,6 @@ import {
     matchStackTrace,
     nativeIsNaN,
     isEmptyObject,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     setPropertyAccess,
@@ -424,7 +422,7 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
     setChainPropAccess(window, property);
 }
 
-export const setConstantNames =[
+export const setConstantNames = [
     'set-constant',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js',

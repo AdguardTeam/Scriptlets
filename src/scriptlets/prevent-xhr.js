@@ -5,8 +5,6 @@ import {
     matchRequestProps,
     getXhrData,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -337,7 +335,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     );
 }
 
-export const preventXHRNames =[
+export const preventXHRNames = [
     'prevent-xhr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-xhr-if.js',

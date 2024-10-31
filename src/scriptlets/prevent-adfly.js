@@ -1,9 +1,5 @@
 /* eslint-disable func-names */
-import {
-    hit,
-    setPropertyAccess,
-    logMessage,
-} from '../helpers/index';
+import { hit, setPropertyAccess, logMessage } from '../helpers/index';
 
 /**
  * @scriptlet prevent-adfly
@@ -88,7 +84,7 @@ export function preventAdfly(source) {
     }
 }
 
-export const preventAdflyNames =[
+export const preventAdflyNames = [
     'prevent-adfly',
     // there are no aliases for this scriptlet
 ];

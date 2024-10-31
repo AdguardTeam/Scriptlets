@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import path from 'path';
 import fs from 'fs-extra';
 import resolve from '@rollup/plugin-node-resolve';
@@ -7,6 +8,7 @@ import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import json from '@rollup/plugin-json';
 import generateHtml from 'rollup-plugin-generate-html';
+
 import { rollupStandard } from './rollup-runners';
 import { generateHtmlTestFilename } from './helpers';
 

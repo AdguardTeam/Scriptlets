@@ -5,8 +5,6 @@ import {
     objectToString,
     matchRequestProps,
     getXhrData,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -265,7 +263,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
-export const trustedReplaceXhrResponseNames =[
+export const trustedReplaceXhrResponseNames = [
     'trusted-replace-xhr-response',
     // trusted scriptlets support no aliases
 ];

@@ -3,7 +3,6 @@ import {
     logMessage,
     parseMatchArg,
     isValidMatchStr,
-    // following helpers are needed for helpers above
     toRegExp,
     escapeRegExp,
     isValidStrPattern,
@@ -86,7 +85,7 @@ export function preventCanvas(source: Source, contextType?: string) {
     );
 }
 
-export const preventCanvasNames =[
+export const preventCanvasNames = [
     'prevent-canvas',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'prevent-canvas.js',

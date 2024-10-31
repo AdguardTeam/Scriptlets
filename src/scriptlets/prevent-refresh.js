@@ -2,7 +2,6 @@ import {
     hit,
     getNumberFromString,
     logMessage,
-    // following helpers are needed for helpers above
     nativeIsNaN,
 } from '../helpers/index';
 
@@ -115,7 +114,7 @@ export function preventRefresh(source, delaySec) {
     }
 }
 
-export const preventRefreshNames =[
+export const preventRefreshNames = [
     'prevent-refresh',
     // Aliases are needed for matching the related scriptlet converted into our syntax
     // These are used by UBO rules syntax

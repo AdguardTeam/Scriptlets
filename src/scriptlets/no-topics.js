@@ -1,7 +1,4 @@
-import {
-    hit,
-    noopPromiseResolve,
-} from '../helpers/index';
+import { hit, noopPromiseResolve } from '../helpers/index';
 
 /**
  * @scriptlet no-topics
@@ -35,7 +32,7 @@ export function noTopics(source) {
     hit(source);
 }
 
-export const noTopicsNames =[
+export const noTopicsNames = [
     'no-topics',
 ];
 

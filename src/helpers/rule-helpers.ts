@@ -1,4 +1,3 @@
-// FIXME consider moving any rule from the main module to utils
 import { type AnyRule } from '@adguard/agtree';
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 import { RuleGenerator } from '@adguard/agtree/generator';

@@ -7,7 +7,6 @@ import {
     isPruningNeeded,
     jsonPruner,
     getPrunePath,
-    // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
@@ -131,7 +130,7 @@ export function trustedPruneInboundObject(source, functionName, propsToRemove, r
     base[prop] = new Proxy(base[prop], objectHandler);
 }
 
-export const trustedPruneInboundObjectNames =[
+export const trustedPruneInboundObjectNames = [
     'trusted-prune-inbound-object',
     // trusted scriptlets support no aliases
 ];

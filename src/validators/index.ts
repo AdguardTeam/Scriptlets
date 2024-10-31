@@ -3,6 +3,7 @@ import {
     isAdgScriptletRule,
     isRedirectResourceCompatibleWithAdg,
     isUboScriptletRule,
+    isValidAdgRedirectRule,
     isValidScriptletName,
     isValidScriptletRule,
 } from './validator';
@@ -14,4 +15,5 @@ export const validators = {
     isUboScriptletRule,
     isAbpSnippetRule,
     isRedirectResourceCompatibleWithAdg,
+    isValidAdgRedirectRule,
 };

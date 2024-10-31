@@ -3,8 +3,6 @@ import {
     observeDOMChanges,
     nativeIsNaN,
     convertTypeToString,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     defaultAttributeSetter,
     logMessage,
     throttle,
@@ -157,7 +155,7 @@ export function setAttr(source, selector, attr, value = '') {
     observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value, attributeHandler), true);
 }
 
-export const setAttrNames =[
+export const setAttrNames = [
     'set-attr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-attr.js',

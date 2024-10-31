@@ -92,7 +92,7 @@ export function trustedSetSessionStorageItem(
     hit(source);
 }
 
-export const trustedSetSessionStorageItemNames =[
+export const trustedSetSessionStorageItemNames = [
     'trusted-set-session-storage-item',
     // trusted scriptlets support no aliases
 ];

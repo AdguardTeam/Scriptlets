@@ -9,7 +9,6 @@ import {
     getDescriptorAddon,
     logMessage,
     shouldAbortInlineOrInjectedScript,
-    // following helpers are needed for helpers above
     escapeRegExp,
     toRegExp,
     isEmptyObject,
@@ -146,7 +145,7 @@ export function abortOnStackTrace(source, property, stack) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-export const abortOnStackTraceNames =[
+export const abortOnStackTraceNames = [
     'abort-on-stack-trace',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js',

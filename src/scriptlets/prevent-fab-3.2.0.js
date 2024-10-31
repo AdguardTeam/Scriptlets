@@ -88,7 +88,7 @@ export function preventFab(source) {
     }
 }
 
-export const preventFabNames =[
+export const preventFabNames = [
     'prevent-fab-3.2.0',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nofab.js',

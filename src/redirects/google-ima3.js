@@ -1,9 +1,5 @@
 /* eslint-disable func-names, no-underscore-dangle */
-import {
-    hit,
-    noopFunc,
-    logMessage,
-} from '../helpers/index';
+import { hit, noopFunc, logMessage } from '../helpers/index';
 
 /**
  * @redirect google-ima3
@@ -542,7 +538,7 @@ export function GoogleIma3(source) {
     hit(source);
 }
 
-export const GoogleIma3Names =[
+export const GoogleIma3Names = [
     'google-ima3',
     // prefixed name
     'ubo-google-ima.js',

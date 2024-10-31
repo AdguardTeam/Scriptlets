@@ -153,7 +153,9 @@ export function trustedClickElement(
     // Regex to split match pairs by commas, avoiding the ones included in regexes
     const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:)/;
 
-    const sleep = (delayMs: number) => new Promise((resolve) => setTimeout(resolve, delayMs));
+    const sleep = (delayMs: number) => {
+        return new Promise((resolve) => { setTimeout(resolve, delayMs); });
+    };
 
     // If shadow combinator is present in selector, then override attachShadow and set mode to 'open'
     if (selectors.includes(SHADOW_COMBINATOR)) {
@@ -513,7 +515,7 @@ export function trustedClickElement(
     }
 }
 
-export const trustedClickElementNames =[
+export const trustedClickElementNames = [
     'trusted-click-element',
     // trusted scriptlets support no aliases
 ];

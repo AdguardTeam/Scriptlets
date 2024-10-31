@@ -113,6 +113,7 @@ const scriptletsCjsAndEsmConfig = {
         {
             dir: `${BUILD_DIST}/cjs`,
             format: 'cjs',
+            entryFileNames: '[name].js',
             exports: 'named',
             preserveModules: true,
             preserveModulesRoot: 'src',
@@ -120,6 +121,7 @@ const scriptletsCjsAndEsmConfig = {
         {
             dir: `${BUILD_DIST}/esm`,
             format: 'esm',
+            entryFileNames: '[name].mjs',
             exports: 'named',
             preserveModules: true,
             preserveModulesRoot: 'src',

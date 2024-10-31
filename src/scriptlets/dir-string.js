@@ -49,7 +49,7 @@ export function dirString(source, times) {
     console.dir = dirWrapper;
 }
 
-export const dirStringNames =[
+export const dirStringNames = [
     'dir-string',
 ];
 

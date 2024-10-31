@@ -8,8 +8,6 @@ import {
     matchRequestProps,
     getXhrData,
     XMLHttpRequestSharedRequestData,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isPruningNeeded,
     matchStackTrace,
     getMatchPropsData,
@@ -339,7 +337,7 @@ export function jsonPruneXhrResponse(
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
-export const jsonPruneXhrResponseNames =[
+export const jsonPruneXhrResponseNames = [
     'json-prune-xhr-response',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune-xhr-response.js',

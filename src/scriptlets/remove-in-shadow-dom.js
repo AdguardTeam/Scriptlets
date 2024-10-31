@@ -3,11 +3,9 @@ import {
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     flatten,
     throttle,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @scriptlet remove-in-shadow-dom
@@ -84,7 +82,7 @@ export function removeInShadowDom(source, selector, baseSelector) {
     observeDOMChanges(removeHandler, true);
 }
 
-export const removeInShadowDomNames =[
+export const removeInShadowDomNames = [
     'remove-in-shadow-dom',
 ];
 

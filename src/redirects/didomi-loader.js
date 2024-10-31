@@ -150,7 +150,7 @@ export function DidomiLoader(source) {
     hit(source);
 }
 
-export const DidomiLoaderNames =[
+export const DidomiLoaderNames = [
     'didomi-loader',
 ];
 

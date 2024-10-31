@@ -5,13 +5,11 @@ import {
     replaceNodeText,
     isTargetNode,
     parseNodeTextParams,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     hit,
     nodeListToArray,
     getAddedNodes,
     toRegExp,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -132,7 +130,7 @@ export function removeNodeText(source, nodeName, textMatch, parentSelector) {
     observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes, selector, parentSelector));
 }
 
-export const removeNodeTextNames =[
+export const removeNodeTextNames = [
     'remove-node-text',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-node-text.js',

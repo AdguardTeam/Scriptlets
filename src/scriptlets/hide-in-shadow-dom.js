@@ -3,8 +3,6 @@ import {
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     flatten,
     throttle,
 } from '../helpers/index';
@@ -85,7 +83,7 @@ export function hideInShadowDom(source, selector, baseSelector) {
     observeDOMChanges(hideHandler, true);
 }
 
-export const hideInShadowDomNames =[
+export const hideInShadowDomNames = [
     'hide-in-shadow-dom',
 ];
 

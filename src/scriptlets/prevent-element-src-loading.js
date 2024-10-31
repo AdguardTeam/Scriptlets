@@ -138,6 +138,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
             if (!isMatched) {
                 origSrcDescriptor.set.call(this, urlValue);
+                // eslint-disable-next-line no-setter-return
                 return true;
             }
 
@@ -172,10 +173,12 @@ export function preventElementSrcLoading(source, tagName, match) {
 
             if (!isMatched) {
                 origOnerrorDescriptor.set.call(this, cb);
+                // eslint-disable-next-line no-setter-return
                 return true;
             }
 
             origOnerrorDescriptor.set.call(this, noopFunc);
+            // eslint-disable-next-line no-setter-return
             return true;
         },
     });
@@ -226,7 +229,7 @@ export function preventElementSrcLoading(source, tagName, match) {
     preventInlineOnerror(tagName, searchRegexp);
 }
 
-export const preventElementSrcLoadingNames =[
+export const preventElementSrcLoadingNames = [
     'prevent-element-src-loading',
 ];
 

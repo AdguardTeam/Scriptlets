@@ -3,10 +3,8 @@ import {
     logMessage,
     observeDOMChanges,
     parseFlags,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     throttle,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -165,7 +163,7 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
     }
 }
 
-export const removeClassNames =[
+export const removeClassNames = [
     'remove-class',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-class.js',

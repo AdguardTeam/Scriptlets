@@ -57,7 +57,7 @@ export function noProtectedAudience(source: Source) {
     hit(source);
 }
 
-export const noProtectedAudienceNames =[
+export const noProtectedAudienceNames = [
     'no-protected-audience',
 ];
 

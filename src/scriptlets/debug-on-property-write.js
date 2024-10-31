@@ -4,8 +4,6 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
 } from '../helpers/index';
 
@@ -64,7 +62,7 @@ export function debugOnPropertyWrite(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-export const debugOnPropertyWriteNames =[
+export const debugOnPropertyWriteNames = [
     'debug-on-property-write',
 ];
 

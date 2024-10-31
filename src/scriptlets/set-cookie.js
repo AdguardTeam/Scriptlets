@@ -6,8 +6,6 @@ import {
     getLimitedCookieValue,
     serializeCookie,
     isValidCookiePath,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getCookiePath,
 } from '../helpers/index';
 
@@ -101,7 +99,7 @@ export function setCookie(source, name, value, path = '/', domain = '') {
     document.cookie = cookieToSet;
 }
 
-export const setCookieNames =[
+export const setCookieNames = [
     'set-cookie',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-cookie.js',

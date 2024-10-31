@@ -32,7 +32,7 @@ export function disableNewtabLinks(source) {
     });
 }
 
-export const disableNewtabLinksNames =[
+export const disableNewtabLinksNames = [
     'disable-newtab-links',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'disable-newtab-links.js',

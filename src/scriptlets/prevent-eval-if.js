@@ -43,7 +43,7 @@ export function preventEvalIf(source, search) {
     }.bind(window);
 }
 
-export const preventEvalIfNames =[
+export const preventEvalIfNames = [
     'prevent-eval-if',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval-if.js',

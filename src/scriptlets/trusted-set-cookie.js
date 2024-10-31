@@ -7,8 +7,6 @@ import {
     isValidCookiePath,
     parseKeywordValue,
     getTrustedCookieOffsetMs,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getCookiePath,
 } from '../helpers/index';
 
@@ -137,7 +135,7 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
     hit(source);
 }
 
-export const trustedSetCookieNames =[
+export const trustedSetCookieNames = [
     'trusted-set-cookie',
     // trusted scriptlets support no aliases
 ];

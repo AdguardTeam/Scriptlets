@@ -4,8 +4,6 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
 } from '../helpers/index';
 
@@ -83,7 +81,7 @@ export function abortOnPropertyRead(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-export const abortOnPropertyReadNames =[
+export const abortOnPropertyReadNames = [
     'abort-on-property-read',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-read.js',

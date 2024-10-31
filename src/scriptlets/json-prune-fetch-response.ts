@@ -8,8 +8,6 @@ import {
     getPrunePath,
     forgeResponse,
     FetchResource,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isPruningNeeded,
     matchStackTrace,
     toRegExp,
@@ -26,7 +24,7 @@ import {
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 import { Source } from '../../types/types';
 
 /**
@@ -196,7 +194,7 @@ export function jsonPruneFetchResponse(
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
-export const jsonPruneFetchResponseNames =[
+export const jsonPruneFetchResponseNames = [
     'json-prune-fetch-response',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune-fetch-response.js',

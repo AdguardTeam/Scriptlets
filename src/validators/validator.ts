@@ -10,13 +10,10 @@ import {
     RuleCategory,
     RuleConverter,
     ScriptletInjectionRule,
-    type SpecificPlatform,
 } from '@adguard/agtree';
 
-// FIXME try to get rid of this by moving names of the scriptlets separately from the scriptlets
 import * as scriptletsNamesList from '../scriptlets/scriptlets-names-list';
 import { getRuleNode } from '../helpers/rule-helpers';
-import { Scriptlet } from '../../types/types';
 
 /* ************************************************************************
  *
@@ -294,25 +291,6 @@ const getRedirectResourcesFromRule = (rule: string): RedirectResource[] => {
 };
 
 /**
- * Checks if the `rule` is AdGuard redirect rule.
- * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
- *
- * @param rule - rule text
- * @returns true if given rule is adg redirect
- */
-const isAdgRedirectRule = (rule: string): boolean => {
-    const resources = getRedirectResourcesFromRule(rule);
-
-    if (!resources.length || resources.length > 1) {
-        return false;
-    }
-
-    const [resource] = resources;
-
-    return modifiersCompatibilityTable.exists(resource.modifier, GenericPlatform.AdgAny);
-};
-
-/**
  * Checks if the specified redirect resource is compatible with AdGuard
  *
  * @param redirectName - Redirect resource name to check
@@ -328,7 +306,7 @@ export const isRedirectResourceCompatibleWithAdg = (redirectName: string): boole
  * @param rule - rule text
  * @returns true if given rule is valid adg redirect
  */
-const isValidAdgRedirectRule = (rule: string): boolean => {
+export const isValidAdgRedirectRule = (rule: string): boolean => {
     const resources = getRedirectResourcesFromRule(rule);
 
     if (!resources.length || resources.length > 1) {
@@ -345,69 +323,4 @@ const isValidAdgRedirectRule = (rule: string): boolean => {
         modifiersCompatibilityTable.exists(resource.modifier, GenericPlatform.AdgAny)
         && isRedirectResourceCompatibleWithAdg(resource.resource)
     );
-};
-
-/**
- * Checks if the redirect resource from the `rule` is compatible with the specified platform (`from`)
- * and has a compatible pair for the target platform (`to`)
- *
- * @param rule - rule text
- * @param from - platform to convert from
- * @param to - platform to convert to
- * @returns true if the rule is compatible with the specified platform
- */
-const checkCompatibility = (
-    rule: string,
-    from: SpecificPlatform | GenericPlatform,
-    to: SpecificPlatform | GenericPlatform,
-): boolean => {
-    const resources = getRedirectResourcesFromRule(rule);
-
-    if (!resources.length || resources.length > 1) {
-        return false;
-    }
-
-    const [resource] = resources;
-
-    if (!resource.resource) {
-        return resource.exceptionRule;
-    }
-
-    // Redirect should exist for the source platform
-    if (!redirectsCompatibilityTable.exists(resource.resource, from)) {
-        return false;
-    }
-
-    // Redirect should have a compatible pair for the target platform (maybe in a different name)
-    return !!redirectsCompatibilityTable.getFirst(resource.resource, to);
-};
-
-/**
- * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
- *
- * @param rule - AdGuard rule text
- * @returns - true if the rule can be converted to Ubo
- */
-const isAdgRedirectCompatibleWithUbo = (rule: string): boolean => {
-    return checkCompatibility(rule, GenericPlatform.AdgAny, GenericPlatform.UboAny);
-};
-
-/**
- * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
- *
- * @param rule - Ubo rule text
- * @returns - true if the rule can be converted to AdGuard
- */
-const isUboRedirectCompatibleWithAdg = (rule: string): boolean => {
-    return checkCompatibility(rule, GenericPlatform.UboAny, GenericPlatform.AdgAny);
-};
-
-/**
- * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
- *
- * @param rule - Abp rule text
- * @returns - true if the rule can be converted to AdGuard
- */
-const isAbpRedirectCompatibleWithAdg = (rule: string): boolean => {
-    return checkCompatibility(rule, GenericPlatform.AbpAny, GenericPlatform.AdgAny);
 };

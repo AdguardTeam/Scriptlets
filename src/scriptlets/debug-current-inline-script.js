@@ -6,8 +6,6 @@ import {
     createOnErrorHandler,
     hit,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
 } from '../helpers/index';
 
@@ -122,7 +120,7 @@ export function debugCurrentInlineScript(source, property, search) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-export const debugCurrentInlineScriptNames =[
+export const debugCurrentInlineScriptNames = [
     'debug-current-inline-script',
 ];
 

@@ -89,7 +89,7 @@ export function removeCookie(source, match) {
     window.addEventListener('beforeunload', rmCookie);
 }
 
-export const removeCookieNames =[
+export const removeCookieNames = [
     'remove-cookie',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'cookie-remover.js',

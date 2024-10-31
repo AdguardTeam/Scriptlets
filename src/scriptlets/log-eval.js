@@ -40,7 +40,7 @@ export function logEval(source) {
     window.Function = FunctionWrapper;
 }
 
-export const logEvalNames =[
+export const logEvalNames = [
     'log-eval',
 ];
 

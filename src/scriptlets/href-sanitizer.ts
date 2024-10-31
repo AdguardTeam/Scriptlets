@@ -2,8 +2,6 @@ import {
     observeDOMChanges,
     hit,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     throttle,
 } from '../helpers/index';
 import { Source } from '../../types/types';
@@ -439,7 +437,7 @@ export function hrefSanitizer(
     }
 }
 
-export const hrefSanitizerNames =[
+export const hrefSanitizerNames = [
     'href-sanitizer',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'href-sanitizer.js',

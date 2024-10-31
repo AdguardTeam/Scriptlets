@@ -62,7 +62,7 @@ export function nowebrtc(source) {
     }
 }
 
-export const nowebrtcNames =[
+export const nowebrtcNames = [
     'nowebrtc',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nowebrtc.js',

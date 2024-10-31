@@ -7,8 +7,6 @@ import {
     getAbortFunc,
     matchStackTrace,
     getErrorMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     toRegExp,
@@ -207,7 +205,7 @@ export function trustedSuppressNativeMethod(
     base[prop] = new Proxy(nativeMethod, { apply });
 }
 
-export const trustedSuppressNativeMethodNames =[
+export const trustedSuppressNativeMethodNames = [
     'trusted-suppress-native-method',
 ];
 

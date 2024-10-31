@@ -40,12 +40,8 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
             - [`SCRIPTLETS_VERSION`](#scriptlets-api--version)
     - [Redirect resources](#redirects_api-methods)
         - [`getCode()`](#redirects-api--getCode)
-        - [`isAdgRedirectRule()`](#redirects-api--isAdgRedirectRule)
         - [`isValidAdgRedirectRule()`](#redirects-api--isValidAdgRedirectRule)
         - [`isRedirectResourceCompatibleWithAdg()`](#redirects-api--isRedirectResourceCompatibleWithAdg)
-        - [`isAdgRedirectCompatibleWithUbo()`](#redirects-api--isAdgRedirectCompatibleWithUbo)
-        - [`isUboRedirectCompatibleWithAdg()`](#redirects-api--isUboRedirectCompatibleWithAdg)
-        - [`isAbpRedirectCompatibleWithAdg()`](#redirects-api--isAbpRedirectCompatibleWithAdg)
         - [`convertUboRedirectToAdg()`](#redirects-api--convertUboRedirectToAdg)
         - [`convertAbpRedirectToAdg()`](#redirects-api--convertAbpRedirectToAdg)
         - [`convertRedirectToAdg()`](#redirects-api--convertRedirectToAdg)
@@ -605,17 +601,6 @@ import { redirects } from '@adguard/scriptlets';
 redirects.getCode(source);
 ```
 
-##### <a name="redirects-api--isAdgRedirectRule"></a> `isAdgRedirectRule()`
-
-```javascript
-/**
- * Checks whether the `rule` is AdGuard redirect resource rule.
- * Discards comments and JS rules and checks whether the `rule` has $redirect or $redirect-rule modifier
- * @param {string} rule
- */
-redirects.isAdgRedirectRule(rule)
-```
-
 ##### <a name="redirects-api--isValidAdgRedirectRule"></a> `isValidAdgRedirectRule()`
 
 ```javascript
@@ -638,41 +623,6 @@ redirects.isValidAdgRedirectRule(rule);
  * @returns true if the redirect resource is compatible with AdGuard
  */
 redirects.isRedirectResourceCompatibleWithAdg(redirectName);
-```
-
-##### <a name="redirects-api--isAdgRedirectCompatibleWithUbo"></a> `isAdgRedirectCompatibleWithUbo()`
-
-```javascript
-/**
- * Checks whether the AdGuard redirect `rule` has Ubo analog.
- * Needed for Adg->Ubo conversion. No matter $redirect or $redirect-rule modifier is used
- * @param {string} rule — AdGuard rule
- * @returns {boolean} — true if the rule can be converted to Ubo syntax
- */
-redirects.isAdgRedirectCompatibleWithUbo(rule);
-```
-
-##### <a name="redirects-api--isUboRedirectCompatibleWithAdg"></a> `isUboRedirectCompatibleWithAdg()`
-
-```javascript
-/**
- * Checks if the Ubo redirect `rule` has AdGuard analog.
- * Needed for Ubo->Adg conversion. No matter $redirect or $redirect-rule modifier is used
- * @param {string} rule — Ubo rule
- * @returns {boolean} — true if the rule can be converted to AdGuard syntax
- */
-redirects.isUboRedirectCompatibleWithAdg(rule);
-```
-
-##### <a name="redirects-api--isAbpRedirectCompatibleWithAdg"></a> `isAbpRedirectCompatibleWithAdg()`
-
-```javascript
-/**
- * Checks whether the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
- * @param {string} rule — Abp rule
- * @returns {boolean} — true if the rule can be converted to AdGuard syntax
- */
-redirects.isAbpRedirectCompatibleWithAdg(rule);
 ```
 
 ##### <a name="redirects-api--convertUboRedirectToAdg"></a> `convertUboRedirectToAdg()`

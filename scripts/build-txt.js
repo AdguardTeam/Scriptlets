@@ -1,4 +1,5 @@
 import path from 'path';
+
 import { writeFile } from './helpers';
 import { version } from '../package.json';
 

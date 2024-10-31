@@ -100,7 +100,7 @@ export function ATInternetSmartTag(source) {
     hit(source);
 }
 
-export const ATInternetSmartTagNames =[
+export const ATInternetSmartTagNames = [
     'ati-smarttag',
 ];
 

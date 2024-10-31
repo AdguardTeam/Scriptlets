@@ -21,7 +21,7 @@ import {
     addCall,
     attachDependencies,
     passSourceAndProps,
-    wrapInNonameFunc
+    wrapInNonameFunc,
 } from '../src/helpers/injector';
 
 const FILE_NAME = 'redirects.yml';
@@ -96,14 +96,10 @@ const getBlockingRedirects = async () => {
  * @returns {Function}
  */
 const getRedirectByName = (name) => {
-    // eslint-disable-next-line global-require
+    // eslint-disable-next-line global-require,import/no-unresolved
     const redirectsList = require('../tmp/redirects-list');
     return redirectsList[name];
-    // FIXME remove
-    // const redirects = Object.keys(redirectsList).map((key) => redirectsList[key]);
-    // return redirects.find((r) => r.names && r.names.includes(name));
 };
-
 
 /**
  * Returns redirect code by param
@@ -127,8 +123,6 @@ export const getRedirectCode = (source) => {
 
 const getJsRedirects = async (options = {}) => {
     const compress = options.compress ?? false;
-    // FIXME check if is needed
-    const code = options.code ?? true;
 
     const redirectNamesList = Object.entries(redirectsNamesLists);
 

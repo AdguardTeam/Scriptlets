@@ -95,7 +95,7 @@ export function preventBab(source) {
     window.eval = evalWrapper.bind(window);
 }
 
-export const preventBabNames =[
+export const preventBabNames = [
     'prevent-bab',
     // there are no aliases for this scriptlet
 ];

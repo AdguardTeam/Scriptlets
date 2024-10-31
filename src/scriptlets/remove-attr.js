@@ -3,8 +3,6 @@ import {
     observeDOMChanges,
     parseFlags,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     throttle,
 } from '../helpers/index';
 
@@ -139,7 +137,7 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
     }
 }
 
-export const removeAttrNames =[
+export const removeAttrNames = [
     'remove-attr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js',

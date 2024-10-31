@@ -292,6 +292,7 @@ test('Protected from infinite loop when prop is used in a helper', (assert) => {
     const scriptletArgs = [property, stackMatch];
     runScriptlet(name, scriptletArgs);
 
+    // eslint-disable-next-line prefer-regex-literals
     const regExpStr = new RegExp('test').toString();
 
     assert.strictEqual(regExpStr, '/test/', 'Property is accessible');
@@ -482,6 +483,7 @@ test('abort RegExp, matches stack', (assert) => {
     const scriptletArgs = [property, stackMatch];
     runScriptlet(name, scriptletArgs);
     function triggerFunc() {
+        // eslint-disable-next-line prefer-regex-literals
         const triggerProp = new RegExp('test');
         return triggerProp;
     }

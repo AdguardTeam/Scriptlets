@@ -1,8 +1,4 @@
-import {
-    hit,
-    toRegExp,
-    logMessage,
-} from '../helpers/index';
+import { hit, toRegExp, logMessage } from '../helpers/index';
 
 /**
  * @scriptlet close-window
@@ -83,7 +79,7 @@ export function forceWindowClose(source, path = '') {
     }
 }
 
-export const forceWindowCloseNames =[
+export const forceWindowCloseNames = [
     'close-window',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'window-close-if.js',

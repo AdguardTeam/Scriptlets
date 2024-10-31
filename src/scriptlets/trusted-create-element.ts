@@ -5,9 +5,8 @@ import {
     nativeIsNaN,
     parseAttributePairs,
     getErrorMessage,
-} from '../helpers/index';
-
-import type { ParsedAttributePair } from '../helpers/attribute-utils';
+} from '../helpers';
+import type { ParsedAttributePair } from '../helpers';
 import { Source } from '../../types/types';
 
 /* eslint-disable max-len */
@@ -192,7 +191,7 @@ export function trustedCreateElement(
     }
 }
 
-export const trustedCreateElementNames =[
+export const trustedCreateElementNames = [
     'trusted-create-element',
     // trusted scriptlets support no aliases
 ];

@@ -1,6 +1,4 @@
-import {
-    hit,
-} from '../helpers/index';
+import { hit } from '../helpers/index';
 
 /* eslint-disable max-len */
 /**
@@ -246,7 +244,7 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
     );
 }
 
-export const spoofCSSNames =[
+export const spoofCSSNames = [
     'spoof-css',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'spoof-css.js',

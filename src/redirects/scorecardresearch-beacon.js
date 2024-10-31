@@ -28,7 +28,7 @@ export function ScoreCardResearchBeacon(source) {
     hit(source);
 }
 
-export const ScoreCardResearchBeaconNames =[
+export const ScoreCardResearchBeaconNames = [
     'scorecardresearch-beacon',
     'ubo-scorecardresearch_beacon.js',
     'scorecardresearch_beacon.js',

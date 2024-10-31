@@ -6,8 +6,6 @@ import {
     getLimitedCookieValue,
     serializeCookie,
     isValidCookiePath,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getCookiePath,
 } from '../helpers/index';
 
@@ -108,7 +106,7 @@ export function setCookieReload(source, name, value, path = '/', domain = '') {
     }
 }
 
-export const setCookieReloadNames =[
+export const setCookieReloadNames = [
     'set-cookie-reload',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-cookie-reload.js',

@@ -5,7 +5,6 @@ import {
     setStorageItem,
     removeStorageItem,
     getLimitedStorageItemValue,
-    // following helpers are needed for helpers above
     isValidStrPattern,
     toRegExp,
     escapeRegExp,
@@ -97,7 +96,7 @@ export function setLocalStorageItem(source, key, value) {
     hit(source);
 }
 
-export const setLocalStorageItemNames =[
+export const setLocalStorageItemNames = [
     'set-local-storage-item',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-local-storage-item.js',

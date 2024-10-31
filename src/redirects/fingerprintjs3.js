@@ -1,8 +1,5 @@
 /* eslint-disable func-names */
-import {
-    hit,
-    noopStr,
-} from '../helpers/index';
+import { hit, noopStr } from '../helpers/index';
 
 /**
  * @redirect fingerprintjs3
@@ -49,7 +46,7 @@ export function Fingerprintjs3(source) {
     hit(source);
 }
 
-export const Fingerprintjs3Names =[
+export const Fingerprintjs3Names = [
     'fingerprintjs3',
     // redirect aliases are needed for conversion:
     // prefixed for us

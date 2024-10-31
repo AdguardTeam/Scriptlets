@@ -8,8 +8,6 @@ import {
     parseKeywordValue,
     getTrustedCookieOffsetMs,
     parseCookieString,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getCookiePath,
 } from '../helpers/index';
 
@@ -157,7 +155,7 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
     }
 }
 
-export const trustedSetCookieReloadNames =[
+export const trustedSetCookieReloadNames = [
     'trusted-set-cookie-reload',
     // trusted scriptlets support no aliases
 ];

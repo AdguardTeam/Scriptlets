@@ -3,7 +3,6 @@ import {
     noopFunc,
     isPreventionNeeded,
     logMessage,
-    // following helpers are needed for helpers above
     parseMatchArg,
     parseDelayArg,
     toRegExp,
@@ -187,7 +186,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
     window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
 }
 
-export const preventSetTimeoutNames =[
+export const preventSetTimeoutNames = [
     'prevent-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js

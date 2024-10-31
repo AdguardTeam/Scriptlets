@@ -6,7 +6,6 @@ import {
     isPruningNeeded,
     jsonPruner,
     getPrunePath,
-    // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
@@ -139,7 +138,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
     Response.prototype.json = responseJsonWrapper;
 }
 
-export const jsonPruneNames =[
+export const jsonPruneNames = [
     'json-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js',

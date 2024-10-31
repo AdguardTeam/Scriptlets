@@ -1,8 +1,6 @@
 import {
-    AnyRule,
     CosmeticRuleType,
     NetworkRule,
-    QuoteUtils,
     RuleCategory,
     RuleConverter,
     ScriptletInjectionRule,
@@ -10,7 +8,6 @@ import {
     redirectsCompatibilityTable,
 } from '@adguard/agtree';
 
-import { validators } from '../validators';
 import { getRuleNode, getRuleText } from './rule-helpers';
 
 /**

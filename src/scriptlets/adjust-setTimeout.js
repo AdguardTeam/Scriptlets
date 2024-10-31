@@ -5,7 +5,6 @@ import {
     getBoostMultiplier,
     isDelayMatched,
     logMessage,
-    // following helpers are needed for helpers above
     nativeIsNaN,
     nativeIsFinite,
     getMatchDelay,
@@ -103,7 +102,7 @@ export function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
     window.setTimeout = timeoutWrapper;
 }
 
-export const adjustSetTimeoutNames =[
+export const adjustSetTimeoutNames = [
     'adjust-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'adjust-setTimeout.js',

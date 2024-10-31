@@ -5,8 +5,6 @@ import {
     createOnErrorHandler,
     hit,
     noopFunc,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
 } from '../helpers/index';
 
@@ -71,7 +69,7 @@ export function debugOnPropertyRead(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-export const debugOnPropertyReadNames =[
+export const debugOnPropertyReadNames = [
     'debug-on-property-read',
 ];
 debugOnPropertyRead.injections = [

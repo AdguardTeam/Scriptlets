@@ -1,21 +1,7 @@
-// FIXME try to convert to typescript
-
-// FIXME remove when not needed
-// import { redirects } from '../redirects';
-// import validator from '../helpers/validator';
+// @ts-ignore
 import { getScriptletFunction } from 'scriptlets-func';
-import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
-// FIXME remove when not needed
-// import {
-//     isValidScriptletRule,
-//     convertUboScriptletToAdg,
-//     convertAbpSnippetToAdg,
-//     convertScriptletToAdg,
-//     convertAdgScriptletToUbo,
-// } from '../helpers/converter';
 
-// next module should be built and put in the tmp directory before building this module
-// eslint-disable-next-line import/no-unresolved,import/extensions
+import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
 
 /**
  * @typedef {object} Source Scriptlet properties.
