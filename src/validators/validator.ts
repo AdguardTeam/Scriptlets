@@ -100,7 +100,6 @@ const hasScriptlet = (
     name: string,
 ): boolean => {
     const scriptletsNames = getScriptletsNames();
-    console.log(scriptletsNames);
     return scriptletsNames.has(name)
         || (!name.endsWith(UBO_JS_SUFFIX) && scriptletsNames.has(`${name}${UBO_JS_SUFFIX}`));
 };
