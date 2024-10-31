@@ -45,7 +45,7 @@
     "types": "dist/types/index.d.ts",
     "typesVersions": {
         "*": {
-            ".": [
+            "*": [
                 "dist/types/index.d.ts"
             ],
             "redirects": [

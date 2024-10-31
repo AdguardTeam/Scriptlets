@@ -127,11 +127,10 @@ export const getRedirectCode = (source) => {
 
 const getJsRedirects = async (options = {}) => {
     const compress = options.compress ?? false;
+    // FIXME check if is needed
     const code = options.code ?? true;
 
     const redirectNamesList = Object.entries(redirectsNamesLists);
-
-    console.log(redirectNamesList);
 
     let listOfRedirectsData = redirectNamesList
         .map(([key, redirectNames]) => {

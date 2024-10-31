@@ -1,3 +1,1 @@
-import { validators } from './src/validators';
-
-console.log(validators.isValidScriptletName('test'));
+export { validators } from './src/validators';

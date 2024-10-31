@@ -11,7 +11,7 @@ import generateHtml from 'rollup-plugin-generate-html';
 import alias from '@rollup/plugin-alias';
 import { dts } from 'rollup-plugin-dts';
 // FIXME remove
-// import { visualizer } from 'rollup-plugin-visualizer';
+import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 
 import project from './package.json';
@@ -37,10 +37,10 @@ const FOOTER = `
 
 const commonPlugins = [
     // FIXME remove
-    // visualizer({
-    //     emitFile: true,
-    //     filename: 'stats.html',
-    // }),
+    visualizer({
+        emitFile: true,
+        filename: 'stats.html',
+    }),
     json(),
     resolve({ extensions: ['.js', '.ts'] }),
     commonjs(),
@@ -50,22 +50,23 @@ const commonPlugins = [
     }),
 ];
 
-const scriptletsIIFEConfig = {
-    input: {
-        scriptlets: 'src/scriptlets/scriptlets-wrapper.js',
-    },
-    output: {
-        dir: BUILD_DIST,
-        entryFileNames: '[name].js',
-        format: 'iife',
-        strict: false,
-        banner: BANNER,
-        footer: FOOTER,
-    },
-    plugins: [
-        ...commonPlugins,
-    ],
-};
+// FIXME remove
+// const scriptletsIIFEConfig = {
+//     input: {
+//         scriptlets: 'src/scriptlets/scriptlets-wrapper.js',
+//     },
+//     output: {
+//         dir: BUILD_DIST,
+//         entryFileNames: '[name].js',
+//         format: 'iife',
+//         strict: false,
+//         banner: BANNER,
+//         footer: FOOTER,
+//     },
+//     plugins: [
+//         ...commonPlugins,
+//     ],
+// };
 
 // FIXME remove
 // const scriptletsUMDConfig = {
@@ -199,7 +200,7 @@ const scriptletsCjsAndEsmConfig = {
     external: (id) => {
         return (
             /node_modules/.test(id)
-            // this was added because when agtree is linked with yarn link, its id does not contains node_modules
+            // Added because when agtree is linked using 'yarn link', its ID does not contain 'node_modules'
             || id === '@adguard/agtree'
             || id.startsWith('@adguard/agtree/')
         );
@@ -242,7 +243,8 @@ const typesConfig = {
 const scriptletsCjsAndEsm = [scriptletsCjsAndEsmConfig, typesConfig];
 
 export {
-    scriptletsIIFEConfig,
+    // FIXME remove IIFE
+    // scriptletsIIFEConfig,
     scriptletsCjsAndEsm,
     // FIXME remove umd
     // scriptletsUMDConfig,
