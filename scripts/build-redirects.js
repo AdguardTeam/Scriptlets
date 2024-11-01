@@ -108,15 +108,16 @@ const getRedirectByName = (name) => {
  * @returns {string} redirect code
  */
 export const getRedirectCode = (source) => {
-    const redirect = getRedirectByName(source.name);
+    const { funcName, ...restSource } = source;
+    const redirect = getRedirectByName(funcName);
     let result = attachDependencies(redirect);
     result = addCall(redirect, result);
 
     // redirect code for different sources is checked in tests
     // so it should be just a code without any source and props passed
-    result = source.engine === 'test'
+    result = restSource.engine === 'test'
         ? wrapInNonameFunc(result)
-        : passSourceAndProps(source, result, true);
+        : passSourceAndProps(restSource, result, true);
 
     return result;
 };
@@ -130,7 +131,8 @@ const getJsRedirects = async (options = {}) => {
         .map(([key, redirectNames]) => {
             const [name, ...aliases] = redirectNames;
             const source = {
-                name: key.replace(/Names$/i, ''),
+                funcName: key.replace(/Names$/i, ''),
+                name,
                 args: [],
             };
 

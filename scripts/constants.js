@@ -44,7 +44,7 @@ const trustedScriptletsFilenames = getFilesList(SCRIPTLETS_SRC_RELATIVE_DIR_PATH
 // files which are not redirects in the source directory
 const NON_REDIRECTS_FILES = [
     'index.js',
-    'redirects.ts',
+    'redirects.js',
     'redirects-list.js',
     'redirects-names-list.js',
 ];

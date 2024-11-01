@@ -2,7 +2,7 @@
 import path from 'path';
 import { minify } from 'terser';
 
-import * as scriptletList from '../src/scriptlets/scriptlets-list';
+import * as scriptletNamesList from '../src/scriptlets/scriptlets-names-list';
 import { version } from '../package.json';
 import { writeFile } from './helpers';
 import { DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME } from './constants';
@@ -14,12 +14,9 @@ const buildCorelibsJson = async () => {
     const { getScriptletFunction } = require('../tmp/scriptlets-func');
 
     const scriptlets = await Promise.all(Object
-        .values(scriptletList)
-        .filter((s) => s.names)
-        .map(async (s) => {
-            const names = [...s.names];
-            const scriptlet = getScriptletFunction(s.names[0])
-                .toString();
+        .values(scriptletNamesList)
+        .map(async (names) => {
+            const scriptlet = getScriptletFunction(names[0]).toString();
             const result = await minify(scriptlet, {
                 mangle: false,
                 format: { comments: false },
@@ -42,6 +39,6 @@ const buildCorelibsJson = async () => {
 export const buildScriptletsForCorelibs = async () => {
     console.log('Start building corelibs...');
     const json = await buildCorelibsJson();
-    await writeFile(corelibsScriptletsPath, json, 'utf8');
+    await writeFile(corelibsScriptletsPath, json);
     console.log('Corelibs built');
 };

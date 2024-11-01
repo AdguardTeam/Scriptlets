@@ -1,4 +1,4 @@
-import Redirects from './redirects';
+import { Redirects } from './redirects';
 // eslint-disable-next-line import/no-unresolved
 import { redirectsMap } from '../../tmp/redirects-map';
 
