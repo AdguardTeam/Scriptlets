@@ -102,6 +102,9 @@ const getRedirectByName = (name) => {
 };
 
 /**
+ * @typedef {import('../types/types').Source} Source
+ */
+/**
  * Returns redirect code by param
  *
  * @param {Source} source

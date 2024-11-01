@@ -1,3 +1,4 @@
+// Ignore this module, because it appears only during build
 // @ts-ignore
 import { getScriptletFunction } from 'scriptlets-func';
 
