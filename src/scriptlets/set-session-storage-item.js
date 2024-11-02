@@ -104,6 +104,9 @@ export const setSessionStorageItemNames = [
     'ubo-set-session-storage-item',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+setSessionStorageItem.primaryName = setSessionStorageItemNames[0];
+
 setSessionStorageItem.injections = [
     hit,
     logMessage,

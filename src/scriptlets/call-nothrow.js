@@ -92,6 +92,9 @@ export const callNoThrowNames = [
     'ubo-call-nothrow',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+callNoThrow.primaryName = callNoThrowNames[0];
+
 callNoThrow.injections = [
     hit,
     getPropertyInChain,

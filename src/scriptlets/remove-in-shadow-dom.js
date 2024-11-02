@@ -86,6 +86,9 @@ export const removeInShadowDomNames = [
     'remove-in-shadow-dom',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+removeInShadowDom.primaryName = removeInShadowDomNames[0];
+
 removeInShadowDom.injections = [
     hit,
     observeDOMChanges,

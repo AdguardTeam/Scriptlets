@@ -433,6 +433,10 @@ export const setConstantNames = [
     'ubo-set',
     'abp-override-property-read',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+setConstant.primaryName = setConstantNames[0];
+
 setConstant.injections = [
     hit,
     logMessage,

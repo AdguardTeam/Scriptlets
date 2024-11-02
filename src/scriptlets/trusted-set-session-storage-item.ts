@@ -97,6 +97,9 @@ export const trustedSetSessionStorageItemNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedSetSessionStorageItem.primaryName = trustedSetSessionStorageItemNames[0];
+
 trustedSetSessionStorageItem.injections = [
     hit,
     logMessage,

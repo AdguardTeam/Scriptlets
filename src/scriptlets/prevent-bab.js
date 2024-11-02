@@ -100,4 +100,7 @@ export const preventBabNames = [
     // there are no aliases for this scriptlet
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventBab.primaryName = preventBabNames[0];
+
 preventBab.injections = [hit];

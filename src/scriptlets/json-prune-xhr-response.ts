@@ -345,6 +345,9 @@ export const jsonPruneXhrResponseNames = [
     'ubo-json-prune-xhr-response',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+jsonPruneXhrResponse.primaryName = jsonPruneXhrResponseNames[0];
+
 jsonPruneXhrResponse.injections = [
     hit,
     logMessage,

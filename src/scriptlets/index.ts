@@ -1,19 +1,7 @@
 // Ignore this module, because it appears only during build
 // @ts-ignore
 import { getScriptletFunction } from 'scriptlets-func';
-
 import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
-
-/**
- * @typedef {object} Source Scriptlet properties.
- * @property {string} name Scriptlet name.
- * @property {Array<string>} args Arguments for scriptlet function.
- * @property {'extension'|'corelibs'|'test'} engine Defines the final form of scriptlet string presentation.
- * @property {string} [version] Extension version.
- * @property {boolean} [verbose] Flag to enable debug information printing to console.
- * @property {string} [ruleText] Source rule text, needed for debug purposes.
- * @property {string} [domainName] Domain name where scriptlet is applied, needed for debug purposes.
- */
 
 /**
  * Scriptlet properties
@@ -76,9 +64,9 @@ export interface IConfiguration {
 /**
  * Returns scriptlet code by `source`.
  *
- * @param {Source} source Scriptlet properties.
+ * @param source Scriptlet properties.
  *
- * @returns {string|null} Scriptlet code.
+ * @returns Scriptlet code.
  * @throws An error on unknown scriptlet name.
  */
 function getScriptletCode(source: IConfiguration): string {
@@ -88,6 +76,7 @@ function getScriptletCode(source: IConfiguration): string {
     if (typeof scriptletFunction !== 'function') {
         throw new Error(`Error: cannot invoke scriptlet with name: '${source.name}'`);
     }
+
     const scriptletFunctionString = scriptletFunction.toString();
 
     const result = source.engine === 'corelibs' || source.engine === 'test'

@@ -147,6 +147,9 @@ export const GoogleAnalyticsNames = [
     'googletagmanager_gtm.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+GoogleAnalytics.primaryName = GoogleAnalyticsNames[0];
+
 GoogleAnalytics.injections = [
     hit,
     noopFunc,

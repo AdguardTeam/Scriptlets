@@ -74,6 +74,9 @@ export const logAddEventListenerNames = [
     'ubo-aell',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+logAddEventListener.primaryName = logAddEventListenerNames[0];
+
 logAddEventListener.injections = [
     hit,
     validateType,

@@ -129,6 +129,9 @@ export const preventRefreshNames = [
     'ubo-refresh-defuser',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventRefresh.primaryName = preventRefreshNames[0];
+
 preventRefresh.injections = [
     hit,
     getNumberFromString,

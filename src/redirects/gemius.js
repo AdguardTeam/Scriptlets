@@ -35,4 +35,7 @@ export const GemiusNames = [
     'gemius',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+Gemius.primaryName = GemiusNames[0];
+
 Gemius.injections = [hit, noopFunc];

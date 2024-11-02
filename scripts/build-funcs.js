@@ -48,20 +48,25 @@ const getScriptletFunctionsString = () => {
 
     // eslint-disable-next-line global-require
     const scriptletsNamesList = require('../src/scriptlets/scriptlets-names-list');
-    const scriptletNamesList = Object.entries(scriptletsNamesList);
+    const scriptletNamesList = Object.values(scriptletsNamesList);
 
     const scriptletsMapString = `const scriptletsMap = {\n${scriptletNamesList
-        .map(([scriptletNamesKey, scriptletNames]) => {
-        // FIXME try to add scriptlet name to the exported names
-            if (scriptletNames) {
-                const scriptletName = scriptletNamesKey.replace(/Names$/i, '');
-                return scriptletNames.map((name) => {
-                    return `'${name}': ${scriptletName}`;
-                })
-                    .join(',\n');
+        .map((scriptletAliases) => {
+            if (!scriptletAliases) {
+                return '';
             }
-            return '';
-        }).filter((arg) => arg).join(',\n')}\n}`;
+
+            const primaryName = scriptletAliases[0];
+            const scriptletFnName = scriptletsFunctions
+                .filter((scriptletFn) => scriptletFn.primaryName === primaryName)[0].name;
+
+            return scriptletAliases
+                .map((name) => {
+                    return `'${name}': ${scriptletFnName}`;
+                })
+                .join(',\n');
+        })
+        .filter((arg) => arg).join(',\n')}\n}`;
 
     const exportString = `var getScriptletFunction = (name) => {
         return scriptletsMap[name];

@@ -206,6 +206,9 @@ export const preventSetTimeoutNames = [
     'ubo-std',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventSetTimeout.primaryName = preventSetTimeoutNames[0];
+
 preventSetTimeout.injections = [
     hit,
     noopFunc,

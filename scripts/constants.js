@@ -29,7 +29,6 @@ const NON_SCRIPTLETS_FILES = [
     'index.js',
     'scriptlets.js',
     'scriptlets-list.js',
-    'scriptlets-wrapper.js',
 ];
 
 const isUtilityFileName = (filename) => NON_SCRIPTLETS_FILES.includes(filename);

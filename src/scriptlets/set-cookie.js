@@ -107,6 +107,9 @@ export const setCookieNames = [
     'ubo-set-cookie',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+setCookie.primaryName = setCookieNames[0];
+
 setCookie.injections = [
     hit,
     logMessage,

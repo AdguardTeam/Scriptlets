@@ -114,6 +114,9 @@ export const adjustSetIntervalNames = [
     'ubo-adjust-setInterval',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+adjustSetInterval.primaryName = adjustSetIntervalNames[0];
+
 adjustSetInterval.injections = [
     hit,
     isValidCallback,

@@ -66,6 +66,9 @@ export const debugOnPropertyWriteNames = [
     'debug-on-property-write',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+debugOnPropertyWrite.primaryName = debugOnPropertyWriteNames[0];
+
 debugOnPropertyWrite.injections = [
     randomId,
     setPropertyAccess,

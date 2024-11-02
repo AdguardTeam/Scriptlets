@@ -229,6 +229,9 @@ export const preventFetchNames = [
     'ubo-no-fetch-if',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventFetch.primaryName = preventFetchNames[0];
+
 preventFetch.injections = [
     hit,
     getFetchData,

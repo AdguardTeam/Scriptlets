@@ -520,6 +520,9 @@ export const trustedClickElementNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedClickElement.primaryName = trustedClickElementNames[0];
+
 trustedClickElement.injections = [
     hit,
     toRegExp,

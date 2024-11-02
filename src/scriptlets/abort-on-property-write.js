@@ -87,6 +87,9 @@ export const abortOnPropertyWriteNames = [
     'abp-abort-on-property-write',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+abortOnPropertyWrite.primaryName = abortOnPropertyWriteNames[0];
+
 abortOnPropertyWrite.injections = [
     randomId,
     setPropertyAccess,

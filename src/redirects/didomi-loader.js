@@ -154,6 +154,9 @@ export const DidomiLoaderNames = [
     'didomi-loader',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+DidomiLoader.primaryName = DidomiLoaderNames[0];
+
 DidomiLoader.injections = [
     hit,
     noopFunc,

@@ -196,6 +196,9 @@ export const trustedCreateElementNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedCreateElement.primaryName = trustedCreateElementNames[0];
+
 trustedCreateElement.injections = [
     hit,
     logMessage,

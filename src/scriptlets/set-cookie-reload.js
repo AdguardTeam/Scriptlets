@@ -114,6 +114,9 @@ export const setCookieReloadNames = [
     'ubo-set-cookie-reload',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+setCookieReload.primaryName = setCookieReloadNames[0];
+
 setCookieReload.injections = [
     hit,
     logMessage,

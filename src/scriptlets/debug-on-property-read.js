@@ -72,6 +72,10 @@ export function debugOnPropertyRead(source, property) {
 export const debugOnPropertyReadNames = [
     'debug-on-property-read',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+debugOnPropertyRead.primaryName = debugOnPropertyReadNames[0];
+
 debugOnPropertyRead.injections = [
     randomId,
     setPropertyAccess,

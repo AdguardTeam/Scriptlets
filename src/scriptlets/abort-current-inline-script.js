@@ -234,6 +234,9 @@ export const abortCurrentInlineScriptNames = [
     'abp-abort-current-inline-script',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+abortCurrentInlineScript.primaryName = abortCurrentInlineScriptNames[0];
+
 abortCurrentInlineScript.injections = [
     randomId,
     setPropertyAccess,

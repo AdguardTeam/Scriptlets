@@ -203,6 +203,9 @@ export const preventSetIntervalNames = [
     'ubo-sid',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventSetInterval.primaryName = preventSetIntervalNames[0];
+
 preventSetInterval.injections = [
     hit,
     noopFunc,

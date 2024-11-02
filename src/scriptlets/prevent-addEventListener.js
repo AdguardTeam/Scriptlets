@@ -106,6 +106,9 @@ export const preventAddEventListenerNames = [
     'abp-prevent-listener',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventAddEventListener.primaryName = preventAddEventListenerNames[0];
+
 preventAddEventListener.injections = [
     hit,
     toRegExp,

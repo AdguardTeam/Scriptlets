@@ -141,6 +141,9 @@ export const removeNodeTextNames = [
     'ubo-rmnt',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+removeNodeText.primaryName = removeNodeTextNames[0];
+
 removeNodeText.injections = [
     observeDocumentWithTimeout,
     handleExistingNodes,

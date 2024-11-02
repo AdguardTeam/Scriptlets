@@ -89,6 +89,9 @@ export const preventAdflyNames = [
     // there are no aliases for this scriptlet
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventAdfly.primaryName = preventAdflyNames[0];
+
 preventAdfly.injections = [
     setPropertyAccess,
     hit,

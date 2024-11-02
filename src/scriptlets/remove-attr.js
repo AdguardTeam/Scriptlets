@@ -148,6 +148,9 @@ export const removeAttrNames = [
     'ubo-ra',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+removeAttr.primaryName = removeAttrNames[0];
+
 removeAttr.injections = [
     hit,
     observeDOMChanges,

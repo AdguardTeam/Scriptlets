@@ -53,4 +53,7 @@ export const dirStringNames = [
     'dir-string',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+dirString.primaryName = dirStringNames[0];
+
 dirString.injections = [hit];

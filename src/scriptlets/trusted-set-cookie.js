@@ -140,6 +140,9 @@ export const trustedSetCookieNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedSetCookie.primaryName = trustedSetCookieNames[0];
+
 trustedSetCookie.injections = [
     hit,
     logMessage,

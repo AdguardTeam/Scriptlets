@@ -343,6 +343,9 @@ export const preventXHRNames = [
     'ubo-no-xhr-if',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventXHR.primaryName = preventXHRNames[0];
+
 preventXHR.injections = [
     hit,
     objectToString,

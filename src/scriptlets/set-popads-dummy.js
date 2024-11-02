@@ -45,4 +45,7 @@ export const setPopadsDummyNames = [
     'ubo-popads-dummy',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+setPopadsDummy.primaryName = setPopadsDummyNames[0];
+
 setPopadsDummy.injections = [hit];

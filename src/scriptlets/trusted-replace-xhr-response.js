@@ -268,6 +268,9 @@ export const trustedReplaceXhrResponseNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedReplaceXhrResponse.primaryName = trustedReplaceXhrResponseNames[0];
+
 trustedReplaceXhrResponse.injections = [
     hit,
     logMessage,

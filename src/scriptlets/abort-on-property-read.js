@@ -92,6 +92,10 @@ export const abortOnPropertyReadNames = [
     'ubo-aopr',
     'abp-abort-on-property-read',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+abortOnPropertyRead.primaryName = abortOnPropertyReadNames[0];
+
 abortOnPropertyRead.injections = [
     randomId,
     setPropertyAccess,

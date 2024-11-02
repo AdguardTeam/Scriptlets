@@ -104,4 +104,7 @@ export const ATInternetSmartTagNames = [
     'ati-smarttag',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+ATInternetSmartTag.primaryName = ATInternetSmartTagNames[0];
+
 ATInternetSmartTag.injections = [hit, noopFunc];

@@ -93,12 +93,13 @@ const getBlockingRedirects = async () => {
  * Finds redirect resource by it's name
  *
  * @param {string} name - redirect name
- * @returns {Function}
+ * @returns {Redirect}
  */
 const getRedirectByName = (name) => {
     // eslint-disable-next-line global-require,import/no-unresolved
     const redirectsList = require('../tmp/redirects-list');
-    return redirectsList[name];
+    return Object.values(redirectsList)
+        .filter((redirect) => redirect.primaryName === name)[0];
 };
 
 /**
@@ -111,16 +112,19 @@ const getRedirectByName = (name) => {
  * @returns {string} redirect code
  */
 export const getRedirectCode = (source) => {
-    const { funcName, ...restSource } = source;
-    const redirect = getRedirectByName(funcName);
+    const redirect = getRedirectByName(source.name);
+    if (!redirect) {
+        throw new Error(`Was unable to find redirect by name: ${source.name}`);
+    }
+
     let result = attachDependencies(redirect);
     result = addCall(redirect, result);
 
     // redirect code for different sources is checked in tests
     // so it should be just a code without any source and props passed
-    result = restSource.engine === 'test'
+    result = source.engine === 'test'
         ? wrapInNonameFunc(result)
-        : passSourceAndProps(restSource, result, true);
+        : passSourceAndProps(source, result, true);
 
     return result;
 };
@@ -128,13 +132,12 @@ export const getRedirectCode = (source) => {
 const getJsRedirects = async (options = {}) => {
     const compress = options.compress ?? false;
 
-    const redirectNamesList = Object.entries(redirectsNamesLists);
+    const redirectNamesList = Object.values(redirectsNamesLists);
 
     let listOfRedirectsData = redirectNamesList
-        .map(([key, redirectNames]) => {
+        .map((redirectNames) => {
             const [name, ...aliases] = redirectNames;
             const source = {
-                funcName: key.replace(/Names$/i, ''),
                 name,
                 args: [],
             };

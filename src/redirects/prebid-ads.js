@@ -31,4 +31,7 @@ export const prebidAdsNames = [
     'prebid-ads.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+prebidAds.primaryName = prebidAdsNames[0];
+
 prebidAds.injections = [hit];

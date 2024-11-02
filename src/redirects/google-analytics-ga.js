@@ -127,6 +127,9 @@ export const GoogleAnalyticsGaNames = [
     'google-analytics_ga.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+GoogleAnalyticsGa.primaryName = GoogleAnalyticsGaNames[0];
+
 GoogleAnalyticsGa.injections = [
     hit,
     noopFunc,

@@ -252,6 +252,9 @@ export const spoofCSSNames = [
     'ubo-spoof-css',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+spoofCSS.primaryName = spoofCSSNames[0];
+
 spoofCSS.injections = [
     hit,
 ];

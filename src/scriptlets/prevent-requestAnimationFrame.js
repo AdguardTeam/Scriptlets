@@ -127,6 +127,9 @@ export const preventRequestAnimationFrameNames = [
     'ubo-norafif',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventRequestAnimationFrame.primaryName = preventRequestAnimationFrameNames[0];
+
 preventRequestAnimationFrame.injections = [
     hit,
     noopFunc,

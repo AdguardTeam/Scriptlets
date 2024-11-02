@@ -546,6 +546,9 @@ export const GoogleIma3Names = [
     'google-ima.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+GoogleIma3.primaryName = GoogleIma3Names[0];
+
 GoogleIma3.injections = [
     hit,
     noopFunc,

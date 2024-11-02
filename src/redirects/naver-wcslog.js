@@ -28,4 +28,7 @@ export function NaverWcslog(source) {
 
 export const NaverWcslogNames = ['naver-wcslog'];
 
+// eslint-disable-next-line prefer-destructuring
+NaverWcslog.primaryName = NaverWcslogNames[0];
+
 NaverWcslog.injections = [hit, noopFunc];

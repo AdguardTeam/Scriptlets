@@ -51,4 +51,7 @@ export const preventEvalIfNames = [
     'ubo-noeval-if',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventEvalIf.primaryName = preventEvalIfNames[0];
+
 preventEvalIf.injections = [toRegExp, hit];

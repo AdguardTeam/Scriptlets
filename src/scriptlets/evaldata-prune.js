@@ -128,6 +128,9 @@ export const evalDataPruneNames = [
     'ubo-evaldata-prune',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+evalDataPrune.primaryName = evalDataPruneNames[0];
+
 evalDataPrune.injections = [
     hit,
     matchStackTrace,

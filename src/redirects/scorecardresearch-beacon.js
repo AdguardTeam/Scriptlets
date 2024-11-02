@@ -34,6 +34,9 @@ export const ScoreCardResearchBeaconNames = [
     'scorecardresearch_beacon.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+ScoreCardResearchBeacon.primaryName = ScoreCardResearchBeaconNames[0];
+
 ScoreCardResearchBeacon.injections = [
     hit,
 ];

@@ -286,6 +286,9 @@ export const trustedReplaceOutboundTextNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedReplaceOutboundText.primaryName = trustedReplaceOutboundTextNames[0];
+
 trustedReplaceOutboundText.injections = [
     hit,
     matchStackTrace,

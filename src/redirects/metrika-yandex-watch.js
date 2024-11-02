@@ -79,4 +79,7 @@ export const metrikaYandexWatchNames = [
     'metrika-yandex-watch',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+metrikaYandexWatch.primaryName = metrikaYandexWatchNames[0];
+
 metrikaYandexWatch.injections = [hit, noopFunc, noopArray];

@@ -255,6 +255,10 @@ export const trustedSetConstantNames = [
     'trusted-set-constant',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedSetConstant.primaryName = trustedSetConstantNames[0];
+
 trustedSetConstant.injections = [
     hit,
     inferValue,

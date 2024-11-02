@@ -138,6 +138,9 @@ export const trustedReplaceNodeTextNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedReplaceNodeText.primaryName = trustedReplaceNodeTextNames[0];
+
 trustedReplaceNodeText.injections = [
     observeDocumentWithTimeout,
     handleExistingNodes,

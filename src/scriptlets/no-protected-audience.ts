@@ -61,6 +61,9 @@ export const noProtectedAudienceNames = [
     'no-protected-audience',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+noProtectedAudience.primaryName = noProtectedAudienceNames[0];
+
 noProtectedAudience.injections = [
     hit,
     noopStr,

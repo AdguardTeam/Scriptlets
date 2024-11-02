@@ -135,6 +135,9 @@ export const trustedPruneInboundObjectNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedPruneInboundObject.primaryName = trustedPruneInboundObjectNames[0];
+
 trustedPruneInboundObject.injections = [
     hit,
     matchStackTrace,

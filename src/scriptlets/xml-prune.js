@@ -412,6 +412,9 @@ export const xmlPruneNames = [
     'ubo-xml-prune',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+xmlPrune.primaryName = xmlPruneNames[0];
+
 xmlPrune.injections = [
     hit,
     logMessage,

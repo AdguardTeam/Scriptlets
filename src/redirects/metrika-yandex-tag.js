@@ -138,4 +138,7 @@ export const metrikaYandexTagNames = [
     'metrika-yandex-tag',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+metrikaYandexTag.primaryName = metrikaYandexTagNames[0];
+
 metrikaYandexTag.injections = [hit, noopFunc];

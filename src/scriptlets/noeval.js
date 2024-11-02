@@ -40,4 +40,7 @@ export const noevalNames = [
     'ubo-silent-noeval',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+noeval.primaryName = noevalNames[0];
+
 noeval.injections = [hit, logMessage];

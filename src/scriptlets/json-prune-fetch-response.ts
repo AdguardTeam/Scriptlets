@@ -202,6 +202,9 @@ export const jsonPruneFetchResponseNames = [
     'ubo-json-prune-fetch-response',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+jsonPruneFetchResponse.primaryName = jsonPruneFetchResponseNames[0];
+
 jsonPruneFetchResponse.injections = [
     hit,
     logMessage,

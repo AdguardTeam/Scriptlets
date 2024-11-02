@@ -163,6 +163,9 @@ export const setAttrNames = [
     'ubo-set-attr',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+setAttr.primaryName = setAttrNames[0];
+
 setAttr.injections = [
     setAttributeBySelector,
     observeDOMChanges,

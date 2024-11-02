@@ -40,6 +40,9 @@ export const disableNewtabLinksNames = [
     'ubo-disable-newtab-links',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+disableNewtabLinks.primaryName = disableNewtabLinksNames[0];
+
 disableNewtabLinks.injections = [
     hit,
 ];

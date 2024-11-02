@@ -194,6 +194,9 @@ export const trustedReplaceFetchResponseNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedReplaceFetchResponse.primaryName = trustedReplaceFetchResponseNames[0];
+
 trustedReplaceFetchResponse.injections = [
     hit,
     logMessage,

@@ -87,6 +87,9 @@ export const hideInShadowDomNames = [
     'hide-in-shadow-dom',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+hideInShadowDom.primaryName = hideInShadowDomNames[0];
+
 hideInShadowDom.injections = [
     hit,
     observeDOMChanges,

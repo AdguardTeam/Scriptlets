@@ -78,6 +78,9 @@ export const injectCssInShadowDomNames = [
     'inject-css-in-shadow-dom',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+injectCssInShadowDom.primaryName = injectCssInShadowDomNames[0];
+
 injectCssInShadowDom.injections = [
     hit,
     logMessage,

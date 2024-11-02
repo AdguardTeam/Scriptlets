@@ -90,6 +90,9 @@ export const forceWindowCloseNames = [
     'ubo-close-window',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+forceWindowClose.primaryName = forceWindowCloseNames[0];
+
 forceWindowClose.injections = [
     hit,
     toRegExp,

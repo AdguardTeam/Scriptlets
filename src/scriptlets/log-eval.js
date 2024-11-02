@@ -44,4 +44,7 @@ export const logEvalNames = [
     'log-eval',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+logEval.primaryName = logEvalNames[0];
+
 logEval.injections = [hit, logMessage];

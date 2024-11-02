@@ -122,6 +122,9 @@ export const logOnStackTraceNames = [
     'log-on-stack-trace',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+logOnStackTrace.primaryName = logOnStackTraceNames[0];
+
 logOnStackTrace.injections = [
     getPropertyInChain,
     setPropertyAccess,

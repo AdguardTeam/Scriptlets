@@ -73,4 +73,7 @@ export function Prebid(source) {
 
 export const PrebidNames = ['prebid'];
 
+// eslint-disable-next-line prefer-destructuring
+Prebid.primaryName = PrebidNames[0];
+
 Prebid.injections = [hit, noopFunc, noopStr, noopArray];

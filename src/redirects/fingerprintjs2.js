@@ -56,4 +56,7 @@ export const Fingerprintjs2Names = [
     'fingerprint2.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+Fingerprintjs2.primaryName = Fingerprintjs2Names[0];
+
 Fingerprintjs2.injections = [hit];

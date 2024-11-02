@@ -124,6 +124,9 @@ export const debugCurrentInlineScriptNames = [
     'debug-current-inline-script',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+debugCurrentInlineScript.primaryName = debugCurrentInlineScriptNames[0];
+
 debugCurrentInlineScript.injections = [
     randomId,
     setPropertyAccess,

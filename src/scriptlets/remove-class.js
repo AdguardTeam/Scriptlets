@@ -174,6 +174,9 @@ export const removeClassNames = [
     'ubo-rc',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+removeClass.primaryName = removeClassNames[0];
+
 removeClass.injections = [
     hit,
     logMessage,

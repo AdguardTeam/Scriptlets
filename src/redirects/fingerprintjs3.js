@@ -55,4 +55,7 @@ export const Fingerprintjs3Names = [
     'fingerprint3.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+Fingerprintjs3.primaryName = Fingerprintjs3Names[0];
+
 Fingerprintjs3.injections = [hit, noopStr];

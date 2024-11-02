@@ -104,6 +104,9 @@ export const setLocalStorageItemNames = [
     'ubo-set-local-storage-item',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+setLocalStorageItem.primaryName = setLocalStorageItemNames[0];
+
 setLocalStorageItem.injections = [
     hit,
     logMessage,

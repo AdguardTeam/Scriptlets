@@ -53,4 +53,7 @@ export const preventBab2Names = [
     'nobab2.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventBab2.primaryName = preventBab2Names[0];
+
 preventBab2.injections = [hit];

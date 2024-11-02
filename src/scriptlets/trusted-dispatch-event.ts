@@ -100,6 +100,9 @@ export const trustedDispatchEventNames = [
     'trusted-dispatch-event',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedDispatchEvent.primaryName = trustedDispatchEventNames[0];
+
 trustedDispatchEvent.injections = [
     hit,
 ];

@@ -37,4 +37,7 @@ export function Matomo(source) {
 
 export const MatomoNames = ['matomo'];
 
+// eslint-disable-next-line prefer-destructuring
+Matomo.primaryName = MatomoNames[0];
+
 Matomo.injections = [hit, noopFunc];

@@ -445,6 +445,9 @@ export const hrefSanitizerNames = [
     'ubo-href-sanitizer',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+hrefSanitizer.primaryName = hrefSanitizerNames[0];
+
 hrefSanitizer.injections = [
     observeDOMChanges,
     hit,

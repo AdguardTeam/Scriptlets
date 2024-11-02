@@ -191,6 +191,9 @@ export const preventWindowOpenNames = [
     'ubo-no-window-open-if',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventWindowOpen.primaryName = preventWindowOpenNames[0];
+
 preventWindowOpen.injections = [
     hit,
     isValidStrPattern,

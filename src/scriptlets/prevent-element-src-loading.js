@@ -233,6 +233,9 @@ export const preventElementSrcLoadingNames = [
     'prevent-element-src-loading',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventElementSrcLoading.primaryName = preventElementSrcLoadingNames[0];
+
 preventElementSrcLoading.injections = [
     hit,
     toRegExp,

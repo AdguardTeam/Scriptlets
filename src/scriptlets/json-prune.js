@@ -147,6 +147,9 @@ export const jsonPruneNames = [
     'abp-json-prune',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+jsonPrune.primaryName = jsonPruneNames[0];
+
 jsonPrune.injections = [
     hit,
     matchStackTrace,

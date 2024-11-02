@@ -104,6 +104,9 @@ export const GoogleSyndicationAdsByGoogleNames = [
     'googlesyndication_adsbygoogle.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+GoogleSyndicationAdsByGoogle.primaryName = GoogleSyndicationAdsByGoogleNames[0];
+
 GoogleSyndicationAdsByGoogle.injections = [
     hit,
 ];

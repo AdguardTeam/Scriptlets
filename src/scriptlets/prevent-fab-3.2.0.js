@@ -98,4 +98,7 @@ export const preventFabNames = [
     'ubo-nofab',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventFab.primaryName = preventFabNames[0];
+
 preventFab.injections = [hit, noopFunc, noopThis];

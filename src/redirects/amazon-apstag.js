@@ -40,4 +40,7 @@ export const AmazonApstagNames = [
     'amazon_apstag.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+AmazonApstag.primaryName = AmazonApstagNames[0];
+
 AmazonApstag.injections = [hit, noopFunc];

@@ -43,4 +43,7 @@ export const preventPopadsNetNames = [
     'ubo-popads.net',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventPopadsNet.primaryName = preventPopadsNetNames[0];
+
 preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];

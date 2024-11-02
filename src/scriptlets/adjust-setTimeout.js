@@ -116,6 +116,9 @@ export const adjustSetTimeoutNames = [
     'ubo-nano-stb',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+adjustSetTimeout.primaryName = adjustSetTimeoutNames[0];
+
 adjustSetTimeout.injections = [
     hit,
     isValidCallback,

@@ -107,6 +107,9 @@ export const trustedSetAttrNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedSetAttr.primaryName = trustedSetAttrNames[0];
+
 trustedSetAttr.injections = [
     setAttributeBySelector,
     observeDOMChanges,

@@ -57,6 +57,9 @@ export function Pardot(source) {
 
 export const PardotNames = ['pardot-1.0'];
 
+// eslint-disable-next-line prefer-destructuring
+Pardot.primaryName = PardotNames[0];
+
 Pardot.injections = [
     hit,
     noopFunc,

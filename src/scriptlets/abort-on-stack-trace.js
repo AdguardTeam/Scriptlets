@@ -156,6 +156,10 @@ export const abortOnStackTraceNames = [
     'ubo-aost',
     'abp-abort-on-stack-trace',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+abortOnStackTrace.primaryName = abortOnStackTraceNames[0];
+
 abortOnStackTrace.injections = [
     randomId,
     setPropertyAccess,

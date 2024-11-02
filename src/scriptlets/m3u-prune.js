@@ -538,6 +538,9 @@ export const m3uPruneNames = [
     'ubo-m3u-prune',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+m3uPrune.primaryName = m3uPruneNames[0];
+
 m3uPrune.injections = [
     hit,
     toRegExp,

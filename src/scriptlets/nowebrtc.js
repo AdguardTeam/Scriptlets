@@ -70,6 +70,9 @@ export const nowebrtcNames = [
     'ubo-nowebrtc',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+nowebrtc.primaryName = nowebrtcNames[0];
+
 nowebrtc.injections = [
     hit,
     noopFunc,

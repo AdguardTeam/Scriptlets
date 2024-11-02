@@ -209,6 +209,9 @@ export const trustedSuppressNativeMethodNames = [
     'trusted-suppress-native-method',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedSuppressNativeMethod.primaryName = trustedSuppressNativeMethodNames[0];
+
 trustedSuppressNativeMethod.injections = [
     hit,
     logMessage,

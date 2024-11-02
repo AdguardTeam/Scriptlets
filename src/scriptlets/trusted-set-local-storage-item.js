@@ -88,6 +88,9 @@ export const trustedSetLocalStorageItemNames = [
     // trusted scriptlets support no aliases
 ];
 
+// eslint-disable-next-line prefer-destructuring
+trustedSetLocalStorageItem.primaryName = trustedSetLocalStorageItemNames[0];
+
 trustedSetLocalStorageItem.injections = [
     hit,
     logMessage,

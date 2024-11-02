@@ -93,6 +93,9 @@ export const preventCanvasNames = [
     'ubo-prevent-canvas',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+preventCanvas.primaryName = preventCanvasNames[0];
+
 preventCanvas.injections = [
     hit,
     logMessage,

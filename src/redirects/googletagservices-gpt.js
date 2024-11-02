@@ -366,6 +366,9 @@ export const GoogleTagServicesGptNames = [
     'googletagservices_gpt.js',
 ];
 
+// eslint-disable-next-line prefer-destructuring
+GoogleTagServicesGpt.primaryName = GoogleTagServicesGptNames[0];
+
 GoogleTagServicesGpt.injections = [
     hit,
     noopFunc,
