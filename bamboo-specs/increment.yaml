@@ -19,7 +19,7 @@ Increment:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   other:
     clean-working-dir: true
   tasks:
@@ -41,7 +41,7 @@ Increment:
               set -e
               set -x
               ls -alt
-              yarn increment
+              pnpm increment
             fi
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit

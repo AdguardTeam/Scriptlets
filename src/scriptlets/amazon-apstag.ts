@@ -1,4 +1,4 @@
-import { AmazonApstag } from '../redirects/amazon-apstag';
+import { AmazonApstag, AmazonApstagNames } from '../redirects/amazon-apstag';
 
 /**
  * @scriptlet amazon-apstag
@@ -14,4 +14,4 @@ import { AmazonApstag } from '../redirects/amazon-apstag';
  *
  * @added v1.10.25.
  */
-export { AmazonApstag };
+export { AmazonApstag, AmazonApstagNames };

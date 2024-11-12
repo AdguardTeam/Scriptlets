@@ -7,8 +7,6 @@ import {
     getAbortFunc,
     matchStackTrace,
     getErrorMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     toRegExp,
@@ -22,7 +20,8 @@ import {
     isObjectMatched,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /* eslint-disable max-len */
 /**
@@ -206,9 +205,12 @@ export function trustedSuppressNativeMethod(
     base[prop] = new Proxy(nativeMethod, { apply });
 }
 
-trustedSuppressNativeMethod.names = [
+export const trustedSuppressNativeMethodNames = [
     'trusted-suppress-native-method',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedSuppressNativeMethod.primaryName = trustedSuppressNativeMethodNames[0];
 
 trustedSuppressNativeMethod.injections = [
     hit,

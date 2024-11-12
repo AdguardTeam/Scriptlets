@@ -21,7 +21,7 @@ Build:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -33,10 +33,11 @@ Build:
             set -x
             ls -alt
 
-            yarn install ${bamboo.varsYarn}
-            yarn build
+            pnpm install
+            pnpm build
 
-            yarn wiki
+            # TODO fix building wiki, ubo changed format of their source
+            # pnpm wiki
     - inject-variables:
         file: dist/build.txt
         scope: RESULT

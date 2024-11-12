@@ -1,3 +1,5 @@
+import { type ArbitraryObject } from '../../types/types';
+
 /**
  * Checks whether the obj is an empty object
  *

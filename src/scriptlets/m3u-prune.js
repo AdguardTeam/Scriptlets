@@ -5,8 +5,6 @@ import {
     getXhrData,
     objectToString,
     matchRequestProps,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -14,7 +12,7 @@ import {
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -532,13 +530,16 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '', verbose = false
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
-m3uPrune.names = [
+export const m3uPruneNames = [
     'm3u-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'm3u-prune.js',
     'ubo-m3u-prune.js',
     'ubo-m3u-prune',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+m3uPrune.primaryName = m3uPruneNames[0];
 
 m3uPrune.injections = [
     hit,

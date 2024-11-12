@@ -1,9 +1,5 @@
 /* eslint-disable func-names */
-import {
-    hit,
-    setPropertyAccess,
-    logMessage,
-} from '../helpers/index';
+import { hit, setPropertyAccess, logMessage } from '../helpers';
 
 /**
  * @scriptlet prevent-adfly
@@ -88,10 +84,13 @@ export function preventAdfly(source) {
     }
 }
 
-preventAdfly.names = [
+export const preventAdflyNames = [
     'prevent-adfly',
     // there are no aliases for this scriptlet
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventAdfly.primaryName = preventAdflyNames[0];
 
 preventAdfly.injections = [
     setPropertyAccess,

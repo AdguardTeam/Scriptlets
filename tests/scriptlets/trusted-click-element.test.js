@@ -9,7 +9,6 @@ import {
     removePanel,
     createClickable,
 } from '../helpers';
-
 import { serializeCookie } from '../../src/helpers';
 
 const { test, module } = QUnit;

@@ -1,6 +1,4 @@
-import {
-    hit,
-} from '../helpers/index';
+import { hit } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -246,13 +244,16 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
     );
 }
 
-spoofCSS.names = [
+export const spoofCSSNames = [
     'spoof-css',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'spoof-css.js',
     'ubo-spoof-css.js',
     'ubo-spoof-css',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+spoofCSS.primaryName = spoofCSSNames[0];
 
 spoofCSS.injections = [
     hit,

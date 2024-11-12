@@ -3,10 +3,8 @@ import {
     observeDOMChanges,
     parseFlags,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     throttle,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -139,7 +137,7 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
     }
 }
 
-removeAttr.names = [
+export const removeAttrNames = [
     'remove-attr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'remove-attr.js',
@@ -149,6 +147,9 @@ removeAttr.names = [
     'ubo-remove-attr',
     'ubo-ra',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+removeAttr.primaryName = removeAttrNames[0];
 
 removeAttr.injections = [
     hit,

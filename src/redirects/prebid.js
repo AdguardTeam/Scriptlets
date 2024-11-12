@@ -4,7 +4,7 @@ import {
     noopFunc,
     noopStr,
     noopArray,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @redirect prebid
@@ -71,6 +71,9 @@ export function Prebid(source) {
     hit(source);
 }
 
-Prebid.names = ['prebid'];
+export const PrebidNames = ['prebid'];
+
+// eslint-disable-next-line prefer-destructuring
+Prebid.primaryName = PrebidNames[0];
 
 Prebid.injections = [hit, noopFunc, noopStr, noopArray];

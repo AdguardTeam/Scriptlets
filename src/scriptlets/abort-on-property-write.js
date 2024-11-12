@@ -4,10 +4,8 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -77,7 +75,7 @@ export function abortOnPropertyWrite(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-abortOnPropertyWrite.names = [
+export const abortOnPropertyWriteNames = [
     'abort-on-property-write',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-write.js',
@@ -88,6 +86,9 @@ abortOnPropertyWrite.names = [
     'ubo-aopw',
     'abp-abort-on-property-write',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+abortOnPropertyWrite.primaryName = abortOnPropertyWriteNames[0];
 
 abortOnPropertyWrite.injections = [
     randomId,

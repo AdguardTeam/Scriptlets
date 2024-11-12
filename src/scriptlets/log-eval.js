@@ -1,5 +1,5 @@
 /* eslint-disable no-eval */
-import { hit, logMessage } from '../helpers/index';
+import { hit, logMessage } from '../helpers';
 
 /**
  * @scriptlet log-eval
@@ -40,8 +40,11 @@ export function logEval(source) {
     window.Function = FunctionWrapper;
 }
 
-logEval.names = [
+export const logEvalNames = [
     'log-eval',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+logEval.primaryName = logEvalNames[0];
 
 logEval.injections = [hit, logMessage];

@@ -1,4 +1,4 @@
-import { setPopadsDummy } from '../scriptlets/set-popads-dummy';
+import { setPopadsDummy, setPopadsDummyNames } from '../scriptlets/set-popads-dummy';
 
 /**
  * @redirect set-popads-dummy
@@ -14,4 +14,4 @@ import { setPopadsDummy } from '../scriptlets/set-popads-dummy';
  *
  * @added v1.0.4.
  */
-export { setPopadsDummy };
+export { setPopadsDummy, setPopadsDummyNames };

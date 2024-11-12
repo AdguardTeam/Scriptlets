@@ -1,8 +1,4 @@
-import {
-    hit,
-    logMessage,
-    hijackAttachShadow,
-} from '../helpers/index';
+import { hit, logMessage, hijackAttachShadow } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -78,9 +74,12 @@ export function injectCssInShadowDom(source, cssRule, hostSelector = '') {
     hijackAttachShadow(window, hostSelector, callback);
 }
 
-injectCssInShadowDom.names = [
+export const injectCssInShadowDomNames = [
     'inject-css-in-shadow-dom',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+injectCssInShadowDom.primaryName = injectCssInShadowDomNames[0];
 
 injectCssInShadowDom.injections = [
     hit,

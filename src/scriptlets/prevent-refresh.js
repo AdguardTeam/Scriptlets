@@ -2,9 +2,8 @@ import {
     hit,
     getNumberFromString,
     logMessage,
-    // following helpers are needed for helpers above
     nativeIsNaN,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -115,7 +114,7 @@ export function preventRefresh(source, delaySec) {
     }
 }
 
-preventRefresh.names = [
+export const preventRefreshNames = [
     'prevent-refresh',
     // Aliases are needed for matching the related scriptlet converted into our syntax
     // These are used by UBO rules syntax
@@ -129,6 +128,9 @@ preventRefresh.names = [
     'ubo-refresh-defuser.js',
     'ubo-refresh-defuser',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventRefresh.primaryName = preventRefreshNames[0];
 
 preventRefresh.injections = [
     hit,

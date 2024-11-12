@@ -1,25 +1,18 @@
 /* eslint-disable no-underscore-dangle */
-import { runRedirect, clearGlobalProps } from '../helpers';
+import { evalWrapper, getRedirectsInstance } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'gemius';
 
-const changingProps = ['hit', '__debug', 'GemiusPlayer'];
-
-const beforeEach = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
+let redirects;
+const before = async () => {
+    redirects = await getRedirectsInstance();
 };
 
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
+module(name, { before });
 
 test('Gemius works', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     const gemius = new window.GemiusPlayer();
     assert.ok(gemius, 'gemiusPlayer was created');
@@ -29,7 +22,4 @@ test('Gemius works', (assert) => {
     assert.notOk(gemius.programEvent(), 'programEvent function mocked');
     assert.notOk(gemius.newAd(), 'newAd function mocked');
     assert.notOk(gemius.adEvent(), 'adEvent function mocked');
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit', 'GemiusPlayer');
 });

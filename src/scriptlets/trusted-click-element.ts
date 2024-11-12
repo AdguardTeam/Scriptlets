@@ -6,7 +6,8 @@ import {
     logMessage,
     parseMatchArg,
     queryShadowSelector,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /* eslint-disable max-len */
 /**
@@ -152,7 +153,9 @@ export function trustedClickElement(
     // Regex to split match pairs by commas, avoiding the ones included in regexes
     const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:)/;
 
-    const sleep = (delayMs: number) => new Promise((resolve) => setTimeout(resolve, delayMs));
+    const sleep = (delayMs: number) => {
+        return new Promise((resolve) => { setTimeout(resolve, delayMs); });
+    };
 
     // If shadow combinator is present in selector, then override attachShadow and set mode to 'open'
     if (selectors.includes(SHADOW_COMBINATOR)) {
@@ -512,10 +515,13 @@ export function trustedClickElement(
     }
 }
 
-trustedClickElement.names = [
+export const trustedClickElementNames = [
     'trusted-click-element',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedClickElement.primaryName = trustedClickElementNames[0];
 
 trustedClickElement.injections = [
     hit,

@@ -74,7 +74,7 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
         throw new Error(`File should have one description comment: ${filePath}.`);
     }
 
-    // eventually only one comment data item should left
+    // only one comment data item should remain eventually
     return describingComment[0].tags;
 };
 

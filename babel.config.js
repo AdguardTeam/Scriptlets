@@ -10,6 +10,7 @@ module.exports = (api) => {
                         '@babel/plugin-transform-regenerator',
                         '@babel/plugin-transform-typeof-symbol',
                         '@babel/plugin-transform-computed-properties',
+                        '@babel/plugin-transform-destructuring',
                     ],
                     targets: [
                         'last 1 version',
@@ -20,7 +21,7 @@ module.exports = (api) => {
                         'firefox >= 52',
                         'edge >= 15',
                         'opera >= 42',
-                        'safari >= 11',
+                        'safari >= 13',
                     ],
                 },
             ],

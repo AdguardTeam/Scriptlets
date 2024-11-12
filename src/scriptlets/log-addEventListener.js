@@ -5,10 +5,9 @@ import {
     listenerToString,
     convertTypeToString,
     logMessage,
-    // following helpers are needed for helpers above
     objectToString,
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @scriptlet log-addEventListener
@@ -64,7 +63,7 @@ export function logAddEventListener(source) {
     Object.defineProperty(document, 'addEventListener', descriptor);
 }
 
-logAddEventListener.names = [
+export const logAddEventListenerNames = [
     'log-addEventListener',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-logger.js',
@@ -74,6 +73,9 @@ logAddEventListener.names = [
     'ubo-addEventListener-logger',
     'ubo-aell',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+logAddEventListener.primaryName = logAddEventListenerNames[0];
 
 logAddEventListener.injections = [
     hit,

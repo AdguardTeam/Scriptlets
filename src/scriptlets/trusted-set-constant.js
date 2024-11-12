@@ -18,12 +18,10 @@ import {
     nativeIsNaN,
     isEmptyObject,
     getNativeRegexpTest,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -253,10 +251,14 @@ export function trustedSetConstant(source, property, value, stack) {
     setChainPropAccess(window, property);
 }
 
-trustedSetConstant.names = [
+export const trustedSetConstantNames = [
     'trusted-set-constant',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedSetConstant.primaryName = trustedSetConstantNames[0];
+
 trustedSetConstant.injections = [
     hit,
     inferValue,

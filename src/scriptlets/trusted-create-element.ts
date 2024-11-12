@@ -5,9 +5,9 @@ import {
     nativeIsNaN,
     parseAttributePairs,
     getErrorMessage,
-} from '../helpers/index';
-
-import type { ParsedAttributePair } from '../helpers/attribute-utils';
+} from '../helpers';
+import type { ParsedAttributePair } from '../helpers';
+import { type Source } from './scriptlets';
 
 /* eslint-disable max-len */
 /**
@@ -191,10 +191,13 @@ export function trustedCreateElement(
     }
 }
 
-trustedCreateElement.names = [
+export const trustedCreateElementNames = [
     'trusted-create-element',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedCreateElement.primaryName = trustedCreateElementNames[0];
 
 trustedCreateElement.injections = [
     hit,

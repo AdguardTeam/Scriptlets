@@ -3,7 +3,7 @@ import {
     toRegExp,
     safeGetDescriptor,
     noopFunc,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len, consistent-return */
 /**
@@ -138,6 +138,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
             if (!isMatched) {
                 origSrcDescriptor.set.call(this, urlValue);
+                // eslint-disable-next-line no-setter-return
                 return true;
             }
 
@@ -172,10 +173,12 @@ export function preventElementSrcLoading(source, tagName, match) {
 
             if (!isMatched) {
                 origOnerrorDescriptor.set.call(this, cb);
+                // eslint-disable-next-line no-setter-return
                 return true;
             }
 
             origOnerrorDescriptor.set.call(this, noopFunc);
+            // eslint-disable-next-line no-setter-return
             return true;
         },
     });
@@ -226,9 +229,12 @@ export function preventElementSrcLoading(source, tagName, match) {
     preventInlineOnerror(tagName, searchRegexp);
 }
 
-preventElementSrcLoading.names = [
+export const preventElementSrcLoadingNames = [
     'prevent-element-src-loading',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventElementSrcLoading.primaryName = preventElementSrcLoadingNames[0];
 
 preventElementSrcLoading.injections = [
     hit,

@@ -4,10 +4,8 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -64,9 +62,12 @@ export function debugOnPropertyWrite(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-debugOnPropertyWrite.names = [
+export const debugOnPropertyWriteNames = [
     'debug-on-property-write',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+debugOnPropertyWrite.primaryName = debugOnPropertyWriteNames[0];
 
 debugOnPropertyWrite.injections = [
     randomId,

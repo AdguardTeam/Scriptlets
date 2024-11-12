@@ -1,4 +1,4 @@
-import { Pardot } from '../redirects/pardot-1.0';
+import { Pardot, PardotNames } from '../redirects/pardot-1.0';
 
 /**
  * @scriptlet pardot-1.0
@@ -16,4 +16,4 @@ import { Pardot } from '../redirects/pardot-1.0';
  *
  * @added v1.10.25.
  */
-export { Pardot };
+export { Pardot, PardotNames };

@@ -1,5 +1,5 @@
 /* eslint-disable consistent-return, no-eval */
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /**
  * @redirect prevent-bab2
@@ -47,10 +47,13 @@ export function preventBab2(source) {
     hit(source);
 }
 
-preventBab2.names = [
+export const preventBab2Names = [
     'prevent-bab2',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nobab2.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventBab2.primaryName = preventBab2Names[0];
 
 preventBab2.injections = [hit];

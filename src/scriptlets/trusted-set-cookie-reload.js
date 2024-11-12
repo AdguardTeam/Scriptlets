@@ -8,10 +8,8 @@ import {
     parseKeywordValue,
     getTrustedCookieOffsetMs,
     parseCookieString,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getCookiePath,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -157,10 +155,13 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
     }
 }
 
-trustedSetCookieReload.names = [
+export const trustedSetCookieReloadNames = [
     'trusted-set-cookie-reload',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedSetCookieReload.primaryName = trustedSetCookieReloadNames[0];
 
 trustedSetCookieReload.injections = [
     hit,

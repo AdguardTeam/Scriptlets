@@ -3,12 +3,10 @@ import {
     setPropertyAccess,
     hit,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -33,7 +31,7 @@ import {
  * @added v1.5.0.
  */
 /* eslint-enable max-len */
-export function logOnStacktrace(source, property) {
+export function logOnStackTrace(source, property) {
     if (!property) {
         return;
     }
@@ -120,10 +118,14 @@ export function logOnStacktrace(source, property) {
     setChainPropAccess(window, property);
 }
 
-logOnStacktrace.names = [
+export const logOnStackTraceNames = [
     'log-on-stack-trace',
 ];
-logOnStacktrace.injections = [
+
+// eslint-disable-next-line prefer-destructuring
+logOnStackTrace.primaryName = logOnStackTraceNames[0];
+
+logOnStackTrace.injections = [
     getPropertyInChain,
     setPropertyAccess,
     hit,

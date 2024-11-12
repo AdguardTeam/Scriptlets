@@ -3,13 +3,11 @@ import {
     observeDOMChanges,
     nativeIsNaN,
     convertTypeToString,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     defaultAttributeSetter,
     logMessage,
     throttle,
     hit,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -157,13 +155,16 @@ export function setAttr(source, selector, attr, value = '') {
     observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value, attributeHandler), true);
 }
 
-setAttr.names = [
+export const setAttrNames = [
     'set-attr',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-attr.js',
     'ubo-set-attr.js',
     'ubo-set-attr',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+setAttr.primaryName = setAttrNames[0];
 
 setAttr.injections = [
     setAttributeBySelector,

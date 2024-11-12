@@ -1,6 +1,6 @@
 /* eslint-disable no-eval, no-extra-bind, func-names */
 
-import { toRegExp, hit } from '../helpers/index';
+import { toRegExp, hit } from '../helpers';
 
 /**
  * @scriptlet prevent-eval-if
@@ -43,12 +43,15 @@ export function preventEvalIf(source, search) {
     }.bind(window);
 }
 
-preventEvalIf.names = [
+export const preventEvalIfNames = [
     'prevent-eval-if',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval-if.js',
     'ubo-noeval-if.js',
     'ubo-noeval-if',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventEvalIf.primaryName = preventEvalIfNames[0];
 
 preventEvalIf.injections = [toRegExp, hit];

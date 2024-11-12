@@ -5,7 +5,7 @@ import {
     noopArray,
     trueFunc,
     falseFunc,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @redirect didomi-loader
@@ -150,9 +150,12 @@ export function DidomiLoader(source) {
     hit(source);
 }
 
-DidomiLoader.names = [
+export const DidomiLoaderNames = [
     'didomi-loader',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+DidomiLoader.primaryName = DidomiLoaderNames[0];
 
 DidomiLoader.injections = [
     hit,

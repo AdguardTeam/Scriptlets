@@ -3,7 +3,6 @@ import {
     noopFunc,
     isPreventionNeeded,
     logMessage,
-    // following helpers are needed for helpers above
     parseMatchArg,
     parseDelayArg,
     toRegExp,
@@ -15,7 +14,7 @@ import {
     nativeIsFinite,
     isValidMatchNumber,
     parseRawDelay,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -187,7 +186,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
     window.setTimeout = new Proxy(window.setTimeout, setTimeoutHandler);
 }
 
-preventSetTimeout.names = [
+export const preventSetTimeoutNames = [
     'prevent-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setTimeout-if.js', // new implementation of setTimeout-defuser.js
@@ -206,6 +205,9 @@ preventSetTimeout.names = [
     'ubo-std.js',
     'ubo-std',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventSetTimeout.primaryName = preventSetTimeoutNames[0];
 
 preventSetTimeout.injections = [
     hit,

@@ -10,7 +10,6 @@ const {
     REDIRECT_TYPE,
     DescribingCommentData,
 } = require('./helpers');
-
 const {
     WIKI_DIR_PATH,
     scriptletsFilenames,

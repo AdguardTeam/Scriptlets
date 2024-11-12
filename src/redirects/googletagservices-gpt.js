@@ -7,7 +7,7 @@ import {
     noopArray,
     noopStr,
     trueFunc,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @redirect googletagservices-gpt
@@ -360,11 +360,14 @@ export function GoogleTagServicesGpt(source) {
     hit(source);
 }
 
-GoogleTagServicesGpt.names = [
+export const GoogleTagServicesGptNames = [
     'googletagservices-gpt',
     'ubo-googletagservices_gpt.js',
     'googletagservices_gpt.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+GoogleTagServicesGpt.primaryName = GoogleTagServicesGptNames[0];
 
 GoogleTagServicesGpt.injections = [
     hit,

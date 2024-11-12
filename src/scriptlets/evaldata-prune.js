@@ -7,12 +7,11 @@ import {
     isPruningNeeded,
     jsonPruner,
     getPrunePath,
-    // following helpers are needed for helpers above
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -121,13 +120,16 @@ export function evalDataPrune(source, propsToRemove, requiredInitialProps, stack
     window.eval = new Proxy(window.eval, evalHandler);
 }
 
-evalDataPrune.names = [
+export const evalDataPruneNames = [
     'evaldata-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'evaldata-prune.js',
     'ubo-evaldata-prune.js',
     'ubo-evaldata-prune',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+evalDataPrune.primaryName = evalDataPruneNames[0];
 
 evalDataPrune.injections = [
     hit,

@@ -1,4 +1,4 @@
-import { hit, noopFunc } from '../helpers/index';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect ati-smarttag
@@ -100,8 +100,11 @@ export function ATInternetSmartTag(source) {
     hit(source);
 }
 
-ATInternetSmartTag.names = [
+export const ATInternetSmartTagNames = [
     'ati-smarttag',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+ATInternetSmartTag.primaryName = ATInternetSmartTagNames[0];
 
 ATInternetSmartTag.injections = [hit, noopFunc];

@@ -3,11 +3,9 @@ import {
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     flatten,
     throttle,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @scriptlet hide-in-shadow-dom
@@ -85,9 +83,12 @@ export function hideInShadowDom(source, selector, baseSelector) {
     observeDOMChanges(hideHandler, true);
 }
 
-hideInShadowDom.names = [
+export const hideInShadowDomNames = [
     'hide-in-shadow-dom',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+hideInShadowDom.primaryName = hideInShadowDomNames[0];
 
 hideInShadowDom.injections = [
     hit,

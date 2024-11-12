@@ -1,4 +1,4 @@
-import { hit, noopFunc } from '../helpers/index';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect amazon-apstag
@@ -34,10 +34,13 @@ export function AmazonApstag(source) {
     hit(source);
 }
 
-AmazonApstag.names = [
+export const AmazonApstagNames = [
     'amazon-apstag',
     'ubo-amazon_apstag.js',
     'amazon_apstag.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+AmazonApstag.primaryName = AmazonApstagNames[0];
 
 AmazonApstag.injections = [hit, noopFunc];

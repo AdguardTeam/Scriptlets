@@ -1,4 +1,4 @@
-import { DidomiLoader } from '../redirects/didomi-loader';
+import { DidomiLoader, DidomiLoaderNames } from '../redirects/didomi-loader';
 
 /**
  * @scriptlet didomi-loader
@@ -15,4 +15,4 @@ import { DidomiLoader } from '../redirects/didomi-loader';
  *
  * @added v1.10.25.
  */
-export { DidomiLoader };
+export { DidomiLoader, DidomiLoaderNames };

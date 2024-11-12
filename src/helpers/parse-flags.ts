@@ -1,7 +1,27 @@
-interface FlagsData {
+/**
+ * Interface representing the structure of flags data.
+ */
+export interface FlagsData {
+    /**
+     * Represents the 'asap' flag, indicating immediate action.
+     */
     ASAP: string;
+
+    /**
+     * Represents the 'complete' flag, indicating action upon completion.
+     */
     COMPLETE: string;
+
+    /**
+     * Represents the 'stay' flag, indicating persistent action.
+     */
     STAY: string;
+
+    /**
+     * Checks if a specific flag is present.
+     * @param flag The flag to check for.
+     * @returns True if the flag is present, otherwise false.
+     */
     hasFlag(flag: string): boolean;
 }
 

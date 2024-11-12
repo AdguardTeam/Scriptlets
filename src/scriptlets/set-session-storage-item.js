@@ -5,11 +5,10 @@ import {
     setStorageItem,
     removeStorageItem,
     getLimitedStorageItemValue,
-    // following helpers are needed for helpers above
     isValidStrPattern,
     toRegExp,
     escapeRegExp,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -97,13 +96,16 @@ export function setSessionStorageItem(source, key, value) {
     hit(source);
 }
 
-setSessionStorageItem.names = [
+export const setSessionStorageItemNames = [
     'set-session-storage-item',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-session-storage-item.js',
     'ubo-set-session-storage-item.js',
     'ubo-set-session-storage-item',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+setSessionStorageItem.primaryName = setSessionStorageItemNames[0];
 
 setSessionStorageItem.injections = [
     hit,

@@ -1,11 +1,6 @@
-import {
-    noopFunc,
-    trueFunc,
-} from './noop-utils';
-import {
-    substringBefore,
-    substringAfter,
-} from './string-utils';
+import { noopFunc, trueFunc } from './noop-utils';
+import { substringBefore, substringAfter } from './string-utils';
+import { type ArbitraryObject, type NoopFunc, type TrueFunc } from '../../types/types';
 
 type ReplacementResult = NoopFunc | TrueFunc | { [key: string]: NoopFunc } | undefined;
 

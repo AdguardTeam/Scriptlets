@@ -1,8 +1,5 @@
 /* eslint-disable func-names */
-import {
-    hit,
-    noopStr,
-} from '../helpers/index';
+import { hit, noopStr } from '../helpers';
 
 /**
  * @redirect fingerprintjs3
@@ -49,7 +46,7 @@ export function Fingerprintjs3(source) {
     hit(source);
 }
 
-Fingerprintjs3.names = [
+export const Fingerprintjs3Names = [
     'fingerprintjs3',
     // redirect aliases are needed for conversion:
     // prefixed for us
@@ -57,5 +54,8 @@ Fingerprintjs3.names = [
     // original ubo name
     'fingerprint3.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+Fingerprintjs3.primaryName = Fingerprintjs3Names[0];
 
 Fingerprintjs3.injections = [hit, noopStr];

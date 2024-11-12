@@ -22,7 +22,7 @@ import { preventBab as preventBabScriptlet } from '../scriptlets/prevent-bab';
  */
 const preventBab = preventBabScriptlet;
 
-preventBab.names = [
+export const preventBabNames = [
     'prevent-bab',
     // list of prevent-bab redirect aliases
     'nobab.js',

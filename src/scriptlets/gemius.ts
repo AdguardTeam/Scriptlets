@@ -1,4 +1,4 @@
-import { Gemius } from '../redirects/gemius';
+import { Gemius, GemiusNames } from '../redirects/gemius';
 
 /**
  * @scriptlet gemius
@@ -15,4 +15,4 @@ import { Gemius } from '../redirects/gemius';
  *
  * @added v1.10.25.
  */
-export { Gemius };
+export { Gemius, GemiusNames };

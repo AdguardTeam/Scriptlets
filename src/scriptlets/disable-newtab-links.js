@@ -1,4 +1,4 @@
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /**
  * @scriptlet disable-newtab-links
@@ -32,13 +32,16 @@ export function disableNewtabLinks(source) {
     });
 }
 
-disableNewtabLinks.names = [
+export const disableNewtabLinksNames = [
     'disable-newtab-links',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'disable-newtab-links.js',
     'ubo-disable-newtab-links.js',
     'ubo-disable-newtab-links',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+disableNewtabLinks.primaryName = disableNewtabLinksNames[0];
 
 disableNewtabLinks.injections = [
     hit,

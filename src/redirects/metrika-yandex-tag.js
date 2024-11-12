@@ -1,4 +1,4 @@
-import { hit, noopFunc } from '../helpers/index';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect metrika-yandex-tag
@@ -134,8 +134,11 @@ export function metrikaYandexTag(source) {
     hit(source);
 }
 
-metrikaYandexTag.names = [
+export const metrikaYandexTagNames = [
     'metrika-yandex-tag',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+metrikaYandexTag.primaryName = metrikaYandexTagNames[0];
 
 metrikaYandexTag.injections = [hit, noopFunc];

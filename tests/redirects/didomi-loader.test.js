@@ -1,27 +1,19 @@
-/* eslint-disable no-underscore-dangle */
-import { runRedirect, clearGlobalProps } from '../helpers';
+import { evalWrapper, getRedirectsInstance } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'didomi-loader';
 
-const changingProps = ['hit', '__debug'];
-
-const beforeEach = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
+let redirects;
+const before = async () => {
+    redirects = await getRedirectsInstance();
 };
 
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
+module(name, { before });
 
 test('Didomi-loader works', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
-    assert.expect(10);
+    assert.expect(9);
     const done1 = assert.async();
     const done2 = assert.async();
 
@@ -48,6 +40,4 @@ test('Didomi-loader works', (assert) => {
     __tcfapi('removeEventListener', 1, () => {
         throw new Error();
     });
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });

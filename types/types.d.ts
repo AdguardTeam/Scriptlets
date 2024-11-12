@@ -1,63 +1,31 @@
-interface Source {
-    name: string;
-    args: string[];
-    engine: string;
-    version: string;
-    verbose: boolean;
-    ruleText: string;
-    domainName?: string;
-}
+import { type Source } from '../src/scriptlets';
 
-type ArbitraryObject = { [key: string | symbol | number]: unknown };
-type ArbitraryFunction = (...args: any[]) => unknown;
-type NoopFunc = () => void;
-type TrueFunc = () => true;
-type Helper = ArbitraryFunction;
+export type ArbitraryObject = { [key: string | symbol | number]: unknown };
+export type ArbitraryFunction = (...args: any[]) => unknown;
+export type NoopFunc = () => void;
+export type TrueFunc = () => true;
 
 interface PageFunction {
     names: string[];
     injections?: Helper[];
 }
 
-interface Scriptlet extends PageFunction {
+export interface Scriptlet extends PageFunction {
     (source: Source, ...args: any[]): void;
 }
 
-interface Redirect extends PageFunction {
+export interface Redirect extends PageFunction {
     (source: Source): void;
 }
 
-type ScriptletsList = Record<string, Scriptlet>;
-
-type ChainBase = {
+export type ChainBase = {
     [key: string]: ChainBase;
 };
 
-type ChainInfo = {
+export type ChainInfo = {
     base: ChainBase;
     prop: string;
     chain?: string;
 };
 
-type StorageItemValue = string | number | undefined | boolean;
-
-/* Redirects converting types */
-type AdgUboRedirectRuleMarker = 'redirect-rule=';
-type AdgUboRedirectMarker = 'redirect=';
-type AbpRedirectMarker = 'rewrite=abp-resource:';
-type RedirectMarker = AdgUboRedirectMarker | AbpRedirectMarker | AdgUboRedirectRuleMarker;
-type RedirectsData = {
-    redirectMarker: AdgUboRedirectMarker | AbpRedirectMarker;
-    compatibility: Record<string, string | undefined>;
-    redirectRuleMarker?: AdgUboRedirectRuleMarker;
-};
-type MarkerData = {
-    index: number;
-    marker: RedirectMarker;
-};
-
-interface RedirectCompatibilityMap {
-    adg: string;
-    ubo?: string;
-    abp?: string;
-}
+export type StorageItemValue = string | number | undefined | boolean;

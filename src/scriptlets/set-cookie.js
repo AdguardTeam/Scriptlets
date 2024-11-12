@@ -6,10 +6,8 @@ import {
     getLimitedCookieValue,
     serializeCookie,
     isValidCookiePath,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getCookiePath,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -101,13 +99,16 @@ export function setCookie(source, name, value, path = '/', domain = '') {
     document.cookie = cookieToSet;
 }
 
-setCookie.names = [
+export const setCookieNames = [
     'set-cookie',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-cookie.js',
     'ubo-set-cookie.js',
     'ubo-set-cookie',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+setCookie.primaryName = setCookieNames[0];
 
 setCookie.injections = [
     hit,

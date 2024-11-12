@@ -1,5 +1,5 @@
 /* eslint-disable consistent-return, no-eval */
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /**
  * @scriptlet prevent-bab
@@ -95,9 +95,12 @@ export function preventBab(source) {
     window.eval = evalWrapper.bind(window);
 }
 
-preventBab.names = [
+export const preventBabNames = [
     'prevent-bab',
     // there are no aliases for this scriptlet
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventBab.primaryName = preventBabNames[0];
 
 preventBab.injections = [hit];

@@ -3,11 +3,9 @@ import {
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     flatten,
     throttle,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @scriptlet remove-in-shadow-dom
@@ -84,9 +82,12 @@ export function removeInShadowDom(source, selector, baseSelector) {
     observeDOMChanges(removeHandler, true);
 }
 
-removeInShadowDom.names = [
+export const removeInShadowDomNames = [
     'remove-in-shadow-dom',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+removeInShadowDom.primaryName = removeInShadowDomNames[0];
 
 removeInShadowDom.injections = [
     hit,

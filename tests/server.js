@@ -7,6 +7,23 @@ const TEST_QUERY_MARKER = '?test';
 
 const PORT = 54136;
 
+const mimeTypes = {
+    '.html': 'text/html',
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.yml': 'text/yaml',
+    '.yaml': 'text/yaml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.gif': 'image/gif',
+};
+
+const getContentType = (filePath) => {
+    const extname = path.extname(filePath).toLowerCase();
+    return mimeTypes[extname] || 'application/octet-stream';
+};
+
 const server = {
     init() {
         return http.createServer((req, res) => {
@@ -16,29 +33,33 @@ const server = {
                 filename = req.url.slice(0, queryPosition);
             }
 
-            fs.readFile(path.join(__dirname, 'dist', filename), (err, data) => {
-                // Required for test for trusted-replace-xhr-response
-                // Checks if specific request header contains the same value few times
-                // https://github.com/AdguardTeam/Scriptlets/issues/359
-                if (filename?.includes('/test-files/test01.json')) {
-                    const firstHeader = req.headers['first-header'];
-                    const secondHeader = req.headers['second-header'];
-                    if ((firstHeader && firstHeader.includes('foo, foo'))
-                        || (secondHeader && secondHeader.includes('bar, bar'))) {
-                        const error = 'Bad request: multiple values in header are not allowed.';
-                        res.writeHead(400);
-                        res.end(JSON.stringify(error));
-                        return;
-                    }
-                }
+            const fullPath = path.join(__dirname, 'dist', filename);
+
+            fs.stat(fullPath, (err, stats) => {
                 if (err) {
                     console.log(err.message);
                     res.writeHead(404);
                     res.end(JSON.stringify(err));
                     return;
                 }
-                res.writeHead(200);
-                res.end(data);
+
+                if (stats.isFile()) {
+                    // It's a file, serve it
+                    fs.readFile(fullPath, (err, data) => {
+                        if (err) {
+                            console.log(err.message);
+                            res.writeHead(500);
+                            res.end(JSON.stringify(err));
+                            return;
+                        }
+                        res.writeHead(200, { 'Content-Type': getContentType(fullPath) });
+                        res.end(data);
+                    });
+                } else {
+                    // Neither a file nor a directory
+                    res.writeHead(404);
+                    res.end();
+                }
             });
         });
     },

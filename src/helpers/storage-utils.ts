@@ -1,21 +1,28 @@
 import { nativeIsNaN } from './number-utils';
 import { logMessage } from './log-message';
 import { isValidStrPattern, toRegExp } from './string-utils';
+import { type StorageItemValue } from '../../types/types';
+import { type Source } from '../scriptlets';
 
 /**
- * Sets item to a specified storage, if storage isn't full.
+ * Stores an item in the specified storage if there is available space.
  *
- * @param source scriptlet's configuration
- * @param storage storage instance to set item into
- * @param key storage key
- * @param  value staroge value
+ * @param source The scriptlet's configuration object.
+ * @param storage The storage instance where the item will be set.
+ * @param key The key under which the item will be stored.
+ * @param value The value to store.
  */
-export const setStorageItem = (source: Source, storage: Storage, key: string, value: string): void => {
-    // setItem() may throw an exception if the storage is full.
+export const setStorageItem = (
+    source: Source,
+    storage: Storage,
+    key: string,
+    value: string,
+): void => {
+    // setItem() may throw an error if the storage is full.
     try {
         storage.setItem(key, value);
     } catch (e) {
-        const message = `Unable to set sessionStorage item due to: ${(e as Error).message}`;
+        const message = `Unable to set storage item due to: ${(e as Error).message}`;
         logMessage(source, message);
     }
 };

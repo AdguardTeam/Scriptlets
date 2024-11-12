@@ -5,10 +5,9 @@ import {
     isValidStrPattern,
     isValidCallback,
     logMessage,
-    // following helpers are needed for helpers above
     escapeRegExp,
     toRegExp,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -117,7 +116,7 @@ export function preventRequestAnimationFrame(source, match) {
     window.requestAnimationFrame = rafWrapper;
 }
 
-preventRequestAnimationFrame.names = [
+export const preventRequestAnimationFrameNames = [
     'prevent-requestAnimationFrame',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-requestAnimationFrame-if.js',
@@ -127,6 +126,9 @@ preventRequestAnimationFrame.names = [
     'ubo-no-requestAnimationFrame-if',
     'ubo-norafif',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventRequestAnimationFrame.primaryName = preventRequestAnimationFrameNames[0];
 
 preventRequestAnimationFrame.injections = [
     hit,

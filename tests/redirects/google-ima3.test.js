@@ -1,37 +1,19 @@
 /* eslint-disable no-underscore-dangle */
-import { runRedirect, clearGlobalProps } from '../helpers';
+import { evalWrapper, getRedirectsInstance } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'google-ima3';
 
-const changingProps = ['hit', '__debug'];
-
-const beforeEach = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
+let redirects;
+const before = async () => {
+    redirects = await getRedirectsInstance();
 };
 
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
+module(name, { before });
 
 test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        name: 'ubo-google-ima.js',
-        engine: 'test',
-        verbose: true,
-    };
-
-    const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
-    const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
+    const codeByAdgParams = redirects.getRedirect(name).content;
+    const codeByUboParams = redirects.getRedirect('ubo-google-ima.js').content;
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
@@ -39,7 +21,7 @@ test('Checking if alias name works', (assert) => {
 test('Ima mocked', (assert) => {
     assert.expect(29);
 
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     assert.ok(window.google, 'window.google created');
     assert.ok(window.google.ima, 'Ima created');
@@ -66,7 +48,7 @@ test('Ima - run requestAds function twice', (assert) => {
     // Test for https://github.com/AdguardTeam/Scriptlets/issues/255
     const done = assert.async();
 
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     let number = 0;
     const test = () => {
@@ -104,7 +86,7 @@ test('Ima - check if DAI API is not discarded by the redirect', (assert) => {
         },
     };
 
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     // check if DAI API is not discarded by the redirect
     assert.ok(window.google.ima.dai, 'window.google.ima.dai exists');
@@ -116,7 +98,7 @@ test('Ima - check if DAI API is not discarded by the redirect', (assert) => {
 });
 
 test('Ima - omidAccessModeRules', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     const adConfig = () => {
         const adObj = {
@@ -153,7 +135,7 @@ test('Ima - omidAccessModeRules', (assert) => {
 });
 
 test('Ima - getInnerError', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     const adError = new window.google.ima.AdError();
     const innerError = adError.getInnerError();
@@ -164,7 +146,7 @@ test('Ima - getInnerError', (assert) => {
 });
 
 test('Ima - AdDisplayContainer create element', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     const adContainer = document.createElement('div');
     adContainer.classList.add('ad-container');
@@ -179,7 +161,7 @@ test('Ima - AdDisplayContainer create element', (assert) => {
 test('Ima - EventHandler bind context', (assert) => {
     const done = assert.async();
 
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     let testPassed = false;
 

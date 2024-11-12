@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 const kleur = require('kleur');
+
 const {
     server,
     port,
@@ -37,7 +38,7 @@ const CAPABILITIES = [
     },
     {
         browserName: 'Safari',
-        browserVersion: '10',
+        browserVersion: '13',
         os: 'OS X',
         osVersion: 'Sierra',
     },

@@ -1,4 +1,5 @@
 import { randomId } from './random-id';
+import { type ArbitraryFunction } from '../../types/types';
 
 interface DescriptorAddon {
     isAbortingSuspended: boolean;

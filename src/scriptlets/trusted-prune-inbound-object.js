@@ -7,14 +7,13 @@ import {
     isPruningNeeded,
     jsonPruner,
     getPrunePath,
-    // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -131,10 +130,13 @@ export function trustedPruneInboundObject(source, functionName, propsToRemove, r
     base[prop] = new Proxy(base[prop], objectHandler);
 }
 
-trustedPruneInboundObject.names = [
+export const trustedPruneInboundObjectNames = [
     'trusted-prune-inbound-object',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedPruneInboundObject.primaryName = trustedPruneInboundObjectNames[0];
 
 trustedPruneInboundObject.injections = [
     hit,

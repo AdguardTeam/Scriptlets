@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.0.0] - 2024-11-12
 
 ### Added
 
@@ -26,8 +26,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - set response `ok` to `false` by `prevent-fetch` if response type is `opaque` [#441]
 - improve `prevent-xhr` — modify response [#415]
 - improve `prevent-xhr` — add missed events [#414]
+- `Source` type instead of `IConfiguration`
+- API structure. Validators, Converters, Scriptlets and redirects are now separate modules
+- The minimum supported Safari version is now 13
+- Updated [@adguard/agtree] to `3.0.0-alpha.1`.
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...HEAD
+### Removed
+
+- IIFE bundle
+- UMD bundle
+- Various conversion and validation functions including `isAdgRedirectRule`, `isAdgRedirectCompatibleWithUbo`,
+  `isUboRedirectCompatibleWithAdg`, `isAbpRedirectCompatibleWithAdg`, `convertUboRedirectToAdg`,
+  `convertAbpRedirectToAdg`, `convertRedirectToAdg`, and `convertRedirectNameToAdg` functions.
+
+
+[v2.0.0]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...v2.0.0
+[@adguard/agtree]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.1
 [#451]: https://github.com/AdguardTeam/Scriptlets/issues/451
 [#415]: https://github.com/AdguardTeam/Scriptlets/issues/415
 [#455]: https://github.com/AdguardTeam/Scriptlets/issues/455

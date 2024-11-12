@@ -2,13 +2,11 @@ import {
     setAttributeBySelector,
     observeDOMChanges,
     nativeIsNaN,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     defaultAttributeSetter,
     logMessage,
     throttle,
     hit,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -104,10 +102,13 @@ export function trustedSetAttr(source, selector, attr, value = '') {
     observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value), true);
 }
 
-trustedSetAttr.names = [
+export const trustedSetAttrNames = [
     'trusted-set-attr',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedSetAttr.primaryName = trustedSetAttrNames[0];
 
 trustedSetAttr.injections = [
     setAttributeBySelector,

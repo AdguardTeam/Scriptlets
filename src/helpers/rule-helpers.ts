@@ -1,4 +1,6 @@
-import { type AnyRule, defaultParserOptions, RuleParser } from '@adguard/agtree';
+import { type AnyRule } from '@adguard/agtree';
+import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 /**
  * Get rule node from string or rule node
@@ -28,5 +30,5 @@ export const getRuleNode = (rule: string | AnyRule): AnyRule => {
 export const getRuleText = (rule: string | AnyRule): string => {
     return typeof rule === 'string'
         ? rule
-        : RuleParser.generate(rule);
+        : RuleGenerator.generate(rule);
 };

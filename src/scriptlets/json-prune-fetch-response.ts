@@ -7,9 +7,7 @@ import {
     jsonPruner,
     getPrunePath,
     forgeResponse,
-    FetchResource,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
+    type FetchResource,
     isPruningNeeded,
     matchStackTrace,
     toRegExp,
@@ -26,7 +24,8 @@ import {
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /**
  * @scriptlet json-prune-fetch-response
@@ -195,13 +194,16 @@ export function jsonPruneFetchResponse(
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
-jsonPruneFetchResponse.names = [
+export const jsonPruneFetchResponseNames = [
     'json-prune-fetch-response',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune-fetch-response.js',
     'ubo-json-prune-fetch-response.js',
     'ubo-json-prune-fetch-response',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+jsonPruneFetchResponse.primaryName = jsonPruneFetchResponseNames[0];
 
 jsonPruneFetchResponse.injections = [
     hit,

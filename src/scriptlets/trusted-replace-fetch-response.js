@@ -5,8 +5,6 @@ import {
     objectToString,
     matchRequestProps,
     forgeResponse,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -16,7 +14,7 @@ import {
     parseMatchProps,
     isValidParsedData,
     getMatchPropsData,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -191,10 +189,13 @@ export function trustedReplaceFetchResponse(
     fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
 }
 
-trustedReplaceFetchResponse.names = [
+export const trustedReplaceFetchResponseNames = [
     'trusted-replace-fetch-response',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedReplaceFetchResponse.primaryName = trustedReplaceFetchResponseNames[0];
 
 trustedReplaceFetchResponse.injections = [
     hit,

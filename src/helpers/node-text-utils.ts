@@ -2,6 +2,7 @@ import { hit } from './hit';
 import { nodeListToArray } from './array-utils';
 import { getAddedNodes } from './observer';
 import { toRegExp } from './string-utils';
+import { type Source } from '../scriptlets';
 
 declare global {
     interface Window {

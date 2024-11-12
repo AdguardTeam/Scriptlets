@@ -2,29 +2,15 @@ import resolve from '@rollup/plugin-node-resolve';
 import json from '@rollup/plugin-json';
 import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
-import copy from 'rollup-plugin-copy';
 import cleanup from 'rollup-plugin-cleanup';
 import generateHtml from 'rollup-plugin-generate-html';
-import project from './package.json';
+import alias from '@rollup/plugin-alias';
+import { dts } from 'rollup-plugin-dts';
+import path from 'path';
+import terser from '@rollup/plugin-terser';
 
 const BUILD_DIST = 'dist';
 const DIST_REDIRECT_FILES = 'dist/redirect-files';
-const BANNER = `
-/**
- * AdGuard Scriptlets
- * Version ${project.version}
- */
-`;
-const FOOTER = `
-/**
- * -------------------------------------------
- * |                                         |
- * |  If you want to add your own scriptlet  |
- * |  please put your code below             |
- * |                                         |
- * -------------------------------------------
- */
-`;
 
 const commonPlugins = [
     json(),
@@ -35,47 +21,6 @@ const commonPlugins = [
         babelHelpers: 'runtime',
     }),
 ];
-
-const scriptletsIIFEConfig = {
-    input: {
-        scriptlets: 'src/scriptlets/scriptlets-wrapper.js',
-    },
-    output: {
-        dir: BUILD_DIST,
-        entryFileNames: '[name].js',
-        format: 'iife',
-        strict: false,
-        banner: BANNER,
-        footer: FOOTER,
-    },
-    plugins: [
-        ...commonPlugins,
-    ],
-};
-
-const scriptletsUMDConfig = {
-    input: {
-        'scriptlets.umd': 'src/scriptlets/scriptlets-umd-wrapper.js',
-    },
-    output: {
-        dir: 'dist/umd',
-        entryFileNames: '[name].js',
-        // umd is preferred over cjs to avoid variables renaming in tsurlfilter
-        format: 'umd',
-        exports: 'named',
-        strict: false,
-        banner: BANNER,
-        footer: FOOTER,
-    },
-    plugins: [
-        ...commonPlugins,
-        copy({
-            targets: [
-                { src: 'types/scriptlets.d.ts', dest: 'dist/umd/' },
-            ],
-        }),
-    ],
-};
 
 const scriptletsListConfig = {
     input: {
@@ -155,9 +100,101 @@ const click2LoadConfig = {
     },
 };
 
+const entryPoints = {
+    index: 'src/index.ts',
+    'scriptlets/index': 'src/scriptlets/index.ts',
+    'redirects/index': 'src/redirects/index.js',
+    'validators/index': 'src/validators/index.ts',
+    'converters/index': 'src/converters/index.ts',
+};
+
+const scriptletsCjsAndEsmConfig = {
+    input: entryPoints,
+    output: [
+        {
+            dir: `${BUILD_DIST}/cjs`,
+            format: 'cjs',
+            entryFileNames: '[name].js',
+            exports: 'named',
+            preserveModules: true,
+            preserveModulesRoot: 'src',
+        },
+        {
+            dir: `${BUILD_DIST}/esm`,
+            format: 'esm',
+            entryFileNames: '[name].mjs',
+            exports: 'named',
+            preserveModules: true,
+            preserveModulesRoot: 'src',
+        },
+    ],
+    treeshake: {
+        /**
+         * To avoid leftovers in the code when you access a property without side effects,
+         * like below:
+         * ```js
+         * Fingerprintjs3Names[0];
+         * ```
+         */
+        propertyReadSideEffects: false,
+    },
+    external: (id) => {
+        return (
+            // Added because when agtree is linked using 'yarn link', its ID does not contain 'node_modules'
+            id.startsWith('@babel/runtime')
+            || id.startsWith('js-yaml')
+            || id.startsWith('@adguard/agtree')
+        );
+    },
+    plugins: [
+        ...commonPlugins,
+        terser(
+            {
+                compress: false,
+                mangle: false,
+                format: {
+                    comments: false,
+                    beautify: true,
+                },
+            },
+        ),
+        alias({
+            entries: [
+                {
+                    find: 'scriptlets-func',
+                    replacement: path.resolve(__dirname, 'tmp/scriptlets-func.js'),
+                },
+            ],
+        }),
+    ],
+};
+
+const typesConfig = {
+    input: entryPoints,
+    output: {
+        dir: `${BUILD_DIST}/types`,
+        format: 'esm',
+        exports: 'named',
+        preserveModules: true,
+        preserveModulesRoot: 'src',
+    },
+    plugins: [
+        dts(),
+        alias({
+            entries: [
+                {
+                    find: 'scriptlets-func',
+                    replacement: path.resolve(__dirname, 'tmp/scriptlets-func.d.ts'),
+                },
+            ],
+        }),
+    ],
+};
+
+const scriptletsCjsAndEsm = [scriptletsCjsAndEsmConfig, typesConfig];
+
 export {
-    scriptletsIIFEConfig,
-    scriptletsUMDConfig,
+    scriptletsCjsAndEsm,
     scriptletsListConfig,
     redirectsListConfig,
     click2LoadConfig,

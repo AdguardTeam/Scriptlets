@@ -5,12 +5,11 @@ import {
     getBoostMultiplier,
     isDelayMatched,
     logMessage,
-    // following helpers are needed for helpers above
     nativeIsNaN,
     nativeIsFinite,
     getMatchDelay,
     shouldMatchAnyDelay,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -101,7 +100,7 @@ export function adjustSetInterval(source, matchCallback, matchDelay, boost) {
     window.setInterval = intervalWrapper;
 }
 
-adjustSetInterval.names = [
+export const adjustSetIntervalNames = [
     'adjust-setInterval',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nano-setInterval-booster.js',
@@ -114,6 +113,9 @@ adjustSetInterval.names = [
     'ubo-nano-sib',
     'ubo-adjust-setInterval',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+adjustSetInterval.primaryName = adjustSetIntervalNames[0];
 
 adjustSetInterval.injections = [
     hit,

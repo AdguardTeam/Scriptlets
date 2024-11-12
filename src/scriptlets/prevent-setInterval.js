@@ -3,7 +3,6 @@ import {
     noopFunc,
     isPreventionNeeded,
     logMessage,
-    // following helpers are needed for helpers above
     toRegExp,
     nativeIsNaN,
     parseMatchArg,
@@ -15,7 +14,7 @@ import {
     nativeIsFinite,
     isValidMatchNumber,
     parseRawDelay,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -187,7 +186,7 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
     window.setInterval = new Proxy(window.setInterval, setIntervalHandler);
 }
 
-preventSetInterval.names = [
+export const preventSetIntervalNames = [
     'prevent-setInterval',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'no-setInterval-if.js', // new implementation of setInterval-defuser.js
@@ -203,6 +202,9 @@ preventSetInterval.names = [
     'ubo-nosiif',
     'ubo-sid',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventSetInterval.primaryName = preventSetIntervalNames[0];
 
 preventSetInterval.injections = [
     hit,

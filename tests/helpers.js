@@ -28,7 +28,18 @@ export const getRandomNumber = (min, max) => {
 };
 
 // eslint-disable-next-line no-eval
-const evalWrapper = eval;
+export const evalWrapper = eval;
+
+/**
+ * Fetches and parses the redirects YAML file, returning an instance of Redirects.
+ * @typedef {import('./path/to/redirects').Redirects} Redirects
+ * @returns {Promise<Redirects>} A promise that resolves to an instance of Redirects.
+ */
+export const getRedirectsInstance = async () => {
+    const yamlResponse = await fetch('./scriptlets/redirects.yml');
+    const yamlString = await yamlResponse.text();
+    return new window.Redirects(yamlString);
+};
 
 /**
  * Runs scriptlet with given args

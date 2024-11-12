@@ -1,4 +1,4 @@
-import { Prebid } from '../redirects/prebid';
+import { Prebid, PrebidNames } from '../redirects/prebid';
 
 /**
  * @scriptlet prebid
@@ -15,4 +15,4 @@ import { Prebid } from '../redirects/prebid';
  *
  * @added v1.10.25.
  */
-export { Prebid };
+export { Prebid, PrebidNames };

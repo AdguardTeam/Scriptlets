@@ -9,14 +9,13 @@ import {
     getDescriptorAddon,
     logMessage,
     shouldAbortInlineOrInjectedScript,
-    // following helpers are needed for helpers above
     escapeRegExp,
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -146,7 +145,7 @@ export function abortOnStackTrace(source, property, stack) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-abortOnStackTrace.names = [
+export const abortOnStackTraceNames = [
     'abort-on-stack-trace',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-stack-trace.js',
@@ -157,6 +156,10 @@ abortOnStackTrace.names = [
     'ubo-aost',
     'abp-abort-on-stack-trace',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+abortOnStackTrace.primaryName = abortOnStackTraceNames[0];
+
 abortOnStackTrace.injections = [
     randomId,
     setPropertyAccess,

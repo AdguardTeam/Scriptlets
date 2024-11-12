@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /**
  * @redirect prebid-ads
@@ -25,10 +25,13 @@ export function prebidAds(source) {
     hit(source);
 }
 
-prebidAds.names = [
+export const prebidAdsNames = [
     'prebid-ads',
     'ubo-prebid-ads.js',
     'prebid-ads.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+prebidAds.primaryName = prebidAdsNames[0];
 
 prebidAds.injections = [hit];

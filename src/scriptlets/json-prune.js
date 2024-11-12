@@ -6,13 +6,12 @@ import {
     isPruningNeeded,
     jsonPruner,
     getPrunePath,
-    // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -139,7 +138,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
     Response.prototype.json = responseJsonWrapper;
 }
 
-jsonPrune.names = [
+export const jsonPruneNames = [
     'json-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune.js',
@@ -147,6 +146,9 @@ jsonPrune.names = [
     'ubo-json-prune',
     'abp-json-prune',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+jsonPrune.primaryName = jsonPruneNames[0];
 
 jsonPrune.injections = [
     hit,

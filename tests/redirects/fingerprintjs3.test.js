@@ -1,45 +1,27 @@
 /* eslint-disable no-underscore-dangle */
-import { runRedirect, clearGlobalProps } from '../helpers';
+import { evalWrapper, getRedirectsInstance } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'fingerprintjs3';
 
-const changingProps = ['hit', '__debug'];
-
-const beforeEach = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
+let redirects;
+const before = async () => {
+    redirects = await getRedirectsInstance();
 };
 
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
+module(name, { before });
 
 test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        name: 'ubo-fingerprint3.js',
-        engine: 'test',
-        verbose: true,
-    };
-
-    const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
-    const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
+    const codeByAdgParams = redirects.getRedirect(name).content;
+    const codeByUboParams = redirects.getRedirect('ubo-fingerprint3.js').content;
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('Fingerprint3 works', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
-    assert.expect(7);
+    assert.expect(6);
 
     const { FingerprintJS } = window;
 
@@ -53,6 +35,4 @@ test('Fingerprint3 works', (assert) => {
         assert.ok(response.visitorId, 'visitorId mocked');
         assert.strictEqual(typeof response.visitorId, 'string', 'visitorId is a string');
     });
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });

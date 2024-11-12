@@ -1,5 +1,7 @@
 const path = require('path');
 
+const MAX_LINE_LENGTH = 120;
+
 module.exports = {
     parser: '@babel/eslint-parser',
     parserOptions: {
@@ -7,6 +9,7 @@ module.exports = {
             rootMode: 'upward',
         },
     },
+    ignorePatterns: ['tests/smoke/**'],
     env: {
         browser: true,
         qunit: true,
@@ -44,9 +47,9 @@ module.exports = {
         'import/prefer-default-export': 0,
         'no-continue': 0,
         'no-await-in-loop': 0,
-        'max-len': ['error', { code: 120, ignoreUrls: true }],
+        'max-len': ['error', { code: MAX_LINE_LENGTH, ignoreUrls: true }],
         'arrow-body-style': 0,
-        'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+        'import/no-extraneous-dependencies': 'off',
         'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
         'no-constant-condition': ['error', { checkLoops: false }],
         // jsdoc rules
@@ -67,6 +70,24 @@ module.exports = {
         'jsdoc/require-returns': 'off',
         'jsdoc/require-returns-description': 0,
         'jsdoc/no-defaults': 0,
+        'import-newlines/enforce': ['error', { items: 3, 'max-len': MAX_LINE_LENGTH }],
+        // Split external and internal imports with an empty line
+        'import/order': [
+            'error',
+            {
+                groups: [
+                    ['builtin', 'external'],
+                ],
+                'newlines-between': 'always',
+            },
+        ],
+        // Force proper import and export of types
+        '@typescript-eslint/consistent-type-imports': [
+            'error',
+            {
+                fixStyle: 'inline-type-imports',
+            },
+        ],
     },
     overrides: [
         {

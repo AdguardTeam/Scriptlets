@@ -6,8 +6,6 @@ import {
     logMessage,
     noopPromiseResolve,
     modifyResponse,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -17,7 +15,7 @@ import {
     parseMatchProps,
     isValidParsedData,
     getMatchPropsData,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -110,6 +108,7 @@ import {
  * @added v1.3.18.
  */
 /* eslint-enable max-len */
+// eslint-disable-next-line default-param-last
 export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseType) {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
@@ -219,7 +218,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
     fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
 }
 
-preventFetch.names = [
+export const preventFetchNames = [
     'prevent-fetch',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'prevent-fetch.js',
@@ -229,6 +228,9 @@ preventFetch.names = [
     'ubo-no-fetch-if.js',
     'ubo-no-fetch-if',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventFetch.primaryName = preventFetchNames[0];
 
 preventFetch.injections = [
     hit,

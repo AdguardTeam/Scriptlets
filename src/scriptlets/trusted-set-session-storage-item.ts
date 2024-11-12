@@ -4,7 +4,8 @@ import {
     nativeIsNaN,
     setStorageItem,
     parseKeywordValue,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /* eslint-disable max-len */
 /**
@@ -91,10 +92,13 @@ export function trustedSetSessionStorageItem(
     hit(source);
 }
 
-trustedSetSessionStorageItem.names = [
+export const trustedSetSessionStorageItemNames = [
     'trusted-set-session-storage-item',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedSetSessionStorageItem.primaryName = trustedSetSessionStorageItemNames[0];
 
 trustedSetSessionStorageItem.injections = [
     hit,

@@ -29,8 +29,6 @@ const NON_SCRIPTLETS_FILES = [
     'index.js',
     'scriptlets.js',
     'scriptlets-list.js',
-    'scriptlets-wrapper.js',
-    'scriptlets-umd-wrapper.js',
 ];
 
 const isUtilityFileName = (filename) => NON_SCRIPTLETS_FILES.includes(filename);
@@ -45,8 +43,9 @@ const trustedScriptletsFilenames = getFilesList(SCRIPTLETS_SRC_RELATIVE_DIR_PATH
 // files which are not redirects in the source directory
 const NON_REDIRECTS_FILES = [
     'index.js',
-    'redirects.js',
+    'redirects.ts',
     'redirects-list.js',
+    'redirects-names-list.js',
 ];
 const redirectsFilenames = getFilesList(REDIRECTS_SRC_RELATIVE_DIR_PATH)
     .filter((el) => !NON_REDIRECTS_FILES.includes(el));

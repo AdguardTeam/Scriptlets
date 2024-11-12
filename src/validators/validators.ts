@@ -1,15 +1,19 @@
 import {
     AdblockSyntax,
+    type AnyRule,
     CosmeticRuleType,
     GenericPlatform,
     modifiersCompatibilityTable,
     NetworkRuleType,
+    QuoteUtils,
     redirectsCompatibilityTable,
     RuleCategory,
-    SpecificPlatform,
+    RuleConverter,
+    type ScriptletInjectionRule,
 } from '@adguard/agtree';
-import * as scriptletListRaw from '../scriptlets/scriptlets-list';
-import { getRuleNode } from './rule-helpers';
+
+import * as scriptletsNamesList from '../scriptlets/scriptlets-names-list';
+import { getRuleNode } from '../helpers/rule-helpers';
 
 /* ************************************************************************
  *
@@ -44,7 +48,7 @@ const isScriptletRuleForSyntax = (rule: string, syntax: AdblockSyntax): boolean 
  * @param rule - rule text
  * @returns true if given rule is adg rule
  */
-const isAdgScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Adg);
+export const isAdgScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Adg);
 
 /**
  * Checks if the `rule` is uBO scriptlet rule
@@ -52,7 +56,7 @@ const isAdgScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(r
  * @param rule rule text
  * @returns true if given rule is ubo rule
  */
-const isUboScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Ubo);
+export const isUboScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Ubo);
 
 /**
  * Checks if the `rule` is AdBlock Plus snippet
@@ -60,7 +64,10 @@ const isUboScriptletRule = (rule: string): boolean => isScriptletRuleForSyntax(r
  * @param rule rule text
  * @returns true if given rule is abp rule
  */
-const isAbpSnippetRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Abp);
+export const isAbpSnippetRule = (rule: string): boolean => isScriptletRuleForSyntax(rule, AdblockSyntax.Abp);
+
+// we use it for avoiding redundant search
+let scriptletsNamesContainer: Set<string>;
 
 /**
  * Returns array of scriptlet objects.
@@ -68,31 +75,34 @@ const isAbpSnippetRule = (rule: string): boolean => isScriptletRuleForSyntax(rul
  *
  * @returns Array of all scriptlet objects.
  */
-const getScriptletsObjList = () => {
-    return Object.values(scriptletListRaw);
+const getScriptletsNames = (): Set<string> => {
+    if (scriptletsNamesContainer) {
+        return scriptletsNamesContainer;
+    }
+
+    scriptletsNamesContainer = new Set<string>();
+
+    const names = Object.values(scriptletsNamesList).flat();
+
+    scriptletsNamesContainer = new Set<string>(names);
+
+    return scriptletsNamesContainer;
 };
 
 /**
- * Finds scriptlet by the `name`.
+ * Checks if a scriptlet with the given name exists.
+ * It also checks for a version of the name with a specific suffix if the original doesn't have it.
  *
- * @param name Scriptlet name.
- * @param scriptlets Array of all scriptlet objects.
- * @returns {Function} Scriptlet function.
+ * @param name The name of the scriptlet to search for.
+ * @returns True if the scriptlet exists; otherwise, false.
  */
-const getScriptletByName = (name: string, scriptlets: Scriptlet[]): Scriptlet | undefined => {
-    const allScriptletsFns = scriptlets || getScriptletsObjList();
-
-    return allScriptletsFns.find((s) => {
-        return s.names
-            // full match name checking
-            && (s.names.includes(name)
-                // or check ubo alias name without '.js' at the end
-                || (!name.endsWith(UBO_JS_SUFFIX) && s.names.includes(`${name}${UBO_JS_SUFFIX}`))
-            );
-    });
+const hasScriptlet = (
+    name: string,
+): boolean => {
+    const scriptletsNames = getScriptletsNames();
+    return scriptletsNames.has(name)
+        || (!name.endsWith(UBO_JS_SUFFIX) && scriptletsNames.has(`${name}${UBO_JS_SUFFIX}`));
 };
-
-const scriptletObjects = getScriptletsObjList();
 
 /**
  * Checks whether the scriptlet `name` is valid by checking the scriptlet list object.
@@ -104,7 +114,7 @@ const isValidScriptletNameNotCached = (name: string): boolean => {
     if (!name) {
         return false;
     }
-    return !!getScriptletByName(name, scriptletObjects);
+    return hasScriptlet(name);
 };
 
 /**
@@ -120,7 +130,7 @@ const scriptletNameValidationCache = new Map();
  * @returns True if scriptlet name is a valid one or an empty string,
  * otherwise false.
  */
-const isValidScriptletName = (name: string | null): boolean => {
+export const isValidScriptletName = (name: string | null): boolean => {
     // empty name is used for allowlist scriptlets. e.g.
     // - '#@%#//scriptlet()'
     if (name === '') {
@@ -139,6 +149,66 @@ const isValidScriptletName = (name: string | null): boolean => {
     }
     // otherwise return cached validation result
     return scriptletNameValidationCache.get(name);
+};
+
+/**
+ * Checks if an array of rules is an array of scriptlet rules
+ *
+ * @param rules Array of rules
+ * @returns True if all rules are scriptlet rules
+ */
+const isArrayOfScriptletRules = (rules: AnyRule[]): rules is ScriptletInjectionRule[] => {
+    return rules.every(
+        (rule) => {
+            return rule.category === RuleCategory.Cosmetic && rule.type === CosmeticRuleType.ScriptletInjectionRule;
+        },
+    );
+};
+
+/**
+ * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
+ * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
+ * by converting them into ADG syntax, and after that checks the name.
+ *
+ * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
+ * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
+ *
+ * @param rule Any scriptlet rule — ADG or UBO or ABP.
+ *
+ * @returns True if scriptlet name is valid in rule.
+ */
+export const isValidScriptletRule = (rule: string | ScriptletInjectionRule): boolean => {
+    let ruleNodes: AnyRule[];
+
+    try {
+        ruleNodes = RuleConverter.convertToAdg(getRuleNode(rule)).result;
+    } catch (e) {
+        return false;
+    }
+
+    if (!isArrayOfScriptletRules(ruleNodes)) {
+        return false;
+    }
+
+    // checking if each of parsed scriptlets is valid
+    // if at least one of them is not valid - whole `ruleText` is not valid too
+    const isValid = ruleNodes.every((ruleNode) => {
+        const name = ruleNode.body.children[0]?.children[0]?.value;
+
+        if (!name) {
+            return ruleNode.exception;
+        }
+
+        const unquotedName = QuoteUtils.removeQuotes(name);
+
+        if (!unquotedName) {
+            return false;
+        }
+
+        return isValidScriptletName(unquotedName);
+    });
+
+    return isValid;
 };
 
 /* ************************************************************************
@@ -224,25 +294,6 @@ const getRedirectResourcesFromRule = (rule: string): RedirectResource[] => {
 };
 
 /**
- * Checks if the `rule` is AdGuard redirect rule.
- * Discards comments and JS rules and checks if the `rule` has 'redirect' modifier.
- *
- * @param rule - rule text
- * @returns true if given rule is adg redirect
- */
-const isAdgRedirectRule = (rule: string): boolean => {
-    const resources = getRedirectResourcesFromRule(rule);
-
-    if (!resources.length || resources.length > 1) {
-        return false;
-    }
-
-    const [resource] = resources;
-
-    return modifiersCompatibilityTable.exists(resource.modifier, GenericPlatform.AdgAny);
-};
-
-/**
  * Checks if the specified redirect resource is compatible with AdGuard
  *
  * @param redirectName - Redirect resource name to check
@@ -258,7 +309,7 @@ export const isRedirectResourceCompatibleWithAdg = (redirectName: string): boole
  * @param rule - rule text
  * @returns true if given rule is valid adg redirect
  */
-const isValidAdgRedirectRule = (rule: string): boolean => {
+export const isValidAdgRedirectRule = (rule: string): boolean => {
     const resources = getRedirectResourcesFromRule(rule);
 
     if (!resources.length || resources.length > 1) {
@@ -276,84 +327,3 @@ const isValidAdgRedirectRule = (rule: string): boolean => {
         && isRedirectResourceCompatibleWithAdg(resource.resource)
     );
 };
-
-/**
- * Checks if the redirect resource from the `rule` is compatible with the specified platform (`from`)
- * and has a compatible pair for the target platform (`to`)
- *
- * @param rule - rule text
- * @param from - platform to convert from
- * @param to - platform to convert to
- * @returns true if the rule is compatible with the specified platform
- */
-const checkCompatibility = (
-    rule: string,
-    from: SpecificPlatform | GenericPlatform,
-    to: SpecificPlatform | GenericPlatform,
-): boolean => {
-    const resources = getRedirectResourcesFromRule(rule);
-
-    if (!resources.length || resources.length > 1) {
-        return false;
-    }
-
-    const [resource] = resources;
-
-    if (!resource.resource) {
-        return resource.exceptionRule;
-    }
-
-    // Redirect should exist for the source platform
-    if (!redirectsCompatibilityTable.exists(resource.resource, from)) {
-        return false;
-    }
-
-    // Redirect should have a compatible pair for the target platform (maybe in a different name)
-    return !!redirectsCompatibilityTable.getFirst(resource.resource, to);
-};
-
-/**
- * Checks if the AdGuard redirect `rule` has Ubo analog. Needed for Adg->Ubo conversion
- *
- * @param rule - AdGuard rule text
- * @returns - true if the rule can be converted to Ubo
- */
-const isAdgRedirectCompatibleWithUbo = (rule: string): boolean => {
-    return checkCompatibility(rule, GenericPlatform.AdgAny, GenericPlatform.UboAny);
-};
-
-/**
- * Checks if the Ubo redirect `rule` has AdGuard analog. Needed for Ubo->Adg conversion
- *
- * @param rule - Ubo rule text
- * @returns - true if the rule can be converted to AdGuard
- */
-const isUboRedirectCompatibleWithAdg = (rule: string): boolean => {
-    return checkCompatibility(rule, GenericPlatform.UboAny, GenericPlatform.AdgAny);
-};
-
-/**
- * Checks if the Abp redirect `rule` has AdGuard analog. Needed for Abp->Adg conversion
- *
- * @param rule - Abp rule text
- * @returns - true if the rule can be converted to AdGuard
- */
-const isAbpRedirectCompatibleWithAdg = (rule: string): boolean => {
-    return checkCompatibility(rule, GenericPlatform.AbpAny, GenericPlatform.AdgAny);
-};
-
-const validator = {
-    isAdgScriptletRule,
-    isUboScriptletRule,
-    isAbpSnippetRule,
-    getScriptletByName,
-    isValidScriptletName,
-    isAdgRedirectRule,
-    isValidAdgRedirectRule,
-    isRedirectResourceCompatibleWithAdg,
-    isAdgRedirectCompatibleWithUbo,
-    isUboRedirectCompatibleWithAdg,
-    isAbpRedirectCompatibleWithAdg,
-};
-
-export default validator;

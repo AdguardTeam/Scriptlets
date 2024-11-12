@@ -1,9 +1,5 @@
 /* eslint-disable func-names, no-underscore-dangle */
-import {
-    hit,
-    noopFunc,
-    logMessage,
-} from '../helpers/index';
+import { hit, noopFunc, logMessage } from '../helpers';
 
 /**
  * @redirect google-ima3
@@ -542,13 +538,16 @@ export function GoogleIma3(source) {
     hit(source);
 }
 
-GoogleIma3.names = [
+export const GoogleIma3Names = [
     'google-ima3',
     // prefixed name
     'ubo-google-ima.js',
     // original ubo name
     'google-ima.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+GoogleIma3.primaryName = GoogleIma3Names[0];
 
 GoogleIma3.injections = [
     hit,

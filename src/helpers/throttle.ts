@@ -1,3 +1,5 @@
+import { type ArbitraryFunction } from '../../types/types';
+
 /**
  * Returns a wrapper, passing the call to 'method' at maximum once per 'delay' milliseconds.
  * Those calls that fall into the "cooldown" period, are ignored

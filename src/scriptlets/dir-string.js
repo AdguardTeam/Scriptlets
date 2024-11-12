@@ -1,4 +1,4 @@
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -49,8 +49,11 @@ export function dirString(source, times) {
     console.dir = dirWrapper;
 }
 
-dirString.names = [
+export const dirStringNames = [
     'dir-string',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+dirString.primaryName = dirStringNames[0];
 
 dirString.injections = [hit];

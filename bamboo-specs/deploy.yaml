@@ -11,7 +11,7 @@ npmjs:
   docker:
     image: adguard/puppeteer-runner:23.3--1
     volumes:
-      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   triggers: [ ]
   tasks:
     - checkout:
@@ -26,7 +26,7 @@ npmjs:
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            yarn install ${bamboo.varsYarn}
+            pnpm install
             npm publish --access public
   final-tasks:
     - script:

@@ -6,10 +6,8 @@ import {
     getLimitedCookieValue,
     serializeCookie,
     isValidCookiePath,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getCookiePath,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @scriptlet set-cookie-reload
@@ -108,13 +106,16 @@ export function setCookieReload(source, name, value, path = '/', domain = '') {
     }
 }
 
-setCookieReload.names = [
+export const setCookieReloadNames = [
     'set-cookie-reload',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-cookie-reload.js',
     'ubo-set-cookie-reload.js',
     'ubo-set-cookie-reload',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+setCookieReload.primaryName = setCookieReloadNames[0];
 
 setCookieReload.injections = [
     hit,

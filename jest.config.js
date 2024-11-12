@@ -1,7 +1,7 @@
-const config = {
+module.exports = {
     testEnvironment: 'jsdom',
-    silent: true,
-    testRegex: '.spec.js',
+    testRegex: '\\.spec\\.(js|ts)$',
+    transform: {
+        '^.+\\.(t|j)s?$': '@swc/jest',
+    },
 };
-
-module.exports = config;

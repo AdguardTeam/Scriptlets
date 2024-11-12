@@ -4,7 +4,7 @@ import {
     noopFunc,
     noopStr,
     noopNull,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @redirect pardot-1.0
@@ -55,7 +55,10 @@ export function Pardot(source) {
     hit(source);
 }
 
-Pardot.names = ['pardot-1.0'];
+export const PardotNames = ['pardot-1.0'];
+
+// eslint-disable-next-line prefer-destructuring
+Pardot.primaryName = PardotNames[0];
 
 Pardot.injections = [
     hit,

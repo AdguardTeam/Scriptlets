@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit, noopFunc } from '../helpers/index';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect matomo
@@ -35,6 +35,9 @@ export function Matomo(source) {
     hit(source);
 }
 
-Matomo.names = ['matomo'];
+export const MatomoNames = ['matomo'];
+
+// eslint-disable-next-line prefer-destructuring
+Matomo.primaryName = MatomoNames[0];
 
 Matomo.injections = [hit, noopFunc];

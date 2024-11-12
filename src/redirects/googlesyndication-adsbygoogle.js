@@ -1,4 +1,4 @@
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -98,11 +98,14 @@ export function GoogleSyndicationAdsByGoogle(source) {
     }
 }
 
-GoogleSyndicationAdsByGoogle.names = [
+export const GoogleSyndicationAdsByGoogleNames = [
     'googlesyndication-adsbygoogle',
     'ubo-googlesyndication_adsbygoogle.js',
     'googlesyndication_adsbygoogle.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+GoogleSyndicationAdsByGoogle.primaryName = GoogleSyndicationAdsByGoogleNames[0];
 
 GoogleSyndicationAdsByGoogle.injections = [
     hit,

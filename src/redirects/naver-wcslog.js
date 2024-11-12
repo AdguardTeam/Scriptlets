@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit, noopFunc } from '../helpers/index';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect naver-wcslog
@@ -26,6 +26,9 @@ export function NaverWcslog(source) {
     hit(source);
 }
 
-NaverWcslog.names = ['naver-wcslog'];
+export const NaverWcslogNames = ['naver-wcslog'];
+
+// eslint-disable-next-line prefer-destructuring
+NaverWcslog.primaryName = NaverWcslogNames[0];
 
 NaverWcslog.injections = [hit, noopFunc];

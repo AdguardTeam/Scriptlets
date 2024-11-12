@@ -1,25 +1,18 @@
 /* eslint-disable no-underscore-dangle */
-import { runRedirect, clearGlobalProps } from '../helpers';
+import { clearGlobalProps, getRedirectsInstance, evalWrapper } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'pardot-1.0';
 
-const changingProps = ['hit', '__debug'];
-
-const beforeEach = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
+let redirects;
+const before = async () => {
+    redirects = await getRedirectsInstance();
 };
 
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
+module(name, { before });
 
 test('pardot works', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     const {
         piVersion,
@@ -47,6 +40,5 @@ test('pardot works', (assert) => {
     assert.ok(piScriptObj);
     assert.strictEqual(piScriptNum, 1);
 
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
-    clearGlobalProps('__debug', 'hit', 'GemiusPlayer');
+    clearGlobalProps('GemiusPlayer');
 });

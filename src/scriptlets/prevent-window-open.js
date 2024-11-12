@@ -10,13 +10,12 @@ import {
     getPreventGetter,
     noopNull,
     logMessage,
-    // following helpers are needed for helpers above
     escapeRegExp,
     noopFunc,
     trueFunc,
     substringBefore,
     substringAfter,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -96,6 +95,7 @@ import {
  * @added v1.0.4.
  */
 /* eslint-enable max-len */
+// eslint-disable-next-line default-param-last
 export function preventWindowOpen(source, match = '*', delay, replacement) {
     // default match value is needed for preventing all window.open calls
     // if scriptlet runs without args
@@ -177,7 +177,7 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
     window.open.toString = nativeOpen.toString.bind(nativeOpen);
 }
 
-preventWindowOpen.names = [
+export const preventWindowOpenNames = [
     'prevent-window-open',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'window.open-defuser.js',
@@ -190,6 +190,9 @@ preventWindowOpen.names = [
     'ubo-no-window-open-if.js',
     'ubo-no-window-open-if',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventWindowOpen.primaryName = preventWindowOpenNames[0];
 
 preventWindowOpen.injections = [
     hit,

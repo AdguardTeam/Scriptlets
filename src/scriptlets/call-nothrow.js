@@ -2,9 +2,8 @@ import {
     hit,
     getPropertyInChain,
     logMessage,
-    // following helpers are needed for helpers above
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -85,13 +84,16 @@ export function callNoThrow(source, functionName) {
     base[prop] = new Proxy(base[prop], objectHandler);
 }
 
-callNoThrow.names = [
+export const callNoThrowNames = [
     'call-nothrow',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'call-nothrow.js',
     'ubo-call-nothrow.js',
     'ubo-call-nothrow',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+callNoThrow.primaryName = callNoThrowNames[0];
 
 callNoThrow.injections = [
     hit,

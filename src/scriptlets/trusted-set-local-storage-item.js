@@ -4,7 +4,7 @@ import {
     nativeIsNaN,
     setStorageItem,
     parseKeywordValue,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -83,10 +83,13 @@ export function trustedSetLocalStorageItem(source, key, value) {
     hit(source);
 }
 
-trustedSetLocalStorageItem.names = [
+export const trustedSetLocalStorageItemNames = [
     'trusted-set-local-storage-item',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedSetLocalStorageItem.primaryName = trustedSetLocalStorageItemNames[0];
 
 trustedSetLocalStorageItem.injections = [
     hit,

@@ -1,0 +1,11 @@
+{
+  "name": "typescript",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "Adguard Software Ltd.",
+  "scripts": {
+    "start": "tsc --noEmit && ts-node root-exports.ts && ts-node specific-exports.ts",
+    "test": "test.sh"
+  }
+}

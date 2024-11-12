@@ -4,7 +4,8 @@ import {
     noopFunc,
     noopResolveVoid,
     noopResolveNull,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /**
  * @scriptlet no-protected-audience
@@ -56,9 +57,12 @@ export function noProtectedAudience(source: Source) {
     hit(source);
 }
 
-noProtectedAudience.names = [
+export const noProtectedAudienceNames = [
     'no-protected-audience',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+noProtectedAudience.primaryName = noProtectedAudienceNames[0];
 
 noProtectedAudience.injections = [
     hit,

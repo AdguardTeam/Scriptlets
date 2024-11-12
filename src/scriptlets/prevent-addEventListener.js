@@ -4,7 +4,7 @@ import {
     validateType,
     validateListener,
     listenerToString,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -94,7 +94,7 @@ export function preventAddEventListener(source, typeSearch, listenerSearch) {
     Object.defineProperty(document, 'addEventListener', descriptor);
 }
 
-preventAddEventListener.names = [
+export const preventAddEventListenerNames = [
     'prevent-addEventListener',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'addEventListener-defuser.js',
@@ -105,6 +105,9 @@ preventAddEventListener.names = [
     'ubo-aeld',
     'abp-prevent-listener',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventAddEventListener.primaryName = preventAddEventListenerNames[0];
 
 preventAddEventListener.injections = [
     hit,

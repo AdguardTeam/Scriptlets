@@ -1,5 +1,5 @@
 /* eslint-disable func-names, no-multi-assign */
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /**
  * @scriptlet set-popads-dummy
@@ -37,12 +37,15 @@ export function setPopadsDummy(source) {
     });
 }
 
-setPopadsDummy.names = [
+export const setPopadsDummyNames = [
     'set-popads-dummy',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'popads-dummy.js',
     'ubo-popads-dummy.js',
     'ubo-popads-dummy',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+setPopadsDummy.primaryName = setPopadsDummyNames[0];
 
 setPopadsDummy.injections = [hit];

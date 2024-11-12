@@ -1,4 +1,4 @@
-import { hit } from '../helpers/index';
+import { hit } from '../helpers';
 
 /**
  * @redirect scorecardresearch-beacon
@@ -28,11 +28,14 @@ export function ScoreCardResearchBeacon(source) {
     hit(source);
 }
 
-ScoreCardResearchBeacon.names = [
+export const ScoreCardResearchBeaconNames = [
     'scorecardresearch-beacon',
     'ubo-scorecardresearch_beacon.js',
     'scorecardresearch_beacon.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+ScoreCardResearchBeacon.primaryName = ScoreCardResearchBeaconNames[0];
 
 ScoreCardResearchBeacon.injections = [
     hit,

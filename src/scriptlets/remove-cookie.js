@@ -1,4 +1,4 @@
-import { hit, toRegExp } from '../helpers/index';
+import { hit, toRegExp } from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -89,7 +89,7 @@ export function removeCookie(source, match) {
     window.addEventListener('beforeunload', rmCookie);
 }
 
-removeCookie.names = [
+export const removeCookieNames = [
     'remove-cookie',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'cookie-remover.js',
@@ -100,5 +100,8 @@ removeCookie.names = [
     'ubo-remove-cookie',
     'abp-cookie-remover',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+removeCookie.primaryName = removeCookieNames[0];
 
 removeCookie.injections = [toRegExp, hit];

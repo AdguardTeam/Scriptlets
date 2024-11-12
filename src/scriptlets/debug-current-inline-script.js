@@ -6,10 +6,8 @@ import {
     createOnErrorHandler,
     hit,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -122,9 +120,12 @@ export function debugCurrentInlineScript(source, property, search) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-debugCurrentInlineScript.names = [
+export const debugCurrentInlineScriptNames = [
     'debug-current-inline-script',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+debugCurrentInlineScript.primaryName = debugCurrentInlineScriptNames[0];
 
 debugCurrentInlineScript.injections = [
     randomId,

@@ -5,12 +5,11 @@ import {
     getBoostMultiplier,
     isDelayMatched,
     logMessage,
-    // following helpers are needed for helpers above
     nativeIsNaN,
     nativeIsFinite,
     getMatchDelay,
     shouldMatchAnyDelay,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -103,7 +102,7 @@ export function adjustSetTimeout(source, matchCallback, matchDelay, boost) {
     window.setTimeout = timeoutWrapper;
 }
 
-adjustSetTimeout.names = [
+export const adjustSetTimeoutNames = [
     'adjust-setTimeout',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'adjust-setTimeout.js',
@@ -116,6 +115,9 @@ adjustSetTimeout.names = [
     'ubo-nano-setTimeout-booster',
     'ubo-nano-stb',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+adjustSetTimeout.primaryName = adjustSetTimeoutNames[0];
 
 adjustSetTimeout.injections = [
     hit,

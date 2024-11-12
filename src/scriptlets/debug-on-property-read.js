@@ -5,10 +5,8 @@ import {
     createOnErrorHandler,
     hit,
     noopFunc,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -71,9 +69,13 @@ export function debugOnPropertyRead(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-debugOnPropertyRead.names = [
+export const debugOnPropertyReadNames = [
     'debug-on-property-read',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+debugOnPropertyRead.primaryName = debugOnPropertyReadNames[0];
+
 debugOnPropertyRead.injections = [
     randomId,
     setPropertyAccess,

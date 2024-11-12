@@ -1,25 +1,18 @@
 /* eslint-disable no-underscore-dangle */
-import { runRedirect, clearGlobalProps } from '../helpers';
+import { getRedirectsInstance, evalWrapper } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'metrika-yandex-watch';
 
-const changingProps = ['hit', '__debug'];
-
-const beforeEach = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
+let redirects;
+const before = async () => {
+    redirects = await getRedirectsInstance();
 };
 
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
+module(name, { before });
 
 test('AdGuard: yandex metrika watch.js', (assert) => {
-    assert.expect(14);
+    assert.expect(13);
 
     // yandex_metrika_callbacks: these callbacks needed for
     // creating an instance of Ya.Metrika after script loading
@@ -27,7 +20,7 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
         () => assert.ok(true, 'yandex_metrika_callbacks were executed'),
     ];
 
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     const { Metrika } = window.Ya;
     assert.ok(Metrika, 'Metrika function was created');
@@ -61,6 +54,4 @@ test('AdGuard: yandex metrika watch.js', (assert) => {
         done1();
     }
     ya.extLink('some url', { callback: extLinkCb, ctx: 123 });
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });

@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit, noopFunc } from '../helpers/index';
+import { hit, noopFunc } from '../helpers';
 
 /**
  * @redirect gemius
@@ -31,8 +31,11 @@ export function Gemius(source) {
     hit(source);
 }
 
-Gemius.names = [
+export const GemiusNames = [
     'gemius',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+Gemius.primaryName = GemiusNames[0];
 
 Gemius.injections = [hit, noopFunc];

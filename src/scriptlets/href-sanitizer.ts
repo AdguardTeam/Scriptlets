@@ -2,10 +2,9 @@ import {
     observeDOMChanges,
     hit,
     logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     throttle,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /**
  * @scriptlet href-sanitizer
@@ -558,13 +557,16 @@ export function hrefSanitizer(
     }
 }
 
-hrefSanitizer.names = [
+export const hrefSanitizerNames = [
     'href-sanitizer',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'href-sanitizer.js',
     'ubo-href-sanitizer.js',
     'ubo-href-sanitizer',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+hrefSanitizer.primaryName = hrefSanitizerNames[0];
 
 hrefSanitizer.injections = [
     observeDOMChanges,

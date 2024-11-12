@@ -15,15 +15,13 @@ import {
     matchStackTrace,
     nativeIsNaN,
     isEmptyObject,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     setPropertyAccess,
     toRegExp,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -424,7 +422,7 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
     setChainPropAccess(window, property);
 }
 
-setConstant.names = [
+export const setConstantNames = [
     'set-constant',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'set-constant.js',
@@ -435,6 +433,10 @@ setConstant.names = [
     'ubo-set',
     'abp-override-property-read',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+setConstant.primaryName = setConstantNames[0];
+
 setConstant.injections = [
     hit,
     logMessage,

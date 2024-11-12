@@ -1,3 +1,5 @@
+import { type NoopFunc, type TrueFunc } from '../../types/types';
+
 /**
  * Noop function
  */

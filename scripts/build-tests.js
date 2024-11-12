@@ -3,10 +3,10 @@ import fs from 'fs-extra';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import babel from '@rollup/plugin-babel';
-import cleanup from 'rollup-plugin-cleanup';
 import copy from 'rollup-plugin-copy';
 import json from '@rollup/plugin-json';
 import generateHtml from 'rollup-plugin-generate-html';
+
 import { rollupStandard } from './rollup-runners';
 import { generateHtmlTestFilename } from './helpers';
 
@@ -28,12 +28,6 @@ const MULTIPLE_TEST_FILES_DIRS = [
  * @returns {object} rollup config
  */
 const getTestConfig = (fileName, subDir) => {
-    if (!fs.existsSync(TESTS_DIST)) {
-        fs.mkdirSync(TESTS_DIST);
-    } else {
-        fs.emptyDirSync(TESTS_DIST);
-    }
-
     const dirPath = path.resolve(__dirname, TESTS_DIR, subDir);
 
     // cut off '.test.js' test file name ending
@@ -52,7 +46,6 @@ const getTestConfig = (fileName, subDir) => {
             commonjs({
                 include: 'node_modules/**',
             }),
-            cleanup(),
             json({
                 preferConst: true,
                 indent: '  ',
@@ -78,7 +71,6 @@ const getTestConfig = (fileName, subDir) => {
                         'tests/scriptlets/test-files',
                         'node_modules/qunit/qunit/qunit.js',
                         'node_modules/sinon/pkg/sinon.js',
-                        'dist/scriptlets.js',
                         'node_modules/js-reporters/dist/js-reporters.js',
                     ],
                     dest: TESTS_DIST,
@@ -147,8 +139,38 @@ const getTestConfigs = (limitData) => {
 
     return allConfigs;
 };
+export const buildScriptletsForTests = async () => {
+    const config = {
+        input: path.resolve(__dirname, '../tests/scriptlets-entrypoint.js'),
+        output: {
+            dir: path.join(TESTS_DIST, 'scriptlets'),
+            entryFileNames: 'index.js',
+        },
+        plugins: [
+            resolve(),
+            commonjs(),
+            babel({
+                extensions: ['.js', '.ts'],
+                babelHelpers: 'runtime',
+            }),
+            copy({
+                targets: [{
+                    src: [path.resolve(__dirname, '../dist/redirects.yml')],
+                    dest: path.join(TESTS_DIST, 'scriptlets'),
+                }],
+            }),
+        ],
+    };
+    await rollupStandard(config);
+};
 
 export const buildTests = async (limitData) => {
+    if (!fs.existsSync(TESTS_DIST)) {
+        fs.mkdirSync(TESTS_DIST);
+    } else {
+        fs.emptyDirSync(TESTS_DIST);
+    }
     const testConfigs = getTestConfigs(limitData);
     await rollupStandard(testConfigs);
+    await buildScriptletsForTests();
 };

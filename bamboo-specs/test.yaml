@@ -19,7 +19,7 @@ Build:
   docker:
     image: "${bamboo.dockerPuppeteer}"
     volumes:
-      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -31,17 +31,18 @@ Build:
             set -x
             ls -alt
 
-            yarn install
+            pnpm install
 
-            # build docs to lint them later
-            # check compatibility table updates and build it and build wiki docs
-            yarn wiki
+            # TODO fix building wiki, ubo changed format of their source
+            # # build docs to lint them later
+            # # check compatibility table updates and build it and build wiki docs
+            # pnpm wiki
 
-            yarn test
-            yarn build
+            pnpm test
+            pnpm build
 
-            # lint code and docs. it should be run after yarn build
-            yarn lint
+            # lint code and docs. it should be run after `pnpm build`
+            pnpm lint
   final-tasks:
     - script:
         interpreter: SHELL

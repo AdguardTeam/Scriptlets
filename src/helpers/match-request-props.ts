@@ -1,10 +1,7 @@
-import {
-    getMatchPropsData,
-    isValidParsedData,
-    parseMatchProps,
-} from './request-utils';
+import { getMatchPropsData, isValidParsedData, parseMatchProps } from './request-utils';
 import type { LegalRequestProp, MatchPropsData } from './request-utils';
 import { logMessage } from './log-message';
+import { type Source } from '../scriptlets';
 
 /**
  * Checks if given propsToMatch string matches with given request data

@@ -1,4 +1,4 @@
-import { preventPopadsNet } from '../scriptlets/prevent-popads-net';
+import { preventPopadsNet, preventPopadsNetNames } from '../scriptlets/prevent-popads-net';
 
 /**
  * @redirect prevent-popads-net
@@ -14,4 +14,4 @@ import { preventPopadsNet } from '../scriptlets/prevent-popads-net';
  *
  * @added v1.0.4.
  */
-export { preventPopadsNet };
+export { preventPopadsNet, preventPopadsNetNames };

@@ -4,9 +4,9 @@ import yaml from 'js-yaml';
 import fs from 'fs-extra';
 import path from 'path';
 import { EOL } from 'os';
-
 import { minify } from 'terser';
-import * as redirectsList from '../src/redirects/redirects-list';
+
+import * as redirectsNamesLists from '../src/redirects/redirects-names-list';
 import { version } from '../package.json';
 import { rollupStandard } from './rollup-runners';
 import { writeFile, getDataFromFiles } from './helpers';
@@ -16,11 +16,13 @@ import {
     DIST_DIR_NAME,
     CORELIBS_REDIRECTS_FILE_NAME,
 } from './constants';
+import { redirectsListConfig, click2LoadConfig, redirectsPrebuildConfig } from '../rollup.config';
 import {
-    redirectsListConfig,
-    click2LoadConfig,
-    redirectsPrebuildConfig,
-} from '../rollup.config';
+    addCall,
+    attachDependencies,
+    passSourceAndProps,
+    wrapInNonameFunc,
+} from '../src/helpers/injector';
 
 const FILE_NAME = 'redirects.yml';
 const PATH_TO_DIST = `./${DIST_DIR_NAME}`;
@@ -87,29 +89,64 @@ const getBlockingRedirects = async () => {
     return blockingRedirects;
 };
 
+/**
+ * @typedef {import('../types/types').Redirect} Redirect
+ */
+
+/**
+ * Finds redirect resource by it's name
+ *
+ * @param {string} name Redirect name
+ * @returns {Redirect} Redirect object
+ */
+const getRedirectByName = (name) => {
+    // eslint-disable-next-line global-require,import/no-unresolved
+    const redirectsList = require('../tmp/redirects-list');
+    return Object.values(redirectsList)
+        .filter((redirect) => redirect.primaryName === name)[0];
+};
+
+/**
+ * @typedef {import('../types/types').Source} Source
+ */
+/**
+ * Returns redirect code by param
+ *
+ * @param {Source} source
+ * @returns {string} redirect code
+ */
+export const getRedirectCode = (source) => {
+    const redirect = getRedirectByName(source.name);
+    if (!redirect) {
+        throw new Error(`Was unable to find redirect by name: ${source.name}`);
+    }
+
+    let result = attachDependencies(redirect);
+    result = addCall(redirect, result);
+
+    // redirect code for different sources is checked in tests
+    // so it should be just a code without any source and props passed
+    result = source.engine === 'test'
+        ? wrapInNonameFunc(result)
+        : passSourceAndProps(source, result, true);
+
+    return result;
+};
+
 const getJsRedirects = async (options = {}) => {
     const compress = options.compress ?? false;
-    const code = options.code ?? true;
 
-    const getCode = (() => {
-        if (code) {
-            // eslint-disable-next-line import/no-unresolved,global-require
-            const { redirects } = require('../tmp/redirects');
-            return redirects.getCode;
-        }
-        return () => '';
-    })();
+    const redirectNamesList = Object.values(redirectsNamesLists);
 
-    let listOfRedirectsData = Object
-        .values(redirectsList)
-        .map((rr) => {
-            const [name, ...aliases] = rr.names;
+    let listOfRedirectsData = redirectNamesList
+        .map((redirectNames) => {
+            const [name, ...aliases] = redirectNames;
             const source = {
                 name,
                 args: [],
             };
 
-            const redirect = getCode(source);
+            const redirect = getRedirectCode(source);
 
             return {
                 name,

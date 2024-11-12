@@ -2,6 +2,7 @@
 const path = require('path');
 const fs = require('fs');
 const { runQunitPuppeteer, printFailedTests, printResultSummary } = require('node-qunit-puppeteer');
+
 const {
     server,
     port,
@@ -23,7 +24,7 @@ const runQunit = async (indexFile) => {
     const qunitArgs = {
         targetUrl: `http://localhost:${port}/${indexFile}?test`,
         timeout: TESTS_RUN_TIMEOUT,
-        // needed for logging to console while testing run via `yarn test`
+        // needed for logging to console while testing run via `pnpm test`
         // redirectConsole: true,
         puppeteerArgs: ['--no-sandbox', '--allow-file-access-from-files'],
     };

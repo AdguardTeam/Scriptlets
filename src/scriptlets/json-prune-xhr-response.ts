@@ -7,9 +7,7 @@ import {
     objectToString,
     matchRequestProps,
     getXhrData,
-    XMLHttpRequestSharedRequestData,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
+    type XMLHttpRequestSharedRequestData,
     isPruningNeeded,
     matchStackTrace,
     getMatchPropsData,
@@ -24,7 +22,8 @@ import {
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /**
  * @scriptlet json-prune-xhr-response
@@ -338,13 +337,16 @@ export function jsonPruneXhrResponse(
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
-jsonPruneXhrResponse.names = [
+export const jsonPruneXhrResponseNames = [
     'json-prune-xhr-response',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'json-prune-xhr-response.js',
     'ubo-json-prune-xhr-response.js',
     'ubo-json-prune-xhr-response',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+jsonPruneXhrResponse.primaryName = jsonPruneXhrResponseNames[0];
 
 jsonPruneXhrResponse.injections = [
     hit,

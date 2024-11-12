@@ -111,8 +111,10 @@ test('CSP require-trusted-types-for "script" - replace script content', (assert)
         set(html) {
             if (policy) {
                 const sanitizedHTML = policy.createHTML(html);
+                // eslint-disable-next-line no-setter-return
                 return nativeInnerHTMLSet.call(this, sanitizedHTML);
             }
+            // eslint-disable-next-line no-setter-return
             return nativeInnerHTMLSet.call(this, html);
         },
     });

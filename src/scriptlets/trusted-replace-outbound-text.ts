@@ -4,14 +4,14 @@ import {
     getPropertyInChain,
     getWildcardPropertyInChain,
     logMessage,
-    // following helpers are needed for helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     toRegExp,
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
-} from '../helpers/index';
+} from '../helpers';
+import { type Source } from './scriptlets';
 
 /* eslint-disable max-len */
 /**
@@ -281,10 +281,13 @@ export function trustedReplaceOutboundText(
     base[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
-trustedReplaceOutboundText.names = [
+export const trustedReplaceOutboundTextNames = [
     'trusted-replace-outbound-text',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedReplaceOutboundText.primaryName = trustedReplaceOutboundTextNames[0];
 
 trustedReplaceOutboundText.injections = [
     hit,

@@ -1,8 +1,4 @@
-import {
-    hit,
-    toRegExp,
-    logMessage,
-} from '../helpers/index';
+import { hit, toRegExp, logMessage } from '../helpers';
 
 /**
  * @scriptlet close-window
@@ -83,7 +79,7 @@ export function forceWindowClose(source, path = '') {
     }
 }
 
-forceWindowClose.names = [
+export const forceWindowCloseNames = [
     'close-window',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'window-close-if.js',
@@ -93,6 +89,9 @@ forceWindowClose.names = [
     'ubo-close-window.js',
     'ubo-close-window',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+forceWindowClose.primaryName = forceWindowCloseNames[0];
 
 forceWindowClose.injections = [
     hit,

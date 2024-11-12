@@ -1,5 +1,5 @@
 /* eslint-disable func-names, no-multi-assign */
-import { hit, noopFunc, noopThis } from '../helpers/index';
+import { hit, noopFunc, noopThis } from '../helpers';
 
 /**
  * @scriptlet prevent-fab-3.2.0
@@ -88,7 +88,7 @@ export function preventFab(source) {
     }
 }
 
-preventFab.names = [
+export const preventFabNames = [
     'prevent-fab-3.2.0',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nofab.js',
@@ -97,5 +97,8 @@ preventFab.names = [
     'ubo-fuckadblock.js-3.2.0',
     'ubo-nofab',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventFab.primaryName = preventFabNames[0];
 
 preventFab.injections = [hit, noopFunc, noopThis];

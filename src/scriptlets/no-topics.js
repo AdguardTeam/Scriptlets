@@ -1,7 +1,4 @@
-import {
-    hit,
-    noopPromiseResolve,
-} from '../helpers/index';
+import { hit, noopPromiseResolve } from '../helpers';
 
 /**
  * @scriptlet no-topics
@@ -35,9 +32,12 @@ export function noTopics(source) {
     hit(source);
 }
 
-noTopics.names = [
+export const noTopicsNames = [
     'no-topics',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+noTopics.primaryName = noTopicsNames[0];
 
 noTopics.injections = [
     hit,

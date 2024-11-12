@@ -23,5 +23,5 @@ if ([[ `git diff --cached --name-only --diff-filter=ACM` == *"scripts/compatibil
     echo "\033[33mbut scriptlet aliases or compatibility-redirects.ts are updated as well\033[0m"
 fi
 
-yarn lint-staged
-yarn test
+pnpm lint-staged
+pnpm test

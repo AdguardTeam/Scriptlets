@@ -3,7 +3,7 @@ import {
     noopFunc,
     noopNull,
     noopArray,
-} from '../helpers/index';
+} from '../helpers';
 
 /**
  * @redirect google-analytics
@@ -137,7 +137,7 @@ export function GoogleAnalytics(source) {
     hit(source);
 }
 
-GoogleAnalytics.names = [
+export const GoogleAnalyticsNames = [
     'google-analytics',
     'ubo-google-analytics_analytics.js',
     'google-analytics_analytics.js',
@@ -146,6 +146,9 @@ GoogleAnalytics.names = [
     'ubo-googletagmanager_gtm.js',
     'googletagmanager_gtm.js',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+GoogleAnalytics.primaryName = GoogleAnalyticsNames[0];
 
 GoogleAnalytics.injections = [
     hit,

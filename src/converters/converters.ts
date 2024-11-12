@@ -1,17 +1,7 @@
-import {
-    AnyRule,
-    CosmeticRuleType,
-    NetworkRule,
-    QuoteUtils,
-    RuleCategory,
-    RuleConverter,
-    ScriptletInjectionRule,
-    GenericPlatform,
-    redirectsCompatibilityTable,
-} from '@adguard/agtree';
+import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '@adguard/agtree';
+import { RuleConverter } from '@adguard/agtree/converter';
 
-import validator from './validator';
-import { getRuleNode, getRuleText } from './rule-helpers';
+import { getRuleNode, getRuleText } from '../helpers/rule-helpers';
 
 /**
  * Helper type to get methods of RuleConverter that are not excluded
@@ -26,20 +16,6 @@ type FilteredConversionMethods<ExcludedMethods extends keyof typeof RuleConverte
  * Conversion method type
  */
 type ConversionMethod = (typeof RuleConverter)[FilteredConversionMethods<'convertToAbp'>];
-
-/**
- * Checks if an array of rules is an array of scriptlet rules
- *
- * @param rules Array of rules
- * @returns True if all rules are scriptlet rules
- */
-const isArrayOfScriptletRules = (rules: AnyRule[]): rules is ScriptletInjectionRule[] => {
-    return rules.every(
-        (rule) => {
-            return rule.category === RuleCategory.Cosmetic && rule.type === CosmeticRuleType.ScriptletInjectionRule;
-        },
-    );
-};
 
 /**
  * Helper function to convert a scriptlet rule to a specific syntax
@@ -126,100 +102,6 @@ export const convertAdgScriptletToUbo = (rule: string | ScriptletInjectionRule):
 };
 
 /**
- * 1. For ADG scriptlet checks whether the scriptlet syntax and name are valid.
- * 2. For UBO and ABP scriptlet first checks their compatibility with ADG
- * by converting them into ADG syntax, and after that checks the name.
- *
- * ADG or UBO rules are "single-scriptlet", but ABP rule may contain more than one snippet
- * so if at least one of them is not valid — whole `ruleText` rule is not valid too.
- *
- * @param rule Any scriptlet rule — ADG or UBO or ABP.
- *
- * @returns True if scriptlet name is valid in rule.
- */
-export const isValidScriptletRule = (rule: string | ScriptletInjectionRule): boolean => {
-    let ruleNodes: AnyRule[];
-
-    try {
-        ruleNodes = RuleConverter.convertToAdg(getRuleNode(rule)).result;
-    } catch (e) {
-        return false;
-    }
-
-    if (!isArrayOfScriptletRules(ruleNodes)) {
-        return false;
-    }
-
-    // checking if each of parsed scriptlets is valid
-    // if at least one of them is not valid - whole `ruleText` is not valid too
-    const isValid = ruleNodes.every((ruleNode) => {
-        const name = ruleNode.body.children[0]?.children[0]?.value;
-
-        if (!name) {
-            return ruleNode.exception;
-        }
-
-        const unquotedName = QuoteUtils.removeQuotes(name);
-
-        if (!unquotedName) {
-            return false;
-        }
-
-        return validator.isValidScriptletName(unquotedName);
-    });
-
-    return isValid;
-};
-
-/**
- * Converts Ubo redirect rule to Adg one
- *
- * @param rule ubo redirect rule
- * @returns  converted adg rule
- */
-export const convertUboRedirectToAdg = (rule: string | NetworkRule): string => {
-    return RuleConverter.convertToAdg(getRuleNode(rule)).result.map(getRuleText)[0];
-};
-
-/**
- * Converts Abp redirect rule to Adg one
- *
- * @param rule abp redirect rule
- * @returns converted adg rule
- */
-export const convertAbpRedirectToAdg = (rule: string): string => {
-    const node = getRuleNode(rule);
-
-    if (node.category !== RuleCategory.Network) {
-        return rule;
-    }
-
-    const conversionResult = RuleConverter.convertToAdg(node);
-
-    return getRuleText(conversionResult.result[0]);
-};
-
-/**
- * Converts redirect rule to AdGuard one
- *
- * @param {string} rule redirect rule
- * @returns converted adg rule
- */
-export const convertRedirectToAdg = (rule: string): string | undefined => {
-    const node = getRuleNode(rule);
-
-    if (node.category !== RuleCategory.Network) {
-        return;
-    }
-
-    // convert to ADG
-    const conversionResult = RuleConverter.convertToAdg(node);
-
-    // eslint-disable-next-line consistent-return
-    return getRuleText(conversionResult.result[0]);
-};
-
-/**
  * Converts Adg redirect rule to Ubo one
  * 1. Checks if there is Ubo analog for Adg rule
  * 2. Parses the rule and checks if there are any source type modifiers which are required by Ubo
@@ -246,17 +128,4 @@ export const convertAdgRedirectToUbo = (rule: string): string => {
     const conversionResult = RuleConverter.convertToUbo(node);
 
     return getRuleText(conversionResult.result[0]);
-};
-
-/**
- * Converts a redirect name to ADG compatible one, if possible
- *
- * @param name Redirect name to convert
- * @returns Converted ADG compatible redirect name or `undefined` if the redirect isn't supported
- */
-export const convertRedirectNameToAdg = (name: string): string | undefined => {
-    return redirectsCompatibilityTable.getFirst(
-        name,
-        GenericPlatform.AdgAny,
-    )?.name;
 };

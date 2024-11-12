@@ -1,9 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import {
-    runScriptlet,
-    clearGlobalProps,
-    getRandomNumber,
-} from '../helpers';
+import { runScriptlet, clearGlobalProps, getRandomNumber } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'adjust-setTimeout';

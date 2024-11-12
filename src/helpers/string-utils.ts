@@ -5,6 +5,7 @@ import {
     getNumberFromString,
     getRandomIntInclusive,
 } from './number-utils';
+import { type ArbitraryObject } from '../../types/types';
 
 /**
  * A literal string or regexp pattern wrapped in forward slashes.
@@ -301,14 +302,16 @@ export const parseDelayArg = (delay: string): DelayData => {
 };
 
 /**
- * Converts object to string for logging
+ * Converts an object to a string for logging purposes.
  *
- * @param obj data object
- * @returns object's string representation
+ * **!IMPORTANT**: Do not change this to an arrow function, as it will alter its name during transpilation!
+ *
+ * @param obj The data object to convert.
+ * @returns The string representation of the object.
  */
-export const objectToString = (obj: ArbitraryObject): string => {
-    // In case if the type of passed obj is different than Object
-    // https://github.com/AdguardTeam/Scriptlets/issues/282
+export function objectToString(obj: ArbitraryObject): string {
+    // Handle cases where the passed obj is not an object
+    // Reference: https://github.com/AdguardTeam/Scriptlets/issues/282
     if (!obj || typeof obj !== 'object') {
         return String(obj);
     }
@@ -328,7 +331,7 @@ export const objectToString = (obj: ArbitraryObject): string => {
             return `${key}:"${recordValueStr}"`;
         })
         .join(' ');
-};
+}
 
 /**
  * Converts types into a string

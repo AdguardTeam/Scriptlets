@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-extra-bind */
-import { hit, logMessage } from '../helpers/index';
+import { hit, logMessage } from '../helpers';
 
 /**
  * @scriptlet noeval
@@ -29,7 +29,7 @@ export function noeval(source) {
     }.bind();
 }
 
-noeval.names = [
+export const noevalNames = [
     'noeval',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'noeval.js',
@@ -39,5 +39,8 @@ noeval.names = [
     'ubo-noeval',
     'ubo-silent-noeval',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+noeval.primaryName = noevalNames[0];
 
 noeval.injections = [hit, logMessage];

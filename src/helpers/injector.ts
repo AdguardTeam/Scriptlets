@@ -1,3 +1,6 @@
+import { type Redirect, type Scriptlet } from '../../types/types';
+import { type Source } from '../scriptlets';
+
 /**
  * Concat dependencies to scriptlet code
  *

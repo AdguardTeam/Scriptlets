@@ -4,10 +4,8 @@ import {
     getPropertyInChain,
     createOnErrorHandler,
     hit,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -83,7 +81,7 @@ export function abortOnPropertyRead(source, property) {
     window.onerror = createOnErrorHandler(rid).bind();
 }
 
-abortOnPropertyRead.names = [
+export const abortOnPropertyReadNames = [
     'abort-on-property-read',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'abort-on-property-read.js',
@@ -94,6 +92,10 @@ abortOnPropertyRead.names = [
     'ubo-aopr',
     'abp-abort-on-property-read',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+abortOnPropertyRead.primaryName = abortOnPropertyReadNames[0];
+
 abortOnPropertyRead.injections = [
     randomId,
     setPropertyAccess,

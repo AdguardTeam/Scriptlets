@@ -1,9 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import {
-    runScriptlet,
-    clearGlobalProps,
-    clearCookie,
-} from '../helpers';
+import { runScriptlet, clearGlobalProps, clearCookie } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'set-cookie';

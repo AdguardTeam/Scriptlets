@@ -1,6 +1,4 @@
-import {
-    hit, createOnErrorHandler, randomId,
-} from '../helpers/index';
+import { hit, createOnErrorHandler, randomId } from '../helpers';
 
 /**
  * @scriptlet prevent-popads-net
@@ -37,12 +35,15 @@ export function preventPopadsNet(source) {
     hit(source);
 }
 
-preventPopadsNet.names = [
+export const preventPopadsNetNames = [
     'prevent-popads-net',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'popads.net.js',
     'ubo-popads.net.js',
     'ubo-popads.net',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventPopadsNet.primaryName = preventPopadsNetNames[0];
 
 preventPopadsNet.injections = [createOnErrorHandler, randomId, hit];

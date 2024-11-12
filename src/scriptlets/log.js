@@ -19,7 +19,11 @@
 export function log(...args) {
     console.log(args); // eslint-disable-line no-console
 }
-log.names = [
+
+export const logNames = [
     'log',
     'abp-log',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+log.primaryName = logNames[0];

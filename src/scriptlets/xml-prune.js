@@ -5,8 +5,6 @@ import {
     getXhrData,
     objectToString,
     matchRequestProps,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -14,7 +12,7 @@ import {
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -406,13 +404,16 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
     window.fetch = new Proxy(window.fetch, fetchHandler);
 }
 
-xmlPrune.names = [
+export const xmlPruneNames = [
     'xml-prune',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'xml-prune.js',
     'ubo-xml-prune.js',
     'ubo-xml-prune',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+xmlPrune.primaryName = xmlPruneNames[0];
 
 xmlPrune.injections = [
     hit,

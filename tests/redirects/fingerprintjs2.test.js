@@ -1,44 +1,25 @@
 /* eslint-disable no-underscore-dangle */
-import { runRedirect, clearGlobalProps } from '../helpers';
+import { evalWrapper, getRedirectsInstance } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'fingerprintjs2';
 
-const changingProps = ['hit', '__debug'];
-
-const beforeEach = () => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
-    };
+let redirects;
+const before = async () => {
+    redirects = await getRedirectsInstance();
 };
 
-const afterEach = () => {
-    clearGlobalProps(...changingProps);
-};
-
-module(name, { beforeEach, afterEach });
+module(name, { before });
 
 test('Checking if alias name works', (assert) => {
-    const adgParams = {
-        name,
-        engine: 'test',
-        verbose: true,
-    };
-    const uboParams = {
-        // original ubo name
-        name: 'fingerprint2.js',
-        engine: 'test',
-        verbose: true,
-    };
-
-    const codeByAdgParams = window.scriptlets.redirects.getCode(adgParams);
-    const codeByUboParams = window.scriptlets.redirects.getCode(uboParams);
+    const codeByAdgParams = redirects.getRedirect(name).content;
+    const codeByUboParams = redirects.getRedirect('fingerprint2.js').content;
 
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
 test('Fingerprint2 works', (assert) => {
-    runRedirect(name);
+    evalWrapper(redirects.getRedirect(name).content);
 
     const done = assert.async();
 
@@ -50,6 +31,4 @@ test('Fingerprint2 works', (assert) => {
         done();
     };
     window.Fingerprint2.get([], cb);
-
-    assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
 });

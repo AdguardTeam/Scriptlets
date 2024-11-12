@@ -5,8 +5,6 @@ import {
     objectToString,
     matchRequestProps,
     getXhrData,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -14,7 +12,7 @@ import {
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -265,10 +263,13 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
 }
 
-trustedReplaceXhrResponse.names = [
+export const trustedReplaceXhrResponseNames = [
     'trusted-replace-xhr-response',
     // trusted scriptlets support no aliases
 ];
+
+// eslint-disable-next-line prefer-destructuring
+trustedReplaceXhrResponse.primaryName = trustedReplaceXhrResponseNames[0];
 
 trustedReplaceXhrResponse.injections = [
     hit,

@@ -3,11 +3,11 @@ import {
     logMessage,
     parseMatchArg,
     isValidMatchStr,
-    // following helpers are needed for helpers above
     toRegExp,
     escapeRegExp,
     isValidStrPattern,
 } from '../helpers';
+import { type Source } from './scriptlets';
 
 /**
  * @scriptlet prevent-canvas
@@ -85,13 +85,16 @@ export function preventCanvas(source: Source, contextType?: string) {
     );
 }
 
-preventCanvas.names = [
+export const preventCanvasNames = [
     'prevent-canvas',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'prevent-canvas.js',
     'ubo-prevent-canvas.js',
     'ubo-prevent-canvas',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+preventCanvas.primaryName = preventCanvasNames[0];
 
 preventCanvas.injections = [
     hit,

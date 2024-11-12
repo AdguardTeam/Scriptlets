@@ -4,7 +4,7 @@ import {
     noopFunc,
     logMessage,
     convertRtcConfigToString,
-} from '../helpers/index';
+} from '../helpers';
 
 /* eslint-disable max-len */
 /**
@@ -62,13 +62,16 @@ export function nowebrtc(source) {
     }
 }
 
-nowebrtc.names = [
+export const nowebrtcNames = [
     'nowebrtc',
     // aliases are needed for matching the related scriptlet converted into our syntax
     'nowebrtc.js',
     'ubo-nowebrtc.js',
     'ubo-nowebrtc',
 ];
+
+// eslint-disable-next-line prefer-destructuring
+nowebrtc.primaryName = nowebrtcNames[0];
 
 nowebrtc.injections = [
     hit,
