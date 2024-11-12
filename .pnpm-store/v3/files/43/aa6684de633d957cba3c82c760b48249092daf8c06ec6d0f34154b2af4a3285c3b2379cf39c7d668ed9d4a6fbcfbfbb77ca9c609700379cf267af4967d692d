@@ -1,0 +1,47 @@
+/**
+ * Checks whether the given value is undefined.
+ *
+ * @param value Value to check.
+ *
+ * @returns `true` if the value is 'undefined', `false` otherwise.
+ */
+export declare const isUndefined: (value: unknown) => value is undefined;
+/**
+ * Checks whether the given value is null.
+ *
+ * @param value Value to check.
+ *
+ * @returns `true` if the value is 'null', `false` otherwise.
+ */
+export declare const isNull: (value: unknown) => value is null;
+/**
+ * Checks whether the given value is a number.
+ *
+ * @param value Value to check.
+ *
+ * @returns `true` if the value is a number, `false` otherwise.
+ */
+export declare const isNumber: (value: unknown) => value is number;
+/**
+ * Checks whether the given value is an integer.
+ *
+ * @param value Value to check.
+ *
+ * @returns `true` if the value is an integer, `false` otherwise.
+ */
+export declare const isInteger: (value: unknown) => value is number;
+/**
+ * Checks whether the given value is a string.
+ *
+ * @param value Value to check.
+ * @returns `true` if the value is a string, `false` otherwise.
+ */
+export declare const isString: (value: unknown) => value is string;
+/**
+ * Checks whether the given value is an array of Uint8Arrays.
+ *
+ * @param value Value to check.
+ *
+ * @returns True if the value type is an array of Uint8Arrays.
+ */
+export declare const isArrayOfUint8Arrays: (value: unknown) => value is Uint8Array[];

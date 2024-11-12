@@ -1,0 +1,21 @@
+/**
+ * @file Cosmetic rule modifier converter from uBO to ADG
+ */
+import { type ModifierList } from '../../../nodes';
+import { type ConversionResult } from '../../base-interfaces/conversion-result';
+/**
+ * Helper class for converting cosmetic rule modifiers from uBO to ADG
+ */
+export declare class AdgCosmeticRuleModifierConverter {
+    /**
+     * Converts a uBO cosmetic rule modifier list to ADG, if possible.
+     *
+     * @param modifierList Cosmetic rule modifier list node to convert
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+     * If the node was not converted, the result will contain the original node with the same object reference
+     * @throws If the modifier list cannot be converted
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#cosmetic-filter-operators}
+     */
+    static convertFromUbo(modifierList: ModifierList): ConversionResult<ModifierList>;
+}

@@ -1,0 +1,17 @@
+import { type Value } from '../../nodes';
+import { BaseDeserializer } from '../base-deserializer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+/**
+ * Value deserializer.
+ */
+export declare class ValueDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a value node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @param frequentValuesMap Optional map of frequent values.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<Value>, frequentValuesMap?: Map<number, string>): void;
+}

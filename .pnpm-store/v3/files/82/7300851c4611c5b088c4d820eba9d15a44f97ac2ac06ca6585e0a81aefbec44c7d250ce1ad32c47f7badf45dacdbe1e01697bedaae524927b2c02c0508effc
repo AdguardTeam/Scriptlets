@@ -1,0 +1,15 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var ruleDeserializer = require('./rule-deserializer.js');
+var syntaxDeserializationMap = require('./syntax-deserialization-map.js');
+
+
+
+exports.RuleDeserializer = ruleDeserializer.RuleDeserializer;
+exports.getSyntaxDeserializationMap = syntaxDeserializationMap.getSyntaxDeserializationMap;

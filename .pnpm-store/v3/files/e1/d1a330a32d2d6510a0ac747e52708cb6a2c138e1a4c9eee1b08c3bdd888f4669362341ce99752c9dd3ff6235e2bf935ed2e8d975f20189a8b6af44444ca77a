@@ -1,0 +1,89 @@
+/**
+ * Prefixes for different adblockers to describe the platform-specific modifiers data
+ * stored in the yaml files.
+ */
+export declare const BLOCKER_PREFIX: {
+    AdGuard: string;
+    UblockOrigin: string;
+    AdblockPlus: string;
+};
+/**
+ * Set of all allowed characters for app name except the dot `.`.
+ */
+export declare const APP_NAME_ALLOWED_CHARS: Set<string>;
+/**
+ * Allowed methods for $method modifier.
+ *
+ * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#method-modifier}
+ */
+export declare const ALLOWED_METHODS: Set<string>;
+/**
+ * Allowed stealth options for $stealth modifier.
+ *
+ * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier}
+ */
+export declare const ALLOWED_STEALTH_OPTIONS: Set<string>;
+/**
+ * Allowed CSP directives for $csp modifier.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy#directives}
+ */
+export declare const ALLOWED_CSP_DIRECTIVES: Set<string>;
+/**
+ * Allowed directives for $permissions modifier.
+ *
+ * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#permissions-modifier}
+ */
+export declare const ALLOWED_PERMISSION_DIRECTIVES: Set<string>;
+/**
+ * One of available tokens for $permission modifier value.
+ *
+ * @see {@link https://w3c.github.io/webappsec-permissions-policy/#structured-header-serialization}
+ */
+export declare const PERMISSIONS_TOKEN_SELF = "self";
+/**
+ * One of allowlist values for $permissions modifier.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Permissions_Policy#allowlists}
+ */
+export declare const EMPTY_PERMISSIONS_ALLOWLIST = "()";
+/**
+ * Allowed directives for $referrerpolicy modifier.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy}
+ */
+export declare const REFERRER_POLICY_DIRECTIVES: Set<string>;
+/**
+ * Prefixes for error messages used in modifier validation.
+ */
+export declare const VALIDATION_ERROR_PREFIX: {
+    BLOCK_ONLY: string;
+    EXCEPTION_ONLY: string;
+    INVALID_CSP_DIRECTIVES: string;
+    INVALID_LIST_VALUES: string;
+    INVALID_NOOP: string;
+    INVALID_PERMISSION_DIRECTIVE: string;
+    INVALID_PERMISSION_ORIGINS: string;
+    INVALID_PERMISSION_ORIGIN_QUOTES: string;
+    INVALID_REFERRER_POLICY_DIRECTIVE: string;
+    MIXED_NEGATIONS: string;
+    NO_CSP_VALUE: string;
+    NO_CSP_DIRECTIVE_QUOTE: string;
+    NO_UNESCAPED_PERMISSION_COMMA: string;
+    NOT_EXISTENT: string;
+    NOT_NEGATABLE_MODIFIER: string;
+    NOT_NEGATABLE_VALUE: string;
+    NOT_SUPPORTED: string;
+    REMOVED: string;
+    VALUE_FORBIDDEN: string;
+    VALUE_INVALID: string;
+    VALUE_REQUIRED: string;
+};
+/**
+ * Prefixes for error messages related to issues in the source YAML files' data.
+ */
+export declare const SOURCE_DATA_ERROR_PREFIX: {
+    INVALID_VALUE_FORMAT_REGEXP: string;
+    NO_DEPRECATION_MESSAGE: string;
+    NO_VALUE_FORMAT_FOR_ASSIGNABLE: string;
+};

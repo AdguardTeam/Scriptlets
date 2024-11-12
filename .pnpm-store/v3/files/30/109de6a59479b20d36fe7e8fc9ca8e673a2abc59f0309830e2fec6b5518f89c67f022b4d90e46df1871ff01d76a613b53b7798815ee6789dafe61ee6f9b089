@@ -1,0 +1,39 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseSerializer = require('./base-serializer.js');
+var typeGuards = require('../utils/type-guards.js');
+var constants = require('../utils/constants.js');
+var invalidRuleErrorNodeSerializer = require('./invalid-rule-error-node-serializer.js');
+var invalidRuleCommon = require('../marshalling-utils/invalid-rule-common.js');
+var binaryTypeCommon = require('../marshalling-utils/misc/binary-type-common.js');
+
+class InvalidRuleSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes an invalid rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.InvalidRule);
+        buffer.writeUint8(invalidRuleCommon.InvalidRuleMarshallingMap.Error);
+        invalidRuleErrorNodeSerializer.InvalidRuleErrorNodeSerializer.serialize(node.error, buffer);
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(invalidRuleCommon.InvalidRuleMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(invalidRuleCommon.InvalidRuleMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.InvalidRuleSerializer = InvalidRuleSerializer;

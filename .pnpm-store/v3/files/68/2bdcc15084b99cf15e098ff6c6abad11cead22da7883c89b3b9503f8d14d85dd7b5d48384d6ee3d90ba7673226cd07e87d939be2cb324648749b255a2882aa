@@ -1,0 +1,33 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var baseGenerator = require('../base-generator.js');
+
+class ModifierGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Generates a string from a modifier (serializes it).
+     *
+     * @param modifier Modifier to generate string from
+     * @returns String representation of the modifier
+     */
+    static generate(modifier) {
+        let result = constants.EMPTY;
+        if (modifier.exception) {
+            result += constants.NEGATION_MARKER;
+        }
+        result += modifier.name.value;
+        if (modifier.value !== undefined) {
+            result += constants.MODIFIER_ASSIGN_OPERATOR;
+            result += modifier.value.value;
+        }
+        return result;
+    }
+}
+
+exports.ModifierGenerator = ModifierGenerator;

@@ -1,0 +1,62 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var valueDeserializer = require('./value-deserializer.js');
+var baseDeserializer = require('../base-deserializer.js');
+var parameterListCommon = require('../../marshalling-utils/misc/parameter-list-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+class ParameterListDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes a parameter list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @param frequentValuesMap Optional map of frequent values.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer, node, frequentValuesMap) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ParameterListNode);
+        node.type = 'ParameterList';
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case parameterListCommon.ParameterListNodeMarshallingMap.Children:
+                    node.children = new Array(buffer.readUint32());
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        switch (buffer.peekUint8()) {
+                            case binaryTypeCommon.BinaryTypeMarshallingMap.Null:
+                                buffer.readUint8();
+                                node.children[i] = null;
+                                break;
+                            case binaryTypeCommon.BinaryTypeMarshallingMap.ValueNode:
+                                // eslint-disable-next-line max-len
+                                valueDeserializer.ValueDeserializer.deserialize(buffer, node.children[i] = {}, frequentValuesMap);
+                                break;
+                            default:
+                                throw new Error(`Invalid child type: ${buffer.peekUint8()}`);
+                        }
+                    }
+                    break;
+                case parameterListCommon.ParameterListNodeMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case parameterListCommon.ParameterListNodeMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.ParameterListDeserializer = ParameterListDeserializer;

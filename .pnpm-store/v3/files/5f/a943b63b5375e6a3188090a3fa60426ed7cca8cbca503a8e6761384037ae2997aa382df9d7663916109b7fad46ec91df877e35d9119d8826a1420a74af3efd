@@ -1,0 +1,18 @@
+import { type Modifier } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `ModifierSerializer` is responsible for serializing modifiers.
+ *
+ * @example
+ * `match-case`, `~third-party`, `domain=example.com|~example.org`
+ */
+export declare class ModifierSerializer extends BaseSerializer {
+    /**
+     * Serializes a modifier node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: Modifier, buffer: OutputByteBuffer): void;
+}

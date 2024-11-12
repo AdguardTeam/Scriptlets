@@ -1,0 +1,30 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var baseGenerator = require('../base-generator.js');
+var agentGenerator = require('./agent-generator.js');
+
+class AgentCommentGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Converts an adblock agent AST to a string.
+     *
+     * @param ast Agent rule AST
+     * @returns Raw string
+     */
+    static generate(ast) {
+        let result = constants.OPEN_SQUARE_BRACKET;
+        result += ast.children
+            .map(agentGenerator.AgentGenerator.generate)
+            .join(constants.SEMICOLON + constants.SPACE);
+        result += constants.CLOSE_SQUARE_BRACKET;
+        return result;
+    }
+}
+
+exports.AgentCommentGenerator = AgentCommentGenerator;

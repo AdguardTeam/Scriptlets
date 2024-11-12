@@ -1,0 +1,57 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+/**
+ * @file Possible adblock syntaxes are listed here.
+ */
+/**
+ * Possible adblock syntaxes (supported by this library)
+ */
+var AdblockSyntax;
+(function (AdblockSyntax) {
+    /**
+     * Common syntax, which is supported by more than one adblocker (or by all adblockers).
+     *
+     * We typically use this syntax when we cannot determine the concrete syntax of the rule,
+     * because the syntax is used by more than one adblocker natively.
+     *
+     * @example
+     * - `||example.org^$important` is a common syntax, since it is used by all adblockers natively, and
+     * we cannot determine at parsing level whether `important` is a valid option or not, and if it is valid,
+     * then which adblocker supports it.
+     */
+    AdblockSyntax["Common"] = "Common";
+    /**
+     * Adblock Plus syntax.
+     *
+     * @example
+     * - `example.org#$#abort-on-property-read alert` is an Adblock Plus syntax, since it is not used by any other
+     * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
+     * @see {@link https://adblockplus.org/}
+     */
+    AdblockSyntax["Abp"] = "AdblockPlus";
+    /**
+     * uBlock Origin syntax.
+     *
+     * @example
+     * - `example.com##+js(set, atob, noopFunc)` is an uBlock Origin syntax, since it is not used by any other
+     * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
+     * @see {@link https://github.com/gorhill/uBlock}
+     */
+    AdblockSyntax["Ubo"] = "UblockOrigin";
+    /**
+     * AdGuard syntax.
+     *
+     * @example
+     * - `example.org#%#//scriptlet("abort-on-property-read", "alert")` is an AdGuard syntax, since it is not used
+     * by any other adblockers directly (probably supported by some on-the-fly conversion, but this is not the native
+     * syntax).
+     * @see {@link https://adguard.com/}
+     */
+    AdblockSyntax["Adg"] = "AdGuard";
+})(AdblockSyntax || (AdblockSyntax = {}));
+
+export { AdblockSyntax };

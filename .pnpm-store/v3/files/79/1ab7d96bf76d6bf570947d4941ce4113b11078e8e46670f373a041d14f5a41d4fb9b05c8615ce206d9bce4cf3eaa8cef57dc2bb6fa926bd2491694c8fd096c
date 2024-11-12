@@ -1,0 +1,46 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseDeserializer = require('../base-deserializer.js');
+var constants = require('../../utils/constants.js');
+var elementHidingBodyCommon = require('../../marshalling-utils/cosmetic/body/element-hiding-body-common.js');
+var valueDeserializer = require('../misc/value-deserializer.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/* eslint-disable no-param-reassign */
+class ElementHidingBodyDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes an element hiding rule body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserializeElementHidingBody(buffer, node) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ElementHidingRuleBody);
+        node.type = 'ElementHidingRuleBody';
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case elementHidingBodyCommon.ElementHidingRuleMarshallingMap.SelectorList:
+                    valueDeserializer.ValueDeserializer.deserialize(buffer, node.selectorList = {});
+                    break;
+                case elementHidingBodyCommon.ElementHidingRuleMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case elementHidingBodyCommon.ElementHidingRuleMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Unknown property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.ElementHidingBodyDeserializer = ElementHidingBodyDeserializer;

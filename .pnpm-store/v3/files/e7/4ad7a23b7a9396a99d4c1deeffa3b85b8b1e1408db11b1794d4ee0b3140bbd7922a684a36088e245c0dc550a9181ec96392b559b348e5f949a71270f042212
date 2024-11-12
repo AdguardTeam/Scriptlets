@@ -1,0 +1,17 @@
+import { type Value } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * Value serializer.
+ */
+export declare class ValueSerializer extends BaseSerializer {
+    /**
+     * Serializes a value node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     * @param frequentValuesMap Optional map of frequent values.
+     * @param toLower Whether to lowercase the value before the frequent value match (defaults to `false`).
+     */
+    static serialize(node: Value, buffer: OutputByteBuffer, frequentValuesMap?: Map<string, number>, toLower?: boolean): void;
+}

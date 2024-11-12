@@ -1,0 +1,47 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseGenerator = require('../base-generator.js');
+var index = require('../../nodes/index.js');
+var logicalExpressionParser = require('../../parser/misc/logical-expression-parser.js');
+
+class LogicalExpressionGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Generates a string representation of the logical expression (serialization).
+     *
+     * @param node Expression node
+     * @returns String representation of the logical expression
+     */
+    static generate(node) {
+        if (node.type === logicalExpressionParser.NodeType.Variable) {
+            return node.name;
+        }
+        if (node.type === logicalExpressionParser.NodeType.Operator) {
+            const left = LogicalExpressionGenerator.generate(node.left);
+            const right = node.right ? LogicalExpressionGenerator.generate(node.right) : undefined;
+            const { operator } = node;
+            // Special case for NOT operator
+            if (operator === index.OperatorValue.Not) {
+                return `${operator}${left}`;
+            }
+            // Right operand is required for AND and OR operators
+            if (!right) {
+                throw new Error('Expected right operand');
+            }
+            return `${left} ${operator} ${right}`;
+        }
+        if (node.type === logicalExpressionParser.NodeType.Parenthesis) {
+            const expressionString = LogicalExpressionGenerator.generate(node.expression);
+            return `(${expressionString})`;
+        }
+        // Theoretically, this shouldn't happen if the library is used correctly
+        throw new Error('Unexpected node type');
+    }
+}
+
+exports.LogicalExpressionGenerator = LogicalExpressionGenerator;

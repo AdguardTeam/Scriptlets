@@ -1,0 +1,41 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../../utils/constants.js');
+var parameterListGenerator = require('../../misc/parameter-list-generator.js');
+var baseGenerator = require('../../base-generator.js');
+
+class AdgScriptletInjectionBodyGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Error messages used by the parser.
+     */
+    static ERROR_MESSAGES = {
+        NO_MULTIPLE_SCRIPTLET_CALLS: 'ADG syntaxes does not support multiple scriptlet calls within one single rule',
+    };
+    /**
+     * Generates a string representation of the AdGuard scriptlet call body.
+     *
+     * @param node Scriptlet injection rule body
+     * @returns String representation of the rule body
+     */
+    static generate(node) {
+        const result = [];
+        if (node.children.length > 1) {
+            throw new Error(AdgScriptletInjectionBodyGenerator.ERROR_MESSAGES.NO_MULTIPLE_SCRIPTLET_CALLS);
+        }
+        result.push(constants.ADG_SCRIPTLET_MASK);
+        result.push(constants.OPEN_PARENTHESIS);
+        if (node.children.length > 0) {
+            result.push(parameterListGenerator.ParameterListGenerator.generate(node.children[0]));
+        }
+        result.push(constants.CLOSE_PARENTHESIS);
+        return result.join(constants.EMPTY);
+    }
+}
+
+exports.AdgScriptletInjectionBodyGenerator = AdgScriptletInjectionBodyGenerator;

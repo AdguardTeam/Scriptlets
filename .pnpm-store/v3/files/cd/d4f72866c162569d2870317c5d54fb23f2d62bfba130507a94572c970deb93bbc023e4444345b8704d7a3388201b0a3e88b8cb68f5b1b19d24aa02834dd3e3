@@ -1,0 +1,109 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var agentCommentDeserializer = require('./agent-comment-deserializer.js');
+var configCommentDeserializer = require('./config-comment-deserializer.js');
+var hintCommentDeserializer = require('./hint-comment-deserializer.js');
+var metadataCommentDeserializer = require('./metadata-comment-deserializer.js');
+var preProcessorCommentDeserializer = require('./pre-processor-comment-deserializer.js');
+var simpleCommentDeserializer = require('./simple-comment-deserializer.js');
+var baseDeserializer = require('../base-deserializer.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/**
+ * `CommentRuleSerializer` is responsible for serializing any comment-like adblock rules.
+ *
+ * @example
+ * Example rules:
+ *  - Adblock agent rules:
+ *      - ```adblock
+ *        [AdGuard]
+ *        ```
+ *      - ```adblock
+ *        [Adblock Plus 2.0]
+ *        ```
+ *      - etc.
+ *  - AdGuard hint rules:
+ *      - ```adblock
+ *        !+ NOT_OPTIMIZED
+ *        ```
+ *      - ```adblock
+ *        !+ NOT_OPTIMIZED PLATFORM(windows)
+ *        ```
+ *      - etc.
+ *  - Pre-processor rules:
+ *      - ```adblock
+ *        !#if (adguard)
+ *        ```
+ *      - ```adblock
+ *        !#endif
+ *        ```
+ *      - etc.
+ *  - Metadata rules:
+ *      - ```adblock
+ *        ! Title: My List
+ *        ```
+ *      - ```adblock
+ *        ! Version: 2.0.150
+ *        ```
+ *      - etc.
+ *  - AGLint inline config rules:
+ *      - ```adblock
+ *        ! aglint-enable some-rule
+ *        ```
+ *      - ```adblock
+ *        ! aglint-disable some-rule
+ *        ```
+ *      - etc.
+ *  - Simple comments:
+ *      - Regular version:
+ *        ```adblock
+ *        ! This is just a comment
+ *        ```
+ *      - uBlock Origin / "hostlist" version:
+ *        ```adblock
+ *        # This is just a comment
+ *        ```
+ *      - etc.
+ */
+class CommentRuleDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes a comment rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer, node) {
+        const type = buffer.peekUint8();
+        switch (type) {
+            case binaryTypeCommon.BinaryTypeMarshallingMap.AgentRuleNode:
+                agentCommentDeserializer.AgentCommentDeserializer.deserialize(buffer, node);
+                return;
+            case binaryTypeCommon.BinaryTypeMarshallingMap.HintRuleNode:
+                hintCommentDeserializer.HintCommentDeserializer.deserialize(buffer, node);
+                return;
+            case binaryTypeCommon.BinaryTypeMarshallingMap.PreProcessorCommentRuleNode:
+                preProcessorCommentDeserializer.PreProcessorCommentDeserializer.deserialize(buffer, node);
+                return;
+            case binaryTypeCommon.BinaryTypeMarshallingMap.MetadataCommentRuleNode:
+                metadataCommentDeserializer.MetadataCommentDeserializer.deserialize(buffer, node);
+                return;
+            case binaryTypeCommon.BinaryTypeMarshallingMap.ConfigCommentRuleNode:
+                configCommentDeserializer.ConfigCommentDeserializer.deserialize(buffer, node);
+                return;
+            case binaryTypeCommon.BinaryTypeMarshallingMap.CommentRuleNode:
+                simpleCommentDeserializer.SimpleCommentDeserializer.deserialize(buffer, node);
+                return;
+            default:
+                throw new Error(`Unknown comment rule type: ${type}`);
+        }
+    }
+}
+
+exports.CommentRuleDeserializer = CommentRuleDeserializer;

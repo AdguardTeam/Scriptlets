@@ -1,0 +1,38 @@
+/**
+ * @file Validator for modifiers.
+ */
+import { type Modifier } from '../nodes';
+import { AdblockSyntax } from '../utils/adblockers';
+import { type ValidationResult } from './helpers';
+/**
+ * Modifier validator class.
+ */
+declare class ModifierValidator {
+    /**
+     * Simply checks whether the modifier exists in any adblocker.
+     *
+     * **Deprecated** and **removed** modifiers are considered as **existent**.
+     *
+     * @param modifier Already parsed modifier AST node.
+     *
+     * @returns True if modifier exists, false otherwise.
+     */
+    exists: (modifier: Modifier) => boolean;
+    /**
+     * Checks whether the given `modifier` is valid for specified `syntax`.
+     *
+     * For `Common` syntax it simply checks whether the modifier exists.
+     * For specific syntax the validation is more complex —
+     * deprecated, assignable, negatable and other requirements are checked.
+     *
+     * @param syntax Adblock syntax to check the modifier for.
+     * @param rawModifier Modifier AST node.
+     * @param isException Whether the modifier is used in exception rule, default to false.
+     * Needed to check whether the modifier is allowed only in blocking or exception rules.
+     *
+     * @returns Result of modifier validation.
+     */
+    validate: (syntax: AdblockSyntax, rawModifier: Modifier, isException?: boolean) => ValidationResult;
+}
+export declare const modifierValidator: ModifierValidator;
+export {};

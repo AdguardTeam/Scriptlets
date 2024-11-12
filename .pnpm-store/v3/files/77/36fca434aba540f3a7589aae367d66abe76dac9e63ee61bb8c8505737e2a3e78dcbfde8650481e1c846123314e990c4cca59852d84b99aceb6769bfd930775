@@ -1,0 +1,47 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { BaseSerializer } from '../base-serializer.mjs';
+import { isUndefined } from '../../utils/type-guards.mjs';
+import { UINT16_MAX, NULL } from '../../utils/constants.mjs';
+import { ValueSerializer } from '../misc/value-serializer.mjs';
+import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common.mjs';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.mjs';
+
+class HostnameListSerializer extends BaseSerializer {
+    /**
+     * Serializes a hostname list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node, buffer) {
+        buffer.writeUint8(BinaryTypeMarshallingMap.HostnameListNode);
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(HostnameListNodeMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(HostnameListNodeMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        const count = node.children.length;
+        if (count) {
+            // note: we store the count, because re-construction of the array is faster if we know the length
+            if (count > UINT16_MAX) {
+                throw new Error(`Too many children: ${count}, the limit is ${UINT16_MAX}`);
+            }
+            buffer.writeUint8(HostnameListNodeMarshallingMap.Children);
+            buffer.writeUint16(count);
+            for (let i = 0; i < count; i += 1) {
+                ValueSerializer.serialize(node.children[i], buffer);
+            }
+        }
+        buffer.writeUint8(NULL);
+    }
+}
+
+export { HostnameListSerializer };

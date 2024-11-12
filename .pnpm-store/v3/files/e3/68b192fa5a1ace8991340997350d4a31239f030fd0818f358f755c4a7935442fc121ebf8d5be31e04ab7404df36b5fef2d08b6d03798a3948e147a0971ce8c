@@ -1,0 +1,194 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var adblockers = require('../utils/adblockers.js');
+var commentParser = require('./comment/comment-parser.js');
+var cosmeticRuleParser = require('./cosmetic/cosmetic-rule-parser.js');
+var networkRuleParser = require('./network/network-rule-parser.js');
+var index = require('../nodes/index.js');
+var adblockSyntaxError = require('../errors/adblock-syntax-error.js');
+var options = require('./options.js');
+var baseParser = require('./base-parser.js');
+var hostRuleParser = require('./network/host-rule-parser.js');
+
+/* eslint-disable no-param-reassign */
+/**
+ * `RuleParser` is responsible for parsing the rules.
+ *
+ * It automatically determines the category and syntax of the rule, so you can pass any kind of rule to it.
+ */
+class RuleParser extends baseParser.BaseParser {
+    /**
+     * Helper method to parse host rules if the `parseHostRules` option is enabled, otherwise it will
+     * parse network rules.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Host rule or network rule node.
+     */
+    static parseHostOrNetworkRule(raw, options, baseOffset) {
+        if (options.parseHostRules) {
+            try {
+                return hostRuleParser.HostRuleParser.parse(raw, options, baseOffset);
+            }
+            catch (error) {
+                // Ignore the error, and fall back to network rule parser
+            }
+        }
+        return networkRuleParser.NetworkRuleParser.parse(raw, options, baseOffset);
+    }
+    /**
+     * Parse an adblock rule. You can pass any kind of rule to this method, since it will automatically determine
+     * the category and syntax. If the rule is syntactically invalid, then an error will be thrown. If the
+     * syntax / compatibility cannot be determined clearly, then the value of the `syntax` property will be
+     * `Common`.
+     *
+     * For example, let's have this network rule:
+     * ```adblock
+     * ||example.org^$important
+     * ```
+     * The `syntax` property will be `Common`, since the rule is syntactically correct in every adblockers, but we
+     * cannot determine at parsing level whether `important` is an existing option or not, nor if it exists, then
+     * which adblocker supports it. This is why the `syntax` property is simply `Common` at this point.
+     * The concrete COMPATIBILITY of the rule will be determined later, in a different, higher-level layer, called
+     * "Compatibility table".
+     *
+     * But we can determinate the concrete syntax of this rule:
+     * ```adblock
+     * example.org#%#//scriptlet("scriptlet0", "arg0")
+     * ```
+     * since it is clearly an AdGuard-specific rule and no other adblockers uses this syntax natively. However, we also
+     * cannot determine the COMPATIBILITY of this rule, as it is not clear at this point whether the `scriptlet0`
+     * scriptlet is supported by AdGuard or not. This is also the task of the "Compatibility table". Here, we simply
+     * mark the rule with the `AdGuard` syntax in this case.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Adblock rule node
+     * @throws If the input matches a pattern but syntactically invalid
+     * @example
+     * Take a look at the following example:
+     * ```js
+     * // Parse a network rule
+     * const ast1 = RuleParser.parse("||example.org^$important");
+     *
+     * // Parse another network rule
+     * const ast2 = RuleParser.parse("/ads.js^$important,third-party,domain=example.org|~example.com");
+     *
+     * // Parse a cosmetic rule
+     * const ast2 = RuleParser.parse("example.org##.banner");
+     *
+     * // Parse another cosmetic rule
+     * const ast3 = RuleParser.parse("example.org#?#.banner:-abp-has(.ad)");
+     *
+     * // Parse a comment rule
+     * const ast4 = RuleParser.parse("! Comment");
+     *
+     * // Parse an empty rule
+     * const ast5 = RuleParser.parse("");
+     *
+     * // Parse a comment rule (with metadata)
+     * const ast6 = RuleParser.parse("! Title: Example");
+     *
+     * // Parse a pre-processor rule
+     * const ast7 = RuleParser.parse("!#if (adguard)");
+     * ```
+     */
+    static parse(raw, options$1 = options.defaultParserOptions, baseOffset = 0) {
+        try {
+            // Empty lines / rules (handle it just for convenience)
+            if (raw.trim().length === 0) {
+                const result = {
+                    type: 'EmptyRule',
+                    category: index.RuleCategory.Empty,
+                    syntax: adblockers.AdblockSyntax.Common,
+                };
+                if (options$1.includeRaws) {
+                    result.raws = {
+                        text: raw,
+                    };
+                }
+                if (options$1.isLocIncluded) {
+                    result.start = baseOffset;
+                    result.end = baseOffset + raw.length;
+                }
+                return result;
+            }
+            // Try to parse the rule with all sub-parsers. If a rule doesn't match
+            // the pattern of a parser, then it will return `null`. For example, a
+            // network rule will not match the pattern of a comment rule, since it
+            // doesn't start with comment marker. But if the rule matches the
+            // pattern of a parser, then it will return the AST of the rule, or
+            // throw an error if the rule is syntactically invalid.
+            if (options$1.ignoreComments) {
+                if (commentParser.CommentParser.isCommentRule(raw)) {
+                    const result = {
+                        type: 'EmptyRule',
+                        category: index.RuleCategory.Empty,
+                        syntax: adblockers.AdblockSyntax.Common,
+                    };
+                    if (options$1.includeRaws) {
+                        result.raws = {
+                            text: raw,
+                        };
+                    }
+                    if (options$1.isLocIncluded) {
+                        result.start = baseOffset;
+                        result.end = baseOffset + raw.length;
+                    }
+                    return result;
+                }
+                return cosmeticRuleParser.CosmeticRuleParser.parse(raw, options$1, baseOffset)
+                    || RuleParser.parseHostOrNetworkRule(raw, options$1, baseOffset);
+            }
+            return commentParser.CommentParser.parse(raw, options$1, baseOffset)
+                || cosmeticRuleParser.CosmeticRuleParser.parse(raw, options$1, baseOffset)
+                || RuleParser.parseHostOrNetworkRule(raw, options$1, baseOffset);
+        }
+        catch (error) {
+            // If tolerant mode is disabled or the error is not known, then simply
+            // re-throw the error
+            if (!options$1.tolerant || !(error instanceof Error)) {
+                throw error;
+            }
+            const errorNode = {
+                type: 'InvalidRuleError',
+                name: error.name,
+                message: error.message,
+            };
+            // If the error is an AdblockSyntaxError, then we can add the
+            // location of the error to the result
+            if (error instanceof adblockSyntaxError.AdblockSyntaxError) {
+                errorNode.start = error.start;
+                errorNode.end = error.end;
+            }
+            // Otherwise, return an invalid rule (tolerant mode)
+            const result = {
+                type: 'InvalidRule',
+                category: index.RuleCategory.Invalid,
+                syntax: adblockers.AdblockSyntax.Common,
+                raw,
+                error: errorNode,
+            };
+            if (options$1.includeRaws) {
+                result.raws = {
+                    text: raw,
+                };
+            }
+            if (options$1.isLocIncluded) {
+                result.start = baseOffset;
+                result.end = baseOffset + raw.length;
+            }
+            return result;
+        }
+    }
+}
+
+exports.RuleParser = RuleParser;

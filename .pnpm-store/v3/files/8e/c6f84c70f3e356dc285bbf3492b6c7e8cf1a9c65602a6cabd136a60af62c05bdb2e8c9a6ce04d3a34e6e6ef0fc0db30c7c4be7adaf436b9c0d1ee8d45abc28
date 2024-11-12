@@ -1,0 +1,118 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { CosmeticRuleType, RuleCategory } from '../../nodes/index.mjs';
+import { AdblockSyntax } from '../../utils/adblockers.mjs';
+import { HtmlRuleConverter } from './html.mjs';
+import { ScriptletRuleConverter } from './scriptlet.mjs';
+import { RuleConversionError } from '../../errors/rule-conversion-error.mjs';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.mjs';
+import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg.mjs';
+import { CssInjectionRuleConverter } from './css.mjs';
+import { ElementHidingRuleConverter } from './element-hiding.mjs';
+import { HeaderRemovalRuleConverter } from './header-removal.mjs';
+import { createNodeConversionResult } from '../base-interfaces/conversion-result.mjs';
+
+/**
+ * @file Cosmetic rule converter
+ */
+/**
+ * Cosmetic rule converter class (also known as "non-basic rule converter")
+ *
+ * @todo Implement `convertToUbo` and `convertToAbp`
+ */
+class CosmeticRuleConverter extends RuleConverterBase {
+    /**
+     * Converts a cosmetic rule to AdGuard syntax, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    static convertToAdg(rule) {
+        let subconverterResult;
+        // Convert cosmetic rule based on its type
+        switch (rule.type) {
+            case CosmeticRuleType.ElementHidingRule:
+                subconverterResult = ElementHidingRuleConverter.convertToAdg(rule);
+                break;
+            case CosmeticRuleType.ScriptletInjectionRule:
+                subconverterResult = ScriptletRuleConverter.convertToAdg(rule);
+                break;
+            case CosmeticRuleType.CssInjectionRule:
+                subconverterResult = CssInjectionRuleConverter.convertToAdg(rule);
+                break;
+            case CosmeticRuleType.HtmlFilteringRule:
+                // Handle special case: uBO response header filtering rule
+                // TODO: Optimize double CSS tokenization here
+                subconverterResult = HeaderRemovalRuleConverter.convertToAdg(rule);
+                if (subconverterResult.isConverted) {
+                    break;
+                }
+                subconverterResult = HtmlRuleConverter.convertToAdg(rule);
+                break;
+            // Note: Currently, only ADG supports JS injection rules, so we don't need to convert them
+            case CosmeticRuleType.JsInjectionRule:
+                subconverterResult = createNodeConversionResult([rule], false);
+                break;
+            default:
+                throw new RuleConversionError('Unsupported cosmetic rule type');
+        }
+        let convertedModifiers;
+        // Convert cosmetic rule modifiers, if any
+        if (rule.modifiers) {
+            if (rule.syntax === AdblockSyntax.Ubo) {
+                // uBO doesn't support this rule:
+                // example.com##+js(set-constant.js, foo, bar):matches-path(/baz)
+                if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {
+                    throw new RuleConversionError('uBO scriptlet injection rules don\'t support cosmetic rule modifiers');
+                }
+                convertedModifiers = AdgCosmeticRuleModifierConverter.convertFromUbo(rule.modifiers);
+            }
+            else if (rule.syntax === AdblockSyntax.Abp) {
+                // TODO: Implement once ABP starts supporting cosmetic rule modifiers
+                throw new RuleConversionError('ABP don\'t support cosmetic rule modifiers');
+            }
+        }
+        if ((subconverterResult.result.length > 1 || subconverterResult.isConverted)
+            || (convertedModifiers && convertedModifiers.isConverted)) {
+            // Add modifier list to the subconverter result rules
+            subconverterResult.result.forEach((subconverterRule) => {
+                if (convertedModifiers && subconverterRule.category === RuleCategory.Cosmetic) {
+                    // eslint-disable-next-line no-param-reassign
+                    subconverterRule.modifiers = convertedModifiers.result;
+                }
+            });
+            return subconverterResult;
+        }
+        return createNodeConversionResult([rule], false);
+    }
+    /**
+     * Converts a cosmetic rule to uBlock Origin syntax, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    // TODO: Add support for other cosmetic rule types
+    static convertToUbo(rule) {
+        // Convert cosmetic rule based on its type
+        if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {
+            if (rule.syntax === AdblockSyntax.Adg && rule.modifiers?.children.length) {
+                // e.g. example.com##+js(set-constant.js, foo, bar):matches-path(/baz)
+                throw new RuleConversionError('uBO scriptlet injection rules do not support cosmetic rule modifiers');
+            }
+            return ScriptletRuleConverter.convertToUbo(rule);
+        }
+        return createNodeConversionResult([rule], false);
+    }
+}
+
+export { CosmeticRuleConverter };

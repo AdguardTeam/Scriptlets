@@ -1,0 +1,21 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+/**
+ * @file Error messages for CSS token stream and balancer.
+ */
+const END_OF_INPUT = 'end of input';
+const ERROR_MESSAGES = {
+    EXPECTED_ANY_TOKEN_BUT_GOT: "Expected a token, but got '%s'",
+    EXPECTED_TOKEN_BUT_GOT: "Expected '%s', but got '%s'",
+    EXPECTED_TOKEN_WITH_BALANCE_BUT_GOT: "Expected '%s' with balance '%d', but got '%d'",
+    EXPECTED_TOKEN_WITH_VALUE_BUT_GOT: "Expected '%s' with value '%s', but got '%s'",
+};
+
+exports.END_OF_INPUT = END_OF_INPUT;
+exports.ERROR_MESSAGES = ERROR_MESSAGES;

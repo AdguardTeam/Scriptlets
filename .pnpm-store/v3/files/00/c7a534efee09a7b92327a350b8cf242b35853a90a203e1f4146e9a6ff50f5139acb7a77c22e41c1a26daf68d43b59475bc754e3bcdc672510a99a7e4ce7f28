@@ -1,0 +1,12 @@
+import { BaseDeserializer } from '../base-deserializer';
+import { type HostnameList } from '../../nodes';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+export declare class HostnameListDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a hostname list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer: InputByteBuffer, node: HostnameList): void;
+}

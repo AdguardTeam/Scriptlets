@@ -1,0 +1,30 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var base = require('./base.js');
+var compatibilityTableData = require('./compatibility-table-data.js');
+var deepFreeze = require('../utils/deep-freeze.js');
+
+/**
+ * @file Compatibility tables for scriptlets.
+ */
+/**
+ * Compatibility table for scriptlets.
+ */
+class ScriptletsCompatibilityTable extends base.CompatibilityTableBase {
+}
+/**
+ * Deep freeze the compatibility table data to avoid accidental modifications.
+ */
+deepFreeze.deepFreeze(compatibilityTableData.scriptletsCompatibilityTableData);
+/**
+ * Compatibility table instance for scriptlets.
+ */
+const scriptletsCompatibilityTable = new ScriptletsCompatibilityTable(compatibilityTableData.scriptletsCompatibilityTableData);
+
+exports.scriptletsCompatibilityTable = scriptletsCompatibilityTable;

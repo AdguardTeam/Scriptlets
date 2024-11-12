@@ -1,0 +1,27 @@
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+export declare const enum CosmeticRuleMarshallingMap {
+    Syntax = 1,
+    Exception = 2,
+    Separator = 3,
+    Modifiers = 4,
+    Domains = 5,
+    Body = 6,
+    Start = 7,
+    End = 8
+}
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+export declare const COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP: Map<string, number>;

@@ -1,0 +1,54 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var typeGuards = require('../../utils/type-guards.js');
+var valueSerializer = require('../misc/value-serializer.js');
+var baseSerializer = require('../base-serializer.js');
+var simpleCommentCommon = require('../../marshalling-utils/comment/simple-comment-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/**
+ * `SimpleCommentSerializer` is responsible for parsing simple comments.
+ * Some comments have a special meaning in adblock syntax, like agent comments or hints,
+ * but this parser is only responsible for parsing regular comments,
+ * whose only purpose is to provide some human-readable information.
+ *
+ * @example
+ * ```adblock
+ * ! This is a simple comment
+ * # This is a simple comment, but in host-like syntax
+ * ```
+ */
+class SimpleCommentSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a simple comment rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    static serialize(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.CommentRuleNode);
+        buffer.writeUint8(simpleCommentCommon.SimpleCommentMarshallingMap.Marker);
+        valueSerializer.ValueSerializer.serialize(node.marker, buffer);
+        buffer.writeUint8(simpleCommentCommon.SimpleCommentMarshallingMap.Text);
+        valueSerializer.ValueSerializer.serialize(node.text, buffer);
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(simpleCommentCommon.SimpleCommentMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(simpleCommentCommon.SimpleCommentMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.SimpleCommentSerializer = SimpleCommentSerializer;

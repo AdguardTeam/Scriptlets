@@ -1,0 +1,14 @@
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { BaseDeserializer } from '../../base-deserializer';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
+export declare const getFrequentPlatformsDeserializationMap: () => Map<number, string>;
+export declare class UboScriptletInjectionBodyDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a scriptlet call body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void;
+}

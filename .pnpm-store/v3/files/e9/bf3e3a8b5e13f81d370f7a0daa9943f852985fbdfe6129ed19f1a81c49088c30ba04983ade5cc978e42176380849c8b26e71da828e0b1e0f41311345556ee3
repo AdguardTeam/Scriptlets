@@ -1,0 +1,36 @@
+/**
+ * @file Tokenizer helpers for balanced pairs.
+ */
+import { type OnErrorCallback, type OnTokenCallback, type TokenizerContextFunction } from '@adguard/css-tokenizer';
+/**
+ * Extended version of `OnTokenCallback` which also receives a `balance` parameter.
+ *
+ * @param type Type of the token.
+ * @param start Start index in the source string.
+ * @param end End index in the source string.
+ * @param props Additional properties of the token (if any - can be `undefined`, depending on the token type).
+ * @param balance Calculated balance level of the token.
+ * @note This function is keeping the same signature as the original `OnTokenCallback` to avoid breaking changes,
+ * just adding the `balance` parameter at the end.
+ */
+export type OnBalancedTokenCallback = (...args: [...Parameters<OnTokenCallback>, ...[balance: number]]) => ReturnType<OnTokenCallback>;
+/**
+ * Tokenize and ensure balanced pairs for standard CSS.
+ *
+ * @param raw Raw CSS string to tokenize
+ * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter
+ * @param onError Error callback which is called when a parsing error is found (optional)
+ * @param functionHandlers Custom function handlers (optional)
+ * @throws If the input is not balanced
+ */
+export declare const tokenizeBalanced: (raw: string, onToken: OnBalancedTokenCallback, onError?: OnErrorCallback, functionHandlers?: Map<number, TokenizerContextFunction>) => void;
+/**
+ * Tokenize and ensure balanced pairs for function calls.
+ *
+ * @param raw Raw CSS string to tokenize
+ * @param onToken Callback which will be invoked for each token, extended with a `balance` parameter
+ * @param onError Error callback which is called when a parsing error is found (optional)
+ * @param functionHandlers Custom function handlers (optional)
+ * @throws If the input is not balanced
+ */
+export declare const tokenizeFnBalanced: (raw: string, onToken: OnBalancedTokenCallback, onError?: OnErrorCallback, functionHandlers?: Map<number, TokenizerContextFunction>) => void;

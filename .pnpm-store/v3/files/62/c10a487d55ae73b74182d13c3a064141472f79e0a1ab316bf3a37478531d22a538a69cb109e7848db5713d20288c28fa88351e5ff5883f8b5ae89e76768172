@@ -1,0 +1,58 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var baseDeserializer = require('../base-deserializer.js');
+var modifierDeserializer = require('./modifier-deserializer.js');
+var modifierListCommon = require('../../marshalling-utils/misc/modifier-list-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/* eslint-disable no-param-reassign */
+/**
+ * `ModifierListDeserializer` is responsible for deserializing modifier lists. Please note that the name is not
+ * uniform, "modifiers" are also known as "options".
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers}
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#non-basic-rules-modifiers}
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
+ */
+class ModifierListDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes a modifier list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ModifierListNode);
+        node.type = 'ModifierList';
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case modifierListCommon.ModifierListNodeMarshallingMap.Children:
+                    node.children = new Array(buffer.readUint16());
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        modifierDeserializer.ModifierDeserializer.deserialize(buffer, node.children[i] = {});
+                    }
+                    break;
+                case modifierListCommon.ModifierListNodeMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case modifierListCommon.ModifierListNodeMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.ModifierListDeserializer = ModifierListDeserializer;

@@ -1,0 +1,58 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+/* eslint-disable no-bitwise */
+/**
+ * @file Provides platform enums.
+ * The difference between specific and generic platforms is that specific platforms are individual platforms
+ * (e.g. AdGuard for Windows, AdGuard for Android, etc.),
+ * while generic platforms are groups of specific platforms
+ * (e.g. AdGuard for any OS, AdGuard for any Chromium-based extension, etc.).
+ */
+/**
+ * List of specific platforms.
+ */
+exports.SpecificPlatform = void 0;
+(function (SpecificPlatform) {
+    SpecificPlatform[SpecificPlatform["AdgOsWindows"] = 1] = "AdgOsWindows";
+    SpecificPlatform[SpecificPlatform["AdgOsMac"] = 2] = "AdgOsMac";
+    SpecificPlatform[SpecificPlatform["AdgOsAndroid"] = 4] = "AdgOsAndroid";
+    SpecificPlatform[SpecificPlatform["AdgExtChrome"] = 8] = "AdgExtChrome";
+    SpecificPlatform[SpecificPlatform["AdgExtOpera"] = 16] = "AdgExtOpera";
+    SpecificPlatform[SpecificPlatform["AdgExtEdge"] = 32] = "AdgExtEdge";
+    SpecificPlatform[SpecificPlatform["AdgExtFirefox"] = 64] = "AdgExtFirefox";
+    SpecificPlatform[SpecificPlatform["AdgCbAndroid"] = 128] = "AdgCbAndroid";
+    SpecificPlatform[SpecificPlatform["AdgCbIos"] = 256] = "AdgCbIos";
+    SpecificPlatform[SpecificPlatform["AdgCbSafari"] = 512] = "AdgCbSafari";
+    SpecificPlatform[SpecificPlatform["UboExtChrome"] = 1024] = "UboExtChrome";
+    SpecificPlatform[SpecificPlatform["UboExtOpera"] = 2048] = "UboExtOpera";
+    SpecificPlatform[SpecificPlatform["UboExtEdge"] = 4096] = "UboExtEdge";
+    SpecificPlatform[SpecificPlatform["UboExtFirefox"] = 8192] = "UboExtFirefox";
+    SpecificPlatform[SpecificPlatform["AbpExtChrome"] = 16384] = "AbpExtChrome";
+    SpecificPlatform[SpecificPlatform["AbpExtOpera"] = 32768] = "AbpExtOpera";
+    SpecificPlatform[SpecificPlatform["AbpExtEdge"] = 65536] = "AbpExtEdge";
+    SpecificPlatform[SpecificPlatform["AbpExtFirefox"] = 131072] = "AbpExtFirefox";
+})(exports.SpecificPlatform || (exports.SpecificPlatform = {}));
+/**
+ * List of generic platforms (combinations of specific platforms).
+ */
+exports.GenericPlatform = void 0;
+(function (GenericPlatform) {
+    GenericPlatform[GenericPlatform["AdgOsAny"] = 7] = "AdgOsAny";
+    GenericPlatform[GenericPlatform["AdgSafariAny"] = 768] = "AdgSafariAny";
+    GenericPlatform[GenericPlatform["AdgExtChromium"] = 56] = "AdgExtChromium";
+    GenericPlatform[GenericPlatform["AdgExtAny"] = 120] = "AdgExtAny";
+    GenericPlatform[GenericPlatform["AdgAny"] = 1023] = "AdgAny";
+    GenericPlatform[GenericPlatform["UboExtChromium"] = 7168] = "UboExtChromium";
+    GenericPlatform[GenericPlatform["UboExtAny"] = 15360] = "UboExtAny";
+    GenericPlatform[GenericPlatform["UboAny"] = 15360] = "UboAny";
+    GenericPlatform[GenericPlatform["AbpExtChromium"] = 114688] = "AbpExtChromium";
+    GenericPlatform[GenericPlatform["AbpExtAny"] = 245760] = "AbpExtAny";
+    GenericPlatform[GenericPlatform["AbpAny"] = 245760] = "AbpAny";
+    GenericPlatform[GenericPlatform["Any"] = 262143] = "Any";
+})(exports.GenericPlatform || (exports.GenericPlatform = {}));

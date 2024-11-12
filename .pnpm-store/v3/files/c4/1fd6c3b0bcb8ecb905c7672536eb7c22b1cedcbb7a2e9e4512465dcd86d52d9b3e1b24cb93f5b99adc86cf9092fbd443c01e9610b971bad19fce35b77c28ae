@@ -1,0 +1,44 @@
+/**
+ * @file uBlock scriptlet injection body parser
+ */
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { BaseParser } from '../../base-parser';
+/**
+ * `UboScriptletInjectionBodyParser` is responsible for parsing the body of a uBlock-style scriptlet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com##+js(scriptlet0, arg0)
+ * ```
+ *
+ * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ *
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
+ */
+export declare class UboScriptletInjectionBodyParser extends BaseParser {
+    /**
+     * Error messages used by the parser.
+     */
+    static readonly ERROR_MESSAGES: {
+        NO_SCRIPTLET_MASK: string;
+        NO_OPENING_PARENTHESIS: string;
+        NO_CLOSING_PARENTHESIS: string;
+        NO_SCRIPTLET_NAME: string;
+        WHITESPACE_AFTER_MASK: string;
+    };
+    /**
+     * Parses the body of a uBlock-style scriptlet rule.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Node of the parsed scriptlet call body
+     * @throws If the body is syntactically incorrect
+     * @example
+     * ```
+     * ##+js(scriptlet0, arg0)
+     * ```
+     */
+    static parse(raw: string, options?: import("../../options").ParserOptions, baseOffset?: number): ScriptletInjectionRuleBody;
+}

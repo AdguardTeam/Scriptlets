@@ -1,0 +1,52 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var baseDeserializer = require('../base-deserializer.js');
+var valueCommon = require('../../marshalling-utils/misc/value-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/**
+ * Value deserializer.
+ */
+class ValueDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes a value node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @param frequentValuesMap Optional map of frequent values.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer, node, frequentValuesMap) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ValueNode);
+        node.type = 'Value';
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case valueCommon.ValueNodeMarshallingMap.Value:
+                    node.value = buffer.readString();
+                    break;
+                case valueCommon.ValueNodeMarshallingMap.FrequentValue:
+                    node.value = frequentValuesMap?.get(buffer.readUint8()) ?? constants.EMPTY;
+                    break;
+                case valueCommon.ValueNodeMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case valueCommon.ValueNodeMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.ValueDeserializer = ValueDeserializer;

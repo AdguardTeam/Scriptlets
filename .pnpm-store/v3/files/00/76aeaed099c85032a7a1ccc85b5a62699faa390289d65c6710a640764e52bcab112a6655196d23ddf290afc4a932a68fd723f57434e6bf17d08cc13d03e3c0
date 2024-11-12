@@ -1,0 +1,48 @@
+/**
+ * @file Known CSS elements and attributes.
+ * TODO: Implement a compatibility table for Extended CSS
+ */
+/**
+ * Legacy Extended CSS attribute prefix.
+ *
+ * @example
+ * ```css
+ * [-ext-<name>=...]
+ * ```
+ */
+export declare const LEGACY_EXT_CSS_ATTRIBUTE_PREFIX = "-ext-";
+/**
+ * ABP Extended CSS prefix.
+ *
+ * @example
+ * ```css
+ * [-abp-<name>=...]
+ * -abp-<name>(...)
+ * ```
+ */
+export declare const ABP_EXT_CSS_PREFIX = "-abp";
+/**
+ * Known _strict_ Extended CSS pseudo-classes. Please, keep this list sorted.
+ * Strict means that these pseudo-classes are not supported by any browser natively,
+ * and they always require Extended CSS libraries to work.
+ */
+export declare const EXT_CSS_PSEUDO_CLASSES_STRICT: Set<string>;
+/**
+ * _ALL_ known Extended CSS pseudo-classes. Please, keep this list sorted.
+ * It includes strict pseudo-classes and additional pseudo-classes that may be
+ * supported by some browsers natively.
+ */
+export declare const EXT_CSS_PSEUDO_CLASSES: Set<string>;
+/**
+ * Known legacy Extended CSS attributes. These attributes are deprecated and
+ * should be replaced with the corresponding pseudo-classes. In a long term,
+ * these attributes will be COMPLETELY removed from the Extended CSS syntax.
+ *
+ * Please, keep this list sorted.
+ */
+export declare const EXT_CSS_LEGACY_ATTRIBUTES: Set<string>;
+/**
+ * Known CSS functions that aren't allowed in CSS injection rules, because they
+ * able to load external resources. Please, keep this list sorted.
+ */
+export declare const FORBIDDEN_CSS_FUNCTIONS: Set<string>;

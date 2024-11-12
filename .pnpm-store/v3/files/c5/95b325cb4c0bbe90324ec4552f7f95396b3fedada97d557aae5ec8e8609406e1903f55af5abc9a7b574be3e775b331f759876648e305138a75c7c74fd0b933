@@ -1,0 +1,14 @@
+import { type ParameterList } from '../../nodes';
+import { BaseParser } from '../base-parser';
+export declare class ParameterListParser extends BaseParser {
+    /**
+     * Parses a raw parameter list.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @param separator Separator character (default: comma)
+     * @returns Parameter list AST
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number, separator?: string): ParameterList;
+}

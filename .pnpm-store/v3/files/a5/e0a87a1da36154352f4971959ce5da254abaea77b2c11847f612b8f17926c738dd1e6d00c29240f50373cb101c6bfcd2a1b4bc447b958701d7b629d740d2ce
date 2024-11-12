@@ -1,0 +1,73 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var agentSerializer = require('./agent-serializer.js');
+var typeGuards = require('../../utils/type-guards.js');
+var baseSerializer = require('../base-serializer.js');
+var agentCommentCommon = require('../../marshalling-utils/comment/agent-comment-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/**
+ * `AgentCommentSerializer` is responsible for serializing an Adblock agent comments.
+ * Adblock agent comment marks that the filter list is supposed to
+ * be used by the specified ad blockers.
+ *
+ * @example
+ *  - ```adblock
+ *    [AdGuard]
+ *    ```
+ *  - ```adblock
+ *    [Adblock Plus 2.0]
+ *    ```
+ *  - ```adblock
+ *    [uBlock Origin]
+ *    ```
+ *  - ```adblock
+ *    [uBlock Origin 1.45.3]
+ *    ```
+ *  - ```adblock
+ *    [Adblock Plus 2.0; AdGuard]
+ *    ```
+ */
+class AgentCommentSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes an adblock agent list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    static serialize(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.AgentRuleNode);
+        const count = node.children.length;
+        if (count) {
+            buffer.writeUint8(agentCommentCommon.AgentCommentMarshallingMap.Children);
+            // note: we store the count, because re-construction of the array is faster if we know the length
+            // 8 bits is more than enough here
+            if (count > constants.UINT8_MAX) {
+                throw new Error(`Too many children: ${count}, the limit is ${constants.UINT8_MAX}`);
+            }
+            buffer.writeUint8(count);
+            for (let i = 0; i < count; i += 1) {
+                agentSerializer.AgentSerializer.serialize(node.children[i], buffer);
+            }
+        }
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(agentCommentCommon.AgentCommentMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(agentCommentCommon.AgentCommentMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.AgentCommentSerializer = AgentCommentSerializer;

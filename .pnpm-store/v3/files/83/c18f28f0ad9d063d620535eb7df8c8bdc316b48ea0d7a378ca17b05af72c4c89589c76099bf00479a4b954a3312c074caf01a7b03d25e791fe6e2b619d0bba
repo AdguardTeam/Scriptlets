@@ -1,0 +1,45 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { SAFARI_CB_AFFINITY, SPACE, OPEN_PARENTHESIS, CLOSE_PARENTHESIS, EMPTY, PREPROCESSOR_MARKER } from '../../utils/constants.mjs';
+import { BaseGenerator } from '../base-generator.mjs';
+import { ValueGenerator } from '../misc/value-generator.mjs';
+import { ParameterListGenerator } from '../misc/parameter-list-generator.mjs';
+import { LogicalExpressionGenerator } from '../misc/logical-expression-generator.mjs';
+
+class PreProcessorCommentGenerator extends BaseGenerator {
+    /**
+     * Converts a pre-processor comment node to a string.
+     *
+     * @param node Pre-processor comment node
+     * @returns Raw string
+     */
+    static generate(node) {
+        let result = EMPTY;
+        result += PREPROCESSOR_MARKER;
+        result += node.name.value;
+        if (node.params) {
+            // Space is not allowed after "safari_cb_affinity" directive, so we need to handle it separately.
+            if (node.name.value !== SAFARI_CB_AFFINITY) {
+                result += SPACE;
+            }
+            if (node.params.type === 'Value') {
+                result += ValueGenerator.generate(node.params);
+            }
+            else if (node.params.type === 'ParameterList') {
+                result += OPEN_PARENTHESIS;
+                result += ParameterListGenerator.generate(node.params);
+                result += CLOSE_PARENTHESIS;
+            }
+            else {
+                result += LogicalExpressionGenerator.generate(node.params);
+            }
+        }
+        return result;
+    }
+}
+
+export { PreProcessorCommentGenerator };

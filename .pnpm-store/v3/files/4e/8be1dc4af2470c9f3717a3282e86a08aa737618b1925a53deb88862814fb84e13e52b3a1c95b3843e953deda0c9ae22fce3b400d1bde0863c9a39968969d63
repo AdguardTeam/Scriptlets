@@ -1,0 +1,15 @@
+import { type OutputByteBuffer } from '../utils/output-byte-buffer';
+import { type Node } from '../nodes';
+/**
+ * Base class for serializers. Each serializer should extend this class.
+ */
+export declare class BaseSerializer {
+    /**
+     * Serializes the AST node to a byte buffer.
+     *
+     * @param node AST node to serialize.
+     * @param buffer Output byte buffer to write to.
+     * @param args Additional, parser-specific arguments, if needed.
+     */
+    static serialize(node: Node, buffer: OutputByteBuffer, ...args: unknown[]): void;
+}

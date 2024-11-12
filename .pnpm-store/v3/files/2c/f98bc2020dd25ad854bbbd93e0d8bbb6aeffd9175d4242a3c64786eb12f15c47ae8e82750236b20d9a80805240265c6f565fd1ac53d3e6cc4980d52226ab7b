@@ -1,0 +1,13 @@
+/**
+ * Simple deep freeze implementation.
+ * It freezes the object and all its properties recursively.
+ *
+ * @param object Object to freeze.
+ *
+ * @returns Frozen object.
+ *
+ * @template T Type of the object to freeze.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze#deep_freezing}
+ */
+export declare const deepFreeze: <T extends object>(object: T) => Readonly<T>;

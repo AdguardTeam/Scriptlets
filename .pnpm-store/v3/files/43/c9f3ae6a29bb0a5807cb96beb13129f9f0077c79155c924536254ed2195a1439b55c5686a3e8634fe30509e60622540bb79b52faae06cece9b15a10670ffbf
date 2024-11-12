@@ -1,0 +1,53 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { ValueDeserializer } from '../misc/value-deserializer.mjs';
+import { NULL } from '../../utils/constants.mjs';
+import { BaseDeserializer } from '../base-deserializer.mjs';
+import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common.mjs';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.mjs';
+
+class CssInjectionBodyDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes CSS injection rule body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(BinaryTypeMarshallingMap.CssInjectionRuleBody);
+        node.type = 'CssInjectionRuleBody';
+        node.remove = false;
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case CssInjectionRuleMarshallingMap.MediaQueryList:
+                    ValueDeserializer.deserialize(buffer, node.mediaQueryList = {});
+                    break;
+                case CssInjectionRuleMarshallingMap.SelectorList:
+                    ValueDeserializer.deserialize(buffer, node.selectorList = {});
+                    break;
+                case CssInjectionRuleMarshallingMap.DeclarationList:
+                    ValueDeserializer.deserialize(buffer, node.declarationList = {});
+                    break;
+                case CssInjectionRuleMarshallingMap.Remove:
+                    node.remove = true;
+                    break;
+                case CssInjectionRuleMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case CssInjectionRuleMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Unknown property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+export { CssInjectionBodyDeserializer };

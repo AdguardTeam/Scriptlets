@@ -1,0 +1,46 @@
+/**
+ * @file Position provider class.
+ */
+/**
+ * Represents a position in the source code.
+ */
+export interface Position {
+    /**
+     * 1-based line number
+     */
+    line: number;
+    /**
+     * 1-based column number
+     */
+    column: number;
+}
+/**
+ * Class responsible for converting a character offset in source code into a line and column position.
+ * This conversion is particularly needed in linters and VSCode extensions,
+ * where line and column numbers are more human-friendly and intuitive than character offsets.
+ * Moreover, the VSCode diagnostics API does not directly support character offsets,
+ * it also requires line and column numbers.
+ */
+export declare class PositionProvider {
+    /**
+     * Maps a character offset to a line number.
+     */
+    private offsetToLine;
+    /**
+     * Maps a line number to the starting character offset of that line.
+     */
+    private lineStartOffsets;
+    /**
+     * Constructs a new PositionProvider instance.
+     *
+     * @param sourceCode The source code as a string.
+     */
+    constructor(sourceCode: string);
+    /**
+     * Converts a character offset to a line and column position.
+     *
+     * @param offset The zero-based character offset in the source code.
+     * @returns A Position object containing the 1-based line and column number, or null if the offset is out of range.
+     */
+    convertOffsetToPosition(offset: number): Position | null;
+}

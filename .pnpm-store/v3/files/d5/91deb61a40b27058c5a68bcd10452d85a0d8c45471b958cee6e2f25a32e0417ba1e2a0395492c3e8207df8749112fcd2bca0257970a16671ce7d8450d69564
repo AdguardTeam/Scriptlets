@@ -1,0 +1,32 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { BaseGenerator } from '../base-generator.mjs';
+import { SPACE, EMPTY } from '../../utils/constants.mjs';
+import { isUndefined } from '../../utils/type-guards.mjs';
+
+class AgentGenerator extends BaseGenerator {
+    /**
+     * Converts an adblock agent node to a string.
+     *
+     * @param value Agent node
+     * @returns Raw string
+     */
+    static generate(value) {
+        let result = EMPTY;
+        // Agent adblock name
+        result += value.adblock.value;
+        // Agent adblock version (if present)
+        if (!isUndefined(value.version)) {
+            // Add a space between the name and the version
+            result += SPACE;
+            result += value.version.value;
+        }
+        return result;
+    }
+}
+
+export { AgentGenerator };

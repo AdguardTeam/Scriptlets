@@ -1,0 +1,26 @@
+import { type MetadataCommentRule } from '../../nodes';
+import { BaseDeserializer } from '../base-deserializer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+/**
+ * `MetadataCommentDeserializer` is responsible for deserializing metadata comments.
+ * Metadata comments are special comments that specify some properties of the list.
+ *
+ * @example
+ * For example, in the case of
+ * ```adblock
+ * ! Title: My List
+ * ```
+ * the name of the header is `Title`, and the value is `My List`, which means that
+ * the list title is `My List`, and it can be used in the adblocker UI.
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
+ */
+export declare class MetadataCommentDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a metadata comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<MetadataCommentRule>): void;
+}

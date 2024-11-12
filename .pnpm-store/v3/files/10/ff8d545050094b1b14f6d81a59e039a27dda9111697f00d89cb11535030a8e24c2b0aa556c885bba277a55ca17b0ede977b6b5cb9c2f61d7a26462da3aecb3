@@ -1,0 +1,32 @@
+{
+  "name": "is-running",
+  "version": "2.1.0",
+  "description": "Test if a process with a given pid is running",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nisaacson/is-running.git"
+  },
+  "keywords": [
+    "pid",
+    "running",
+    "child",
+    "exec",
+    "spawn"
+  ],
+  "author": "Noah Isaacson",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "e8487ba5532434a453a85c0d2a1eea6785a9460c",
+  "devDependencies": {
+    "eyespect": "~0.1.8",
+    "should": "~1.2.1",
+    "mocha": "~1.8.1"
+  }
+}

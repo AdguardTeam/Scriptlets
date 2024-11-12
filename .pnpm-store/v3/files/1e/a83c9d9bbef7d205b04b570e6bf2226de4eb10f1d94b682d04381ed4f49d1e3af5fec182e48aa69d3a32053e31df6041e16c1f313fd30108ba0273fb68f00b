@@ -1,0 +1,6 @@
+node_modules/
+npm-debug.log
+local_config.json
+doc_data.txt
+fleet.json
+erl_crash.dump

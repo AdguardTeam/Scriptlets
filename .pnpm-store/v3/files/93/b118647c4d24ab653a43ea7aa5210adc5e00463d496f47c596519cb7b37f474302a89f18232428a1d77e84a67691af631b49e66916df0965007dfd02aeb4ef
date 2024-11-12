@@ -1,0 +1,18 @@
+import { ParameterListParser } from './parameter-list-parser';
+import { type ParameterList } from '../../nodes';
+export declare class UboParameterListParser extends ParameterListParser {
+    /**
+     * Parses an "uBO-specific parameter list".
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @param separator Separator character (default: comma).
+     * @param requireQuotes Whether to require quotes around the parameter values (default: false).
+     * @param supportedQuotes Set of accepted quotes (default: {@link QUOTE_SET}).
+     * @returns Parameter list node.
+     *
+     * @note Based on {@link https://github.com/gorhill/uBlock/blob/f9ab4b75041815e6e5690d80851189ae3dc660d0/src/js/static-filtering-parser.js#L607-L699} to provide consistency.
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number, separator?: string, requireQuotes?: boolean, supportedQuotes?: Set<string>): ParameterList;
+}

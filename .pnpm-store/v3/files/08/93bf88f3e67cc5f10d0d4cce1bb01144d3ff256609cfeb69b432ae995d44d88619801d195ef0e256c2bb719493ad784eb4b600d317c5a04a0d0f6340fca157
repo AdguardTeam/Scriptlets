@@ -1,0 +1,18 @@
+import { type Modifier } from '../../nodes';
+import { BaseDeserializer } from '../base-deserializer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+/**
+ * `ModifierSerializer` is responsible for serializing modifiers.
+ *
+ * @example
+ * `match-case`, `~third-party`, `domain=example.com|~example.org`
+ */
+export declare class ModifierDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a modifier node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<Modifier>): void;
+}

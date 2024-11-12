@@ -1,0 +1,15 @@
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { BaseDeserializer } from '../../base-deserializer';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
+export declare class ScriptletBodyDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a hint rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @param frequentScriptletArgs Map of frequently used scriptlet names / arguments
+     * and their serialization index (optional).
+     * @throws If the binary data is malformed.
+     */
+    static deserialize: (buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>, frequentScriptletArgs?: Map<number, string>) => void;
+}

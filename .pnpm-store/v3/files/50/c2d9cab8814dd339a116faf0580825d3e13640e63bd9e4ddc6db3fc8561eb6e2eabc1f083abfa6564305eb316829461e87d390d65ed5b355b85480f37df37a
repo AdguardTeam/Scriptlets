@@ -1,0 +1,27 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseGenerator = require('../base-generator.js');
+var constants = require('../../utils/constants.js');
+var hintGenerator = require('./hint-generator.js');
+
+class HintCommentGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Converts a hint rule node to a raw string.
+     *
+     * @param node Hint rule node
+     * @returns Raw string
+     */
+    static generate(node) {
+        let result = constants.HINT_MARKER + constants.SPACE;
+        result += node.children.map(hintGenerator.HintGenerator.generate).join(constants.SPACE);
+        return result;
+    }
+}
+
+exports.HintCommentGenerator = HintCommentGenerator;

@@ -1,0 +1,47 @@
+name: Publish to NPM
+
+env:
+  NODE_VERSION: 20
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '8.15.1'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Pack files
+        run: pnpm pack && mv node-qunit-puppeteer-*.tgz node-qunit-puppeteer.tgz
+
+      - name: Publish to NPM
+        run: npm publish node-qunit-puppeteer.tgz --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

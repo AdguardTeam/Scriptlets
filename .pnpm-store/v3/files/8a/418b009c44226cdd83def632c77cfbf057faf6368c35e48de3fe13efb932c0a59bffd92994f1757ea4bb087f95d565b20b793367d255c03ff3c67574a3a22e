@@ -1,0 +1,22 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+exports.InvalidRuleMarshallingMap = void 0;
+(function (InvalidRuleMarshallingMap) {
+    InvalidRuleMarshallingMap[InvalidRuleMarshallingMap["Error"] = 1] = "Error";
+    InvalidRuleMarshallingMap[InvalidRuleMarshallingMap["Start"] = 2] = "Start";
+    InvalidRuleMarshallingMap[InvalidRuleMarshallingMap["End"] = 3] = "End";
+})(exports.InvalidRuleMarshallingMap || (exports.InvalidRuleMarshallingMap = {}));

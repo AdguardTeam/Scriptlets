@@ -1,0 +1,249 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+/**
+ * @file Constant values used by all parts of the library
+ */
+// TODO: remove unused constants
+// General
+/**
+ * Empty string.
+ */
+const EMPTY = '';
+const SPACE = ' ';
+const TAB = '\t';
+const COLON = ':';
+const COMMA = ',';
+const DOT = '.';
+const SEMICOLON = ';';
+const AMPERSAND = '&';
+const ASTERISK = '*';
+const AT_SIGN = '@';
+const CARET = '^';
+const DOLLAR_SIGN = '$';
+const EQUALS = '=';
+const EXCLAMATION_MARK = '!';
+const HASHMARK = '#';
+const PIPE = '|';
+const PLUS = '+';
+const QUESTION_MARK = '?';
+const SLASH = '/';
+const UNDERSCORE = '_';
+// Escape characters
+const BACKSLASH = '\\';
+const ESCAPE_CHARACTER = BACKSLASH;
+// Newlines
+const CR = '\r';
+const FF = '\f';
+const LF = '\n';
+const CRLF = CR + LF;
+const NEWLINE = LF;
+// Quotes
+const BACKTICK_QUOTE = '`';
+const DOUBLE_QUOTE = '"';
+const SINGLE_QUOTE = '\'';
+// Brackets
+const OPEN_PARENTHESIS = '(';
+const CLOSE_PARENTHESIS = ')';
+const OPEN_SQUARE_BRACKET = '[';
+const CLOSE_SQUARE_BRACKET = ']';
+const OPEN_CURLY_BRACKET = '{';
+const CLOSE_CURLY_BRACKET = '}';
+// Letters
+const SMALL_LETTER_A = 'a';
+const SMALL_LETTER_B = 'b';
+const SMALL_LETTER_C = 'c';
+const SMALL_LETTER_D = 'd';
+const SMALL_LETTER_E = 'e';
+const SMALL_LETTER_F = 'f';
+const SMALL_LETTER_G = 'g';
+const SMALL_LETTER_H = 'h';
+const SMALL_LETTER_I = 'i';
+const SMALL_LETTER_J = 'j';
+const SMALL_LETTER_K = 'k';
+const SMALL_LETTER_L = 'l';
+const SMALL_LETTER_M = 'm';
+const SMALL_LETTER_N = 'n';
+const SMALL_LETTER_O = 'o';
+const SMALL_LETTER_P = 'p';
+const SMALL_LETTER_Q = 'q';
+const SMALL_LETTER_R = 'r';
+const SMALL_LETTER_S = 's';
+const SMALL_LETTER_T = 't';
+const SMALL_LETTER_U = 'u';
+const SMALL_LETTER_V = 'v';
+const SMALL_LETTER_W = 'w';
+const SMALL_LETTER_X = 'x';
+const SMALL_LETTER_Y = 'y';
+const SMALL_LETTER_Z = 'z';
+/**
+ * Set of all small letters.
+ */
+const SMALL_LETTERS = new Set([
+    SMALL_LETTER_A,
+    SMALL_LETTER_B,
+    SMALL_LETTER_C,
+    SMALL_LETTER_D,
+    SMALL_LETTER_E,
+    SMALL_LETTER_F,
+    SMALL_LETTER_G,
+    SMALL_LETTER_H,
+    SMALL_LETTER_I,
+    SMALL_LETTER_J,
+    SMALL_LETTER_K,
+    SMALL_LETTER_L,
+    SMALL_LETTER_M,
+    SMALL_LETTER_N,
+    SMALL_LETTER_O,
+    SMALL_LETTER_P,
+    SMALL_LETTER_Q,
+    SMALL_LETTER_R,
+    SMALL_LETTER_S,
+    SMALL_LETTER_T,
+    SMALL_LETTER_U,
+    SMALL_LETTER_V,
+    SMALL_LETTER_W,
+    SMALL_LETTER_X,
+    SMALL_LETTER_Y,
+    SMALL_LETTER_Z,
+]);
+// Capital letters
+const CAPITAL_LETTER_A = 'A';
+const CAPITAL_LETTER_B = 'B';
+const CAPITAL_LETTER_C = 'C';
+const CAPITAL_LETTER_D = 'D';
+const CAPITAL_LETTER_E = 'E';
+const CAPITAL_LETTER_F = 'F';
+const CAPITAL_LETTER_G = 'G';
+const CAPITAL_LETTER_H = 'H';
+const CAPITAL_LETTER_I = 'I';
+const CAPITAL_LETTER_J = 'J';
+const CAPITAL_LETTER_K = 'K';
+const CAPITAL_LETTER_L = 'L';
+const CAPITAL_LETTER_M = 'M';
+const CAPITAL_LETTER_N = 'N';
+const CAPITAL_LETTER_O = 'O';
+const CAPITAL_LETTER_P = 'P';
+const CAPITAL_LETTER_Q = 'Q';
+const CAPITAL_LETTER_R = 'R';
+const CAPITAL_LETTER_S = 'S';
+const CAPITAL_LETTER_T = 'T';
+const CAPITAL_LETTER_U = 'U';
+const CAPITAL_LETTER_V = 'V';
+const CAPITAL_LETTER_W = 'W';
+const CAPITAL_LETTER_X = 'X';
+const CAPITAL_LETTER_Y = 'Y';
+const CAPITAL_LETTER_Z = 'Z';
+/**
+ * Set of all capital letters.
+ */
+const CAPITAL_LETTERS = new Set([
+    CAPITAL_LETTER_A,
+    CAPITAL_LETTER_B,
+    CAPITAL_LETTER_C,
+    CAPITAL_LETTER_D,
+    CAPITAL_LETTER_E,
+    CAPITAL_LETTER_F,
+    CAPITAL_LETTER_G,
+    CAPITAL_LETTER_H,
+    CAPITAL_LETTER_I,
+    CAPITAL_LETTER_J,
+    CAPITAL_LETTER_K,
+    CAPITAL_LETTER_L,
+    CAPITAL_LETTER_M,
+    CAPITAL_LETTER_N,
+    CAPITAL_LETTER_O,
+    CAPITAL_LETTER_P,
+    CAPITAL_LETTER_Q,
+    CAPITAL_LETTER_R,
+    CAPITAL_LETTER_S,
+    CAPITAL_LETTER_T,
+    CAPITAL_LETTER_U,
+    CAPITAL_LETTER_V,
+    CAPITAL_LETTER_W,
+    CAPITAL_LETTER_X,
+    CAPITAL_LETTER_Y,
+    CAPITAL_LETTER_Z,
+]);
+// Numbers as strings
+const NUMBER_0 = '0';
+const NUMBER_1 = '1';
+const NUMBER_2 = '2';
+const NUMBER_3 = '3';
+const NUMBER_4 = '4';
+const NUMBER_5 = '5';
+const NUMBER_6 = '6';
+const NUMBER_7 = '7';
+const NUMBER_8 = '8';
+const NUMBER_9 = '9';
+/**
+ * Set of all numbers as strings.
+ */
+const NUMBERS = new Set([
+    NUMBER_0,
+    NUMBER_1,
+    NUMBER_2,
+    NUMBER_3,
+    NUMBER_4,
+    NUMBER_5,
+    NUMBER_6,
+    NUMBER_7,
+    NUMBER_8,
+    NUMBER_9,
+]);
+const REGEX_MARKER = '/';
+const ADG_SCRIPTLET_MASK = '//scriptlet';
+const UBO_SCRIPTLET_MASK = '+js';
+const UBO_SCRIPTLET_MASK_LEGACY = 'script:inject';
+const UBO_HTML_MASK = '^';
+// Modifiers are separated by ",". For example: "script,domain=example.com"
+const MODIFIERS_SEPARATOR = ',';
+const MODIFIER_ASSIGN_OPERATOR = '=';
+const NEGATION_MARKER = '~';
+/**
+ * The wildcard symbol — `*`.
+ */
+const WILDCARD = ASTERISK;
+/**
+ * Classic domain separator.
+ *
+ * @example
+ * ```adblock
+ * ! Domains are separated by ",":
+ * example.com,~example.org##.ads
+ * ```
+ */
+const COMMA_DOMAIN_LIST_SEPARATOR = ',';
+/**
+ * Modifier separator for $app, $denyallow, $domain, $method.
+ *
+ * @example
+ * ```adblock
+ * ! Domains are separated by "|":
+ * ads.js^$script,domains=example.com|~example.org
+ * ```
+ */
+const PIPE_MODIFIER_SEPARATOR = '|';
+const CSS_MEDIA_MARKER = '@media';
+const CSS_NOT_PSEUDO = 'not';
+const HINT_MARKER = '!+';
+const HINT_MARKER_LEN = HINT_MARKER.length;
+const NETWORK_RULE_EXCEPTION_MARKER = '@@';
+const NETWORK_RULE_EXCEPTION_MARKER_LEN = NETWORK_RULE_EXCEPTION_MARKER.length;
+const NETWORK_RULE_SEPARATOR = '$';
+const AGLINT_COMMAND_PREFIX = 'aglint';
+const AGLINT_CONFIG_COMMENT_MARKER = '--';
+const PREPROCESSOR_MARKER = '!#';
+const PREPROCESSOR_MARKER_LEN = PREPROCESSOR_MARKER.length;
+const PREPROCESSOR_SEPARATOR = ' ';
+const SAFARI_CB_AFFINITY = 'safari_cb_affinity';
+const IF = 'if';
+const INCLUDE = 'include';
+const NULL = 0;
+const UINT8_MAX = 255;
+const UINT16_MAX = 65535;
+
+export { ADG_SCRIPTLET_MASK, AGLINT_COMMAND_PREFIX, AGLINT_CONFIG_COMMENT_MARKER, AMPERSAND, ASTERISK, AT_SIGN, BACKSLASH, BACKTICK_QUOTE, CAPITAL_LETTERS, CAPITAL_LETTER_A, CAPITAL_LETTER_B, CAPITAL_LETTER_C, CAPITAL_LETTER_D, CAPITAL_LETTER_E, CAPITAL_LETTER_F, CAPITAL_LETTER_G, CAPITAL_LETTER_H, CAPITAL_LETTER_I, CAPITAL_LETTER_J, CAPITAL_LETTER_K, CAPITAL_LETTER_L, CAPITAL_LETTER_M, CAPITAL_LETTER_N, CAPITAL_LETTER_O, CAPITAL_LETTER_P, CAPITAL_LETTER_Q, CAPITAL_LETTER_R, CAPITAL_LETTER_S, CAPITAL_LETTER_T, CAPITAL_LETTER_U, CAPITAL_LETTER_V, CAPITAL_LETTER_W, CAPITAL_LETTER_X, CAPITAL_LETTER_Y, CAPITAL_LETTER_Z, CARET, CLOSE_CURLY_BRACKET, CLOSE_PARENTHESIS, CLOSE_SQUARE_BRACKET, COLON, COMMA, COMMA_DOMAIN_LIST_SEPARATOR, CR, CRLF, CSS_MEDIA_MARKER, CSS_NOT_PSEUDO, DOLLAR_SIGN, DOT, DOUBLE_QUOTE, EMPTY, EQUALS, ESCAPE_CHARACTER, EXCLAMATION_MARK, FF, HASHMARK, HINT_MARKER, HINT_MARKER_LEN, IF, INCLUDE, LF, MODIFIERS_SEPARATOR, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER, NETWORK_RULE_EXCEPTION_MARKER, NETWORK_RULE_EXCEPTION_MARKER_LEN, NETWORK_RULE_SEPARATOR, NEWLINE, NULL, NUMBERS, NUMBER_0, NUMBER_1, NUMBER_2, NUMBER_3, NUMBER_4, NUMBER_5, NUMBER_6, NUMBER_7, NUMBER_8, NUMBER_9, OPEN_CURLY_BRACKET, OPEN_PARENTHESIS, OPEN_SQUARE_BRACKET, PIPE, PIPE_MODIFIER_SEPARATOR, PLUS, PREPROCESSOR_MARKER, PREPROCESSOR_MARKER_LEN, PREPROCESSOR_SEPARATOR, QUESTION_MARK, REGEX_MARKER, SAFARI_CB_AFFINITY, SEMICOLON, SINGLE_QUOTE, SLASH, SMALL_LETTERS, SMALL_LETTER_A, SMALL_LETTER_B, SMALL_LETTER_C, SMALL_LETTER_D, SMALL_LETTER_E, SMALL_LETTER_F, SMALL_LETTER_G, SMALL_LETTER_H, SMALL_LETTER_I, SMALL_LETTER_J, SMALL_LETTER_K, SMALL_LETTER_L, SMALL_LETTER_M, SMALL_LETTER_N, SMALL_LETTER_O, SMALL_LETTER_P, SMALL_LETTER_Q, SMALL_LETTER_R, SMALL_LETTER_S, SMALL_LETTER_T, SMALL_LETTER_U, SMALL_LETTER_V, SMALL_LETTER_W, SMALL_LETTER_X, SMALL_LETTER_Y, SMALL_LETTER_Z, SPACE, TAB, UBO_HTML_MASK, UBO_SCRIPTLET_MASK, UBO_SCRIPTLET_MASK_LEGACY, UINT16_MAX, UINT8_MAX, UNDERSCORE, WILDCARD };

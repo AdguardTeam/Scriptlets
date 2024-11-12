@@ -1,0 +1,86 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { OperatorValue } from '../../nodes/index.mjs';
+
+/**
+ * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
+ */
+var VariableNodeBinaryPropMarshallingMap;
+(function (VariableNodeBinaryPropMarshallingMap) {
+    VariableNodeBinaryPropMarshallingMap[VariableNodeBinaryPropMarshallingMap["Name"] = 1] = "Name";
+    VariableNodeBinaryPropMarshallingMap[VariableNodeBinaryPropMarshallingMap["FrequentName"] = 2] = "FrequentName";
+    VariableNodeBinaryPropMarshallingMap[VariableNodeBinaryPropMarshallingMap["Start"] = 3] = "Start";
+    VariableNodeBinaryPropMarshallingMap[VariableNodeBinaryPropMarshallingMap["End"] = 4] = "End";
+})(VariableNodeBinaryPropMarshallingMap || (VariableNodeBinaryPropMarshallingMap = {}));
+/**
+ * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
+ */
+var OperatorNodeBinaryPropMarshallingMap;
+(function (OperatorNodeBinaryPropMarshallingMap) {
+    OperatorNodeBinaryPropMarshallingMap[OperatorNodeBinaryPropMarshallingMap["Operator"] = 1] = "Operator";
+    OperatorNodeBinaryPropMarshallingMap[OperatorNodeBinaryPropMarshallingMap["Left"] = 2] = "Left";
+    OperatorNodeBinaryPropMarshallingMap[OperatorNodeBinaryPropMarshallingMap["Right"] = 3] = "Right";
+    OperatorNodeBinaryPropMarshallingMap[OperatorNodeBinaryPropMarshallingMap["Start"] = 4] = "Start";
+    OperatorNodeBinaryPropMarshallingMap[OperatorNodeBinaryPropMarshallingMap["End"] = 5] = "End";
+})(OperatorNodeBinaryPropMarshallingMap || (OperatorNodeBinaryPropMarshallingMap = {}));
+/**
+ * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
+ */
+var ParenthesisNodeBinaryPropMarshallingMap;
+(function (ParenthesisNodeBinaryPropMarshallingMap) {
+    ParenthesisNodeBinaryPropMarshallingMap[ParenthesisNodeBinaryPropMarshallingMap["Expression"] = 1] = "Expression";
+    ParenthesisNodeBinaryPropMarshallingMap[ParenthesisNodeBinaryPropMarshallingMap["Start"] = 2] = "Start";
+    ParenthesisNodeBinaryPropMarshallingMap[ParenthesisNodeBinaryPropMarshallingMap["End"] = 3] = "End";
+})(ParenthesisNodeBinaryPropMarshallingMap || (ParenthesisNodeBinaryPropMarshallingMap = {}));
+/**
+ * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
+ */
+const LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP = new Map([
+    [OperatorValue.Not, 0],
+    [OperatorValue.And, 1],
+    [OperatorValue.Or, 2],
+]);
+/**
+ * Serialization map for known variables.
+ */
+const KNOWN_VARIABLES_SERIALIZATION_MAP = new Map([
+    ['ext_abp', 0],
+    ['ext_ublock', 1],
+    ['ext_ubol', 2],
+    ['ext_devbuild', 3],
+    ['env_chromium', 4],
+    ['env_edge', 5],
+    ['env_firefox', 6],
+    ['env_mobile', 7],
+    ['env_safari', 8],
+    ['env_mv3', 9],
+    ['false', 10],
+    ['cap_html_filtering', 11],
+    ['cap_user_stylesheet', 12],
+    ['adguard', 13],
+    ['adguard_app_windows', 14],
+    ['adguard_app_mac', 15],
+    ['adguard_app_android', 16],
+    ['adguard_app_ios', 17],
+    ['adguard_ext_safari', 18],
+    ['adguard_ext_chromium', 19],
+    ['adguard_ext_firefox', 20],
+    ['adguard_ext_edge', 21],
+    ['adguard_ext_opera', 22],
+    ['adguard_ext_android_cb', 23],
+    // TODO: Add 'adguard_ext_chromium_mv3' to the list
+]);
+
+export { KNOWN_VARIABLES_SERIALIZATION_MAP, LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP, OperatorNodeBinaryPropMarshallingMap, ParenthesisNodeBinaryPropMarshallingMap, VariableNodeBinaryPropMarshallingMap };

@@ -1,0 +1,12 @@
+import { type ListItem, type ListItemNodeType } from '../../nodes';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+export declare class ListItemsDeserializer {
+    /**
+     * Deserializes a list of items from binary format.
+     *
+     * @param buffer Input byte buffer.
+     * @param items Partial list of items to deserialize.
+     * @template T Type of the list items.
+     */
+    static deserialize: <T extends ListItemNodeType>(buffer: InputByteBuffer, items: Partial<ListItem<T>>[]) => void;
+}

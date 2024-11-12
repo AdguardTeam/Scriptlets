@@ -1,0 +1,38 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseSerializer = require('../../base-serializer.js');
+var scriptletBodySerializer = require('./scriptlet-body-serializer.js');
+var adgScriptletInjectionBodyCommon = require('../../../marshalling-utils/cosmetic/body/adg-scriptlet-injection-body-common.js');
+
+/**
+ * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com#%#//scriptlet('scriptlet0', 'arg0')
+ * ```
+ *
+ * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
+ */
+class AdgScriptletInjectionBodySerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a scriptlet call body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node, buffer) {
+        scriptletBodySerializer.ScriptletBodySerializer.serialize(node, buffer, adgScriptletInjectionBodyCommon.FREQUENT_ADG_SCRIPTLET_ARGS_SERIALIZATION_MAP);
+    }
+}
+
+exports.AdgScriptletInjectionBodySerializer = AdgScriptletInjectionBodySerializer;

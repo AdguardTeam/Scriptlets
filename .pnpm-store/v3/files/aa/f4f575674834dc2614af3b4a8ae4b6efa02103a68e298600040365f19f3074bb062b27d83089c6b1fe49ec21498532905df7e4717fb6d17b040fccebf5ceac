@@ -1,0 +1,131 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var adblockers = require('../../utils/adblockers.js');
+var domainListSerializer = require('../misc/domain-list-serializer.js');
+var constants = require('../../utils/constants.js');
+var index = require('../../nodes/index.js');
+var abpSnippetInjectionBodySerializer = require('./body/abp-snippet-injection-body-serializer.js');
+var uboScriptletInjectionBodySerializer = require('./body/ubo-scriptlet-injection-body-serializer.js');
+var adgScriptletInjectionBodySerializer = require('./body/adg-scriptlet-injection-body-serializer.js');
+var valueSerializer = require('../misc/value-serializer.js');
+var typeGuards = require('../../utils/type-guards.js');
+var baseSerializer = require('../base-serializer.js');
+var elementHidingBodySerializer = require('./element-hiding-body-serializer.js');
+var cssInjectionBodySerializer = require('./css-injection-body-serializer.js');
+var modifierListSerializer = require('../misc/modifier-list-serializer.js');
+var cosmeticRuleCommon = require('../../marshalling-utils/cosmetic/cosmetic-rule-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+var syntaxSerializationMap = require('../../marshalling-utils/syntax-serialization-map.js');
+
+/**
+ * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
+ *
+ * Where possible, it automatically detects the difference between supported syntaxes:
+ *  - AdGuard
+ *  - uBlock Origin
+ *  - Adblock Plus
+ *
+ * If the syntax is common / cannot be determined, the parser gives `Common` syntax.
+ *
+ * Please note that syntactically correct rules are parsed even if they are not actually
+ * compatible with the given adblocker. This is a completely natural behavior, meaningful
+ * checking of compatibility is not done at the parser level.
+ */
+// TODO: Make raw body parsing optional
+// TODO: Split into smaller sections
+class CosmeticRuleSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a cosmetic rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    static serialize(node, buffer) {
+        // specific properties
+        switch (node.type) {
+            case index.CosmeticRuleType.ElementHidingRule:
+                // rule type
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ElementHidingRule);
+                // syntax
+                buffer.writeUint8(syntaxSerializationMap.getSyntaxSerializationMap().get(node.syntax) ?? 0);
+                // rule body
+                elementHidingBodySerializer.ElementHidingBodySerializer.serialize(node.body, buffer);
+                break;
+            case index.CosmeticRuleType.CssInjectionRule:
+                // rule type
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.CssInjectionRule);
+                // syntax
+                buffer.writeUint8(syntaxSerializationMap.getSyntaxSerializationMap().get(node.syntax) ?? 0);
+                // rule body
+                cssInjectionBodySerializer.CssInjectionBodySerializer.serialize(node.body, buffer);
+                break;
+            case index.CosmeticRuleType.JsInjectionRule:
+                // rule type
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.JsInjectionRule);
+                // syntax
+                buffer.writeUint8(syntaxSerializationMap.getSyntaxSerializationMap().get(node.syntax) ?? 0);
+                // rule body
+                valueSerializer.ValueSerializer.serialize(node.body, buffer);
+                break;
+            case index.CosmeticRuleType.HtmlFilteringRule:
+                // rule type
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.HtmlFilteringRule);
+                // syntax
+                buffer.writeUint8(syntaxSerializationMap.getSyntaxSerializationMap().get(node.syntax) ?? 0);
+                // rule body
+                valueSerializer.ValueSerializer.serialize(node.body, buffer);
+                break;
+            case index.CosmeticRuleType.ScriptletInjectionRule:
+                // rule type
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ScriptletInjectionRule);
+                // syntax
+                buffer.writeUint8(syntaxSerializationMap.getSyntaxSerializationMap().get(node.syntax) ?? 0);
+                // rule body
+                switch (node.syntax) {
+                    case adblockers.AdblockSyntax.Adg:
+                        adgScriptletInjectionBodySerializer.AdgScriptletInjectionBodySerializer.serialize(node.body, buffer);
+                        break;
+                    case adblockers.AdblockSyntax.Abp:
+                        abpSnippetInjectionBodySerializer.AbpSnippetInjectionBodySerializer.serialize(node.body, buffer);
+                        break;
+                    case adblockers.AdblockSyntax.Ubo:
+                        uboScriptletInjectionBodySerializer.UboScriptletInjectionBodySerializer.serialize(node.body, buffer);
+                        break;
+                    default:
+                        throw new Error('Scriptlet rule should have an explicit syntax');
+                }
+                break;
+            default:
+                throw new Error('Unknown cosmetic rule type');
+        }
+        // common properties
+        buffer.writeUint8(cosmeticRuleCommon.CosmeticRuleMarshallingMap.Exception);
+        buffer.writeUint8(node.exception ? 1 : 0);
+        buffer.writeUint8(cosmeticRuleCommon.CosmeticRuleMarshallingMap.Separator);
+        valueSerializer.ValueSerializer.serialize(node.separator, buffer, cosmeticRuleCommon.COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP);
+        if (node.modifiers) {
+            buffer.writeUint8(cosmeticRuleCommon.CosmeticRuleMarshallingMap.Modifiers);
+            modifierListSerializer.ModifierListSerializer.serialize(node.modifiers, buffer);
+        }
+        buffer.writeUint8(cosmeticRuleCommon.CosmeticRuleMarshallingMap.Domains);
+        domainListSerializer.DomainListSerializer.serialize(node.domains, buffer);
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(cosmeticRuleCommon.CosmeticRuleMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(cosmeticRuleCommon.CosmeticRuleMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.CosmeticRuleSerializer = CosmeticRuleSerializer;

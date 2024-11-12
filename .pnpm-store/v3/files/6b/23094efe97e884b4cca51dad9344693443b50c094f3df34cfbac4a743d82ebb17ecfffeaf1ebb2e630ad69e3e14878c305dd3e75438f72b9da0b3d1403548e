@@ -1,0 +1,11 @@
+import { BaseGenerator } from '../base-generator';
+import type { Agent } from '../../nodes';
+export declare class AgentGenerator extends BaseGenerator {
+    /**
+     * Converts an adblock agent node to a string.
+     *
+     * @param value Agent node
+     * @returns Raw string
+     */
+    static generate(value: Agent): string;
+}

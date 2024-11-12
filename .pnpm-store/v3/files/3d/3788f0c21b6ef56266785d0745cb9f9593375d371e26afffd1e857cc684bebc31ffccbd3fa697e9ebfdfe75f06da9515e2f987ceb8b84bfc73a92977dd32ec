@@ -1,0 +1,64 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { AdblockSyntax } from '../../utils/adblockers.mjs';
+import { COLON, OPEN_PARENTHESIS, CLOSE_PARENTHESIS, SPACE, EMPTY } from '../../utils/constants.mjs';
+import { BaseGenerator } from '../base-generator.mjs';
+import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator.mjs';
+import { CosmeticRuleBodyGenerator } from './cosmetic-rule-body-generator.mjs';
+
+/**
+ * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
+ *
+ * Where possible, it automatically detects the difference between supported syntaxes:
+ *  - AdGuard
+ *  - uBlock Origin
+ *  - Adblock Plus
+ *
+ * If the syntax is common / cannot be determined, the parser gives `Common` syntax.
+ *
+ * Please note that syntactically correct rules are parsed even if they are not actually
+ * compatible with the given adblocker. This is a completely natural behavior, meaningful
+ * checking of compatibility is not done at the parser level.
+ */
+// TODO: Make raw body parsing optional
+// TODO: Split into smaller sections
+class CosmeticRuleGenerator extends BaseGenerator {
+    /**
+     * Converts a cosmetic rule AST into a string.
+     *
+     * @param node Cosmetic rule AST
+     * @returns Raw string
+     */
+    static generate(node) {
+        let result = EMPTY;
+        // Pattern
+        result += CosmeticRulePatternGenerator.generate(node);
+        // Separator
+        result += node.separator.value;
+        // uBO rule modifiers
+        if (node.syntax === AdblockSyntax.Ubo && node.modifiers) {
+            node.modifiers.children.forEach((modifier) => {
+                result += COLON;
+                result += modifier.name.value;
+                if (modifier.value) {
+                    result += OPEN_PARENTHESIS;
+                    result += modifier.value.value;
+                    result += CLOSE_PARENTHESIS;
+                }
+            });
+            // If there are at least one modifier, add a space
+            if (node.modifiers.children.length) {
+                result += SPACE;
+            }
+        }
+        // Body
+        result += CosmeticRuleBodyGenerator.generate(node);
+        return result;
+    }
+}
+
+export { CosmeticRuleGenerator };

@@ -1,0 +1,11 @@
+import type { AgentCommentRule } from '../../nodes';
+import { BaseGenerator } from '../base-generator';
+export declare class AgentCommentGenerator extends BaseGenerator {
+    /**
+     * Converts an adblock agent AST to a string.
+     *
+     * @param ast Agent rule AST
+     * @returns Raw string
+     */
+    static generate(ast: AgentCommentRule): string;
+}

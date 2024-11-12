@@ -1,0 +1,81 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var ruleConversionError = require('../../../errors/rule-conversion-error.js');
+var modifiers = require('../../../ast-utils/modifiers.js');
+var regexp = require('../../../utils/regexp.js');
+var constants = require('../../../utils/constants.js');
+var string = require('../../../utils/string.js');
+var multiValueMap = require('../../../utils/multi-value-map.js');
+var clone = require('../../../utils/clone.js');
+var conversionResult = require('../../base-interfaces/conversion-result.js');
+
+/**
+ * @file Cosmetic rule modifier converter from uBO to ADG
+ */
+const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
+const ADG_PATH_MODIFIER = 'path';
+/**
+ * Special characters in modifier regexps that should be escaped
+ */
+const SPECIAL_MODIFIER_REGEX_CHARS = new Set([
+    constants.OPEN_SQUARE_BRACKET,
+    constants.CLOSE_SQUARE_BRACKET,
+    constants.COMMA,
+    constants.ESCAPE_CHARACTER,
+]);
+/**
+ * Helper class for converting cosmetic rule modifiers from uBO to ADG
+ */
+class AdgCosmeticRuleModifierConverter {
+    /**
+     * Converts a uBO cosmetic rule modifier list to ADG, if possible.
+     *
+     * @param modifierList Cosmetic rule modifier list node to convert
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+     * If the node was not converted, the result will contain the original node with the same object reference
+     * @throws If the modifier list cannot be converted
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#cosmetic-filter-operators}
+     */
+    static convertFromUbo(modifierList) {
+        const conversionMap = new multiValueMap.MultiValueMap();
+        modifierList.children.forEach((modifier, index) => {
+            // :matches-path
+            if (modifier.name.value === UBO_MATCHES_PATH_OPERATOR) {
+                if (!modifier.value) {
+                    throw new ruleConversionError.RuleConversionError(`'${UBO_MATCHES_PATH_OPERATOR}' operator requires a value`);
+                }
+                const value = regexp.RegExpUtils.isRegexPattern(modifier.value.value)
+                    ? string.StringUtils.escapeCharacters(modifier.value.value, SPECIAL_MODIFIER_REGEX_CHARS)
+                    : modifier.value.value;
+                // Convert uBO's `:matches-path(...)` operator to ADG's `$path=...` modifier
+                conversionMap.add(index, modifiers.createModifierNode(ADG_PATH_MODIFIER, 
+                // We should negate the regexp if the modifier is an exception
+                modifier.exception
+                    // eslint-disable-next-line max-len
+                    ? `${constants.REGEX_MARKER}${regexp.RegExpUtils.negateRegexPattern(regexp.RegExpUtils.patternToRegexp(value))}${constants.REGEX_MARKER}`
+                    : value));
+            }
+        });
+        // Check if we have any converted modifiers
+        if (conversionMap.size) {
+            const modifierListClone = clone.clone(modifierList);
+            // Replace the original modifiers with the converted ones
+            modifierListClone.children = modifierListClone.children.map((modifier, index) => {
+                const convertedModifier = conversionMap.get(index);
+                return convertedModifier ?? modifier;
+            }).flat();
+            return conversionResult.createConversionResult(modifierListClone, true);
+        }
+        // Otherwise, just return the original modifier list
+        return conversionResult.createConversionResult(modifierList, false);
+    }
+}
+
+exports.AdgCosmeticRuleModifierConverter = AdgCosmeticRuleModifierConverter;

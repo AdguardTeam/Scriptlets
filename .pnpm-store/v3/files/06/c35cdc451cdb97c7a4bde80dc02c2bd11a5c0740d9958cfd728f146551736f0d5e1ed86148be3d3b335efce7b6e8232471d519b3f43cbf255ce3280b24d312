@@ -1,0 +1,54 @@
+/**
+ * @file Regular expression utilities
+ */
+export declare const REGEX_START = "^";
+export declare const REGEX_END = "$";
+export declare const REGEX_ANY_CHARACTERS: string;
+export declare const ADBLOCK_URL_START: string;
+export declare const ADBLOCK_URL_START_REGEX = "^(http|https|ws|wss)://([a-z0-9-_.]+\\.)?";
+export declare const ADBLOCK_URL_SEPARATOR = "^";
+export declare const ADBLOCK_URL_SEPARATOR_REGEX = "([^ a-zA-Z0-9.%_-]|$)";
+export declare const ADBLOCK_WILDCARD = "*";
+export declare const ADBLOCK_WILDCARD_REGEX: string;
+export declare const REGEX_NEGATION_PREFIX = "^((?!";
+export declare const REGEX_NEGATION_SUFFIX = ").)*$";
+/**
+ * Special RegExp symbols
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-escape
+ */
+export declare const SPECIAL_REGEX_SYMBOLS: Set<string>;
+/**
+ * Utility functions for working with RegExp patterns
+ */
+export declare class RegExpUtils {
+    /**
+     * Checks whether a string possibly is a RegExp pattern.
+     * Flags are not supported.
+     *
+     * Note: it does not perform a full validation of the pattern,
+     * it just checks if the string starts and ends with a slash.
+     *
+     * @param pattern - Pattern to check
+     * @returns `true` if the string is a RegExp pattern, `false` otherwise
+     */
+    static isRegexPattern(pattern: string): boolean;
+    /**
+     * Negates a RegExp pattern. Technically, this method wraps the pattern in `^((?!` and `).)*$`.
+     *
+     * RegExp modifiers are not supported.
+     *
+     * @param pattern Pattern to negate (can be wrapped in slashes or not)
+     * @returns Negated RegExp pattern
+     */
+    static negateRegexPattern(pattern: string): string;
+    /**
+     * Converts a basic adblock rule pattern to a RegExp pattern. Based on
+     * https://github.com/AdguardTeam/tsurlfilter/blob/9b26e0b4a0e30b87690bc60f7cf377d112c3085c/packages/tsurlfilter/src/rules/simple-regex.ts#L219
+     *
+     * @param pattern Pattern to convert
+     * @returns RegExp equivalent of the pattern
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
+     */
+    static patternToRegexp(pattern: string): string;
+}

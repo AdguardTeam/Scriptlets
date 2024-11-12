@@ -1,0 +1,43 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+exports.AgentNodeMarshallingMap = void 0;
+(function (AgentNodeMarshallingMap) {
+    AgentNodeMarshallingMap[AgentNodeMarshallingMap["Adblock"] = 1] = "Adblock";
+    AgentNodeMarshallingMap[AgentNodeMarshallingMap["Version"] = 2] = "Version";
+    AgentNodeMarshallingMap[AgentNodeMarshallingMap["Start"] = 3] = "Start";
+    AgentNodeMarshallingMap[AgentNodeMarshallingMap["End"] = 4] = "End";
+})(exports.AgentNodeMarshallingMap || (exports.AgentNodeMarshallingMap = {}));
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map([
+    // AdGuard
+    [0, 'AdGuard'],
+    [1, 'ADG'],
+    // uBlock Origin
+    [2, 'uBlock Origin'],
+    [3, 'uBlock'],
+    [4, 'uBO'],
+    // Adblock Plus
+    [5, 'Adblock Plus'],
+    [6, 'AdblockPlus'],
+    [7, 'ABP'],
+    [8, 'AdBlock'],
+]);
+
+exports.FREQUENT_AGENTS_DESERIALIZATION_MAP = FREQUENT_AGENTS_DESERIALIZATION_MAP;

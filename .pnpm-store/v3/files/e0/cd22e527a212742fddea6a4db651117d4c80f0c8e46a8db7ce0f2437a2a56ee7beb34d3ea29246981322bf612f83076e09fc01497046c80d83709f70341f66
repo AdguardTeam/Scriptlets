@@ -1,0 +1,28 @@
+/**
+ * @file Parser for AdGuard CSS injections.
+ */
+import { type CssInjectionRuleBody } from '../../nodes';
+import { BaseParser } from '../base-parser';
+export declare const REMOVE_PROPERTY = "remove";
+export declare const REMOVE_VALUE = "true";
+export declare const ERROR_MESSAGES: {
+    MEDIA_QUERY_LIST_IS_EMPTY: string;
+    SELECTOR_LIST_IS_EMPTY: string;
+    DECLARATION_LIST_IS_EMPTY: string;
+};
+/**
+ * Parser for AdGuard CSS injection.
+ */
+export declare class AdgCssInjectionParser extends BaseParser {
+    /**
+     * Parses an AdGuard CSS injection.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
+     * @returns Parsed AdGuard CSS injection {@link CssInjectionRuleBody}.
+     * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): CssInjectionRuleBody;
+}

@@ -1,0 +1,5 @@
+/**
+ * @file AGTree version
+ */
+declare const AGTREE_VERSION: string;
+export { AGTREE_VERSION };

@@ -1,0 +1,43 @@
+{
+  "name": "browserstack-local",
+  "version": "1.5.5",
+  "description": "Nodejs bindings for BrowserStack Local",
+  "engine": "^0.10.44",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "pretest": "./node_modules/.bin/eslint lib/* index.js",
+    "test": "./node_modules/.bin/mocha"
+  },
+  "keywords": [
+    "BrowserStack",
+    "Local",
+    "selenium",
+    "testing"
+  ],
+  "author": "BrowserStack",
+  "license": "MIT",
+  "dependencies": {
+    "https-proxy-agent": "^5.0.1",
+    "is-running": "^2.1.0",
+    "ps-tree": "=1.2.0",
+    "temp-fs": "^0.9.9",
+    "agent-base": "^6.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.0.0",
+    "eslint-plugin-mocha": "^10.1.0",
+    "expect.js": "0.3.1",
+    "mocha": "^10.0.0",
+    "mocks": "0.0.15",
+    "proxy": "^1.0.2",
+    "rimraf": "^3.0.2",
+    "sinon": "^1.17.6"
+  },
+  "bugs": "https://github.com/browserstack/browserstack-local-nodejs/issues",
+  "homepage": "https://github.com/browserstack/browserstack-local-nodejs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/browserstack/browserstack-local-nodejs.git"
+  }
+}

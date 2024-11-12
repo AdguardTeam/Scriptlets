@@ -1,0 +1,210 @@
+/**
+ * @file CSS token stream.
+ */
+import { TokenType } from '@adguard/css-tokenizer';
+/**
+ * Interface for CSS token data.
+ */
+export interface TokenData {
+    /**
+     * Type of the token.
+     */
+    type: TokenType;
+    /**
+     * Start index in the source string.
+     */
+    start: number;
+    /**
+     * End index in the source string.
+     */
+    end: number;
+    /**
+     * Balance level of the token.
+     */
+    balance: number;
+}
+/**
+ * Interface for expectation data.
+ */
+export interface ExpectationData {
+    /**
+     * Expected balance level of the token (optional).
+     */
+    balance?: number;
+    /**
+     * Expected value of the token (optional).
+     */
+    value?: string;
+}
+/**
+ * Interface for skipUntilExt result.
+ */
+export interface SkipUntilExtResult {
+    /**
+     * Number of tokens skipped.
+     */
+    skipped: number;
+    /**
+     * Number of tokens skipped without leading and trailing whitespace tokens.
+     */
+    skippedTrimmed: number;
+}
+/**
+ * Represents a stream of CSS tokens.
+ */
+export declare class CssTokenStream {
+    /**
+     * The tokens in the stream.
+     */
+    private tokens;
+    /**
+     * The source string.
+     */
+    readonly source: string;
+    /**
+     * The current index in the stream.
+     */
+    private index;
+    /**
+     * The base offset of the source string.
+     */
+    private baseOffset;
+    /**
+     * Initializes a new instance of the TokenStream class.
+     *
+     * @param source The source string to tokenize.
+     * @param baseOffset The base offset of the source string.
+     */
+    constructor(source: string, baseOffset?: number);
+    /**
+     * Gets the number of tokens in the stream.
+     *
+     * @returns The number of tokens in the stream.
+     */
+    get length(): number;
+    /**
+     * Checks if the end of the token stream is reached.
+     *
+     * @returns True if the end of the stream is reached, otherwise false.
+     */
+    isEof(): boolean;
+    /**
+     * Gets the token at the specified index.
+     *
+     * @param index The index of the token to retrieve.
+     * @returns The token at the specified index or undefined if the index is out of bounds.
+     */
+    get(index?: number): TokenData | undefined;
+    /**
+     * Gets the token at the specified index or throws if no token is found at the specified index.
+     *
+     * @param index The index of the token to retrieve.
+     * @returns The token at the specified index or undefined if the index is out of bounds.
+     * @throws If no token is found at the specified index.
+     */
+    getOrFail(index?: number): TokenData;
+    /**
+     * Gets the source fragment of the token at the specified index.
+     *
+     * @param index The index of the token to retrieve the fragment for.
+     * @returns The source fragment of the token or an empty string if the index is out of bounds.
+     */
+    fragment(index?: number): string;
+    /**
+     * Moves the index to the next token and returns it.
+     *
+     * @returns The next token or undefined if the end of the stream is reached.
+     */
+    advance(): TokenData | undefined;
+    /**
+     * Looks ahead in the stream without changing the index.
+     *
+     * @param index The relative index to look ahead to, starting from the current index.
+     * @returns The next token or undefined if the end of the stream is reached.
+     */
+    lookahead(index?: number): TokenData | undefined;
+    /**
+     * Looks behind in the stream without changing the index.
+     *
+     * @param index The relative index to look behind to, starting from the current index.
+     * @returns The previous token or undefined if the current token is the first in the stream.
+     */
+    lookbehind(index?: number): TokenData | undefined;
+    /**
+     * Looks behind in the stream for the previous non-whitespace token without changing the index.
+     *
+     * @returns The previous non-whitespace token or undefined if it could not be found.
+     */
+    lookbehindForNonWs(): TokenData | undefined;
+    /**
+     * Skips whitespace tokens in the stream.
+     */
+    skipWhitespace(): void;
+    /**
+     * Skips tokens until the current balance level is reached.
+     *
+     * @returns The number of tokens skipped.
+     */
+    skipUntilBalanced(): number;
+    /**
+     * Skips tokens until a token with the specified type or the end of the stream is reached.
+     *
+     * @param type The type of token to skip until.
+     * @param balance The balance level of the token to skip until.
+     * @returns The number of tokens skipped.
+     */
+    skipUntil(type: TokenType, balance?: number): number;
+    /**
+     * Skips tokens until a token with the specified type or the end of the stream is reached. This is an extended
+     * version of skipUntil that also returns the number of tokens skipped without calculating leading and trailing
+     * whitespace tokens.
+     *
+     * @param type The type of token to skip until.
+     * @param balance The balance level of the token to skip until.
+     * @returns An array containing the number of tokens skipped and the number of tokens skipped without leading and
+     * trailing whitespace tokens.
+     */
+    skipUntilExt(type: TokenType, balance: number): SkipUntilExtResult;
+    /**
+     * Expects that the end of the stream is not reached.
+     */
+    expectNotEof(): void;
+    /**
+     * Expects the current token to have a specific type and optional value and balance level.
+     *
+     * @param type The expected token type.
+     * @param data Optional expectation data.
+     * @throws If the end of the stream is reached or if the token type or expectation data does not match.
+     */
+    expect(type: TokenType, data?: ExpectationData): void;
+    /**
+     * Gets the balance level of the token at the specified index.
+     *
+     * @param index The index of the token to retrieve the balance level for.
+     * @returns The balance level of the token or 0 if the index is out of bounds.
+     */
+    getBalance(index?: number): number;
+    /**
+     * Checks whether the token stream contains any Extended CSS elements, such as `:contains()`, etc.
+     *
+     * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
+     */
+    hasAnySelectorExtendedCssNode(): boolean;
+    /**
+     * Strictly checks whether the token stream contains any Extended CSS elements, such as `:contains()`.
+     * Some Extended CSS elements are natively supported by browsers, like `:has()`.
+     * This method is used to check for Extended CSS elements that are not natively supported by browsers,
+     * this is why it called "strict", because it strictly checks for Extended CSS elements.
+     *
+     * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
+     */
+    hasAnySelectorExtendedCssNodeStrict(): boolean;
+    /**
+     * Checks whether the token stream contains any Extended CSS elements, such as `:has()`, `:contains()`, etc.
+     *
+     * @param pseudos Set of pseudo-classes to check for.
+     *
+     * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
+     */
+    private hasAnySelectorExtendedCssNodeInternal;
+}

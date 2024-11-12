@@ -1,0 +1,35 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { NETWORK_RULE_SEPARATOR, EMPTY, NETWORK_RULE_EXCEPTION_MARKER } from '../../utils/constants.mjs';
+import { BaseGenerator } from '../base-generator.mjs';
+import { ModifierListGenerator } from '../misc/modifier-list-generator.mjs';
+
+class NetworkRuleGenerator extends BaseGenerator {
+    /**
+     * Converts a network rule (basic rule) AST to a string.
+     *
+     * @param node Network rule node
+     * @returns Raw string
+     */
+    static generate(node) {
+        let result = EMPTY;
+        // If the rule is an exception, add the exception marker: `@@||example.org`
+        if (node.exception) {
+            result += NETWORK_RULE_EXCEPTION_MARKER;
+        }
+        // Add the pattern: `||example.org`
+        result += node.pattern.value;
+        // If there are modifiers, add a separator and the modifiers: `||example.org$important`
+        if (node.modifiers && node.modifiers.children.length > 0) {
+            result += NETWORK_RULE_SEPARATOR;
+            result += ModifierListGenerator.generate(node.modifiers);
+        }
+        return result;
+    }
+}
+
+export { NetworkRuleGenerator };

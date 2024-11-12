@@ -1,0 +1,16 @@
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+export declare const enum CssInjectionRuleMarshallingMap {
+    SelectorList = 1,
+    DeclarationList = 2,
+    MediaQueryList = 3,
+    Remove = 4,
+    Start = 5,
+    End = 6
+}

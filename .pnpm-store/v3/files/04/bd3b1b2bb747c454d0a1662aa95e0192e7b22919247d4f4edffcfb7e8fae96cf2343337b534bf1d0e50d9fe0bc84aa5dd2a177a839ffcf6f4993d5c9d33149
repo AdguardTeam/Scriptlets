@@ -1,0 +1,12 @@
+import { BaseSerializer } from '../base-serializer';
+import { type ElementHidingRuleBody } from '../../nodes';
+import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
+export declare class ElementHidingBodySerializer extends BaseSerializer {
+    /**
+     * Serializes an element hiding rule body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: ElementHidingRuleBody, buffer: OutputByteBuffer): void;
+}

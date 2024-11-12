@@ -1,0 +1,14 @@
+/**
+ * @file Optimized utility for decoding strings from byte sequences.
+ */
+/**
+ * Decodes a byte sequence into an UTF-8 string according to the WHATWG spec.
+ * Optimized for performance.
+ *
+ * @param buffer Buffer to read the bytes from.
+ * @param start Start offset in the buffer.
+ * @param end End offset in the buffer.
+ * @returns Decoded string.
+ * @see {@link https://encoding.spec.whatwg.org/#utf-8-decoder}
+ */
+export declare const decodeTextPolyfill: (buffer: Uint8Array, start?: number, end?: number) => string;

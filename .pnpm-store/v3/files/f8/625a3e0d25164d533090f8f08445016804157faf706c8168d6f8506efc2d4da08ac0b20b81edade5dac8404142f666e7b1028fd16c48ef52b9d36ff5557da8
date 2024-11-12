@@ -1,0 +1,11 @@
+import { BaseGenerator } from '../base-generator';
+import { type AnyExpressionNode } from '../../nodes';
+export declare class LogicalExpressionGenerator extends BaseGenerator {
+    /**
+     * Generates a string representation of the logical expression (serialization).
+     *
+     * @param node Expression node
+     * @returns String representation of the logical expression
+     */
+    static generate(node: AnyExpressionNode): string;
+}

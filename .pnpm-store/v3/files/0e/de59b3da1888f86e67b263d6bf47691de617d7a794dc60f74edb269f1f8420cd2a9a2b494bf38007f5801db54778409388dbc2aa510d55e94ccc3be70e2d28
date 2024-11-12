@@ -1,0 +1,110 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var agentCommentParser = require('./agent-comment-parser.js');
+var configCommentParser = require('./config-comment-parser.js');
+var hintCommentParser = require('./hint-comment-parser.js');
+var metadataCommentParser = require('./metadata-comment-parser.js');
+var preprocessorParser = require('./preprocessor-parser.js');
+var options = require('../options.js');
+var baseParser = require('../base-parser.js');
+var simpleCommentParser = require('./simple-comment-parser.js');
+
+/* eslint-disable no-param-reassign */
+/**
+ * `CommentParser` is responsible for parsing any comment-like adblock rules.
+ *
+ * @example
+ * Example rules:
+ *  - Adblock agent rules:
+ *      - ```adblock
+ *        [AdGuard]
+ *        ```
+ *      - ```adblock
+ *        [Adblock Plus 2.0]
+ *        ```
+ *      - etc.
+ *  - AdGuard hint rules:
+ *      - ```adblock
+ *        !+ NOT_OPTIMIZED
+ *        ```
+ *      - ```adblock
+ *        !+ NOT_OPTIMIZED PLATFORM(windows)
+ *        ```
+ *      - etc.
+ *  - Pre-processor rules:
+ *      - ```adblock
+ *        !#if (adguard)
+ *        ```
+ *      - ```adblock
+ *        !#endif
+ *        ```
+ *      - etc.
+ *  - Metadata rules:
+ *      - ```adblock
+ *        ! Title: My List
+ *        ```
+ *      - ```adblock
+ *        ! Version: 2.0.150
+ *        ```
+ *      - etc.
+ *  - AGLint inline config rules:
+ *      - ```adblock
+ *        ! aglint-enable some-rule
+ *        ```
+ *      - ```adblock
+ *        ! aglint-disable some-rule
+ *        ```
+ *      - etc.
+ *  - Simple comments:
+ *      - Regular version:
+ *        ```adblock
+ *        ! This is just a comment
+ *        ```
+ *      - uBlock Origin / "hostlist" version:
+ *        ```adblock
+ *        # This is just a comment
+ *        ```
+ *      - etc.
+ */
+class CommentParser extends baseParser.BaseParser {
+    /**
+     * Checks whether a rule is a comment.
+     *
+     * @param raw Raw rule
+     * @returns `true` if the rule is a comment, `false` otherwise
+     */
+    static isCommentRule(raw) {
+        const trimmed = raw.trim();
+        return simpleCommentParser.SimpleCommentParser.isSimpleComment(trimmed) || agentCommentParser.AgentCommentParser.isAgentRule(trimmed);
+    }
+    /**
+     * Parses a raw rule as comment.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Comment AST or null (if the raw rule cannot be parsed as comment)
+     */
+    static parse(raw, options$1 = options.defaultParserOptions, baseOffset = 0) {
+        // Ignore non-comment rules
+        if (!CommentParser.isCommentRule(raw)) {
+            return null;
+        }
+        // Note: we parse non-functional comments at the end,
+        // if the input does not match any of the previous, more specific comment patterns
+        return agentCommentParser.AgentCommentParser.parse(raw, options$1, baseOffset)
+            || hintCommentParser.HintCommentParser.parse(raw, options$1, baseOffset)
+            || preprocessorParser.PreProcessorCommentParser.parse(raw, options$1, baseOffset)
+            || metadataCommentParser.MetadataCommentParser.parse(raw, options$1, baseOffset)
+            || configCommentParser.ConfigCommentParser.parse(raw, options$1, baseOffset)
+            || simpleCommentParser.SimpleCommentParser.parse(raw, options$1, baseOffset);
+    }
+}
+
+exports.CommentParser = CommentParser;

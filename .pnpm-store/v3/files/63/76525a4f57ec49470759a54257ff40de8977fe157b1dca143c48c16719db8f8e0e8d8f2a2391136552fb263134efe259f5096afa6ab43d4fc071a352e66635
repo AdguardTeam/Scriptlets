@@ -1,0 +1,15 @@
+import { BaseGenerator } from '../base-generator';
+import { type AnyCosmeticRule } from '../../nodes';
+export declare class CosmeticRuleBodyGenerator extends BaseGenerator {
+    /**
+     * Generates the rule body from the node.
+     *
+     * @param node Cosmetic rule node
+     * @returns Raw rule body
+     * @example
+     * - '##.foo' → '.foo'
+     * - 'example.com,example.org##.foo' → '.foo'
+     * - 'example.com#%#//scriptlet('foo')' → '//scriptlet('foo')'
+     */
+    static generate(node: AnyCosmeticRule): string;
+}

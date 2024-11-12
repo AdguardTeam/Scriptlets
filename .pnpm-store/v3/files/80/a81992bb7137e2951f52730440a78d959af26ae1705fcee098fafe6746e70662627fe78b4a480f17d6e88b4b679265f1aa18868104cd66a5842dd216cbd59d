@@ -1,0 +1,201 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var ruleParser = require('./parser/rule-parser.js');
+var ruleSerializer = require('./serializer/rule-serializer.js');
+var ruleDeserializer = require('./deserializer/rule-deserializer.js');
+var ruleGenerator = require('./generator/rule-generator.js');
+var index = require('./nodes/index.js');
+var adblockSyntaxError = require('./errors/adblock-syntax-error.js');
+var agentCommentParser = require('./parser/comment/agent-comment-parser.js');
+var agentParser = require('./parser/comment/agent-parser.js');
+var commentParser = require('./parser/comment/comment-parser.js');
+var configCommentParser = require('./parser/comment/config-comment-parser.js');
+var cosmeticRuleParser = require('./parser/cosmetic/cosmetic-rule-parser.js');
+var appListParser = require('./parser/misc/app-list-parser.js');
+var domainListParser = require('./parser/misc/domain-list-parser.js');
+var methodListParser = require('./parser/misc/method-list-parser.js');
+var stealthOptionListParser = require('./parser/misc/stealth-option-list-parser.js');
+var filterlistParser = require('./parser/filterlist-parser.js');
+var filterlistSerializer = require('./serializer/filterlist-serializer.js');
+var filterlistDeserializer = require('./deserializer/filterlist-deserializer.js');
+var hintCommentParser = require('./parser/comment/hint-comment-parser.js');
+var hintParser = require('./parser/comment/hint-parser.js');
+var logicalExpressionParser = require('./parser/misc/logical-expression-parser.js');
+var metadataCommentParser = require('./parser/comment/metadata-comment-parser.js');
+var modifierList = require('./parser/misc/modifier-list.js');
+var modifierParser = require('./parser/misc/modifier-parser.js');
+var networkRuleParser = require('./parser/network/network-rule-parser.js');
+var notImplementedError = require('./errors/not-implemented-error.js');
+var parameterListParser = require('./parser/misc/parameter-list-parser.js');
+var hostRuleParser = require('./parser/network/host-rule-parser.js');
+var preprocessorParser = require('./parser/comment/preprocessor-parser.js');
+var ruleConversionError = require('./errors/rule-conversion-error.js');
+var binarySchemaMismatchError = require('./errors/binary-schema-mismatch-error.js');
+var index$1 = require('./validator/index.js');
+var rawFilterList = require('./converter/raw-filter-list.js');
+var rule = require('./converter/rule.js');
+var constants = require('./utils/constants.js');
+var binarySchemaVersion = require('./utils/binary-schema-version.js');
+var adblockers = require('./utils/adblockers.js');
+var cosmeticRuleSeparator = require('./utils/cosmetic-rule-separator.js');
+var domain = require('./utils/domain.js');
+var logicalExpression = require('./utils/logical-expression.js');
+var regexp = require('./utils/regexp.js');
+var quotes = require('./utils/quotes.js');
+var positionProvider = require('./utils/position-provider.js');
+var outputByteBuffer = require('./utils/output-byte-buffer.js');
+var inputByteBuffer = require('./utils/input-byte-buffer.js');
+var byteBuffer = require('./utils/byte-buffer.js');
+var textEncoderPolyfill = require('./utils/text-encoder-polyfill.js');
+var textDecoderPolyfill = require('./utils/text-decoder-polyfill.js');
+var categorizer = require('./utils/categorizer.js');
+var css = require('./converter/data/css.js');
+var modifiers = require('./compatibility-tables/modifiers.js');
+var redirects = require('./compatibility-tables/redirects.js');
+var scriptlets = require('./compatibility-tables/scriptlets.js');
+var platforms = require('./compatibility-tables/platforms.js');
+require('./compatibility-tables/schemas/base.js');
+require('./compatibility-tables/schemas/modifier.js');
+require('./compatibility-tables/schemas/redirect.js');
+require('./compatibility-tables/schemas/scriptlet.js');
+var platform = require('./compatibility-tables/schemas/platform.js');
+var platformHelpers = require('./compatibility-tables/utils/platform-helpers.js');
+var resourceType = require('./compatibility-tables/schemas/resource-type.js');
+var resourceTypeHelpers = require('./compatibility-tables/utils/resource-type-helpers.js');
+var version = require('./version.js');
+var syntaxSerializationMap = require('./marshalling-utils/syntax-serialization-map.js');
+
+
+
+exports.RuleParser = ruleParser.RuleParser;
+exports.RuleSerializer = ruleSerializer.RuleSerializer;
+exports.RuleDeserializer = ruleDeserializer.RuleDeserializer;
+exports.RuleGenerator = ruleGenerator.RuleGenerator;
+Object.defineProperty(exports, "CommentMarker", {
+	enumerable: true,
+	get: function () { return index.CommentMarker; }
+});
+Object.defineProperty(exports, "CommentRuleType", {
+	enumerable: true,
+	get: function () { return index.CommentRuleType; }
+});
+Object.defineProperty(exports, "CosmeticRuleSeparator", {
+	enumerable: true,
+	get: function () { return index.CosmeticRuleSeparator; }
+});
+Object.defineProperty(exports, "CosmeticRuleType", {
+	enumerable: true,
+	get: function () { return index.CosmeticRuleType; }
+});
+Object.defineProperty(exports, "NetworkRuleType", {
+	enumerable: true,
+	get: function () { return index.NetworkRuleType; }
+});
+Object.defineProperty(exports, "RuleCategory", {
+	enumerable: true,
+	get: function () { return index.RuleCategory; }
+});
+exports.AdblockSyntaxError = adblockSyntaxError.AdblockSyntaxError;
+exports.AgentCommentParser = agentCommentParser.AgentCommentParser;
+exports.AgentParser = agentParser.AgentParser;
+exports.CommentParser = commentParser.CommentParser;
+exports.ConfigCommentParser = configCommentParser.ConfigCommentParser;
+exports.CosmeticRuleParser = cosmeticRuleParser.CosmeticRuleParser;
+exports.AppListParser = appListParser.AppListParser;
+exports.DomainListParser = domainListParser.DomainListParser;
+exports.MethodListParser = methodListParser.MethodListParser;
+exports.StealthOptionListParser = stealthOptionListParser.StealthOptionListParser;
+exports.FilterListParser = filterlistParser.FilterListParser;
+exports.FilterListSerializer = filterlistSerializer.FilterListSerializer;
+exports.FilterListDeserializer = filterlistDeserializer.FilterListDeserializer;
+exports.HintCommentParser = hintCommentParser.HintCommentParser;
+exports.HintParser = hintParser.HintParser;
+exports.LogicalExpressionParser = logicalExpressionParser.LogicalExpressionParser;
+exports.MetadataCommentParser = metadataCommentParser.MetadataCommentParser;
+exports.ModifierListParser = modifierList.ModifierListParser;
+exports.ModifierParser = modifierParser.ModifierParser;
+exports.NetworkRuleParser = networkRuleParser.NetworkRuleParser;
+exports.NotImplementedError = notImplementedError.NotImplementedError;
+exports.ParameterListParser = parameterListParser.ParameterListParser;
+exports.HostRuleParser = hostRuleParser.HostRuleParser;
+exports.PreProcessorCommentParser = preprocessorParser.PreProcessorCommentParser;
+exports.RuleConversionError = ruleConversionError.RuleConversionError;
+exports.BinarySchemaMismatchError = binarySchemaMismatchError.BinarySchemaMismatchError;
+exports.modifierValidator = index$1.modifierValidator;
+exports.RawFilterListConverter = rawFilterList.RawFilterListConverter;
+exports.RuleConverter = rule.RuleConverter;
+exports.ADG_SCRIPTLET_MASK = constants.ADG_SCRIPTLET_MASK;
+exports.AGLINT_COMMAND_PREFIX = constants.AGLINT_COMMAND_PREFIX;
+exports.COMMA_DOMAIN_LIST_SEPARATOR = constants.COMMA_DOMAIN_LIST_SEPARATOR;
+exports.HINT_MARKER = constants.HINT_MARKER;
+exports.IF = constants.IF;
+exports.INCLUDE = constants.INCLUDE;
+exports.MODIFIERS_SEPARATOR = constants.MODIFIERS_SEPARATOR;
+exports.MODIFIER_ASSIGN_OPERATOR = constants.MODIFIER_ASSIGN_OPERATOR;
+exports.NEGATION_MARKER = constants.NEGATION_MARKER;
+exports.NETWORK_RULE_EXCEPTION_MARKER = constants.NETWORK_RULE_EXCEPTION_MARKER;
+exports.NETWORK_RULE_SEPARATOR = constants.NETWORK_RULE_SEPARATOR;
+exports.PIPE_MODIFIER_SEPARATOR = constants.PIPE_MODIFIER_SEPARATOR;
+exports.PREPROCESSOR_MARKER = constants.PREPROCESSOR_MARKER;
+exports.SAFARI_CB_AFFINITY = constants.SAFARI_CB_AFFINITY;
+exports.UBO_SCRIPTLET_MASK = constants.UBO_SCRIPTLET_MASK;
+exports.BINARY_SCHEMA_VERSION = binarySchemaVersion.BINARY_SCHEMA_VERSION;
+Object.defineProperty(exports, "AdblockSyntax", {
+	enumerable: true,
+	get: function () { return adblockers.AdblockSyntax; }
+});
+exports.CosmeticRuleSeparatorUtils = cosmeticRuleSeparator.CosmeticRuleSeparatorUtils;
+exports.DomainUtils = domain.DomainUtils;
+exports.LogicalExpressionUtils = logicalExpression.LogicalExpressionUtils;
+exports.ADBLOCK_URL_SEPARATOR = regexp.ADBLOCK_URL_SEPARATOR;
+exports.ADBLOCK_URL_SEPARATOR_REGEX = regexp.ADBLOCK_URL_SEPARATOR_REGEX;
+exports.ADBLOCK_URL_START = regexp.ADBLOCK_URL_START;
+exports.ADBLOCK_URL_START_REGEX = regexp.ADBLOCK_URL_START_REGEX;
+exports.ADBLOCK_WILDCARD = regexp.ADBLOCK_WILDCARD;
+exports.ADBLOCK_WILDCARD_REGEX = regexp.ADBLOCK_WILDCARD_REGEX;
+exports.RegExpUtils = regexp.RegExpUtils;
+exports.SPECIAL_REGEX_SYMBOLS = regexp.SPECIAL_REGEX_SYMBOLS;
+Object.defineProperty(exports, "QuoteType", {
+	enumerable: true,
+	get: function () { return quotes.QuoteType; }
+});
+exports.QuoteUtils = quotes.QuoteUtils;
+exports.PositionProvider = positionProvider.PositionProvider;
+exports.OutputByteBuffer = outputByteBuffer.OutputByteBuffer;
+exports.InputByteBuffer = inputByteBuffer.InputByteBuffer;
+exports.ByteBuffer = byteBuffer.ByteBuffer;
+exports.encodeIntoPolyfill = textEncoderPolyfill.encodeIntoPolyfill;
+exports.decodeTextPolyfill = textDecoderPolyfill.decodeTextPolyfill;
+exports.RuleCategorizer = categorizer.RuleCategorizer;
+exports.EXT_CSS_LEGACY_ATTRIBUTES = css.EXT_CSS_LEGACY_ATTRIBUTES;
+exports.EXT_CSS_PSEUDO_CLASSES = css.EXT_CSS_PSEUDO_CLASSES;
+exports.FORBIDDEN_CSS_FUNCTIONS = css.FORBIDDEN_CSS_FUNCTIONS;
+exports.modifiersCompatibilityTable = modifiers.modifiersCompatibilityTable;
+exports.redirectsCompatibilityTable = redirects.redirectsCompatibilityTable;
+exports.scriptletsCompatibilityTable = scriptlets.scriptletsCompatibilityTable;
+Object.defineProperty(exports, "GenericPlatform", {
+	enumerable: true,
+	get: function () { return platforms.GenericPlatform; }
+});
+Object.defineProperty(exports, "SpecificPlatform", {
+	enumerable: true,
+	get: function () { return platforms.SpecificPlatform; }
+});
+exports.parseRawPlatforms = platform.parseRawPlatforms;
+exports.getPlatformId = platformHelpers.getPlatformId;
+exports.getSpecificPlatformName = platformHelpers.getSpecificPlatformName;
+exports.isGenericPlatform = platformHelpers.isGenericPlatform;
+Object.defineProperty(exports, "ResourceType", {
+	enumerable: true,
+	get: function () { return resourceType.ResourceType; }
+});
+exports.getResourceTypeModifier = resourceTypeHelpers.getResourceTypeModifier;
+exports.isValidResourceType = resourceTypeHelpers.isValidResourceType;
+exports.AGTREE_VERSION = version.AGTREE_VERSION;
+exports.getSyntaxSerializationMap = syntaxSerializationMap.getSyntaxSerializationMap;

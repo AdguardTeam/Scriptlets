@@ -1,0 +1,41 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var adblockers = require('../../utils/adblockers.js');
+var baseGenerator = require('../base-generator.js');
+var modifierListGenerator = require('../misc/modifier-list-generator.js');
+var domainListGenerator = require('../misc/domain-list-generator.js');
+
+class CosmeticRulePatternGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Generates the rule pattern from the AST.
+     *
+     * @param node Cosmetic rule node
+     * @returns Raw rule pattern
+     * @example
+     * - '##.foo' → ''
+     * - 'example.com,example.org##.foo' → 'example.com,example.org'
+     * - '[$path=/foo/bar]example.com##.foo' → '[$path=/foo/bar]example.com'
+     */
+    static generate(node) {
+        let result = constants.EMPTY;
+        // AdGuard modifiers (if any)
+        if (node.syntax === adblockers.AdblockSyntax.Adg && node.modifiers && node.modifiers.children.length > 0) {
+            result += constants.OPEN_SQUARE_BRACKET;
+            result += constants.DOLLAR_SIGN;
+            result += modifierListGenerator.ModifierListGenerator.generate(node.modifiers);
+            result += constants.CLOSE_SQUARE_BRACKET;
+        }
+        // Domain list (if any)
+        result += domainListGenerator.DomainListGenerator.generate(node.domains);
+        return result;
+    }
+}
+
+exports.CosmeticRulePatternGenerator = CosmeticRulePatternGenerator;

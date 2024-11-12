@@ -1,0 +1,34 @@
+import { type AgentCommentRule } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `AgentCommentSerializer` is responsible for serializing an Adblock agent comments.
+ * Adblock agent comment marks that the filter list is supposed to
+ * be used by the specified ad blockers.
+ *
+ * @example
+ *  - ```adblock
+ *    [AdGuard]
+ *    ```
+ *  - ```adblock
+ *    [Adblock Plus 2.0]
+ *    ```
+ *  - ```adblock
+ *    [uBlock Origin]
+ *    ```
+ *  - ```adblock
+ *    [uBlock Origin 1.45.3]
+ *    ```
+ *  - ```adblock
+ *    [Adblock Plus 2.0; AdGuard]
+ *    ```
+ */
+export declare class AgentCommentSerializer extends BaseSerializer {
+    /**
+     * Serializes an adblock agent list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: AgentCommentRule, buffer: OutputByteBuffer): void;
+}

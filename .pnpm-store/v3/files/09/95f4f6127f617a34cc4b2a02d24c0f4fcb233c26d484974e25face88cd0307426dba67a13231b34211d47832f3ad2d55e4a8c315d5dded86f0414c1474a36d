@@ -1,0 +1,12 @@
+import { BaseDeserializer } from './base-deserializer';
+import { type InvalidRule } from '../nodes';
+import { type InputByteBuffer } from '../utils/input-byte-buffer';
+export declare class InvalidRuleDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes an invalid rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer: InputByteBuffer, node: InvalidRule): void;
+}

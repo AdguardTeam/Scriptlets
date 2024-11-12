@@ -1,0 +1,27 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var camelCaseKeys = require('camelcase-keys');
+
+/**
+ * @file Zod camelCase utility.
+ */
+/**
+ * Transforms Zod schema to camelCase.
+ *
+ * @param zod Zod schema.
+ *
+ * @returns Zod schema with camelCase properties.
+ *
+ * @see {@link https://github.com/colinhacks/zod/issues/486#issuecomment-1501097361}
+ */
+const zodToCamelCase = (zod) => {
+    return zod.transform((val) => camelCaseKeys(val));
+};
+
+exports.zodToCamelCase = zodToCamelCase;

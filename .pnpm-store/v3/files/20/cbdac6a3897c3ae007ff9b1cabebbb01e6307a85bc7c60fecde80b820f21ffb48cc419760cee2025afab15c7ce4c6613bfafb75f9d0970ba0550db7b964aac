@@ -1,0 +1,71 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var index$1 = require('../../nodes/index.js');
+var ruleConverterBase = require('../base-interfaces/rule-converter-base.js');
+var index = require('../css/index.js');
+var adblockers = require('../../utils/adblockers.js');
+var clone = require('../../utils/clone.js');
+var conversionResult = require('../base-interfaces/conversion-result.js');
+var cssTokenStream = require('../../parser/css/css-token-stream.js');
+
+/**
+ * @file CSS injection rule converter
+ */
+/**
+ * CSS injection rule converter class
+ *
+ * @todo Implement `convertToUbo` and `convertToAbp`
+ */
+class CssInjectionRuleConverter extends ruleConverterBase.RuleConverterBase {
+    /**
+     * Converts a CSS injection rule to AdGuard format, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    static convertToAdg(rule) {
+        const separator = rule.separator.value;
+        let convertedSeparator = separator;
+        const stream = new cssTokenStream.CssTokenStream(rule.body.selectorList.value);
+        const convertedSelectorList = index.CssSelectorConverter.convertToAdg(stream);
+        // Change the separator if the rule contains ExtendedCSS elements,
+        // but do not force non-extended CSS separator if the rule does not contain any ExtendedCSS selectors,
+        // because sometimes we use it to force executing ExtendedCSS library.
+        if (stream.hasAnySelectorExtendedCssNodeStrict() || rule.body.remove) {
+            convertedSeparator = rule.exception
+                ? index$1.CosmeticRuleSeparator.AdgExtendedCssInjectionException
+                : index$1.CosmeticRuleSeparator.AdgExtendedCssInjection;
+        }
+        else if (rule.syntax !== adblockers.AdblockSyntax.Adg) {
+            // If the original rule syntax is not AdGuard, use the default separator
+            // e.g. if the input rule is from uBO, we need to convert ## to #$#.
+            convertedSeparator = rule.exception
+                ? index$1.CosmeticRuleSeparator.AdgCssInjectionException
+                : index$1.CosmeticRuleSeparator.AdgCssInjection;
+        }
+        // Check if the rule needs to be converted
+        if (!(rule.syntax === adblockers.AdblockSyntax.Common || rule.syntax === adblockers.AdblockSyntax.Adg)
+            || separator !== convertedSeparator
+            || convertedSelectorList.isConverted) {
+            // TODO: Replace with custom clone method
+            const ruleClone = clone.clone(rule);
+            ruleClone.syntax = adblockers.AdblockSyntax.Adg;
+            ruleClone.separator.value = convertedSeparator;
+            ruleClone.body.selectorList.value = convertedSelectorList.result;
+            return conversionResult.createNodeConversionResult([ruleClone], true);
+        }
+        // Otherwise, return the original rule
+        return conversionResult.createNodeConversionResult([rule], false);
+    }
+}
+
+exports.CssInjectionRuleConverter = CssInjectionRuleConverter;

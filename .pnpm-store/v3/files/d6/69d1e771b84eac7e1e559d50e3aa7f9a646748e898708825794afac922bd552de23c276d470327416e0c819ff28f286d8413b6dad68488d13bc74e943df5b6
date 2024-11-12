@@ -1,0 +1,13 @@
+import { BaseSerializer } from '../base-serializer';
+import { type ListItem, ListItemNodeType } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+export declare class ListItemSerializer extends BaseSerializer {
+    /**
+     * Serializes a list item to binary format.
+     *
+     * @param item List item to serialize.
+     * @param buffer Output byte buffer.
+     * @template T Type of the list item.
+     */
+    static serialize<T extends ListItemNodeType>(item: ListItem<T>, buffer: OutputByteBuffer): void;
+}

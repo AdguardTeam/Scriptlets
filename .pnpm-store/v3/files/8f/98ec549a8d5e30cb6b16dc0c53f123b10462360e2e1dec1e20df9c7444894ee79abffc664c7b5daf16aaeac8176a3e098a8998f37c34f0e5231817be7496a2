@@ -1,0 +1,112 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../../utils/constants.js');
+var string = require('../../../utils/string.js');
+var adblockSyntaxError = require('../../../errors/adblock-syntax-error.js');
+var options = require('../../options.js');
+var baseParser = require('../../base-parser.js');
+var uboParameterListParser = require('../../misc/ubo-parameter-list-parser.js');
+
+/**
+ * @file uBlock scriptlet injection body parser
+ */
+/**
+ * `UboScriptletInjectionBodyParser` is responsible for parsing the body of a uBlock-style scriptlet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com##+js(scriptlet0, arg0)
+ * ```
+ *
+ * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ *
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
+ */
+class UboScriptletInjectionBodyParser extends baseParser.BaseParser {
+    /**
+     * Error messages used by the parser.
+     */
+    static ERROR_MESSAGES = {
+        NO_SCRIPTLET_MASK: `Invalid uBO scriptlet call, no scriptlet call mask '${constants.UBO_SCRIPTLET_MASK}' found`,
+        NO_OPENING_PARENTHESIS: `Invalid uBO scriptlet call, no opening parentheses '${constants.OPEN_PARENTHESIS}' found`,
+        NO_CLOSING_PARENTHESIS: `Invalid uBO scriptlet call, no closing parentheses '${constants.CLOSE_PARENTHESIS}' found`,
+        NO_SCRIPTLET_NAME: 'Invalid uBO scriptlet call, no scriptlet name specified',
+        WHITESPACE_AFTER_MASK: 'Invalid uBO scriptlet call, whitespace is not allowed after the scriptlet call mask',
+    };
+    /**
+     * Parses the body of a uBlock-style scriptlet rule.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Node of the parsed scriptlet call body
+     * @throws If the body is syntactically incorrect
+     * @example
+     * ```
+     * ##+js(scriptlet0, arg0)
+     * ```
+     */
+    static parse(raw, options$1 = options.defaultParserOptions, baseOffset = 0) {
+        let offset = 0;
+        // Skip leading spaces
+        offset = string.StringUtils.skipWS(raw, offset);
+        let scriptletMaskLength = 0;
+        if (raw.startsWith(constants.UBO_SCRIPTLET_MASK, offset)) {
+            scriptletMaskLength = constants.UBO_SCRIPTLET_MASK.length;
+        }
+        else if (raw.startsWith(constants.UBO_SCRIPTLET_MASK_LEGACY, offset)) {
+            scriptletMaskLength = constants.UBO_SCRIPTLET_MASK_LEGACY.length;
+        }
+        // Scriptlet call should start with "+js"
+        if (!scriptletMaskLength) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.NO_SCRIPTLET_MASK, baseOffset + offset, baseOffset + raw.length);
+        }
+        offset += scriptletMaskLength;
+        // Whitespace is not allowed after the mask
+        if (raw[offset] === constants.SPACE) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.WHITESPACE_AFTER_MASK, baseOffset + offset, baseOffset + raw.length);
+        }
+        // Parameter list should be wrapped in parentheses
+        if (raw[offset] !== constants.OPEN_PARENTHESIS) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.NO_OPENING_PARENTHESIS, baseOffset + offset, baseOffset + raw.length);
+        }
+        // Save the offset of the opening parentheses
+        const openingParenthesesIndex = offset;
+        // Skip whitespace from the end
+        const closingParenthesesIndex = string.StringUtils.skipWSBack(raw, raw.length - 1);
+        // Closing parentheses should be present
+        if (raw[closingParenthesesIndex] !== constants.CLOSE_PARENTHESIS
+            || raw[closingParenthesesIndex - 1] === constants.ESCAPE_CHARACTER) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.NO_CLOSING_PARENTHESIS, baseOffset + offset, baseOffset + raw.length);
+        }
+        const result = {
+            type: 'ScriptletInjectionRuleBody',
+            children: [],
+        };
+        if (options$1.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+        // Special case: empty scriptlet call, like +js(), +js( ), etc.
+        if (string.StringUtils.skipWS(raw, openingParenthesesIndex + 1) === closingParenthesesIndex) {
+            return result;
+        }
+        // Parse parameter list
+        const params = uboParameterListParser.UboParameterListParser.parse(raw.slice(openingParenthesesIndex + 1, closingParenthesesIndex), options$1, baseOffset + openingParenthesesIndex + 1, constants.COMMA);
+        // Do not allow parameters without scriptlet: +js(, arg0, arg1)
+        if (params.children.length > 0 && params.children[0] === null) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.NO_SCRIPTLET_NAME, baseOffset + offset, baseOffset + raw.length);
+        }
+        result.children.push(params);
+        return result;
+    }
+}
+
+exports.UboScriptletInjectionBodyParser = UboScriptletInjectionBodyParser;

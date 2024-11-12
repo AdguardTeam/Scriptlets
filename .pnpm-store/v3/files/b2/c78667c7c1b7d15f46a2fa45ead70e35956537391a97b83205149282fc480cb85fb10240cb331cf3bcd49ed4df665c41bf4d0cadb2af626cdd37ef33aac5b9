@@ -1,0 +1,57 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseSerializer = require('../base-serializer.js');
+var index = require('../../nodes/index.js');
+var typeGuards = require('../../utils/type-guards.js');
+var constants = require('../../utils/constants.js');
+var listItemCommon = require('../../marshalling-utils/misc/list-item-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+class ListItemSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a list item to binary format.
+     *
+     * @param item List item to serialize.
+     * @param buffer Output byte buffer.
+     * @template T Type of the list item.
+     */
+    static serialize(item, buffer) {
+        switch (item.type) {
+            case index.ListItemNodeType.App:
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.AppNode);
+                break;
+            case index.ListItemNodeType.Domain:
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.DomainNode);
+                break;
+            case index.ListItemNodeType.Method:
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.MethodNode);
+                break;
+            case index.ListItemNodeType.StealthOption:
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.StealthOptionNode);
+                break;
+            default:
+                throw new Error(`Invalid list item type: ${item.type}`);
+        }
+        buffer.writeUint8(listItemCommon.ListItemMarshallingMap.Exception);
+        buffer.writeUint8(item.exception ? 1 : 0);
+        buffer.writeUint8(listItemCommon.ListItemMarshallingMap.Value);
+        buffer.writeString(item.value);
+        if (!typeGuards.isUndefined(item.start)) {
+            buffer.writeUint8(listItemCommon.ListItemMarshallingMap.Start);
+            buffer.writeUint32(item.start);
+        }
+        if (!typeGuards.isUndefined(item.end)) {
+            buffer.writeUint8(listItemCommon.ListItemMarshallingMap.End);
+            buffer.writeUint32(item.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.ListItemSerializer = ListItemSerializer;

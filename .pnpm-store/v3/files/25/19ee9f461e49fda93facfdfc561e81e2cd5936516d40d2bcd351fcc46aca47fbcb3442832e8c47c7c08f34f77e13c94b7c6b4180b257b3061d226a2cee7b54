@@ -1,0 +1,83 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var index = require('../nodes/index.js');
+var index$3 = require('./comment/index.js');
+var index$2 = require('./cosmetic/index.js');
+var index$1 = require('./network/index.js');
+var ruleConversionError = require('../errors/rule-conversion-error.js');
+var ruleConverterBase = require('./base-interfaces/rule-converter-base.js');
+var conversionResult = require('./base-interfaces/conversion-result.js');
+
+/**
+ * @file Adblock rule converter
+ *
+ * This file is the entry point for all rule converters
+ * which automatically detects the rule type and calls
+ * the corresponding "sub-converter".
+ */
+/**
+ * Adblock filtering rule converter class
+ *
+ * @todo Implement `convertToUbo` and `convertToAbp`
+ */
+class RuleConverter extends ruleConverterBase.RuleConverterBase {
+    /**
+     * Converts an adblock filtering rule to AdGuard format, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    static convertToAdg(rule) {
+        // Delegate conversion to the corresponding sub-converter
+        // based on the rule category
+        switch (rule.category) {
+            case index.RuleCategory.Comment:
+                return index$3.CommentRuleConverter.convertToAdg(rule);
+            case index.RuleCategory.Cosmetic:
+                return index$2.CosmeticRuleConverter.convertToAdg(rule);
+            case index.RuleCategory.Network:
+                // TODO: Handle hosts rules later
+                if (rule.type === index.NetworkRuleType.HostRule) {
+                    return conversionResult.createConversionResult([rule], false);
+                }
+                return index$1.NetworkRuleConverter.convertToAdg(rule);
+            case index.RuleCategory.Invalid:
+            case index.RuleCategory.Empty:
+                // Just forward the rule as is
+                return conversionResult.createConversionResult([rule], false);
+            default:
+                // Never happens during normal operation
+                throw new ruleConversionError.RuleConversionError('Unknown rule category');
+        }
+    }
+    /**
+     * Converts an adblock filtering rule to uBlock Origin format, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    // TODO: Add support for other rule types
+    static convertToUbo(rule) {
+        if (rule.category === index.RuleCategory.Cosmetic) {
+            return index$2.CosmeticRuleConverter.convertToUbo(rule);
+        }
+        if (rule.category === index.RuleCategory.Network) {
+            return index$1.NetworkRuleConverter.convertToUbo(rule);
+        }
+        return conversionResult.createConversionResult([rule], false);
+    }
+}
+
+exports.RuleConverter = RuleConverter;

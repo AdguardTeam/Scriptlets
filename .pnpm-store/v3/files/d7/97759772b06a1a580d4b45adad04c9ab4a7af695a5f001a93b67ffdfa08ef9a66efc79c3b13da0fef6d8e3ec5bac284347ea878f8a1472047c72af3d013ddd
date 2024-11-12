@@ -1,0 +1,69 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var index = require('../../nodes/index.js');
+var hintDeserializer = require('./hint-deserializer.js');
+var adblockers = require('../../utils/adblockers.js');
+var baseDeserializer = require('../base-deserializer.js');
+var hintCommentCommon = require('../../marshalling-utils/comment/hint-comment-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+var syntaxDeserializationMap = require('../syntax-deserialization-map.js');
+
+/* eslint-disable no-param-reassign */
+/**
+ * `HintCommentDeserializer` is responsible for deserializing AdGuard hint rules.
+ *
+ * @example
+ * The following hint rule
+ * ```adblock
+ * !+ NOT_OPTIMIZED PLATFORM(windows)
+ * ```
+ * contains two hints: `NOT_OPTIMIZED` and `PLATFORM`.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
+ */
+class HintCommentDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes a hint rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.HintRuleNode);
+        node.category = index.RuleCategory.Comment;
+        node.type = index.CommentRuleType.HintCommentRule;
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case hintCommentCommon.HintCommentMarshallingMap.Syntax:
+                    node.syntax = syntaxDeserializationMap.getSyntaxDeserializationMap().get(buffer.readUint8()) ?? adblockers.AdblockSyntax.Common;
+                    break;
+                case hintCommentCommon.HintCommentMarshallingMap.Children:
+                    node.children = new Array(buffer.readUint8());
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        hintDeserializer.HintDeserializer.deserialize(buffer, node.children[i] = {});
+                    }
+                    break;
+                case hintCommentCommon.HintCommentMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case hintCommentCommon.HintCommentMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.HintCommentDeserializer = HintCommentDeserializer;

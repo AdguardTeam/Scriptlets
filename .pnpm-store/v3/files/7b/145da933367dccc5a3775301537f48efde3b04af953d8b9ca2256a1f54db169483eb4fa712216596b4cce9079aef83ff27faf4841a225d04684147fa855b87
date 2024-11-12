@@ -1,0 +1,43 @@
+{
+  "name": "node-qunit-puppeteer",
+  "version": "2.2.0",
+  "description": "A simple node module for running qunit tests with headless Chromium",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ameshkov/node-qunit-puppeteer.git"
+  },
+  "bin": {
+    "node-qunit-puppeteer": "cli.js"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "puppeteer": "^23.3.0"
+  },
+  "keywords": [
+    "qunit",
+    "qunit-plugin",
+    "chrome",
+    "puppeteer",
+    "headless",
+    "testing"
+  ],
+  "author": "Andrey Meshkov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ameshkov/node-qunit-puppeteer/issues"
+  },
+  "homepage": "https://github.com/ameshkov/node-qunit-puppeteer",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "merge": ">=2.1.1",
+    "qunit": "^2.22.0"
+  },
+  "scripts": {
+    "test": "node test/test-runner.js",
+    "lint": "eslint index.js cli.js test/**/*.js",
+    "lint:fix": "eslint index.js cli.js test/**/*.js --fix"
+  }
+}

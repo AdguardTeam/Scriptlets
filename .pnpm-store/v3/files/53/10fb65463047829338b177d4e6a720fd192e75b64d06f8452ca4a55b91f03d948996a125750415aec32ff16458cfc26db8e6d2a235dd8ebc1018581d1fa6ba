@@ -1,0 +1,21 @@
+import { BaseGenerator } from './base-generator';
+import { type AnyRule } from '../nodes';
+export declare class RuleGenerator extends BaseGenerator {
+    /**
+     * Converts a rule AST to a string.
+     *
+     * @param ast - Adblock rule AST
+     * @returns Raw string
+     * @example
+     * Take a look at the following example:
+     * ```js
+     * // Parse the rule to the AST
+     * const ast = RuleParser.parse("example.org##.banner");
+     * // Generate the rule from the AST
+     * const raw = RuleParser.generate(ast);
+     * // Print the generated rule
+     * console.log(raw); // "example.org##.banner"
+     * ```
+     */
+    static generate(ast: AnyRule): string;
+}

@@ -1,0 +1,15 @@
+import type { AnyCosmeticRule } from '../../nodes';
+import { BaseGenerator } from '../base-generator';
+export declare class CosmeticRulePatternGenerator extends BaseGenerator {
+    /**
+     * Generates the rule pattern from the AST.
+     *
+     * @param node Cosmetic rule node
+     * @returns Raw rule pattern
+     * @example
+     * - '##.foo' → ''
+     * - 'example.com,example.org##.foo' → 'example.com,example.org'
+     * - '[$path=/foo/bar]example.com##.foo' → '[$path=/foo/bar]example.com'
+     */
+    static generate(node: AnyCosmeticRule): string;
+}

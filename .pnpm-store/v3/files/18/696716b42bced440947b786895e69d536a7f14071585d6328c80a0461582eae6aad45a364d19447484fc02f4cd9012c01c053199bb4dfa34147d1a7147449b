@@ -1,0 +1,26 @@
+import { type Hint } from '../../nodes';
+import { BaseDeserializer } from '../base-deserializer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+export declare const getFrequentPlatformsDeserializationMap: () => Map<number, string>;
+/**
+ * `HintDeserializer` is responsible for deserializing AdGuard hints.
+ *
+ * @example
+ * If the hint rule is
+ * ```adblock
+ * !+ NOT_OPTIMIZED PLATFORM(windows)
+ * ```
+ * then the hints are `NOT_OPTIMIZED` and `PLATFORM(windows)`, and this
+ * class is responsible for parsing them. The rule itself is parsed by
+ * the `HintRuleParser`, which uses this class to parse single hints.
+ */
+export declare class HintDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a hint node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<Hint>): void;
+}

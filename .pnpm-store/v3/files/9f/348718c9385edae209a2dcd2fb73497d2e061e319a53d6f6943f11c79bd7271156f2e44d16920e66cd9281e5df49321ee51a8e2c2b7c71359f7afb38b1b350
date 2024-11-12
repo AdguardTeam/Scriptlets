@@ -1,0 +1,33 @@
+import { type CommentRule } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `SimpleCommentParser` is responsible for parsing simple comments.
+ * Some comments have a special meaning in adblock syntax, like agent comments or hints,
+ * but this parser is only responsible for parsing regular comments,
+ * whose only purpose is to provide some human-readable information.
+ *
+ * @example
+ * ```adblock
+ * ! This is a simple comment
+ * # This is a simple comment, but in host-like syntax
+ * ```
+ */
+export declare class SimpleCommentParser extends BaseParser {
+    /**
+     * Checks if the raw rule is a simple comment.
+     *
+     * @param raw Raw input to check.
+     * @returns `true` if the input is a simple comment, `false` otherwise.
+     * @note This method does not check for adblock agent comments.
+     */
+    static isSimpleComment(raw: string): boolean;
+    /**
+     * Parses a raw rule as a simple comment.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Comment rule node or null (if the raw rule cannot be parsed as a simple comment).
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): CommentRule | null;
+}

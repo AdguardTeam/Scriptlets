@@ -1,0 +1,67 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+/**
+ * Type map for binary serialization.
+ *
+ * @note Values should be fit into 8 bits.
+ */
+exports.BinaryTypeMarshallingMap = void 0;
+(function (BinaryTypeMarshallingMap) {
+    // Basic types
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["Null"] = 1] = "Null";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["Undefined"] = 2] = "Undefined";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["Boolean"] = 3] = "Boolean";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["Int"] = 4] = "Int";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["Float"] = 5] = "Float";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["NotANumber"] = 6] = "NotANumber";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["String"] = 7] = "String";
+    // AGTree nodes
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["FilterListNode"] = 8] = "FilterListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["EmptyRule"] = 9] = "EmptyRule";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["InvalidRule"] = 10] = "InvalidRule";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["CommentRuleNode"] = 11] = "CommentRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["AgentNode"] = 12] = "AgentNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["AgentRuleNode"] = 13] = "AgentRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["HintNode"] = 14] = "HintNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["HintRuleNode"] = 15] = "HintRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["MetadataCommentRuleNode"] = 16] = "MetadataCommentRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ConfigCommentRuleNode"] = 17] = "ConfigCommentRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["PreProcessorCommentRuleNode"] = 18] = "PreProcessorCommentRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ConfigNode"] = 19] = "ConfigNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["NetworkRuleNode"] = 20] = "NetworkRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["HostRuleNode"] = 21] = "HostRuleNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ElementHidingRule"] = 22] = "ElementHidingRule";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["CssInjectionRule"] = 23] = "CssInjectionRule";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ScriptletInjectionRule"] = 24] = "ScriptletInjectionRule";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["JsInjectionRule"] = 25] = "JsInjectionRule";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["HtmlFilteringRule"] = 26] = "HtmlFilteringRule";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ScriptletInjectionRuleBodyNode"] = 27] = "ScriptletInjectionRuleBodyNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ElementHidingRuleBody"] = 28] = "ElementHidingRuleBody";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["CssInjectionRuleBody"] = 29] = "CssInjectionRuleBody";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["HtmlFilteringRuleBody"] = 30] = "HtmlFilteringRuleBody";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["JsInjectionRuleBody"] = 31] = "JsInjectionRuleBody";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ValueNode"] = 32] = "ValueNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["RawNode"] = 33] = "RawNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ModifierNode"] = 34] = "ModifierNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ModifierListNode"] = 35] = "ModifierListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ParameterListNode"] = 36] = "ParameterListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["DomainListNode"] = 37] = "DomainListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["DomainNode"] = 38] = "DomainNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["MethodListNode"] = 39] = "MethodListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["MethodNode"] = 40] = "MethodNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["StealthOptionListNode"] = 41] = "StealthOptionListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["StealthOptionNode"] = 42] = "StealthOptionNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["AppListNode"] = 43] = "AppListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["AppNode"] = 44] = "AppNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["HostnameListNode"] = 45] = "HostnameListNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["InvalidRuleErrorNode"] = 46] = "InvalidRuleErrorNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ExpressionVariableNode"] = 47] = "ExpressionVariableNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ExpressionOperatorNode"] = 48] = "ExpressionOperatorNode";
+    BinaryTypeMarshallingMap[BinaryTypeMarshallingMap["ExpressionParenthesisNode"] = 49] = "ExpressionParenthesisNode";
+})(exports.BinaryTypeMarshallingMap || (exports.BinaryTypeMarshallingMap = {}));

@@ -1,0 +1,64 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var hintSerializer = require('./hint-serializer.js');
+var adblockers = require('../../utils/adblockers.js');
+var typeGuards = require('../../utils/type-guards.js');
+var baseSerializer = require('../base-serializer.js');
+var hintCommentCommon = require('../../marshalling-utils/comment/hint-comment-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+var syntaxSerializationMap = require('../../marshalling-utils/syntax-serialization-map.js');
+
+/**
+ * `HintCommentSerializer` is responsible for serializing AdGuard hint rules.
+ *
+ * @example
+ * The following hint rule
+ * ```adblock
+ * !+ NOT_OPTIMIZED PLATFORM(windows)
+ * ```
+ * contains two hints: `NOT_OPTIMIZED` and `PLATFORM`.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
+ */
+class HintCommentSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a hint rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    static serialize(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.HintRuleNode);
+        if (node.syntax === adblockers.AdblockSyntax.Adg) {
+            buffer.writeUint8(hintCommentCommon.HintCommentMarshallingMap.Syntax);
+            buffer.writeUint8(syntaxSerializationMap.getSyntaxSerializationMap().get(adblockers.AdblockSyntax.Adg) ?? 0);
+        }
+        const count = node.children.length;
+        if (count) {
+            buffer.writeUint8(hintCommentCommon.HintCommentMarshallingMap.Children);
+            // note: we store the count, because re-construction of the array is faster if we know the length
+            buffer.writeUint8(count);
+            for (let i = 0; i < count; i += 1) {
+                hintSerializer.HintSerializer.serialize(node.children[i], buffer);
+            }
+        }
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(hintCommentCommon.HintCommentMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(hintCommentCommon.HintCommentMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.HintCommentSerializer = HintCommentSerializer;

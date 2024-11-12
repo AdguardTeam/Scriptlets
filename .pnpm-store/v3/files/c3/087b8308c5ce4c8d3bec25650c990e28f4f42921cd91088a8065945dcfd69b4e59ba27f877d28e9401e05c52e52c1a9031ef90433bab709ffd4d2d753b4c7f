@@ -1,0 +1,43 @@
+/**
+ * Pre-processor directives
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
+ */
+import type { PreProcessorCommentRule } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `PreProcessorParser` is responsible for parsing preprocessor rules.
+ * Pre-processor comments are special comments that are used to control the behavior of the filter list processor.
+ * Please note that this parser only handles general syntax for now, and does not validate the parameters at
+ * the parsing stage.
+ *
+ * @example
+ * If your rule is
+ * ```adblock
+ * !#if (adguard)
+ * ```
+ * then the directive's name is `if` and its value is `(adguard)`, but the parameter list
+ * is not parsed / validated further.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
+ */
+export declare class PreProcessorCommentParser extends BaseParser {
+    /**
+     * Determines whether the rule is a pre-processor rule.
+     *
+     * @param raw Raw rule
+     * @returns `true` if the rule is a pre-processor rule, `false` otherwise
+     */
+    static isPreProcessorRule(raw: string): boolean;
+    /**
+     * Parses a raw rule as a pre-processor comment.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns
+     * Pre-processor comment AST or null (if the raw rule cannot be parsed as a pre-processor comment)
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): PreProcessorCommentRule | null;
+}

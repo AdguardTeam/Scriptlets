@@ -1,0 +1,76 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var index = require('../../nodes/index.js');
+var adblockers = require('../../utils/adblockers.js');
+var baseDeserializer = require('../base-deserializer.js');
+var agentCommentCommon = require('../../marshalling-utils/comment/agent-comment-common.js');
+var agentDeserializer = require('./agent-deserializer.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/* eslint-disable no-param-reassign */
+/**
+ * `AgentCommentDeserializer` is responsible for deserializing an Adblock agent comments.
+ * Adblock agent comment marks that the filter list is supposed to
+ * be used by the specified ad blockers.
+ *
+ * @example
+ *  - ```adblock
+ *    [AdGuard]
+ *    ```
+ *  - ```adblock
+ *    [Adblock Plus 2.0]
+ *    ```
+ *  - ```adblock
+ *    [uBlock Origin]
+ *    ```
+ *  - ```adblock
+ *    [uBlock Origin 1.45.3]
+ *    ```
+ *  - ```adblock
+ *    [Adblock Plus 2.0; AdGuard]
+ *    ```
+ */
+class AgentCommentDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes an agent list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.AgentRuleNode);
+        node.type = index.CommentRuleType.AgentCommentRule;
+        node.syntax = adblockers.AdblockSyntax.Common;
+        node.category = index.RuleCategory.Comment;
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case agentCommentCommon.AgentCommentMarshallingMap.Children:
+                    node.children = new Array(buffer.readUint8());
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        agentDeserializer.AgentDeserializer.deserialize(buffer, node.children[i] = {});
+                    }
+                    break;
+                case agentCommentCommon.AgentCommentMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case agentCommentCommon.AgentCommentMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.AgentCommentDeserializer = AgentCommentDeserializer;

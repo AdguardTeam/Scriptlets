@@ -1,0 +1,44 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseGenerator = require('../base-generator.js');
+var constants = require('../../utils/constants.js');
+var parameterListGenerator = require('../misc/parameter-list-generator.js');
+
+class ConfigCommentGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Converts an inline configuration comment node to a string.
+     *
+     * @param node Inline configuration comment node
+     * @returns Raw string
+     */
+    static generate(node) {
+        let result = constants.EMPTY;
+        result += node.marker.value;
+        result += constants.SPACE;
+        result += node.command.value;
+        if (node.params) {
+            result += constants.SPACE;
+            if (node.params.type === 'ParameterList') {
+                result += parameterListGenerator.ParameterListGenerator.generate(node.params, constants.COMMA);
+            }
+            else {
+                // Trim JSON boundaries
+                result += JSON.stringify(node.params.value).slice(1, -1).trim();
+            }
+        }
+        // Add comment within the config comment
+        if (node.comment) {
+            result += constants.SPACE;
+            result += node.comment.value;
+        }
+        return result;
+    }
+}
+
+exports.ConfigCommentGenerator = ConfigCommentGenerator;

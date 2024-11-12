@@ -1,0 +1,50 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { NULL } from '../../../utils/constants.mjs';
+import { ParameterListDeserializer } from '../../misc/parameter-list-deserializer.mjs';
+import { BaseDeserializer } from '../../base-deserializer.mjs';
+import { AbpSnippetBodyMarshallingMap } from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common.mjs';
+import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common.mjs';
+
+class ScriptletBodyDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a hint rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @param frequentScriptletArgs Map of frequently used scriptlet names / arguments
+     * and their serialization index (optional).
+     * @throws If the binary data is malformed.
+     */
+    static deserialize = (buffer, node, frequentScriptletArgs) => {
+        buffer.assertUint8(BinaryTypeMarshallingMap.ScriptletInjectionRuleBodyNode);
+        node.type = 'ScriptletInjectionRuleBody';
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case AbpSnippetBodyMarshallingMap.Children:
+                    node.children = new Array(buffer.readUint8());
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        ParameterListDeserializer.deserialize(buffer, node.children[i] = {}, frequentScriptletArgs);
+                    }
+                    break;
+                case AbpSnippetBodyMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case AbpSnippetBodyMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    };
+}
+
+export { ScriptletBodyDeserializer };

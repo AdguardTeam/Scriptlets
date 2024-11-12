@@ -1,0 +1,35 @@
+import { type HostRule } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `HostRuleParser` is responsible for parsing hosts-like rules.
+ *
+ * HostRule is a structure for simple host-level rules (i.e. /etc/hosts syntax).
+ * It also supports "just domain" syntax. In this case, the IP will be set to 0.0.0.0.
+ *
+ * Rules syntax looks like this:
+ * ```text
+ * IP_address canonical_hostname [aliases...]
+ * ```
+ *
+ * @example
+ * `192.168.1.13 bar.mydomain.org bar` -- ipv4
+ * `ff02::1 ip6-allnodes` -- ipv6
+ * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
+ * `example.org` -- "just domain" syntax
+ * @see {@link http://man7.org/linux/man-pages/man5/hosts.5.html}
+ */
+export declare class HostRuleParser extends BaseParser {
+    static readonly NULL_IP = "0.0.0.0";
+    static readonly COMMENT_MARKER = "#";
+    /**
+     * Parses an etc/hosts-like rule.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Host rule node.
+     *
+     * @throws If the input contains invalid data.
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): HostRule;
+}

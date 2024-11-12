@@ -1,0 +1,50 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { NULL, EMPTY } from '../../utils/constants.mjs';
+import { BaseDeserializer } from '../base-deserializer.mjs';
+import { ValueNodeMarshallingMap } from '../../marshalling-utils/misc/value-common.mjs';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.mjs';
+
+/**
+ * Value deserializer.
+ */
+class ValueDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a value node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @param frequentValuesMap Optional map of frequent values.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer, node, frequentValuesMap) {
+        buffer.assertUint8(BinaryTypeMarshallingMap.ValueNode);
+        node.type = 'Value';
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case ValueNodeMarshallingMap.Value:
+                    node.value = buffer.readString();
+                    break;
+                case ValueNodeMarshallingMap.FrequentValue:
+                    node.value = frequentValuesMap?.get(buffer.readUint8()) ?? EMPTY;
+                    break;
+                case ValueNodeMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case ValueNodeMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+export { ValueDeserializer };

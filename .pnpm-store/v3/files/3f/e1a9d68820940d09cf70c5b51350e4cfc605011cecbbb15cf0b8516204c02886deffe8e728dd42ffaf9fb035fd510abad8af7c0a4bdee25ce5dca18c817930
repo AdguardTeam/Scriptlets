@@ -1,0 +1,68 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { NULL } from '../../utils/constants.mjs';
+import { ValueSerializer } from '../misc/value-serializer.mjs';
+import { isUndefined } from '../../utils/type-guards.mjs';
+import { BaseSerializer } from '../base-serializer.mjs';
+import { AgentNodeMarshallingMap, FREQUENT_AGENTS_DESERIALIZATION_MAP } from '../../marshalling-utils/comment/agent-common.mjs';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.mjs';
+
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+let frequentAgentsSerializationMap;
+const getFrequentAgentsSerializationMap = () => {
+    if (!frequentAgentsSerializationMap) {
+        frequentAgentsSerializationMap = new Map(Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]));
+    }
+    return frequentAgentsSerializationMap;
+};
+/**
+ * `AgentParser` is responsible for parsing single adblock agent elements.
+ *
+ * @example
+ * If the adblock agent rule is
+ * ```adblock
+ * [Adblock Plus 2.0; AdGuard]
+ * ```
+ * then the adblock agents are `Adblock Plus 2.0` and `AdGuard`, and this
+ * class is responsible for parsing them. The rule itself is parsed by
+ * `AgentCommentSerializer`, which uses this class to parse single agents.
+ */
+class AgentSerializer extends BaseSerializer {
+    /**
+     * Serializes an agent node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node, buffer) {
+        buffer.writeUint8(BinaryTypeMarshallingMap.AgentNode);
+        buffer.writeUint8(AgentNodeMarshallingMap.Adblock);
+        ValueSerializer.serialize(node.adblock, buffer, getFrequentAgentsSerializationMap(), true);
+        if (!isUndefined(node.version)) {
+            buffer.writeUint8(AgentNodeMarshallingMap.Version);
+            ValueSerializer.serialize(node.version, buffer);
+        }
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(AgentNodeMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(AgentNodeMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(NULL);
+    }
+}
+
+export { AgentSerializer };

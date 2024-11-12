@@ -1,0 +1,35 @@
+/**
+ * @file Network rule modifier list converter.
+ */
+import { type ModifierList } from '../../nodes';
+import { BaseConverter } from '../base-interfaces/base-converter';
+import { type ConversionResult } from '../base-interfaces/conversion-result';
+/**
+ * Helper class for converting network rule modifier lists.
+ *
+ * @todo Implement `convertToUbo` and `convertToAbp`
+ */
+export declare class NetworkRuleModifierListConverter extends BaseConverter {
+    /**
+     * Converts a network rule modifier list to AdGuard format, if possible.
+     *
+     * @param modifierList Network rule modifier list node to convert
+     * @param isException If `true`, the rule is an exception rule
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+     * If the node was not converted, the result will contain the original node with the same object reference
+     * @throws If the conversion is not possible
+     */
+    static convertToAdg(modifierList: ModifierList, isException?: boolean): ConversionResult<ModifierList>;
+    /**
+     * Converts a network rule modifier list to uBlock format, if possible.
+     *
+     * @param modifierList Network rule modifier list node to convert
+     * @param isException If `true`, the rule is an exception rule
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+     * If the node was not converted, the result will contain the original node with the same object reference
+     * @throws If the conversion is not possible
+     */
+    static convertToUbo(modifierList: ModifierList, isException?: boolean): ConversionResult<ModifierList>;
+}

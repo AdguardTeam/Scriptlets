@@ -1,0 +1,34 @@
+import { type ListItem, ListItemNodeType } from '../../nodes';
+/**
+ * Prefixes for error messages which are used for parsing of value lists.
+ */
+export declare const LIST_PARSE_ERROR_PREFIX: {
+    EMPTY_ITEM: string;
+    NO_MULTIPLE_NEGATION: string;
+    NO_SEPARATOR_AFTER_NEGATION: string;
+    NO_SEPARATOR_AT_THE_BEGINNING: string;
+    NO_SEPARATOR_AT_THE_END: string;
+    NO_WHITESPACE_AFTER_NEGATION: string;
+};
+export declare class ListItemsParser {
+    /**
+     * Parses a `raw` modifier value which may be represented as a list of items separated by `separator`.
+     * Needed for $app, $denyallow, $domain, $method.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @param separator Separator character (default: comma)
+     * @param type Type of the list items (default: {@link ListItemNodeType.Domain}).
+     * @template T Type of the list items.
+     *
+     * @returns List of parsed items.
+     * @throws An {@link AdblockSyntaxError} if the list is syntactically invalid
+     *
+     * @example
+     * - parses an app list — `com.example.app|Example.exe`
+     * - parses a domain list — `example.com,example.org,~example.org` or `example.com|~example.org`
+     * - parses a method list — `~post|~put`
+     */
+    static parse<T extends ListItemNodeType>(raw: string, options?: import("../options").ParserOptions, baseOffset?: number, separator?: string, type?: T): ListItem<T>[];
+}

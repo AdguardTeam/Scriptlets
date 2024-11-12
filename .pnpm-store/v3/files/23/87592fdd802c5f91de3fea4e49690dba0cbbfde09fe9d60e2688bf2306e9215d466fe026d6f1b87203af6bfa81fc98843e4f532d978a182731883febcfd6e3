@@ -1,0 +1,56 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { createConversionResult } from './base-interfaces/conversion-result.mjs';
+import { BaseConverter } from './base-interfaces/base-converter.mjs';
+import { FilterListParser } from '../parser/filterlist-parser.mjs';
+import { FilterListConverter } from './filter-list.mjs';
+import { defaultParserOptions } from '../parser/options.mjs';
+import { FilterListGenerator } from '../generator/filterlist-generator.mjs';
+
+/**
+ * @file Filter list converter for raw filter lists
+ *
+ * Technically, this is a wrapper around `FilterListConverter` that works with nodes instead of strings.
+ */
+/**
+ * Adblock filter list converter class.
+ *
+ * You can use this class to convert string-based filter lists, since most of the converters work with nodes.
+ * This class just provides an extra layer on top of the {@link FilterListConverter} and calls the parser/serializer
+ * before/after the conversion internally.
+ *
+ * @todo Implement `convertToUbo` and `convertToAbp`
+ */
+class RawFilterListConverter extends BaseConverter {
+    /**
+     * Converts an adblock filter list text to AdGuard format, if possible.
+     *
+     * @param rawFilterList Raw filter list text to convert
+     * @param tolerant Indicates whether the converter should be tolerant to invalid rules. If enabled and a rule is
+     * invalid, it will be left as is. If disabled and a rule is invalid, the whole filter list will be failed.
+     * Defaults to `true`.
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the array of converted filter list text, and its `isConverted` flag indicates whether the original rule was
+     * converted. If the rule was not converted, the original filter list text will be returned
+     * @throws If the filter list is invalid or cannot be converted (if the tolerant mode is disabled)
+     */
+    static convertToAdg(rawFilterList, tolerant = true) {
+        const conversionResult = FilterListConverter.convertToAdg(FilterListParser.parse(rawFilterList, {
+            ...defaultParserOptions,
+            isLocIncluded: false,
+            tolerant,
+        }), tolerant);
+        // If the filter list was not converted, return the original text
+        if (!conversionResult.isConverted) {
+            return createConversionResult(rawFilterList, false);
+        }
+        // Otherwise, serialize the filter list and return the result
+        return createConversionResult(FilterListGenerator.generate(conversionResult.result), true);
+    }
+}
+
+export { RawFilterListConverter };

@@ -1,0 +1,31 @@
+/**
+ * @file AGLint configuration comments. Inspired by ESLint inline configuration comments.
+ * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
+ */
+import { type ConfigCommentRule } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
+ * Generally, the idea is inspired by ESLint inline configuration comments.
+ *
+ * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
+ */
+export declare class ConfigCommentParser extends BaseParser {
+    /**
+     * Checks if the raw rule is an inline configuration comment rule.
+     *
+     * @param raw Raw rule
+     * @returns `true` if the rule is an inline configuration comment rule, otherwise `false`.
+     */
+    static isConfigComment(raw: string): boolean;
+    /**
+     * Parses a raw rule as an inline configuration comment.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns
+     * Inline configuration comment AST or null (if the raw rule cannot be parsed as configuration comment)
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): ConfigCommentRule | null;
+}

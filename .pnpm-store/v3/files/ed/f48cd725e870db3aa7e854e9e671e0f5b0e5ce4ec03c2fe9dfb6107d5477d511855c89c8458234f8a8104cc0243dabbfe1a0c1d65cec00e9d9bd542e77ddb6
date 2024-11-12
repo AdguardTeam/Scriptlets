@@ -1,0 +1,24 @@
+import { type Agent } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `AgentParser` is responsible for parsing single adblock agent elements.
+ *
+ * @example
+ * If the adblock agent rule is
+ * ```adblock
+ * [Adblock Plus 2.0; AdGuard]
+ * ```
+ * then the adblock agents are `Adblock Plus 2.0` and `AdGuard`, and this
+ * class is responsible for parsing them. The rule itself is parsed by
+ * `AgentCommentSerializer`, which uses this class to parse single agents.
+ */
+export declare class AgentSerializer extends BaseSerializer {
+    /**
+     * Serializes an agent node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: Agent, buffer: OutputByteBuffer): void;
+}

@@ -1,0 +1,43 @@
+{
+  "name": "dox",
+  "description": "Markdown / JSdoc documentation generator",
+  "version": "0.9.1",
+  "author": "TJ Holowaychuk <tj@vision-media.ca>",
+  "contributors": [
+    "Jocelyn Badgley <joc@twipped.com>",
+    "Arseny Zarechnev <me@evindor.com>",
+    "Thomas Parisot <hi@oncletom.io>",
+    "Stephen Mathieson <me@stephenmathieson.com>",
+    "Vladimir Tsvang <vtsvang@gmail.com>",
+    "Nathan Rajlich <nathan@tootallnate.net>",
+    "Gion Kunz <gion.kunz@gmail.com>",
+    "ForbesLindesay"
+  ],
+  "homepage": "https://github.com/tj/dox",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/visionmedia/dox.git"
+  },
+  "keywords": [
+    "documentation",
+    "docs",
+    "markdown",
+    "jsdoc"
+  ],
+  "bin": {
+    "dox": "./bin/dox"
+  },
+  "dependencies": {
+    "commander": "9.1.0",
+    "jsdoctypeparser": "^1.2.0",
+    "markdown-it": "12.3.2"
+  },
+  "devDependencies": {
+    "mocha": "9.2.2",
+    "should": "13.2.3"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "make test"
+  }
+}

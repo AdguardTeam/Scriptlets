@@ -1,0 +1,26 @@
+import { type AnyCosmeticRule } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
+ *
+ * Where possible, it automatically detects the difference between supported syntaxes:
+ *  - AdGuard
+ *  - uBlock Origin
+ *  - Adblock Plus
+ *
+ * If the syntax is common / cannot be determined, the parser gives `Common` syntax.
+ *
+ * Please note that syntactically correct rules are parsed even if they are not actually
+ * compatible with the given adblocker. This is a completely natural behavior, meaningful
+ * checking of compatibility is not done at the parser level.
+ */
+export declare class CosmeticRuleSerializer extends BaseSerializer {
+    /**
+     * Serializes a cosmetic rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: AnyCosmeticRule, buffer: OutputByteBuffer): void;
+}

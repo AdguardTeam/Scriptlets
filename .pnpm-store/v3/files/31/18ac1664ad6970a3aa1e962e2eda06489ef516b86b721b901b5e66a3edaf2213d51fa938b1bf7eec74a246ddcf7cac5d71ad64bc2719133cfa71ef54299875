@@ -1,0 +1,47 @@
+/**
+ * @file AdGuard scriptlet injection body parser
+ */
+import { BaseParser } from '../../base-parser';
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+/**
+ * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com#%#//scriptlet('scriptlet0', 'arg0')
+ * ```
+ *
+ * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
+ */
+export declare class AdgScriptletInjectionBodyParser extends BaseParser {
+    /**
+     * Error messages used by the parser.
+     */
+    static readonly ERROR_MESSAGES: {
+        NO_SCRIPTLET_MASK: string;
+        NO_OPENING_PARENTHESIS: string;
+        NO_CLOSING_PARENTHESIS: string;
+        WHITESPACE_AFTER_MASK: string;
+        NO_INCONSISTENT_QUOTES: string;
+        NO_UNCLOSED_PARAMETER: string;
+        EXPECTED_QUOTE: string;
+        EXPECTED_COMMA: string;
+    };
+    /**
+     * Parses the body of an AdGuard-style scriptlet rule.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Node of the parsed scriptlet call body
+     * @throws If the body is syntactically incorrect
+     * @example
+     * ```
+     * //scriptlet('scriptlet0', 'arg0')
+     * ```
+     */
+    static parse(raw: string, options?: import("../../options").ParserOptions, baseOffset?: number): ScriptletInjectionRuleBody;
+}

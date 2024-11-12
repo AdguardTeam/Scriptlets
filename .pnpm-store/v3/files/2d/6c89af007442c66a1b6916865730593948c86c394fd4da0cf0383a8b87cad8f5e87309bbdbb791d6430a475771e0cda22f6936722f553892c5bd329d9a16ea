@@ -1,0 +1,12 @@
+import { BaseDeserializer } from '../base-deserializer';
+import { type ElementHidingRuleBody } from '../../nodes';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+export declare class ElementHidingBodyDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes an element hiding rule body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserializeElementHidingBody(buffer: InputByteBuffer, node: Partial<ElementHidingRuleBody>): void;
+}

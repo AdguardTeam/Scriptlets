@@ -1,0 +1,26 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { ListItemDeserializer } from './list-item-deserializer.mjs';
+
+class ListItemsDeserializer {
+    /**
+     * Deserializes a list of items from binary format.
+     *
+     * @param buffer Input byte buffer.
+     * @param items Partial list of items to deserialize.
+     * @template T Type of the list items.
+     */
+    static deserialize = (buffer, items) => {
+        const length = buffer.readUint16();
+        items.length = length;
+        for (let i = 0; i < length; i += 1) {
+            ListItemDeserializer.deserialize(buffer, items[i] = {});
+        }
+    };
+}
+
+export { ListItemsDeserializer };

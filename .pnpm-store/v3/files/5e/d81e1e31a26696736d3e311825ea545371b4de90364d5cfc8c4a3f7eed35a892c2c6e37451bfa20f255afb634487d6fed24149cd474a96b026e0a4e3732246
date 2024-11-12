@@ -1,0 +1,34 @@
+/**
+ * @file uBlock scriptlet injection body parser
+ */
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { BaseParser } from '../../base-parser';
+/**
+ * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com#$#snippet0 arg0
+ * ```
+ *
+ * but it didn't check if the scriptlet `snippet0` actually supported by any adblocker.
+ *
+ * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
+ */
+export declare class AbpSnippetInjectionBodyParser extends BaseParser {
+    /**
+     * Parses the body of an Adblock Plus-style snippet rule.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Node of the parsed scriptlet call body
+     * @throws If the body is syntactically incorrect
+     * @example
+     * ```
+     * #$#snippet0 arg0
+     * ```
+     */
+    static parse(raw: string, options?: import("../../options").ParserOptions, baseOffset?: number): ScriptletInjectionRuleBody;
+}

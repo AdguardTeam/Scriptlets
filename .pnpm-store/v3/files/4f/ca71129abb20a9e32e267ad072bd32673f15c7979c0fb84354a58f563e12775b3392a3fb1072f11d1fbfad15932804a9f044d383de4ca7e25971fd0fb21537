@@ -1,0 +1,71 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { NULL } from '../../utils/constants.mjs';
+import { LogicalExpressionSerializer } from '../misc/logical-expression-serializer.mjs';
+import { ParameterListSerializer } from '../misc/parameter-list-serializer.mjs';
+import { ValueSerializer } from '../misc/value-serializer.mjs';
+import { isUndefined } from '../../utils/type-guards.mjs';
+import { BaseSerializer } from '../base-serializer.mjs';
+import { PreProcessorRuleMarshallingMap, FREQUENT_DIRECTIVES_SERIALIZATION_MAP, FREQUENT_PARAMS_SERIALIZATION_MAP } from '../../marshalling-utils/comment/pre-processor-comment-common.mjs';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.mjs';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map.mjs';
+
+/**
+ * `PreProcessorSerializer` is responsible for serializing preprocessor rules.
+ * Pre-processor comments are special comments that are used to control the behavior of the filter list processor.
+ * Please note that this parser only handles general syntax for now, and does not validate the parameters at
+ * the parsing stage.
+ *
+ * @example
+ * If your rule is
+ * ```adblock
+ * !#if (adguard)
+ * ```
+ * then the directive's name is `if` and its value is `(adguard)`, but the parameter list
+ * is not parsed / validated further.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
+ */
+class PreProcessorCommentSerializer extends BaseSerializer {
+    /**
+     * Serializes a pre-processor comment node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    static serialize(node, buffer) {
+        buffer.writeUint8(BinaryTypeMarshallingMap.PreProcessorCommentRuleNode);
+        buffer.writeUint8(PreProcessorRuleMarshallingMap.Name);
+        ValueSerializer.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);
+        buffer.writeUint8(PreProcessorRuleMarshallingMap.Syntax);
+        buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
+        if (!isUndefined(node.params)) {
+            buffer.writeUint8(PreProcessorRuleMarshallingMap.Params);
+            if (node.params.type === 'Value') {
+                ValueSerializer.serialize(node.params, buffer);
+            }
+            else if (node.params.type === 'ParameterList') {
+                ParameterListSerializer.serialize(node.params, buffer, FREQUENT_PARAMS_SERIALIZATION_MAP, true);
+            }
+            else {
+                LogicalExpressionSerializer.serialize(node.params, buffer);
+            }
+        }
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(PreProcessorRuleMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(PreProcessorRuleMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(NULL);
+    }
+}
+
+export { PreProcessorCommentSerializer };

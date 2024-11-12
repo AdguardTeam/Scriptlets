@@ -1,0 +1,114 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var index = require('../../nodes/index.js');
+var baseDeserializer = require('../base-deserializer.js');
+var preProcessorCommentCommon = require('../../marshalling-utils/comment/pre-processor-comment-common.js');
+var adblockers = require('../../utils/adblockers.js');
+var valueDeserializer = require('../misc/value-deserializer.js');
+var logicalExpressionDeserializer = require('../misc/logical-expression-deserializer.js');
+var parameterListDeserializer = require('../misc/parameter-list-deserializer.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+var syntaxDeserializationMap = require('../syntax-deserialization-map.js');
+
+/* eslint-disable no-param-reassign */
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+let frequentDirectivesDeserializationMap;
+const getFrequentDirectivesDeserializationMap = () => {
+    if (!frequentDirectivesDeserializationMap) {
+        frequentDirectivesDeserializationMap = new Map(Array.from(preProcessorCommentCommon.FREQUENT_DIRECTIVES_SERIALIZATION_MAP).map(([key, value]) => [value, key]));
+    }
+    return frequentDirectivesDeserializationMap;
+};
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+let frequentParamsDeserializationMap;
+const getFrequentParamsDeserializationMap = () => {
+    if (!frequentParamsDeserializationMap) {
+        frequentParamsDeserializationMap = new Map(Array.from(preProcessorCommentCommon.FREQUENT_PARAMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]));
+    }
+    return frequentParamsDeserializationMap;
+};
+/**
+ * `PreProcessorCommentDeserializer` is responsible for deserializing preprocessor rules.
+ * Pre-processor comments are special comments that are used to control the behavior of the filter list processor.
+ * Please note that this parser only handles general syntax for now, and does not validate the parameters at
+ * the parsing stage.
+ *
+ * @example
+ * If your rule is
+ * ```adblock
+ * !#if (adguard)
+ * ```
+ * then the directive's name is `if` and its value is `(adguard)`, but the parameter list
+ * is not parsed / validated further.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
+ */
+class PreProcessorCommentDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes a pre-processor comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.PreProcessorCommentRuleNode);
+        node.type = index.CommentRuleType.PreProcessorCommentRule;
+        node.category = index.RuleCategory.Comment;
+        node.syntax = adblockers.AdblockSyntax.Common;
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case preProcessorCommentCommon.PreProcessorRuleMarshallingMap.Name:
+                    // eslint-disable-next-line max-len
+                    valueDeserializer.ValueDeserializer.deserialize(buffer, node.name = {}, getFrequentDirectivesDeserializationMap());
+                    break;
+                case preProcessorCommentCommon.PreProcessorRuleMarshallingMap.Syntax:
+                    node.syntax = syntaxDeserializationMap.getSyntaxDeserializationMap().get(buffer.readUint8()) ?? adblockers.AdblockSyntax.Common;
+                    break;
+                case preProcessorCommentCommon.PreProcessorRuleMarshallingMap.Params:
+                    switch (buffer.peekUint8()) {
+                        case binaryTypeCommon.BinaryTypeMarshallingMap.ValueNode:
+                            valueDeserializer.ValueDeserializer.deserialize(buffer, node.params = {});
+                            break;
+                        case binaryTypeCommon.BinaryTypeMarshallingMap.ParameterListNode:
+                            // eslint-disable-next-line max-len
+                            parameterListDeserializer.ParameterListDeserializer.deserialize(buffer, node.params = {}, getFrequentParamsDeserializationMap());
+                            break;
+                        case binaryTypeCommon.BinaryTypeMarshallingMap.ExpressionOperatorNode:
+                        case binaryTypeCommon.BinaryTypeMarshallingMap.ExpressionParenthesisNode:
+                        case binaryTypeCommon.BinaryTypeMarshallingMap.ExpressionVariableNode:
+                            logicalExpressionDeserializer.LogicalExpressionDeserializer.deserialize(buffer, node.params = {});
+                            break;
+                        default:
+                            throw new Error(`Invalid binary type: ${prop}`);
+                    }
+                    break;
+                case preProcessorCommentCommon.PreProcessorRuleMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case preProcessorCommentCommon.PreProcessorRuleMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.PreProcessorCommentDeserializer = PreProcessorCommentDeserializer;

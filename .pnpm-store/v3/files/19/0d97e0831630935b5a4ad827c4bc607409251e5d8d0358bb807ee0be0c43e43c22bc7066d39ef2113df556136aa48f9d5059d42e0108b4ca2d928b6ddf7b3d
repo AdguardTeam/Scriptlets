@@ -1,0 +1,29 @@
+import type { PreProcessorCommentRule } from '../../nodes';
+import { BaseDeserializer } from '../base-deserializer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+/**
+ * `PreProcessorCommentDeserializer` is responsible for deserializing preprocessor rules.
+ * Pre-processor comments are special comments that are used to control the behavior of the filter list processor.
+ * Please note that this parser only handles general syntax for now, and does not validate the parameters at
+ * the parsing stage.
+ *
+ * @example
+ * If your rule is
+ * ```adblock
+ * !#if (adguard)
+ * ```
+ * then the directive's name is `if` and its value is `(adguard)`, but the parameter list
+ * is not parsed / validated further.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
+ */
+export declare class PreProcessorCommentDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a pre-processor comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<PreProcessorCommentRule>): void;
+}

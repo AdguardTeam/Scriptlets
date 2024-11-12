@@ -1,0 +1,58 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+exports.ConfigCommentRuleMarshallingMap = void 0;
+(function (ConfigCommentRuleMarshallingMap) {
+    ConfigCommentRuleMarshallingMap[ConfigCommentRuleMarshallingMap["Marker"] = 1] = "Marker";
+    ConfigCommentRuleMarshallingMap[ConfigCommentRuleMarshallingMap["Command"] = 2] = "Command";
+    ConfigCommentRuleMarshallingMap[ConfigCommentRuleMarshallingMap["Params"] = 3] = "Params";
+    ConfigCommentRuleMarshallingMap[ConfigCommentRuleMarshallingMap["Comment"] = 4] = "Comment";
+    ConfigCommentRuleMarshallingMap[ConfigCommentRuleMarshallingMap["Start"] = 5] = "Start";
+    ConfigCommentRuleMarshallingMap[ConfigCommentRuleMarshallingMap["End"] = 6] = "End";
+})(exports.ConfigCommentRuleMarshallingMap || (exports.ConfigCommentRuleMarshallingMap = {}));
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+exports.ConfigNodeMarshallingMap = void 0;
+(function (ConfigNodeMarshallingMap) {
+    ConfigNodeMarshallingMap[ConfigNodeMarshallingMap["Value"] = 1] = "Value";
+    ConfigNodeMarshallingMap[ConfigNodeMarshallingMap["Start"] = 2] = "Start";
+    ConfigNodeMarshallingMap[ConfigNodeMarshallingMap["End"] = 3] = "End";
+})(exports.ConfigNodeMarshallingMap || (exports.ConfigNodeMarshallingMap = {}));
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ *
+ * @see {@link https://github.com/AdguardTeam/AGLint/blob/master/src/linter/inline-config.ts}
+ */
+const FREQUENT_COMMANDS_SERIALIZATION_MAP = new Map([
+    ['aglint', 0],
+    ['aglint-disable', 1],
+    ['aglint-enable', 2],
+    ['aglint-disable-next-line', 3],
+    ['aglint-enable-next-line', 4],
+]);
+
+exports.FREQUENT_COMMANDS_SERIALIZATION_MAP = FREQUENT_COMMANDS_SERIALIZATION_MAP;

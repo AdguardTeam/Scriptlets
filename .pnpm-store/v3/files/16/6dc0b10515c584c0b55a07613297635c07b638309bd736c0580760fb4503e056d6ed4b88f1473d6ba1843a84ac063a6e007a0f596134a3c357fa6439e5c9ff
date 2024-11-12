@@ -1,0 +1,54 @@
+/**
+ * @file HTML filtering rule converter
+ */
+import { type HtmlFilteringRule } from '../../nodes';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
+import { type NodeConversionResult } from '../base-interfaces/conversion-result';
+export declare const ERROR_MESSAGES: {
+    ABP_NOT_SUPPORTED: string;
+    TAG_SHOULD_BE_FIRST_CHILD: string;
+    EXPECTED_BUT_GOT_WITH_VALUE: string;
+    INVALID_ATTRIBUTE_NAME: string;
+    INVALID_ATTRIBUTE_VALUE: string;
+    INVALID_FLAG: string;
+    INVALID_OPERATOR_FOR_ATTR: string;
+    VALUE_FOR_ATTR_SHOULD_BE_INT: string;
+    INVALID_PSEUDO_CLASS: string;
+    VALUE_FOR_PSEUDO_CLASS_SHOULD_BE_INT: string;
+    REGEXP_NOT_SUPPORTED: string;
+    ATTRIBUTE_SELECTOR_REQUIRES_VALUE: string;
+    INVALID_ATTRIBUTE_SELECTOR_OPERATOR: string;
+    VALUE_SHOULD_BE_SPECIFIED: string;
+    OPERATOR_SHOULD_BE_SPECIFIED: string;
+    UNEXPECTED_TOKEN_WITH_VALUE: string;
+    FLAGS_NOT_SUPPORTED: string;
+};
+/**
+ * HTML filtering rule converter class
+ *
+ * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules)
+ */
+export declare class HtmlRuleConverter extends RuleConverterBase {
+    /**
+     * Converts a HTML rule to AdGuard syntax, if possible. Also can be used to convert
+     * AdGuard rules to AdGuard syntax to validate them.
+     *
+     * _Note:_ uBlock Origin supports multiple selectors within a single rule, but AdGuard doesn't,
+     * so the following rule
+     * ```
+     * example.com##^div[attr1="value1"][attr2="value2"], script:has-text(value)
+     * ```
+     * will be converted to multiple AdGuard rules:
+     * ```
+     * example.com$$div[attr1="value1"][attr2="value2"][max-length="262144"]
+     * example.com$$script[tag-content="value"][max-length="262144"]
+     * ```
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    static convertToAdg(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule>;
+}

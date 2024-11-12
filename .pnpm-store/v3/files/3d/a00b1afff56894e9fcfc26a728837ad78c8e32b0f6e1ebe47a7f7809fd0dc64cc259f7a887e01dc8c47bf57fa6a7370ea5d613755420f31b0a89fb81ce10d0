@@ -1,0 +1,51 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var valueSerializer = require('./value-serializer.js');
+var typeGuards = require('../../utils/type-guards.js');
+var baseSerializer = require('../base-serializer.js');
+var parameterListCommon = require('../../marshalling-utils/misc/parameter-list-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+class ParameterListSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a parameter list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     * @param frequentValuesMap Optional map of frequent values.
+     * @param toLower Whether to lowercase the value before the frequent value match (defaults to `false`).
+     */
+    static serialize(node, buffer, frequentValuesMap, toLower = false) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ParameterListNode);
+        const count = node.children.length;
+        buffer.writeUint8(parameterListCommon.ParameterListNodeMarshallingMap.Children);
+        // note: we store the count, because re-construction of the array is faster if we know the length
+        buffer.writeUint32(count);
+        for (let i = 0; i < count; i += 1) {
+            const child = node.children[i];
+            if (typeGuards.isNull(child)) {
+                buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.Null);
+                continue;
+            }
+            valueSerializer.ValueSerializer.serialize(child, buffer, frequentValuesMap, toLower);
+        }
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(parameterListCommon.ParameterListNodeMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(parameterListCommon.ParameterListNodeMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.ParameterListSerializer = ParameterListSerializer;

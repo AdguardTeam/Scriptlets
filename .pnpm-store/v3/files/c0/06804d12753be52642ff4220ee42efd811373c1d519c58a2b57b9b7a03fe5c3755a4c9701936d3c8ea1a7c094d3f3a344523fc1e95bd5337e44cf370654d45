@@ -1,0 +1,112 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var platforms = require('../platforms.js');
+
+/* eslint-disable no-bitwise */
+/**
+ * @file Provides platform mapping and helper functions.
+ */
+/**
+ * Map of specific platforms string names to their corresponding enum values.
+ */
+const SPECIFIC_PLATFORM_MAP = new Map([
+    ['adg_os_windows', platforms.SpecificPlatform.AdgOsWindows],
+    ['adg_os_mac', platforms.SpecificPlatform.AdgOsMac],
+    ['adg_os_android', platforms.SpecificPlatform.AdgOsAndroid],
+    ['adg_ext_chrome', platforms.SpecificPlatform.AdgExtChrome],
+    ['adg_ext_opera', platforms.SpecificPlatform.AdgExtOpera],
+    ['adg_ext_edge', platforms.SpecificPlatform.AdgExtEdge],
+    ['adg_ext_firefox', platforms.SpecificPlatform.AdgExtFirefox],
+    ['adg_cb_android', platforms.SpecificPlatform.AdgCbAndroid],
+    ['adg_cb_ios', platforms.SpecificPlatform.AdgCbIos],
+    ['adg_cb_safari', platforms.SpecificPlatform.AdgCbSafari],
+    ['ubo_ext_chrome', platforms.SpecificPlatform.UboExtChrome],
+    ['ubo_ext_opera', platforms.SpecificPlatform.UboExtOpera],
+    ['ubo_ext_edge', platforms.SpecificPlatform.UboExtEdge],
+    ['ubo_ext_firefox', platforms.SpecificPlatform.UboExtFirefox],
+    ['abp_ext_chrome', platforms.SpecificPlatform.AbpExtChrome],
+    ['abp_ext_opera', platforms.SpecificPlatform.AbpExtOpera],
+    ['abp_ext_edge', platforms.SpecificPlatform.AbpExtEdge],
+    ['abp_ext_firefox', platforms.SpecificPlatform.AbpExtFirefox],
+]);
+/**
+ * Map of specific platforms enum values to their corresponding string names.
+ *
+ * @note Reverse of {@link SPECIFIC_PLATFORM_MAP}.
+ */
+const SPECIFIC_PLATFORM_MAP_REVERSE = new Map([...SPECIFIC_PLATFORM_MAP].map(([key, value]) => [value, key]));
+/**
+ * Map of generic platforms string names to their corresponding enum values.
+ */
+const GENERIC_PLATFORM_MAP = new Map([
+    ['adg_os_any', platforms.GenericPlatform.AdgOsAny],
+    ['adg_safari_any', platforms.GenericPlatform.AdgSafariAny],
+    ['adg_ext_chromium', platforms.GenericPlatform.AdgExtChromium],
+    ['adg_ext_any', platforms.GenericPlatform.AdgExtAny],
+    ['adg_any', platforms.GenericPlatform.AdgAny],
+    ['ubo_ext_chromium', platforms.GenericPlatform.UboExtChromium],
+    ['ubo_ext_any', platforms.GenericPlatform.UboExtAny],
+    ['ubo_any', platforms.GenericPlatform.UboAny],
+    ['abp_ext_chromium', platforms.GenericPlatform.AbpExtChromium],
+    ['abp_ext_any', platforms.GenericPlatform.AbpExtAny],
+    ['abp_any', platforms.GenericPlatform.AbpAny],
+    ['any', platforms.GenericPlatform.Any],
+]);
+/**
+ * Check if the platform is a generic platform.
+ *
+ * @param platform Platform to check.
+ *
+ * @returns True if the platform is a generic platform, false otherwise.
+ */
+const isGenericPlatform = (platform) => {
+    // if more than one bit is set, it's a generic platform
+    return !!(platform & (platform - 1));
+};
+/**
+ * Returns the platform enum value for the given platform string name.
+ *
+ * @param platform Platform string name, e.g., 'adg_os_windows'.
+ *
+ * @returns Specific or generic platform enum value.
+ * @throws Error if the platform is unknown.
+ */
+const getPlatformId = (platform) => {
+    const specificPlatform = SPECIFIC_PLATFORM_MAP.get(platform);
+    if (specificPlatform) {
+        return specificPlatform;
+    }
+    const genericPlatform = GENERIC_PLATFORM_MAP.get(platform);
+    if (genericPlatform) {
+        return genericPlatform;
+    }
+    throw new Error(`Unknown platform: ${platform}`);
+};
+/**
+ * Returns the specific platform string name for the given platform enum value.
+ *
+ * @param platform Specific platform enum value.
+ *
+ * @returns Specific platform string name, e.g., 'adg_os_windows'.
+ * @throws Error if the platform is unknown.
+ */
+const getSpecificPlatformName = (platform) => {
+    const specificPlatform = SPECIFIC_PLATFORM_MAP_REVERSE.get(platform);
+    if (!specificPlatform) {
+        throw new Error(`Unknown platform: ${platform}`);
+    }
+    return specificPlatform;
+};
+
+exports.GENERIC_PLATFORM_MAP = GENERIC_PLATFORM_MAP;
+exports.SPECIFIC_PLATFORM_MAP = SPECIFIC_PLATFORM_MAP;
+exports.SPECIFIC_PLATFORM_MAP_REVERSE = SPECIFIC_PLATFORM_MAP_REVERSE;
+exports.getPlatformId = getPlatformId;
+exports.getSpecificPlatformName = getSpecificPlatformName;
+exports.isGenericPlatform = isGenericPlatform;

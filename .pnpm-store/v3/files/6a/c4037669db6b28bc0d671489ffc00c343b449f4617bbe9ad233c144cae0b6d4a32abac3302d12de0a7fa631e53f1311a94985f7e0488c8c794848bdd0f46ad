@@ -1,0 +1,64 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseGenerator = require('./base-generator.js');
+var index = require('../nodes/index.js');
+var constants = require('../utils/constants.js');
+var commentRuleGenerator = require('./comment/comment-rule-generator.js');
+var cosmeticRuleGenerator = require('./cosmetic/cosmetic-rule-generator.js');
+var hostRuleGenerator = require('./network/host-rule-generator.js');
+var networkRuleGenerator = require('./network/network-rule-generator.js');
+
+class RuleGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Converts a rule AST to a string.
+     *
+     * @param ast - Adblock rule AST
+     * @returns Raw string
+     * @example
+     * Take a look at the following example:
+     * ```js
+     * // Parse the rule to the AST
+     * const ast = RuleParser.parse("example.org##.banner");
+     * // Generate the rule from the AST
+     * const raw = RuleParser.generate(ast);
+     * // Print the generated rule
+     * console.log(raw); // "example.org##.banner"
+     * ```
+     */
+    static generate(ast) {
+        switch (ast.category) {
+            // Empty lines
+            case index.RuleCategory.Empty:
+                return constants.EMPTY;
+            // Invalid rules
+            case index.RuleCategory.Invalid:
+                return ast.raw;
+            // Comment rules
+            case index.RuleCategory.Comment:
+                return commentRuleGenerator.CommentRuleGenerator.generate(ast);
+            // Cosmetic / non-basic rules
+            case index.RuleCategory.Cosmetic:
+                return cosmeticRuleGenerator.CosmeticRuleGenerator.generate(ast);
+            // Network / basic rules
+            case index.RuleCategory.Network:
+                switch (ast.type) {
+                    case index.NetworkRuleType.HostRule:
+                        return hostRuleGenerator.HostRuleGenerator.generate(ast);
+                    case index.NetworkRuleType.NetworkRule:
+                        return networkRuleGenerator.NetworkRuleGenerator.generate(ast);
+                    default:
+                        throw new Error('Unknown network rule type');
+                }
+            default:
+                throw new Error('Unknown rule category');
+        }
+    }
+}
+
+exports.RuleGenerator = RuleGenerator;

@@ -1,0 +1,11 @@
+import type { Modifier } from '../../nodes';
+import { BaseGenerator } from '../base-generator';
+export declare class ModifierGenerator extends BaseGenerator {
+    /**
+     * Generates a string from a modifier (serializes it).
+     *
+     * @param modifier Modifier to generate string from
+     * @returns String representation of the modifier
+     */
+    static generate(modifier: Modifier): string;
+}

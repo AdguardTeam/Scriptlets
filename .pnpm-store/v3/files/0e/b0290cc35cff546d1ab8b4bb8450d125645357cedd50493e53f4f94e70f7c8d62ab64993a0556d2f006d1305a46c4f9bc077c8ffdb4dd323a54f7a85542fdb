@@ -1,0 +1,55 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { LF, CR, CRLF, EMPTY } from '../utils/constants.mjs';
+import { RuleGenerator } from './rule-generator.mjs';
+import { BaseGenerator } from './base-generator.mjs';
+
+/**
+ * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
+ * It is a wrapper around `RuleParser` which parses each line separately.
+ */
+class FilterListGenerator extends BaseGenerator {
+    /**
+     * Serializes a whole adblock filter list (list of rules).
+     *
+     * @param ast AST to generate
+     * @param preferRaw If `true`, then the parser will use `raws.text` property of each rule
+     * if it is available. Default is `false`.
+     * @returns Serialized filter list
+     */
+    static generate(ast, preferRaw = false) {
+        let result = EMPTY;
+        for (let i = 0; i < ast.children.length; i += 1) {
+            const rule = ast.children[i];
+            if (preferRaw && rule.raws?.text) {
+                result += rule.raws.text;
+            }
+            else {
+                result += RuleGenerator.generate(rule);
+            }
+            switch (rule.raws?.nl) {
+                case 'crlf':
+                    result += CRLF;
+                    break;
+                case 'cr':
+                    result += CR;
+                    break;
+                case 'lf':
+                    result += LF;
+                    break;
+                default:
+                    if (i !== ast.children.length - 1) {
+                        result += LF;
+                    }
+                    break;
+            }
+        }
+        return result;
+    }
+}
+
+export { FilterListGenerator };

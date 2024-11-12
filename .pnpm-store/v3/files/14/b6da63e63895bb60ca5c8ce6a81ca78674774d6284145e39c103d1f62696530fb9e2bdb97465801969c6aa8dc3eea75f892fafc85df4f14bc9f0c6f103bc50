@@ -1,0 +1,23 @@
+import { type HintCommentRule } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `HintCommentSerializer` is responsible for serializing AdGuard hint rules.
+ *
+ * @example
+ * The following hint rule
+ * ```adblock
+ * !+ NOT_OPTIMIZED PLATFORM(windows)
+ * ```
+ * contains two hints: `NOT_OPTIMIZED` and `PLATFORM`.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
+ */
+export declare class HintCommentSerializer extends BaseSerializer {
+    /**
+     * Serializes a hint rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: HintCommentRule, buffer: OutputByteBuffer): void;
+}

@@ -1,0 +1,28 @@
+import type { PreProcessorCommentRule } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `PreProcessorSerializer` is responsible for serializing preprocessor rules.
+ * Pre-processor comments are special comments that are used to control the behavior of the filter list processor.
+ * Please note that this parser only handles general syntax for now, and does not validate the parameters at
+ * the parsing stage.
+ *
+ * @example
+ * If your rule is
+ * ```adblock
+ * !#if (adguard)
+ * ```
+ * then the directive's name is `if` and its value is `(adguard)`, but the parameter list
+ * is not parsed / validated further.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
+ */
+export declare class PreProcessorCommentSerializer extends BaseSerializer {
+    /**
+     * Serializes a pre-processor comment node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: PreProcessorCommentRule, buffer: OutputByteBuffer): void;
+}

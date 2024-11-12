@@ -1,0 +1,47 @@
+/**
+ * @file Provides platform enums.
+ * The difference between specific and generic platforms is that specific platforms are individual platforms
+ * (e.g. AdGuard for Windows, AdGuard for Android, etc.),
+ * while generic platforms are groups of specific platforms
+ * (e.g. AdGuard for any OS, AdGuard for any Chromium-based extension, etc.).
+ */
+/**
+ * List of specific platforms.
+ */
+export declare enum SpecificPlatform {
+    AdgOsWindows = 1,
+    AdgOsMac = 2,
+    AdgOsAndroid = 4,
+    AdgExtChrome = 8,
+    AdgExtOpera = 16,
+    AdgExtEdge = 32,
+    AdgExtFirefox = 64,
+    AdgCbAndroid = 128,
+    AdgCbIos = 256,
+    AdgCbSafari = 512,
+    UboExtChrome = 1024,
+    UboExtOpera = 2048,
+    UboExtEdge = 4096,
+    UboExtFirefox = 8192,
+    AbpExtChrome = 16384,
+    AbpExtOpera = 32768,
+    AbpExtEdge = 65536,
+    AbpExtFirefox = 131072
+}
+/**
+ * List of generic platforms (combinations of specific platforms).
+ */
+export declare enum GenericPlatform {
+    AdgOsAny = 7,
+    AdgSafariAny = 768,
+    AdgExtChromium = 56,
+    AdgExtAny = 120,
+    AdgAny = 1023,
+    UboExtChromium = 7168,
+    UboExtAny = 15360,
+    UboAny = 15360,
+    AbpExtChromium = 114688,
+    AbpExtAny = 245760,
+    AbpAny = 245760,
+    Any = 262143
+}

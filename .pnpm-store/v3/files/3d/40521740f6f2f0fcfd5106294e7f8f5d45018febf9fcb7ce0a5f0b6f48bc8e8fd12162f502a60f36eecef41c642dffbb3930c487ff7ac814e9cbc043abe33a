@@ -1,0 +1,213 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var cssTokenizer = require('@adguard/css-tokenizer');
+var adblockSyntaxError = require('../../errors/adblock-syntax-error.js');
+var constants = require('../../utils/constants.js');
+var cssTokenStream = require('./css-token-stream.js');
+var options = require('../options.js');
+var baseParser = require('../base-parser.js');
+
+/**
+ * @file Parser for AdGuard CSS injections.
+ */
+const REMOVE_PROPERTY = 'remove';
+const REMOVE_VALUE = 'true';
+const ERROR_MESSAGES = {
+    MEDIA_QUERY_LIST_IS_EMPTY: 'Media query list is empty',
+    SELECTOR_LIST_IS_EMPTY: 'Selector list is empty',
+    DECLARATION_LIST_IS_EMPTY: 'Declaration list is empty',
+};
+/**
+ * Parser for AdGuard CSS injection.
+ */
+class AdgCssInjectionParser extends baseParser.BaseParser {
+    /**
+     * Parses an AdGuard CSS injection.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
+     * @returns Parsed AdGuard CSS injection {@link CssInjectionRuleBody}.
+     * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
+     */
+    static parse(raw, options$1 = options.defaultParserOptions, baseOffset = 0) {
+        let mediaQueryList;
+        const selectorList = { type: 'Value', value: constants.EMPTY };
+        const declarationList = { type: 'Value', value: constants.EMPTY };
+        const stream = new cssTokenStream.CssTokenStream(raw, baseOffset);
+        // Skip leading whitespace characters
+        stream.skipWhitespace();
+        // We have two possible CSS injection formats:
+        // 1. @media (media-query-list) { selector list { declarations separated by semicolons } }
+        // 2. selector list { declarations separated by semicolons }
+        // Handle '@media' case:
+        let balanceShift = 0;
+        if (stream.getOrFail().type === cssTokenizer.TokenType.AtKeyword) {
+            // Currently only '@media' is supported, we should throw an error if we encounter anything else,
+            // like '@supports' or '@charset', etc.
+            stream.expect(cssTokenizer.TokenType.AtKeyword, { value: constants.CSS_MEDIA_MARKER, balance: 0 });
+            stream.advance();
+            // Skip whitespace characters after @media keyword, if any
+            // @media (media-query-list) { ...
+            //       ↑
+            //       └ this one (if any)
+            stream.skipWhitespace();
+            const mediaQueryListStart = stream.getOrFail().start;
+            // Skip everything until we found the opening curly bracket of the declaration block
+            // @media media-query-list { ...
+            //                         ↑
+            //                         └ this one
+            let lastNonWsIndex = -1;
+            while (!stream.isEof()) {
+                const token = stream.getOrFail();
+                if (token.type === cssTokenizer.TokenType.OpenCurlyBracket && token.balance === 1) {
+                    break;
+                }
+                if (token.type !== cssTokenizer.TokenType.Whitespace) {
+                    lastNonWsIndex = token.end;
+                }
+                stream.advance();
+            }
+            // If the skipped tokens count is 0 without leading and trailing whitespace characters, then the media query
+            // list is empty
+            if (lastNonWsIndex === -1) {
+                throw new adblockSyntaxError.AdblockSyntaxError(ERROR_MESSAGES.MEDIA_QUERY_LIST_IS_EMPTY, baseOffset + mediaQueryListStart, baseOffset + raw.length);
+            }
+            // It is safe to use non-null assertion here, because we have already checked previous tokens.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const mediaQueryListEnd = lastNonWsIndex;
+            mediaQueryList = {
+                type: 'Value',
+                value: raw.slice(mediaQueryListStart, mediaQueryListEnd),
+            };
+            if (options$1.isLocIncluded) {
+                mediaQueryList.start = baseOffset + mediaQueryListStart;
+                mediaQueryList.end = baseOffset + mediaQueryListEnd;
+            }
+            // Next token should be an open curly bracket
+            // @media (media-query-list) { ...
+            //                           ↑
+            //                           └ this one
+            stream.expect(cssTokenizer.TokenType.OpenCurlyBracket);
+            stream.advance();
+            // '@media' at-rule wrap increases the balance level by 1 for the rule within the at-rule, because it
+            // has its own { ... } block
+            balanceShift = 1;
+        }
+        // Skip leading whitespace before the rule, if any
+        // Note: rule = selector list { declarations separated by semicolons }
+        stream.skipWhitespace();
+        const selectorStart = stream.getOrFail().start;
+        // Jump to the opening curly bracket of the declaration block, based on the balance level
+        // .selector { padding-top: 10px; padding-bottom: 10px; }
+        //           ↑
+        //           └ this one
+        const { skippedTrimmed: selectorTokensLength } = stream.skipUntilExt(cssTokenizer.TokenType.OpenCurlyBracket, balanceShift + 1);
+        stream.expect(cssTokenizer.TokenType.OpenCurlyBracket);
+        // If the skipped tokens count is 0 without leading and trailing whitespace characters, then the selector list
+        // is empty
+        if (selectorTokensLength === 0) {
+            throw new adblockSyntaxError.AdblockSyntaxError(ERROR_MESSAGES.SELECTOR_LIST_IS_EMPTY, baseOffset + selectorStart, baseOffset + raw.length);
+        }
+        // It is safe to use non-null assertion here, because we have already checked previous tokens.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const selectorEnd = stream.lookbehindForNonWs().end;
+        selectorList.value = raw.slice(selectorStart, selectorEnd);
+        if (options$1.isLocIncluded) {
+            selectorList.start = baseOffset + selectorStart;
+            selectorList.end = baseOffset + selectorEnd;
+        }
+        // Jump to the next token after the opening curly bracket of the declaration block
+        // .selector { padding-top: 10px; padding-bottom: 10px; }
+        //            ↑
+        //            └ this one
+        stream.advance();
+        // Skip whitespace characters after the opening curly bracket of the declaration block, if any
+        stream.skipWhitespace();
+        // Jump to the closing curly bracket of the declaration block, based on the balance level
+        // .selector { padding-top: 10px; padding-bottom: 10px; }
+        //                                                      ↑
+        //                                                      └ this one
+        const declarationsStart = stream.getOrFail().start;
+        const declarations = new Set();
+        let declarationsEnd = -1;
+        let remove = false;
+        let lastNonWsIndex = -1;
+        while (!stream.isEof()) {
+            const token = stream.getOrFail();
+            if (token.type === cssTokenizer.TokenType.CloseCurlyBracket && stream.getBalance() === balanceShift) {
+                declarationsEnd = lastNonWsIndex;
+                break;
+            }
+            if (token.type !== cssTokenizer.TokenType.Whitespace) {
+                lastNonWsIndex = token.end;
+            }
+            if (token.type === cssTokenizer.TokenType.Ident && stream.lookahead()?.type === cssTokenizer.TokenType.Colon) {
+                const ident = raw.slice(token.start, token.end);
+                declarations.add(ident);
+                // Consume ident and colon
+                stream.advance();
+                stream.advance();
+                // only 'remove: true' is allowed
+                if (ident === REMOVE_PROPERTY) {
+                    // Skip whitespace after colon, if any
+                    stream.skipWhitespace();
+                    // Next token should be an ident, with value 'true'
+                    stream.expect(cssTokenizer.TokenType.Ident, { value: REMOVE_VALUE });
+                    stream.advance();
+                    remove = true;
+                }
+            }
+            else {
+                stream.advance();
+            }
+        }
+        if (declarationsEnd === -1) {
+            throw new adblockSyntaxError.AdblockSyntaxError(ERROR_MESSAGES.DECLARATION_LIST_IS_EMPTY, baseOffset + declarationsStart, baseOffset + raw.length);
+        }
+        declarationList.value = raw.slice(declarationsStart, declarationsEnd);
+        if (options$1.isLocIncluded) {
+            declarationList.start = baseOffset + declarationsStart;
+            declarationList.end = baseOffset + declarationsEnd;
+        }
+        // Eat the close curly bracket of the declaration block
+        // .selector { padding-top: 10px; padding-bottom: 10px; }
+        //                                                      ↑
+        //                                                      └ this one
+        stream.expect(cssTokenizer.TokenType.CloseCurlyBracket);
+        stream.advance();
+        // Skip whitespace after the rule, if any
+        stream.skipWhitespace();
+        // If we have a media query, we should have an extra close curly bracket
+        if (balanceShift === 1) {
+            stream.expect(cssTokenizer.TokenType.CloseCurlyBracket);
+            stream.advance();
+        }
+        const result = {
+            type: 'CssInjectionRuleBody',
+            selectorList,
+            declarationList,
+            remove,
+        };
+        if (options$1.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+        if (mediaQueryList) {
+            result.mediaQueryList = mediaQueryList;
+        }
+        return result;
+    }
+}
+
+exports.AdgCssInjectionParser = AdgCssInjectionParser;
+exports.ERROR_MESSAGES = ERROR_MESSAGES;
+exports.REMOVE_PROPERTY = REMOVE_PROPERTY;
+exports.REMOVE_VALUE = REMOVE_VALUE;

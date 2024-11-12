@@ -1,0 +1,25 @@
+/**
+ * @file Schema for redirect data.
+ */
+import zod from 'zod';
+/**
+ * Zod schema for redirect data.
+ */
+export declare const redirectDataSchema: zod.ZodEffects<zod.ZodTypeAny, {
+    name: string;
+    description: string | null;
+    aliases: string[] | null;
+    docs: string | null;
+    versionAdded: string | null;
+    versionRemoved: string | null;
+    deprecated: boolean;
+    deprecationMessage: string | null;
+    removed: boolean;
+    removalMessage: string | null;
+    isBlocking: boolean;
+    resourceTypes: import("./resource-type").ResourceType[];
+}, any>;
+/**
+ * Type of the redirect data schema.
+ */
+export type RedirectDataSchema = zod.infer<typeof redirectDataSchema>;

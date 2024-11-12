@@ -1,0 +1,43 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var typeGuards = require('../utils/type-guards.js');
+var index = require('../nodes/index.js');
+var adblockers = require('../utils/adblockers.js');
+var clone = require('../utils/clone.js');
+
+/**
+ * @file Utility functions for working with network rule nodes
+ */
+/**
+ * Creates a network rule node
+ *
+ * @param pattern Rule pattern
+ * @param modifiers Rule modifiers (optional, default: undefined)
+ * @param exception Exception rule flag (optional, default: false)
+ * @param syntax Adblock syntax (optional, default: Common)
+ * @returns Network rule node
+ */
+function createNetworkRuleNode(pattern, modifiers = undefined, exception = false, syntax = adblockers.AdblockSyntax.Common) {
+    const result = {
+        category: index.RuleCategory.Network,
+        type: index.NetworkRuleType.NetworkRule,
+        syntax,
+        exception,
+        pattern: {
+            type: 'Value',
+            value: pattern,
+        },
+    };
+    if (!typeGuards.isUndefined(modifiers)) {
+        result.modifiers = clone.clone(modifiers);
+    }
+    return result;
+}
+
+exports.createNetworkRuleNode = createNetworkRuleNode;

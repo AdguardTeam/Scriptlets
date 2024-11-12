@@ -1,0 +1,33 @@
+/**
+ * @file Compatibility tables for redirects.
+ */
+import { CompatibilityTableBase } from './base';
+import { type RedirectDataSchema } from './schemas';
+import { type CompatibilityTable } from './types';
+import { type GenericPlatform, type SpecificPlatform } from './platforms';
+/**
+ * Compatibility table for redirects.
+ */
+declare class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSchema> {
+    /**
+     * Creates a new instance of the compatibility table for redirects.
+     *
+     * @param data Compatibility table data.
+     */
+    constructor(data: CompatibilityTable<RedirectDataSchema>);
+    /**
+     * Gets the resource type adblock modifiers for the redirect for the given platform
+     * based on the `resourceTypes` field.
+     *
+     * @param redirect Redirect name or redirect data.
+     * @param platform Platform to get the modifiers for.
+     *
+     * @returns Set of resource type modifiers or an empty set if the redirect is not found or has no resource types.
+     */
+    getResourceTypeModifiers(redirect: string | RedirectDataSchema, platform: SpecificPlatform | GenericPlatform): Set<string>;
+}
+/**
+ * Compatibility table instance for redirects.
+ */
+export declare const redirectsCompatibilityTable: RedirectsCompatibilityTable;
+export {};

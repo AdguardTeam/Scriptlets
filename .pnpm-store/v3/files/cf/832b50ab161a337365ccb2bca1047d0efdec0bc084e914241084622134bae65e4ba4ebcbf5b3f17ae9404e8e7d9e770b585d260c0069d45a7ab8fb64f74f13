@@ -1,0 +1,47 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var index = require('../../nodes/index.js');
+var options = require('../options.js');
+var baseParser = require('../base-parser.js');
+var listItemsParser = require('./list-items-parser.js');
+
+/**
+ * `AppListParser` is responsible for parsing an app list.
+ *
+ * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#app-modifier}
+ */
+class AppListParser extends baseParser.BaseParser {
+    /**
+     * Parses an app list which items are separated by `|`,
+     * e.g. `Example.exe|com.example.osx`.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
+     * @returns App list AST.
+     * @throws An {@link AdblockSyntaxError} if the app list is syntactically invalid.
+     * @throws An {@link Error} if the options are invalid.
+     */
+    static parse(raw, options$1 = options.defaultParserOptions, baseOffset = 0) {
+        const result = {
+            type: index.ListNodeType.AppList,
+            separator: constants.PIPE,
+            children: listItemsParser.ListItemsParser.parse(raw, options$1, baseOffset, constants.PIPE, index.ListItemNodeType.App),
+        };
+        if (options$1.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+        return result;
+    }
+}
+
+exports.AppListParser = AppListParser;

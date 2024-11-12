@@ -1,0 +1,30 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { OPEN_PARENTHESIS, COMMA, CLOSE_PARENTHESIS, EMPTY } from '../../utils/constants.mjs';
+import { BaseGenerator } from '../base-generator.mjs';
+import { ParameterListGenerator } from '../misc/parameter-list-generator.mjs';
+
+class HintGenerator extends BaseGenerator {
+    /**
+     * Converts a single hint AST to a string.
+     *
+     * @param hint Hint AST
+     * @returns Hint string
+     */
+    static generate(hint) {
+        let result = EMPTY;
+        result += hint.name.value;
+        if (hint.params && hint.params.children.length > 0) {
+            result += OPEN_PARENTHESIS;
+            result += ParameterListGenerator.generate(hint.params, COMMA);
+            result += CLOSE_PARENTHESIS;
+        }
+        return result;
+    }
+}
+
+export { HintGenerator };

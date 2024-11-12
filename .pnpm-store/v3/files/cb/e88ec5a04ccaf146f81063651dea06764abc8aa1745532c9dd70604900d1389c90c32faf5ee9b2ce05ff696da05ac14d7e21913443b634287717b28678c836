@@ -1,0 +1,11 @@
+import type { HostRule } from '../../nodes';
+import { BaseGenerator } from '../base-generator';
+export declare class HostRuleGenerator extends BaseGenerator {
+    /**
+     * Converts a host rule node to a raw string.
+     *
+     * @param node Host rule node.
+     * @returns Raw string.
+     */
+    static generate(node: HostRule): string;
+}

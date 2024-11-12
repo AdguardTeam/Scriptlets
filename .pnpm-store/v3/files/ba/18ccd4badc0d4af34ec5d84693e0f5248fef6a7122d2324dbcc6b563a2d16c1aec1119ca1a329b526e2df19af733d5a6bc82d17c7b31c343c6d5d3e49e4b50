@@ -1,0 +1,50 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var valueSerializer = require('../misc/value-serializer.js');
+var typeGuards = require('../../utils/type-guards.js');
+var constants = require('../../utils/constants.js');
+var baseSerializer = require('../base-serializer.js');
+var cssInjectionBodyCommon = require('../../marshalling-utils/cosmetic/body/css-injection-body-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+class CssInjectionBodySerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a CSS injection rule body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.CssInjectionRuleBody);
+        if (node.mediaQueryList) {
+            buffer.writeUint8(cssInjectionBodyCommon.CssInjectionRuleMarshallingMap.MediaQueryList);
+            valueSerializer.ValueSerializer.serialize(node.mediaQueryList, buffer);
+        }
+        buffer.writeUint8(cssInjectionBodyCommon.CssInjectionRuleMarshallingMap.SelectorList);
+        valueSerializer.ValueSerializer.serialize(node.selectorList, buffer);
+        if (node.declarationList) {
+            buffer.writeUint8(cssInjectionBodyCommon.CssInjectionRuleMarshallingMap.DeclarationList);
+            valueSerializer.ValueSerializer.serialize(node.declarationList, buffer);
+        }
+        if (node.remove) {
+            buffer.writeUint8(cssInjectionBodyCommon.CssInjectionRuleMarshallingMap.Remove);
+        }
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(cssInjectionBodyCommon.CssInjectionRuleMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(cssInjectionBodyCommon.CssInjectionRuleMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.CssInjectionBodySerializer = CssInjectionBodySerializer;

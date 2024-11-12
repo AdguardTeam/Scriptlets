@@ -1,0 +1,12 @@
+import { type AnyCosmeticRule } from '../../nodes';
+import { BaseDeserializer } from '../base-deserializer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+export declare class CosmeticRuleDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a cosmetic rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<AnyCosmeticRule>): void;
+}

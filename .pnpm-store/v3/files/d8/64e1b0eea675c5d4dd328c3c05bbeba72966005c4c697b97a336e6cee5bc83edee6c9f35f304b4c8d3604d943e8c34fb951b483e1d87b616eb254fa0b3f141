@@ -1,0 +1,180 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+/**
+ * Possible operators in the logical expression.
+ */
+var OperatorValue;
+(function (OperatorValue) {
+    OperatorValue["Not"] = "!";
+    OperatorValue["And"] = "&&";
+    OperatorValue["Or"] = "||";
+})(OperatorValue || (OperatorValue = {}));
+/**
+ * Represents the different comment markers that can be used in an adblock rule.
+ *
+ * @example
+ * - If the rule is `! This is just a comment`, then the marker will be `!`.
+ * - If the rule is `# This is just a comment`, then the marker will be `#`.
+ */
+var CommentMarker;
+(function (CommentMarker) {
+    /**
+     * Regular comment marker. It is supported by all ad blockers.
+     */
+    CommentMarker["Regular"] = "!";
+    /**
+     * Hashmark comment marker. It is supported by uBlock Origin and AdGuard,
+     * and also used in hosts files.
+     */
+    CommentMarker["Hashmark"] = "#";
+})(CommentMarker || (CommentMarker = {}));
+/**
+ * Represents the main categories that an adblock rule can belong to.
+ * Of course, these include additional subcategories.
+ */
+var RuleCategory;
+(function (RuleCategory) {
+    /**
+     * Empty "rules" that are only containing whitespaces. These rules are handled just for convenience.
+     */
+    RuleCategory["Empty"] = "Empty";
+    /**
+     * Syntactically invalid rules (tolerant mode only).
+     */
+    RuleCategory["Invalid"] = "Invalid";
+    /**
+     * Comment rules, such as comment rules, metadata rules, preprocessor rules, etc.
+     */
+    RuleCategory["Comment"] = "Comment";
+    /**
+     * Cosmetic rules, such as element hiding rules, CSS rules, scriptlet rules, HTML rules, and JS rules.
+     */
+    RuleCategory["Cosmetic"] = "Cosmetic";
+    /**
+     * Network rules, such as basic network rules, header remover network rules, redirect network rules,
+     * response header filtering rules, etc.
+     */
+    RuleCategory["Network"] = "Network";
+})(RuleCategory || (RuleCategory = {}));
+/**
+ * Represents similar types of modifiers values
+ * which may be separated by a comma `,` (only for DomainList) or a pipe `|`.
+ */
+var ListNodeType;
+(function (ListNodeType) {
+    ListNodeType["Unknown"] = "Unknown";
+    ListNodeType["AppList"] = "AppList";
+    ListNodeType["DomainList"] = "DomainList";
+    ListNodeType["MethodList"] = "MethodList";
+    ListNodeType["StealthOptionList"] = "StealthOptionList";
+})(ListNodeType || (ListNodeType = {}));
+/**
+ * Represents child items for {@link ListNodeType}.
+ */
+var ListItemNodeType;
+(function (ListItemNodeType) {
+    ListItemNodeType["Unknown"] = "Unknown";
+    ListItemNodeType["App"] = "App";
+    ListItemNodeType["Domain"] = "Domain";
+    ListItemNodeType["Method"] = "Method";
+    ListItemNodeType["StealthOption"] = "StealthOption";
+})(ListItemNodeType || (ListItemNodeType = {}));
+/**
+ * Represents possible comment types.
+ */
+var CommentRuleType;
+(function (CommentRuleType) {
+    CommentRuleType["AgentCommentRule"] = "AgentCommentRule";
+    CommentRuleType["CommentRule"] = "CommentRule";
+    CommentRuleType["ConfigCommentRule"] = "ConfigCommentRule";
+    CommentRuleType["HintCommentRule"] = "HintCommentRule";
+    CommentRuleType["MetadataCommentRule"] = "MetadataCommentRule";
+    CommentRuleType["PreProcessorCommentRule"] = "PreProcessorCommentRule";
+})(CommentRuleType || (CommentRuleType = {}));
+/**
+ * Represents possible cosmetic rule types.
+ */
+var CosmeticRuleType;
+(function (CosmeticRuleType) {
+    CosmeticRuleType["ElementHidingRule"] = "ElementHidingRule";
+    CosmeticRuleType["CssInjectionRule"] = "CssInjectionRule";
+    CosmeticRuleType["ScriptletInjectionRule"] = "ScriptletInjectionRule";
+    CosmeticRuleType["HtmlFilteringRule"] = "HtmlFilteringRule";
+    CosmeticRuleType["JsInjectionRule"] = "JsInjectionRule";
+})(CosmeticRuleType || (CosmeticRuleType = {}));
+/**
+ * Represents possible cosmetic rule separators.
+ */
+var CosmeticRuleSeparator;
+(function (CosmeticRuleSeparator) {
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    CosmeticRuleSeparator["ElementHiding"] = "##";
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    CosmeticRuleSeparator["ElementHidingException"] = "#@#";
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    CosmeticRuleSeparator["ExtendedElementHiding"] = "#?#";
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    CosmeticRuleSeparator["ExtendedElementHidingException"] = "#@?#";
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    CosmeticRuleSeparator["AbpSnippet"] = "#$#";
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    CosmeticRuleSeparator["AbpSnippetException"] = "#@$#";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    CosmeticRuleSeparator["AdgCssInjection"] = "#$#";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    CosmeticRuleSeparator["AdgCssInjectionException"] = "#@$#";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    CosmeticRuleSeparator["AdgExtendedCssInjection"] = "#$?#";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    CosmeticRuleSeparator["AdgExtendedCssInjectionException"] = "#@$?#";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
+     */
+    CosmeticRuleSeparator["AdgJsInjection"] = "#%#";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
+     */
+    CosmeticRuleSeparator["AdgJsInjectionException"] = "#@%#";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
+     */
+    CosmeticRuleSeparator["AdgHtmlFiltering"] = "$$";
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
+     */
+    CosmeticRuleSeparator["AdgHtmlFilteringException"] = "$@$";
+})(CosmeticRuleSeparator || (CosmeticRuleSeparator = {}));
+/**
+ * Represents the different types of network rules.
+ */
+var NetworkRuleType;
+(function (NetworkRuleType) {
+    NetworkRuleType["NetworkRule"] = "NetworkRule";
+    NetworkRuleType["HostRule"] = "HostRule";
+})(NetworkRuleType || (NetworkRuleType = {}));
+
+export { CommentMarker, CommentRuleType, CosmeticRuleSeparator, CosmeticRuleType, ListItemNodeType, ListNodeType, NetworkRuleType, OperatorValue, RuleCategory };

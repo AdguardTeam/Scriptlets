@@ -1,0 +1,15 @@
+import { type Node } from '../nodes';
+import { type InputByteBuffer } from '../utils/input-byte-buffer';
+/**
+ * Base class for deserializers. Each deserializer should extend this class.
+ */
+export declare class BaseDeserializer {
+    /**
+     * Deserializes the AST node from a byte buffer.
+     *
+     * @param buffer Input byte buffer to read from.
+     * @param node Destination node to write to.
+     * @param args Additional, parser-specific arguments, if needed.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<Node>, ...args: unknown[]): void;
+}

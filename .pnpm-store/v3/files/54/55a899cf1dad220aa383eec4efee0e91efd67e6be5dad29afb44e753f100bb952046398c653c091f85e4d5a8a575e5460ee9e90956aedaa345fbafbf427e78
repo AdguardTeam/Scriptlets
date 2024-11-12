@@ -1,0 +1,25 @@
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
+import { BaseSerializer } from '../../base-serializer';
+/**
+ * `UboScriptletInjectionBodySerializer` is responsible for serializing the body of a uBlock-style scriptlet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com##+js(scriptlet0, arg0)
+ * ```
+ *
+ * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ *
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
+ */
+export declare class UboScriptletInjectionBodySerializer extends BaseSerializer {
+    /**
+     * Serializes a scriptlet call body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer): void;
+}

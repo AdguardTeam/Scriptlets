@@ -1,0 +1,24 @@
+import { type HintCommentRule } from '../../nodes';
+import { BaseDeserializer } from '../base-deserializer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+/**
+ * `HintCommentDeserializer` is responsible for deserializing AdGuard hint rules.
+ *
+ * @example
+ * The following hint rule
+ * ```adblock
+ * !+ NOT_OPTIMIZED PLATFORM(windows)
+ * ```
+ * contains two hints: `NOT_OPTIMIZED` and `PLATFORM`.
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
+ */
+export declare class HintCommentDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a hint rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer: InputByteBuffer, node: Partial<HintCommentRule>): void;
+}

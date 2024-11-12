@@ -1,0 +1,138 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var typeGuards = require('../../utils/type-guards.js');
+var baseSerializer = require('../base-serializer.js');
+var logicalExpressionCommon = require('../../marshalling-utils/misc/logical-expression-common.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/**
+ * Possible node types in the logical expression.
+ */
+exports.NodeType = void 0;
+(function (NodeType) {
+    NodeType["Variable"] = "Variable";
+    NodeType["Operator"] = "Operator";
+    NodeType["Parenthesis"] = "Parenthesis";
+})(exports.NodeType || (exports.NodeType = {}));
+/**
+ * `LogicalExpressionParser` is responsible for parsing logical expressions.
+ *
+ * @example
+ * From the following rule:
+ * ```adblock
+ * !#if (adguard_ext_android_cb || adguard_ext_safari)
+ * ```
+ * this parser will parse the expression `(adguard_ext_android_cb || adguard_ext_safari)`.
+ */
+// TODO: Refactor this class
+class LogicalExpressionSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a variable node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: create a common serialize / deserialize interface for such nodes (Variable, Value, Parameter, etc.)
+    static serializeVariableNode(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ExpressionVariableNode);
+        const frequentName = logicalExpressionCommon.KNOWN_VARIABLES_SERIALIZATION_MAP.get(node.name);
+        if (!typeGuards.isUndefined(frequentName)) {
+            buffer.writeUint8(logicalExpressionCommon.VariableNodeBinaryPropMarshallingMap.FrequentName);
+            buffer.writeUint8(frequentName);
+        }
+        else {
+            buffer.writeUint8(logicalExpressionCommon.VariableNodeBinaryPropMarshallingMap.Name);
+            buffer.writeString(node.name);
+        }
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(logicalExpressionCommon.VariableNodeBinaryPropMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(logicalExpressionCommon.VariableNodeBinaryPropMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+    /**
+     * Serializes a parenthesis node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serializeParenthesisNode(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ExpressionParenthesisNode);
+        buffer.writeUint8(logicalExpressionCommon.ParenthesisNodeBinaryPropMarshallingMap.Expression);
+        LogicalExpressionSerializer.serialize(node.expression, buffer);
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(logicalExpressionCommon.ParenthesisNodeBinaryPropMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(logicalExpressionCommon.ParenthesisNodeBinaryPropMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+    /**
+     * Serializes an operator node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serializeOperatorNode(node, buffer) {
+        buffer.writeUint8(binaryTypeCommon.BinaryTypeMarshallingMap.ExpressionOperatorNode);
+        buffer.writeUint8(logicalExpressionCommon.OperatorNodeBinaryPropMarshallingMap.Operator);
+        const operatorBinary = logicalExpressionCommon.LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP.get(node.operator);
+        if (typeGuards.isUndefined(operatorBinary)) {
+            throw new Error(`Unknown operator: ${node.operator}`);
+        }
+        buffer.writeUint8(operatorBinary);
+        buffer.writeUint8(logicalExpressionCommon.OperatorNodeBinaryPropMarshallingMap.Left);
+        LogicalExpressionSerializer.serialize(node.left, buffer);
+        if (node.right) {
+            buffer.writeUint8(logicalExpressionCommon.OperatorNodeBinaryPropMarshallingMap.Right);
+            LogicalExpressionSerializer.serialize(node.right, buffer);
+        }
+        if (!typeGuards.isUndefined(node.start)) {
+            buffer.writeUint8(logicalExpressionCommon.OperatorNodeBinaryPropMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+        if (!typeGuards.isUndefined(node.end)) {
+            buffer.writeUint8(logicalExpressionCommon.OperatorNodeBinaryPropMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+    /**
+     * Serializes a logical expression node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node, buffer) {
+        switch (node.type) {
+            case exports.NodeType.Variable:
+                LogicalExpressionSerializer.serializeVariableNode(node, buffer);
+                break;
+            case exports.NodeType.Operator:
+                LogicalExpressionSerializer.serializeOperatorNode(node, buffer);
+                break;
+            case exports.NodeType.Parenthesis:
+                LogicalExpressionSerializer.serializeParenthesisNode(node, buffer);
+                break;
+            default:
+                throw new Error(`Unexpected node type: ${node.type}`);
+        }
+        buffer.writeUint8(constants.NULL);
+    }
+}
+
+exports.LogicalExpressionSerializer = LogicalExpressionSerializer;

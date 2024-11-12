@@ -1,0 +1,33 @@
+import { type Agent } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `AgentParser` is responsible for parsing single adblock agent elements.
+ *
+ * @example
+ * If the adblock agent rule is
+ * ```adblock
+ * [Adblock Plus 2.0; AdGuard]
+ * ```
+ * then the adblock agents are `Adblock Plus 2.0` and `AdGuard`, and this
+ * class is responsible for parsing them. The rule itself is parsed by
+ * `AgentCommentParser`, which uses this class to parse single agents.
+ */
+export declare class AgentParser extends BaseParser {
+    /**
+     * Checks if the string is a valid version.
+     *
+     * @param str String to check
+     * @returns `true` if the string is a valid version, `false` otherwise
+     */
+    private static isValidVersion;
+    /**
+     * Parses a raw rule as an adblock agent comment.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Agent rule AST
+     * @throws {AdblockSyntaxError} If the raw rule cannot be parsed as an adblock agent
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): Agent;
+}

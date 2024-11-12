@@ -1,0 +1,63 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var index = require('../nodes/index.js');
+var baseSerializer = require('./base-serializer.js');
+var commentRuleSerializer = require('./comment/comment-rule-serializer.js');
+var cosmeticRuleSerializer = require('./cosmetic/cosmetic-rule-serializer.js');
+var hostRuleSerializer = require('./network/host-rule-serializer.js');
+var networkRuleSerializer = require('./network/network-rule-serializer.js');
+var emptyRuleSerializer = require('./empty-rule-serializer.js');
+var invalidRuleSerializer = require('./invalid-rule-serializer.js');
+
+/**
+ * `RuleSerializer` is responsible for serializing the rules.
+ *
+ * It automatically determines the category and syntax of the rule, so you can pass any kind of rule to it.
+ */
+class RuleSerializer extends baseSerializer.BaseSerializer {
+    /**
+     * Serializes a rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    static serialize(node, buffer) {
+        switch (node.category) {
+            case index.RuleCategory.Comment:
+                commentRuleSerializer.CommentRuleSerializer.serialize(node, buffer);
+                break;
+            case index.RuleCategory.Cosmetic:
+                cosmeticRuleSerializer.CosmeticRuleSerializer.serialize(node, buffer);
+                break;
+            case index.RuleCategory.Network:
+                switch (node.type) {
+                    case index.NetworkRuleType.HostRule:
+                        hostRuleSerializer.HostRuleSerializer.serialize(node, buffer);
+                        break;
+                    case index.NetworkRuleType.NetworkRule:
+                        networkRuleSerializer.NetworkRuleSerializer.serialize(node, buffer);
+                        break;
+                    default:
+                        throw new Error('Unknown network rule type');
+                }
+                break;
+            case index.RuleCategory.Empty:
+                emptyRuleSerializer.EmptyRuleSerializer.serialize(node, buffer);
+                break;
+            case index.RuleCategory.Invalid:
+                invalidRuleSerializer.InvalidRuleSerializer.serialize(node, buffer);
+                break;
+            default:
+                throw new Error('Unknown rule category');
+        }
+    }
+}
+
+exports.RuleSerializer = RuleSerializer;

@@ -1,0 +1,49 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants$1 = require('../utils/constants.js');
+var constants = require('./constants.js');
+
+/**
+ * Validates the noop modifier (i.e. only underscores).
+ *
+ * @param value Value of the modifier.
+ *
+ * @returns True if the modifier is valid, false otherwise.
+ */
+const isValidNoopModifier = (value) => {
+    return value.split('').every((char) => char === constants$1.UNDERSCORE);
+};
+/**
+ * Returns invalid validation result with given error message.
+ *
+ * @param error Error message.
+ *
+ * @returns Validation result `{ valid: false, error }`.
+ */
+const getInvalidValidationResult = (error) => {
+    return {
+        valid: false,
+        error,
+    };
+};
+/**
+ * Returns invalid validation result which uses {@link VALIDATION_ERROR_PREFIX.VALUE_REQUIRED} as prefix
+ * and specifies the given `modifierName` in the error message.
+ *
+ * @param modifierName Modifier name.
+ *
+ * @returns Validation result `{ valid: false, error }`.
+ */
+const getValueRequiredValidationResult = (modifierName) => {
+    return getInvalidValidationResult(`${constants.VALIDATION_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);
+};
+
+exports.getInvalidValidationResult = getInvalidValidationResult;
+exports.getValueRequiredValidationResult = getValueRequiredValidationResult;
+exports.isValidNoopModifier = isValidNoopModifier;

@@ -1,0 +1,11 @@
+import type { NetworkRule } from '../../nodes';
+import { BaseGenerator } from '../base-generator';
+export declare class NetworkRuleGenerator extends BaseGenerator {
+    /**
+     * Converts a network rule (basic rule) AST to a string.
+     *
+     * @param node Network rule node
+     * @returns Raw string
+     */
+    static generate(node: NetworkRule): string;
+}

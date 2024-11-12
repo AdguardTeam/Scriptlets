@@ -1,0 +1,46 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var baseDeserializer = require('./base-deserializer.js');
+var index = require('../nodes/index.js');
+var constants = require('../utils/constants.js');
+var emptyRuleCommon = require('../marshalling-utils/empty-rule-common.js');
+var adblockers = require('../utils/adblockers.js');
+var binaryTypeCommon = require('../marshalling-utils/misc/binary-type-common.js');
+
+/* eslint-disable no-param-reassign */
+class EmptyRuleDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes an empty rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.EmptyRule);
+        node.type = 'EmptyRule';
+        node.category = index.RuleCategory.Empty;
+        node.syntax = adblockers.AdblockSyntax.Common;
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case emptyRuleCommon.EmptyRuleMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case emptyRuleCommon.EmptyRuleMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.EmptyRuleDeserializer = EmptyRuleDeserializer;

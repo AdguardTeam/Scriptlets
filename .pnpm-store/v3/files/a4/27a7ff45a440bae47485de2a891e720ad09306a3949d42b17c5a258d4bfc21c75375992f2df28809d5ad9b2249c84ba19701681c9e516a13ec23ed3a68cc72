@@ -1,0 +1,29 @@
+import { type FilterList } from '../nodes';
+import { BaseParser } from './base-parser';
+/**
+ * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
+ * It is a wrapper around `RuleParser` which parses each line separately.
+ */
+export declare class FilterListParser extends BaseParser {
+    /**
+     * Parses a whole adblock filter list (list of rules).
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns AST of the source code (list of rules)
+     * @example
+     * ```js
+     * import { readFileSync } from 'fs';
+     * import { FilterListParser } from '@adguard/agtree';
+     *
+     * // Read filter list content from file
+     * const content = readFileSync('your-adblock-filter-list.txt', 'utf-8');
+     *
+     * // Parse the filter list content, then do something with the AST
+     * const ast = FilterListParser.parse(content);
+     * ```
+     * @throws If one of the rules is syntactically invalid (if `tolerant` is `false`)
+     */
+    static parse(raw: string, options?: import("./options").ParserOptions, baseOffset?: number): FilterList;
+}

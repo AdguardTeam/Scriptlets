@@ -1,0 +1,151 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var sprintfJs = require('sprintf-js');
+var constants = require('../../../utils/constants.js');
+var string = require('../../../utils/string.js');
+var adblockSyntaxError = require('../../../errors/adblock-syntax-error.js');
+var options = require('../../options.js');
+var baseParser = require('../../base-parser.js');
+var valueParser = require('../../misc/value-parser.js');
+var typeGuards = require('../../../utils/type-guards.js');
+
+/**
+ * @file AdGuard scriptlet injection body parser
+ */
+/**
+ * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com#%#//scriptlet('scriptlet0', 'arg0')
+ * ```
+ *
+ * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
+ */
+class AdgScriptletInjectionBodyParser extends baseParser.BaseParser {
+    /**
+     * Error messages used by the parser.
+     */
+    static ERROR_MESSAGES = {
+        NO_SCRIPTLET_MASK: `Invalid ADG scriptlet call, no scriptlet call mask '${constants.ADG_SCRIPTLET_MASK}' found`,
+        NO_OPENING_PARENTHESIS: `Invalid ADG scriptlet call, no opening parentheses '${constants.OPEN_PARENTHESIS}' found`,
+        NO_CLOSING_PARENTHESIS: `Invalid ADG scriptlet call, no closing parentheses '${constants.CLOSE_PARENTHESIS}' found`,
+        WHITESPACE_AFTER_MASK: 'Invalid ADG scriptlet call, whitespace is not allowed after the scriptlet call mask',
+        NO_INCONSISTENT_QUOTES: 'Invalid ADG scriptlet call, inconsistent quotes',
+        NO_UNCLOSED_PARAMETER: 'Invalid ADG scriptlet call, unclosed parameter',
+        EXPECTED_QUOTE: "Invalid ADG scriptlet call, expected quote, got '%s'",
+        EXPECTED_COMMA: "Invalid ADG scriptlet call, expected comma, got '%s'",
+    };
+    /**
+     * Parses the body of an AdGuard-style scriptlet rule.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Node of the parsed scriptlet call body
+     * @throws If the body is syntactically incorrect
+     * @example
+     * ```
+     * //scriptlet('scriptlet0', 'arg0')
+     * ```
+     */
+    static parse(raw, options$1 = options.defaultParserOptions, baseOffset = 0) {
+        let offset = 0;
+        // Skip leading spaces
+        offset = string.StringUtils.skipWS(raw, offset);
+        // Scriptlet call should start with "//scriptlet"
+        if (!raw.startsWith(constants.ADG_SCRIPTLET_MASK, offset)) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.NO_SCRIPTLET_MASK, baseOffset + offset, baseOffset + raw.length);
+        }
+        offset += constants.ADG_SCRIPTLET_MASK.length;
+        // Whitespace is not allowed after the mask
+        if (raw[offset] === constants.SPACE) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.WHITESPACE_AFTER_MASK, baseOffset + offset, baseOffset + raw.length);
+        }
+        // Parameter list should be wrapped in parentheses
+        if (raw[offset] !== constants.OPEN_PARENTHESIS) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.NO_OPENING_PARENTHESIS, baseOffset + offset, baseOffset + raw.length);
+        }
+        // Save the offset of the opening parentheses
+        const openingParenthesesIndex = offset;
+        // Skip whitespace from the end
+        const closingParenthesesIndex = string.StringUtils.skipWSBack(raw, raw.length - 1);
+        // Closing parentheses should be present
+        if (raw[closingParenthesesIndex] !== constants.CLOSE_PARENTHESIS
+            || raw[closingParenthesesIndex - 1] === constants.ESCAPE_CHARACTER) {
+            throw new adblockSyntaxError.AdblockSyntaxError(this.ERROR_MESSAGES.NO_CLOSING_PARENTHESIS, baseOffset + offset, baseOffset + raw.length);
+        }
+        // Skip space, if any
+        offset = string.StringUtils.skipWS(raw, offset + 1);
+        const result = {
+            type: 'ScriptletInjectionRuleBody',
+            children: [],
+        };
+        if (options$1.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+        // Special case: empty scriptlet call, like `//scriptlet()`, `//scriptlet( )` etc.
+        if (string.StringUtils.skipWS(raw, openingParenthesesIndex + 1) === closingParenthesesIndex) {
+            return result;
+        }
+        let detectedQuote = null;
+        const parameterList = {
+            type: 'ParameterList',
+            children: [],
+        };
+        if (options$1.isLocIncluded) {
+            parameterList.start = baseOffset + openingParenthesesIndex + 1;
+            parameterList.end = baseOffset + closingParenthesesIndex;
+        }
+        while (offset < closingParenthesesIndex) {
+            // Skip whitespace
+            offset = string.StringUtils.skipWS(raw, offset);
+            // Expect comma if not first parameter
+            if (parameterList.children.length > 0) {
+                if (raw[offset] !== constants.COMMA) {
+                    throw new adblockSyntaxError.AdblockSyntaxError(sprintfJs.sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_COMMA, raw[offset]), baseOffset + offset, baseOffset + raw.length);
+                }
+                // Eat the comma
+                offset += 1;
+                // Skip whitespace
+                offset = string.StringUtils.skipWS(raw, offset);
+            }
+            // Next character should be a quote
+            if (raw[offset] === constants.SINGLE_QUOTE || raw[offset] === constants.DOUBLE_QUOTE) {
+                if (typeGuards.isNull(detectedQuote)) {
+                    detectedQuote = raw[offset];
+                }
+                else if (detectedQuote !== raw[offset]) {
+                    throw new adblockSyntaxError.AdblockSyntaxError(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES, baseOffset + offset, baseOffset + raw.length);
+                }
+                // Find next unescaped same quote
+                const closingQuoteIndex = string.StringUtils.findNextUnescapedCharacter(raw, detectedQuote, offset + 1);
+                if (closingQuoteIndex === -1) {
+                    throw new adblockSyntaxError.AdblockSyntaxError(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_UNCLOSED_PARAMETER, baseOffset + offset, baseOffset + raw.length);
+                }
+                // Save the parameter
+                const parameter = valueParser.ValueParser.parse(raw.slice(offset, closingQuoteIndex + 1), options$1, baseOffset + offset);
+                parameterList.children.push(parameter);
+                // Move after the closing quote
+                offset = string.StringUtils.skipWS(raw, closingQuoteIndex + 1);
+            }
+            else {
+                throw new adblockSyntaxError.AdblockSyntaxError(sprintfJs.sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, raw[offset]), baseOffset + offset, baseOffset + raw.length);
+            }
+        }
+        result.children.push(parameterList);
+        return result;
+    }
+}
+
+exports.AdgScriptletInjectionBodyParser = AdgScriptletInjectionBodyParser;

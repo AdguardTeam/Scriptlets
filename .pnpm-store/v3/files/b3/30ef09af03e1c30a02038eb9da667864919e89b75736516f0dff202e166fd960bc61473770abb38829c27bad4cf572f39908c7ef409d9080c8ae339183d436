@@ -1,0 +1,21 @@
+import { type Modifier } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `ModifierParser` is responsible for parsing modifiers.
+ *
+ * @example
+ * `match-case`, `~third-party`, `domain=example.com|~example.org`
+ */
+export declare class ModifierParser extends BaseParser {
+    /**
+     * Parses a modifier.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
+     * @returns Parsed modifier
+     * @throws An error if modifier name or value is empty.
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): Modifier;
+}

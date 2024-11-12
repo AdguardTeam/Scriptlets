@@ -1,0 +1,11 @@
+import type { MetadataCommentRule } from '../../nodes';
+import { BaseGenerator } from '../base-generator';
+export declare class MetadataCommentGenerator extends BaseGenerator {
+    /**
+     * Converts a metadata comment rule node to a string.
+     *
+     * @param node Metadata comment rule node.
+     * @returns Raw string.
+     */
+    static generate(node: MetadataCommentRule): string;
+}

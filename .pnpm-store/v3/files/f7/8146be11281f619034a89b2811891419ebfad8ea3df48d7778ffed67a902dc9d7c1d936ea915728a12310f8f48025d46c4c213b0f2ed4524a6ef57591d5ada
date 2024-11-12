@@ -1,0 +1,45 @@
+{
+  "name": "temp-fs",
+  "version": "0.9.9",
+  "description": "Temporary files, directories or names!",
+  "license": "MIT",
+  "author": "Jak Wings <jakwings@gmail.com>",
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha --reporter spec test/*.js"
+  },
+  "dependencies": {
+    "rimraf": "~2.5.2"
+  },
+  "devDependencies": {
+    "mocha": "~2.4.5",
+    "should": "~8.2.2"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "index.js"
+  ],
+  "keywords": [
+    "tmp",
+    "temp",
+    "tmpfile",
+    "tempfile",
+    "tmpdir",
+    "tempdir",
+    "temporary",
+    "filename",
+    "random"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jakwings/node-temp-fs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jakwings/node-temp-fs/issues"
+  },
+  "homepage": "https://github.com/jakwings/node-temp-fs"
+}

@@ -1,0 +1,38 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var baseGenerator = require('../base-generator.js');
+
+class HostRuleGenerator extends baseGenerator.BaseGenerator {
+    /**
+     * Converts a host rule node to a raw string.
+     *
+     * @param node Host rule node.
+     * @returns Raw string.
+     */
+    static generate(node) {
+        const result = [];
+        if (node.ip) {
+            result.push(node.ip.value);
+        }
+        if (node.hostnames) {
+            result.push(constants.SPACE);
+            result.push(node.hostnames.children.map(({ value }) => value).join(constants.SPACE));
+        }
+        if (node.comment) {
+            result.push(constants.SPACE);
+            result.push(constants.HASHMARK);
+            result.push(constants.SPACE);
+            result.push(node.comment.value);
+        }
+        return result.join(constants.EMPTY);
+    }
+}
+
+exports.HostRuleGenerator = HostRuleGenerator;

@@ -1,0 +1,36 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { NEGATION_MARKER, EMPTY } from '../../utils/constants.mjs';
+
+class ListItemsGenerator {
+    /**
+     * Generates a string representation of a list item.
+     *
+     * @param item List item to generate.
+     * @template T Type of the list item.
+     *
+     * @returns String representation of the list item.
+     */
+    static generateListItem = (item) => {
+        return `${item.exception ? NEGATION_MARKER : EMPTY}${item.value}`;
+    };
+    /**
+     * Generates a string representation of a list of items.
+     *
+     * @param items List of items to generate.
+     * @param separator Separator character.
+     * @template T Type of the list items.
+     *
+     * @returns String representation of the list of items.
+     */
+    static generate = (items, separator) => {
+        return items.map(ListItemsGenerator.generateListItem)
+            .join(separator);
+    };
+}
+
+export { ListItemsGenerator };

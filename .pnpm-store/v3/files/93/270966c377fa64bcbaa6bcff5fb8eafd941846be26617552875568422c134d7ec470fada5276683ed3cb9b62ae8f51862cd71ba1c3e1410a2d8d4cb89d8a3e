@@ -1,0 +1,14 @@
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
+import { BaseSerializer } from '../../base-serializer';
+export declare class ScriptletBodySerializer extends BaseSerializer {
+    /**
+     * Serializes a hint rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     * @param frequentScriptletArgs Map of frequently used scriptlet names / arguments
+     * and their serialization index (optional).
+     */
+    static serialize: (node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer, frequentScriptletArgs?: Map<string, number>) => void;
+}

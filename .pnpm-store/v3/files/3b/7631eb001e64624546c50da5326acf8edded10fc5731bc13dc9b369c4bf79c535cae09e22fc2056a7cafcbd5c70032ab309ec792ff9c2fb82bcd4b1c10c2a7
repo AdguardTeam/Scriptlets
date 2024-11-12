@@ -1,0 +1,14 @@
+/**
+ * @file Customized error class for conversion errors.
+ */
+/**
+ * Customized error class for conversion errors.
+ */
+export declare class RuleConversionError extends Error {
+    /**
+     * Constructs a new `RuleConversionError` instance.
+     *
+     * @param message Error message
+     */
+    constructor(message: string);
+}

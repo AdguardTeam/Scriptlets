@@ -1,0 +1,26 @@
+import { type DomainList } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `DomainListParser` is responsible for parsing a domain list.
+ *
+ * @example
+ * - If the rule is `example.com,~example.net##.ads`, the domain list is `example.com,~example.net`.
+ * - If the rule is `ads.js^$script,domains=example.com|~example.org`, the domain list is `example.com|~example.org`.
+ * This parser is responsible for parsing these domain lists.
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_domains}
+ */
+export declare class DomainListParser extends BaseParser {
+    /**
+     * Parses a domain list, eg. `example.com,example.org,~example.org`
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @param separator Separator character (default: comma)
+     *
+     * @returns Domain list AST.
+     * @throws An {@link AdblockSyntaxError} if the domain list is syntactically invalid.
+     * @throws An {@link Error} if the options are invalid.
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number, separator?: string): DomainList;
+}

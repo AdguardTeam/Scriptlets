@@ -1,0 +1,12 @@
+import { type Node } from '../nodes';
+/**
+ * Base class for generators. Each generator should extend this class.
+ */
+export declare class BaseGenerator {
+    /**
+     * Generates a string from the AST node.
+     *
+     * @param node AST node to generate a string from.
+     */
+    static generate(node: Node): string;
+}

@@ -1,0 +1,25 @@
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
+import { BaseSerializer } from '../../base-serializer';
+/**
+ * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com#$#snippet0 arg0
+ * ```
+ *
+ * but it didn't check if the scriptlet `snippet0` actually supported by any adblocker.
+ *
+ * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
+ */
+export declare class AbpSnippetInjectionBodySerializer extends BaseSerializer {
+    /**
+     * Serializes a scriptlet call body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer): void;
+}

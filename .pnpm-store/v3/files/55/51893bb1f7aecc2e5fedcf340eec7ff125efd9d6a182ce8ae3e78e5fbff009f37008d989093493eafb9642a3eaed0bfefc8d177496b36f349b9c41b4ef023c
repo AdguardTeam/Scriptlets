@@ -1,0 +1,75 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('./constants.js');
+
+/**
+ * @file Position provider class.
+ */
+/**
+ * Class responsible for converting a character offset in source code into a line and column position.
+ * This conversion is particularly needed in linters and VSCode extensions,
+ * where line and column numbers are more human-friendly and intuitive than character offsets.
+ * Moreover, the VSCode diagnostics API does not directly support character offsets,
+ * it also requires line and column numbers.
+ */
+class PositionProvider {
+    /**
+     * Maps a character offset to a line number.
+     */
+    offsetToLine;
+    /**
+     * Maps a line number to the starting character offset of that line.
+     */
+    lineStartOffsets;
+    /**
+     * Constructs a new PositionProvider instance.
+     *
+     * @param sourceCode The source code as a string.
+     */
+    constructor(sourceCode) {
+        this.offsetToLine = [];
+        this.lineStartOffsets = [0];
+        let currentLine = 0;
+        for (let i = 0; i < sourceCode.length; i += 1) {
+            this.offsetToLine[i] = currentLine;
+            // Handle different types of line breaks: LF, FF, and CR
+            if (sourceCode[i] === constants.LF || sourceCode[i] === constants.FF || sourceCode[i] === constants.CR) {
+                currentLine += 1;
+                this.lineStartOffsets[currentLine] = (sourceCode[i] === constants.CR && sourceCode[i + 1] === constants.LF)
+                    ? i + 2
+                    : i + 1;
+                if (sourceCode[i] === constants.CR && sourceCode[i + 1] === constants.LF) {
+                    // Skip the '\n' in a '\r\n' sequence
+                    i += 1;
+                }
+            }
+        }
+        // Handle the case where the last offset is at the end of the source code
+        this.offsetToLine[sourceCode.length] = currentLine;
+    }
+    /**
+     * Converts a character offset to a line and column position.
+     *
+     * @param offset The zero-based character offset in the source code.
+     * @returns A Position object containing the 1-based line and column number, or null if the offset is out of range.
+     */
+    convertOffsetToPosition(offset) {
+        if (offset < 0 || offset > this.offsetToLine.length - 1) {
+            return null;
+        }
+        const line = this.offsetToLine[offset];
+        const lineStartOffset = this.lineStartOffsets[line];
+        return {
+            line: line + 1,
+            column: offset - lineStartOffset + 1,
+        };
+    }
+}
+
+exports.PositionProvider = PositionProvider;

@@ -1,0 +1,17 @@
+import type { ScriptletInjectionRuleBody } from '../../../nodes';
+import { BaseGenerator } from '../../base-generator';
+export declare class AdgScriptletInjectionBodyGenerator extends BaseGenerator {
+    /**
+     * Error messages used by the parser.
+     */
+    static readonly ERROR_MESSAGES: {
+        NO_MULTIPLE_SCRIPTLET_CALLS: string;
+    };
+    /**
+     * Generates a string representation of the AdGuard scriptlet call body.
+     *
+     * @param node Scriptlet injection rule body
+     * @returns String representation of the rule body
+     */
+    static generate(node: ScriptletInjectionRuleBody): string;
+}

@@ -1,0 +1,30 @@
+{
+  "rules": {
+    "indent": [
+      1,
+      2
+    ],
+    "quotes": [
+      2,
+      "single"
+    ],
+    "semi": [
+      2,
+      "always"
+    ],
+    "no-console": 0,
+    "no-trailing-spaces": 2,
+    "no-irregular-whitespace": 2,
+    "camelcase": 2,
+    "brace-style": [2, "1tbs", { "allowSingleLine": true }],
+    "no-constant-condition": 0
+  },
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "extends": "eslint:recommended",
+  "plugins": [
+    "mocha"
+  ]
+}

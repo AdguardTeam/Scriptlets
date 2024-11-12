@@ -1,0 +1,20 @@
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type ModifierList } from '../../nodes';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `ModifierListSerializer` is responsible for serializing modifier lists. Please note that the name is not
+ * uniform, "modifiers" are also known as "options".
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers}
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#non-basic-rules-modifiers}
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
+ */
+export declare class ModifierListSerializer extends BaseSerializer {
+    /**
+     * Serializes a modifier list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: ModifierList, buffer: OutputByteBuffer): void;
+}

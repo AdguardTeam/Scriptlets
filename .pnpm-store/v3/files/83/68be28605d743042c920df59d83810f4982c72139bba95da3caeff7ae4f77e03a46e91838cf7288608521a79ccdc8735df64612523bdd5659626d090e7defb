@@ -1,0 +1,31 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var zod = require('zod');
+var zodCamelcase = require('../utils/zod-camelcase.js');
+var base = require('./base.js');
+var resourceType = require('./resource-type.js');
+
+/**
+ * @file Schema for redirect data.
+ */
+/**
+ * Zod schema for redirect data.
+ */
+zodCamelcase.zodToCamelCase(base.baseCompatibilityDataSchema.extend({
+    /**
+     * Whether the redirect is blocking.
+     */
+    is_blocking: base.booleanSchema.default(false),
+    /**
+     * Resource type(s) belonging to the redirect.
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType}
+     */
+    resource_types: zod.array(resourceType.resourceTypeSchema).default([]),
+}).superRefine(base.baseRefineLogic));

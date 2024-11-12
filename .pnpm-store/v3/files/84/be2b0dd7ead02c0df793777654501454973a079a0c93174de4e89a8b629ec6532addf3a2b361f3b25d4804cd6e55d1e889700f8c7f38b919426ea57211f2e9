@@ -1,0 +1,65 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+import { NULL } from '../../utils/constants.mjs';
+import { CommentRuleType, RuleCategory } from '../../nodes/index.mjs';
+import { BaseDeserializer } from '../base-deserializer.mjs';
+import { AdblockSyntax } from '../../utils/adblockers.mjs';
+import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common.mjs';
+import { ValueDeserializer } from '../misc/value-deserializer.mjs';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.mjs';
+
+/* eslint-disable no-param-reassign */
+/**
+ * `SimpleCommentDeserializer` is responsible for deserializing simple comments.
+ *
+ * Some comments have a special meaning in adblock syntax, like agent comments or hints,
+ * but this parser is only responsible for parsing regular comments,
+ * whose only purpose is to provide some human-readable information.
+ *
+ * @example
+ * ```adblock
+ * ! This is a simple comment
+ * # This is a simple comment, but in host-like syntax
+ * ```
+ */
+class SimpleCommentDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a simple comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(BinaryTypeMarshallingMap.CommentRuleNode);
+        node.type = CommentRuleType.CommentRule;
+        node.category = RuleCategory.Comment;
+        node.syntax = AdblockSyntax.Common;
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case SimpleCommentMarshallingMap.Marker:
+                    ValueDeserializer.deserialize(buffer, node.marker = {});
+                    break;
+                case SimpleCommentMarshallingMap.Text:
+                    ValueDeserializer.deserialize(buffer, node.text = {});
+                    break;
+                case SimpleCommentMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case SimpleCommentMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+export { SimpleCommentDeserializer };

@@ -1,0 +1,11 @@
+import { BaseGenerator } from '../base-generator';
+import type { ConfigCommentRule } from '../../nodes';
+export declare class ConfigCommentGenerator extends BaseGenerator {
+    /**
+     * Converts an inline configuration comment node to a string.
+     *
+     * @param node Inline configuration comment node
+     * @returns Raw string
+     */
+    static generate(node: ConfigCommentRule): string;
+}

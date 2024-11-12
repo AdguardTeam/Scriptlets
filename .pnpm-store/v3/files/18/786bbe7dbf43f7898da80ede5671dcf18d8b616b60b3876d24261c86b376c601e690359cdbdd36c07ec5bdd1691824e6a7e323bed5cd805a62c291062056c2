@@ -1,0 +1,40 @@
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+export declare const enum ConfigCommentRuleMarshallingMap {
+    Marker = 1,
+    Command = 2,
+    Params = 3,
+    Comment = 4,
+    Start = 5,
+    End = 6
+}
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+export declare const enum ConfigNodeMarshallingMap {
+    Value = 1,
+    Start = 2,
+    End = 3
+}
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ *
+ * @see {@link https://github.com/AdguardTeam/AGLint/blob/master/src/linter/inline-config.ts}
+ */
+export declare const FREQUENT_COMMANDS_SERIALIZATION_MAP: Map<string, number>;

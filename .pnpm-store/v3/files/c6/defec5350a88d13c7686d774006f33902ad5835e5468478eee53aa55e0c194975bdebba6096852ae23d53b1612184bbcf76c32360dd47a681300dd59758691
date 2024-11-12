@@ -1,0 +1,31 @@
+import { type NetworkRule } from '../../nodes';
+import { BaseParser } from '../base-parser';
+/**
+ * `NetworkRuleParser` is responsible for parsing network rules.
+ *
+ * Please note that this will parse all syntactically correct network rules.
+ * Modifier compatibility is not checked at the parser level.
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#basic}
+ */
+export declare class NetworkRuleParser extends BaseParser {
+    /**
+     * Parses a network rule (also known as basic rule).
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Network rule AST
+     *
+     * @throws If the rule is syntactically incorrect.
+     */
+    static parse(raw: string, options?: import("../options").ParserOptions, baseOffset?: number): NetworkRule;
+    /**
+     * Finds the index of the separator character in a network rule.
+     *
+     * @param rule Network rule to check
+     * @returns The index of the separator character, or -1 if there is no separator
+     */
+    private static findNetworkRuleSeparatorIndex;
+}

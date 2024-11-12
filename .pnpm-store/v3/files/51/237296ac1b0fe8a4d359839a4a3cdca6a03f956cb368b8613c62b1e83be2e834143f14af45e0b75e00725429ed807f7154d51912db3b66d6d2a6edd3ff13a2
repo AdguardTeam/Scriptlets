@@ -1,0 +1,21 @@
+import { type DomainList } from '../../nodes';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { BaseSerializer } from '../base-serializer';
+/**
+ * `DomainListParser` is responsible for parsing a domain list.
+ *
+ * @example
+ * - If the rule is `example.com,~example.net##.ads`, the domain list is `example.com,~example.net`.
+ * - If the rule is `ads.js^$script,domains=example.com|~example.org`, the domain list is `example.com|~example.org`.
+ * This parser is responsible for parsing these domain lists.
+ * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_domains}
+ */
+export declare class DomainListSerializer extends BaseSerializer {
+    /**
+     * Serializes a domain list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    static serialize(node: DomainList, buffer: OutputByteBuffer): void;
+}

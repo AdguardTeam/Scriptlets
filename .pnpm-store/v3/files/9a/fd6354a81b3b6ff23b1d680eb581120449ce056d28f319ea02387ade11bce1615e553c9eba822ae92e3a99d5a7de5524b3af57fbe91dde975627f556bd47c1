@@ -1,0 +1,81 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../../utils/constants.js');
+var string = require('../../../utils/string.js');
+var adblockSyntaxError = require('../../../errors/adblock-syntax-error.js');
+var parameterListParser = require('../../misc/parameter-list-parser.js');
+var options = require('../../options.js');
+var baseParser = require('../../base-parser.js');
+var abpSnippetInjectionBodyCommon = require('../../../common/abp-snippet-injection-body-common.js');
+
+/**
+ * @file uBlock scriptlet injection body parser
+ */
+/**
+ * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.
+ *
+ * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
+ * For example, it will parse this:
+ * ```adblock
+ * example.com#$#snippet0 arg0
+ * ```
+ *
+ * but it didn't check if the scriptlet `snippet0` actually supported by any adblocker.
+ *
+ * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
+ */
+class AbpSnippetInjectionBodyParser extends baseParser.BaseParser {
+    /**
+     * Parses the body of an Adblock Plus-style snippet rule.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Node of the parsed scriptlet call body
+     * @throws If the body is syntactically incorrect
+     * @example
+     * ```
+     * #$#snippet0 arg0
+     * ```
+     */
+    static parse(raw, options$1 = options.defaultParserOptions, baseOffset = 0) {
+        const result = {
+            type: 'ScriptletInjectionRuleBody',
+            children: [],
+        };
+        if (options$1.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+        let offset = 0;
+        // Skip leading spaces
+        offset = string.StringUtils.skipWS(raw, offset);
+        while (offset < raw.length) {
+            offset = string.StringUtils.skipWS(raw, offset);
+            const scriptletCallStart = offset;
+            // Find the next semicolon or the end of the string
+            let semicolonIndex = string.StringUtils.findUnescapedNonStringNonRegexChar(raw, constants.SEMICOLON, offset);
+            if (semicolonIndex === -1) {
+                semicolonIndex = raw.length;
+            }
+            const scriptletCallEnd = Math.max(string.StringUtils.skipWSBack(raw, semicolonIndex - 1) + 1, scriptletCallStart);
+            const params = parameterListParser.ParameterListParser.parse(raw.slice(scriptletCallStart, scriptletCallEnd), options$1, baseOffset + scriptletCallStart, constants.SPACE);
+            // Parse the scriptlet call
+            result.children.push(params);
+            // Skip the semicolon
+            offset = semicolonIndex + 1;
+        }
+        if (result.children.length === 0) {
+            throw new adblockSyntaxError.AdblockSyntaxError(abpSnippetInjectionBodyCommon.AbpSnippetInjectionBodyCommon.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL, baseOffset, baseOffset + raw.length);
+        }
+        return result;
+    }
+}
+
+exports.AbpSnippetInjectionBodyParser = AbpSnippetInjectionBodyParser;

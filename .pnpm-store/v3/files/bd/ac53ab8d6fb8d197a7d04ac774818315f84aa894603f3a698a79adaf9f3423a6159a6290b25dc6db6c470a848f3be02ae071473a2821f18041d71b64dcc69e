@@ -1,0 +1,69 @@
+{
+  "name": "is-bun-module",
+  "author": "SunsetTechuila <techuila.sunset@gmail.com>",
+  "description": "Is this specifier a Bun core module or supported Node one?",
+  "version": "1.2.1",
+  "license": "MIT",
+  "files": [
+    "dist/**/*"
+  ],
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.mjs",
+  "exports": {
+    ".": {
+      "import": {
+        "default": "./dist/esm/index.mjs",
+        "types": "./dist/esm/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/cjs/index.js",
+        "types": "./dist/cjs/index.d.ts"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "homepage": "https://github.com/SunsetTechuila/is-bun-module",
+  "repository": "github:SunsetTechuila/is-bun-module",
+  "bugs": {
+    "url": "https://github.com/SunsetTechuila/is-bun-module/issues"
+  },
+  "keywords": [
+    "core",
+    "modules",
+    "module",
+    "node",
+    "dependencies",
+    "bun"
+  ],
+  "scripts": {
+    "build": "bun --bun tsup",
+    "check-all": "concurrently --kill-others=failure 'bun run test' 'bun lint' 'bun type-check' 'bun format:check'",
+    "test": "bun run build && bun test",
+    "format": "bun format:base --write",
+    "format:check": "bun format:base --check",
+    "format:base": "bun --bun prettier . --cache",
+    "lint": "bun --bun eslint . --cache",
+    "type-check": "bun --bun tsc"
+  },
+  "dependencies": {
+    "semver": "^7.6.3"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.4.1",
+    "@commitlint/config-conventional": "^19.4.1",
+    "@eslint/js": "^9.10.0",
+    "@semantic-release/exec": "^6.0.3",
+    "@types/bun": "^1.1.8",
+    "@types/eslint__js": "^8.42.3",
+    "@types/semver": "^7.5.8",
+    "concurrently": "^9.0.0",
+    "eslint": "^9.10.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.5",
+    "prettier": "^3.3.3",
+    "semantic-release": "^24.1.0",
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.4.0"
+  }
+}

@@ -1,0 +1,277 @@
+/**
+ * @file Utility functions for string manipulation.
+ */
+export declare const SINGLE_QUOTE_MARKER = "'";
+export declare const DOUBLE_QUOTE_MARKER = "\"";
+export type NewLineType = 'lf' | 'crlf' | 'cr';
+export type NewLineSplit = [string, NewLineType | null][];
+export declare class StringUtils {
+    /**
+     * Finds the first occurrence of a character that:
+     * - isn't preceded by an escape character
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param start - Start index
+     * @param escapeCharacter - Escape character, \ by default
+     * @param end - End index (excluded)
+     * @returns Index or -1 if the character not found
+     */
+    static findNextUnescapedCharacter(pattern: string, searchedCharacter: string, start?: number, escapeCharacter?: string, end?: number): number;
+    /**
+     * Finds the first occurrence in backward direction of a character that isn't preceded by an escape character.
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param start - Start index
+     * @param escapeCharacter - Escape character, \ by default
+     * @param end - End index (Included)
+     * @returns Index or -1 if the character not found
+     */
+    static findNextUnescapedCharacterBackwards(pattern: string, searchedCharacter: string, start?: number, escapeCharacter?: string, end?: number): number;
+    /**
+     * Finds the last occurrence of a character that:
+     * - isn't preceded by an escape character
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param escapeCharacter - Escape character, \ by default
+     * @returns Index or -1 if the character not found
+     */
+    static findLastUnescapedCharacter(pattern: string, searchedCharacter: string, escapeCharacter?: string): number;
+    /**
+     * Finds the next occurrence of a character that:
+     * - isn't preceded by an escape character
+     * - isn't followed by the specified character
+     *
+     * @param pattern - Source pattern
+     * @param start - Start index
+     * @param searchedCharacter - Searched character
+     * @param notFollowedBy - Searched character not followed by this character
+     * @param escapeCharacter - Escape character, \ by default
+     * @returns Index or -1 if the character not found
+     */
+    static findNextUnescapedCharacterThatNotFollowedBy(pattern: string, start: number, searchedCharacter: string, notFollowedBy: string, escapeCharacter?: string): number;
+    /**
+     * Finds the last occurrence of a character that:
+     * - isn't preceded by an escape character
+     * - isn't followed by the specified character
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param notFollowedBy - Searched character not followed by this character
+     * @param escapeCharacter - Escape character, \ by default
+     * @returns Index or -1 if the character not found
+     */
+    static findLastUnescapedCharacterThatNotFollowedBy(pattern: string, searchedCharacter: string, notFollowedBy: string, escapeCharacter?: string): number;
+    /**
+     * Finds the next occurrence of a character that:
+     * - isn't part of any string literal ('literal' or "literal")
+     * - isn't part of any RegExp expression (/regexp/)
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param start - Start index
+     * @returns Index or -1 if the character not found
+     */
+    static findUnescapedNonStringNonRegexChar(pattern: string, searchedCharacter: string, start?: number): number;
+    /**
+     * Finds the next occurrence of a character that:
+     * - isn't part of any string literal ('literal' or "literal")
+     * - isn't preceded by an escape character
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param start - Start index
+     * @param escapeCharacter - Escape character, \ by default
+     * @returns Index or -1 if the character not found
+     */
+    static findNextUnquotedUnescapedCharacter(pattern: string, searchedCharacter: string, start?: number, escapeCharacter?: string): number;
+    /**
+     * Finds the next occurrence of a character that:
+     * - isn't "bracketed"
+     * - isn't preceded by an escape character
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param start - Start index
+     * @param escapeCharacter - Escape character, \ by default
+     * @param openBracket - Open bracket, ( by default
+     * @param closeBracket - Close bracket, ( by default
+     * @throws If the opening and closing brackets are the same
+     * @returns Index or -1 if the character not found
+     */
+    static findNextNotBracketedUnescapedCharacter(pattern: string, searchedCharacter: string, start?: number, escapeCharacter?: string, openBracket?: string, closeBracket?: string): number;
+    /**
+     * Splits the source pattern along characters that:
+     * - isn't part of any string literal ('literal' or "literal")
+     * - isn't preceded by an escape character
+     *
+     * @param pattern - Source pattern
+     * @param delimeterCharacter - Delimeter character
+     * @returns Splitted string
+     */
+    static splitStringByUnquotedUnescapedCharacter(pattern: string, delimeterCharacter: string): string[];
+    /**
+     * Splits the source pattern along characters that:
+     * - isn't part of any string literal ('literal' or "literal")
+     * - isn't part of any RegExp expression (/regexp/)
+     * - isn't preceded by an escape character
+     *
+     * @param pattern - Source pattern
+     * @param delimeterCharacter - Delimeter character
+     * @returns Splitted string
+     */
+    static splitStringByUnescapedNonStringNonRegexChar(pattern: string, delimeterCharacter: string): string[];
+    /**
+     * Splits the source pattern along characters that:
+     * - isn't preceded by an escape character
+     *
+     * @param pattern - Source pattern
+     * @param delimeterCharacter - Delimeter character
+     * @returns Splitted string
+     */
+    static splitStringByUnescapedCharacter(pattern: string, delimeterCharacter: string): string[];
+    /**
+     * Determines whether the given character is a space or tab character.
+     *
+     * @param char - The character to check.
+     * @returns true if the given character is a space or tab character, false otherwise.
+     */
+    static isWhitespace(char: string): boolean;
+    /**
+     * Checks if the given character is a digit.
+     *
+     * @param char The character to check.
+     * @returns `true` if the given character is a digit, `false` otherwise.
+     */
+    static isDigit(char: string): boolean;
+    /**
+     * Checks if the given character is a small letter.
+     *
+     * @param char The character to check.
+     * @returns `true` if the given character is a small letter, `false` otherwise.
+     */
+    static isSmallLetter(char: string): boolean;
+    /**
+     * Checks if the given character is a capital letter.
+     *
+     * @param char The character to check.
+     * @returns `true` if the given character is a capital letter, `false` otherwise.
+     */
+    static isCapitalLetter(char: string): boolean;
+    /**
+     * Checks if the given character is a letter (small or capital).
+     *
+     * @param char The character to check.
+     * @returns `true` if the given character is a letter, `false` otherwise.
+     */
+    static isLetter(char: string): boolean;
+    /**
+     * Checks if the given character is a letter or a digit.
+     *
+     * @param char Character to check
+     * @returns `true` if the given character is a letter or a digit, `false` otherwise.
+     */
+    static isAlphaNumeric(char: string): boolean;
+    /**
+     * Searches for the first non-whitespace character in the source pattern.
+     *
+     * @param pattern - Source pattern
+     * @param start - Start index
+     * @returns Index or -1 if the character not found
+     */
+    static findFirstNonWhitespaceCharacter(pattern: string, start?: number): number;
+    /**
+     * Searches for the last non-whitespace character in the source pattern.
+     *
+     * @param pattern - Source pattern
+     * @returns Index or -1 if the character not found
+     */
+    static findLastNonWhitespaceCharacter(pattern: string): number;
+    /**
+     * Finds the next whitespace character in the pattern.
+     *
+     * @param pattern Pattern to search in
+     * @param start Start index
+     * @returns Index of the next whitespace character or the length of the pattern if not found
+     */
+    static findNextWhitespaceCharacter(pattern: string, start?: number): number;
+    /**
+     * Escapes a specified character in the string.
+     *
+     * @param pattern - Input string
+     * @param character - Character to escape
+     * @param escapeCharacter - Escape character (optional)
+     * @returns Escaped string
+     */
+    static escapeCharacter(pattern: string, character: string, escapeCharacter?: string): string;
+    /**
+     * Searches for the next non-whitespace character in the source pattern.
+     *
+     * @param pattern Pattern to search
+     * @param start Start index
+     * @returns Index of the next non-whitespace character or the length of the pattern
+     */
+    static skipWS(pattern: string, start?: number): number;
+    /**
+     * Searches for the previous non-whitespace character in the source pattern.
+     *
+     * @param pattern Pattern to search
+     * @param start Start index
+     * @returns Index of the previous non-whitespace character or -1
+     */
+    static skipWSBack(pattern: string, start?: number): number;
+    /**
+     * Checks if the given character is a new line character.
+     *
+     * @param char Character to check
+     * @returns `true` if the given character is a new line character, `false` otherwise.
+     */
+    static isEOL(char: string): boolean;
+    /**
+     * Splits a string along newline characters.
+     *
+     * @param input - Input string
+     * @returns Splitted string
+     */
+    static splitStringByNewLines(input: string): string[];
+    /**
+     * Splits a string by new lines and stores the new line type for each line
+     *
+     * @param input The input string to be split
+     * @returns An array of tuples, where each tuple contains a line of the input string and its
+     * corresponding new line type ("lf", "crlf", or "cr")
+     */
+    static splitStringByNewLinesEx(input: string): NewLineSplit;
+    /**
+     * Merges an array of tuples (line, newLineType) into a single string
+     *
+     * @param input The array of tuples to be merged
+     * @returns A single string containing the lines and new line characters from the input array
+     */
+    static mergeStringByNewLines(input: NewLineSplit): string;
+    /**
+     * Helper method to parse a raw string as a number
+     *
+     * @param raw Raw string to parse
+     * @returns Parsed number
+     * @throws If the raw string can't be parsed as a number
+     */
+    static parseNumber(raw: string): number;
+    /**
+     * Checks if the given value is a string.
+     *
+     * @param value Value to check
+     * @returns `true` if the value is a string, `false` otherwise
+     */
+    static isString(value: unknown): value is string;
+    /**
+     * Escapes the given characters in the input string.
+     *
+     * @param input Input string
+     * @param characters Characters to escape (by default, no characters are escaped)
+     * @returns Escaped string
+     */
+    static escapeCharacters(input: string, characters?: Set<string>): string;
+}

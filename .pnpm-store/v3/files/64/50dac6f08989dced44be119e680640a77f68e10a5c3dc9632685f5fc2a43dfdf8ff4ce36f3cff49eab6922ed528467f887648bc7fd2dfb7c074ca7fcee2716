@@ -1,0 +1,66 @@
+/*
+ * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
+ * (c) 2024 Adguard Software Ltd.
+ * Released under the MIT license
+ * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
+ */
+'use strict';
+
+var constants = require('../../utils/constants.js');
+var index = require('../../nodes/index.js');
+var baseDeserializer = require('../base-deserializer.js');
+var domainListCommon = require('../../marshalling-utils/misc/domain-list-common.js');
+var listItemsDeserializer = require('./list-items-deserializer.js');
+var binaryTypeCommon = require('../../marshalling-utils/misc/binary-type-common.js');
+
+/* eslint-disable no-param-reassign */
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+let separatorDeserializationMap;
+const getSeparatorDeserializationMap = () => {
+    if (!separatorDeserializationMap) {
+        separatorDeserializationMap = new Map(Array.from(domainListCommon.SEPARATOR_SERIALIZATION_MAP)
+            .map(([key, value]) => [value, key]));
+    }
+    return separatorDeserializationMap;
+};
+/**
+ * `DomainListDeserializer` is responsible for deserializing a domain list.
+ */
+class DomainListDeserializer extends baseDeserializer.BaseDeserializer {
+    /**
+     * Deserializes a modifier list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    static deserialize(buffer, node) {
+        buffer.assertUint8(binaryTypeCommon.BinaryTypeMarshallingMap.DomainListNode);
+        node.type = index.ListNodeType.DomainList;
+        let prop = buffer.readUint8();
+        while (prop !== constants.NULL) {
+            switch (prop) {
+                case domainListCommon.DomainListMarshallingMap.Separator:
+                    // eslint-disable-next-line max-len
+                    node.separator = (getSeparatorDeserializationMap().get(buffer.readUint8()) ?? constants.COMMA);
+                    break;
+                case domainListCommon.DomainListMarshallingMap.Children:
+                    listItemsDeserializer.ListItemsDeserializer.deserialize(buffer, node.children = []);
+                    break;
+                case domainListCommon.DomainListMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case domainListCommon.DomainListMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}
+
+exports.DomainListDeserializer = DomainListDeserializer;
