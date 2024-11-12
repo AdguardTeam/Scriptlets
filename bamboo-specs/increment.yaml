@@ -5,11 +5,11 @@ plan:
   key: SCRIPTLETSINCR
   name: scriptlets - increment
 variables:
-  dockerContainer: adguard/node-ssh:15.14--6
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Increment:
-      manual: false
+      manual: true
       final: false
       jobs:
         - Increment
