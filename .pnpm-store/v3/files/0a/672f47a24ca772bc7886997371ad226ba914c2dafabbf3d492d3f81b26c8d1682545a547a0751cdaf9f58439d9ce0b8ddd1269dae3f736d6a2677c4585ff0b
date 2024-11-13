@@ -1,2 +1,0 @@
-import { type AdblockSyntax } from '../utils/adblockers';
-export declare const getSyntaxDeserializationMap: () => Map<number, AdblockSyntax>;

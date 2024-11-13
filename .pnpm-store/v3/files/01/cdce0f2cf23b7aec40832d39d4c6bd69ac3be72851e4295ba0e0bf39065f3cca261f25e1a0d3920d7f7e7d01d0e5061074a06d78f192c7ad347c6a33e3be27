@@ -1,9 +1,0 @@
-/*
- * AGTree v3.0.0-alpha.1 (build date: Tue, 12 Nov 2024 16:11:58 GMT)
- * (c) 2024 Adguard Software Ltd.
- * Released under the MIT license
- * https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme
- */
-const version = "3.0.0-alpha.1";
-
-export { version };

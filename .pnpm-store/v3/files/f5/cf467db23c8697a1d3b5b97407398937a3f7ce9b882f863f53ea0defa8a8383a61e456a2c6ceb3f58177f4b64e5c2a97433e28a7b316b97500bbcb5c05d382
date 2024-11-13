@@ -1,2 +1,0 @@
-process.on('exit', function () {
-});

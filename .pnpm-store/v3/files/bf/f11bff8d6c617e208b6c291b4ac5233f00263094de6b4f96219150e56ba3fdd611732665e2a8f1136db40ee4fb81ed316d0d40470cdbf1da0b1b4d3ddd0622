@@ -1,8 +1,0 @@
-export declare class AbpSnippetInjectionBodyCommon {
-    /**
-     * Error messages used by the parser and generator.
-     */
-    static ERROR_MESSAGES: {
-        EMPTY_SCRIPTLET_CALL: string;
-    };
-}

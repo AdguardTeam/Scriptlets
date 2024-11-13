@@ -1,9 +1,0 @@
-/**
- * Known uBO-specific pseudo-class names.
- */
-export declare const enum UboPseudoName {
-    MatchesMedia = "matches-media",
-    MatchesPath = "matches-path",
-    Remove = "remove",
-    Style = "style"
-}
