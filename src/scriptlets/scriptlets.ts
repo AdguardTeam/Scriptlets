@@ -1,7 +1,7 @@
 // Ignore this module, because it appears only during build
 // @ts-ignore
-import { getScriptletFunction } from 'scriptlets-func';
 // eslint-disable-next-line import/order
+import { getScriptletFunction } from 'scriptlets-func';
 import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
 
 /**
