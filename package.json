@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "scripts": {
         "build": "rimraf dist && babel-node -x .js,.ts scripts/build.js",
@@ -137,6 +137,7 @@
         "markdownlint-cli": "^0.34.0",
         "node-qunit-puppeteer": "^2.2.0",
         "openurl": "^1.1.1",
+        "puppeteer": "^23.7.1",
         "qunit": "^2.22.0",
         "rimraf": "^6.0.1",
         "rollup": "^4.24.0",

@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [v2.0.0] - 2024-11-12
+## [v2.0.1] - 2024-11-13
 
 ### Added
 
@@ -39,8 +39,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `isUboRedirectCompatibleWithAdg`, `isAbpRedirectCompatibleWithAdg`, `convertUboRedirectToAdg`,
   `convertAbpRedirectToAdg`, `convertRedirectToAdg`, and `convertRedirectNameToAdg` functions.
 
-
-[v2.0.0]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...v2.0.0
+[v2.0.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...v2.0.1
 [@adguard/agtree]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.1
 [#451]: https://github.com/AdguardTeam/Scriptlets/issues/451
 [#415]: https://github.com/AdguardTeam/Scriptlets/issues/415

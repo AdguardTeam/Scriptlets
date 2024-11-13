@@ -49,7 +49,7 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('prevent-canvas', '!2d')
  *     ```
  *
- * @added unknown.
+ * @added v2.0.1.
  */
 export function preventCanvas(source: Source, contextType?: string) {
     const handlerWrapper = (
