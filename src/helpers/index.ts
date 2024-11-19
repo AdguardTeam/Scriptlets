@@ -30,6 +30,7 @@ export * from './get-wildcard-property-in-chain';
 export * from './hit';
 export * from './match-request-props';
 export * from './match-stack';
+export { extractOrCreatePolicy } from './trusted-types-utils';
 export * from './observer';
 export * from './parse-flags';
 export * from './parse-keyword-value';

@@ -3,6 +3,7 @@
 // eslint-disable-next-line import/order
 import { getScriptletFunction } from 'scriptlets-func';
 import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
+import { type Api } from '../content-script-api';
 
 /**
  * Scriptlet properties
@@ -61,6 +62,13 @@ export interface Source {
      * scriptlet can be called multiple times.
      */
     uniqueId?: string;
+
+    /**
+     * Instance of helper `API` provided from `content-script`.
+     *
+     * Property optional for backwards compatibility.
+     */
+    api?: Api;
 }
 
 /**
