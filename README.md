@@ -199,38 +199,14 @@ See the list of [available redirect resources](./wiki/about-redirects.md#redirec
 
 Install dependencies:
 
-```bash
+```shell
 pnpm install
 ```
 
 Build dist:
 
-```bash
+```shell
 pnpm build
-```
-
-In tsurlfilter directory install and link dependencies, link scriptlets,
-move into package and build, and create tsurlfilter link.
-
-```bash
-lerna bootstrap
-
-pnpm link --global "@adguard/scriptlets"
-
-cd ./packages/tsurlfilter
-pnpm build
-yarn link
-```
-
-In extension directory install dependencies, link packages and build
-
-``` bash
-yarn
-
-yarn link @adguard/scriptlets
-yarn link @adguard/tsurlfilter
-
-yarn dev
 ```
 
 ### <a name="how-to-test"></a> How to test
@@ -239,7 +215,7 @@ Some tests are run in QUnit, some in Jest.
 
 Run all tests:
 
-```bash
+```shell
 pnpm test
 ```
 
@@ -251,7 +227,7 @@ pnpm test
 
     For scriptlets and redirects test run can be more specific:
 
-    ```bash
+    ```shell
     // node test run
     pnpm test:qunit scriptlets --name set-cookie
     pnpm test:qunit redirects --name ati-smarttag
@@ -265,20 +241,20 @@ pnpm test
     you may change your scriptlet/redirect code, and without stopping the server
     run in new terminal:
 
-    ```bash
+    ```shell
     pnpm test:qunit scriptlets --name set-cookie --build
     ```
 
 1. Run all jest tests:
 
-    ```bash
+    ```shell
     pnpm test:jest
     ```
 
     or limit the testing — `testRegex` may be specified in `jest.config.js`
     or specify [test name](https://jestjs.io/docs/cli#--testnamepatternregex) in command line, e.g.:
 
-    ```bash
+    ```shell
     pnpm test:jest -t isValidScriptletRule
     ```
 
@@ -287,7 +263,7 @@ To run browserstack tests create `.env` file or copy and rename `.env-example`.
 Fill in `<username>` and `<key>` with data from your Browserstack profile.
 Run next command:
 
-```bash
+```shell
 pnpm browserstack
 ```
 
@@ -297,7 +273,7 @@ Tests run by `jest` should be named `.spec.js`, so they will be not included in 
 
 Use `debugger;` statement where you need it, run
 
-```bash
+```shell
 pnpm test
 ```
 
@@ -308,6 +284,29 @@ and open needed HTML file from `tests/dist` in your browser with devtools
 
 Scriptlets library relies on external packages, such as `@adguard/agtree`.
 During development, you might need to link these packages using `pnpm link`.
+
+To check changes in [browser-extension](https://github.com/AdguardTeam/AdguardBrowserExtension/),
+you should link scriptlets to tsurlfilter and tswebextension first:
+
+1. Build scriptlets — see [How to build](#how-to-build).
+
+1. In scriptlets directory run:
+
+    ```shell
+    pnpm link --global
+    ```
+
+1. In [tsurlfilter][gh-tsurlfilter] monorepo:
+
+    - link scriptlets:
+
+        ```shell
+        pnpm link --global "@adguard/scriptlets"
+        ```
+
+    - run required command to link monorepo packages — see [Linking monorepo packages to another projects].
+
+[Linking monorepo packages to another projects]: https://github.com/AdguardTeam/tsurlfilter#dev-link
 
 ### <a name="how-to-update-wiki"></a> How to update wiki
 
@@ -379,7 +378,7 @@ Schema:
 
 You can install the library using
 
-- [Yarn][yarn-pkg-manager-url]: `yarn add @adguard/scriptlets`
+- [Yarn][yarn-pkg-manager-url]: `pnpm add @adguard/scriptlets`
 - [NPM][npm-pkg-manager-url]: `npm install @adguard/scriptlets`
 - [PNPM][pnpm-pkg-manager-url]: `pnpm add @adguard/scriptlets`
 
@@ -746,7 +745,7 @@ declare function convertAdgRedirectToUbo(rule: string): string;
 ## <a name="used-by"> Projects using Scriptlets
 
 - [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
-- [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter)
+- [TSUrlFilter][gh-tsurlfilter]
 - [FiltersCompiler](https://github.com/AdguardTeam/FiltersCompiler)
   (`tsurlfilter`'s update might be required as well)
 - [AdguardBrowserExtension](https://github.com/AdguardTeam/AdguardBrowserExtension)
@@ -761,3 +760,4 @@ declare function convertAdgRedirectToUbo(rule: string): string;
 [yarn-pkg-manager-url]: https://yarnpkg.com/en/docs/install
 [npm-pkg-manager-url]: https://www.npmjs.com/get-npm
 [pnpm-pkg-manager-url]: https://pnpm.io/installation
+[gh-tsurlfilter]: https://github.com/AdguardTeam/tsurlfilter
