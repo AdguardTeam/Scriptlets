@@ -127,6 +127,27 @@ import { type Source } from './scriptlets';
  * @added v1.7.3.
  */
 /* eslint-enable max-len */
+
+/**
+ * Object that contains information about element that can be clicked
+ */
+interface ElementObject {
+    /**
+     * HTML element to be clicked, or null if not found
+     */
+    element: HTMLElement | null;
+
+    /**
+     * Indicates whether the element has been clicked
+     */
+    clicked: boolean;
+
+    /**
+     * CSS selector text used to find the element
+     */
+    selectorText: string | null;
+}
+
 export function trustedClickElement(
     source: Source,
     selectors: string,
@@ -313,13 +334,37 @@ export function trustedClickElement(
         .split(SELECTORS_DELIMITER)
         .map((selector) => selector.trim());
 
-    const createElementObj = (element: any): Object => {
+    const createElementObj = (element: any, selector?: string | null): Object => {
         return {
             element: element || null,
             clicked: false,
+            selectorText: selector || null,
         };
     };
     const elementsSequence = Array(selectorsSequence.length).fill(createElementObj(null));
+
+    /**
+     * Attempts to find and click an element based on the provided selector data.
+     *
+     * @param elementObj - Object containing element selector information
+     *
+     */
+    const findAndClickElement = (elementObj: ElementObject): void => {
+        try {
+            if (!elementObj.selectorText) {
+                return;
+            }
+            const element = queryShadowSelector(elementObj.selectorText) as HTMLElement;
+            if (!element) {
+                logMessage(source, `Could not find element: '${elementObj.selectorText}'`);
+                return;
+            }
+            element.click();
+            elementObj.clicked = true;
+        } catch (error) {
+            logMessage(source, `Could not click element: '${elementObj.selectorText}'`);
+        }
+    };
 
     // Flag indicating if the reload is set
     let shouldReloadAfterClick: boolean = false;
@@ -388,8 +433,15 @@ export function trustedClickElement(
                 if (textMatchRegexp && !doesElementContainText(elementObj.element, textMatchRegexp)) {
                     continue;
                 }
-                elementObj.element.click();
-                elementObj.clicked = true;
+                // Checks if node is connected to a Document object,
+                // if not, try to find the element again
+                // https://github.com/AdguardTeam/Scriptlets/issues/391
+                if (elementObj.element.isConnected) {
+                    elementObj.element.click();
+                    elementObj.clicked = true;
+                } else {
+                    findAndClickElement(elementObj);
+                }
             }
         }
 
@@ -407,8 +459,8 @@ export function trustedClickElement(
         }
     };
 
-    const handleElement = (element: Element, i: number) => {
-        const elementObj = createElementObj(element);
+    const handleElement = (element: Element, i: number, selector: string) => {
+        const elementObj = createElementObj(element, selector);
         elementsSequence[i] = elementObj;
 
         if (canClick) {
@@ -433,7 +485,7 @@ export function trustedClickElement(
                 return;
             }
 
-            handleElement(element, i);
+            handleElement(element, i, selector);
             fulfilledSelectors.push(selector);
         });
 

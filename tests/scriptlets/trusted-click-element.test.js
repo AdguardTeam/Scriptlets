@@ -74,6 +74,36 @@ test('Element added to DOM is clicked', (assert) => {
     }, 150);
 });
 
+test('Element added to DOM, removed and then added again - should be clicked', (assert) => {
+    const DELAY = 100;
+    const ELEM_COUNT = 1;
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+
+    const done = assert.async();
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, '', DELAY]);
+
+    const panelToRemove = createPanel();
+    const clickableToRemove = createClickable(1);
+    panelToRemove.appendChild(clickableToRemove);
+
+    let clickable;
+    setTimeout(() => {
+        removePanel();
+        const panel = createPanel();
+        clickable = createClickable(1);
+        panel.appendChild(clickable);
+    }, 10);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
 test('Multiple elements clicked - one element loaded before scriptlet, rest added later', (assert) => {
     const CLICK_ORDER = [1, 2, 3];
     // Assert elements for being clicked, hit func execution & click order
