@@ -129,5 +129,22 @@ module.exports = {
                 ],
             },
         },
+        // Array destructuring is not allowed according to the
+        // ReferenceError: _slicedToArray is not defined
+        {
+            files: ['src/**/*.{js,ts}'],
+            rules: {
+                'prefer-destructuring': [
+                    'error',
+                    {
+                        array: false,
+                    },
+                ],
+                'no-restricted-syntax': [
+                    'error',
+                    'ArrayPattern',
+                ],
+            },
+        },
     ],
 };

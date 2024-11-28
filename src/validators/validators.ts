@@ -316,7 +316,7 @@ export const isValidAdgRedirectRule = (rule: string): boolean => {
         return false;
     }
 
-    const [resource] = resources;
+    const resource = resources[0];
 
     if (!resource.resource) {
         return resource.exceptionRule;
