@@ -6,6 +6,8 @@ import {
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    doesElementContainText,
+    findElementWithText,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -16,6 +18,9 @@ import { type Source } from './scriptlets';
  * @description
  * Clicks selected elements in a strict sequence, ordered by selectors passed,
  * and waiting for them to render in the DOM first.
+ * First matched element is clicked unless `containsText` is specified.
+ * If `containsText` is specified, then it searches for all given selectors and clicks
+ * the first element containing the specified text.
  * Deactivates after all elements have been clicked or by 10s timeout.
  *
  * ### Syntax
@@ -305,24 +310,6 @@ export function trustedClickElement(
     const textMatchRegexp = textMatches ? toRegExp(textMatches) : null;
 
     /**
-     * Checks if an element contains the specified text.
-     *
-     * @param element - The element to check.
-     * @param matchRegexp - The text to match.
-     * @returns True if the element contains the specified text, otherwise false.
-     */
-    const doesElementContainText = (
-        element: Element,
-        matchRegexp: RegExp,
-    ): boolean => {
-        const { textContent } = element;
-        if (!textContent) {
-            return false;
-        }
-        return matchRegexp.test(textContent);
-    };
-
-    /**
      * Create selectors array and swap selectors to null on finding it's element
      *
      * Selectors / nulls should not be (re)moved from array to:
@@ -430,9 +417,6 @@ export function trustedClickElement(
 
             // Skip already clicked elements
             if (!elementObj.clicked) {
-                if (textMatchRegexp && !doesElementContainText(elementObj.element, textMatchRegexp)) {
-                    continue;
-                }
                 // Checks if node is connected to a Document object,
                 // if not, try to find the element again
                 // https://github.com/AdguardTeam/Scriptlets/issues/391
@@ -480,7 +464,7 @@ export function trustedClickElement(
             if (!selector) {
                 return;
             }
-            const element = queryShadowSelector(selector);
+            const element = queryShadowSelector(selector, document.documentElement, textMatchRegexp);
             if (!element) {
                 return;
             }
@@ -544,7 +528,7 @@ export function trustedClickElement(
             if (!selector) {
                 return false;
             }
-            const element = queryShadowSelector(selector);
+            const element = queryShadowSelector(selector, document.documentElement, textMatchRegexp);
             return !!element;
         });
         if (foundElements) {
@@ -585,4 +569,6 @@ trustedClickElement.injections = [
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    doesElementContainText,
+    findElementWithText,
 ];

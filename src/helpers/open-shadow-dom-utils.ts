@@ -9,10 +9,10 @@ import { flatten } from './array-utils';
 export const findHostElements = (rootElement: Element | ShadowRoot | null): HTMLElement[] => {
     const hosts: HTMLElement[] = [];
     if (rootElement) {
-    // Element.querySelectorAll() returns list of elements
-    // which are defined in DOM of Element.
-    // Meanwhile, inner DOM of the element with shadowRoot property
-    // is absolutely another DOM and which can not be reached by querySelectorAll('*')
+        // Element.querySelectorAll() returns list of elements
+        // which are defined in DOM of Element.
+        // Meanwhile, inner DOM of the element with shadowRoot property
+        // is absolutely another DOM and which can not be reached by querySelectorAll('*')
         const domElems = rootElement.querySelectorAll('*');
         domElems.forEach((el) => {
             if (el.shadowRoot) {
@@ -74,6 +74,47 @@ export const pierceShadowDom = (
 type QueryFunc = typeof document.querySelector;
 
 /**
+ * Checks if an element contains the specified text.
+ *
+ * @param element - The element to check.
+ * @param matchRegexp - The text to match.
+ * @returns True if the element contains the specified text, otherwise false.
+ */
+export function doesElementContainText(
+    element: Element,
+    matchRegexp: RegExp,
+): boolean {
+    const { textContent } = element;
+    if (!textContent) {
+        return false;
+    }
+    return matchRegexp.test(textContent);
+}
+
+/**
+ * Finds an element within the given root element that matches the specified element
+ * and contains text matching the provided regular expression.
+ *
+ * @param rootElement - The root element to search within.
+ * @param selector - The element to find.
+ * @param matchRegexp - The regular expression to match the text content of the elements.
+ * @returns The first element that matches the criteria, or null if no such element is found.
+ */
+export function findElementWithText(
+    rootElement: Element,
+    selector: string,
+    matchRegexp: RegExp,
+): Element | null {
+    const elements = rootElement.querySelectorAll(selector);
+    for (let i = 0; i < elements.length; i += 1) {
+        if (doesElementContainText(elements[i], matchRegexp)) {
+            return elements[i];
+        }
+    }
+    return null;
+}
+
+/**
  * Retrieves the first Element that matches the selector, with the ability
  * to select elements from inside open shadow-dom.
  *
@@ -82,15 +123,20 @@ type QueryFunc = typeof document.querySelector;
  * to find the element containing shadow root, and shadow root selector, to find the element inside shadow dom.
  * @param context The Element or Document which is the context for the query.
  * @param context.querySelector The querySelector function to use.
+ * @param textContent The text content to match.
  * @returns The first Element within the document that matches the specified selector, or null if no matches are found.
  */
 export function queryShadowSelector(
     selector: string,
     context: { querySelector: QueryFunc } = document.documentElement,
+    textContent: RegExp | null = null,
 ): ReturnType<QueryFunc> {
     const SHADOW_COMBINATOR = ' >>> ';
     const pos = selector.indexOf(SHADOW_COMBINATOR);
     if (pos === -1) {
+        if (textContent) {
+            return findElementWithText(context as Element, selector, textContent);
+        }
         return context.querySelector(selector);
     }
 
@@ -101,5 +147,5 @@ export function queryShadowSelector(
     }
 
     const shadowRootSelector = selector.slice(pos + SHADOW_COMBINATOR.length).trim();
-    return queryShadowSelector(shadowRootSelector, elem.shadowRoot);
+    return queryShadowSelector(shadowRootSelector, elem.shadowRoot, textContent);
 }

@@ -316,6 +316,35 @@ test('extraMatch - text match, matched', (assert) => {
     }, 150);
 });
 
+test('extraMatch - text match, few elements, matched only first element with text', (assert) => {
+    const textToMatch = 'Accept cookie';
+    const EXTRA_MATCH_STR = `containsText:${textToMatch}`;
+
+    const ELEM_COUNT = 1;
+    // Check hit func execution, one element should be clicked, and one should not be clicked (3)
+    const ASSERTIONS = ELEM_COUNT + 1 + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > [id^="${CLICKABLE_NAME}"]`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+    const panel = createPanel();
+    const clickableNotMatched = createClickable(1, 'Not match');
+    const clickableMatched = createClickable(1, textToMatch);
+    const clickableMatchedShouldNotBeClicked = createClickable(1, textToMatch);
+    panel.appendChild(clickableNotMatched);
+    panel.appendChild(clickableMatched);
+    panel.appendChild(clickableMatchedShouldNotBeClicked);
+
+    setTimeout(() => {
+        assert.ok(clickableMatched.getAttribute('clicked'), 'Element should be clicked');
+        assert.notOk(clickableMatchedShouldNotBeClicked.getAttribute('clicked'), 'Element should NOT be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
 test('extraMatch - text match regexp, matched', (assert) => {
     const textToMatch = 'Reject foo bar cookie';
     const EXTRA_MATCH_STR = 'containsText:/Reject.*cookie/';
@@ -890,6 +919,39 @@ test('Closed shadow dom element clicked', (assert) => {
 
     setTimeout(() => {
         assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('Closed shadow dom element clicked - text', (assert) => {
+    const textToMatch = 'Accept cookie';
+    const EXTRA_MATCH_STR = `containsText:${textToMatch}`;
+
+    const ELEM_COUNT = 1;
+    // Check hit func execution, one element should be clicked, and one should not be clicked (3)
+    const ASSERTIONS = ELEM_COUNT + 1 + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> div > [id^="${CLICKABLE_NAME}"]`;
+
+    runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+
+    const panel = createPanel();
+    const shadowRoot = panel.attachShadow({ mode: 'closed' });
+    const div = document.createElement('div');
+    const clickableNotMatched = createClickable(1, 'Not match');
+    const clickableMatched = createClickable(1, textToMatch);
+    const clickableMatchedShouldNOTBeClicked = createClickable(1, textToMatch);
+    div.appendChild(clickableNotMatched);
+    div.appendChild(clickableMatched);
+    div.appendChild(clickableMatchedShouldNOTBeClicked);
+    shadowRoot.appendChild(div);
+
+    setTimeout(() => {
+        assert.ok(clickableMatched.getAttribute('clicked'), 'Element should be clicked');
+        assert.notOk(clickableMatchedShouldNOTBeClicked.getAttribute('clicked'), 'Element should NOT be clicked');
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 150);
