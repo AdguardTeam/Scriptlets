@@ -18,8 +18,8 @@
 import path from 'path';
 import { minify } from 'terser';
 
-import { addCall, attachDependencies } from '../src/helpers/injector';
-import { writeFile } from './helpers';
+import { addCall, attachDependencies } from '../src/helpers/injector.ts';
+import { writeFile } from './helpers.js';
 
 /**
  * Method creates string for file with scriptlets functions,

@@ -2,6 +2,7 @@
     "name": "@adguard/scriptlets",
     "version": "2.0.1",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
+    "type": "module",
     "scripts": {
         "build": "rimraf dist && babel-node -x .js,.ts scripts/build.js",
         "postbuild": "babel-node -x .js,.ts scripts/check-corelibs-dist.js",
@@ -40,45 +41,23 @@
     },
     "homepage": "https://github.com/AdguardTeam/Scriptlets#adguard-scriptlets-and-redirect-resources",
     "sideEffects": false,
-    "main": "dist/cjs/index.js",
-    "module": "dist/esm/index.mjs",
     "types": "dist/types/index.d.ts",
-    "typesVersions": {
-        "*": {
-            "*": [
-                "dist/types/index.d.ts"
-            ],
-            "redirects": [
-                "dist/types/redirects/index.d.ts"
-            ],
-            "converters": [
-                "dist/types/converters/index.d.ts"
-            ],
-            "validators": [
-                "dist/types/validators/index.d.ts"
-            ]
-        }
-    },
     "exports": {
         ".": {
             "types": "./dist/types/index.d.ts",
-            "import": "./dist/esm/index.mjs",
-            "require": "./dist/cjs/index.js"
+            "import": "./dist/index.js"
         },
         "./redirects": {
             "types": "./dist/types/redirects/index.d.ts",
-            "import": "./dist/esm/redirects/index.mjs",
-            "require": "./dist/cjs/redirects/index.js"
+            "import": "./dist/redirects/index.js"
         },
         "./converters": {
             "types": "./dist/types/converters/index.d.ts",
-            "import": "./dist/esm/converters/index.mjs",
-            "require": "./dist/cjs/converters/index.js"
+            "import": "./dist/converters/index.js"
         },
         "./validators": {
             "types": "./dist/types/validators/index.d.ts",
-            "import": "./dist/esm/validators/index.mjs",
-            "require": "./dist/cjs/validators/index.js"
+            "import": "./dist/validators/index.js"
         }
     },
     "dependencies": {

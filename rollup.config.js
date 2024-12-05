@@ -112,17 +112,9 @@ const scriptletsCjsAndEsmConfig = {
     input: entryPoints,
     output: [
         {
-            dir: `${BUILD_DIST}/cjs`,
-            format: 'cjs',
-            entryFileNames: '[name].js',
-            exports: 'named',
-            preserveModules: true,
-            preserveModulesRoot: 'src',
-        },
-        {
-            dir: `${BUILD_DIST}/esm`,
+            dir: BUILD_DIST,
             format: 'esm',
-            entryFileNames: '[name].mjs',
+            entryFileNames: '[name].js',
             exports: 'named',
             preserveModules: true,
             preserveModulesRoot: 'src',
