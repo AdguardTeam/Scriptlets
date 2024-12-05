@@ -82,7 +82,7 @@
         }
     },
     "dependencies": {
-        "@adguard/agtree": "3.0.0-alpha.1",
+        "@adguard/agtree": "https://github.com/AdguardTeam/tsurlfilter/raw/151f2e46058712d459ce722d2a9520d7b557f2a9/packages/agtree/test-adguard-agtree-3.0.0-alpha.2.tgz",
         "@babel/runtime": "^7.26.0",
         "js-yaml": "^3.14.1"
     },
