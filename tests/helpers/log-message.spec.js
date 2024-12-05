@@ -1,4 +1,11 @@
 /* eslint-disable no-console */
+import {
+    afterEach,
+    describe,
+    vi,
+    test,
+    expect,
+} from 'vitest';
 
 import { logMessage } from '../../src/helpers';
 
@@ -14,7 +21,7 @@ describe('Test logMessage', () => {
     });
 
     test('Logs message conditionally', async () => {
-        console.log = jest.fn();
+        console.log = vi.fn();
 
         let forced;
         let source;
@@ -53,7 +60,7 @@ describe('Test logMessage', () => {
     });
 
     test('Logs message without ruleText', async () => {
-        console.log = jest.fn();
+        console.log = vi.fn();
 
         const FORCED = true;
         const source = {

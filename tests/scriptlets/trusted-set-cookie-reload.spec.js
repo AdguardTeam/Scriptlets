@@ -1,4 +1,12 @@
 /* eslint-disable no-underscore-dangle */
+import {
+    beforeEach,
+    afterEach,
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 
 import { trustedSetCookieReload } from '../../src/scriptlets/trusted-set-cookie-reload';
 import { parseCookieString } from '../../src/helpers';
@@ -12,18 +20,18 @@ beforeEach(() => {
         configurable: true,
         value: {
             reload:
-                jest.fn(),
+                vi.fn(),
         },
     });
 
     // Mocking console.trace() because
     // it causes errors in tests using jest
-    window.console.trace = jest.fn();
+    window.console.trace = vi.fn();
 });
 
 afterEach(() => {
     clearGlobalProps('hit', '__debug');
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 });
 
 describe('Test trusted-set-cookie-reload scriptlet', () => {

@@ -13,7 +13,6 @@ module.exports = {
     env: {
         browser: true,
         qunit: true,
-        jest: true,
     },
     extends: [
         'airbnb-base',
@@ -121,6 +120,7 @@ module.exports = {
                 '@typescript-eslint/indent': ['error', 4],
                 '@typescript-eslint/interface-name-prefix': 0,
                 '@typescript-eslint/no-non-null-assertion': 0,
+                'import/no-extraneous-dependencies': 'off',
                 '@typescript-eslint/type-annotation-spacing': [
                     'error',
                     {

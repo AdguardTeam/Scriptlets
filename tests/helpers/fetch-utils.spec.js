@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { parseMatchProps } from '../../src/helpers';
 
 const GET_METHOD = 'GET';

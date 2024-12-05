@@ -1,3 +1,5 @@
+import { test, expect } from 'vitest';
+
 import { isEmptyObject } from '../../src/helpers';
 
 test('isEmptyObject() for different inputs', async () => {
