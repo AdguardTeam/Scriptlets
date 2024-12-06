@@ -16,7 +16,7 @@ cleanup() {
 # Set trap to execute the cleanup function on script exit
 trap cleanup EXIT
 
-(cd ../../.. && pnpm pack && mv adguard-scriptlets-*.tgz "$curr_path/$scriptlets")
+(cd ../../.. && pnpm build && pnpm pack && mv adguard-scriptlets-*.tgz "$curr_path/$scriptlets")
 
 # unzip to @adguard/tsurlfilter to node_modules
 scriptlets_node_modules=$nm_path"/@adguard/scriptlets"
