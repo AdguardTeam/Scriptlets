@@ -1,6 +1,10 @@
-const path = require('path');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const { getFilesList } = require('./helpers');
+import { getFilesList } from './helpers';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Rules which were removed from the list should be marked with it
@@ -8,6 +12,7 @@ const { getFilesList } = require('./helpers');
 const REMOVED_MARKER = '(removed)';
 
 const COMPATIBILITY_TABLE_INPUT_FILENAME = 'compatibility-table.json';
+
 /**
  * Path to **input** compatibility data source json
  */
@@ -54,7 +59,7 @@ const DIST_DIR_NAME = 'dist';
 const CORELIBS_SCRIPTLETS_FILE_NAME = 'scriptlets.corelibs.json';
 const CORELIBS_REDIRECTS_FILE_NAME = 'redirects.json';
 
-module.exports = {
+export {
     REMOVED_MARKER,
     COMPATIBILITY_TABLE_DATA_PATH,
     WIKI_DIR_PATH,

@@ -12,7 +12,7 @@ import {
 } from './build-redirects';
 import { buildTests } from './build-tests';
 import { generateHtmlTestFilename, runTasks } from './helpers';
-import { runQunitTests } from '../tests';
+import { runQunitTests } from '../tests/index';
 import { server, port, start } from '../tests/server';
 
 const SCRIPTLETS_TYPE = 'scriptlets';

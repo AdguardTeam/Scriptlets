@@ -1,5 +1,0 @@
-"use strict";
-
-var setCookieReloadNames = [ "set-cookie-reload", "set-cookie-reload.js", "ubo-set-cookie-reload.js", "ubo-set-cookie-reload" ];
-
-exports.setCookieReloadNames = setCookieReloadNames;

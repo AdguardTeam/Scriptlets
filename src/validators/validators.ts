@@ -8,7 +8,7 @@ import {
     QuoteUtils,
     redirectsCompatibilityTable,
     RuleCategory,
-    RuleConverter,
+    RuleConverter, // import from '@adguard/agtree/converters'
     type ScriptletInjectionRule,
 } from '@adguard/agtree';
 

@@ -13,11 +13,14 @@ import { RuleGenerator } from '@adguard/agtree/generator';
 export const getRuleNode = (rule: string | AnyRule): AnyRule => {
     return typeof rule === 'string'
         // Note: AGTree does not support legacy script:inject syntax
-        ? RuleParser.parse(rule, {
-            ...defaultParserOptions,
-            includeRaws: false,
-            isLocIncluded: false,
-        })
+        ? RuleParser.parse(
+            rule,
+            Object.assign(
+                {},
+                defaultParserOptions,
+                { includeRaws: false, isLocIncluded: false },
+            ),
+        )
         : rule;
 };
 

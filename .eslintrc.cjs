@@ -3,12 +3,7 @@ const path = require('path');
 const MAX_LINE_LENGTH = 120;
 
 module.exports = {
-    parser: '@babel/eslint-parser',
-    parserOptions: {
-        babelOptions: {
-            rootMode: 'upward',
-        },
-    },
+    parser: '@typescript-eslint/parser',
     ignorePatterns: ['tests/smoke/**'],
     env: {
         browser: true,
@@ -33,6 +28,9 @@ module.exports = {
     rules: {
         indent: ['error', 4, {
             SwitchCase: 1,
+        }],
+        'no-underscore-dangle': ['error', {
+            allow: ['__filename', '__dirname'],
         }],
         'import/extensions': ['error', 'never', { json: 'always' }],
         'no-param-reassign': 0,
@@ -127,6 +125,7 @@ module.exports = {
                         after: true,
                     },
                 ],
+                'prefer-object-spread': 0,
             },
         },
         // Array destructuring is not allowed according to the

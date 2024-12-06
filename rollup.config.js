@@ -6,7 +6,6 @@ import cleanup from 'rollup-plugin-cleanup';
 import generateHtml from 'rollup-plugin-generate-html';
 import alias from '@rollup/plugin-alias';
 import { dts } from 'rollup-plugin-dts';
-import path from 'path';
 import terser from '@rollup/plugin-terser';
 
 const BUILD_DIST = 'dist';
@@ -19,6 +18,7 @@ const commonPlugins = [
     babel({
         extensions: ['.js', '.ts'],
         babelHelpers: 'runtime',
+        plugins: ['@babel/plugin-transform-runtime'],
     }),
 ];
 
@@ -108,7 +108,7 @@ const entryPoints = {
     'converters/index': 'src/converters/index.ts',
 };
 
-const scriptletsCjsAndEsmConfig = {
+const scriptletsConfig = {
     input: entryPoints,
     output: [
         {
@@ -116,7 +116,6 @@ const scriptletsCjsAndEsmConfig = {
             format: 'esm',
             entryFileNames: '[name].js',
             exports: 'named',
-            preserveModules: true,
             preserveModulesRoot: 'src',
         },
     ],
@@ -133,8 +132,7 @@ const scriptletsCjsAndEsmConfig = {
     external: (id) => {
         return (
             // Added because when agtree is linked using 'yarn link', its ID does not contain 'node_modules'
-            id.startsWith('@babel/runtime')
-            || id.startsWith('js-yaml')
+            id.startsWith('js-yaml')
             || id.startsWith('@adguard/agtree')
         );
     },
@@ -154,7 +152,7 @@ const scriptletsCjsAndEsmConfig = {
             entries: [
                 {
                     find: 'scriptlets-func',
-                    replacement: path.resolve(__dirname, 'tmp/scriptlets-func.js'),
+                    replacement: 'tmp/scriptlets-func.js',
                 },
             ],
         }),
@@ -176,17 +174,17 @@ const typesConfig = {
             entries: [
                 {
                     find: 'scriptlets-func',
-                    replacement: path.resolve(__dirname, 'tmp/scriptlets-func.d.ts'),
+                    replacement: 'tmp/scriptlets-func.d.ts',
                 },
             ],
         }),
     ],
 };
 
-const scriptletsCjsAndEsm = [scriptletsCjsAndEsmConfig, typesConfig];
+const scriptlets = [scriptletsConfig, typesConfig];
 
 export {
-    scriptletsCjsAndEsm,
+    scriptlets,
     scriptletsListConfig,
     redirectsListConfig,
     click2LoadConfig,

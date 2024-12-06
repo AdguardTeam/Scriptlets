@@ -1,18 +1,18 @@
 import { program } from 'commander';
 
-import { buildScriptletsFunc } from './build-funcs.js';
+import { buildScriptletsFunc } from './build-funcs';
 import {
     buildClick2Load,
     buildRedirectsFiles,
     buildRedirectsForCorelibs,
     buildRedirectsList,
     prebuildRedirects,
-} from './build-redirects.js';
-import { buildScriptletsForCorelibs } from './build-corelibs.js';
-import { buildScriptlets, buildScriptletsList } from './build-scriptlets.js';
-import { buildTxt } from './build-txt.js';
-import { buildRedirectsMap } from './build-redirects-map.js';
-import { runTasks } from './helpers.js';
+} from './build-redirects';
+import { buildScriptletsForCorelibs } from './build-corelibs';
+import { buildScriptlets, buildScriptletsList } from './build-scriptlets';
+import { buildTxt } from './build-txt';
+import { buildRedirectsMap } from './build-redirects-map';
+import { runTasks } from './helpers';
 
 const buildScriptletsAndRedirectsLists = async () => {
     await Promise.all([buildRedirectsList(), buildScriptletsList()]);

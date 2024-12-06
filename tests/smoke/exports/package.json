@@ -4,8 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "author": "Adguard Software Ltd.",
+  "type": "module",
   "scripts": {
-    "start": "tsc --noEmit && ts-node root-exports.ts && ts-node specific-exports.ts",
+    "start": "tsc --noEmit && tsx root-exports.ts && tsx specific-exports.ts",
     "test": "test.sh"
   }
 }
