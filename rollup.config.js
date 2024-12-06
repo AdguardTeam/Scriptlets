@@ -115,6 +115,7 @@ const scriptletsConfig = {
             dir: BUILD_DIST,
             format: 'esm',
             entryFileNames: '[name].js',
+            chunkFileNames: 'common/[name].js',
             exports: 'named',
             preserveModulesRoot: 'src',
         },

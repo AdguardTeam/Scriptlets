@@ -16,3 +16,4 @@ local.log
 .eslintcache
 tsconfig.tsbuildinfo
 .pnpm-store
+/dist

@@ -8,9 +8,9 @@ import {
     QuoteUtils,
     redirectsCompatibilityTable,
     RuleCategory,
-    RuleConverter, // import from '@adguard/agtree/converters'
     type ScriptletInjectionRule,
 } from '@adguard/agtree';
+import { RuleConverter } from '@adguard/agtree/converter';
 
 import * as scriptletsNamesList from '../scriptlets/scriptlets-names-list';
 import { getRuleNode } from '../helpers/rule-helpers';
