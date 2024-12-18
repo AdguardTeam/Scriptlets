@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "type": "module",
     "scripts": {
