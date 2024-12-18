@@ -1,16 +1,15 @@
 import {
-    AdblockSyntax,
     type AnyRule,
     CosmeticRuleType,
     GenericPlatform,
     modifiersCompatibilityTable,
     NetworkRuleType,
-    QuoteUtils,
     redirectsCompatibilityTable,
     RuleCategory,
-    RuleConverter,
     type ScriptletInjectionRule,
 } from '@adguard/agtree';
+import { RuleConverter } from '@adguard/agtree/converter';
+import { QuoteUtils, AdblockSyntax } from '@adguard/agtree/utils';
 
 import * as scriptletsNamesList from '../scriptlets/scriptlets-names-list';
 import { getRuleNode } from '../helpers/rule-helpers';

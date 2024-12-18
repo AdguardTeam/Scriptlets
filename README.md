@@ -235,7 +235,7 @@ yarn dev
 
 ### <a name="how-to-test"></a> How to test
 
-Some tests are run in QUnit, some in Jest.
+Some tests are run in QUnit, some in Vitest.
 
 Run all tests:
 
@@ -272,14 +272,14 @@ pnpm test
 1. Run all jest tests:
 
     ```bash
-    pnpm test:jest
+    pnpm test:vitest
     ```
 
-    or limit the testing — `testRegex` may be specified in `jest.config.js`
-    or specify [test name](https://jestjs.io/docs/cli#--testnamepatternregex) in command line, e.g.:
+    or limit the testing — `include` may be specified in `vitest.config.ts`
+    or specify [test name](https://vitest.dev/guide/filtering#cli) in command line, e.g.:
 
     ```bash
-    pnpm test:jest -t isValidScriptletRule
+    pnpm test:vitest -t isValidScriptletRule
     ```
 
 To run browserstack tests create `.env` file or copy and rename `.env-example`.

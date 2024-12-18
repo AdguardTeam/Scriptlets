@@ -1,4 +1,11 @@
 import {
+    describe,
+    test,
+    expect,
+    it,
+} from 'vitest';
+
+import {
     convertAdgRedirectToUbo,
     convertAdgScriptletToUbo,
     convertScriptletToAdg,

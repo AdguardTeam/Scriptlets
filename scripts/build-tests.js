@@ -1,4 +1,3 @@
-import path from 'path';
 import fs from 'fs-extra';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -6,9 +5,14 @@ import babel from '@rollup/plugin-babel';
 import copy from 'rollup-plugin-copy';
 import json from '@rollup/plugin-json';
 import generateHtml from 'rollup-plugin-generate-html';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 import { rollupStandard } from './rollup-runners';
 import { generateHtmlTestFilename } from './helpers';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TESTS_DIR = '../tests';
 const TESTS_DIST = path.resolve(__dirname, TESTS_DIR, 'dist');
@@ -55,6 +59,7 @@ const getTestConfig = (fileName, subDir) => {
             babel({
                 extensions: ['.js', '.ts'],
                 babelHelpers: 'runtime',
+                plugins: ['@babel/plugin-transform-runtime'],
             }),
             generateHtml({
                 // add subDir to final file name to avoid files rewriting
@@ -152,6 +157,7 @@ export const buildScriptletsForTests = async () => {
             babel({
                 extensions: ['.js', '.ts'],
                 babelHelpers: 'runtime',
+                plugins: ['@babel/plugin-transform-runtime'],
             }),
             copy({
                 targets: [{

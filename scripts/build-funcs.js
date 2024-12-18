@@ -15,26 +15,30 @@
  *     dependencyFunc();
  * };
  */
-import path from 'path';
+import path from 'node:path';
 import { minify } from 'terser';
+import { fileURLToPath } from 'node:url';
 
 import { addCall, attachDependencies } from '../src/helpers/injector';
 import { writeFile } from './helpers';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Method creates string for file with scriptlets functions,
  * where dependencies are placed inside scriptlet functions
  *
- * @returns {string}
+ * @returns {Promise<string>}
  */
-const getScriptletFunctionsString = () => {
+const getScriptletFunctionsString = async () => {
     function wrapInFunc(name, code) {
         return `function ${name}(source, args){\n${code}\n}`;
     }
     // we require scriptlets list dynamically, because scriptletsList file can be not built in the
     // moment of this script execution
     // eslint-disable-next-line import/no-unresolved,global-require
-    const scriptletsList = require('../tmp/scriptlets-list');
+    const scriptletsList = await import('../tmp/scriptlets-list');
 
     const scriptletsFunctions = Object.values(scriptletsList);
 
@@ -46,8 +50,7 @@ const getScriptletFunctionsString = () => {
 
     const scriptletsString = scriptletsStrings.join('\n');
 
-    // eslint-disable-next-line global-require
-    const scriptletsNamesList = require('../src/scriptlets/scriptlets-names-list');
+    const scriptletsNamesList = await import('../src/scriptlets/scriptlets-names-list');
     const scriptletNamesList = Object.values(scriptletsNamesList);
 
     const scriptletsMapString = `const scriptletsMap = {\n${scriptletNamesList
@@ -79,7 +82,7 @@ const getScriptletFunctionsString = () => {
 export const buildScriptletsFunc = async () => {
     console.log('Start building scriptlets functions...');
 
-    const scriptletFunctions = getScriptletFunctionsString();
+    const scriptletFunctions = await getScriptletFunctionsString();
     const beautifiedScriptletFunctions = await minify(scriptletFunctions, {
         mangle: false,
         compress: false,

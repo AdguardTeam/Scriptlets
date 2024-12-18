@@ -1,10 +1,14 @@
-const path = require('path');
-const fs = require('fs-extra');
-const dox = require('dox');
+import path from 'node:path';
+import fs from 'fs-extra';
+import dox from 'dox';
+import { fileURLToPath } from 'node:url';
 
 const SCRIPTLET_TYPE = 'scriptlet';
 const TRUSTED_SCRIPTLET_TYPE = 'trustedScriptlet';
 const REDIRECT_TYPE = 'redirect';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Asynchronously writes data to a file, replacing the file if it already exists.
@@ -146,7 +150,7 @@ const generateHtmlTestFilename = (type, name) => {
     return `${type}-${name}.html`;
 };
 
-module.exports = {
+export {
     writeFile,
     getFilesList,
     getDataFromFiles,

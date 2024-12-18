@@ -1,9 +1,13 @@
 /* eslint-disable no-console */
 import { minify } from 'terser';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getPreparedRedirects } from './build-redirects';
 import { writeFile } from './helpers';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const createRedirectsMap = (redirects) => {
     const map = {};

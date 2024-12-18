@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- ESM-only bundle
 - `trusted-click-element` scriptlet, now when `containsText` is used then it will search for all given selectors
   and click on the first element with matched text [#468]
 

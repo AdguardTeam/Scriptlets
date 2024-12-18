@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { parseAttributePairs } from '../../src/helpers';
 
 describe('parseAttributePairs', () => {
