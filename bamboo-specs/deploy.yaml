@@ -18,6 +18,8 @@ npmjs: &npmjs
     publishArgs: --access public
   triggers: [ ]
   tasks:
+    - checkout:
+        force-clean-build: true
     - artifact-download:
         artifacts:
           - name: scriptlets.tgz
@@ -36,7 +38,8 @@ npmjs: &npmjs
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
         configuration:
-          selectedRepository: defaultRepository
+          # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
+          selectedRepository: '26050988'
           tagName: v${bamboo.inject.version}${bamboo_tagSuffix}
   requirements:
     - adg-docker: 'true'
