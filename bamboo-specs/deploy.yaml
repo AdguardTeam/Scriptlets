@@ -16,7 +16,6 @@ npmjs: &npmjs
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   variables: &npmjs-variables
     publishArgs: --access public
-    tagSuffix: '-stable'
   triggers: [ ]
   tasks:
     - checkout:
@@ -41,7 +40,7 @@ npmjs: &npmjs
         configuration:
           # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
           selectedRepository: '26050988'
-          tagName: v${bamboo.inject.version}${bamboo.tagSuffix}
+          tagName: v${bamboo.inject.version}
   requirements:
     - adg-docker: 'true'
   notifications:
@@ -57,11 +56,9 @@ npmjs • alpha:
   variables:
     <<: *npmjs-variables
     publishArgs: --tag alpha --access public
-    tagSuffix: '-alpha'
 
 npmjs • beta:
   <<: *npmjs
   variables:
     <<: *npmjs-variables
     publishArgs: --tag beta --access public
-    tagSuffix: '-beta'
