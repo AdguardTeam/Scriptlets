@@ -16,6 +16,7 @@ npmjs: &npmjs
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   variables: &npmjs-variables
     publishArgs: --access public
+    tagSuffix: '-stable'
   triggers: [ ]
   tasks:
     - checkout:
