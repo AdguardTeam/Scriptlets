@@ -14,8 +14,8 @@ const __dirname = path.dirname(__filename);
 const corelibsScriptletsPath = path.join(__dirname, '../', DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME);
 
 const buildCorelibsJson = async () => {
+    // eslint-disable-next-line import/no-unresolved
     const { getScriptletFunction } = await import('../tmp/scriptlets-func');
-
     const scriptlets = await Promise.all(Object
         .values(scriptletNamesList)
         .map(async (names) => {
