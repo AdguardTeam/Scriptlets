@@ -41,7 +41,7 @@ npmjs: &npmjs
         configuration:
           # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
           selectedRepository: '26050988'
-          tagName: v${bamboo.inject.version}${bamboo_tagSuffix}
+          tagName: v${bamboo.inject.version}${bamboo.tagSuffix}
   requirements:
     - adg-docker: 'true'
   notifications:
