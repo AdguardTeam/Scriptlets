@@ -4,8 +4,23 @@
  * Content of this file is copied from `content-script` repository to match typings for APIs.
  */
 
+/**
+ * Isomorphic trusted value type, if browser supports Trusted Types API it will be one of the
+ * `TrustedHTML`, `TrustedScript` or `TrustedScriptURL`, otherwise will fallback into regular string.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/TrustedHTML}
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/TrustedScript}
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/TrustedScriptURL}
+ */
 export type TrustedValue = string | TrustedHTML | TrustedScript | TrustedScriptURL;
 
+/**
+ * Enum representation of return values of `getAttributeType` and
+ * `getPropertyType` methods of native Trusted Types API.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory/getAttributeType}
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory/getPropertyType}
+ */
 export const enum TrustedType {
     HTML = 'TrustedHTML',
     Script = 'TrustedScript',
@@ -553,6 +568,19 @@ export interface Api {
 
     /**
      * Shared state between different script and scriptlet rules.
+     *
+     * This object acts as a centralized repository for shared data.
+     * - Keys represent the unique identifiers or names of the shared data.
+     * - Values can be of any type and should correspond to the specific data shared across script rules.
+     *
+     * Example:.
+     * ```adguard
+     * ! Modify in one script rule
+     * #%#api.shared.testKey = 'testValue'
+     *
+     * ! Access in another (logs 'testValue')
+     * #%#console.log(api.shared.testKey)
+     * ```
      */
     shared: Record<string, unknown>;
 }
