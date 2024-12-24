@@ -35,6 +35,7 @@ Build:
 
             pnpm install
             pnpm build
+            pnpm pack && mv adguard-scriptlets-*.tgz scriptlets.tgz
 
             # TODO fix building wiki, ubo changed format of their source
             # pnpm wiki
@@ -42,17 +43,6 @@ Build:
         file: dist/build.txt
         scope: RESULT
         namespace: inject
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-        configuration:
-          # do not change commitMessage as it does not trigger increment after deploy
-          commitMessage: 'deploy: update dist v${bamboo.inject.version}'
-          selectedRepository: defaultRepository
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
-        configuration:
-          selectedRepository: defaultRepository
-          tagName: v${bamboo.inject.version}
   final-tasks:
     - script:
         interpreter: SHELL
@@ -69,6 +59,12 @@ Build:
             echo "Size before cleanup:" && du -h | tail -n 1
             rm -rf node_modules
             echo "Size after cleanup:" && du -h | tail -n 1
+  artifacts:
+    - name: scriptlets.tgz
+      location: .
+      pattern: scriptlets.tgz
+      shared: true
+      required: true
   requirements:
     - adg-docker: 'true'
 

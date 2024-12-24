@@ -1,3 +1,5 @@
+import { test, expect } from 'vitest';
+
 import { restoreRegExpValues, backupRegExpValues } from '../../src/helpers';
 
 test('restoreRegExpValues() check if correct value have been set', async () => {

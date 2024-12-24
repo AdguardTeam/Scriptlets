@@ -6,16 +6,23 @@ deployment:
 release-naming: ${bamboo.inject.version}
 environments:
   - npmjs
+  - npmjs • alpha
+  - npmjs • beta
 
-npmjs:
+npmjs: &npmjs
   docker:
     image: adguard/puppeteer-runner:23.3--1
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  variables: &npmjs-variables
+    publishArgs: --access public
   triggers: [ ]
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
+    - artifact-download:
+        artifacts:
+          - name: scriptlets.tgz
     - script:
         interpreter: SHELL
         scripts:
@@ -26,24 +33,14 @@ npmjs:
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            pnpm install
-            npm publish --access public
-  final-tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -x
-            set -e
 
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-            rm -rf node_modules
-            echo "Size after cleanup:" && du -h | tail -n 1
+            npm publish scriptlets.tgz ${bamboo_publishArgs}
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
+        configuration:
+          # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
+          selectedRepository: '26050988'
+          tagName: v${bamboo.inject.version}
   requirements:
     - adg-docker: 'true'
   notifications:
@@ -53,3 +50,15 @@ npmjs:
         - webhook:
             name: Deploy webhook
             url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+npmjs • alpha:
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    publishArgs: --tag alpha --access public
+
+npmjs • beta:
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    publishArgs: --tag beta --access public

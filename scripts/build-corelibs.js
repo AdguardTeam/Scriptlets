@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { minify } from 'terser';
 
 import * as scriptletNamesList from '../src/scriptlets/scriptlets-names-list';
@@ -7,12 +8,14 @@ import { version } from '../package.json';
 import { writeFile } from './helpers';
 import { DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME } from './constants';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const corelibsScriptletsPath = path.join(__dirname, '../', DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME);
 
 const buildCorelibsJson = async () => {
-    // eslint-disable-next-line import/no-unresolved,global-require
-    const { getScriptletFunction } = require('../tmp/scriptlets-func');
-
+    // eslint-disable-next-line import/no-unresolved
+    const { getScriptletFunction } = await import('../tmp/scriptlets-func');
     const scriptlets = await Promise.all(Object
         .values(scriptletNamesList)
         .map(async (names) => {

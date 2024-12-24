@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { getNumberFromString } from '../../src/helpers';
 
 describe('Number utils tests', () => {

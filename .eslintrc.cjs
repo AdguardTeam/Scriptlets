@@ -1,19 +1,13 @@
-const path = require('path');
+const path = require('node:path');
 
 const MAX_LINE_LENGTH = 120;
 
 module.exports = {
-    parser: '@babel/eslint-parser',
-    parserOptions: {
-        babelOptions: {
-            rootMode: 'upward',
-        },
-    },
+    parser: '@typescript-eslint/parser',
     ignorePatterns: ['tests/smoke/**'],
     env: {
         browser: true,
         qunit: true,
-        jest: true,
     },
     extends: [
         'airbnb-base',
@@ -34,6 +28,9 @@ module.exports = {
     rules: {
         indent: ['error', 4, {
             SwitchCase: 1,
+        }],
+        'no-underscore-dangle': ['error', {
+            allow: ['__filename', '__dirname'],
         }],
         'import/extensions': ['error', 'never', { json: 'always' }],
         'no-param-reassign': 0,
@@ -121,11 +118,30 @@ module.exports = {
                 '@typescript-eslint/indent': ['error', 4],
                 '@typescript-eslint/interface-name-prefix': 0,
                 '@typescript-eslint/no-non-null-assertion': 0,
+                'import/no-extraneous-dependencies': 'off',
                 '@typescript-eslint/type-annotation-spacing': [
                     'error',
                     {
                         after: true,
                     },
+                ],
+                'prefer-object-spread': 0,
+            },
+        },
+        // Array destructuring is not allowed according to the
+        // ReferenceError: _slicedToArray is not defined
+        {
+            files: ['src/**/*.{js,ts}'],
+            rules: {
+                'prefer-destructuring': [
+                    'error',
+                    {
+                        array: false,
+                    },
+                ],
+                'no-restricted-syntax': [
+                    'error',
+                    'ArrayPattern',
                 ],
             },
         },

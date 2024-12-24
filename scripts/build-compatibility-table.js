@@ -1,6 +1,6 @@
-const path = require('path');
-const fs = require('fs');
-const { EOL } = require('os');
+const path = require('node:path');
+const fs = require('node:fs');
+const { EOL } = require('node:os');
 
 const {
     REMOVED_MARKER,

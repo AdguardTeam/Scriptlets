@@ -6,6 +6,8 @@ import {
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    doesElementContainText,
+    findElementWithText,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -16,6 +18,9 @@ import { type Source } from './scriptlets';
  * @description
  * Clicks selected elements in a strict sequence, ordered by selectors passed,
  * and waiting for them to render in the DOM first.
+ * First matched element is clicked unless `containsText` is specified.
+ * If `containsText` is specified, then it searches for all given selectors and clicks
+ * the first element containing the specified text.
  * Deactivates after all elements have been clicked or by 10s timeout.
  *
  * ### Syntax
@@ -127,6 +132,27 @@ import { type Source } from './scriptlets';
  * @added v1.7.3.
  */
 /* eslint-enable max-len */
+
+/**
+ * Object that contains information about element that can be clicked
+ */
+interface ElementObject {
+    /**
+     * HTML element to be clicked, or null if not found
+     */
+    element: HTMLElement | null;
+
+    /**
+     * Indicates whether the element has been clicked
+     */
+    clicked: boolean;
+
+    /**
+     * CSS selector text used to find the element
+     */
+    selectorText: string | null;
+}
+
 export function trustedClickElement(
     source: Source,
     selectors: string,
@@ -284,24 +310,6 @@ export function trustedClickElement(
     const textMatchRegexp = textMatches ? toRegExp(textMatches) : null;
 
     /**
-     * Checks if an element contains the specified text.
-     *
-     * @param element - The element to check.
-     * @param matchRegexp - The text to match.
-     * @returns True if the element contains the specified text, otherwise false.
-     */
-    const doesElementContainText = (
-        element: Element,
-        matchRegexp: RegExp,
-    ): boolean => {
-        const { textContent } = element;
-        if (!textContent) {
-            return false;
-        }
-        return matchRegexp.test(textContent);
-    };
-
-    /**
      * Create selectors array and swap selectors to null on finding it's element
      *
      * Selectors / nulls should not be (re)moved from array to:
@@ -313,13 +321,37 @@ export function trustedClickElement(
         .split(SELECTORS_DELIMITER)
         .map((selector) => selector.trim());
 
-    const createElementObj = (element: any): Object => {
+    const createElementObj = (element: any, selector?: string | null): Object => {
         return {
             element: element || null,
             clicked: false,
+            selectorText: selector || null,
         };
     };
     const elementsSequence = Array(selectorsSequence.length).fill(createElementObj(null));
+
+    /**
+     * Attempts to find and click an element based on the provided selector data.
+     *
+     * @param elementObj - Object containing element selector information
+     *
+     */
+    const findAndClickElement = (elementObj: ElementObject): void => {
+        try {
+            if (!elementObj.selectorText) {
+                return;
+            }
+            const element = queryShadowSelector(elementObj.selectorText) as HTMLElement;
+            if (!element) {
+                logMessage(source, `Could not find element: '${elementObj.selectorText}'`);
+                return;
+            }
+            element.click();
+            elementObj.clicked = true;
+        } catch (error) {
+            logMessage(source, `Could not click element: '${elementObj.selectorText}'`);
+        }
+    };
 
     // Flag indicating if the reload is set
     let shouldReloadAfterClick: boolean = false;
@@ -328,7 +360,9 @@ export function trustedClickElement(
 
     if (reload) {
         // split reload option by colon
-        const [reloadMarker, reloadValue] = reload.split(COLON);
+        const reloadSplit = reload.split(COLON);
+        const reloadMarker = reloadSplit[0];
+        const reloadValue = reloadSplit[1];
 
         if (reloadMarker !== RELOAD_ON_FINAL_CLICK_MARKER) {
             logMessage(source, `Passed reload option '${reload}' is invalid`);
@@ -383,11 +417,15 @@ export function trustedClickElement(
 
             // Skip already clicked elements
             if (!elementObj.clicked) {
-                if (textMatchRegexp && !doesElementContainText(elementObj.element, textMatchRegexp)) {
-                    continue;
+                // Checks if node is connected to a Document object,
+                // if not, try to find the element again
+                // https://github.com/AdguardTeam/Scriptlets/issues/391
+                if (elementObj.element.isConnected) {
+                    elementObj.element.click();
+                    elementObj.clicked = true;
+                } else {
+                    findAndClickElement(elementObj);
                 }
-                elementObj.element.click();
-                elementObj.clicked = true;
             }
         }
 
@@ -405,8 +443,8 @@ export function trustedClickElement(
         }
     };
 
-    const handleElement = (element: Element, i: number) => {
-        const elementObj = createElementObj(element);
+    const handleElement = (element: Element, i: number, selector: string) => {
+        const elementObj = createElementObj(element, selector);
         elementsSequence[i] = elementObj;
 
         if (canClick) {
@@ -426,12 +464,12 @@ export function trustedClickElement(
             if (!selector) {
                 return;
             }
-            const element = queryShadowSelector(selector);
+            const element = queryShadowSelector(selector, document.documentElement, textMatchRegexp);
             if (!element) {
                 return;
             }
 
-            handleElement(element, i);
+            handleElement(element, i, selector);
             fulfilledSelectors.push(selector);
         });
 
@@ -490,7 +528,7 @@ export function trustedClickElement(
             if (!selector) {
                 return false;
             }
-            const element = queryShadowSelector(selector);
+            const element = queryShadowSelector(selector, document.documentElement, textMatchRegexp);
             return !!element;
         });
         if (foundElements) {
@@ -531,4 +569,6 @@ trustedClickElement.injections = [
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    doesElementContainText,
+    findElementWithText,
 ];

@@ -1,7 +1,11 @@
 /* eslint-disable no-console */
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TEST_QUERY_MARKER = '?test';
 
@@ -82,9 +86,9 @@ const stop = (server) => {
     });
 };
 
-module.exports = {
+export {
     server,
-    port: PORT,
+    PORT as port,
     start,
     stop,
 };

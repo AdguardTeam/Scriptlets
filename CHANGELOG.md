@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Changed
+
+- ESM-only bundle
+- `trusted-click-element` scriptlet, now when `containsText` is used then it will search for all given selectors
+  and click on the first element with matched text [#468]
+
+### Fixed
+
+- issue with `trusted-click-element` scriptlet when `delay` was used and the element was removed
+  and added again before it was clicked [#391]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.0.1...HEAD
+[#391]: https://github.com/AdguardTeam/Scriptlets/issues/391
+[#468]: https://github.com/AdguardTeam/Scriptlets/issues/468
+
 ## [v2.0.1] - 2024-11-13
 
 ### Added

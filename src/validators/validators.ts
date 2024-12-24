@@ -1,16 +1,15 @@
 import {
-    AdblockSyntax,
     type AnyRule,
     CosmeticRuleType,
     GenericPlatform,
     modifiersCompatibilityTable,
     NetworkRuleType,
-    QuoteUtils,
     redirectsCompatibilityTable,
     RuleCategory,
-    RuleConverter,
     type ScriptletInjectionRule,
 } from '@adguard/agtree';
+import { RuleConverter } from '@adguard/agtree/converter';
+import { QuoteUtils, AdblockSyntax } from '@adguard/agtree/utils';
 
 import * as scriptletsNamesList from '../scriptlets/scriptlets-names-list';
 import { getRuleNode } from '../helpers/rule-helpers';
@@ -316,7 +315,7 @@ export const isValidAdgRedirectRule = (rule: string): boolean => {
         return false;
     }
 
-    const [resource] = resources;
+    const resource = resources[0];
 
     if (!resource.resource) {
         return resource.exceptionRule;

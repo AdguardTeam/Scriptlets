@@ -1,14 +1,18 @@
 /* eslint-disable no-console */
-const path = require('path');
-const fs = require('fs');
-const { runQunitPuppeteer, printFailedTests, printResultSummary } = require('node-qunit-puppeteer');
+import path from 'node:path';
+import fs from 'node:fs';
+import { runQunitPuppeteer, printFailedTests, printResultSummary } from 'node-qunit-puppeteer';
+import { fileURLToPath } from 'node:url';
 
-const {
+import {
     server,
     port,
     start,
     stop,
-} = require('./server');
+} from './server';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TESTS_RUN_TIMEOUT = 30000;
 const TESTS_DIST = './dist';
@@ -75,6 +79,6 @@ const runQunitTests = async () => {
     await stop(testServer);
 };
 
-module.exports = {
+export {
     runQunitTests,
 };

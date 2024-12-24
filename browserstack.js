@@ -2,8 +2,8 @@
 const webdriver = require('selenium-webdriver');
 const BrowserStackLocal = require('browserstack-local');
 const dotenv = require('dotenv');
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 const kleur = require('kleur');
 
 const {

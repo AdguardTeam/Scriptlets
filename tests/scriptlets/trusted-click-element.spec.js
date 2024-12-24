@@ -1,4 +1,12 @@
 /* eslint-disable no-underscore-dangle, no-console */
+import {
+    beforeAll,
+    vi,
+    afterEach,
+    describe,
+    test,
+} from 'vitest';
+
 import { trustedClickElement } from '../../src/scriptlets/trusted-click-element';
 import {
     clearGlobalProps,
@@ -10,25 +18,25 @@ import {
     createClickable,
 } from '../helpers';
 
-beforeEach(() => {
-    window.__debug = () => {
-        window.hit = 'FIRED';
+beforeAll(() => {
+    global.__debug = () => {
+        global.hit = 'FIRED';
     };
-    window.clickOrder = [];
+    global.clickOrder = [];
     Object.defineProperty(window, 'location', {
         configurable: true,
         value: {
             reload:
-                jest.fn(),
+                vi.fn(),
         },
     });
-    window.console.trace = jest.fn();
+    window.console.trace = vi.fn();
 });
 
 afterEach(() => {
     removePanel();
     clearGlobalProps('hit', '__debug');
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 });
 
 describe('Test trusted-click-element scriptlet - reload option', () => {
@@ -43,7 +51,7 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         const clickable = createClickable(1);
         panel.appendChild(clickable);
         const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
-        const reloadSpy = jest.spyOn(window.location, 'reload').mockImplementation(() => {});
+        const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick:100');
         setTimeout(() => {
             try {
@@ -73,7 +81,7 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
             return clickable;
         });
         const selectorsString = createSelectorsString(CLICK_ORDER);
-        const reloadSpy = jest.spyOn(window.location, 'reload').mockImplementation(() => {});
+        const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick:100');
         setTimeout(() => {
             try {
@@ -102,7 +110,7 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         const clickable = createClickable(1);
         panel.appendChild(clickable);
         const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
-        const reloadSpy = jest.spyOn(window.location, 'reload').mockImplementation(() => {});
+        const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick');
         setTimeout(() => {
             try {
@@ -129,8 +137,8 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         const clickable = createClickable(1);
         panel.appendChild(clickable);
         const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
-        const reloadSpy = jest.spyOn(window.location, 'reload').mockImplementation(() => {});
-        const logMessageSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+        const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
+        const logMessageSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         // Attempt to trigger the click with an invalid reload value
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick10:10');
         setTimeout(() => {

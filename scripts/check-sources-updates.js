@@ -1,7 +1,7 @@
 /* eslint-disable no-console, camelcase */
-const fs = require('fs');
+const fs = require('node:fs');
 const axios = require('axios');
-const { EOL } = require('os');
+const { EOL } = require('node:os');
 
 const {
     REMOVED_MARKER,

@@ -2,9 +2,10 @@ import sha256 from 'crypto-js/sha256';
 import Base64 from 'crypto-js/enc-base64';
 import yaml from 'js-yaml';
 import fs from 'fs-extra';
-import path from 'path';
-import { EOL } from 'os';
+import path from 'node:path';
+import { EOL } from 'node:os';
 import { minify } from 'terser';
+import { fileURLToPath } from 'node:url';
 
 import * as redirectsNamesLists from '../src/redirects/redirects-names-list';
 import { version } from '../package.json';
@@ -23,6 +24,9 @@ import {
     passSourceAndProps,
     wrapInNonameFunc,
 } from '../src/helpers/injector';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const FILE_NAME = 'redirects.yml';
 const PATH_TO_DIST = `./${DIST_DIR_NAME}`;
@@ -97,11 +101,11 @@ const getBlockingRedirects = async () => {
  * Finds redirect resource by it's name
  *
  * @param {string} name Redirect name
- * @returns {Redirect} Redirect object
+ * @returns {Promise<Redirect>} Redirect object
  */
-const getRedirectByName = (name) => {
+const getRedirectByName = async (name) => {
     // eslint-disable-next-line global-require,import/no-unresolved
-    const redirectsList = require('../tmp/redirects-list');
+    const redirectsList = await import('../tmp/redirects-list');
     return Object.values(redirectsList)
         .filter((redirect) => redirect.primaryName === name)[0];
 };
@@ -113,10 +117,10 @@ const getRedirectByName = (name) => {
  * Returns redirect code by param
  *
  * @param {Source} source
- * @returns {string} redirect code
+ * @returns {Promise<string>} redirect code
  */
-export const getRedirectCode = (source) => {
-    const redirect = getRedirectByName(source.name);
+const getRedirectCode = async (source) => {
+    const redirect = await getRedirectByName(source.name);
     if (!redirect) {
         throw new Error(`Was unable to find redirect by name: ${source.name}`);
     }
@@ -138,22 +142,22 @@ const getJsRedirects = async (options = {}) => {
 
     const redirectNamesList = Object.values(redirectsNamesLists);
 
-    let listOfRedirectsData = redirectNamesList
-        .map((redirectNames) => {
+    let listOfRedirectsData = await Promise.all(redirectNamesList
+        .map(async (redirectNames) => {
             const [name, ...aliases] = redirectNames;
             const source = {
                 name,
                 args: [],
             };
 
-            const redirect = getRedirectCode(source);
+            const redirect = await getRedirectCode(source);
 
             return {
                 name,
                 redirect,
                 aliases,
             };
-        });
+        }));
 
     const minifyOpt = {
         mangle: false,
