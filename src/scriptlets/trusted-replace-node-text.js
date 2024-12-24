@@ -10,6 +10,7 @@ import {
     nodeListToArray,
     getAddedNodes,
     toRegExp,
+    extractOrCreatePolicy,
     createTrustedScript,
 } from '../helpers';
 
@@ -156,5 +157,6 @@ trustedReplaceNodeText.injections = [
     nodeListToArray,
     getAddedNodes,
     toRegExp,
+    extractOrCreatePolicy,
     createTrustedScript,
 ];

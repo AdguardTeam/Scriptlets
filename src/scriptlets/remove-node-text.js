@@ -9,6 +9,7 @@ import {
     nodeListToArray,
     getAddedNodes,
     toRegExp,
+    extractOrCreatePolicy,
     createTrustedScript,
 } from '../helpers';
 
@@ -158,5 +159,6 @@ removeNodeText.injections = [
     nodeListToArray,
     getAddedNodes,
     toRegExp,
+    extractOrCreatePolicy,
     createTrustedScript,
 ];
