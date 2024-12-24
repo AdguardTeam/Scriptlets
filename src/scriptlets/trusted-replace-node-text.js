@@ -10,6 +10,7 @@ import {
     nodeListToArray,
     getAddedNodes,
     toRegExp,
+    createTrustedScript,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -155,4 +156,5 @@ trustedReplaceNodeText.injections = [
     nodeListToArray,
     getAddedNodes,
     toRegExp,
+    createTrustedScript,
 ];

@@ -230,4 +230,5 @@ preventElementSrcLoading.injections = [
     toRegExp,
     safeGetDescriptor,
     noopFunc,
+    extractOrCreatePolicy,
 ];
