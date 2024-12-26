@@ -42,6 +42,40 @@ test('API mocking test', (assert) => {
     clearGlobalProps(`yaCounter${counterId1}`, `yaCounter${counterId1}`);
 });
 
+test('Init mocking test - when it is used as a scriptlet', (assert) => {
+    let testPassed = false;
+
+    evalWrapper(redirects.getRedirect(name).content);
+
+    window.ym = window.ym || function YandexMetrika(...args) {
+        (window.ym.a = window.ym.a || []).push(...args);
+    };
+
+    const counterId = 28510826;
+
+    window.ym(counterId, 'init', {
+        clickmap: true,
+        trackLinks: true,
+        accurateTrackBounce: true,
+        webvisor: true,
+        ecommerce: 'dataLayer',
+    });
+
+    try {
+        window.yaCounter28510826.reachGoal('login');
+        testPassed = true;
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`yaCounter${counterId} is not defined:`, error);
+    }
+
+    assert.ok(window.ym, 'Metrika function was created');
+    assert.ok(typeof window[`yaCounter${counterId}`] === 'object', 'yaCounter was created');
+    assert.strictEqual(testPassed, true, 'testPassed is true');
+
+    clearGlobalProps(`yaCounter${counterId}`);
+});
+
 test('ym: API methods test', (assert) => {
     assert.expect(4);
 

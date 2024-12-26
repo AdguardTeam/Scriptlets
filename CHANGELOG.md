@@ -20,12 +20,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- issue with `metrika-yandex-tag` redirect when it's used as a scriptlet [#472]
 - issue with `trusted-click-element` scriptlet when `delay` was used and the element was removed
   and added again before it was clicked [#391]
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.0.1...HEAD
 [#391]: https://github.com/AdguardTeam/Scriptlets/issues/391
 [#468]: https://github.com/AdguardTeam/Scriptlets/issues/468
+[#472]: https://github.com/AdguardTeam/Scriptlets/issues/472
 
 ## [v2.0.1] - 2024-11-13
 

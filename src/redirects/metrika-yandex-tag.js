@@ -108,14 +108,17 @@ export function metrikaYandexTag(source) {
         destruct,
     };
 
-    function ym(id, funcName, ...args) {
-        return api[funcName] && api[funcName](id, ...args);
-    }
-
     function init(id) {
         // yaCounter object should provide api
         window[`yaCounter${id}`] = api;
         document.dispatchEvent(new Event(`yacounter${id}inited`));
+    }
+
+    function ym(id, funcName, ...args) {
+        if (funcName === 'init') {
+            return init(id);
+        }
+        return api[funcName] && api[funcName](id, ...args);
     }
 
     if (typeof window.ym === 'undefined') {
