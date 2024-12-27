@@ -63,7 +63,7 @@ jobs:
         with:
           draft: false
           prerelease: false
-          body: See [CHANGELOG.md](./CHANGELOG.md) for the list of changes.
+          body: See [CHANGELOG.md](../master/CHANGELOG.md) for the list of changes.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
