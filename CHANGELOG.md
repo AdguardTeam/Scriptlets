@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.1.4] - 2025-01-17
 
 ### Changed
 
@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - issue with `trusted-click-element` scriptlet when `delay` was used and the element was removed
   and added again before it was clicked [#391]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.0.1...HEAD
+[v2.1.4]: https://github.com/AdguardTeam/Scriptlets/compare/v2.0.1...v2.1.4
 [#391]: https://github.com/AdguardTeam/Scriptlets/issues/391
 [#468]: https://github.com/AdguardTeam/Scriptlets/issues/468
 [#472]: https://github.com/AdguardTeam/Scriptlets/issues/472
