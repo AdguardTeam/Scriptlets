@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [v2.1.4] - 2025-01-17
+## [v2.1.4] - 2025-01-20
 
 ### Changed
 
