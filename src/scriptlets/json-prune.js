@@ -11,6 +11,7 @@ import {
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
+    nativeIsNaN,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -101,8 +102,8 @@ import {
  */
 /* eslint-enable max-len */
 export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '') {
-    const prunePaths = getPrunePath(propsToRemove);
-    const requiredPaths = getPrunePath(requiredInitialProps);
+    const prunePathsObj = getPrunePath(propsToRemove);
+    const requiredPathsObj = getPrunePath(requiredInitialProps);
 
     const nativeObjects = {
         nativeStringify: window.JSON.stringify,
@@ -113,7 +114,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeJSONParse.apply(JSON, args);
-        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
+        return jsonPruner(source, root, prunePathsObj, requiredPathsObj, stack, nativeObjects);
     };
 
     // JSON.parse mocking
@@ -125,7 +126,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
     const responseJsonWrapper = function () {
         const promise = nativeResponseJson.apply(this);
         return promise.then((obj) => {
-            return jsonPruner(source, obj, prunePaths, requiredPaths, stack, nativeObjects);
+            return jsonPruner(source, obj, prunePathsObj, requiredPathsObj, stack, nativeObjects);
         });
     };
 
@@ -164,4 +165,5 @@ jsonPrune.injections = [
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
+    nativeIsNaN,
 ];

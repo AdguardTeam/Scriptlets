@@ -21,8 +21,8 @@ import { type Source } from '../scriptlets';
 export function isPruningNeeded(
     source: Source,
     root: ChainBase,
-    prunePaths: string[],
-    requiredPaths: string[],
+    prunePaths: { path: string; value?: any }[],
+    requiredPaths: { path: string; value?: any }[],
     stack: string,
     nativeObjects: any,
 ): boolean | undefined {
@@ -34,10 +34,17 @@ export function isPruningNeeded(
 
     let shouldProcess;
 
+    const prunePathsToCheck = prunePaths.map((obj) => {
+        return obj.path;
+    });
+    const requiredPathsToCheck = requiredPaths.map((obj) => {
+        return obj.path;
+    });
+
     // Only log hostname and matched JSON payload if only second argument is present
-    if (prunePaths.length === 0 && requiredPaths.length > 0) {
+    if (prunePathsToCheck.length === 0 && requiredPathsToCheck.length > 0) {
         const rootString = nativeStringify(root);
-        const matchRegex = toRegExp(requiredPaths.join(''));
+        const matchRegex = toRegExp(requiredPathsToCheck.join(''));
         const shouldLog = matchRegex.test(rootString);
         if (shouldLog) {
             logMessage(
@@ -60,8 +67,8 @@ export function isPruningNeeded(
 
     const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
 
-    for (let i = 0; i < requiredPaths.length; i += 1) {
-        const requiredPath = requiredPaths[i];
+    for (let i = 0; i < requiredPathsToCheck.length; i += 1) {
+        const requiredPath = requiredPathsToCheck[i];
         const lastNestedPropName = requiredPath.split('.').pop();
         const hasWildcard = wildcardSymbols.some((symbol) => requiredPath.includes(symbol));
 
@@ -110,8 +117,8 @@ export function isPruningNeeded(
 export const jsonPruner = (
     source: Source,
     root: ChainBase,
-    prunePaths: string[],
-    requiredPaths: string[],
+    prunePaths: { path: string; value?: any }[],
+    requiredPaths: { path: string; value?: any }[],
     stack: string,
     nativeObjects: any,
 ): ArbitraryObject => {
@@ -136,7 +143,9 @@ export const jsonPruner = (
         // if pruning is needed, we check every input pathToRemove
         // and delete it if root has it
         prunePaths.forEach((path) => {
-            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
+            const pathToCheck = path.path;
+            const valueToCheck = path.value;
+            const ownerObjArr = getWildcardPropertyInChain(root, pathToCheck, true, [], valueToCheck);
             ownerObjArr.forEach((ownerObj) => {
                 if (ownerObj !== undefined && ownerObj.base) {
                     delete ownerObj.base[ownerObj.prop];
@@ -159,11 +168,34 @@ export const jsonPruner = (
  * @returns array of properties or empty array if props is not a string
  */
 export const getPrunePath = (props: unknown) => {
+    const VALUE_MARKER = '.[=].';
+    const REGEXP_START_MARKER = '/';
+
     const validPropsString = typeof props === 'string'
         && props !== undefined
         && props !== '';
 
-    return validPropsString
-        ? props.split(/ +/)
-        : [];
+    if (validPropsString) {
+        const parts = props.split(/ +/).map((part) => {
+            const splitPart = part.split(VALUE_MARKER);
+            const path = splitPart[0];
+            let value = splitPart[1] as any;
+            if (value !== undefined) {
+                if (value === 'true') {
+                    value = true;
+                } else if (value === 'false') {
+                    value = false;
+                } else if (value.startsWith(REGEXP_START_MARKER)) {
+                    value = toRegExp(value);
+                } else if (typeof value === 'string' && /^\d+$/.test(value)) {
+                    value = parseFloat(value);
+                }
+                return { path, value };
+            }
+            return { path };
+        });
+        return parts;
+    }
+
+    return [];
 };

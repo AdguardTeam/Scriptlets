@@ -905,3 +905,498 @@ test('JSON with Array and empty Array as first element, should remove', (assert)
         'should remove propsToRemove -- wildcard in propsToRemove for array',
     );
 });
+
+test('removes propsToRemove with specific value', (assert) => {
+    runScriptlet('json-prune', 'c.[=].3');
+    assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1, b: 2 }, 'should remove single propsToRemove');
+    assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":4}'), { a: 1, b: 2, c: 4 }, 'should not remove');
+});
+
+test('removes propsToRemove with "fooBar" value', (assert) => {
+    runScriptlet('json-prune', '*.[=].fooBar');
+    assert.deepEqual(
+        JSON.parse('{"a":1,"b":"fooBar","c":3,"d":"fooBar"}'),
+        { a: 1, c: 3 },
+        'should remove all keys with "fooBar" value',
+    );
+});
+
+test('removes propsToRemove with "fooBar2" value', (assert) => {
+    runScriptlet('json-prune', 'test.*.[=].fooBar2');
+    assert.deepEqual(
+        JSON.parse('{"test":{"a":1,"b":"fooBar2","c":3,"d":"fooBar2"}}'),
+        { test: { a: 1, c: 3 } },
+        'should remove all keys with "fooBar2" value',
+    );
+
+    assert.deepEqual(
+        JSON.parse('{"baz":{"a":1,"b":"fooBar2","c":3,"d":"fooBar2"}}'),
+        {
+            baz: {
+                a: 1, b: 'fooBar2', c: 3, d: 'fooBar2',
+            },
+        },
+        'should not remove',
+    );
+});
+
+test('removes video objects with "isAd" property', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.isAd');
+    const actualJson = {
+        videos: {
+            video1: {
+                isAd: true,
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                src: 'src2',
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes video objects with "infoAd" property', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.infoAd');
+    const actualJson = {
+        videos: {
+            video1: {
+                infoAd: {
+                    time: 10,
+                },
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                src: 'src2',
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes video objects with "isAd" property', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.isAd');
+    const actualJson = {
+        videos: {
+            video0: {
+                src: 'src0',
+            },
+            video1: {
+                isAd: true,
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                src: 'src3',
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video0: {
+                src: 'src0',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                src: 'src3',
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes all "video" objects with "isAd" property', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.isAd');
+    const actualJson = {
+        videos: {
+            video0: {
+                src: 'src0',
+            },
+            video1: {
+                isAd: true,
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                src: 'src3',
+            },
+            video4: {
+                src: 'src4',
+            },
+            video5: {
+                isAd: true,
+                src: 'src5',
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video0: {
+                src: 'src0',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                src: 'src3',
+            },
+            video4: {
+                src: 'src4',
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'all videos with isAd has been removed');
+});
+
+test('removes video objects with isAd property in values object', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.values.isAd');
+    const actualJson = {
+        videos: {
+            video1: {
+                values: {
+                    isAd: true,
+                    src: 'src1',
+                },
+            },
+            video2: {
+                values: {
+                    src: 'src2',
+                },
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                values: {
+                    src: 'src2',
+                },
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes video objects with isAd property in any nested object', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.*.isAd');
+    const actualJson = {
+        videos: {
+            video1: {
+                foo: {
+                    isAd: true,
+                    src: 'src1',
+                },
+            },
+            video2: {
+                bar: {
+                    src: 'src2',
+                },
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                bar: {
+                    src: 'src2',
+                },
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes video objects with isAd property if src property exists', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.values.isAd', 'videos.*.values.src');
+    const actualJson = {
+        videos: {
+            video1: {
+                values: {
+                    isAd: true,
+                    src: 'src1',
+                },
+            },
+            video2: {
+                values: {
+                    src: 'src2',
+                },
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                values: {
+                    src: 'src2',
+                },
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes object which contains array with object which contains "isAd" key', (assert) => {
+    runScriptlet('json-prune', '[].{-}.*.isAd');
+
+    const actualJson = [
+        {
+            content1: [
+                {
+                    id: 0,
+                    source: 'example.com',
+                },
+                {
+                    id: 1,
+                    source: 'example.org',
+                    isAd: true,
+                },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+        {
+            content2: [
+                { id: 0 },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    const expectedJson = [
+        {
+            state: {
+                ready: true,
+            },
+        },
+        {
+            content2: [
+                { id: 0 },
+                { id: 1 },
+            ],
+            state: {
+                ready: true,
+            },
+        },
+    ];
+
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+
+    assert.deepEqual(prunnedJSON, expectedJson, 'should remove content1 array');
+});
+
+test('removes array elements witch contains "a" object', (assert) => {
+    runScriptlet('json-prune', 'gifs.[-].a');
+
+    const actualJson = {
+        gifs: [
+            { a: 1 },
+            { b: 2 },
+            { a: 3 },
+            { b: 4 },
+            { c: { a: 5 } },
+        ],
+    };
+
+    const expectedJson = {
+        gifs: [
+            undefined, // assert.deepEqual shows undefined for removed element
+            { b: 2 },
+            undefined, // assert.deepEqual shows undefined for removed element
+            { b: 4 },
+            { c: { a: 5 } },
+        ],
+    };
+
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+
+    assert.deepEqual(prunnedJSON, expectedJson, 'should remove array elements with property "a"');
+});
+
+test('removes video objects when "isAd" property is "true"', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.isAd.[=].true');
+    const actualJson = {
+        videos: {
+            video1: {
+                isAd: true,
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                isAd: false,
+                src: 'src3',
+            },
+            video4: {
+                isAd: true,
+                src: 'src4',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                isAd: false,
+                src: 'src3',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes video objects when regex matches "value" property', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.value.[=]./advert/');
+    const actualJson = {
+        videos: {
+            video1: {
+                value: 'advertisement',
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                isAd: 'video',
+                src: 'src3',
+            },
+            video4: {
+                value: 'advertisement',
+                src: 'src4',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                isAd: 'video',
+                src: 'src3',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+});
+
+test('removes video objects from videos and images when regex matches "value" property', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.value.[=]./advert/ images.{-}.value.[=]./advert/');
+    const actualJson = {
+        videos: {
+            video1: {
+                value: 'advertisement',
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                value: 'video',
+                src: 'src3',
+            },
+            video4: {
+                value: 'advertisement',
+                src: 'src4',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+        images: {
+            video1: {
+                value: 'advertisement',
+                src: 'src1',
+            },
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                value: 'video',
+                src: 'src3',
+            },
+            video4: {
+                value: 'advertisement',
+                src: 'src4',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                value: 'video',
+                src: 'src3',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+        images: {
+            video2: {
+                src: 'src2',
+            },
+            video3: {
+                value: 'video',
+                src: 'src3',
+            },
+            video5: {
+                src: 'src5',
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'every video with advertisement value has been removed');
+});
