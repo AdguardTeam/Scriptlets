@@ -12,6 +12,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     nativeIsNaN,
+    isKeyInObject,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -166,4 +167,5 @@ jsonPrune.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     nativeIsNaN,
+    isKeyInObject,
 ];

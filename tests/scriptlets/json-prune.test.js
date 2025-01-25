@@ -1243,6 +1243,34 @@ test('removes array elements witch contains "a" object', (assert) => {
     assert.deepEqual(prunnedJSON, expectedJson, 'should remove array elements with property "a"');
 });
 
+test('should not remove, {-} does not match array', (assert) => {
+    runScriptlet('json-prune', 'gifs.{-}.a');
+
+    const actualJson = {
+        gifs: [
+            { a: 1 },
+            { b: 2 },
+            { a: 3 },
+            { b: 4 },
+            { c: { a: 5 } },
+        ],
+    };
+
+    const expectedJson = {
+        gifs: [
+            { a: 1 },
+            { b: 2 },
+            { a: 3 },
+            { b: 4 },
+            { c: { a: 5 } },
+        ],
+    };
+
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+
+    assert.deepEqual(prunnedJSON, expectedJson, 'should not remove any element');
+});
+
 test('removes video objects when "isAd" property is "true"', (assert) => {
     runScriptlet('json-prune', 'videos.{-}.isAd.[=].true');
     const actualJson = {
@@ -1282,7 +1310,7 @@ test('removes video objects when "isAd" property is "true"', (assert) => {
         },
     };
     const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
-    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 and video4 have been removed');
 });
 
 test('removes video objects when regex matches "value" property', (assert) => {
@@ -1324,7 +1352,79 @@ test('removes video objects when regex matches "value" property', (assert) => {
         },
     };
     const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
-    assert.deepEqual(prunnedJSON, expectedJson, 'video1 has been removed');
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1 and video4 have been removed');
+});
+
+test('removes video objects when it has "entries.value.ad" path', (assert) => {
+    runScriptlet('json-prune', 'videos.{-}.entries.value.ad');
+    const actualJson = {
+        videos: {
+            video1: {
+                entries: {
+                    value: {
+                        src: 'src1',
+                        ad: {
+                            value: 'advertisement',
+                        },
+                    },
+                },
+            },
+            video2: {
+                entries: {
+                    value: {
+                        src: 'src2',
+                    },
+                },
+            },
+            video3: {
+                entries: {
+                    value: {
+                        src: 'src3',
+                        ad: {
+                            value: 'advertisement',
+                        },
+                    },
+                },
+            },
+            video4: {
+                entries: {
+                    value: {
+                        src: 'src4',
+                        ad: {
+                            value: 'advertisement',
+                        },
+                    },
+                },
+            },
+            video5: {
+                entries: {
+                    value: {
+                        src: 'src5',
+                    },
+                },
+            },
+        },
+    };
+    const expectedJson = {
+        videos: {
+            video2: {
+                entries: {
+                    value: {
+                        src: 'src2',
+                    },
+                },
+            },
+            video5: {
+                entries: {
+                    value: {
+                        src: 'src5',
+                    },
+                },
+            },
+        },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'video1, video3 and video4 have been removed');
 });
 
 test('removes video objects from videos and images when regex matches "value" property', (assert) => {

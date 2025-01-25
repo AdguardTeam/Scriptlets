@@ -128,6 +128,51 @@ if (!isSupported) {
         done();
     });
 
+    test('Prune object if it contains "src" key with "example.org" value, regexp URL', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const TEST_METHOD = 'GET';
+        const init = {
+            method: TEST_METHOD,
+        };
+
+        const done = assert.async();
+
+        const PROPS_TO_REMOVE = '{-}.src.[=].example.org';
+        const PATTERN = '/test/';
+        runScriptlet(name, [PROPS_TO_REMOVE, '', PATTERN]);
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.strictEqual(actualJson.cc, undefined, '"cc" key removed');
+        assert.strictEqual(actualJson.aa, 1, 'aa key not removed');
+        done();
+    });
+
+    test('Should not prune object "src" key with "test.org" value does not match, regexp URL', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const TEST_METHOD = 'GET';
+        const init = {
+            method: TEST_METHOD,
+        };
+
+        const done = assert.async();
+
+        // "src" key with "test.org" value is not present,
+        // so should not be removed
+        const PROPS_TO_REMOVE = '{-}.src.[=].test.org';
+        const PATTERN = '/test/';
+        runScriptlet(name, [PROPS_TO_REMOVE, '', PATTERN]);
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.strictEqual(actualJson.cc.src, 'example.org', '"cc" key not removed');
+        done();
+    });
+
     test('Match request by url and method, prune object + required props', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test04.json`;
         const TEST_METHOD = 'GET';

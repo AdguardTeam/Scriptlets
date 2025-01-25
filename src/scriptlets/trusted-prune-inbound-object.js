@@ -13,6 +13,7 @@ import {
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -154,4 +155,5 @@ trustedPruneInboundObject.injections = [
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 ];

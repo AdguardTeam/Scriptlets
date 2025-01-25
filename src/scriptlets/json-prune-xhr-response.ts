@@ -22,6 +22,7 @@ import {
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -371,4 +372,5 @@ jsonPruneXhrResponse.injections = [
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 ];
