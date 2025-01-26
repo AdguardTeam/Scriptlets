@@ -146,12 +146,24 @@ export const jsonPruner = (
             const pathToCheck = path.path;
             const valueToCheck = path.value;
             const ownerObjArr = getWildcardPropertyInChain(root, pathToCheck, true, [], valueToCheck);
-            ownerObjArr.forEach((ownerObj) => {
+            // Iterate in reverse order to avoid index issues when removing elements from an array
+            for (let i = ownerObjArr.length - 1; i >= 0; i -= 1) {
+                const ownerObj = ownerObjArr[i];
                 if (ownerObj !== undefined && ownerObj.base) {
-                    delete ownerObj.base[ownerObj.prop];
+                    if (Array.isArray(ownerObj.base)) {
+                        try {
+                            const index = Number(ownerObj.prop);
+                            // Delete operator leaves "undefined" in the array and it sometimes causes issues
+                            ownerObj.base.splice(index, 1);
+                        } catch (error) {
+                            console.error('Error while deleting array element', error);
+                        }
+                    } else {
+                        delete ownerObj.base[ownerObj.prop];
+                    }
                     hit(source);
                 }
-            });
+            }
         });
     } catch (e) {
         logMessage(source, e);

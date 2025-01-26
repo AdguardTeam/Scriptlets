@@ -3,6 +3,7 @@ const { test, module } = QUnit;
 const name = 'json-prune';
 
 const nativeParse = JSON.parse;
+const nativeResponseJson = Response.prototype.json;
 const nativeConsole = console.log;
 
 const FETCH_OBJECTS_PATH = './test-files';
@@ -22,6 +23,7 @@ const runScriptlet = (name, ...args) => {
         verbose: true,
     };
     JSON.parse = nativeParse;
+    Response.prototype.json = nativeResponseJson;
     const resultString = window.scriptlets.invoke(params);
     const evalWrapper = eval;
     evalWrapper(resultString);
@@ -1217,6 +1219,7 @@ test('removes object which contains array with object which contains "isAd" key'
 
 test('removes array elements witch contains "a" object', (assert) => {
     runScriptlet('json-prune', 'gifs.[-].a');
+    let testPassed = false;
 
     const actualJson = {
         gifs: [
@@ -1225,21 +1228,37 @@ test('removes array elements witch contains "a" object', (assert) => {
             { a: 3 },
             { b: 4 },
             { c: { a: 5 } },
+            { a: 3 },
+            { foo: 'bar' },
         ],
     };
 
     const expectedJson = {
         gifs: [
-            undefined, // assert.deepEqual shows undefined for removed element
             { b: 2 },
-            undefined, // assert.deepEqual shows undefined for removed element
             { b: 4 },
             { c: { a: 5 } },
+            { foo: 'bar' },
         ],
     };
 
     const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    let cValue;
 
+    try {
+        for (let i = 0; i < prunnedJSON.gifs.length; i += 1) {
+            const gif = prunnedJSON.gifs[i];
+            if (gif.c) {
+                cValue = gif.c.a;
+            }
+        }
+        testPassed = true;
+    } catch (e) {
+        console.error('Could not read "cValue":', e);
+    }
+
+    assert.deepEqual(testPassed, true, 'testPassed should be true');
+    assert.deepEqual(cValue, 5, 'cValue should be 5');
     assert.deepEqual(prunnedJSON, expectedJson, 'should remove array elements with property "a"');
 });
 
