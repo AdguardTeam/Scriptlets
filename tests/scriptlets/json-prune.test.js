@@ -1519,3 +1519,95 @@ test('removes video objects from videos and images when regex matches "value" pr
     const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
     assert.deepEqual(prunnedJSON, expectedJson, 'every video with advertisement value has been removed');
 });
+
+test('remove different elements', (assert) => {
+    // eslint-disable-next-line max-len
+    runScriptlet('json-prune', 'foo.advert foo.elements.[-].div.*.advert foo.elements.[-].div.foo.bar.[=].advert foo.elements.[-].div.[].baz.advert advert');
+    const actualJson = {
+        foo: {
+            element: { div: 1 },
+            elements: [
+                {
+                    div: {
+                        foo: {
+                            bar: 'baz',
+                        },
+                    },
+                },
+                {
+                    div: {
+                        foo: {
+                            bar: 'advert',
+                        },
+                    },
+                },
+                {
+                    div: {
+                        foo: {
+                            bar: 'test',
+                        },
+                    },
+                },
+                {
+                    div: {
+                        foo: {
+                            advert: 'test',
+                        },
+                    },
+                },
+                {
+                    div: [
+                        {
+                            baz: {
+                                advert: true,
+                            },
+                        },
+                    ],
+                },
+                {
+                    div: {
+                        foo: {
+                            bar: 'test',
+                        },
+                    },
+                },
+            ],
+            span: { div: 2 },
+            advert: { div: 3 },
+        },
+        advert: { div: 4 },
+        bar: { div: 5 },
+    };
+    const expectedJson = {
+        foo: {
+            element: { div: 1 },
+            elements: [
+                {
+                    div: {
+                        foo: {
+                            bar: 'baz',
+                        },
+                    },
+                },
+                {
+                    div: {
+                        foo: {
+                            bar: 'test',
+                        },
+                    },
+                },
+                {
+                    div: {
+                        foo: {
+                            bar: 'test',
+                        },
+                    },
+                },
+            ],
+            span: { div: 2 },
+        },
+        bar: { div: 5 },
+    };
+    const prunnedJSON = JSON.parse(JSON.stringify(actualJson));
+    assert.deepEqual(prunnedJSON, expectedJson, 'remove elements matching specified paths');
+});
