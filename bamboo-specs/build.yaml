@@ -37,8 +37,7 @@ Build:
             pnpm build
             pnpm pack && mv adguard-scriptlets-*.tgz scriptlets.tgz
 
-            # TODO fix building wiki, ubo changed format of their source
-            # pnpm wiki
+            pnpm wiki
     - inject-variables:
         file: dist/build.txt
         scope: RESULT

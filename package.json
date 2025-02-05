@@ -17,8 +17,8 @@
         "lint:md": "markdownlint .",
         "lint-staged": "lint-staged",
         "wiki": "pnpm wiki:build-table && pnpm wiki:build-docs",
-        "wiki:build-table": "node ./scripts/check-sources-updates.js && node ./scripts/build-compatibility-table.js",
-        "wiki:build-docs": "node scripts/build-docs.js",
+        "wiki:build-table": "tsx ./scripts/check-sources-updates.js && tsx ./scripts/build-compatibility-table.js",
+        "wiki:build-docs": "tsx scripts/build-docs.js",
         "prepublishOnly": "pnpm build",
         "increment": "pnpm version patch --no-git-tag-version"
     },

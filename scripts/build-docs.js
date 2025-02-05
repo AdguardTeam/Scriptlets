@@ -1,29 +1,36 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const yaml = require('js-yaml');
-const { EOL } = require('node:os');
+import fs from 'node:fs';
+import path from 'node:path';
+import yaml from 'js-yaml';
+import { EOL } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
-const {
+import {
     getDataFromFiles,
     SCRIPTLET_TYPE,
     TRUSTED_SCRIPTLET_TYPE,
     REDIRECT_TYPE,
-    DescribingCommentData,
-} = require('./helpers');
-const {
+} from './helpers';
+import {
     WIKI_DIR_PATH,
     scriptletsFilenames,
     trustedScriptletsFilenames,
     redirectsFilenames,
     SCRIPTLETS_SRC_RELATIVE_DIR_PATH,
     REDIRECTS_SRC_RELATIVE_DIR_PATH,
-} = require('./constants');
+} from './constants';
+
+/**
+ * @typedef {import('./helpers').DescribingCommentData} DescribingCommentData
+ */
 
 const STATIC_REDIRECTS_FILENAME = 'static-redirects.yml';
 const BLOCKING_REDIRECTS_FILENAME = 'blocking-redirects.yml';
 
 // eslint-disable-next-line max-len
 const STATIC_REDIRECTS_RELATIVE_SOURCE = `${REDIRECTS_SRC_RELATIVE_DIR_PATH}/${STATIC_REDIRECTS_FILENAME}`;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const staticRedirectsPath = path.resolve(__dirname, STATIC_REDIRECTS_RELATIVE_SOURCE);
 

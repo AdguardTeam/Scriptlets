@@ -24,7 +24,7 @@ const commonPlugins = [
 
 const scriptletsListConfig = {
     input: {
-        'scriptlets-list': 'src/scriptlets/scriptlets-list.js',
+        'scriptlets-list': 'src/scriptlets/scriptlets-list.ts',
     },
     output: {
         dir: 'tmp',

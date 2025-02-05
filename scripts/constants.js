@@ -31,9 +31,10 @@ const TRUSTED_SCRIPTLETS_PREFIX = 'trusted-';
 
 // files which are not scriptlets in the source directory
 const NON_SCRIPTLETS_FILES = [
-    'index.js',
-    'scriptlets.js',
-    'scriptlets-list.js',
+    'index.ts',
+    'scriptlets.ts',
+    'scriptlets-list.ts',
+    'scriptlets-names-list.ts',
 ];
 
 const isUtilityFileName = (filename) => NON_SCRIPTLETS_FILES.includes(filename);

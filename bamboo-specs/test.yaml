@@ -33,10 +33,9 @@ Build:
 
             pnpm install
 
-            # TODO fix building wiki, ubo changed format of their source
-            # # build docs to lint them later
-            # # check compatibility table updates and build it and build wiki docs
-            # pnpm wiki
+            # build docs to lint them later
+            # check compatibility table updates and build it and build wiki docs
+            pnpm wiki
 
             pnpm test
             pnpm build

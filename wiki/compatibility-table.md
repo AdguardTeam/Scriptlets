@@ -51,23 +51,24 @@
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) | prevent-listener |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) |  |  |
 | [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
+| [prevent-canvas](../wiki/about-scriptlets.md#prevent-canvas) | prevent-canvas.js |  |
 | [prevent-element-src-loading](../wiki/about-scriptlets.md#prevent-element-src-loading) |  |  |
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
 | [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | prevent-fetch.js (no-fetch-if.js) |  |
-| [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | no-xhr-if.js (prevent-xhr.js) |  |
+| [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | prevent-xhr.js (no-xhr-if.js) |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
 | [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | prevent-refresh.js (refresh-defuser.js) |  |
 | [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js) |  |
 | [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js) |  |
 | [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js) |  |
-| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) | no-window-open-if.js (nowoif.js, prevent-window-open.js, window.open-defuser.js) |  |
+| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) | prevent-window-open.js (nowoif.js, no-window-open-if.js, window.open-defuser.js) |  |
 | [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
 | [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
 | [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | remove-cookie.js (cookie-remover.js) | cookie-remover |
 | [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (rmnt.js) |  |
 | [scorecardresearch-beacon](../wiki/about-scriptlets.md#scorecardresearch-beacon) |  |  |
-| [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js |  |
+| [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js (removed) |  |
 | [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
 | [set-cookie](../wiki/about-scriptlets.md#set-cookie) | set-cookie.js |  |
 | [set-cookie-reload](../wiki/about-scriptlets.md#set-cookie-reload) | set-cookie-reload.js |  |
@@ -110,7 +111,6 @@
 | [json-prune-xhr-response](../wiki/about-scriptlets.md#json-prune-xhr-response) | json-prune-xhr-response.js |  |
 |  | trusted-replace-xhr-response.js |  |
 |  | multiup.js |  |
-|  | prevent-canvas.js |  |
 |  | trusted-set-cookie-reload.js |  |
 |  | trusted-click-element.js |  |
 |  | trusted-prune-inbound-object.js |  |
@@ -121,6 +121,9 @@
 |  | trusted-replace-argument.js |  |
 |  | trusted-replace-outbound-text.js |  |
 |  | trusted-suppress-native-method.js |  |
+|  | trusted-prevent-xhr.js |  |
+|  | trusted-prevent-dom-bypass.js |  |
+|  | trusted-override-element-method.js |  |
 
 
 ## <a id="redirects"></a> Redirects compatibility table

@@ -1,14 +1,14 @@
-const path = require('node:path');
-const fs = require('node:fs');
-const { EOL } = require('node:os');
+import path from 'node:path';
+import fs from 'node:fs';
+import { EOL } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
-const {
-    REMOVED_MARKER,
-    WIKI_DIR_PATH,
-    COMPATIBILITY_TABLE_DATA_PATH,
-} = require('./constants');
+import { REMOVED_MARKER, WIKI_DIR_PATH, COMPATIBILITY_TABLE_DATA_PATH } from './constants';
 
 const COMPATIBILITY_TABLE_OUTPUT_FILENAME = 'compatibility-table.md';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Path to **output** wiki compatibility table file

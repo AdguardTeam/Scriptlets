@@ -48,6 +48,7 @@
 - [prevent-addEventListener](#prevent-addeventlistener)
 - [prevent-adfly](#prevent-adfly)
 - [prevent-bab](#prevent-bab)
+- [prevent-canvas](#prevent-canvas)
 - [prevent-element-src-loading](#prevent-element-src-loading)
 - [prevent-eval-if](#prevent-eval-if)
 - [prevent-fab-3.2.0](#prevent-fab-3.2.0)
@@ -902,15 +903,24 @@ https://github.com/uBlockOrigin/uBlock-issues/wiki/Resources-Library#href-saniti
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('href-sanitizer', selector[, attribute])
+example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
 ```
 
 - `selector` — required, a CSS selector to match the elements to be sanitized,
   which should be anchor elements (`<a>`) with `href` attribute.
 - `attribute` — optional, default to `text`:
     - `text` — use the text content of the matched element,
-    - `[attribute-name]` copy the value from attribute `attribute-name` on the same element,
-    - `?parameter` copy the value from URL parameter `parameter` of the same element's `href` attribute.
+    - `[<attribute-name>]` copy the value from attribute `attribute-name` on the same element,
+    - `?<parameter-name>` copy the value from URL parameter `parameter-name` of the same element's `href` attribute.
+- `transform` — optional, defaults to no transforming. Possible values:
+    - `base64decode` — decode the base64 string from specified attribute.
+    - `removeHash` — remove the hash from the URL.
+    - `removeParam[:<parameters>]` — remove the specified parameters from the URL,
+      where `<parameters>` is a comma-separated list of parameter names;
+      if no parameter is specified, remove all parameters.
+
+> Note that in the case where the discovered value does not correspond to a valid URL with the appropriate
+> http or https protocols, the value will not be set.
 
 ### Examples
 
@@ -965,6 +975,78 @@ example.org#%#//scriptlet('href-sanitizer', selector[, attribute])
     <!-- after -->
     <div>
         <a href="https://example.org/"></a>
+    </div>
+    ```
+
+4. Decode the base64 string from specified attribute:
+
+    ```adblock
+    example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[href]', 'base64decode')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a href="http://www.foo.com/out/?aHR0cDovL2V4YW1wbGUuY29tLz92PTEyMw=="></a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a href="http://example.com/?v=123"></a>
+    </div>
+    ```
+
+5. Remove the hash from the URL:
+
+    ```adblock
+    example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[href]', 'removeHash')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a href="http://www.foo.com/out/#aHR0cDovL2V4YW1wbGUuY29tLz92PTEyMw=="></a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a href="http://www.foo.com/out/"></a>
+    </div>
+    ```
+
+6. Remove the all parameter(s) from the URL:
+
+    ```adblock
+    example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[href]', 'removeParam')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a href="https://foo.com/123123?utm_source=nova&utm_medium=tg&utm_campaign=main"></a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a href="https://foo.com/123123"></a>
+    </div>
+    ```
+
+7. Remove the specified parameter(s) from the URL:
+
+    ```adblock
+    example.org#%#//scriptlet('href-sanitizer', 'a[href*="foo.com"]', '[href]', 'removeParam:utm_source,utm_medium')
+    ```
+
+    ```html
+    <!-- before -->
+    <div>
+        <a href="https://foo.com/123123?utm_source=nova&utm_medium=tg&utm_campaign=main"></a>
+    </div>
+
+    <!-- after -->
+    <div>
+        <a href="https://foo.com/123123?utm_campaign=main"></a>
     </div>
     ```
 
@@ -1682,6 +1764,50 @@ example.org#%#//scriptlet('prevent-bab')
 
 * * *
 
+## <a id="prevent-canvas"></a> ⚡️ prevent-canvas
+
+> Added in v2.0.1.
+
+Prevents calls to `HTMLCanvasElement.prototype.getContext` and returns `null`.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-canvasjs-
+
+### Syntax
+
+```adblock
+example.org#%#//scriptlet('prevent-canvas'[, contextType])
+```
+
+- `contextType` — optional, string matching the context type (e.g., '2d', 'webgl');
+  by default it matches all context types.
+  It can be a string pattern or a regular expression pattern.
+  If the pattern starts with `!`, it will be negated.
+
+### Examples
+
+1. Prevent all canvas contexts
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-canvas')
+    ```
+
+1. Prevent only '2d' canvas contexts
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-canvas', '2d')
+    ```
+
+1. Prevent all canvas contexts except '2d'
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-canvas', '!2d')
+    ```
+
+[Scriptlet source](../src/scriptlets/prevent-canvas.ts)
+
+* * *
+
 ## <a id="prevent-element-src-loading"></a> ⚡️ prevent-element-src-loading
 
 > Added in v1.6.2.
@@ -2360,9 +2486,9 @@ example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
             - `value` is string or regular expression for matching the value of the option
     passed to `XMLHttpRequest.open()` call
 - `randomize` — defaults to `false` for empty responseText,
-  optional argument to randomize responseText of matched XMLHttpRequest's response; possible values:
-    - `true` to randomize responseText, random alphanumeric string of 10 symbols
-    - colon-separated pair `name:value` string value to customize responseText data where
+  optional argument to randomize responseText and response of matched XMLHttpRequest's response; possible values:
+    - `true` to randomize responseText and response, random alphanumeric string of 10 symbols
+    - colon-separated pair `name:value` string value to customize responseText and response data where
         - `name` — only `length` supported for now
         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
 
@@ -2651,13 +2777,14 @@ https://github.com/gorhill/uBlock/commit/2bb446797a12086f2eebc0c8635b671b8b90c47
 ### Syntax
 
 ```adblock
-example.org#%#//scriptlet('remove-node-text', nodeName, condition)
+example.org#%#//scriptlet('remove-node-text', nodeName, textMatch[, parentSelector])
 ```
 
 - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
 Must target lowercased node names, e.g `div` instead of `DIV`.
 - `textMatch` — required, string or RegExp to match against node's text content.
 If matched, the whole text will be removed. Case sensitive.
+- `parentSelector` — optional, string, CSS selector to match parent node.
 
 ### Examples
 
@@ -2691,6 +2818,28 @@ If matched, the whole text will be removed. Case sensitive.
     <!-- after -->
     <qrce3></qrce3>
     <span>some text</span>
+    ```
+
+3. Remove node's text content, matching parent node:
+
+    ```adblock
+    example.org#%#//scriptlet('remove-node-text', '#text', 'some text', '.container')
+    ```
+
+    ```html
+    <!-- before -->
+    <div class="container">
+         some text
+     </div>
+    <div class="section">
+         some text
+     </div>
+    <!-- after -->
+    <div class="container">
+    </div>
+    <div class="section">
+         some text
+     </div>
     ```
 
 [Scriptlet source](../src/scriptlets/remove-node-text.js)
@@ -2955,6 +3104,7 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
         - `hide` / `hidden`
         - `essential` / `nonessential`
         - `checked` / `unchecked`
+        - `forbidden` / `forever`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3017,6 +3167,7 @@ example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
         - `hide` / `hidden`
         - `essential` / `nonessential`
         - `checked` / `unchecked`
+        - `forbidden` / `forever`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3085,6 +3236,8 @@ example.com#%#//scriptlet('set-local-storage-item', 'key', 'value')
         - `allowed`
         - `denied`
         - `$remove$` — remove specific item from localStorage
+        - `forbidden`
+        - `forever`
 
 ### Examples
 
@@ -3164,6 +3317,8 @@ example.com#%#//scriptlet('set-session-storage-item', 'key', 'value')
         - `allowed`
         - `denied`
         - `$remove$` — remove specific item from sessionStorage
+        - `forbidden`
+        - `forever`
 
 ### Examples
 

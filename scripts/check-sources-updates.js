@@ -1,12 +1,9 @@
 /* eslint-disable no-console, camelcase */
-const fs = require('node:fs');
-const axios = require('axios');
-const { EOL } = require('node:os');
+import fs from 'node:fs';
+import axios from 'axios';
+import { EOL } from 'node:os';
 
-const {
-    REMOVED_MARKER,
-    COMPATIBILITY_TABLE_DATA_PATH,
-} = require('./constants');
+import { REMOVED_MARKER, COMPATIBILITY_TABLE_DATA_PATH } from './constants';
 
 /* ************************************************************************
  *
@@ -225,6 +222,7 @@ async function getCurrentUBOScriptlets() {
  *
  * @returns {Diff|null} diff
  */
+// eslint-disable-next-line no-unused-vars
 async function checkForUBOScriptletsUpdates() {
     const oldList = getScriptletsFromTable('ubo');
     const newList = await getCurrentUBOScriptlets();
@@ -397,7 +395,8 @@ async function checkForABPRedirectsUpdates() {
  */
 (async function init() {
     const UBORedirectsDiff = await checkForUBORedirectsUpdates();
-    const UBOScriptletsDiff = await checkForUBOScriptletsUpdates();
+    // TODO: fix building wiki, ubo changed format of their source. AG-39652
+    // const UBOScriptletsDiff = await checkForUBOScriptletsUpdates();
     const ABPRedirectsDiff = await checkForABPRedirectsUpdates();
     const ABPScriptletsDiff = await checkForABPScriptletsUpdates();
 
@@ -405,9 +404,9 @@ async function checkForABPRedirectsUpdates() {
         markTableWithDiff(UBORedirectsDiff, 'redirects', 'ubo');
     }
 
-    if (UBOScriptletsDiff) {
-        markTableWithDiff(UBOScriptletsDiff, 'scriptlets', 'ubo');
-    }
+    // if (UBOScriptletsDiff) {
+    //     markTableWithDiff(UBOScriptletsDiff, 'scriptlets', 'ubo');
+    // }
 
     if (ABPRedirectsDiff) {
         markTableWithDiff(ABPRedirectsDiff, 'redirects', 'abp');
@@ -417,7 +416,12 @@ async function checkForABPRedirectsUpdates() {
         markTableWithDiff(ABPScriptletsDiff, 'scriptlets', 'abp');
     }
 
-    const diffs = [UBORedirectsDiff, UBOScriptletsDiff, ABPRedirectsDiff, ABPScriptletsDiff];
+    const diffs = [
+        UBORedirectsDiff,
+        // UBOScriptletsDiff,
+        ABPRedirectsDiff,
+        ABPScriptletsDiff,
+    ];
 
     if (diffs.some((diff) => !!diff)) {
         const removed = diffs

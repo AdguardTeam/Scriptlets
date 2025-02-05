@@ -24,6 +24,9 @@
 
 Clicks selected elements in a strict sequence, ordered by selectors passed,
 and waiting for them to render in the DOM first.
+First matched element is clicked unless `containsText` is specified.
+If `containsText` is specified, then it searches for all given selectors and clicks
+the first element containing the specified text.
 Deactivates after all elements have been clicked or by 10s timeout.
 
 ### Syntax

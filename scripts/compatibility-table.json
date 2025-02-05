@@ -150,6 +150,10 @@
             "adg": "prevent-bab"
         },
         {
+            "adg": "prevent-canvas",
+            "ubo": "prevent-canvas.js"
+        },
+        {
             "adg": "prevent-element-src-loading"
         },
         {
@@ -350,10 +354,6 @@
         },
         {
             "ubo": "multiup.js"
-        },
-        {
-            "adg": "prevent-canvas",
-            "ubo": "prevent-canvas.js"
         },
         {
             "ubo": "trusted-set-cookie-reload.js"
