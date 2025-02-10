@@ -11,6 +11,8 @@ import {
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
+    nativeIsNaN,
+    isKeyInObject,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -83,6 +85,30 @@ import {
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.ad')
+ *     ```
+ *
+ * 1. Removes every property from `videos` object if it has `isAd` key
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd')
+ *     ```
+ *
+ *     For instance, the following call will return `{ videos: { video2: { src: 'video1.mp4' } } }`
+ *
+ *     ```html
+ *     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"src":"video1.mp4"}}}')
+ *     ```
+ *
+ * 1. Removes every property from `videos` object if it has `isAd` key with `true` value
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd.[=].true')
+ *     ```
+ *
+ *     For instance, the following call will return `{ videos: { video2: { isAd: false, src: 'video1.mp4' } } }`
+ *
+ *     ```html
+ *     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"isAd":false,"src":"video1.mp4"}}}')
  *     ```
  *
  * 1. Call with no arguments will log the current hostname and json payload at the console
@@ -164,4 +190,6 @@ jsonPrune.injections = [
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
+    nativeIsNaN,
+    isKeyInObject,
 ];

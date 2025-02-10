@@ -10,6 +10,7 @@ import {
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -302,4 +303,5 @@ trustedReplaceOutboundText.injections = [
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 ];

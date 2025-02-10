@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- ability in `json-prune` scriptlet to match `key` with specific `value`
+  and remove `array`/`object` if it contains specific `item` [#183]
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.4...HEAD
+[#183]: https://github.com/AdguardTeam/Scriptlets/issues/183
+
 ## [v2.1.4] - 2025-01-20
 
 ### Changed

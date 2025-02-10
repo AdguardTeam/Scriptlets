@@ -3,6 +3,7 @@ const { test, module } = QUnit;
 const name = 'json-prune';
 
 const nativeParse = JSON.parse;
+const nativeResponseJson = Response.prototype.json;
 const nativeConsole = console.log;
 
 const FETCH_OBJECTS_PATH = './test-files';
@@ -22,6 +23,7 @@ const runScriptlet = (name, ...args) => {
         verbose: true,
     };
     JSON.parse = nativeParse;
+    Response.prototype.json = nativeResponseJson;
     const resultString = window.scriptlets.invoke(params);
     const evalWrapper = eval;
     evalWrapper(resultString);

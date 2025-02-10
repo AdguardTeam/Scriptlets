@@ -24,6 +24,7 @@ import {
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -230,4 +231,5 @@ jsonPruneFetchResponse.injections = [
     getNativeRegexpTest,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 ];

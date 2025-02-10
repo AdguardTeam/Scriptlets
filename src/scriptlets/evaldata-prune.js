@@ -11,6 +11,7 @@ import {
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -145,4 +146,5 @@ evalDataPrune.injections = [
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
+    isKeyInObject,
 ];

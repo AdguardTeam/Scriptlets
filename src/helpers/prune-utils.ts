@@ -7,22 +7,22 @@ import { type ArbitraryObject, type ChainBase } from '../../types/types';
 import { type Source } from '../scriptlets';
 
 /**
- * Checks if prunning is required
+ * Checks if pruning is required
  *
  * @param source required, scriptlet properties
  * @param root object which should be pruned or logged
- * @param prunePaths array with string of space-separated property chains to remove
- * @param requiredPaths array with string of space-separated propertiy chains
+ * @param prunePaths array with objects containing string of property chain as a path to remove and optional value
+ * @param requiredPaths array with objects containing string of property chain
  * @param stack string which should be matched by stack trace
  * @param nativeObjects reference to native objects, required for a trusted-prune-inbound-object to fix infinite loop
  * which must be all present for the pruning to occur
- * @returns true if prunning is required
+ * @returns true if pruning is required
  */
 export function isPruningNeeded(
     source: Source,
     root: ChainBase,
-    prunePaths: string[],
-    requiredPaths: string[],
+    prunePaths: { path: string; value?: any }[],
+    requiredPaths: { path: string; value?: any }[],
     stack: string,
     nativeObjects: any,
 ): boolean | undefined {
@@ -34,10 +34,17 @@ export function isPruningNeeded(
 
     let shouldProcess;
 
+    const prunePathsToCheck = prunePaths.map((obj) => {
+        return obj.path;
+    });
+    const requiredPathsToCheck = requiredPaths.map((obj) => {
+        return obj.path;
+    });
+
     // Only log hostname and matched JSON payload if only second argument is present
-    if (prunePaths.length === 0 && requiredPaths.length > 0) {
+    if (prunePathsToCheck.length === 0 && requiredPathsToCheck.length > 0) {
         const rootString = nativeStringify(root);
-        const matchRegex = toRegExp(requiredPaths.join(''));
+        const matchRegex = toRegExp(requiredPathsToCheck.join(''));
         const shouldLog = matchRegex.test(rootString);
         if (shouldLog) {
             logMessage(
@@ -60,8 +67,8 @@ export function isPruningNeeded(
 
     const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
 
-    for (let i = 0; i < requiredPaths.length; i += 1) {
-        const requiredPath = requiredPaths[i];
+    for (let i = 0; i < requiredPathsToCheck.length; i += 1) {
+        const requiredPath = requiredPathsToCheck[i];
         const lastNestedPropName = requiredPath.split('.').pop();
         const hasWildcard = wildcardSymbols.some((symbol) => requiredPath.includes(symbol));
 
@@ -110,8 +117,8 @@ export function isPruningNeeded(
 export const jsonPruner = (
     source: Source,
     root: ChainBase,
-    prunePaths: string[],
-    requiredPaths: string[],
+    prunePaths: { path: string; value?: any }[],
+    requiredPaths: { path: string; value?: any }[],
     stack: string,
     nativeObjects: any,
 ): ArbitraryObject => {
@@ -136,13 +143,28 @@ export const jsonPruner = (
         // if pruning is needed, we check every input pathToRemove
         // and delete it if root has it
         prunePaths.forEach((path) => {
-            const ownerObjArr = getWildcardPropertyInChain(root, path, true);
-            ownerObjArr.forEach((ownerObj) => {
+            const pathToCheck = path.path;
+            const valueToCheck = path.value;
+            const ownerObjArr = getWildcardPropertyInChain(root, pathToCheck, true, [], valueToCheck);
+            // Iterate in reverse order to avoid index issues when removing elements from an array
+            for (let i = ownerObjArr.length - 1; i >= 0; i -= 1) {
+                const ownerObj = ownerObjArr[i];
                 if (ownerObj !== undefined && ownerObj.base) {
-                    delete ownerObj.base[ownerObj.prop];
+                    if (Array.isArray(ownerObj.base)) {
+                        try {
+                            const index = Number(ownerObj.prop);
+                            // Delete operator leaves "undefined" in the array and it sometimes causes issues
+                            ownerObj.base.splice(index, 1);
+                        } catch (error) {
+                            // eslint-disable-next-line no-console
+                            console.error('Error while deleting array element', error);
+                        }
+                    } else {
+                        delete ownerObj.base[ownerObj.prop];
+                    }
                     hit(source);
                 }
-            });
+            }
         });
     } catch (e) {
         logMessage(source, e);
@@ -159,11 +181,38 @@ export const jsonPruner = (
  * @returns array of properties or empty array if props is not a string
  */
 export const getPrunePath = (props: unknown) => {
+    const VALUE_MARKER = '.[=].';
+    const REGEXP_START_MARKER = '/';
+
     const validPropsString = typeof props === 'string'
         && props !== undefined
         && props !== '';
 
-    return validPropsString
-        ? props.split(/ +/)
-        : [];
+    if (validPropsString) {
+        // Regular expression to split the properties string by spaces,
+        // but it should not split if there is space inside value, like in:
+        // 'foo.[=]./foo bar baz/ bar' or 'foo.[=]./foo bar \/ baz/ bar'
+        const splitRegexp = /(?<!\.\[=\]\.\/(?:[^/]|\\.)*)\s+/;
+        const parts = props.split(splitRegexp).map((part) => {
+            const splitPart = part.split(VALUE_MARKER);
+            const path = splitPart[0];
+            let value = splitPart[1] as any;
+            if (value !== undefined) {
+                if (value === 'true') {
+                    value = true;
+                } else if (value === 'false') {
+                    value = false;
+                } else if (value.startsWith(REGEXP_START_MARKER)) {
+                    value = toRegExp(value);
+                } else if (typeof value === 'string' && /^\d+$/.test(value)) {
+                    value = parseFloat(value);
+                }
+                return { path, value };
+            }
+            return { path };
+        });
+        return parts;
+    }
+
+    return [];
 };
