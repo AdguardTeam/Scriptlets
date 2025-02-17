@@ -93,6 +93,7 @@ export function preventBab(source) {
         }
     };
     window.eval = evalWrapper.bind(window);
+    window.eval.toString = nativeEval.toString.bind(nativeEval);
 }
 
 export const preventBabNames = [

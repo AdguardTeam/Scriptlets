@@ -41,6 +41,9 @@ export function preventEvalIf(source, search) {
         hit(source, payload);
         return undefined;
     }.bind(window);
+
+    // Protect window.eval from native code check
+    window.eval.toString = nativeEval.toString.bind(nativeEval);
 }
 
 export const preventEvalIfNames = [

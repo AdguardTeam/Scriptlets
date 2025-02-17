@@ -52,6 +52,24 @@ test('AG prevent-eval-if works', (assert) => {
     assert.strictEqual(secondActual, undefined, 'result of eval evaluation should be undefined');
 });
 
+test('AG prevent-eval-if works, check toString', (assert) => {
+    const originalEvalString = window.eval.toString();
+
+    runScriptlet(name, ['/adblock/']);
+
+    const agPreventEvalIf = 'agPreventEvalIf';
+
+    const evalWrapper = eval;
+    const firstActual = evalWrapper(`(function () {return '${agPreventEvalIf}'})()`);
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire for not matched function');
+    assert.strictEqual(firstActual, agPreventEvalIf, 'result of eval evaluation should exist');
+
+    const secondActual = evalWrapper(`(function () {const adblock = true; return '${agPreventEvalIf}'})()`);
+    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+    assert.strictEqual(secondActual, undefined, 'result of eval evaluation should be undefined');
+    assert.strictEqual(window.eval.toString(), originalEvalString, 'toString should not be changed');
+});
+
 test('does not work -- invalid regexp pattern', (assert) => {
     runScriptlet(name, ['/\\/']);
 
