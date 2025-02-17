@@ -23,7 +23,7 @@ import {
  *
  * ### Syntax
  *
- * ```adblock
+ * ```text
  * example.org#%#//scriptlet('remove-node-text', nodeName, textMatch[, parentSelector])
  * ```
  *

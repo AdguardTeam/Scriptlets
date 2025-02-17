@@ -35,7 +35,7 @@ import {
  * 1. Prevent reloading of a document with delay
  *
  *     ```adblock
- *     example.com#%#//scriptlet('prevent-refresh', 3)
+ *     example.com#%#//scriptlet('prevent-refresh', '3')
  *     ```
  *
  * @added v1.6.2.

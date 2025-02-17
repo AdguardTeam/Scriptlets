@@ -20,7 +20,7 @@ import { type Source } from './scriptlets';
  *
  * ### Syntax
  *
- * ```adblock
+ * ```text
  * example.org#%#//scriptlet('prevent-canvas'[, contextType])
  * ```
  *

@@ -34,6 +34,7 @@ import {
  *     - `*` to match all text content
  *     - non-empty string
  *     - regular expression
+ *   By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
  * - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content
  *   matched by `pattern`. Empty string to remove content. Defaults to empty string.
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -99,6 +100,12 @@ import {
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', 'foo', 'bar', 'example.com', 'true')
+ *     ```
+ *
+ * 1. Replace all "noAds=false" text content with "noAds=true" of all fetch responses for example.com and log original and modified text content <!-- markdownlint-disable-line line-length -->
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/noAds=false/g', 'noAds=true', 'example.com', 'true')
  *     ```
  *
  * @added v1.7.3.

@@ -31,7 +31,7 @@ import {
  * 1. Prevent script source loading
  *
  *     ```adblock
- *     example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
+ *     example.org#%#//scriptlet('prevent-element-src-loading', 'script', 'adsbygoogle')
  *     ```
  *
  * @added v1.6.2.

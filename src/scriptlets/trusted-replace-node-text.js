@@ -30,6 +30,7 @@ import {
  * - `textMatch` — required, string or RegExp to match against node's text content.
  * If matched, the `pattern` will be replaced by the `replacement`. Case sensitive.
  * - `pattern` — required, string or regexp for matching contents of `node.textContent` that should be replaced.
+ * By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
  * - `replacement` — required, string to replace text content matched by `pattern`.
  * - `...extraArgs` — optional, string, if includes 'verbose' will log original and modified text content.
  *
@@ -55,7 +56,7 @@ import {
  *     <span>some text</span>
  *     ```
  *
- * 2. Replace node's text content, matching both node name, text and pattern by RegExp:
+ * 1. Replace node's text content, matching both node name, text and pattern by RegExp:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-node-text', '/[a-z]*[0-9]/', '/s\dme/', '/t\dxt/', 'other text')
@@ -73,7 +74,21 @@ import {
  *     <span>some text</span>
  *     ```
  *
- * 3. Replace node's text content and log original and modified text content:
+ * 1. Replace all occurrences in node's text content, matching both node name and text:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-node-text', 'p', 'bar', '/a/g', 'x')
+ *     ```
+ *
+ *     ```html
+ *     <!-- before -->
+ *     <p>foa bar baz</p> // this node is going to be matched by both node name and text
+ *
+ *     <!-- after -->
+ *     <p>fox bxr bxz</p> // text content has changed
+ *     ```
+ *
+ * 1. Replace node's text content and log original and modified text content:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-node-text', 'div', 'some', 'text', 'other text', 'verbose')

@@ -32,6 +32,7 @@ import {
  *     - `*` to match all text content
  *     - non-empty string
  *     - regular expression
+ *   By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
  * - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with.
  *   Empty string to remove content.
  * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
@@ -92,6 +93,12 @@ import {
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', 'foo', 'bar', 'example.com', 'true')
+ *     ```
+ *
+ * 1. Replace all "noAds=false" text content with "noAds=true" of all XMLHttpRequests for example.com and log original and modified text content <!-- markdownlint-disable-line line-length -->
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/noAds=false/g', 'noAds=true', 'example.com', 'true')
  *     ```
  *
  * @added v1.7.3.
