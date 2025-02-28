@@ -10,7 +10,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.1.5] - 2025-02-28
+
+### Changed
+
+- Updated @adguard/agtree to `3.0.1`.
 
 ### Added
 
@@ -21,7 +25,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `prevent-eval-if` and `prevent-bab` scriptlets, now `eval.toString()` call returns original value [#481]
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.4...HEAD
+[v2.1.5]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.4...v2.1.5
 [#183]: https://github.com/AdguardTeam/Scriptlets/issues/183
 [#481]: https://github.com/AdguardTeam/Scriptlets/issues/481
 

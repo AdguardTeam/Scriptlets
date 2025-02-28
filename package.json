@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "2.1.4",
+    "version": "2.1.5",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "type": "module",
     "scripts": {
@@ -61,7 +61,7 @@
         }
     },
     "dependencies": {
-        "@adguard/agtree": "3.0.0-alpha.2",
+        "@adguard/agtree": "3.0.1",
         "js-yaml": "^3.14.1"
     },
     "devDependencies": {
