@@ -931,4 +931,30 @@ describe('jsonPruner tests', () => {
 
         expect(result).toStrictEqual(expected);
     });
+
+    test('Array - should not be removed', async () => {
+        const root = [
+            'foo',
+            0,
+            1,
+            43200,
+            100,
+        ];
+
+        const expected = [
+            'foo',
+            0,
+            1,
+            43200,
+            100,
+        ];
+
+        // eslint-disable-next-line max-len
+        const pathToPrune = getPrunePath('playerResponse.adPlacements playerResponse.playerAds playerResponse.adSlots adPlacements playerAds adSlots');
+        const requiredPaths = getPrunePath('');
+        const stack = '';
+        const result = jsonPruner(name, root, pathToPrune, requiredPaths, stack, nativeObjects);
+
+        expect(result).toStrictEqual(expected);
+    });
 });

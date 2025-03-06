@@ -149,20 +149,28 @@ export const jsonPruner = (
             // Iterate in reverse order to avoid index issues when removing elements from an array
             for (let i = ownerObjArr.length - 1; i >= 0; i -= 1) {
                 const ownerObj = ownerObjArr[i];
-                if (ownerObj !== undefined && ownerObj.base) {
-                    if (Array.isArray(ownerObj.base)) {
-                        try {
-                            const index = Number(ownerObj.prop);
-                            // Delete operator leaves "undefined" in the array and it sometimes causes issues
-                            ownerObj.base.splice(index, 1);
-                        } catch (error) {
-                            // eslint-disable-next-line no-console
-                            console.error('Error while deleting array element', error);
-                        }
-                    } else {
-                        delete ownerObj.base[ownerObj.prop];
+                if (ownerObj === undefined || !ownerObj.base) {
+                    continue;
+                }
+
+                hit(source);
+
+                if (!Array.isArray(ownerObj.base)) {
+                    delete ownerObj.base[ownerObj.prop];
+                    continue;
+                }
+
+                try {
+                    const index = Number(ownerObj.prop);
+                    if (Number.isNaN(index)) {
+                        continue;
                     }
-                    hit(source);
+
+                    // Delete operator leaves "undefined" in the array and it sometimes causes issues
+                    ownerObj.base.splice(index, 1);
+                } catch (error) {
+                    // eslint-disable-next-line no-console
+                    console.error('Error while deleting array element', error);
                 }
             }
         });
