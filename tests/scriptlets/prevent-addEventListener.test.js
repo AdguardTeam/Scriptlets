@@ -235,3 +235,89 @@ test('match escaped quote mark', (assert) => {
     assert.strictEqual(window[testProp], undefined, 'property should be undefined');
     clearGlobalProps(testProp);
 });
+
+test('match element with class name', (assert) => {
+    const scriptletArgs = ['click', 'clicked', 'elements', '.match'];
+    runScriptlet(name, scriptletArgs);
+
+    const testPropMatch = 'testPropMatch';
+    const elementMatches = document.createElement('div');
+    elementMatches.className = 'match';
+    elementMatches.addEventListener('click', () => {
+        window[testPropMatch] = 'clicked';
+    });
+    elementMatches.click();
+
+    const testPropDoesNotMatch = 'testPropDoesNotMatch';
+    const elementDoesNotMatch = document.createElement('div');
+    elementDoesNotMatch.className = 'doesNotMatch';
+    elementDoesNotMatch.addEventListener('click', () => {
+        window[testPropDoesNotMatch] = 'clicked';
+    });
+    elementDoesNotMatch.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testPropMatch], undefined, 'property should be undefined');
+    assert.strictEqual(window[testPropDoesNotMatch], 'clicked', 'property should be clicked');
+
+    clearGlobalProps(testPropMatch, testPropDoesNotMatch);
+});
+
+test('match window', (assert) => {
+    const scriptletArgs = ['click', 'clicked', 'elements', 'window'];
+    runScriptlet(name, scriptletArgs);
+
+    const testPropMatch = 'testPropMatch';
+    window.addEventListener('click', () => {
+        window[testPropMatch] = 'clicked';
+    });
+    const event = new Event('click');
+    window.dispatchEvent(event);
+
+    const testPropDoesNotMatch = 'testPropDoesNotMatch';
+    document.addEventListener('click', () => {
+        window[testPropDoesNotMatch] = 'clicked';
+    });
+    const eventDoesNotMatch = new Event('click');
+    document.dispatchEvent(eventDoesNotMatch);
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testPropMatch], undefined, 'property should be undefined');
+    assert.strictEqual(window[testPropDoesNotMatch], 'clicked', 'property should be clicked');
+
+    clearGlobalProps(testPropMatch, testPropDoesNotMatch);
+});
+
+test('match document', (assert) => {
+    const scriptletArgs = ['click', 'clicked', 'elements', 'document'];
+    runScriptlet(name, scriptletArgs);
+
+    const testPropMatch = 'testPropMatch';
+    document.addEventListener('click', () => {
+        window[testPropMatch] = 'clicked';
+    });
+    const event = new Event('click');
+    document.dispatchEvent(event);
+
+    const testPropDoesNotMatch1 = 'testPropDoesNotMatch1';
+    window.addEventListener('click', () => {
+        window[testPropDoesNotMatch1] = 'clicked1';
+    });
+    const eventDoesNotMatch = new Event('click');
+    window.dispatchEvent(eventDoesNotMatch);
+
+    const testPropDoesNotMatch2 = 'testPropDoesNotMatch2';
+    const elementDoesNotMatch = document.createElement('div');
+    elementDoesNotMatch.className = 'doesNotMatch';
+    elementDoesNotMatch.addEventListener('click', () => {
+        window[testPropDoesNotMatch2] = 'clicked2';
+    });
+    elementDoesNotMatch.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testPropMatch], undefined, 'property should be undefined');
+    assert.strictEqual(window[testPropDoesNotMatch1], 'clicked1', 'property should be clicked1');
+    assert.strictEqual(window[testPropDoesNotMatch2], 'clicked2', 'property should be clicked2');
+
+    clearGlobalProps(testPropMatch, testPropDoesNotMatch1, testPropDoesNotMatch2);
+});

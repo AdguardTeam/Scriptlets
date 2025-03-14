@@ -29,6 +29,12 @@ import {
  *   defaults to match all types; invalid regular expression will cause exit and rule will not work
  * - `listenerSearch` — optional, string or regular expression matching the listener function body;
  *   defaults to match all listeners; invalid regular expression will cause exit and rule will not work
+ * - `additionalArgName` — optional, string, name of the additional argument to match;
+ *   currently only `elements` is supported;
+ * - `additionalArgValue` — optional, value corresponding to the additional argument name;
+ *   for `elements` it can be a CSS selector or one of the following values:
+ *   - `window`
+ *   - `document`
  *
  * ### Examples
  *
@@ -52,12 +58,63 @@ import {
  *     });
  *     ```
  *
+ * 1. Prevent 'click' listeners with the callback body containing `foo` and only if the element has the class `bar`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click', 'foo', 'elements', '.bar')
+ *     ```
+ *
+ *     For instance, this listener will not be called:
+ *
+ *     ```javascript
+ *     const el = document.querySelector('.bar');
+ *     el.addEventListener('click', () => {
+ *         window.test = 'foo';
+ *     });
+ *     ```
+ *
+ *     This listener will be called:
+ *
+ *     ```javascript
+ *     const el = document.querySelector('.xyz');
+ *     el.addEventListener('click', () => {
+ *         window.test = 'foo';
+ *     });
+ *     ```
+ *
  * @added v1.0.4.
  */
 /* eslint-enable max-len */
-export function preventAddEventListener(source, typeSearch, listenerSearch) {
+export function preventAddEventListener(source, typeSearch, listenerSearch, additionalArgName, additionalArgValue) {
     const typeSearchRegexp = toRegExp(typeSearch);
     const listenerSearchRegexp = toRegExp(listenerSearch);
+
+    let additionalArg;
+    if (additionalArgName && additionalArgValue) {
+        additionalArg = {
+            [additionalArgName]: additionalArgValue,
+        };
+    }
+
+    const elementToMatch = additionalArg?.elements;
+
+    const elementMatches = (element) => {
+        // If elementToMatch is undefined, it means that the scriptlet was called without the `elements` argument
+        // so it should match all elements
+        if (elementToMatch === undefined) {
+            return true;
+        }
+        if (elementToMatch === 'window') {
+            return element === window;
+        }
+        if (elementToMatch === 'document') {
+            return element === document;
+        }
+        if (element && element.matches && element.matches(elementToMatch)) {
+            return true;
+        }
+        return false;
+    };
 
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
@@ -65,7 +122,8 @@ export function preventAddEventListener(source, typeSearch, listenerSearch) {
         let shouldPrevent = false;
         if (validateType(type) && validateListener(listener)) {
             shouldPrevent = typeSearchRegexp.test(type.toString())
-                && listenerSearchRegexp.test(listenerToString(listener));
+                && listenerSearchRegexp.test(listenerToString(listener))
+                && elementMatches(this);
         }
 
         if (shouldPrevent) {
