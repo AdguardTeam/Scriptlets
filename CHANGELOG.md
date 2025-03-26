@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+<!-- FIXME: Mention about additions -->
+
 ## [v2.1.6] - 2025-03-06
 
 ### Fixed

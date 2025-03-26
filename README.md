@@ -1,5 +1,7 @@
 # AdGuard Scriptlets and Redirect Resources
 
+<!-- FIXME: Add here about new API -->
+
 AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
 
 - [Scriptlets](#scriptlets)
