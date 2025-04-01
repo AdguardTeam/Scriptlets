@@ -7,6 +7,7 @@ import {
     logMessage,
     objectToString,
     isEmptyObject,
+    getElementAttributesWithValues,
 } from '../helpers';
 
 /**
@@ -31,8 +32,32 @@ export function logAddEventListener(source) {
 
     function addEventListenerWrapper(type, listener, ...args) {
         if (validateType(type) && validateListener(listener)) {
-            const message = `addEventListener("${type}", ${listenerToString(listener)})`;
-            logMessage(source, message, true);
+            let targetElement;
+            let targetElementInfo;
+            const listenerInfo = listenerToString(listener);
+
+            if (this) {
+                if (this instanceof Window) {
+                    targetElementInfo = 'window';
+                } else if (this instanceof Document) {
+                    targetElementInfo = 'document';
+                } else if (this instanceof Element) {
+                    targetElement = this;
+                    targetElementInfo = getElementAttributesWithValues(this);
+                }
+            }
+
+            if (targetElementInfo) {
+                const message = `addEventListener("${type}", ${listenerInfo})\nElement: ${targetElementInfo}`;
+                logMessage(source, message, true);
+                if (targetElement) {
+                    // eslint-disable-next-line no-console
+                    console.log('log-addEventListener Element:', targetElement);
+                }
+            } else {
+                const message = `addEventListener("${type}", ${listenerInfo})`;
+                logMessage(source, message, true);
+            }
             hit(source);
         } else {
             // logging while debugging
@@ -86,4 +111,5 @@ logAddEventListener.injections = [
     logMessage,
     objectToString,
     isEmptyObject,
+    getElementAttributesWithValues,
 ];

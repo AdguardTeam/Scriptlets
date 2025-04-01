@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { parseAttributePairs } from '../../src/helpers';
+import { parseAttributePairs, getElementAttributesWithValues } from '../../src/helpers';
 
 describe('parseAttributePairs', () => {
     describe('valid input', () => {
@@ -151,5 +151,38 @@ describe('parseAttributePairs', () => {
         test.each(testCases)('$actual', ({ actual, expected }) => {
             expect(() => parseAttributePairs(actual)).toThrow(expected);
         });
+    });
+});
+
+describe('getElementAttributesWithValues', () => {
+    test('Only node name', () => {
+        const anchor = document.createElement('a');
+        const expected = 'a';
+        const result = getElementAttributesWithValues(anchor);
+        expect(result).toStrictEqual(expected);
+    });
+
+    test('Node name with attributes', () => {
+        const NODE_NAME = 'div';
+        const ATTRIBUTE_CLASS = 'class';
+        const ATTRIBUTE_CLASS_VALUE = 'test-class';
+        const ATTRIBUTE_STYLE = 'style';
+        const ATTRIBUTE_STYLE_VALUE = 'display: none;';
+        const ATTRIBUTE_DATA_TEST = 'data-test';
+        const ATTRIBUTE_DATA_TEST_VALUE = 'test-value';
+        const divWithClassAndStyle = document.createElement(NODE_NAME);
+        divWithClassAndStyle.setAttribute(ATTRIBUTE_CLASS, ATTRIBUTE_CLASS_VALUE);
+        divWithClassAndStyle.setAttribute(ATTRIBUTE_STYLE, ATTRIBUTE_STYLE_VALUE);
+        divWithClassAndStyle.setAttribute(ATTRIBUTE_DATA_TEST, ATTRIBUTE_DATA_TEST_VALUE);
+        // eslint-disable-next-line max-len
+        const expected = `${NODE_NAME}[${ATTRIBUTE_CLASS}="${ATTRIBUTE_CLASS_VALUE}"][${ATTRIBUTE_STYLE}="${ATTRIBUTE_STYLE_VALUE}"][${ATTRIBUTE_DATA_TEST}="${ATTRIBUTE_DATA_TEST_VALUE}"]`;
+        const result = getElementAttributesWithValues(divWithClassAndStyle);
+        expect(result).toStrictEqual(expected);
+    });
+
+    test('Not element - should return empty string', () => {
+        const expected = '';
+        const result = getElementAttributesWithValues('test');
+        expect(result).toStrictEqual(expected);
     });
 });

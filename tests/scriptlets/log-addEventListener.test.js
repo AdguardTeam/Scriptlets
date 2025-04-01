@@ -48,26 +48,73 @@ test('Checking if alias name works', (assert) => {
 });
 
 test('logs events to console', (assert) => {
+    assert.expect(7);
+
+    const elementId = 'testElement';
     const agLogAddEventListenerProp = 'agLogAddEventListenerProp';
     const eventName = 'click';
     const callback = function callback() {
         window[agLogAddEventListenerProp] = 'clicked';
     };
-    console.log = function log(input) {
+
+    const element = document.createElement('div');
+    element.setAttribute('id', elementId);
+    console.log = function log(...args) {
+        const input = args[0];
+        const elementArg = args[1];
         // Ignore hit messages with "trace"
         if (input.includes('trace')) {
             return;
         }
-        assert.ok(input.includes(eventName), 'console.hit input should be equal');
-        assert.ok(input.includes(callback.toString()), 'console.hit input should be equal');
-        assert.notOk(input.includes(INVALID_MESSAGE_START), 'Invalid message should not be displayed');
+
+        if (input.includes('log-addEventListener Element:')) {
+            assert.true(elementArg.matches(`div#${elementId}`), 'target element should matches the element');
+        } else {
+            assert.ok(input.includes(eventName), 'event name should be logged');
+            assert.ok(input.includes(callback.toString()), 'callback should be logged');
+            assert.ok(input.includes(`Element: div[id="${elementId}"]`), 'target element should be logged');
+            assert.notOk(input.includes(INVALID_MESSAGE_START), 'Invalid message should not be displayed');
+        }
+        nativeConsole(...args);
     };
 
     runScriptlet(name);
 
-    const element = document.createElement('div');
     element.addEventListener(eventName, callback);
     element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[agLogAddEventListenerProp], 'clicked', 'property should change');
+    clearGlobalProps(agLogAddEventListenerProp);
+});
+
+test('logs events to console - listener added to window', (assert) => {
+    assert.expect(6);
+
+    const agLogAddEventListenerProp = 'agLogAddEventListenerProp';
+    const eventName = 'click';
+    const callback = function callback() {
+        window[agLogAddEventListenerProp] = 'clicked';
+    };
+
+    console.log = function log(...args) {
+        const input = args[0];
+        // Ignore hit messages with "trace"
+        if (input.includes('trace')) {
+            return;
+        }
+        assert.ok(input.includes(eventName), 'event name should be logged');
+        assert.ok(input.includes(callback.toString()), 'callback should be logged');
+        assert.ok(input.includes('Element: window'), 'target element should be logged');
+        assert.notOk(input.includes(INVALID_MESSAGE_START), 'Invalid message should not be displayed');
+
+        nativeConsole(...args);
+    };
+
+    runScriptlet(name);
+
+    window.addEventListener(eventName, callback);
+    window.dispatchEvent(new Event(eventName));
 
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     assert.strictEqual(window[agLogAddEventListenerProp], 'clicked', 'property should change');
