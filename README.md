@@ -475,7 +475,7 @@ interface Source {
 }
 ```
 
-see also [`ContentScriptApi`](#scriptlets-api--content-script-api) for more details.:
+see also [`ContentScriptApi`](#scriptlets-api--content-script-api) for more details.
 
 #### <a name="scriptlets-api--getScriptletFunction"></a> `getScriptletFunction()`
 
