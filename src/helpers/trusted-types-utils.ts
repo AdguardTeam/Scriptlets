@@ -20,8 +20,6 @@ export const enum TrustedType {
 }
 
 /**
- * FIXME: Add how it works with CoreLibs.
- *
  * Get Trusted Types Policy API utility object. It performs the following steps:
  * - If `source` object provided and it has `api.policy` object, it simply returns it,
  *   because it means that API is already provided by the content script.
@@ -163,7 +161,10 @@ export const getTrustedTypesApi = (source?: Source): PolicyApi => {
 /**
  * Trusted Types Policy API utilities.
  *
- * FIXME: Add detailed description.
+ * This interface extends the native `TrustedTypePolicy` and `TrustedTypePolicyFactory`
+ * to provide a more user-friendly API for working with Trusted Types. In case if
+ * environment doesn't support Trusted Types API, it provides polyfilled methods
+ * and properties to ensure compatibility.
  */
 export interface PolicyApi extends RemappedTrustedTypePolicy, FactoryStaticMethods {
     /**

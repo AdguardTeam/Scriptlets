@@ -10,7 +10,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-<!-- FIXME: Mention about additions -->
+## [Unreleased]
+
+### Added
+
+- TypeScript types for CoreLibs provided [ContentScriptApi](./README.md#scriptlets-api--content-script-api).
+- Trusted Types API utility.
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.6...HEAD
 
 ## [v2.1.6] - 2025-03-06
 
@@ -18,8 +25,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - issue with incorrectly removing content from parsed array when using the `json-prune` scriptlet [#482]
 
-  [v2.1.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.5...v2.1.6
-  [#482]: https://github.com/AdguardTeam/Scriptlets/issues/482
+[v2.1.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.5...v2.1.6
+[#482]: https://github.com/AdguardTeam/Scriptlets/issues/482
 
 ## [v2.1.5] - 2025-02-28
 

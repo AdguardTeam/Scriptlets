@@ -1,7 +1,5 @@
 # AdGuard Scriptlets and Redirect Resources
 
-<!-- FIXME: Add here about new API -->
-
 AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
 
 - [Scriptlets](#scriptlets)
@@ -31,6 +29,8 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
         - [`getScriptletFunction()`](#scriptlets-api--getScriptletFunction)
         - [Properties](#scriptlets-api-properties)
             - [`SCRIPTLETS_VERSION`](#scriptlets-api--version)
+        - [`ContentScriptApi`](#scriptlets-api--content-script-api)
+            - [`PolicyApi`](#scriptlets-api--content-script-api--policy-api)
     - [Redirects API](#redirects-api)
         - [Redirects class](#redirects-api--redirects-class)
         - [`getRedirect()`](#redirects-api--getRedirect)
@@ -464,8 +464,18 @@ interface Source {
      * scriptlet can be called multiple times.
      */
     uniqueId?: string;
+    /**
+     * Instance of content script provided API.
+     *
+     * Property optional because:
+     * - for backwards compatibility.
+     * - currently only CoreLibs provides this API.
+     */
+    api?: ContentScriptApi;
 }
 ```
+
+see also [`ContentScriptApi`](#scriptlets-api--content-script-api) for more details.:
 
 #### <a name="scriptlets-api--getScriptletFunction"></a> `getScriptletFunction()`
 
@@ -490,6 +500,18 @@ declare const scriptlets: {
 type: `string`
 
 Current version of scriptlets library.
+
+#### <a name="scriptlets-api--content-script-api"></a> `ContentScriptApi`
+
+```typescript
+FIXME: Insert typing here.
+```
+
+##### <a name="scriptlets-api--content-script-api--policy-api"></a> `PolicyApi`
+
+```typescript
+FIXME: Insert typing here.
+```
 
 ### <a name="redirects-api"></a> Redirects API
 
