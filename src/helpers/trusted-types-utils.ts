@@ -21,7 +21,6 @@ export const enum TrustedType {
 
 /**
  * FIXME: Add how it works with CoreLibs.
- * FIXME: Add test cases.
  *
  * Get Trusted Types Policy API utility object. It performs the following steps:
  * - If `source` object provided and it has `api.policy` object, it simply returns it,
@@ -58,16 +57,16 @@ export const getTrustedTypesApi = (source?: Source): PolicyApi => {
      */
     const trustedTypesWindow = window as unknown as TrustedTypesWindow;
     const trustedTypes = trustedTypesWindow.trustedTypes;
-    const isSupported = !!trustedTypes; // FIXME: Maybe use another check as in content-script
+    const isSupported = !!trustedTypes;
 
     /**
      * In case if API doesn't exist, we should provide enum by ourselves.
      */
     const TrustedTypeEnum = {
-        HTML: TrustedType.HTML as const,
-        Script: TrustedType.Script as const,
-        ScriptURL: TrustedType.ScriptURL as const,
-    };
+        HTML: TrustedType.HTML,
+        Script: TrustedType.Script,
+        ScriptURL: TrustedType.ScriptURL,
+    } as const;
 
     // If Trusted Types API is not supported, return stub object
     if (!isSupported) {
