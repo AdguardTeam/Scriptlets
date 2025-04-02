@@ -156,3 +156,34 @@ export const parseAttributePairs = (input: string): ParsedAttributePair[] => {
 
     return pairs;
 };
+
+/**
+ * Retrieves the attributes and their values of a given DOM element
+ * and returns them as a string in the format:
+ * 'nodeName[attrName1="attrValue1"][attrName2="attrValue2"]'.
+ *
+ * @param element The DOM element to extract attributes from.
+ * @returns A string representation of the element's attributes
+ * and their values, or an empty string if the element
+ * or its attributes are not defined.
+ */
+export const getElementAttributesWithValues = (element: any): string => {
+    if (
+        !element
+        || !(element instanceof Element)
+        || !element.attributes
+        || !element.nodeName
+    ) {
+        return '';
+    }
+    const attributes = element.attributes;
+    const nodeName = element.nodeName.toLowerCase();
+    let result = nodeName;
+
+    for (let i = 0; i < attributes.length; i += 1) {
+        const attr = attributes[i];
+        result += `[${attr.name}="${attr.value}"]`;
+    }
+
+    return result;
+};

@@ -14,10 +14,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- ability in `prevent-addEventListener` scriptlet to match specific element
+  and updated `log-addEventListener` scriptlet to log target element [#480]
 - TypeScript types for CoreLibs provided [ContentScriptApi](./README.md#scriptlets-api--content-script-api).
 - Trusted Types API utility.
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.6...HEAD
+[#480]: https://github.com/AdguardTeam/Scriptlets/issues/480
 
 ## [v2.1.6] - 2025-03-06
 
