@@ -4,19 +4,26 @@ import { type Source } from '../scriptlets';
 import { type ChangeMethodReturnType } from '../../types/types';
 
 /**
- * Enum representation of return values of `getAttributeType` and
+ * Type representation of return values of `getAttributeType` and
  * `getPropertyType` methods of native Trusted Types API.
- *
- * NOTE: It's intentionally constant enum to prevent
- * overlapping with actual enum provided by CoreLibs.
  *
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory/getAttributeType}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory/getPropertyType}
  */
-export const enum TrustedType {
-    HTML = 'TrustedHTML',
-    Script = 'TrustedScript',
-    ScriptURL = 'TrustedScriptURL',
+export type TrustedType = 'TrustedHTML' | 'TrustedScript' | 'TrustedScriptURL';
+
+/**
+ * Type representation of Trusted Types enum.
+ *
+ * NOTE: This is intentionally interface not enum to prevent
+ * overlapping with actual enum provided by CoreLibs.
+ *
+ * @see {@link TrustedType} for more information.
+ */
+export interface TrustedTypeEnum {
+    HTML: 'TrustedHTML';
+    Script: 'TrustedScript';
+    ScriptURL: 'TrustedScriptURL';
 }
 
 /**
@@ -36,8 +43,9 @@ export const enum TrustedType {
  */
 export const getTrustedTypesApi = (source?: Source): PolicyApi => {
     // if API exists in the source object, return it
-    if (source?.api?.policy) {
-        return source.api.policy;
+    const policyApi = source?.api?.policy;
+    if (policyApi) {
+        return policyApi;
     }
 
     /**
@@ -61,9 +69,9 @@ export const getTrustedTypesApi = (source?: Source): PolicyApi => {
      * In case if API doesn't exist, we should provide enum by ourselves.
      */
     const TrustedTypeEnum = {
-        HTML: TrustedType.HTML,
-        Script: TrustedType.Script,
-        ScriptURL: TrustedType.ScriptURL,
+        HTML: 'TrustedHTML',
+        Script: 'TrustedScript',
+        ScriptURL: 'TrustedScriptURL',
     } as const;
 
     // If Trusted Types API is not supported, return stub object
@@ -99,11 +107,11 @@ export const getTrustedTypesApi = (source?: Source): PolicyApi => {
     const createScriptURL = (input: string) => policy.createScriptURL(input) as unknown as string;
     const create = (type: TrustedType, input: string) => {
         switch (type) {
-            case TrustedType.HTML:
+            case TrustedTypeEnum.HTML:
                 return createHTML(input);
-            case TrustedType.Script:
+            case TrustedTypeEnum.Script:
                 return createScript(input);
-            case TrustedType.ScriptURL:
+            case TrustedTypeEnum.ScriptURL:
                 return createScriptURL(input);
             default:
                 return input;
@@ -182,7 +190,7 @@ export interface PolicyApi extends RemappedTrustedTypePolicy, FactoryStaticMetho
      * @example
      * api.policy.TrustedType.HTML // "TrustedHTML"
      */
-    TrustedType: typeof TrustedType;
+    TrustedType: TrustedTypeEnum;
 
     /**
      * Creates Trusted Type depending on `type`:

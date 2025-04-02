@@ -70,7 +70,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
     // For websites that use Trusted Types
     // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-    const policy = getTrustedTypesApi();
+    const policy = getTrustedTypesApi(source);
 
     const SOURCE_PROPERTY_NAME = tagName === 'link' ? 'href' : 'src';
     const ONERROR_PROPERTY_NAME = 'onerror';

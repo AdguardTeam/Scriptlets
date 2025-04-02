@@ -116,7 +116,7 @@ export const replaceNodeText = (
         // For websites that use Trusted Types
         // https://w3c.github.io/webappsec-trusted-types/dist/spec/
         if (node.nodeName === 'SCRIPT') {
-            const trustedTypesApi = getTrustedTypesApi();
+            const trustedTypesApi = getTrustedTypesApi(source);
             modifiedText = trustedTypesApi.createScript(modifiedText);
         }
 
