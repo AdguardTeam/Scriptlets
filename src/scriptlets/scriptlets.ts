@@ -8,7 +8,11 @@ import { type PolicyApi } from '../helpers/trusted-types-utils';
 /**
  * Interface of content script provided API.
  *
- * FIXME: Add detailed description.
+ * This API is used to provide a set of utilities and shared state
+ * for scriptlets running in the context of a web page. Particularly,
+ * it includes:
+ * - Trusted Types Policy API utilities.
+ * - Shared state between different scriptlet rules.
  *
  * NOTE: Currently only CoreLibs provides this API.
  */
