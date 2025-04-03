@@ -31,7 +31,7 @@ export interface ContentScriptApi {
      * - Keys represent the unique identifiers or names of the shared data.
      * - Values can be of any type and should correspond to the specific data shared across script rules.
      *
-     * Example:.
+     * @example
      * ```adguard
      * ! Modify in one script rule
      * #%#api.shared.testKey = 'testValue'
@@ -105,7 +105,7 @@ export interface Source {
      * Instance of content script provided API.
      *
      * Property optional because:
-     * - for backwards compatibility.
+     * - for backwards compatibility,
      * - currently only CoreLibs provides this API.
      *
      * @see {@link ContentScriptApi} for more information.

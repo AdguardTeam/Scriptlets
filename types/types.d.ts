@@ -46,6 +46,7 @@ export type StorageItemValue = string | number | undefined | boolean;
  *    b: () => boolean;
  *    c: string;
  * };
+ * ```
  */
 export type ChangeMethodReturnType<TObj, TReplaceKey extends keyof TObj, TNewReturn> = {
     [TKey in keyof TObj]: TKey extends TReplaceKey
