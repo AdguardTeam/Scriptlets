@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@adguard/agtree':
-    specifier: 3.0.1
-    version: 3.0.1
+    specifier: 3.1.0
+    version: 3.1.0
   js-yaml:
     specifier: ^3.14.1
     version: 3.14.1
@@ -205,8 +205,8 @@ devDependencies:
 
 packages:
 
-  /@adguard/agtree@3.0.1:
-    resolution: {integrity: sha512-/tx6NXr9zUUmmnIJLK8dtSwH9il3lH38iBPQ2AFfPUkqYXizBWQuA2tttz91YNpFj54ABnpMSbYGB7zMBNNmLA==}
+  /@adguard/agtree@3.1.0:
+    resolution: {integrity: sha512-0jW1V/k3kh1lMU2Q7iZSsRQMLLOXFIzhbdEIK32ZrnU5S9u/++pSPreYw/LhgKdiSJ5tnycFVLY1YLYQ3YEyFA==}
     engines: {node: '>=18'}
     dependencies:
       '@adguard/css-tokenizer': 1.2.0
