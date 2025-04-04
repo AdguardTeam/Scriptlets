@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- TypeScript types for CoreLibs provided [`ContentScriptApi`](./README.md#scriptlets-api--content-script-api).
+- Trusted Types API utility - [`PolicyApi`](./README.md#scriptlets-api--content-script-api--policy-api).
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...HEAD
+
 ## [v2.1.7] - 2025-04-03
 
 ### Changed
@@ -20,8 +29,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - ability in `prevent-addEventListener` scriptlet to match specific element
   and updated `log-addEventListener` scriptlet to log target element [#480]
-- TypeScript types for CoreLibs provided [`ContentScriptApi`](./README.md#scriptlets-api--content-script-api).
-- Trusted Types API utility - [`PolicyApi`](./README.md#scriptlets-api--content-script-api--policy-api).
 
 [v2.1.7]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.6...v2.1.7
 [#480]: https://github.com/AdguardTeam/Scriptlets/issues/480
