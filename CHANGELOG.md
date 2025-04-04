@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Changed
+
+- Improved docs for `json-prune`, `xml-prune` and `trusted-prune-inbound-object` scriptlets [#392]
+
+[#392]: https://github.com/AdguardTeam/Scriptlets/issues/392
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...HEAD
+
 ## [v2.1.7] - 2025-04-03
 
 ### Changed

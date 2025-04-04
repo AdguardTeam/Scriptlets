@@ -51,10 +51,27 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'example')
  *     ```
  *
- *     For instance, the following call will return `{ one: 1}`
+ *     JSON.parse call:
  *
  *     ```html
  *     JSON.parse('{"one":1,"example":true}')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "one": 1,
+ *       "example": true
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {
+ *       "one": 1
+ *     }
  *     ```
  *
  * 1. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
@@ -63,10 +80,28 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
  *     ```
  *
- *     For instance, the following call will return `{ one: 1, two: 2}`
+ *     JSON.parse call:
  *
  *     ```html
  *     JSON.parse('{"one":1,"two":2}')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "one": 1,
+ *       "two": 2
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {
+ *       "one": 1,
+ *       "two": 2
+ *     }
  *     ```
  *
  * 1. A property in a list of properties can be a chain of properties
@@ -75,10 +110,70 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'a.b', 'ads.url.first')
  *     ```
  *
+ *     JSON.parse call:
+ *
+ *     ```html
+ *     JSON.parse('{"a":{"b":123},"ads":{"url":{"first":"abc"}}}')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "a": {
+ *         "b": 123
+ *       },
+ *       "ads": {
+ *         "url": {
+ *           "first": "abc"
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {
+ *       "a": {},
+ *       "ads": {
+ *         "url": {
+ *           "first": "abc"
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
  * 1. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
+ *     ```
+ *
+ *     JSON.parse call:
+ *
+ *     ```html
+ *     JSON.parse('{"content":{"ad":{"src":"a.js"}}}')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "content": {
+ *         "ad": {
+ *           "src": "a.js"
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {
+ *       "content": {}
+ *     }
  *     ```
  *
  * 1. A property in a list of properties can be a chain of properties with wildcard in it
@@ -87,16 +182,87 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.ad')
  *     ```
  *
+ *     JSON.parse call:
+ *
+ *     ```html
+ *     JSON.parse('{"content":{"block1":{"media":{"src":"1.jpg","ad":true}},"block2":{"media":{"src":"2.jpg"}}}}')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "content": {
+ *         "block1": {
+ *           "media": {
+ *             "src": "1.jpg",
+ *             "ad": true
+ *           }
+ *         },
+ *         "block2": {
+ *           "media": {
+ *             "src": "2.jpg"
+ *           }
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {
+ *       "content": {
+ *         "block1": {
+ *           "media": {
+ *             "ad": true
+ *           }
+ *         },
+ *         "block2": {
+ *           "media": {}
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
  * 1. Removes every property from `videos` object if it has `isAd` key
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd')
  *     ```
  *
- *     For instance, the following call will return `{ videos: { video2: { src: 'video1.mp4' } } }`
+ *     JSON.parse call:
  *
  *     ```html
  *     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"src":"video1.mp4"}}}')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "videos": {
+ *         "video1": {
+ *           "isAd": true,
+ *           "src": "video1.mp4"
+ *         },
+ *         "video2": {
+ *           "src": "video1.mp4"
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {
+ *       "videos": {
+ *         "video2": {
+ *           "src": "video1.mp4"
+ *         }
+ *       }
+ *     }
  *     ```
  *
  * 1. Removes every property from `videos` object if it has `isAd` key with `true` value
@@ -105,13 +271,43 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd.[=].true')
  *     ```
  *
- *     For instance, the following call will return `{ videos: { video2: { isAd: false, src: 'video1.mp4' } } }`
+ *     JSON.parse call:
  *
  *     ```html
  *     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"isAd":false,"src":"video1.mp4"}}}')
  *     ```
  *
- * 1. Call with no arguments will log the current hostname and json payload at the console
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "videos": {
+ *         "video1": {
+ *           "isAd": true,
+ *           "src": "video1.mp4"
+ *         },
+ *         "video2": {
+ *           "isAd": false,
+ *           "src": "video1.mp4"
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {
+ *       "videos": {
+ *         "video2": {
+ *           "isAd": false,
+ *           "src": "video1.mp4"
+ *         }
+ *       }
+ *     }
+ *     ```
+ *
+ * 1. Call with no arguments will log the current hostname and JSON payload at the console
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune')
