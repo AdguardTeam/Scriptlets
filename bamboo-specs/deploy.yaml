@@ -4,6 +4,7 @@ deployment:
   name: scriptlets - deploy
   source-plan: AJL-SCRIPTLETSBUILD
 release-naming: ${bamboo.inject.version}
+
 environments:
   - npmjs
   - npmjs • alpha
@@ -11,7 +12,7 @@ environments:
 
 npmjs: &npmjs
   docker:
-    image: adguard/puppeteer-runner:23.3--1
+    image: adguard/node-ssh:22.14--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   variables: &npmjs-variables

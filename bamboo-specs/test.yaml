@@ -5,12 +5,12 @@ plan:
   key: SCRIPTLETSTEST
   name: scriptlets - test new
 variables:
-  dockerPuppeteer: adguard/puppeteer-runner:23.3--1
+  dockerPuppeteer: adguard/puppeteer-runner:22.14--24.5--0
 
 stages:
   - Build:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Build
 
@@ -22,7 +22,7 @@ Build:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
     - script:
         interpreter: SHELL
         scripts:
@@ -75,7 +75,7 @@ branches:
   delete:
     after-deleted-days: '1'
     after-inactive-days: '5'
-  link-to-jira: 'true'
+  link-to-jira: true
 
 notifications:
   - events:
