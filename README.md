@@ -218,19 +218,20 @@ lerna bootstrap
 pnpm link --global "@adguard/scriptlets"
 
 cd ./packages/tsurlfilter
+
 pnpm build
-yarn link
+
+pnpm link --global
 ```
 
 In extension directory install dependencies, link packages and build
 
 ``` bash
-yarn
+pnpm install
 
-yarn link @adguard/scriptlets
-yarn link @adguard/tsurlfilter
+pnpm link --global "@adguard/scriptlets"
 
-yarn dev
+# run build script
 ```
 
 ### <a name="how-to-test"></a> How to test

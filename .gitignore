@@ -3,17 +3,17 @@
 .idea/
 .vscode/
 *.iml
-yarn-error.log
-node_modules
+node_modules/
 private
-/tmp
+tmp/
 output.md
-tests/dist
+tests/dist/
 browserstack.err
 local.log
 
 # linters cache
 .eslintcache
+
 tsconfig.tsbuildinfo
-.pnpm-store
-/dist
+.pnpm-store/
+dist/
