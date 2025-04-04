@@ -48,10 +48,38 @@ import {
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
  *     ```
  *
+ *     Input XML:
+ *
+ *     ```xml
+ *     <Period id="main"/>
+ *     <Period id="123-ad-456"/>
+ *     ```
+ *
+ *     Resulting XML:
+ *
+ *     ```xml
+ *     <Period id="main"/>
+ *     ```
+ *
  * 1. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
  *
  *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
+ *     ```
+ *
+ *     Input XML:
+ *
+ *     ```xml
+ *     <Period id="preroll-ad">
+ *       <SegmentTemplate />
+ *     </Period>
+ *     <Period id="content"/>
+ *     ```
+ *
+ *     Resulting XML:
+ *
+ *     ```xml
+ *     <Period id="content"/>
  *     ```
  *
  * 1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
@@ -60,10 +88,36 @@ import {
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
  *     ```
  *
+ *     Input XML:
+ *
+ *     ```xml
+ *     <Period id="intro"/>
+ *     <Period id="ads-ad-block"/>
+ *     ```
+ *
+ *     Resulting XML:
+ *
+ *     ```xml
+ *     <Period id="intro"/>
+ *     ```
+ *
  * 1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd` and log content
  *
  *     ```adblock
  *     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd', 'true')
+ *     ```
+ *
+ *     Input XML:
+ *
+ *     ```xml
+ *     <Period id="pre-roll-ad"/>
+ *     <Period id="movie"/>
+ *     ```
+ *
+ *     Resulting XML:
+ *
+ *     ```xml
+ *     <Period id="movie"/>
  *     ```
  *
  * 1. Remove `Period` tag whose `id` contains `pre-roll` and remove `duration` attribute from the `Period` tag
@@ -76,6 +130,19 @@ import {
  *     ```
  *
  *     <!-- markdownlint-enable line-length -->
+ *
+ *     Input XML:
+ *
+ *     ```xml
+ *     <Period id="pre-roll-ad" duration="PT5S"/>
+ *     <Period id="main" duration="PT30M"/>
+ *     ```
+ *
+ *     Resulting XML:
+ *
+ *     ```xml
+ *     <Period id="main"/>
+ *     ```
  *
  * 1. Call with no arguments will log response payload and URL at the console
  *

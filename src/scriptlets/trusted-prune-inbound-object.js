@@ -51,43 +51,155 @@ import {
  *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.getOwnPropertyNames', 'example')
  *     ```
  *
- *     For instance, the following call will return `['one']`
+ *     Function call:
  *
- *     ```html
+ *     ```js
  *     Object.getOwnPropertyNames({ one: 1, example: true })
  *     ```
  *
- * 2. Removes property `ads` from the payload of the Object.keys call
+ *     Input:
+ *
+ *     ```json
+ *     {
+ *       "one": 1,
+ *       "example": true
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     ["one"]
+ *     ```
+ *
+ * 1. Removes property `ads` from the payload of the Object.keys call
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.keys', 'ads')
  *     ```
  *
- *     For instance, the following call will return `['one', 'two']`
+ *     Function call:
  *
- *     ```html
+ *     ```js
  *     Object.keys({ one: 1, two: 2, ads: true })
  *     ```
  *
- * 3. Removes property `foo.bar` from the payload of the JSON.stringify call
+ *     Input:
+ *
+ *     ```json
+ *     {
+ *       "one": 1,
+ *       "two": 2,
+ *       "ads": true
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     ["one", "two"]
+ *     ```
+ *
+ * 1. Removes property `foo.bar` from the payload of the JSON.stringify call
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar')
  *     ```
  *
- *     For instance, the following call will return `'{"foo":{"a":2},"b":3}'`
+ *     Function call:
  *
- *     ```html
+ *     ```js
  *     JSON.stringify({ foo: { bar: 1, a: 2 }, b: 3 })
  *     ```
  *
- * 4. Removes property `foo.bar` from the payload of the JSON.stringify call if its error stack trace contains `test.js`
+ *     Input:
+ *
+ *     ```json
+ *     {
+ *       "foo": {
+ *         "bar": 1,
+ *         "a": 2
+ *       },
+ *       "b": 3
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     {"foo":{"a":2},"b":3}
+ *     ```
+ *
+ * 1. Removes property `foo.bar` from the payload of the JSON.stringify call if its error stack trace contains `test.js`
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar', '', 'test.js')
  *     ```
  *
- * 5. Call with only first and third argument will log the current hostname and matched payload at the console
+ *     Function call:
+ *
+ *     ```js
+ *     JSON.stringify({ foo: { bar: 1, a: 2 }, b: 3 })
+ *     ```
+ *
+ *     Input:
+ *
+ *     ```json
+ *     {
+ *       "foo": {
+ *         "bar": 1,
+ *         "a": 2
+ *       },
+ *       "b": 3
+ *     }
+ *     ```
+ *
+ *     Output (if `test.js` in stack):
+ *
+ *     ```json
+ *     {"foo":{"a":2},"b":3}
+ *     ```
+ *
+ * 1. Removes all `slots` properties at any depth during Object.entries call
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.entries', '*.slots')
+ *     ```
+ *
+ *     Function call:
+ *
+ *     ```js
+ *     Object.entries({
+ *       ad: { slots: [1, 2], type: "banner" },
+ *       main: { title: "News" }
+ *     })
+ *     ```
+ *
+ *     Input:
+ *
+ *     ```json
+ *     {
+ *       "ad": {
+ *         "slots": [1, 2],
+ *         "type": "banner"
+ *       },
+ *       "main": {
+ *         "slots": [3, 4],
+ *         "title": "News"
+ *       }
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     [
+ *       ["ad", { "type": "banner" }],
+ *       ["main", { "title": "News" }]
+ *     ]
+ *     ```
+ *
+ * 1. Call with only first and third argument will log the current hostname and matched payload at the console
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', '', 'bar', '')

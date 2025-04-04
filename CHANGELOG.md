@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - TypeScript types for CoreLibs provided [`ContentScriptApi`](./README.md#scriptlets-api--content-script-api).
 - Trusted Types API utility - [`PolicyApi`](./README.md#scriptlets-api--content-script-api--policy-api).
 
+### Changed
+
+- Improved docs for `json-prune`, `xml-prune` and `trusted-prune-inbound-object` scriptlets [#392]
+
+[#392]: https://github.com/AdguardTeam/Scriptlets/issues/392
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...HEAD
 
 ## [v2.1.7] - 2025-04-03
