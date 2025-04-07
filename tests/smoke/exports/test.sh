@@ -23,5 +23,5 @@ scriptlets_node_modules=$nm_path"/@adguard/scriptlets"
 mkdir -p $scriptlets_node_modules
 tar -xzf $scriptlets --strip-components=1 -C $scriptlets_node_modules
 
-yarn start
+pnpm start
 #echo "Test successfully built."

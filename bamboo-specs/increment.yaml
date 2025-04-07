@@ -5,7 +5,7 @@ plan:
   key: SCRIPTLETSINCR
   name: scriptlets - increment
 variables:
-  dockerContainer: adguard/node-ssh:18.19--0
+  dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
   - Increment:
@@ -24,7 +24,7 @@ Increment:
     clean-working-dir: true
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
     - script:
         interpreter: SHELL
         scripts:
@@ -54,7 +54,7 @@ Increment:
 branches:
   create: manually
   delete: never
-  link-to-jira: 'true'
+  link-to-jira: true
 
 labels: []
 other:

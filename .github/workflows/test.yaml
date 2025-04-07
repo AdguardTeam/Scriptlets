@@ -1,7 +1,8 @@
 name: Test Scriptlets
 
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22
+  PNPM_VERSION: 10.7.1
 
 on:
   push:
@@ -17,10 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pnpm
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
 
       - name: Use Node.jobs
         uses: actions/setup-node@v4

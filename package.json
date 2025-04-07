@@ -60,6 +60,9 @@
             "import": "./dist/validators/index.js"
         }
     },
+    "pnpm": {
+        "neverBuiltDependencies": []
+    },
     "dependencies": {
         "@adguard/agtree": "3.1.0",
         "js-yaml": "^3.14.1"
@@ -96,7 +99,7 @@
         "crypto-js": "^4.2.0",
         "dotenv": "^8.2.0",
         "dox": "^0.9.0",
-        "eslint": "^8.57.1",
+        "eslint": "8.57.1",
         "eslint-config-airbnb-base": "^15.0.0",
         "eslint-config-airbnb-typescript": "^17.0.0",
         "eslint-import-resolver-typescript": "^3.5.5",
@@ -111,9 +114,9 @@
         "lint-staged": "^12.1.2",
         "markdownlint": "^0.28.2",
         "markdownlint-cli": "^0.34.0",
-        "node-qunit-puppeteer": "^2.2.0",
+        "node-qunit-puppeteer": "^2.2.1",
         "openurl": "^1.1.1",
-        "puppeteer": "^23.7.1",
+        "puppeteer": "^24.5.0",
         "qunit": "^2.22.0",
         "rimraf": "^6.0.1",
         "rollup": "^4.28.1",
