@@ -29,6 +29,8 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
         - [`getScriptletFunction()`](#scriptlets-api--getScriptletFunction)
         - [Properties](#scriptlets-api-properties)
             - [`SCRIPTLETS_VERSION`](#scriptlets-api--version)
+        - [`ContentScriptApi`](#scriptlets-api--content-script-api)
+            - [`PolicyApi`](#scriptlets-api--content-script-api--policy-api)
     - [Redirects API](#redirects-api)
         - [Redirects class](#redirects-api--redirects-class)
         - [`getRedirect()`](#redirects-api--getRedirect)
@@ -463,8 +465,18 @@ interface Source {
      * scriptlet can be called multiple times.
      */
     uniqueId?: string;
+    /**
+     * Instance of content script provided API.
+     *
+     * Property optional because:
+     * - for backwards compatibility.
+     * - currently only CoreLibs provides this API.
+     */
+    api?: ContentScriptApi;
 }
 ```
+
+see also [`ContentScriptApi`](#scriptlets-api--content-script-api) for more details.
 
 #### <a name="scriptlets-api--getScriptletFunction"></a> `getScriptletFunction()`
 
@@ -489,6 +501,139 @@ declare const scriptlets: {
 type: `string`
 
 Current version of scriptlets library.
+
+#### <a name="scriptlets-api--content-script-api"></a> `ContentScriptApi`
+
+API provided by CoreLibs content script.
+
+This API is used to provide a set of utilities and shared state for scriptlets
+running in the context of a web page. Particularly, it includes:
+
+```typescript
+export interface ContentScriptApi {
+    /**
+     * Trusted Types Policy API utilities.
+     */
+    readonly policy: PolicyApi;
+
+    /**
+     * Shared state between different script and scriptlet rules.
+     *
+     * This object acts as a centralized repository for shared data.
+     * - Keys represent the unique identifiers or names of the shared data.
+     * - Values can be of any type and should correspond to the specific data shared across script rules.
+     *
+     * Example:.
+     * ```adguard
+     * ! Modify in one script rule
+     * #%#api.shared.testKey = 'testValue'
+     *
+     * ! Access in another (logs 'testValue')
+     * #%#console.log(api.shared.testKey)
+     * ```
+     */
+    readonly shared: Record<string, unknown>;
+}
+```
+
+##### <a name="scriptlets-api--content-script-api--policy-api"></a> `PolicyApi`
+
+Trusted Types Policy API utility.
+
+This interface extends the native `TrustedTypePolicy` and `TrustedTypePolicyFactory`
+to provide a more user-friendly API for working with Trusted Types. In case if
+environment doesn't support Trusted Types API, it provides polyfilled methods
+and properties to ensure compatibility.
+
+```typescript
+export interface PolicyApi extends TrustedTypePolicy, TrustedTypePolicyFactory {
+    /**
+     * Is Trusted Types API supported.
+     */
+    isSupported: boolean;
+
+    /**
+     * TrustedType enum attached to PolicyApi.
+     *
+     * Reason why we attach it to instance because inside
+     * of script and scriptlet we can't import and to not
+     * pollute global env with custom variables.
+     *
+     * @example
+     * api.policy.TrustedType.HTML // "TrustedHTML"
+     */
+    TrustedType: typeof TrustedType;
+
+    /**
+     * Creates Trusted Type depending on `type`:
+     * - `TrustedHTML`
+     * - `TrustedScript`
+     * - `TrustedScriptURL`
+     * - or returns back `input` if none of them applicable.
+     *
+     * @example
+     * divElement.innerHTML = api.policy.create(api.policy.TrustedType.HTML, '<div></div>');
+     *
+     * @param type Trusted Type.
+     * @param input Input from which creates Trusted Type.
+     * @returns Created value.
+     */
+    create(type: TrustedType, input: string): string;
+
+    /**
+     * Converts `value` of `attribute` into one of the Trusted Types:
+     * - `TrustedHTML`
+     * - `TrustedScript`
+     * - `TrustedScriptURL`
+     * - or returns back `value` if none of them applicable (`null`).
+     *
+     * @example
+     * const trustedScriptURL = api.policy.convertAttributeToTrusted("script", "src", 'SOME_URL');
+     * scriptElement.setAttribute("src", trustedScriptURL);
+     *
+     * @param tagName Name of an HTML tag.
+     * @param attribute Attribute.
+     * @param value Value of attribute that needs to be converted.
+     * @param elementNS Element namespace, if empty defaults to the HTML namespace.
+     * @param attrNS Attribute namespace, if empty defaults to null.
+     * @returns Converted value.
+     */
+    convertAttributeToTrusted(
+        tagName: string,
+        attribute: string,
+        value: string,
+        elementNS?: string,
+        attrNS?: string,
+    ): string;
+
+    /**
+     * Converts `value` of `property` into one of the Trusted Types:
+     * - `TrustedHTML`
+     * - `TrustedScript`
+     * - `TrustedScriptURL`
+     * - or returns back `value` if none of them applicable (`null`).
+     *
+     * @example
+     * divElement.innerHTML = api.policy.convertPropertyToTrusted("div", "innerHTML", "<div></div>");
+     *
+     * @param tagName Name of an HTML tag.
+     * @param property Property.
+     * @param value Value or property.
+     * @param elementNS Element namespace, if empty defaults to the HTML namespace.
+     * @returns Converted value.
+     */
+    convertPropertyToTrusted(
+        tagName: string,
+        property: string,
+        value: string,
+        elementNS?: string,
+    ): string;
+}
+```
+
+- [TrustedTypePolicy](https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicy) interface
+- [TrustedTypePolicyFactory](https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory) interface
+
 
 ### <a name="redirects-api"></a> Redirects API
 

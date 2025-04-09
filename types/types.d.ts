@@ -29,3 +29,29 @@ export type ChainInfo = {
 };
 
 export type StorageItemValue = string | number | undefined | boolean;
+
+/**
+ * Utility type to replace return type of methods in object by its key.
+ *
+ * @example
+ * ```ts
+ * type Test = {
+ *    a: () => string;
+ *    b: () => number;
+ *    c: string;
+ * };
+ *
+ * type Test2 = ReplaceReturnTypeOfObject<Test, 'a' | 'b', boolean> = {
+ *    a: () => boolean;
+ *    b: () => boolean;
+ *    c: string;
+ * };
+ * ```
+ */
+export type ChangeMethodReturnType<TObj, TReplaceKey extends keyof TObj, TNewReturn> = {
+    [TKey in keyof TObj]: TKey extends TReplaceKey
+        ? TObj[TKey] extends (...args: infer TArgs) => any
+            ? (...args: TArgs) => TNewReturn
+            : TObj[TKey]
+        : TObj[TKey];
+};

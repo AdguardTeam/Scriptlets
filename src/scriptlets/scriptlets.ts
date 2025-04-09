@@ -3,6 +3,45 @@
 // eslint-disable-next-line import/order
 import { getScriptletFunction } from 'scriptlets-func';
 import { passSourceAndProps, wrapInNonameFunc } from '../helpers/injector';
+import { type PolicyApi } from '../helpers/trusted-types-utils';
+
+/**
+ * Interface of content script provided API.
+ *
+ * This API is used to provide a set of utilities and shared state
+ * for scriptlets running in the context of a web page. Particularly,
+ * it includes:
+ * - Trusted Types Policy API utilities.
+ * - Shared state between different scriptlet rules.
+ *
+ * NOTE: Currently only CoreLibs provides this API.
+ */
+export interface ContentScriptApi {
+    /**
+     * Trusted Types Policy API utilities.
+     *
+     * @see {@link PolicyApi} for more information.
+     */
+    readonly policy: PolicyApi;
+
+    /**
+     * Shared state between different script and scriptlet rules.
+     *
+     * This object acts as a centralized repository for shared data.
+     * - Keys represent the unique identifiers or names of the shared data.
+     * - Values can be of any type and should correspond to the specific data shared across script rules.
+     *
+     * @example
+     * ```adguard
+     * ! Modify in one script rule
+     * #%#api.shared.testKey = 'testValue'
+     *
+     * ! Access in another (logs 'testValue')
+     * #%#console.log(api.shared.testKey)
+     * ```
+     */
+    readonly shared: Record<string, unknown>;
+}
 
 /**
  * Scriptlet properties
@@ -61,6 +100,17 @@ export interface Source {
      * scriptlet can be called multiple times.
      */
     uniqueId?: string;
+
+    /**
+     * Instance of content script provided API.
+     *
+     * Property optional because:
+     * - for backwards compatibility,
+     * - currently only CoreLibs provides this API.
+     *
+     * @see {@link ContentScriptApi} for more information.
+     */
+    api?: ContentScriptApi;
 }
 
 /**

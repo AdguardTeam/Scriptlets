@@ -3,6 +3,7 @@ import {
     toRegExp,
     safeGetDescriptor,
     noopFunc,
+    getTrustedTypesApi,
 } from '../helpers';
 
 /* eslint-disable max-len, consistent-return */
@@ -69,19 +70,7 @@ export function preventElementSrcLoading(source, tagName, match) {
 
     // For websites that use Trusted Types
     // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-    const hasTrustedTypes = window.trustedTypes && typeof window.trustedTypes.createPolicy === 'function';
-    let policy;
-    if (hasTrustedTypes) {
-        // The name for the trusted-types policy should only be 'AGPolicy',because corelibs can
-        // allow our policy if the server has restricted the creation of a trusted-types policy with
-        // the directive 'Content-Security-Policy: trusted-types <policyName>;`.
-        // If such a header is presented in the server response, corelibs adds permission to create
-        // the 'AGPolicy' policy with the 'allow-duplicates' option to prevent errors.
-        // See AG-18204 for details.
-        policy = window.trustedTypes.createPolicy('AGPolicy', {
-            createScriptURL: (arg) => arg,
-        });
-    }
+    const policy = getTrustedTypesApi(source);
 
     const SOURCE_PROPERTY_NAME = tagName === 'link' ? 'href' : 'src';
     const ONERROR_PROPERTY_NAME = 'onerror';
@@ -241,4 +230,5 @@ preventElementSrcLoading.injections = [
     toRegExp,
     safeGetDescriptor,
     noopFunc,
+    getTrustedTypesApi,
 ];

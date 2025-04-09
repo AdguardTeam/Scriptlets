@@ -1,6 +1,6 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "2.1.7",
+    "version": "2.2.0",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "type": "module",
     "scripts": {
@@ -89,6 +89,7 @@
         "@swc/core": "^1.8.0",
         "@types/js-yaml": "^3.12.10",
         "@types/node": "^22.7.9",
+        "@types/trusted-types": "^2.0.7",
         "@typescript-eslint/eslint-plugin": "^5.52.0",
         "@typescript-eslint/parser": "^5.62.0",
         "axios": "^1.7.7",

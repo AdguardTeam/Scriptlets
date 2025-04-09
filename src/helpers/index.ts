@@ -37,4 +37,5 @@ export * from './random-id';
 export * from './throttle';
 export * from './shadow-dom-utils';
 export * from './node-text-utils';
+export * from './trusted-types-utils';
 export * from './value-matchers';

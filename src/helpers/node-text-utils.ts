@@ -3,17 +3,7 @@ import { nodeListToArray } from './array-utils';
 import { getAddedNodes } from './observer';
 import { toRegExp } from './string-utils';
 import { type Source } from '../scriptlets';
-
-declare global {
-    interface Window {
-        trustedTypes?: {
-            createPolicy: (
-                name: string,
-                rules: { createScript: (input: string) => string }
-            ) => { createScript: (input: string) => string };
-        };
-    }
-}
+import { getTrustedTypesApi } from './trusted-types-utils';
 
 type NodeHandler = (nodes: Node[]) => void;
 
@@ -121,28 +111,17 @@ export const replaceNodeText = (
 ): void => {
     const { textContent } = node;
     if (textContent) {
+        let modifiedText = textContent.replace(pattern, replacement);
+
         // For websites that use Trusted Types
         // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-        if (
-            node.nodeName === 'SCRIPT'
-            && window.trustedTypes
-            && window.trustedTypes.createPolicy
-        ) {
-            // The name for the trusted-types policy should only be 'AGPolicy',because corelibs can
-            // allow our policy if the server has restricted the creation of a trusted-types policy with
-            // the directive 'Content-Security-Policy: trusted-types <policyName>;`.
-            // If such a header is presented in the server response, corelibs adds permission to create
-            // the 'AGPolicy' policy with the 'allow-duplicates' option to prevent errors.
-            // See AG-18204 for details.
-            const policy = window.trustedTypes.createPolicy('AGPolicy', {
-                createScript: (string) => string,
-            });
-            const modifiedText = textContent.replace(pattern, replacement);
-            const trustedReplacement = policy.createScript(modifiedText);
-            node.textContent = trustedReplacement;
-        } else {
-            node.textContent = textContent.replace(pattern, replacement);
+        if (node.nodeName === 'SCRIPT') {
+            const trustedTypesApi = getTrustedTypesApi(source);
+            modifiedText = trustedTypesApi.createScript(modifiedText);
         }
+
+        node.textContent = modifiedText;
+
         hit(source);
     }
 };

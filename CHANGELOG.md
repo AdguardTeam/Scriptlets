@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- TypeScript types for CoreLibs provided [`ContentScriptApi`](./README.md#scriptlets-api--content-script-api).
+- Trusted Types API utility - [`PolicyApi`](./README.md#scriptlets-api--content-script-api--policy-api).
+
 ### Changed
 
 - Improved docs for `json-prune`, `xml-prune` and `trusted-prune-inbound-object` scriptlets [#392]
@@ -39,8 +44,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - issue with incorrectly removing content from parsed array when using the `json-prune` scriptlet [#482]
 
-  [v2.1.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.5...v2.1.6
-  [#482]: https://github.com/AdguardTeam/Scriptlets/issues/482
+[v2.1.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.5...v2.1.6
+[#482]: https://github.com/AdguardTeam/Scriptlets/issues/482
 
 ## [v2.1.5] - 2025-02-28
 
