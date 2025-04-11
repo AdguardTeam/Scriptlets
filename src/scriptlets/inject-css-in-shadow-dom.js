@@ -17,6 +17,10 @@ import { hit, logMessage, hijackAttachShadow } from '../helpers';
  * - `hostSelector` — optional, string, selector to match shadow host elements.
  *   CSS rule will be only applied to shadow roots inside these elements.
  *   Defaults to injecting css rule into all available roots.
+ * - `cssInjectionMethod` — optional, string, method to inject css rule into shadow dom.
+ *   Available methods are:
+ *     - `adoptedStyleSheets` — injects the CSS rule using adopted style sheets (default option).
+ *     - `styleTag` — injects the CSS rule using a `style` tag.
  *
  * ### Examples
  *
@@ -32,14 +36,30 @@ import { hit, logMessage, hijackAttachShadow } from '../helpers';
  *     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '#banner')
  *     ```
  *
+ * 1. Apply style to all shadow dom subtrees using style tag
+ *
+ *    ```adblock
+ *    example.org#%#//scriptlet('inject-css-in-shadow-dom', '.ads { display: none !important; }', '', 'styleTag')
+ *    ```
+ *
  * @added v1.8.2.
  */
 /* eslint-enable max-len */
 
-export function injectCssInShadowDom(source, cssRule, hostSelector = '') {
+export function injectCssInShadowDom(
+    source,
+    cssRule,
+    hostSelector = '',
+    cssInjectionMethod = 'adoptedStyleSheets',
+) {
     // do nothing if browser does not support ShadowRoot, Proxy or Reflect
     // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
     if (!Element.prototype.attachShadow || typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
+        return;
+    }
+
+    if (cssInjectionMethod !== 'adoptedStyleSheets' && cssInjectionMethod !== 'styleTag') {
+        logMessage(source, `Unknown cssInjectionMethod: ${cssInjectionMethod}`);
         return;
     }
 
@@ -49,9 +69,31 @@ export function injectCssInShadowDom(source, cssRule, hostSelector = '') {
         return;
     }
 
-    const callback = (shadowRoot) => {
+    const injectStyleTag = (shadowRoot) => {
         try {
-            // adoptedStyleSheets and CSSStyleSheet constructor are not yet supported by Safari
+            const styleTag = document.createElement('style');
+            styleTag.innerText = cssRule;
+            shadowRoot.appendChild(styleTag);
+            hit(source);
+        } catch (error) {
+            logMessage(source, `Unable to inject style tag due to: \n'${error.message}'`);
+        }
+    };
+
+    /**
+     * Injects CSS rules into a shadow root using the adoptedStyleSheets API
+     *
+     * @param {ShadowRoot} shadowRoot - The shadow root to inject styles into
+     * @private
+     *
+     * @description
+     * This function attempts to inject CSS using adoptedStyleSheets API.
+     * If successful, it adds the stylesheet to the shadow root's adoptedStyleSheets array.
+     * On failure, it falls back to using the injectStyleTag method.
+     */
+    const injectAdoptedStyleSheets = (shadowRoot) => {
+        try {
+            // adoptedStyleSheets and CSSStyleSheet constructor are not supported by old browsers
             // https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets
             // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/CSSStyleSheet
             const stylesheet = new CSSStyleSheet();
@@ -62,13 +104,19 @@ export function injectCssInShadowDom(source, cssRule, hostSelector = '') {
                 return;
             }
             shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, stylesheet];
-        } catch {
-            const styleTag = document.createElement('style');
-            styleTag.innerText = cssRule;
-            shadowRoot.appendChild(styleTag);
+            hit(source);
+        } catch (error) {
+            logMessage(source, `Unable to inject adopted style sheet due to: \n'${error.message}'`);
+            injectStyleTag(shadowRoot);
         }
+    };
 
-        hit(source);
+    const callback = (shadowRoot) => {
+        if (cssInjectionMethod === 'adoptedStyleSheets') {
+            injectAdoptedStyleSheets(shadowRoot);
+        } else if (cssInjectionMethod === 'styleTag') {
+            injectStyleTag(shadowRoot);
+        }
     };
 
     hijackAttachShadow(window, hostSelector, callback);

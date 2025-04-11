@@ -208,4 +208,20 @@ if (!isSupported) {
         assert.strictEqual(getComputedStyle(target1).color, 'rgb(255, 0, 0)', 'style was applied to shadowRoot #1');
         assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
     });
+
+    test('test "styleTag" injection method', (assert) => {
+        runScriptlet(name, [CSS_TEXT1, '', 'styleTag']);
+
+        const host1 = appendHost(HOST_ID1);
+        const shadowRoot1 = host1.attachShadow({ mode: 'closed' });
+        appendTarget(shadowRoot1, TARGET_ID1);
+
+        const target1 = shadowRoot1.getElementById(TARGET_ID1);
+        const styleTag = shadowRoot1.querySelector('style');
+
+        assert.ok(styleTag, 'style tag was created');
+        assert.strictEqual(styleTag.innerText, CSS_TEXT1, 'style tag contains the correct css rule');
+        assert.strictEqual(getComputedStyle(target1).color, 'rgb(255, 0, 0)', 'style was applied to shadowRoot #1');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function was executed');
+    });
 }
