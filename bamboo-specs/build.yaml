@@ -31,11 +31,20 @@ Build:
           - |-
             set -e
             set -x
-            ls -alt
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -laht
+
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
 
             pnpm install
+
             pnpm build
-            pnpm pack && mv adguard-scriptlets-*.tgz scriptlets.tgz
+
+            pnpm pack --out scriptlets.tgz
 
             pnpm wiki
     - inject-variables:

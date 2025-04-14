@@ -5,7 +5,7 @@ plan:
   key: SCRIPTLETSTEST
   name: scriptlets - test new
 variables:
-  dockerPuppeteer: adguard/puppeteer-runner:22.14--24.5--0
+  dockerPuppeteer: adguard/puppeteer-runner:22.14--24.5--1
 
 stages:
   - Build:
@@ -29,7 +29,11 @@ Build:
           - |-
             set -e
             set -x
-            ls -alt
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -laht
 
             pnpm install
 
