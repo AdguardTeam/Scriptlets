@@ -113,6 +113,9 @@ export const noopPromiseResolve = (
     }
 
     const response = new Response(responseBody, {
+        headers: {
+            'Content-Length': `${responseBody.length}`,
+        },
         status: 200,
         statusText: 'OK',
     });

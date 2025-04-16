@@ -294,6 +294,39 @@ if (!isSupported) {
         done();
     });
 
+    test('simple fetch - returns random string of 10 symbols', async (assert) => {
+        const INPUT_JSON_PATH_1 = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const inputRequest1 = new Request(INPUT_JSON_PATH_1);
+
+        runScriptlet(name, ['test01', 'true']);
+        const done = assert.async();
+
+        const response = await fetch(inputRequest1);
+        const parsedData = await response.text();
+
+        assert.strictEqual(parsedData.length, 10, 'Response length is correct');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - returns random string with specific range', async (assert) => {
+        // blocked_request.json doesn't exist,
+        // it's required for test for blocked requests
+        const BLOCKED_REQUEST = `${FETCH_OBJECTS_PATH}/blocked_request.json`;
+
+        runScriptlet(name, ['blocked_request', 'length:50-100']);
+        const done = assert.async();
+
+        const response = await fetch(BLOCKED_REQUEST);
+        const parsedData = await response.text();
+        const headerLength = Number(response.headers.get('Content-Length'));
+
+        assert.ok(parsedData.length >= 50 && parsedData.length <= 100, 'Response length is correct');
+        assert.strictEqual(headerLength, parsedData.length, 'Header length matches response length');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('simple fetch - valid response type', async (assert) => {
         const OPAQUE_RESPONSE_TYPE = 'opaque';
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
