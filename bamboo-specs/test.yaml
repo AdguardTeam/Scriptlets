@@ -35,7 +35,14 @@ Build:
 
             ls -laht
 
-            pnpm install
+            # Exclude '--ignore-scripts' from pnpm arguments
+            # since it prevents postinstall scripts from running
+            # so Chrome is not installed which is crucial for tests
+            originalPnpmArgs="$bamboo_varsPnpm"
+            modifiedPnpmArgs=$(echo "$originalPnpmArgs" | sed 's/--ignore-scripts//g')
+
+            # Install common dependencies
+            pnpm install ${modifiedPnpmArgs}
 
             # build docs to lint them later
             # check compatibility table updates and build it and build wiki docs

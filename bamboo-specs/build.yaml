@@ -40,7 +40,7 @@ Build:
             # Set cache directory
             pnpm config set store-dir ${bamboo.cachePnpm}
 
-            pnpm install
+            pnpm install ${bamboo.varsPnpm}
 
             pnpm build
 
