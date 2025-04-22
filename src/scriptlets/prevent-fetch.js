@@ -15,6 +15,12 @@ import {
     parseMatchProps,
     isValidParsedData,
     getMatchPropsData,
+    generateRandomResponse,
+    nativeIsFinite,
+    nativeIsNaN,
+    getNumberFromString,
+    getRandomIntInclusive,
+    getRandomStrByLength,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -46,6 +52,10 @@ import {
  *     - `emptyObj` — empty object
  *     - `emptyArr` — empty array
  *     - `emptyStr` — empty string
+ *     - `true` — random alphanumeric string of 10 symbols
+ *     - colon-separated pair `name:value` string value to customize `responseBody` where
+ *         - `name` — only `length` supported for now
+ *         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
  * - `responseType` — optional, string for defining response type,
  *   original response type is used if not specified. Possible values:
  *     - `basic`
@@ -97,6 +107,12 @@ import {
  *
  *     ! Specify response body for all fetch calls
  *     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
+ *
+ *     ! Specify response body to random alphanumeric string of 10 symbols for all fetch calls
+ *     example.org#%#//scriptlet('prevent-fetch', '', 'true')
+ *
+ *     ! Specify response body to random alphanumeric string with specific range for all fetch calls
+ *     example.org#%#//scriptlet('prevent-fetch', '', 'length:100-300')
  *     ```
  *
  * 1. Prevent all fetch calls and specify response type value
@@ -128,6 +144,8 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         strResponseBody = '[]';
     } else if (responseBody === 'emptyStr') {
         strResponseBody = '';
+    } else if (responseBody === 'true' || responseBody.match(/^length:\d+-\d+$/)) {
+        strResponseBody = generateRandomResponse(responseBody);
     } else {
         logMessage(source, `Invalid responseBody parameter: '${responseBody}'`);
         return;
@@ -249,4 +267,10 @@ preventFetch.injections = [
     parseMatchProps,
     isValidParsedData,
     getMatchPropsData,
+    generateRandomResponse,
+    nativeIsFinite,
+    nativeIsNaN,
+    getNumberFromString,
+    getRandomIntInclusive,
+    getRandomStrByLength,
 ];

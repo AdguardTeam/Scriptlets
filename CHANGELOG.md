@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- Ability to set random response content in `prevent-fetch` scriptlet [#416].
 - Ability to choose CSS injection method in `inject-css-in-shadow-dom` scriptlet [#477].
 - TypeScript types for CoreLibs provided [`ContentScriptApi`](./README.md#scriptlets-api--content-script-api).
 - Trusted Types API utility — [`PolicyApi`](./README.md#scriptlets-api--content-script-api--policy-api).
@@ -24,6 +25,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...HEAD
 [#392]: https://github.com/AdguardTeam/Scriptlets/issues/392
+[#416]: https://github.com/AdguardTeam/Scriptlets/issues/416
 [#477]: https://github.com/AdguardTeam/Scriptlets/issues/477
 
 ## [v2.1.7] - 2025-04-03
