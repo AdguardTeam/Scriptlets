@@ -188,6 +188,7 @@ export function trustedSuppressNativeMethod(
         isMatchingSuspended = true;
 
         if (stack && !matchStackTrace(stack, new Error().stack || '')) {
+            isMatchingSuspended = false;
             return Reflect.apply(target, thisArg, argumentsList);
         }
         const isMatching = matchMethodCall(argumentsList, signatureMatcher);

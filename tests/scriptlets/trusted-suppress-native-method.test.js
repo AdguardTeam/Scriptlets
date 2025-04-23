@@ -16,6 +16,7 @@ const natives = {
     'Array.isArray': Array.isArray,
     'Node.prototype.appendChild': Node.prototype.appendChild,
     'Document.prototype.querySelectorAll': Document.prototype.querySelectorAll,
+    'Document.prototype.querySelector': Document.prototype.querySelector,
 };
 
 const restoreNativeMethod = (path) => {
@@ -307,4 +308,23 @@ test('Match: stack trace', (assert) => {
 
     assert.notOk(window.testMatching('test'), 'Call was prevented');
     assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+
+    runScriptlet(name, [
+        'Document.prototype.querySelector',
+        '"body"',
+        'prevent',
+        'testFunc',
+    ]);
+
+    const testFunc = () => document.querySelector('body');
+    const result = testFunc();
+    assert.strictEqual(result, undefined, 'testFunc should return undefined when prevented');
+
+    const test = () => document.querySelector('body');
+    const result2 = test();
+    assert.ok(result2 instanceof HTMLElement, 'test should return HTMLElement, stack does not match');
+
+    const testFunc1 = () => document.querySelector('body');
+    const result3 = testFunc1();
+    assert.strictEqual(result3, undefined, 'testFunc1 should return undefined when prevented');
 });

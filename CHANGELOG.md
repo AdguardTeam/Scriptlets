@@ -23,10 +23,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Improved docs for `json-prune`, `xml-prune` and `trusted-prune-inbound-object` scriptlets [#392].
 
+### Fixed
+
+- `trusted-suppress-native-method` scriptlet, `isMatchingSuspended` was not reset when the stack does not match,
+  so in some cases given method was not prevented [#496].
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...HEAD
 [#392]: https://github.com/AdguardTeam/Scriptlets/issues/392
 [#416]: https://github.com/AdguardTeam/Scriptlets/issues/416
 [#477]: https://github.com/AdguardTeam/Scriptlets/issues/477
+[#496]: https://github.com/AdguardTeam/Scriptlets/issues/496
 
 ## [v2.1.7] - 2025-04-03
 
