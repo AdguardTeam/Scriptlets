@@ -70,12 +70,40 @@ const cookies = [
     ['__test-cookie_unchecked', 'unchecked'],
     ['__test-cookie_forbidden', 'forbidden'],
     ['__test-cookie_forever', 'forever'],
+    ['__test-cookie_emptyArray', 'emptyArr'],
+    ['__test-cookie_emptyObject', 'emptyObj'],
 ];
 
 test.each('Set cookie with valid value', cookies, (assert, [cName, cValue]) => {
+    const emptyArrValue = '[]';
+    const emptyObjValue = '{}';
+
     runScriptlet(name, [cName, cValue]);
     assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
-    assert.strictEqual(document.cookie.includes(cName) && document.cookie.includes(cValue), true, 'Cookie is set');
+    switch (cValue) {
+        case 'emptyArr':
+            assert.strictEqual(
+                document.cookie.includes(cName)
+                && document.cookie.includes(emptyArrValue),
+                true,
+                'Cookie is set',
+            );
+            break;
+        case 'emptyObj':
+            assert.strictEqual(
+                document.cookie.includes(cName)
+                && document.cookie.includes(emptyObjValue),
+                true,
+                'Cookie is set');
+            break;
+        default:
+            assert.strictEqual(
+                document.cookie.includes(cName)
+                && document.cookie.includes(cValue),
+                true,
+                'Cookie is set',
+            );
+    }
     clearCookie(cName);
 });
 

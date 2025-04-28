@@ -44,6 +44,8 @@ import {
  *         - `essential` / `nonessential`
  *         - `checked` / `unchecked`
  *         - `forbidden` / `forever`
+ *         - `emptyArr` to set an empty array `[]`
+ *         - `emptyObj` to set an empty object `{}`
  * - `path` — optional, cookie path, defaults to `/`; possible values:
  *     - `/` — root path
  *     - `none` — to set no path at all
@@ -90,7 +92,7 @@ export function setCookieReload(source, name, value, path = '/', domain = '') {
         return;
     }
 
-    const cookieToSet = serializeCookie(name, validValue, path, domain);
+    const cookieToSet = serializeCookie(name, validValue, path, domain, false);
     if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;

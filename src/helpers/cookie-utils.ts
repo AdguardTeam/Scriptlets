@@ -138,6 +138,10 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
     let validValue;
     if (allowedCookieValues.has(value.toLowerCase())) {
         validValue = value;
+    } else if (value === 'emptyArr') {
+        validValue = '[]';
+    } else if (value === 'emptyObj') {
+        validValue = '{}';
     } else if (/^\d+$/.test(value)) {
         validValue = parseFloat(value);
         if (nativeIsNaN(validValue)) {
