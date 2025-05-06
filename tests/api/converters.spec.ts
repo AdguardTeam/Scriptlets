@@ -353,6 +353,7 @@ describe('converters', () => {
             });
         });
 
+        // FIXME: fix this test
         it('convert scriptlet with no parameters', () => {
             const input = 'example.com#%#//scriptlet("prevent-fab-3.2.0")';
             const converted = convertAdgScriptletToUbo(input);
