@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Changed
 
 - Improved docs for `json-prune`, `xml-prune` and `trusted-prune-inbound-object` scriptlets [#392].
+- Updated [@adguard/agtree] to `3.1.3`.
 
 ### Fixed
 

@@ -141,7 +141,7 @@ ${description}${EOL}
  */
 const getMarkdownDataForStaticRedirects = () => {
     const staticRedirects = fs.readFileSync(path.resolve(__dirname, staticRedirectsPath), { encoding: 'utf8' });
-    const parsedStaticRedirects = yaml.safeLoad(staticRedirects);
+    const parsedStaticRedirects = yaml.load(staticRedirects);
 
     const output = parsedStaticRedirects.reduce((acc, { title, description, added }) => {
         if (!title) {
@@ -184,7 +184,7 @@ const getMarkdownDataForBlockingRedirects = () => {
     const BLOCKING_REDIRECTS_RELATIVE_SOURCE = `${REDIRECTS_SRC_RELATIVE_DIR_PATH}/${BLOCKING_REDIRECTS_SOURCE_SUB_DIR}`;
 
     const blockingRedirects = fs.readFileSync(blockingRedirectsPath, { encoding: 'utf8' });
-    const parsedBlockingRedirects = yaml.safeLoad(blockingRedirects);
+    const parsedBlockingRedirects = yaml.load(blockingRedirects);
 
     const output = parsedBlockingRedirects.reduce((acc, { title, description, added }) => {
         if (!title) {

@@ -76,7 +76,7 @@ export class Redirects {
      */
     constructor(rawYaml: string) {
         try {
-            const arrOfRedirects = jsYaml.safeLoad(rawYaml) as Redirect[];
+            const arrOfRedirects = jsYaml.load(rawYaml) as Redirect[];
             this.redirects = arrOfRedirects.reduce((acc, redirect) => {
                 return {
                     ...acc,
