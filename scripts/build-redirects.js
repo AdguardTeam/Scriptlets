@@ -49,7 +49,7 @@ const getStaticRedirects = async () => {
 
     try {
         const staticRedirectsContent = await fs.readFile(STATIC_REDIRECTS_PATH);
-        staticRedirects = yaml.load(staticRedirectsContent);
+        staticRedirects = yaml.safeLoad(staticRedirectsContent);
     } catch (e) {
         // eslint-disable-next-line no-console
         console.log(`Unable to load yaml because of: ${e}`);
@@ -80,7 +80,7 @@ const getBlockingRedirects = async () => {
     let blockingRedirects;
     try {
         const blockingRedirectsContent = await fs.readFile(BLOCKING_REDIRECTS_PATH);
-        const rawBlockingRedirects = yaml.load(blockingRedirectsContent);
+        const rawBlockingRedirects = yaml.safeLoad(blockingRedirectsContent);
 
         blockingRedirects = await Promise.all(rawBlockingRedirects
             .map((rawBlockingRedirect) => completeRawBlockingRedirect(rawBlockingRedirect)));
@@ -287,7 +287,7 @@ const buildStaticRedirectFiles = async (redirectsData) => {
 };
 
 const buildRedirectsYamlFile = async (mergedRedirects) => {
-    let yamlRedirects = yaml.dump(mergedRedirects);
+    let yamlRedirects = yaml.safeDump(mergedRedirects);
 
     // add empty line before titles
     yamlRedirects = yamlRedirects.split('- title:')
