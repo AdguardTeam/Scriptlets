@@ -283,11 +283,6 @@ describe('converters', () => {
                     expected: 'example.org##+js(remove-class, promo, a.class\\, div#id\\, div > #ad > .test)',
                 },
                 {
-                    // scriptlet with no parameters
-                    actual: 'example.com#%#//scriptlet("prevent-fab-3.2.0")',
-                    expected: 'example.com##+js(prevent-fab-3.2.0)',
-                },
-                {
                     actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
                     expected: 'example.org#@#+js(no-setTimeout-if, [native code], 8000)',
                 },
@@ -356,6 +351,15 @@ describe('converters', () => {
             test.each(testCases)('$actual', ({ actual, expected }: StringTestCase) => {
                 expect(convertAdgScriptletToUbo(actual)).toStrictEqual(expected);
             });
+        });
+
+        it('convert scriptlet with no parameters', () => {
+            const input = 'example.com#%#//scriptlet("prevent-fab-3.2.0")';
+            const converted = convertAdgScriptletToUbo(input);
+
+            const expected = 'example.com##+js(prevent-fab-3.2.0)';
+
+            expect(converted).toStrictEqual(expected);
         });
     });
 
