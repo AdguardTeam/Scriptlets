@@ -42,11 +42,11 @@ const getScriptletFunctionsString = async () => {
 
     const scriptletsFunctions = Object.values(scriptletsList);
 
-    const scriptletsStrings = scriptletsFunctions.map((scriptlet) => {
-        const scriptletWithDeps = attachDependencies(scriptlet);
+    const scriptletsStrings = await Promise.all(scriptletsFunctions.map(async (scriptlet) => {
+        const scriptletWithDeps = await attachDependencies(scriptlet);
         const scriptletWithCall = addCall(scriptlet, scriptletWithDeps);
         return wrapInFunc(scriptlet.name, scriptletWithCall);
-    });
+    }));
 
     const scriptletsString = scriptletsStrings.join('\n');
 

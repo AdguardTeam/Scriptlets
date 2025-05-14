@@ -151,6 +151,7 @@ const scriptletsConfig = {
                 format: {
                     comments: false,
                     beautify: true,
+                    indent_level: 2,
                 },
             },
         ),

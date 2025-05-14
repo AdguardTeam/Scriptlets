@@ -1,16 +1,42 @@
+import { minify } from 'terser';
+
 import { type Redirect, type Scriptlet } from '../../types/types';
 import { type Source } from '../scriptlets';
 
 /**
- * Concat dependencies to scriptlet code
+ * Concat dependencies to scriptlet code.
+ *
+ * Dependencies are minified using Terser while preserving their names.
  *
  * @param scriptlet scriptlet or redirect function
  * @returns string view of scriptlet with attached dependencies
  */
-export function attachDependencies(scriptlet: Scriptlet | Redirect): string {
+export async function attachDependencies(scriptlet: Scriptlet | Redirect): Promise<string> {
     const { injections = [] } = scriptlet;
-    return injections.reduce((accum, dep) => {
-        return `${accum}\n${dep.toString()}`;
+
+    // Minify each dependency while preserving its name
+    const minifiedDeps = await Promise.all(injections.map(async (dep) => {
+        try {
+            const depStr = dep.toString();
+            const result = await minify(depStr, {
+                compress: true,
+                mangle: {
+                    // injection functions should be accessible by the same name
+                    // so we preserve their names
+                    keep_fnames: true,
+                },
+            });
+            // Fallback to original if minification fails
+            return result.code || depStr;
+        } catch (e) {
+            // If minification fails, return the original code
+            return dep.toString();
+        }
+    }));
+
+    // Combine the minified dependencies with the scriptlet code
+    return minifiedDeps.reduce((acc: string, depCode: string) => {
+        return `${acc}\n${depCode}`;
     }, scriptlet.toString());
 }
 

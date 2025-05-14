@@ -125,7 +125,7 @@ const getRedirectCode = async (source) => {
         throw new Error(`Was unable to find redirect by name: ${source.name}`);
     }
 
-    let result = attachDependencies(redirect);
+    let result = await attachDependencies(redirect);
     result = addCall(redirect, result);
 
     // redirect code for different sources is checked in tests
