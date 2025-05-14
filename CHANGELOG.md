@@ -26,12 +26,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Escaping quotes in `trusted-replace-node-text` scriptlet [#440].
 - `trusted-suppress-native-method` scriptlet, `isMatchingSuspended` was not reset when the stack does not match,
   so in some cases given method was not prevented [#496].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...HEAD
 [#392]: https://github.com/AdguardTeam/Scriptlets/issues/392
 [#416]: https://github.com/AdguardTeam/Scriptlets/issues/416
+[#440]: https://github.com/AdguardTeam/Scriptlets/issues/440
 [#477]: https://github.com/AdguardTeam/Scriptlets/issues/477
 [#496]: https://github.com/AdguardTeam/Scriptlets/issues/496
 [#497]: https://github.com/AdguardTeam/Scriptlets/issues/497

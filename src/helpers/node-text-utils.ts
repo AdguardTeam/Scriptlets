@@ -111,7 +111,11 @@ export const replaceNodeText = (
 ): void => {
     const { textContent } = node;
     if (textContent) {
-        let modifiedText = textContent.replace(pattern, replacement);
+        // Remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
+        // https://github.com/AdguardTeam/Scriptlets/issues/440
+        let modifiedText = textContent.replace(pattern, replacement)
+            .replace(/\\'/g, "'")
+            .replace(/\\"/g, '"');
 
         // For websites that use Trusted Types
         // https://w3c.github.io/webappsec-trusted-types/dist/spec/
