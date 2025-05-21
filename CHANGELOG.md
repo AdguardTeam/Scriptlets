@@ -10,6 +10,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [v2.2.1] - 2025-05-21
+
+### Fixed
+
+- Trusted types bundle.
+
 ## [v2.2.0] - 2025-05-21
 
 ### Added
