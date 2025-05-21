@@ -285,7 +285,7 @@ describe('converters', () => {
                 {
                     // scriptlet with no parameters
                     actual: 'example.com#%#//scriptlet("prevent-fab-3.2.0")',
-                    expected: 'example.com##+js(prevent-fab-3.2.0)',
+                    expected: 'example.com##+js(nofab)',
                 },
                 {
                     actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',

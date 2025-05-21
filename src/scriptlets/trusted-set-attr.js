@@ -31,7 +31,7 @@ import {
  * 1. Set attribute by selector
  *
  *     ```adblock
- *     example.org#%#//scriptlet('trusted-set-attr', 'div.class > a.class', 'test-attribute', '[true, true]')
+ *     example.org#%#//scriptlet('trusted-set-attr', 'div > a.class', 'test-attribute', '[true, true]')
  *     ```
  *
  *     ```html

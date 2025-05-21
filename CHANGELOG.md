@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.2.0] - 2025-05-21
 
 ### Added
 
@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Changed
 
 - Improved docs for `json-prune`, `xml-prune` and `trusted-prune-inbound-object` scriptlets [#392].
+- Updated [@adguard/agtree] to `3.1.5`.
 
 ### Fixed
 
@@ -30,7 +31,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `trusted-suppress-native-method` scriptlet, `isMatchingSuspended` was not reset when the stack does not match,
   so in some cases given method was not prevented [#496].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...HEAD
+[v2.2.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...v2.2.0
 [#392]: https://github.com/AdguardTeam/Scriptlets/issues/392
 [#416]: https://github.com/AdguardTeam/Scriptlets/issues/416
 [#440]: https://github.com/AdguardTeam/Scriptlets/issues/440

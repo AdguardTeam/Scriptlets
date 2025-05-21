@@ -13,7 +13,7 @@ import { hit } from '../helpers';
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('spoof-css', selectors, cssNameProperty, cssNameValue)
+ * example.org#%#//scriptlet('spoof-css', selectors, cssPropertyName, cssPropertyValue)
  * ```
  *
  * - `selectors` — string of comma-separated selectors to match

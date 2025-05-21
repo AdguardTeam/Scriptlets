@@ -39,7 +39,7 @@ import {
  * 1. Set attribute by selector
  *
  *     ```adblock
- *     example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', '0')
+ *     example.org#%#//scriptlet('set-attr', 'div > a.class', 'test-attribute', '0')
  *     ```
  *
  *     ```html

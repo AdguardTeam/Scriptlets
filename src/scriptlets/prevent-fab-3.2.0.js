@@ -8,7 +8,7 @@ import { hit, noopFunc, noopThis } from '../helpers';
  * Prevents execution of the FAB script v3.2.0.
  *
  * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
+ * https://github.com/gorhill/uBlock/wiki/Resources-Library#nofabjs-
  *
  * ### Syntax
  *
