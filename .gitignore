@@ -17,3 +17,6 @@ local.log
 tsconfig.tsbuildinfo
 .pnpm-store/
 dist/
+
+.npmrc
+*.tgz
