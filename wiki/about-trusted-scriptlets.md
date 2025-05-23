@@ -281,43 +281,155 @@ example.org#%#//scriptlet('trusted-prune-inbound-object', functionName[, propsTo
     example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.getOwnPropertyNames', 'example')
     ```
 
-    For instance, the following call will return `['one']`
+    Function call:
 
-    ```html
+    ```js
     Object.getOwnPropertyNames({ one: 1, example: true })
     ```
 
-2. Removes property `ads` from the payload of the Object.keys call
+    Input:
+
+    ```json
+    {
+      "one": 1,
+      "example": true
+    }
+    ```
+
+    Output:
+
+    ```json
+    ["one"]
+    ```
+
+1. Removes property `ads` from the payload of the Object.keys call
 
     ```adblock
     example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.keys', 'ads')
     ```
 
-    For instance, the following call will return `['one', 'two']`
+    Function call:
 
-    ```html
+    ```js
     Object.keys({ one: 1, two: 2, ads: true })
     ```
 
-3. Removes property `foo.bar` from the payload of the JSON.stringify call
+    Input:
+
+    ```json
+    {
+      "one": 1,
+      "two": 2,
+      "ads": true
+    }
+    ```
+
+    Output:
+
+    ```json
+    ["one", "two"]
+    ```
+
+1. Removes property `foo.bar` from the payload of the JSON.stringify call
 
     ```adblock
     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar')
     ```
 
-    For instance, the following call will return `'{"foo":{"a":2},"b":3}'`
+    Function call:
 
-    ```html
+    ```js
     JSON.stringify({ foo: { bar: 1, a: 2 }, b: 3 })
     ```
 
-4. Removes property `foo.bar` from the payload of the JSON.stringify call if its error stack trace contains `test.js`
+    Input:
+
+    ```json
+    {
+      "foo": {
+        "bar": 1,
+        "a": 2
+      },
+      "b": 3
+    }
+    ```
+
+    Output:
+
+    ```json
+    {"foo":{"a":2},"b":3}
+    ```
+
+1. Removes property `foo.bar` from the payload of the JSON.stringify call if its error stack trace contains `test.js`
 
     ```adblock
     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', 'foo.bar', '', 'test.js')
     ```
 
-5. Call with only first and third argument will log the current hostname and matched payload at the console
+    Function call:
+
+    ```js
+    JSON.stringify({ foo: { bar: 1, a: 2 }, b: 3 })
+    ```
+
+    Input:
+
+    ```json
+    {
+      "foo": {
+        "bar": 1,
+        "a": 2
+      },
+      "b": 3
+    }
+    ```
+
+    Output (if `test.js` in stack):
+
+    ```json
+    {"foo":{"a":2},"b":3}
+    ```
+
+1. Removes all `slots` properties at any depth during Object.entries call
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prune-inbound-object', 'Object.entries', '*.slots')
+    ```
+
+    Function call:
+
+    ```js
+    Object.entries({
+      ad: { slots: [1, 2], type: "banner" },
+      main: { title: "News" }
+    })
+    ```
+
+    Input:
+
+    ```json
+    {
+      "ad": {
+        "slots": [1, 2],
+        "type": "banner"
+      },
+      "main": {
+        "slots": [3, 4],
+        "title": "News"
+      }
+    }
+    ```
+
+    Output:
+
+    ```json
+    [
+      ["ad", { "type": "banner" }],
+      ["main", { "title": "News" }]
+    ]
+    ```
+
+1. Call with only first and third argument will log the current hostname and matched payload at the console
 
     ```adblock
     example.org#%#//scriptlet('trusted-prune-inbound-object', 'JSON.stringify', '', 'bar', '')
@@ -344,6 +456,7 @@ If set, `replacement` is required. Possible values:
     - `*` to match all text content
     - non-empty string
     - regular expression
+  By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
 - `replacement` — optional, should be set if `pattern` is set. String to replace the response text content
   matched by `pattern`. Empty string to remove content. Defaults to empty string.
 - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -411,6 +524,12 @@ If set, `replacement` is required. Possible values:
     example.org#%#//scriptlet('trusted-replace-fetch-response', 'foo', 'bar', 'example.com', 'true')
     ```
 
+1. Replace all "noAds=false" text content with "noAds=true" of all fetch responses for example.com and log original and modified text content <!-- markdownlint-disable-line line-length -->
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-fetch-response', '/noAds=false/g', 'noAds=true', 'example.com', 'true')
+    ```
+
 [Scriptlet source](../src/scriptlets/trusted-replace-fetch-response.js)
 
 * * *
@@ -432,6 +551,7 @@ Must target lowercased node names, e.g `div` instead of `DIV`.
 - `textMatch` — required, string or RegExp to match against node's text content.
 If matched, the `pattern` will be replaced by the `replacement`. Case sensitive.
 - `pattern` — required, string or regexp for matching contents of `node.textContent` that should be replaced.
+By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
 - `replacement` — required, string to replace text content matched by `pattern`.
 - `...extraArgs` — optional, string, if includes 'verbose' will log original and modified text content.
 
@@ -457,7 +577,7 @@ If matched, the `pattern` will be replaced by the `replacement`. Case sensitive.
     <span>some text</span>
     ```
 
-2. Replace node's text content, matching both node name, text and pattern by RegExp:
+1. Replace node's text content, matching both node name, text and pattern by RegExp:
 
     ```adblock
     example.org#%#//scriptlet('trusted-replace-node-text', '/[a-z]*[0-9]/', '/s\dme/', '/t\dxt/', 'other text')
@@ -475,7 +595,21 @@ If matched, the `pattern` will be replaced by the `replacement`. Case sensitive.
     <span>some text</span>
     ```
 
-3. Replace node's text content and log original and modified text content:
+1. Replace all occurrences in node's text content, matching both node name and text:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-node-text', 'p', 'bar', '/a/g', 'x')
+    ```
+
+    ```html
+    <!-- before -->
+    <p>foa bar baz</p> // this node is going to be matched by both node name and text
+
+    <!-- after -->
+    <p>fox bxr bxz</p> // text content has changed
+    ```
+
+1. Replace node's text content and log original and modified text content:
 
     ```adblock
     example.org#%#//scriptlet('trusted-replace-node-text', 'div', 'some', 'text', 'other text', 'verbose')
@@ -604,6 +738,7 @@ example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[
     - `*` to match all text content
     - non-empty string
     - regular expression
+  By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
 - `replacement` — optional, should be set if `pattern` is set. String to replace matched content with.
   Empty string to remove content.
 - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
@@ -666,6 +801,12 @@ example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[
     example.org#%#//scriptlet('trusted-replace-xhr-response', 'foo', 'bar', 'example.com', 'true')
     ```
 
+1. Replace all "noAds=false" text content with "noAds=true" of all XMLHttpRequests for example.com and log original and modified text content <!-- markdownlint-disable-line line-length -->
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-xhr-response', '/noAds=false/g', 'noAds=true', 'example.com', 'true')
+    ```
+
 [Scriptlet source](../src/scriptlets/trusted-replace-xhr-response.js)
 
 * * *
@@ -692,7 +833,7 @@ example.org#%#//scriptlet('trusted-set-attr', selector, attr[, value])
 1. Set attribute by selector
 
     ```adblock
-    example.org#%#//scriptlet('trusted-set-attr', 'div.class > a.class', 'test-attribute', '[true, true]')
+    example.org#%#//scriptlet('trusted-set-attr', 'div > a.class', 'test-attribute', '[true, true]')
     ```
 
     ```html

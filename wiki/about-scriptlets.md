@@ -1070,6 +1070,10 @@ example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
 - `hostSelector` — optional, string, selector to match shadow host elements.
   CSS rule will be only applied to shadow roots inside these elements.
   Defaults to injecting css rule into all available roots.
+- `cssInjectionMethod` — optional, string, method to inject css rule into shadow dom.
+  Available methods are:
+    - `adoptedStyleSheets` — injects the CSS rule using adopted style sheets (default option).
+    - `styleTag` — injects the CSS rule using a `style` tag.
 
 ### Examples
 
@@ -1084,6 +1088,12 @@ example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
     ```adblock
     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '#banner')
     ```
+
+1. Apply style to all shadow dom subtrees using style tag
+
+   ```adblock
+   example.org#%#//scriptlet('inject-css-in-shadow-dom', '.ads { display: none !important; }', '', 'styleTag')
+   ```
 
 [Scriptlet source](../src/scriptlets/inject-css-in-shadow-dom.js)
 
@@ -1305,10 +1315,27 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'example')
     ```
 
-    For instance, the following call will return `{ one: 1}`
+    JSON.parse call:
 
     ```html
     JSON.parse('{"one":1,"example":true}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+      "one": 1,
+      "example": true
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+      "one": 1
+    }
     ```
 
 1. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
@@ -1317,10 +1344,28 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
     ```
 
-    For instance, the following call will return `{ one: 1, two: 2}`
+    JSON.parse call:
 
     ```html
     JSON.parse('{"one":1,"two":2}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+      "one": 1,
+      "two": 2
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+      "one": 1,
+      "two": 2
+    }
     ```
 
 1. A property in a list of properties can be a chain of properties
@@ -1329,10 +1374,70 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'a.b', 'ads.url.first')
     ```
 
+    JSON.parse call:
+
+    ```html
+    JSON.parse('{"a":{"b":123},"ads":{"url":{"first":"abc"}}}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+      "a": {
+        "b": 123
+      },
+      "ads": {
+        "url": {
+          "first": "abc"
+        }
+      }
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+      "a": {},
+      "ads": {
+        "url": {
+          "first": "abc"
+        }
+      }
+    }
+    ```
+
 1. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
 
     ```adblock
     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
+    ```
+
+    JSON.parse call:
+
+    ```html
+    JSON.parse('{"content":{"ad":{"src":"a.js"}}}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+      "content": {
+        "ad": {
+          "src": "a.js"
+        }
+      }
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+      "content": {}
+    }
     ```
 
 1. A property in a list of properties can be a chain of properties with wildcard in it
@@ -1341,7 +1446,132 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.ad')
     ```
 
-1. Call with no arguments will log the current hostname and json payload at the console
+    JSON.parse call:
+
+    ```html
+    JSON.parse('{"content":{"block1":{"media":{"src":"1.jpg","ad":true}},"block2":{"media":{"src":"2.jpg"}}}}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+      "content": {
+        "block1": {
+          "media": {
+            "src": "1.jpg",
+            "ad": true
+          }
+        },
+        "block2": {
+          "media": {
+            "src": "2.jpg"
+          }
+        }
+      }
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+      "content": {
+        "block1": {
+          "media": {
+            "ad": true
+          }
+        },
+        "block2": {
+          "media": {}
+        }
+      }
+    }
+    ```
+
+1. Removes every property from `videos` object if it has `isAd` key
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd')
+    ```
+
+    JSON.parse call:
+
+    ```html
+    JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"src":"video1.mp4"}}}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+      "videos": {
+        "video1": {
+          "isAd": true,
+          "src": "video1.mp4"
+        },
+        "video2": {
+          "src": "video1.mp4"
+        }
+      }
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+      "videos": {
+        "video2": {
+          "src": "video1.mp4"
+        }
+      }
+    }
+    ```
+
+1. Removes every property from `videos` object if it has `isAd` key with `true` value
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd.[=].true')
+    ```
+
+    JSON.parse call:
+
+    ```html
+    JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"isAd":false,"src":"video1.mp4"}}}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+      "videos": {
+        "video1": {
+          "isAd": true,
+          "src": "video1.mp4"
+        },
+        "video2": {
+          "isAd": false,
+          "src": "video1.mp4"
+        }
+      }
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+      "videos": {
+        "video2": {
+          "isAd": false,
+          "src": "video1.mp4"
+        }
+      }
+    }
+    ```
+
+1. Call with no arguments will log the current hostname and JSON payload at the console
 
     ```adblock
     example.org#%#//scriptlet('json-prune')
@@ -1688,14 +1918,24 @@ https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/prevent-listener.
 
 ### Syntax
 
+<!-- markdownlint-disable line-length -->
+
 ```text
-example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch]])
+example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch[, additionalArgName, additionalArgValue]]])
 ```
+
+<!-- markdownlint-enable line-length -->
 
 - `typeSearch` — optional, string or regular expression matching the type (event name);
   defaults to match all types; invalid regular expression will cause exit and rule will not work
 - `listenerSearch` — optional, string or regular expression matching the listener function body;
   defaults to match all listeners; invalid regular expression will cause exit and rule will not work
+- `additionalArgName` — optional, string, name of the additional argument to match;
+  currently only `elements` is supported;
+- `additionalArgValue` — optional, value corresponding to the additional argument name;
+  for `elements` it can be a CSS selector or one of the following values:
+    - `window`
+    - `document`
 
 ### Examples
 
@@ -1716,6 +1956,30 @@ example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSear
     ```javascript
     el.addEventListener('click', () => {
         window.test = 'searchString';
+    });
+    ```
+
+1. Prevent 'click' listeners with the callback body containing `foo` and only if the element has the class `bar`
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-addEventListener', 'click', 'foo', 'elements', '.bar')
+    ```
+
+    For instance, this listener will not be called:
+
+    ```javascript
+    const el = document.querySelector('.bar');
+    el.addEventListener('click', () => {
+        window.test = 'foo';
+    });
+    ```
+
+    This listener will be called:
+
+    ```javascript
+    const el = document.querySelector('.xyz');
+    el.addEventListener('click', () => {
+        window.test = 'foo';
     });
     ```
 
@@ -1775,7 +2039,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-canvasjs-
 
 ### Syntax
 
-```adblock
+```text
 example.org#%#//scriptlet('prevent-canvas'[, contextType])
 ```
 
@@ -1833,7 +2097,7 @@ example.org#%#//scriptlet('prevent-element-src-loading', tagName, match)
 1. Prevent script source loading
 
     ```adblock
-    example.org#%#//scriptlet('prevent-element-src-loading', 'script' ,'adsbygoogle')
+    example.org#%#//scriptlet('prevent-element-src-loading', 'script', 'adsbygoogle')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-element-src-loading.js)
@@ -1877,7 +2141,7 @@ example.org#%#//scriptlet('prevent-eval-if', 'test')
 Prevents execution of the FAB script v3.2.0.
 
 Related UBO scriptlet:
-https://github.com/gorhill/uBlock/wiki/Resources-Library#fuckadblockjs-320-
+https://github.com/gorhill/uBlock/wiki/Resources-Library#nofabjs-
 
 ### Syntax
 
@@ -1917,6 +2181,10 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
     - `emptyObj` — empty object
     - `emptyArr` — empty array
     - `emptyStr` — empty string
+    - `true` — random alphanumeric string of 10 symbols
+    - colon-separated pair `name:value` string value to customize `responseBody` where
+        - `name` — only `length` supported for now
+        - `value` — range on numbers, for example `100-300`, limited to 500000 characters
 - `responseType` — optional, string for defining response type,
   original response type is used if not specified. Possible values:
     - `basic`
@@ -1968,6 +2236,12 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
 
     ! Specify response body for all fetch calls
     example.org#%#//scriptlet('prevent-fetch', '', 'emptyArr')
+
+    ! Specify response body to random alphanumeric string of 10 symbols for all fetch calls
+    example.org#%#//scriptlet('prevent-fetch', '', 'true')
+
+    ! Specify response body to random alphanumeric string with specific range for all fetch calls
+    example.org#%#//scriptlet('prevent-fetch', '', 'length:100-300')
     ```
 
 1. Prevent all fetch calls and specify response type value
@@ -2028,7 +2302,7 @@ example.org#%#//scriptlet('prevent-refresh'[, delay])
 1. Prevent reloading of a document with delay
 
     ```adblock
-    example.com#%#//scriptlet('prevent-refresh', 3)
+    example.com#%#//scriptlet('prevent-refresh', '3')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-refresh.js)
@@ -2776,7 +3050,7 @@ https://github.com/gorhill/uBlock/commit/2bb446797a12086f2eebc0c8635b671b8b90c47
 
 ### Syntax
 
-```adblock
+```text
 example.org#%#//scriptlet('remove-node-text', nodeName, textMatch[, parentSelector])
 ```
 
@@ -2890,7 +3164,7 @@ example.org#%#//scriptlet('set-attr', selector, attr[, value])
 1. Set attribute by selector
 
     ```adblock
-    example.org#%#//scriptlet('set-attr', 'div.class > a.class', 'test-attribute', '0')
+    example.org#%#//scriptlet('set-attr', 'div > a.class', 'test-attribute', '0')
     ```
 
     ```html
@@ -3105,6 +3379,8 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
         - `essential` / `nonessential`
         - `checked` / `unchecked`
         - `forbidden` / `forever`
+        - `emptyArr` to set an empty array `[]`
+        - `emptyObj` to set an empty object `{}`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3168,6 +3444,8 @@ example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
         - `essential` / `nonessential`
         - `checked` / `unchecked`
         - `forbidden` / `forever`
+        - `emptyArr` to set an empty array `[]`
+        - `emptyObj` to set an empty object `{}`
 - `path` — optional, cookie path, defaults to `/`; possible values:
     - `/` — root path
     - `none` — to set no path at all
@@ -3350,7 +3628,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#spoof-cssjs-
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('spoof-css', selectors, cssNameProperty, cssNameValue)
+example.org#%#//scriptlet('spoof-css', selectors, cssPropertyName, cssPropertyValue)
 ```
 
 - `selectors` — string of comma-separated selectors to match
@@ -3418,10 +3696,38 @@ example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch
     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]')
     ```
 
+    Input XML:
+
+    ```xml
+    <Period id="main"/>
+    <Period id="123-ad-456"/>
+    ```
+
+    Resulting XML:
+
+    ```xml
+    <Period id="main"/>
+    ```
+
 1. Remove `Period` tag whose `id` contains `-ad-`, only if XML contains `SegmentTemplate`
 
     ```adblock
     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', 'SegmentTemplate')
+    ```
+
+    Input XML:
+
+    ```xml
+    <Period id="preroll-ad">
+      <SegmentTemplate />
+    </Period>
+    <Period id="content"/>
+    ```
+
+    Resulting XML:
+
+    ```xml
+    <Period id="content"/>
     ```
 
 1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd`
@@ -3430,10 +3736,36 @@ example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch
     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd')
     ```
 
+    Input XML:
+
+    ```xml
+    <Period id="intro"/>
+    <Period id="ads-ad-block"/>
+    ```
+
+    Resulting XML:
+
+    ```xml
+    <Period id="intro"/>
+    ```
+
 1. Remove `Period` tag whose `id` contains `-ad-`, only if request's URL contains `.mpd` and log content
 
     ```adblock
     example.org#%#//scriptlet('xml-prune', 'Period[id*="-ad-"]', '', '.mpd', 'true')
+    ```
+
+    Input XML:
+
+    ```xml
+    <Period id="pre-roll-ad"/>
+    <Period id="movie"/>
+    ```
+
+    Resulting XML:
+
+    ```xml
+    <Period id="movie"/>
     ```
 
 1. Remove `Period` tag whose `id` contains `pre-roll` and remove `duration` attribute from the `Period` tag
@@ -3446,6 +3778,19 @@ example.org#%#//scriptlet('xml-prune'[, propsToMatch[, optionalProp[, urlToMatch
     ```
 
     <!-- markdownlint-enable line-length -->
+
+    Input XML:
+
+    ```xml
+    <Period id="pre-roll-ad" duration="PT5S"/>
+    <Period id="main" duration="PT30M"/>
+    ```
+
+    Resulting XML:
+
+    ```xml
+    <Period id="main"/>
+    ```
 
 1. Call with no arguments will log response payload and URL at the console
 
