@@ -17,6 +17,8 @@ npmjs: &npmjs
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   variables: &npmjs-variables
     publishArgs: --access public
+    # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
+    selectedRepository: '26050988'
   triggers: [ ]
   tasks:
     - checkout:
@@ -41,6 +43,9 @@ npmjs: &npmjs
 
             npm publish scriptlets.tgz ${bamboo_publishArgs}
 
+            # remove tgz after successful publish before updated docs committing
+            rm -f scriptlets.tgz
+
             # Set cache directory
             pnpm config set store-dir ${bamboo.cachePnpm}
 
@@ -50,15 +55,13 @@ npmjs: &npmjs
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
-          # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
-          selectedRepository: '26050988'
+          selectedRepository: ${bamboo_selectedRepository}
           # do not change commitMessage
           commitMessage: 'deploy: update docs for v${bamboo.inject.version}'
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
         configuration:
-          # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
-          selectedRepository: '26050988'
+          selectedRepository: ${bamboo_selectedRepository}
           tagName: v${bamboo.inject.version}
   requirements:
     - adg-docker: 'true'
