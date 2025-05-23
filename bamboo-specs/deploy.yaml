@@ -30,12 +30,24 @@ npmjs: &npmjs
           - |-
             set -e
             set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
             ls -alt
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 
             npm publish scriptlets.tgz ${bamboo_publishArgs}
+
+            pnpm wiki
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          # do not change commitMessage
+          commitMessage: 'deploy: update docs for v${bamboo.inject.version}'
+          selectedRepository: defaultRepository
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
         configuration:

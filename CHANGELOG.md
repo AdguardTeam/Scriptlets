@@ -10,11 +10,26 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [v2.2.2] - 2025-05-23
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.2.0`.
+
+### Fixed
+
+- `spoof-css` scriptlet — incorrect `DOMRect` setting [#498].
+
+[v2.2.2]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.1...v2.2.2
+[#498]: https://github.com/AdguardTeam/Scriptlets/issues/498
+
 ## [v2.2.1] - 2025-05-21
 
 ### Fixed
 
 - Trusted types bundle.
+
+[v2.2.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.0...v2.2.1
 
 ## [v2.2.0] - 2025-05-21
 
@@ -33,7 +48,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- `spoof-css` scriptlet — incorrect `DOMRect` setting [#498].
 - Escaping quotes in `trusted-replace-node-text` scriptlet [#440].
 - `trusted-suppress-native-method` scriptlet, `isMatchingSuspended` was not reset when the stack does not match,
   so in some cases given method was not prevented [#496].
@@ -45,7 +59,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#477]: https://github.com/AdguardTeam/Scriptlets/issues/477
 [#496]: https://github.com/AdguardTeam/Scriptlets/issues/496
 [#497]: https://github.com/AdguardTeam/Scriptlets/issues/497
-[#498]: https://github.com/AdguardTeam/Scriptlets/issues/498
 
 ## [v2.1.7] - 2025-04-03
 

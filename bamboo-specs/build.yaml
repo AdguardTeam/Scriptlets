@@ -45,8 +45,6 @@ Build:
             pnpm build
 
             pnpm pack --out scriptlets.tgz
-
-            pnpm wiki
     - inject-variables:
         file: dist/build.txt
         scope: RESULT
