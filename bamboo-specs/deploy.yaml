@@ -39,12 +39,16 @@ npmjs: &npmjs
             ls -alt
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
+
+            # Store NPM token in .npmrc file to be used during publishing the package
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 
             npm publish scriptlets.tgz ${bamboo_publishArgs}
 
-            # remove tgz after successful publish before updated docs committing
+            # After successful publish and before updated docs committing,
+            # tgz and npmrc files should be removed
             rm -f scriptlets.tgz
+            rm -f .npmrc
 
             # Set cache directory
             pnpm config set store-dir ${bamboo.cachePnpm}
