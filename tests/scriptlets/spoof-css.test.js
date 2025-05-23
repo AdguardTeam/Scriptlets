@@ -440,6 +440,68 @@ test('One selector and one property - getBoundingClientRect height', (assert) =>
     matchStyle.remove();
 });
 
+test('One selector and one property - check if "width" in getBoundingClientRect is set correctly', (assert) => {
+    const EXPECTED_WIDTH = 100;
+    const EXPECTED_VISIBILITY = 'hidden';
+    const matchClassName = 'testClassClientRect';
+
+    const matchElem = createElem(matchClassName);
+    const cssProperty = 'height: 100px !important; width: 100px !important; visibility: visible !important;';
+    const matchStyle = addStyle(`.${matchClassName} { ${cssProperty} }`);
+
+    const cssNameProperty = 'visibility';
+    const cssValueProperty = `${EXPECTED_VISIBILITY}`;
+
+    const scriptletArgs = [`.${matchClassName}`, cssNameProperty, cssValueProperty];
+    runScriptlet(name, scriptletArgs);
+
+    const boundingClientRect = matchElem.getBoundingClientRect();
+    const elStyleWidth = boundingClientRect.width;
+    const elStyleVisibility = window.getComputedStyle(matchElem).visibility;
+
+    assert.strictEqual(elStyleWidth, EXPECTED_WIDTH, `width is set to ${EXPECTED_WIDTH}`);
+    assert.strictEqual(elStyleVisibility, EXPECTED_VISIBILITY, `visibility is set to ${EXPECTED_VISIBILITY}`);
+    assert.strictEqual(window.hit, 'FIRED');
+
+    clearGlobalProps('hit');
+    matchElem.remove();
+    matchStyle.remove();
+});
+
+test('Two separated scriptlets - getBoundingClientRect - width and height', (assert) => {
+    const EXPECTED_HEIGHT = 7000;
+    const EXPECTED_WIDTH = 8000;
+    const matchClassName = 'testClassClientRect';
+
+    const matchElem = createElem(matchClassName);
+    const cssProperty = 'height: 100px !important; width: 100px !important;';
+    const matchStyle = addStyle(`.${matchClassName} { ${cssProperty} }`);
+
+    const cssNamePropertyOne = 'height';
+    const cssValuePropertyOne = `${EXPECTED_HEIGHT}`;
+
+    const scriptletArgsOne = [`.${matchClassName}`, cssNamePropertyOne, cssValuePropertyOne];
+    runScriptlet(name, scriptletArgsOne);
+
+    const cssNamePropertyTwo = 'width';
+    const cssValuePropertyTwo = `${EXPECTED_WIDTH}`;
+
+    const scriptletArgsTwo = [`.${matchClassName}`, cssNamePropertyTwo, cssValuePropertyTwo];
+    runScriptlet(name, scriptletArgsTwo);
+
+    const boundingClientRect = matchElem.getBoundingClientRect();
+    const elStyleHeight = boundingClientRect.height;
+    const elStyleWidth = boundingClientRect.width;
+
+    assert.strictEqual(elStyleHeight, EXPECTED_HEIGHT, `height is set to ${EXPECTED_HEIGHT}`);
+    assert.strictEqual(elStyleWidth, EXPECTED_WIDTH, `width is set to ${EXPECTED_WIDTH}`);
+    assert.strictEqual(window.hit, 'FIRED');
+
+    clearGlobalProps('hit');
+    matchElem.remove();
+    matchStyle.remove();
+});
+
 test('One selector and one property - getBoundingClientRect top', (assert) => {
     const EXPECTED_TOP = 2050;
     const matchClassName = 'testClassClientRect';

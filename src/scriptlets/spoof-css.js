@@ -201,15 +201,13 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
         }
 
         const {
-            top,
-            bottom,
+            x,
+            y,
             height,
             width,
-            left,
-            right,
         } = rect;
 
-        const newDOMRect = new window.DOMRect(rect.x, rect.y, top, bottom, width, height, left, right);
+        const newDOMRect = new window.DOMRect(x, y, width, height);
 
         if (propToValueMap.has('top')) {
             setRectValue(newDOMRect, 'top', propToValueMap.get('top'));
