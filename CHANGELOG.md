@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [v2.2.2] - 2025-05-23
+## [v2.2.4] - 2025-05-23
 
 ### Changed
 
@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `spoof-css` scriptlet — incorrect `DOMRect` setting [#498].
 
-[v2.2.2]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.1...v2.2.2
+[v2.2.4]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.1...v2.2.4
 [#498]: https://github.com/AdguardTeam/Scriptlets/issues/498
 
 ## [v2.2.1] - 2025-05-21

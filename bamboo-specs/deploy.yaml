@@ -50,9 +50,10 @@ npmjs: &npmjs
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
+          # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
+          selectedRepository: '26050988'
           # do not change commitMessage
           commitMessage: 'deploy: update docs for v${bamboo.inject.version}'
-          selectedRepository: defaultRepository
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
         configuration:
