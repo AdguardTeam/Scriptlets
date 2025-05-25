@@ -18,7 +18,7 @@ npmjs: &npmjs
   variables: &npmjs-variables
     publishArgs: --access public
     # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
-    selectedRepository: '26050988'
+    selectedRepository: 26050988
   triggers: [ ]
   tasks:
     - checkout:
