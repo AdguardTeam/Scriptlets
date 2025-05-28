@@ -19,6 +19,10 @@ export function isKeyInObject(baseObj: ChainBase, path: string, valueToCheck: an
      * @returns `true` if the path exists and matches the value (if provided), otherwise `false`.
      */
     const check = (targetObject: ChainBase, pathSegments: string[]): boolean => {
+        if (targetObject === undefined || targetObject === null) {
+            return false;
+        }
+
         if (pathSegments.length === 0) {
             if (valueToCheck !== undefined) {
                 if (typeof targetObject === 'string' && valueToCheck instanceof RegExp) {

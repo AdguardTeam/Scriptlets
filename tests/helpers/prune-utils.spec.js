@@ -957,4 +957,276 @@ describe('jsonPruner tests', () => {
 
         expect(result).toStrictEqual(expected);
     });
+
+    // eslint-disable-next-line max-len
+    test('Removes recommendation items with "adClickLog" containing "clickUrl" property when in other cases "adClickLog" is "null"', async () => {
+        const root = [
+            {
+                data: {
+                    poiRecommendations: {
+                        chips: null,
+                        recommendations: [
+                            {
+                                recommendType: 'similar',
+                                category: 'restaurant',
+                                items: [
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 2216,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '220m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 852,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: {
+                                            clickUrl: 'https://example.org/ad_click',
+                                        },
+                                        adDescription: null,
+                                        distance: '190m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 809,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '30m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                ],
+                                __typename: 'PoiRecommendation',
+                            },
+                            {
+                                recommendType: 'next',
+                                category: 'cafe',
+                                items: [
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 3564,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: 1,
+                                        adDescription: null,
+                                        distance: '2.7km',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 91,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: {
+                                            clickUrl: 'https://example.org/ad_click',
+                                        },
+                                        adDescription: null,
+                                        distance: '960m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 122,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '720m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 109,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '720m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                ],
+                                __typename: 'PoiRecommendation',
+                            },
+                        ],
+                        __typename: 'PoiRecommendationsResult',
+                    },
+                },
+            },
+        ];
+
+        const expected = [
+            {
+                data: {
+                    poiRecommendations: {
+                        chips: null,
+                        recommendations: [
+                            {
+                                recommendType: 'similar',
+                                category: 'restaurant',
+                                items: [
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 2216,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '220m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 809,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '30m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                ],
+                                __typename: 'PoiRecommendation',
+                            },
+                            {
+                                recommendType: 'next',
+                                category: 'cafe',
+                                items: [
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 3564,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: 1,
+                                        adDescription: null,
+                                        distance: '2.7km',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 122,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '720m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                    {
+                                        title: 'Test',
+                                        imageUrls: [
+                                            {
+                                                rank: 1,
+                                                url: 'https://example.org/image1.jpg',
+                                                __typename: 'RecommendationImageUrl',
+                                            },
+                                        ],
+                                        reviewCount: 109,
+                                        adId: null,
+                                        impressionEventUrl: null,
+                                        adClickLog: null,
+                                        adDescription: null,
+                                        distance: '720m',
+                                        __typename: 'RecommendationItem',
+                                    },
+                                ],
+                                __typename: 'PoiRecommendation',
+                            },
+                        ],
+                        __typename: 'PoiRecommendationsResult',
+                    },
+                },
+            },
+        ];
+
+        const pathToPrune = getPrunePath('[].data.poiRecommendations.recommendations.[].items.[-].adClickLog.clickUrl');
+        const requiredPaths = getPrunePath('');
+        const stack = '';
+        const result = jsonPruner(name, root, pathToPrune, requiredPaths, stack, nativeObjects);
+
+        expect(result).toStrictEqual(expected);
+    });
 });
