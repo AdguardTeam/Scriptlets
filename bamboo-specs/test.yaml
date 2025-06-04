@@ -17,11 +17,15 @@ stages:
   - Lint and test:
       <<: *stage
       jobs:
-        # FIXME: experiment with splitting 'Test' and 'Lint' jobs into separate jobs,
-        # e.g. 'pnpm test' -> 'pnpm test:qunit [scriptlets | redirects | helpers]' + 'pnpm test:vitest'
-        - Test
+        - Test vitest
+        - Test smoke
+        - Test scriptlets
+        - Test redirects
+        - Test helpers
         # lint should be run after building of docs and lib
-        - Lint
+        - Lint code
+        - Lint types
+        - Lint markdown
   - Cleanup:
       <<: *stage
       final: true
@@ -91,8 +95,8 @@ Build lib:
       required: true
   requirements: *requirements
 
-Test:
-  key: TEST
+Test vitest:
+  key: TESTVITEST
   docker: *docker
   tasks:
     - checkout:
@@ -102,10 +106,66 @@ Test:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm test
+            pnpm test:vitest
   requirements: *requirements
 
-Lint:
+Test smoke:
+  key: TESTSMOKE
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm test:smoke
+  requirements: *requirements
+
+Test scriptlets:
+  key: TESTSCRIPTLETS
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm test:qunit scriptlets
+  requirements: *requirements
+
+Test redirects:
+  key: TESTREDIRECTS
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm test:qunit redirects
+  requirements: *requirements
+
+Test helpers:
+  key: TESTHELPERS
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm test:qunit helpers
+  requirements: *requirements
+
+Lint code:
   key: LINT
   docker: *docker
   tasks:
@@ -116,7 +176,35 @@ Lint:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm lint
+            pnpm lint:code
+  requirements: *requirements
+
+Lint types:
+  key: LINTTYPES
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm lint:types
+  requirements: *requirements
+
+Lint markdown:
+  key: LINTMD
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm lint:md
   requirements: *requirements
 
 Cleanup:
