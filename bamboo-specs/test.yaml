@@ -14,7 +14,7 @@ stages:
       jobs:
         - Build docs
         - Build lib
-  - Lint:
+  - Lint and test:
       <<: *stage
       jobs:
         # FIXME: experiment with splitting 'Test' and 'Lint' jobs into separate jobs,
@@ -98,7 +98,8 @@ Test:
   key: TEST
   docker: *docker
   tasks:
-    - checkout
+    - checkout:
+        force-clean-build: true
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -111,7 +112,8 @@ Lint:
   key: LINT
   docker: *docker
   tasks:
-    - checkout
+    - checkout:
+        force-clean-build: true
     - script: *setup-script
     - script:
         interpreter: SHELL
