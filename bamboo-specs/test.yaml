@@ -21,9 +21,7 @@ stages:
         - Test smoke
         - Test qunit
         # lint should be run after building of docs and lib
-        - Lint code
-        - Lint types
-        - Lint markdown
+        - Lint
   - Cleanup:
       <<: *stage
       final: true
@@ -97,8 +95,7 @@ Test vitest:
   key: TESTVITEST
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: true
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -134,46 +131,17 @@ Test qunit:
             pnpm test:qunit
   requirements: *requirements
 
-Lint code:
+Lint:
   key: LINT
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: true
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm lint:code
-  requirements: *requirements
-
-Lint types:
-  key: LINTTYPES
-  docker: *docker
-  tasks:
-    - checkout:
-        force-clean-build: true
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            pnpm lint:types
-  requirements: *requirements
-
-Lint markdown:
-  key: LINTMD
-  docker: *docker
-  tasks:
-    - checkout:
-        force-clean-build: true
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            pnpm lint:md
+            pnpm lint
   requirements: *requirements
 
 Cleanup:
