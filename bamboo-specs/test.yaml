@@ -8,32 +8,49 @@ variables:
   dockerPuppeteer: adguard/puppeteer-runner:22.14--24.5--1
 
 stages:
-  - Build:
+  - Build: &stage
       manual: false
       final: false
       jobs:
-        - Build
+        - Build docs
+        - Build lib
+  - Lint:
+      <<: *stage
+      jobs:
+        # FIXME: experiment with splitting 'Test' and 'Lint' jobs into separate jobs,
+        # e.g. 'pnpm test' -> 'pnpm test:qunit [scriptlets | redirects | helpers]' + 'pnpm test:vitest'
+        - Test
+        # lint should be run after building of docs and lib
+        - Lint
+  - Cleanup:
+      <<: *stage
+      final: true
+      jobs:
+        - Cleanup
 
-Build:
-  key: BUILD
-  docker:
+Build docs:
+  key: BUILDDOCS
+  docker: &docker
     image: "${bamboo.dockerPuppeteer}"
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: true
-    - script:
+    - script: &setup-script
         interpreter: SHELL
         scripts:
           - |-
             set -e
             set -x
 
+            ls -laht
+
             # Fix mixed logs
             exec 2>&1
 
-            ls -laht
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
 
             # Exclude '--ignore-scripts' from pnpm arguments
             # since it prevents postinstall scripts from running
@@ -43,17 +60,71 @@ Build:
 
             # Install common dependencies
             pnpm install ${modifiedPnpmArgs}
-
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
             # build docs to lint them later
             # check compatibility table updates and build it and build wiki docs
             pnpm wiki
+  requirements: &requirements
+    - adg-docker: 'true'
+    - extension: 'true'
 
-            pnpm test
+Build lib:
+  key: BUILDLIB
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
             pnpm build
+  artifacts:
+    - name: scriptlets.corelibs.json
+      location: dist
+      pattern: scriptlets.corelibs.json
+      required: true
+    - name: redirects.json
+      location: dist
+      pattern: redirects.json
+      required: true
+  requirements: *requirements
 
-            # lint code and docs. it should be run after `pnpm build`
+Test:
+  key: TEST
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm test
+  requirements: *requirements
+
+Lint:
+  key: LINT
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
             pnpm lint
-  final-tasks:
+  requirements: *requirements
+
+Cleanup:
+  key: CLEAN
+  docker: *docker
+  tasks:
+    - checkout
     - script:
         interpreter: SHELL
         scripts:
@@ -69,17 +140,7 @@ Build:
             echo "Size before cleanup:" && du -h | tail -n 1
             rm -rf node_modules
             echo "Size after cleanup:" && du -h | tail -n 1
-  artifacts:
-    - name: scriptlets.corelibs.json
-      location: dist
-      pattern: scriptlets.corelibs.json
-      required: true
-    - name: redirects.json
-      location: dist
-      pattern: redirects.json
-      required: true
-  requirements:
-    - adg-docker: 'true'
+  requirements: *requirements
 
 branches:
   create: for-pull-request
