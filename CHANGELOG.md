@@ -10,16 +10,21 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.2.6] - 2025-06-04
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.2.1`.
 
 ### Fixed
 
 - `json-prune` scriptlet to properly handle `null` values
   while checking specified key in object [#504].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.4...HEAD
+[v2.2.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.4...v2.2.6
 [#504]: https://github.com/AdguardTeam/Scriptlets/issues/504
 
+<!-- v2.2.5 is the same as v2.2.4 -->
 ## [v2.2.4] - 2025-05-23
 
 ### Changed
