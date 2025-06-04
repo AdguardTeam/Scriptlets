@@ -57,16 +57,18 @@ npmjs: &npmjs
 
             pnpm wiki
     - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-        configuration:
-          selectedRepository: ${bamboo_selectedRepository}
-          # do not change commitMessage
-          commitMessage: 'deploy: update docs for v${bamboo.inject.version}'
-    - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
         configuration:
-          selectedRepository: ${bamboo_selectedRepository}
+          # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
+          selectedRepository: '26050988'
           tagName: v${bamboo.inject.version}
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          # This ID is visible on the page with linked repositories. Ask the admin to provide it to you.
+          selectedRepository: '26050988'
+          # do not change commitMessage
+          commitMessage: 'deploy: update docs for v${bamboo.inject.version}'
   requirements:
     - adg-docker: 'true'
   notifications:
