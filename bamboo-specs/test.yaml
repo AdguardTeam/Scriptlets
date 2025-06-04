@@ -19,9 +19,7 @@ stages:
       jobs:
         - Test vitest
         - Test smoke
-        - Test scriptlets
-        - Test redirects
-        - Test helpers
+        - Test qunit
         # lint should be run after building of docs and lib
         - Lint code
         - Lint types
@@ -123,8 +121,8 @@ Test smoke:
             pnpm test:smoke
   requirements: *requirements
 
-Test scriptlets:
-  key: TESTSCRIPTLETS
+Test qunit:
+  key: TESTQUNIT
   docker: *docker
   tasks:
     - checkout
@@ -133,33 +131,7 @@ Test scriptlets:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm test:qunit scriptlets
-  requirements: *requirements
-
-Test redirects:
-  key: TESTREDIRECTS
-  docker: *docker
-  tasks:
-    - checkout
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            pnpm test:qunit redirects
-  requirements: *requirements
-
-Test helpers:
-  key: TESTHELPERS
-  docker: *docker
-  tasks:
-    - checkout
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            pnpm test:qunit helpers
+            pnpm test:qunit
   requirements: *requirements
 
 Lint code:
