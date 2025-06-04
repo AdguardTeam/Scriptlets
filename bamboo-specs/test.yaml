@@ -49,9 +49,6 @@ Build docs:
             # Fix mixed logs
             exec 2>&1
 
-            # Set cache directory
-            pnpm config set store-dir ${bamboo.cachePnpm}
-
             # Exclude '--ignore-scripts' from pnpm arguments
             # since it prevents postinstall scripts from running
             # so Chrome is not installed which is crucial for tests
