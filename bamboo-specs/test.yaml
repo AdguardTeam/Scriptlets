@@ -17,9 +17,9 @@ stages:
   - Lint and test:
       <<: *stage
       jobs:
+        - Test qunit
         - Test vitest
         - Test smoke
-        - Test qunit
         # lint should be run after building of docs and lib
         - Lint
   - Cleanup:
@@ -91,6 +91,19 @@ Build lib:
       required: true
   requirements: *requirements
 
+Test qunit:
+  key: TESTQUNIT
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            pnpm test:qunit
+  requirements: *requirements
+
 Test vitest:
   key: TESTVITEST
   docker: *docker
@@ -116,19 +129,6 @@ Test smoke:
         scripts:
           - |-
             pnpm test:smoke
-  requirements: *requirements
-
-Test qunit:
-  key: TESTQUNIT
-  docker: *docker
-  tasks:
-    - checkout
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            pnpm test:qunit
   requirements: *requirements
 
 Lint:
