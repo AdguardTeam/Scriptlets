@@ -127,8 +127,7 @@ Test scriptlets:
   key: TESTSCRIPTLETS
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: true
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -141,8 +140,7 @@ Test redirects:
   key: TESTREDIRECTS
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: true
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -155,8 +153,7 @@ Test helpers:
   key: TESTHELPERS
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: true
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
