@@ -95,7 +95,8 @@ Test qunit:
   key: TESTQUNIT
   docker: *docker
   tasks:
-    - checkout
+    - checkout:
+        force-clean-build: true
     - script: *setup-script
     - script:
         interpreter: SHELL
