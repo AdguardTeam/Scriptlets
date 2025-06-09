@@ -11,6 +11,16 @@ const TEST_QUERY_MARKER = '?test';
 
 const PORT = 54136;
 
+/**
+ * Maximum file size for caching — 5MB.
+ */
+const MAX_CACHE_SIZE = 5 * 1024 * 1024;
+
+/**
+ * File cache to improve performance.
+ */
+const fileCache = new Map();
+
 const mimeTypes = {
     '.html': 'text/html',
     '.js': 'application/javascript',
@@ -38,33 +48,54 @@ const server = {
             }
 
             const fullPath = path.join(__dirname, 'dist', filename);
+            const contentType = getContentType(fullPath);
 
-            fs.stat(fullPath, (err, stats) => {
-                if (err) {
-                    console.log(err.message);
-                    res.writeHead(404);
-                    res.end(JSON.stringify(err));
-                    return;
-                }
+            // Check if file is cached and not a dynamic resource
+            if (fileCache.has(fullPath) && !filename.includes('?')) {
+                // Serve from cache
+                console.log(`Serving ${filename} from cache`);
+                res.writeHead(200, {
+                    'Content-Type': contentType,
+                    'Cache-Control': 'max-age=3600',
+                });
+                res.end(fileCache.get(fullPath));
+                return;
+            }
 
-                if (stats.isFile()) {
-                    // It's a file, serve it
-                    fs.readFile(fullPath, (err, data) => {
-                        if (err) {
-                            console.log(err.message);
-                            res.writeHead(500);
-                            res.end(JSON.stringify(err));
-                            return;
-                        }
-                        res.writeHead(200, { 'Content-Type': getContentType(fullPath) });
-                        res.end(data);
+            // Fast-path synchronous file check to avoid async overhead if we know the file exists
+            if (!fs.existsSync(fullPath)) {
+                res.writeHead(404);
+                res.end('File not found');
+                return;
+            }
+
+            const stats = fs.statSync(fullPath);
+
+            if (stats.isFile()) {
+                // It's a file, serve it
+                try {
+                    const data = fs.readFileSync(fullPath);
+
+                    // Cache the file if not too large
+                    if (stats.size < MAX_CACHE_SIZE) {
+                        fileCache.set(fullPath, data);
+                    }
+
+                    res.writeHead(200, {
+                        'Content-Type': contentType,
+                        'Cache-Control': 'max-age=3600',
                     });
-                } else {
-                    // Neither a file nor a directory
-                    res.writeHead(404);
-                    res.end();
+                    res.end(data);
+                } catch (err) {
+                    console.log(err.message);
+                    res.writeHead(500);
+                    res.end(JSON.stringify(err));
                 }
-            });
+            } else {
+                // Neither a file nor a directory
+                res.writeHead(404);
+                res.end('Not a file');
+            }
         });
     },
 };

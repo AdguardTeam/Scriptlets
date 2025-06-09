@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [v2.2.6] - 2025-06-04
+<!-- v2.2.6 is the same as v2.2.7 -->
+## [v2.2.7] - 2025-06-04
 
 ### Changed
 
@@ -21,7 +22,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `json-prune` scriptlet to properly handle `null` values
   while checking specified key in object [#504].
 
-[v2.2.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.4...v2.2.6
+[v2.2.7]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.4...v2.2.7
 [#504]: https://github.com/AdguardTeam/Scriptlets/issues/504
 
 <!-- v2.2.5 is the same as v2.2.4 -->
