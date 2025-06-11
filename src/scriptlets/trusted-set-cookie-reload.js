@@ -103,9 +103,16 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
         return;
     }
 
+    const timeKeywords = new Set([
+        '$now$',
+        '$currentDate$',
+        '$currentISODate$',
+    ]);
+    const isValueTimeKeyword = timeKeywords.has(value);
+
     // Prevent infinite reloads if cookie was already set or blocked by the browser
     // https://github.com/AdguardTeam/Scriptlets/issues/212
-    if (isCookieSetWithValue(document.cookie, name, value)) {
+    if (isCookieSetWithValue(document.cookie, name, value, isValueTimeKeyword)) {
         return;
     }
 
@@ -150,7 +157,7 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
 
     // Only reload the page if cookie was set
     // https://github.com/AdguardTeam/Scriptlets/issues/212
-    if (isCookieSetWithValue(document.cookie, name, cookieValueToCheck)) {
+    if (isCookieSetWithValue(document.cookie, name, cookieValueToCheck, isValueTimeKeyword)) {
         window.location.reload();
     }
 }

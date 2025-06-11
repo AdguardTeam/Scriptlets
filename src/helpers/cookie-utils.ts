@@ -199,9 +199,15 @@ export const parseCookieString = (cookieString: string): CookieData => {
  * @param cookieString 'document.cookie'-like string
  * @param name name argument of *set-cookie-* scriptlets
  * @param value value argument of *set-cookie-* scriptlets
+ * @param isValueTimeKeyword if value is a time keyword
  * @returns if cookie is already set
  */
-export const isCookieSetWithValue = (cookieString: string, name: string, value: string): boolean => {
+export const isCookieSetWithValue = (
+    cookieString: string,
+    name: string,
+    value: string,
+    isValueTimeKeyword: boolean = false,
+): boolean => {
     return cookieString.split(';')
         .some((cookieStr) => {
             const pos = cookieStr.indexOf('=');
@@ -210,6 +216,19 @@ export const isCookieSetWithValue = (cookieString: string, name: string, value: 
             }
             const cookieName = cookieStr.slice(0, pos).trim();
             const cookieValue = cookieStr.slice(pos + 1).trim();
+
+            if (isValueTimeKeyword) {
+                const oneDayMs = 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                // Convert cookie value to milliseconds
+                const cookieValueMs = /^\d+$/.test(cookieValue)
+                    ? parseInt(cookieValue, 10)
+                    : new Date(cookieValue).getTime();
+
+                // If cookie value is greater than now minus one day, return true,
+                // otherwise return false and new cookie should be set
+                return name === cookieName && cookieValueMs > now - oneDayMs;
+            }
 
             return name === cookieName && value === cookieValue;
         });
