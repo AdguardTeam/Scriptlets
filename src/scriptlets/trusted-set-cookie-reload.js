@@ -103,6 +103,7 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
         return;
     }
 
+    // If required, remember to sync new time keywords with the "parseKeywordValue" function
     const timeKeywords = new Set([
         '$now$',
         '$currentDate$',

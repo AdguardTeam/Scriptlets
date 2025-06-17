@@ -206,7 +206,7 @@ export const isCookieSetWithValue = (
     cookieString: string,
     name: string,
     value: string,
-    isValueTimeKeyword: boolean = false,
+    isValueTimeKeyword = false,
 ): boolean => {
     return cookieString.split(';')
         .some((cookieStr) => {
@@ -217,8 +217,11 @@ export const isCookieSetWithValue = (
             const cookieName = cookieStr.slice(0, pos).trim();
             const cookieValue = cookieStr.slice(pos + 1).trim();
 
+            // Prevent webpage reloading when cookie value is a time keyword
+            // https://github.com/AdguardTeam/Scriptlets/issues/489
             if (isValueTimeKeyword) {
-                const oneDayMs = 24 * 60 * 60 * 1000;
+                // The time after which the website will reload (1 day)
+                const ONE_DAY_MS = 24 * 60 * 60 * 1000;
                 const now = Date.now();
                 // Convert cookie value to milliseconds
                 const cookieValueMs = /^\d+$/.test(cookieValue)
@@ -227,7 +230,7 @@ export const isCookieSetWithValue = (
 
                 // If cookie value is greater than now minus one day, return true,
                 // otherwise return false and new cookie should be set
-                return name === cookieName && cookieValueMs > now - oneDayMs;
+                return name === cookieName && cookieValueMs > now - ONE_DAY_MS;
             }
 
             return name === cookieName && value === cookieValue;
