@@ -11,7 +11,7 @@
  */
 export const parseKeywordValue = (rawValue: string): string => {
     // !IMPORTANT: Do not move constants outside of this function
-    // Remember to add new keywords to "trusted-set-cookie-reload", if required
+    // Remember to add new keywords to "isCookieSetWithValue" function in "cookie-utils", if required
     // https://github.com/AdguardTeam/Scriptlets/issues/489
     const NOW_VALUE_KEYWORD = '$now$';
     const CURRENT_DATE_KEYWORD = '$currentDate$';
