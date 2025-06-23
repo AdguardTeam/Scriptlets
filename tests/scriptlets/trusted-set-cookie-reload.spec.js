@@ -84,6 +84,33 @@ describe('Test trusted-set-cookie-reload scriptlet', () => {
         clearCookie(cName);
     });
 
+    test('Set cookie with current ISO date value and reload', () => {
+        const cName = '__test-cookie_current_date_reload';
+        const cValue = '$currentISODate$';
+        const expiresSec = '';
+        const cPath = '/';
+
+        trustedSetCookieReload(sourceParams, cName, cValue, expiresSec, cPath);
+
+        // Some time will pass between calling scriptlet
+        // and jest running test
+        const cookieValue = parseCookieString(document.cookie)[cName];
+        // Check only day, month and year
+        const currentISODate = new Date().toISOString().split('T')[0];
+        const dateDiff = cookieValue.split('T')[0];
+
+        expect(dateDiff.startsWith(currentISODate)).toBeTruthy();
+        expect(document.cookie.includes(cName)).toBeTruthy();
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        expect(window.hit).toBe('FIRED');
+
+        // Run scriptlet again to check if reload is called
+        trustedSetCookieReload(sourceParams, cName, cValue, expiresSec, cPath);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        clearCookie(cName);
+    });
+
     test('Set cookie string', () => {
         const cName = '__test-cookie_OK';
         const cValue = 'OK';

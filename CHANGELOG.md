@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Fixed
+
+- `trusted-set-cookie-reload` scriptlet infinite page reloading when cookie with time keyword is used [#489].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.7...HEAD
+[#489]: https://github.com/AdguardTeam/Scriptlets/issues/489
+
 <!-- v2.2.6 is the same as v2.2.7 -->
 ## [v2.2.7] - 2025-06-04
 

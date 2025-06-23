@@ -201,7 +201,11 @@ export const parseCookieString = (cookieString: string): CookieData => {
  * @param value value argument of *set-cookie-* scriptlets
  * @returns if cookie is already set
  */
-export const isCookieSetWithValue = (cookieString: string, name: string, value: string): boolean => {
+export const isCookieSetWithValue = (
+    cookieString: string,
+    name: string,
+    value: string,
+): boolean => {
     return cookieString.split(';')
         .some((cookieStr) => {
             const pos = cookieStr.indexOf('=');
@@ -210,6 +214,30 @@ export const isCookieSetWithValue = (cookieString: string, name: string, value: 
             }
             const cookieName = cookieStr.slice(0, pos).trim();
             const cookieValue = cookieStr.slice(pos + 1).trim();
+
+            // If required, remember to sync new time keywords with the "parseKeywordValue" function
+            const timeKeywords = new Set([
+                '$now$',
+                '$currentDate$',
+                '$currentISODate$',
+            ]);
+            const isValueTimeKeyword = timeKeywords.has(value);
+
+            // Prevent webpage reloading when cookie value is a time keyword
+            // https://github.com/AdguardTeam/Scriptlets/issues/489
+            if (isValueTimeKeyword) {
+                // The time after which the website will reload (1 day)
+                const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                // Convert cookie value to milliseconds
+                const cookieValueMs = /^\d+$/.test(cookieValue)
+                    ? parseInt(cookieValue, 10)
+                    : new Date(cookieValue).getTime();
+
+                // If cookie value is greater than now minus one day, return true,
+                // otherwise return false and new cookie should be set
+                return name === cookieName && cookieValueMs > now - ONE_DAY_MS;
+            }
 
             return name === cookieName && value === cookieValue;
         });
