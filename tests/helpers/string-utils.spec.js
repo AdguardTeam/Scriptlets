@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { toRegExp, inferValue } from '../../src/helpers';
+import { toRegExp, inferValue, extractRegexAndReplacement } from '../../src/helpers';
 
 describe('Test string utils', () => {
     describe('Test toRegExp for valid inputs', () => {
@@ -209,5 +209,95 @@ describe('Test string utils', () => {
             expect(res instanceof RegExp).toBeTruthy();
             expect(res.toString()).toStrictEqual(actual);
         });
+    });
+
+    test('Test regex and replacement extraction using "extractRegexAndReplacement"', () => {
+        let inputStr;
+        let objeRegexAndReplacement;
+        let regex;
+        let replacement;
+        let expRegex;
+        let expReplacement;
+
+        // Single regex and replacement
+        inputStr = 'replace:/foo/bar/';
+        expRegex = /foo/;
+        expReplacement = 'bar';
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+        regex = objeRegexAndReplacement.regexPart;
+        replacement = objeRegexAndReplacement.replacementPart;
+
+        expect(regex).toStrictEqual(expRegex);
+        expect(replacement).toStrictEqual(expReplacement);
+
+        // Single regex and replacement with "g" flag
+        inputStr = 'replace:/foo/bar/g';
+        expRegex = /foo/g;
+        expReplacement = 'bar';
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+        regex = objeRegexAndReplacement.regexPart;
+        replacement = objeRegexAndReplacement.replacementPart;
+
+        expect(regex).toStrictEqual(expRegex);
+        expect(replacement).toStrictEqual(expReplacement);
+
+        // Slash escaped in regex part
+        inputStr = String.raw`replace:/foo\/test/bar/`;
+        expRegex = /foo\/test/;
+        expReplacement = 'bar';
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+        regex = objeRegexAndReplacement.regexPart;
+        replacement = objeRegexAndReplacement.replacementPart;
+
+        expect(regex).toStrictEqual(expRegex);
+        expect(replacement).toStrictEqual(expReplacement);
+
+        // Slash escaped in regex part and unescaped slashes in replacement part
+        inputStr = String.raw`replace:/foo\/ abc.*ads\/xyz/test/bar/`;
+        expRegex = /foo\/ abc.*ads\/xyz/;
+        expReplacement = 'test/bar';
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+        regex = objeRegexAndReplacement.regexPart;
+        replacement = objeRegexAndReplacement.replacementPart;
+
+        expect(regex).toStrictEqual(expRegex);
+        expect(replacement).toStrictEqual(expReplacement);
+
+        // Slash escaped in regex part and both escaped and unescaped slashes in replacement part
+        inputStr = String.raw`replace:/foo\/ abc.*ads\/xyz/test\/bar/abc/`;
+        expRegex = /foo\/ abc.*ads\/xyz/;
+        expReplacement = String.raw`test\/bar/abc`;
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+        regex = objeRegexAndReplacement.regexPart;
+        replacement = objeRegexAndReplacement.replacementPart;
+
+        expect(regex).toStrictEqual(expRegex);
+        expect(replacement).toStrictEqual(expReplacement);
+
+        // Invalid input without "replace:" prefix
+        inputStr = '/foo/bar/';
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+
+        expect(objeRegexAndReplacement).toStrictEqual(undefined);
+
+        // Invalid input without slash at the end
+        inputStr = 'replace:/a/bar';
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+
+        expect(objeRegexAndReplacement).toStrictEqual(undefined);
+
+        // Invalid input without slash at the beginning
+        inputStr = 'replace:qwerty/asdfg/';
+
+        objeRegexAndReplacement = extractRegexAndReplacement(inputStr);
+
+        expect(objeRegexAndReplacement).toStrictEqual(undefined);
     });
 });

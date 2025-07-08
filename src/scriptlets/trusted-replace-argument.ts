@@ -11,6 +11,7 @@ import {
     noopPromiseResolve,
     matchStackTrace,
     getPropertyInChain,
+    extractRegexAndReplacement,
     logMessage,
     toRegExp,
     getNativeRegexpTest,
@@ -143,99 +144,14 @@ export function trustedReplaceArgument(
     // and no other parameters are provided.
     const SHOULD_LOG_ONLY = verbose === 'true' && !argumentIndex && !argumentValue && !pattern && !stack;
 
-    const SLASH = '/';
     const REPLACE_MARKER = 'replace:';
 
     let constantValue;
     let replaceRegexValue: RegExp | string = '';
     let shouldReplaceArgument = false;
 
-    /**
-     * Parses a string in the format 'replace:/regex/replacement/' and extracts the regex and replacement parts.
-     *
-     * @param str - The argument value string to parse, expected to start with 'replace:' and be in the
-     *   format 'replace:/regex/replacement/'.
-     * @returns An object with the RegExp or string for the regex part and the replacement string,
-     *   or undefined if the format is invalid.
-     */
-    const getReplacementAndRegexValue = (
-        str: string,
-    ): { regexPart: RegExp | string; replacementPart: string } | undefined => {
-        let regexWithReplacement = str.slice(REPLACE_MARKER.length);
-        let regexFlags = '';
-
-        // Support for /g flag at the end
-        if (regexWithReplacement.endsWith('/g')) {
-            regexWithReplacement = regexWithReplacement.slice(0, -1);
-            regexFlags = 'g';
-        }
-
-        // Must start with a slash
-        if (!regexWithReplacement.startsWith('/')) {
-            logMessage(source, `Invalid argument value format: ${argumentValue}`);
-            return undefined;
-        }
-
-        // Must end with a slash
-        if (!regexWithReplacement.endsWith('/')) {
-            logMessage(source, `Invalid argument value format: ${argumentValue}`);
-            return undefined;
-        }
-
-        // Remove the leading and trailing slashes
-        const content = regexWithReplacement.slice(1, -1);
-
-        // Find the delimiter slash that separates regex from replacement
-        // We need to find the first unescaped slash
-        let delimiterIndex = -1;
-        for (let i = 0; i < content.length; i += 1) {
-            if (content[i] === '/') {
-                // Check if this slash is escaped by looking at preceding backslashes
-                let slashIsEscaped = false;
-                let backslashIndex = i - 1;
-                while (backslashIndex >= 0 && content[backslashIndex] === '\\') {
-                    slashIsEscaped = !slashIsEscaped;
-                    backslashIndex -= 1;
-                }
-                // If not escaped, this is our delimiter
-                if (!slashIsEscaped) {
-                    delimiterIndex = i;
-                    break;
-                }
-            }
-        }
-
-        if (delimiterIndex === -1) {
-            logMessage(source, `Invalid argument value format: ${argumentValue}`);
-            return undefined;
-        }
-
-        // Add slashes at the beginning and end of the regex part
-        // and add the flag if it was found
-        const regex = `${SLASH}${content.slice(0, delimiterIndex)}${SLASH}${regexFlags}`;
-        const replacement = content.slice(delimiterIndex + 1);
-
-        if (!regex) {
-            logMessage(source, `Empty regex in argument value: ${argumentValue}`);
-            return undefined;
-        }
-
-        replaceRegexValue = toRegExp(regex);
-        if (!replaceRegexValue) {
-            logMessage(source, `Invalid regex in argument value: ${argumentValue}`);
-            return undefined;
-        }
-
-        const objReplacementWithRegex = {
-            regexPart: replaceRegexValue,
-            replacementPart: replacement,
-        };
-
-        return objReplacementWithRegex;
-    };
-
     if (argumentValue.startsWith(REPLACE_MARKER)) {
-        const replacementRegexPair = getReplacementAndRegexValue(argumentValue);
+        const replacementRegexPair = extractRegexAndReplacement(argumentValue);
         if (!replacementRegexPair) {
             logMessage(source, `Invalid argument value format: ${argumentValue}`);
             return;
@@ -470,6 +386,7 @@ trustedReplaceArgument.injections = [
     noopPromiseResolve,
     matchStackTrace,
     getPropertyInChain,
+    extractRegexAndReplacement,
     logMessage,
     // following helpers are needed for helpers above
     toRegExp,
