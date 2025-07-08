@@ -10,13 +10,21 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.2.8] - 2025-07-08
+
+### Added
+
+- UBO aliases `ubo-nobab`, `nobab`, and `bab-defuser` for `prevent-bab` AdGuard scriptlet.
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.2.2`.
 
 ### Fixed
 
 - `trusted-set-cookie-reload` scriptlet infinite page reloading when cookie with time keyword is used [#489].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.7...HEAD
+[v2.2.8]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...HEAD
 [#489]: https://github.com/AdguardTeam/Scriptlets/issues/489
 
 <!-- v2.2.6 is the same as v2.2.7 -->
