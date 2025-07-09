@@ -500,13 +500,8 @@ export const extractRegexAndReplacement = (
         regexFlags = 'g';
     }
 
-    // Must start with a slash
-    if (!regexWithReplacement.startsWith('/')) {
-        return undefined;
-    }
-
-    // Must end with a slash
-    if (!regexWithReplacement.endsWith('/')) {
+    // Must start and end with a slash
+    if (!regexWithReplacement.startsWith('/') || !regexWithReplacement.endsWith('/')) {
         return undefined;
     }
 

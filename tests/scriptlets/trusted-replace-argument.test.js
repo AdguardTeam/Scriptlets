@@ -11,6 +11,7 @@ const nativeJSONParse = window.JSON.parse;
 const nativeDocumentQuerySelector = window.document.querySelector;
 const nativeDocumentQuerySelectorAll = window.document.querySelectorAll;
 const nativeMutationObserver = window.MutationObserver;
+const nativeObjectDefineProperty = window.Object.defineProperty;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -27,6 +28,7 @@ const afterEach = () => {
     window.document.querySelector = nativeDocumentQuerySelector;
     window.document.querySelectorAll = nativeDocumentQuerySelectorAll;
     window.MutationObserver = nativeMutationObserver;
+    window.Object.defineProperty = nativeObjectDefineProperty;
 };
 
 module(name, { beforeEach, afterEach });
@@ -224,4 +226,19 @@ test('Replace argument in MutationObserver constructor to "noopFunc" if pattern 
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     }, 100);
+});
+
+test('Replace argument in Object.defineProperty if pattern matches, test for "json:"', (assert) => {
+    const expected = 'disabled';
+    const objectIntact = {};
+    const objectToReplace = {};
+
+    runScriptlet(name, ['Object.defineProperty', '2', 'json:{"value": "disabled"}', 'enabled']);
+
+    Object.defineProperty(objectIntact, 'foo', { value: 'bar' });
+    Object.defineProperty(objectToReplace, 'adblock', { value: 'enabled' });
+
+    assert.strictEqual(objectIntact.foo, 'bar', "The property 'foo' should be 'bar'");
+    assert.strictEqual(objectToReplace.adblock, expected, `"The property 'adblock' should be '${expected}'`);
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });

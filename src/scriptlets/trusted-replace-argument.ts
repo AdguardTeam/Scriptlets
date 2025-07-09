@@ -44,8 +44,10 @@ import { type Source } from './scriptlets';
  *
  * - `methodPath` – required, string path to a native method (joined with `.` if needed). The property must be attached to `window`.
  * - `argumentIndex` – required, string index of the argument to replace (0-based).
- * - `argumentValue` – required, string value to set for the argument. If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`.
+ * - `argumentValue` – required, string value to set for the argument.
+ *   If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`.
  *   To replace all occurrences of a pattern, the replacement string must include the global flag `g`, like this: `replace:/foo/bar/g`, otherwise only the first occurrence will be replaced.
+ *   If it starts with `json:`, it is treated as a JSON string to parse and set for the argument.
  *   If it does not start with `replace:`, it is treated as a constant value to set for the argument or one of the predefined constants:
  *     - `undefined`
  *     - `false`
@@ -116,6 +118,18 @@ import { type Source } from './scriptlets';
  *     }
  *     ```
  *
+ * 1. Replace the second argument of `Object.defineProperty` with a JSON object `{"value": "disabled"}` if the pattern matches:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-argument', 'Object.defineProperty', '2', 'json:{"value": "disabled"}', 'enabled')
+ *     ```
+ *
+ *     For instance, `window.adblock` property for the following call will return `"disabled"`:
+ *
+ *     ```html
+ *     Object.defineProperty(window, 'adblock', { value: 'enabled' });
+ *     ```
+ *
  * <!-- markdownlint-enable line-length -->
  *
  * @added unknown.
@@ -131,8 +145,8 @@ export function trustedReplaceArgument(
     stack = '',
     verbose = 'false',
 ) {
-    // If verbose is 'false', require methodPath, argumentIndex, and argumentValue.
-    // If verbose is 'true', require at least methodPath. It's only used for logging.
+    // If verbose is 'false', methodPath, argumentIndex, and argumentValue are required.
+    // If verbose is 'true', only methodPath is required. It's only used for logging.
     if (
         ((!methodPath || !argumentIndex || !argumentValue) && verbose === 'false')
         || (!methodPath && verbose === 'true')
@@ -144,13 +158,16 @@ export function trustedReplaceArgument(
     // and no other parameters are provided.
     const SHOULD_LOG_ONLY = verbose === 'true' && !argumentIndex && !argumentValue && !pattern && !stack;
 
-    const REPLACE_MARKER = 'replace:';
+    const MARKERS = {
+        JSON: 'json:',
+        REPLACE: 'replace:',
+    };
 
     let constantValue;
     let replaceRegexValue: RegExp | string = '';
     let shouldReplaceArgument = false;
 
-    if (argumentValue.startsWith(REPLACE_MARKER)) {
+    if (argumentValue.startsWith(MARKERS.REPLACE)) {
         const replacementRegexPair = extractRegexAndReplacement(argumentValue);
         if (!replacementRegexPair) {
             logMessage(source, `Invalid argument value format: ${argumentValue}`);
@@ -159,6 +176,13 @@ export function trustedReplaceArgument(
         replaceRegexValue = replacementRegexPair.regexPart;
         constantValue = replacementRegexPair.replacementPart;
         shouldReplaceArgument = true;
+    } else if (argumentValue.startsWith(MARKERS.JSON)) {
+        try {
+            constantValue = JSON.parse(argumentValue.slice(MARKERS.JSON.length));
+        } catch (error) {
+            logMessage(source, `Invalid JSON argument value: ${argumentValue}`);
+            return;
+        }
     } else {
         const emptyArr = noopArray();
         const emptyObj = noopObject();
@@ -219,6 +243,18 @@ export function trustedReplaceArgument(
     }
 
     /**
+     * Converts an object to a JSON string, converting functions to their string representation.
+     * Required in case if object contains functions, as JSON.stringify does not handle them.
+     * For example `{ foo: () => 'bar' }` will be stringified as `{}` by default.
+     *
+     * @param obj - The object to stringify.
+     * @returns The JSON string representation of the object, with functions stringified.
+     */
+    const stringifyObject = (obj: unknown) => {
+        return JSON.stringify(obj, (key, value) => (typeof value === 'function' ? value.toString() : value));
+    };
+
+    /**
      * Formats the provided arguments into a readable string for logging purposes.
      *
      * @param args - The array of arguments to format.
@@ -226,6 +262,14 @@ export function trustedReplaceArgument(
      */
     const createFormattedMessage = (args: unknown[], when = '') => {
         const formattedArgs = args.map((arg, index) => {
+            if (typeof arg === 'object' && arg !== null) {
+                try {
+                    return `${index}: ${stringifyObject(arg)} // Object converted to string`;
+                } catch (e) {
+                    // If JSON.stringify fails, fall back to String conversion
+                    return `${index}: ${String(arg)} // Object conversion failed`;
+                }
+            }
             return `${index}: ${String(arg)}`;
         });
         const modifiedOrOriginal = when === 'modified' ? 'modified' : 'original';
@@ -245,6 +289,16 @@ export function trustedReplaceArgument(
         }
 
         if (pattern) {
+            if (typeof arg === 'object' && arg !== null) {
+                // If the argument is an object, convert it to a string for pattern matching.
+                try {
+                    const argString = stringifyObject(arg);
+                    return !!argString && toRegExp(pattern).test(argString);
+                } catch (error) {
+                    logMessage(source, `Failed to stringify argument: ${arg}\nError: ${error}`);
+                }
+            }
+
             const argumentContent = String(arg);
             return !!argumentContent && toRegExp(pattern).test(argumentContent);
         }
