@@ -47,8 +47,8 @@ import { type Source } from './scriptlets';
  * - `argumentValue` – required, string value to set for the argument.
  *   If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`.
  *   To replace all occurrences of a pattern, the replacement string must include the global flag `g`, like this: `replace:/foo/bar/g`, otherwise only the first occurrence will be replaced.
- *   If it starts with `json:`, it is treated as a JSON string to parse and set for the argument.
- *   If it does not start with `replace:`, it is treated as a constant value to set for the argument or one of the predefined constants:
+ *   If it starts with `json:`, it is treated as a JSON string to parse and set for the argument. For example, `json:{"key": "value"}` will set the argument to an object `{ key: 'value' }`.
+ *   If it does not start with `replace:` and `json:`, it is treated as a constant value to set for the argument or one of the predefined constants:
  *     - `undefined`
  *     - `false`
  *     - `true`
