@@ -28,7 +28,8 @@ import { type Source } from './scriptlets';
  * @trustedScriptlet trusted-replace-argument
  *
  * @description
- * Replaces a specific argument of a native method with a constant value or a value derived from a regular expression replacement.
+ * Replaces a specific argument of a native method with a constant value, JSON parsed value
+ * or a value derived from a regular expression replacement.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/ublock/wiki/Resources-Library#trusted-replace-argumentjs-
@@ -118,7 +119,7 @@ import { type Source } from './scriptlets';
  *     }
  *     ```
  *
- * 1. Replace the second argument of `Object.defineProperty` with a JSON object `{"value": "disabled"}` if the pattern matches:
+ * 1. Replace the third argument of `Object.defineProperty` with a JSON object `{"value": "disabled"}` if the pattern matches:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-replace-argument', 'Object.defineProperty', '2', 'json:{"value": "disabled"}', 'enabled')
@@ -128,6 +129,23 @@ import { type Source } from './scriptlets';
  *
  *     ```html
  *     Object.defineProperty(window, 'adblock', { value: 'enabled' });
+ *     ```
+ *
+ * 1. Replace first argument of `MutationObserver` with `noopFunc` if the pattern matches:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-argument', 'MutationObserver', '0', 'noopFunc', 'Adblock')
+ *     ```
+ *
+ *     For instance, `callback` function for the following call will be replaced with `noopFunc`:
+ *
+ *     ```html
+ *     const callback = () => {
+ *         if(adblock) {
+ *            document.body.innerHTML = 'Adblock detected';
+ *         }
+ *     };
+ *     const observerToPrevent = new MutationObserver(callback);
  *     ```
  *
  * <!-- markdownlint-enable line-length -->
