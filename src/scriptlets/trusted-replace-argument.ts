@@ -258,9 +258,11 @@ export function trustedReplaceArgument(
      * Formats the provided arguments into a readable string for logging purposes.
      *
      * @param args - The array of arguments to format.
+     * @param when - Optional. Indicates if the arguments are 'original' or 'modified'.
+     *               Defaults to 'original'. Use 'modified' to indicate arguments where modified after replacement.
      * @returns A string representation of the arguments, including their indices and string values.
      */
-    const createFormattedMessage = (args: unknown[], when = '') => {
+    const createFormattedMessage = (args: unknown[], when = 'original') => {
         const formattedArgs = args.map((arg, index) => {
             if (typeof arg === 'object' && arg !== null) {
                 try {
@@ -272,7 +274,7 @@ export function trustedReplaceArgument(
             }
             return `${index}: ${String(arg)}`;
         });
-        const modifiedOrOriginal = when === 'modified' ? 'modified' : 'original';
+        const modifiedOrOriginal = when === 'modified' ? 'modified' : when;
         const message = `${methodPath} ${modifiedOrOriginal} arguments:\n${formattedArgs.join(',\n')}`;
         return message;
     };
