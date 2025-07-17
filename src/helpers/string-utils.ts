@@ -537,11 +537,17 @@ export const extractRegexAndReplacement = (
     const regex = `${SLASH}${content.slice(0, delimiterIndex)}${SLASH}${regexFlags}`;
     const replacement = content.slice(delimiterIndex + 1);
 
-    if (!regex) {
+    // If the regex part is empty, return undefined
+    if (!regex || regex === '//') {
         return undefined;
     }
 
-    const replaceRegexValue = toRegExp(regex);
+    let replaceRegexValue;
+    try {
+        replaceRegexValue = toRegExp(regex);
+    } catch (error) {
+        return undefined;
+    }
     if (!replaceRegexValue) {
         return undefined;
     }
