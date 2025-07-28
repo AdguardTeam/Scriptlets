@@ -131,15 +131,20 @@ export function preventElementSrcLoading(source, tagName, match) {
                 return true;
             }
 
-            // eslint-disable-next-line no-undef
-            if (policy && urlValue instanceof TrustedScriptURL) {
-                const trustedSrc = policy.createScriptURL(urlValue);
-                origSrcDescriptor.set.call(this, trustedSrc);
-                hit(source);
-                return;
+            let mockData = srcMockData[nodeName];
+
+            // If setting value is TrustedScriptURL - we also should set TrustedScriptURL to not violate trusted types
+            if (
+                typeof TrustedScriptURL !== 'undefined'
+                && policy?.isSupported
+                // eslint-disable-next-line no-undef
+                && urlValue instanceof TrustedScriptURL
+            ) {
+                mockData = policy.createScriptURL(mockData);
             }
+
             setMatchedAttribute(this);
-            origSrcDescriptor.set.call(this, srcMockData[nodeName]);
+            origSrcDescriptor.set.call(this, mockData);
             hit(source);
         },
     });
