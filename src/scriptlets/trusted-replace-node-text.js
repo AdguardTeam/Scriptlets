@@ -99,12 +99,22 @@ import {
  */
 /* eslint-enable max-len */
 export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, replacement, ...extraArgs) {
+    // Remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
+    // https://github.com/AdguardTeam/Scriptlets/issues/440
+    const fixedPattern = pattern
+        .replace(/\\'/g, "'")
+        .replace(/\\"/g, '"');
+
+    const fixedReplacement = replacement
+        .replace(/\\'/g, "'")
+        .replace(/\\"/g, '"');
+
     const {
         selector,
         nodeNameMatch,
         textContentMatch,
         patternMatch,
-    } = parseNodeTextParams(nodeName, textMatch, pattern);
+    } = parseNodeTextParams(nodeName, textMatch, fixedPattern);
 
     const shouldLog = extraArgs.includes('verbose');
 
@@ -130,7 +140,7 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
                     logMessage(source, `Original text content: ${originalText}`);
                 }
             }
-            replaceNodeText(source, node, patternMatch, replacement);
+            replaceNodeText(source, node, patternMatch, fixedReplacement);
             if (shouldLog) {
                 const modifiedText = node.textContent;
                 if (modifiedText) {
