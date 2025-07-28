@@ -14,8 +14,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- issue with incorrectly escaped quotes in `trusted-replace-node-text` scriptlet [#517].
-- issue with `TrustedScriptURL` in `prevent-element-src-loading` scriptlet [#514].
+- Incorrectly escaped quotes in `trusted-replace-node-text` scriptlet [#517].
+- `TrustedScriptURL` in `prevent-element-src-loading` scriptlet [#514].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...HEAD
 [#514]: https://github.com/AdguardTeam/Scriptlets/issues/514
