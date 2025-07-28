@@ -102,6 +102,9 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
     // Remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
     // https://github.com/AdguardTeam/Scriptlets/issues/440
     const fixQuotes = (str) => {
+        if (typeof str !== 'string') {
+            return str;
+        }
         return str
             .replace(/\\'/g, "'")
             .replace(/\\"/g, '"');
