@@ -101,13 +101,14 @@ import {
 export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, replacement, ...extraArgs) {
     // Remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
     // https://github.com/AdguardTeam/Scriptlets/issues/440
-    const fixedPattern = pattern
-        .replace(/\\'/g, "'")
-        .replace(/\\"/g, '"');
+    const fixQuotes = (str) => {
+        return str
+            .replace(/\\'/g, "'")
+            .replace(/\\"/g, '"');
+    };
 
-    const fixedReplacement = replacement
-        .replace(/\\'/g, "'")
-        .replace(/\\"/g, '"');
+    const fixedPattern = fixQuotes(pattern);
+    const fixedReplacement = fixQuotes(replacement);
 
     const {
         selector,
