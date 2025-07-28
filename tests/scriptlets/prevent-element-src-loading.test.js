@@ -4,6 +4,8 @@ import { runScriptlet, clearGlobalProps } from '../helpers';
 const { test, module } = QUnit;
 const name = 'prevent-element-src-loading';
 
+const nativeTrustedScriptURL = window.TrustedScriptURL;
+
 const beforeEach = () => {
     window.__debug = () => {
         window.hit = 'FIRED';
@@ -14,6 +16,7 @@ const afterEach = () => {
     if (window.elem) {
         window.elem.remove();
     }
+    window.TrustedScriptURL = nativeTrustedScriptURL;
     clearGlobalProps('hit', '__debug', 'elem', 'scriptLoaded', 'scriptBlocked');
 };
 
@@ -25,14 +28,21 @@ const ONERROR_PROP = 'onerrorProp';
 const ERROR_LISTENER = 'addErrorListener';
 
 // Create tag using combination of different methods
-const createTestTag = (assert, nodeName, url, srcMethod, onerrorMethod) => {
+const createTestTag = (assert, nodeName, url, srcMethod, onerrorMethod, useTrustedTypes = false) => {
     const done = assert.async();
     const node = document.createElement(nodeName);
+
+    let policy;
+    if (useTrustedTypes && window.trustedTypes) {
+        policy = window.trustedTypes.createPolicy('default', {
+            createScriptURL: (url) => url,
+        });
+    }
 
     // Set url with .src or .setAttribute
     switch (srcMethod) {
         case SET_SRC_PROP: {
-            node.src = url;
+            node.src = policy ? policy.createScriptURL(url) : url;
             break;
         }
         case SET_SRC_ATTRIBUTE: {
@@ -423,4 +433,38 @@ test('onerror inline, do not match source', (assert) => {
     // onerror event should be fired
     // and window.hit should not be fired
     onErrorTestTag(assert, SOURCE_PATH, testPassed, shouldLoad);
+});
+
+test('src prop, matching script element (no TrustedScriptURL)', (assert) => {
+    window.TrustedScriptURL = undefined; // Simulate no TrustedScriptURL support
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+    const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
+    runScriptlet(name, scriptletArgs);
+
+    var elem = createTestTag(
+        assert,
+        SCRIPT_TARGET_NODE,
+        SOURCE_PATH,
+        SET_SRC_PROP,
+        ONERROR_PROP,
+    );
+    assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('src prop, matching script element TrustedTypes', (assert) => {
+    const SOURCE_PATH = `${TEST_FILES_DIR}${TEST_SCRIPT01_FILENAME}`;
+    const scriptletArgs = [SCRIPT_TARGET_NODE, TEST_SCRIPT01_FILENAME];
+    runScriptlet(name, scriptletArgs);
+
+    var elem = createTestTag(
+        assert,
+        SCRIPT_TARGET_NODE,
+        SOURCE_PATH,
+        SET_SRC_PROP,
+        ONERROR_PROP,
+        true,
+    );
+    assert.strictEqual(elem.src, srcMockData[SCRIPT_TARGET_NODE], 'src was mocked');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
