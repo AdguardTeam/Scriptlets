@@ -72,7 +72,35 @@ test('simple case', (assert) => {
     }, 1);
 });
 
-test('simple case - check if quotes are correctly escaped', (assert) => {
+test('simple case - should not throw error when pattern and replacement are not provided', (assert) => {
+    const done = assert.async();
+
+    const nodeName = 'div';
+    const textMatch = 'qwerty!';
+
+    const text = 'qwerty!1';
+    const expectedText = 'qwerty!1';
+
+    const nodeBefore = addNode('div', text);
+    const safeNodeBefore = addNode('a', text);
+
+    runScriptlet(name, [nodeName, textMatch]);
+
+    const nodeAfter = addNode('div', text);
+    const safeNodeAfter = addNode('span', text);
+    setTimeout(() => {
+        assert.strictEqual(nodeAfter.textContent, expectedText, 'text content should not be modified');
+        assert.strictEqual(nodeBefore.textContent, expectedText, 'text content should not be modified');
+
+        assert.strictEqual(safeNodeAfter.textContent, text, 'non-matched node should not be affected');
+        assert.strictEqual(safeNodeBefore.textContent, text, 'non-matched node should not be affected');
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+        done();
+    }, 1);
+});
+
+test('simple case - check if quotes are correctly escaped in pattern and replacement', (assert) => {
     const done = assert.async();
 
     const nodeName = 'div';
@@ -81,6 +109,35 @@ test('simple case - check if quotes are correctly escaped', (assert) => {
     const replacement = 'alert(\\\'replaced\\\')';
     const text = "alert('test')";
     const expectedText = "alert('replaced')";
+
+    const nodeBefore = addNode('div', text);
+    const safeNodeBefore = addNode('a', text);
+
+    runScriptlet(name, [nodeName, textMatch, pattern, replacement]);
+
+    const nodeAfter = addNode('div', text);
+    const safeNodeAfter = addNode('span', text);
+    setTimeout(() => {
+        assert.strictEqual(nodeAfter.textContent, expectedText, 'text content should be modified');
+        assert.strictEqual(nodeBefore.textContent, expectedText, 'text content should be modified');
+
+        assert.strictEqual(safeNodeAfter.textContent, text, 'non-matched node should not be affected');
+        assert.strictEqual(safeNodeBefore.textContent, text, 'non-matched node should not be affected');
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+        done();
+    }, 1);
+});
+
+test('simple case - check if quotes are correctly escaped in result', (assert) => {
+    const done = assert.async();
+
+    const nodeName = 'div';
+    const textMatch = 'alert';
+    const pattern = 'foo';
+    const replacement = 'bar';
+    const text = 'alert("\\"foo\\"")';
+    const expectedText = 'alert("\\"bar\\"")';
 
     const nodeBefore = addNode('div', text);
     const safeNodeBefore = addNode('a', text);
