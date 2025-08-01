@@ -19,7 +19,9 @@ export async function attachDependencies(scriptlet: Scriptlet | Redirect): Promi
         try {
             const depStr = dep.toString();
             const result = await minify(depStr, {
-                compress: true,
+                compress: {
+                    drop_debugger: false,
+                },
                 mangle: {
                     // injection functions should be accessible by the same name
                     // so we preserve their names
