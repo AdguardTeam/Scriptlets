@@ -470,3 +470,92 @@ export function inferValue(value: string): unknown {
 
     throw new TypeError(errorMessage);
 }
+
+/**
+ * Parses a string in the format 'replace:/regex/replacement/' and extracts the regex and replacement parts.
+ *
+ * @param str - The argument value string to parse, expected to start with 'replace:' and be in the
+ *   format 'replace:/regex/replacement/'.
+ *   To perform a global replacement, append the 'g' flag at the end, e.g. 'replace:/foo/bar/g'.
+ *   The 'g' flag will be included in the resulting RegExp.
+ * @returns An object with the RegExp or string for the regex part and the replacement string,
+ *   or undefined if the format is invalid.
+ */
+export const extractRegexAndReplacement = (
+    str: string,
+): { regexPart: RegExp | string; replacementPart: string } | undefined => {
+    if (!str) {
+        return undefined;
+    }
+
+    const SLASH = '/';
+    const REPLACE_MARKER = 'replace:';
+
+    let regexWithReplacement = str.slice(REPLACE_MARKER.length);
+    let regexFlags = '';
+
+    // Support for /g flag at the end
+    if (regexWithReplacement.endsWith('/g')) {
+        regexWithReplacement = regexWithReplacement.slice(0, -1);
+        regexFlags = 'g';
+    }
+
+    // Must start and end with a slash
+    if (!regexWithReplacement.startsWith('/') || !regexWithReplacement.endsWith('/')) {
+        return undefined;
+    }
+
+    // Remove the leading and trailing slashes
+    const content = regexWithReplacement.slice(1, -1);
+
+    // Find the delimiter slash that separates regex from replacement
+    // We need to find the first unescaped slash
+    let delimiterIndex = -1;
+    for (let i = 0; i < content.length; i += 1) {
+        if (content[i] === '/') {
+            // Check if this slash is escaped by looking at preceding backslashes
+            let slashIsEscaped = false;
+            let backslashIndex = i - 1;
+            while (backslashIndex >= 0 && content[backslashIndex] === '\\') {
+                slashIsEscaped = !slashIsEscaped;
+                backslashIndex -= 1;
+            }
+            // If not escaped, this is our delimiter
+            if (!slashIsEscaped) {
+                delimiterIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (delimiterIndex === -1) {
+        return undefined;
+    }
+
+    // Add slashes at the beginning and end of the regex part
+    // and add the flag if it was found
+    const regex = `${SLASH}${content.slice(0, delimiterIndex)}${SLASH}${regexFlags}`;
+    const replacement = content.slice(delimiterIndex + 1);
+
+    // If the regex part is empty, return undefined
+    if (!regex || regex === '//') {
+        return undefined;
+    }
+
+    let replaceRegexValue;
+    try {
+        replaceRegexValue = toRegExp(regex);
+    } catch (error) {
+        return undefined;
+    }
+    if (!replaceRegexValue) {
+        return undefined;
+    }
+
+    const objReplacementWithRegex = {
+        regexPart: replaceRegexValue,
+        replacementPart: replacement,
+    };
+
+    return objReplacementWithRegex;
+};

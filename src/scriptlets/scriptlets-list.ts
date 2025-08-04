@@ -74,6 +74,7 @@ export { jsonPruneXhrResponse } from './json-prune-xhr-response';
 export { trustedDispatchEvent } from './trusted-dispatch-event';
 export { trustedReplaceOutboundText } from './trusted-replace-outbound-text';
 export { preventCanvas } from './prevent-canvas';
+export { trustedReplaceArgument } from './trusted-replace-argument';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
 export { AmazonApstag } from './amazon-apstag';

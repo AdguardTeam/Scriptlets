@@ -12,12 +12,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- `trusted-replace-argument` scriptlet [#405].
+
 ### Fixed
 
 - Incorrectly escaped quotes in `trusted-replace-node-text` scriptlet [#517].
 - `TrustedScriptURL` in `prevent-element-src-loading` scriptlet [#514].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...HEAD
+[#405]: https://github.com/AdguardTeam/Scriptlets/issues/405
 [#514]: https://github.com/AdguardTeam/Scriptlets/issues/514
 [#517]: https://github.com/AdguardTeam/Scriptlets/issues/517
 

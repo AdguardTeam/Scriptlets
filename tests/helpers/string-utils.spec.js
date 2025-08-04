@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { toRegExp, inferValue } from '../../src/helpers';
+import { toRegExp, inferValue, extractRegexAndReplacement } from '../../src/helpers';
 
 describe('Test string utils', () => {
     describe('Test toRegExp for valid inputs', () => {
@@ -208,6 +208,202 @@ describe('Test string utils', () => {
             expect(res).toStrictEqual(expected);
             expect(res instanceof RegExp).toBeTruthy();
             expect(res.toString()).toStrictEqual(actual);
+        });
+    });
+
+    describe('Test regex and replacement extraction using "extractRegexAndReplacement"', () => {
+        test('Single regex and replacement', () => {
+            const inputStr = 'replace:/foo/bar/';
+            const expRegex = /foo/;
+            const expReplacement = 'bar';
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+            const regex = objRegexAndReplacement.regexPart;
+            const replacement = objRegexAndReplacement.replacementPart;
+
+            expect(regex).toStrictEqual(expRegex);
+            expect(replacement).toStrictEqual(expReplacement);
+        });
+
+        test('Single regex and replacement with "g" flag', () => {
+            const inputStr = 'replace:/foo/bar/g';
+            const expRegex = /foo/g;
+            const expReplacement = 'bar';
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+            const regex = objRegexAndReplacement.regexPart;
+            const replacement = objRegexAndReplacement.replacementPart;
+
+            expect(regex).toStrictEqual(expRegex);
+            expect(replacement).toStrictEqual(expReplacement);
+        });
+
+        test('Single regex and replacement with escaped slashes', () => {
+            const inputStr = String.raw`replace:/foo\/test/bar/`;
+            const expRegex = /foo\/test/;
+            const expReplacement = 'bar';
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+            const regex = objRegexAndReplacement.regexPart;
+            const replacement = objRegexAndReplacement.replacementPart;
+
+            expect(regex).toStrictEqual(expRegex);
+            expect(replacement).toStrictEqual(expReplacement);
+        });
+
+        test('Slash escaped in regex part and unescaped slashes in replacement part', () => {
+            const inputStr = String.raw`replace:/foo\/ abc.*ads\/xyz/test/bar/`;
+            const expRegex = /foo\/ abc.*ads\/xyz/;
+            const expReplacement = 'test/bar';
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+            const regex = objRegexAndReplacement.regexPart;
+            const replacement = objRegexAndReplacement.replacementPart;
+
+            expect(regex).toStrictEqual(expRegex);
+            expect(replacement).toStrictEqual(expReplacement);
+        });
+
+        test('Slash escaped in regex part and both escaped and unescaped slashes in replacement part', () => {
+            const inputStr = String.raw`replace:/foo\/ abc.*ads\/xyz/test\/bar/abc/`;
+            const expRegex = /foo\/ abc.*ads\/xyz/;
+            const expReplacement = String.raw`test\/bar/abc`;
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+            const regex = objRegexAndReplacement.regexPart;
+            const replacement = objRegexAndReplacement.replacementPart;
+
+            expect(regex).toStrictEqual(expRegex);
+            expect(replacement).toStrictEqual(expReplacement);
+        });
+
+        test('Invalid input without "replace:" prefix', () => {
+            const inputStr = '/foo/bar/';
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+
+            expect(objRegexAndReplacement).toStrictEqual(undefined);
+        });
+
+        test('Invalid input without slash at the end', () => {
+            const inputStr = 'replace:/a/bar';
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+
+            expect(objRegexAndReplacement).toStrictEqual(undefined);
+        });
+
+        test('Invalid input without slash at the beginning', () => {
+            const inputStr = 'replace:qwerty/asdfg/';
+
+            const objRegexAndReplacement = extractRegexAndReplacement(inputStr);
+
+            expect(objRegexAndReplacement).toStrictEqual(undefined);
+        });
+
+        test('Test for null/undefined/empty inputs', () => {
+            expect(extractRegexAndReplacement(null)).toBeUndefined();
+            expect(extractRegexAndReplacement(undefined)).toBeUndefined();
+            expect(extractRegexAndReplacement('')).toBeUndefined();
+        });
+
+        test('Edge cases with replace: prefix', () => {
+            // Only prefix
+            expect(extractRegexAndReplacement('replace:')).toBeUndefined();
+
+            // Empty regex and replacement
+            expect(extractRegexAndReplacement('replace://')).toBeUndefined();
+
+            // Empty regex
+            expect(extractRegexAndReplacement('replace://bar/')).toBeUndefined();
+
+            // Empty replacement
+            const result = extractRegexAndReplacement('replace:/foo//');
+            expect(result.regexPart).toStrictEqual(/foo/);
+            expect(result.replacementPart).toBe('');
+        });
+
+        test('Should handle no unescaped delimiter slash', () => {
+            // All slashes are escaped
+            expect(extractRegexAndReplacement('replace:/foo\\/bar\\//g')).toBeUndefined();
+
+            // No slash separator found
+            expect(extractRegexAndReplacement('replace:/nodelimiter/')).toBeUndefined();
+        });
+
+        test('Test invalid regex patterns', () => {
+            // Invalid regex - unmatched bracket
+            expect(extractRegexAndReplacement('replace:/[/bar/')).toBeUndefined();
+
+            // Invalid regex - unmatched parenthesis
+            expect(extractRegexAndReplacement('replace:/(/bar/')).toBeUndefined();
+
+            // Invalid regex - incomplete character class
+            expect(extractRegexAndReplacement('replace:/[a-/bar/')).toBeUndefined();
+        });
+
+        test('Test complex backslash escape scenarios', () => {
+            // Multiple consecutive backslashes before slash
+            const result1 = extractRegexAndReplacement(String.raw`replace:/foo\\\\/bar/`);
+            expect(result1.regexPart).toStrictEqual(/foo\\\\/);
+            expect(result1.replacementPart).toBe('bar');
+
+            // Complex escaping patterns
+            // "foo\\\\\\" is a regex part
+            // first "/" is a slash delimiter
+            // "/bar" is the replacement part
+            const result2 = extractRegexAndReplacement(String.raw`replace:/foo\\\\\\//bar/`);
+            expect(result2.regexPart).toStrictEqual(/foo\\\\\\/);
+            expect(result2.replacementPart).toBe('/bar');
+
+            // Even number of backslashes (unescaped slash)
+            const result3 = extractRegexAndReplacement(String.raw`replace:/foo\\\\/bar/test/`);
+            expect(result3.regexPart).toStrictEqual(/foo\\\\/);
+            expect(result3.replacementPart).toBe('bar/test');
+        });
+
+        test('Test complex escaping patterns', () => {
+            // "foo\\\/\\\/\/" is a regex part
+            // first not escaped "/" is a slash delimiter
+            // "/bar/test/abc" is the replacement part
+            const result = extractRegexAndReplacement(String.raw`replace:/foo\\\/\\\/\///bar/test\/abc/`);
+            expect(result.regexPart).toStrictEqual(/foo\\\/\\\/\//);
+            expect(result.replacementPart).toBe('/bar/test\\/abc');
+        });
+
+        test('Test unsupported regex flags', () => {
+            // i flag should be unsupported
+            expect(extractRegexAndReplacement('replace:/foo/bar/i')).toBeUndefined();
+
+            // gi flags should be unsupported
+            expect(extractRegexAndReplacement('replace:/foo/bar/gi')).toBeUndefined();
+
+            // m flag should be unsupported
+            expect(extractRegexAndReplacement('replace:/foo/bar/m')).toBeUndefined();
+        });
+
+        test('Test edge cases with whitespace', () => {
+            // Whitespace in regex
+            const result1 = extractRegexAndReplacement('replace:/foo bar/baz/');
+            expect(result1.regexPart).toStrictEqual(/foo bar/);
+            expect(result1.replacementPart).toBe('baz');
+
+            // Whitespace in replacement
+            const result2 = extractRegexAndReplacement('replace:/foo/bar baz/');
+            expect(result2.regexPart).toStrictEqual(/foo/);
+            expect(result2.replacementPart).toBe('bar baz');
+        });
+
+        test('Test special characters in replacement', () => {
+            // Dollar signs in replacement
+            const result1 = extractRegexAndReplacement('replace:/foo/$1 $2/');
+            expect(result1.regexPart).toStrictEqual(/foo/);
+            expect(result1.replacementPart).toBe('$1 $2');
+
+            // Backslashes in replacement
+            const result2 = extractRegexAndReplacement('replace:/foo/bar\\n/');
+            expect(result2.regexPart).toStrictEqual(/foo/);
+            expect(result2.replacementPart).toBe('bar\\n');
         });
     });
 });
