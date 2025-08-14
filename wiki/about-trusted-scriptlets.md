@@ -442,7 +442,7 @@ example.org#%#//scriptlet('trusted-prune-inbound-object', functionName[, propsTo
 
 ## <a id="trusted-replace-argument"></a> ⚡️ trusted-replace-argument
 
-> Added in unknown.
+> Added in v2.2.9.
 
 Replaces a specific argument of a native method with a constant value, JSON parsed value
 or a value derived from a regular expression replacement.

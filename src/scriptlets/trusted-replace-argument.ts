@@ -150,7 +150,7 @@ import { type Source } from './scriptlets';
  *
  * <!-- markdownlint-enable line-length -->
  *
- * @added unknown.
+ * @added v2.2.9.
  */
 /* eslint-enable max-len */
 
