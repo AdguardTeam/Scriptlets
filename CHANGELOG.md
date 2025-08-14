@@ -20,11 +20,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Incorrectly escaped quotes in `trusted-replace-node-text` scriptlet [#517].
 - `TrustedScriptURL` in `prevent-element-src-loading` scriptlet [#514].
+- Fix scriptlets compilation error in Safari 15 due to unsupported regex lookbehind [#519].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...HEAD
 [#405]: https://github.com/AdguardTeam/Scriptlets/issues/405
 [#514]: https://github.com/AdguardTeam/Scriptlets/issues/514
 [#517]: https://github.com/AdguardTeam/Scriptlets/issues/517
+[#519]: https://github.com/AdguardTeam/Scriptlets/issues/519
 
 ## [v2.2.8] - 2025-07-08
 

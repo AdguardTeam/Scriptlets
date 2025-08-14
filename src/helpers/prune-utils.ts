@@ -197,11 +197,97 @@ export const getPrunePath = (props: unknown) => {
         && props !== '';
 
     if (validPropsString) {
-        // Regular expression to split the properties string by spaces,
-        // but it should not split if there is space inside value, like in:
-        // 'foo.[=]./foo bar baz/ bar' or 'foo.[=]./foo bar \/ baz/ bar'
-        const splitRegexp = /(?<!\.\[=\]\.\/(?:[^/]|\\.)*)\s+/;
-        const parts = props.split(splitRegexp).map((part) => {
+        /**
+         * Safari 15 does not support lookbehind, so we need to use a custom splitter.
+         *
+         * Legacy approach (for engines with lookbehind) that this replaces:
+         *
+         *   // Regular expression to split the properties string by spaces,
+         *   // but it should not split if there is space inside value, like in:
+         *   // 'foo.[=]./foo bar baz/ bar' or 'foo.[=]./foo bar \/ baz/ bar'
+         *   // const splitRegexp = /(?<!\.\[=\]\.\/(?:[^/]|\\.)*)\s+/;
+         *
+         * @param str splitted string
+         * @returns array of parts
+         */
+        // We ignore the rule here because we need to define the function inside the function,
+        // so that we do not have to import it additionally from the scriptlets,
+        // also we need to use the VALUE_MARKER variable.
+        // eslint-disable-next-line no-inner-declarations
+        function splitProps(str: string) {
+            const parts: string[] = [];
+            let current = '';
+            let i = 0;
+            let insideRegex = false;
+            let escapeActive = false;
+
+            while (i < str.length) {
+                const ch = str[i];
+
+                if (!insideRegex) {
+                    // split on whitespace (treat runs of whitespace as a single separator)
+                    if (
+                        ch === ' '
+                        || ch === '\n'
+                        || ch === '\t'
+                        || ch === '\r'
+                        || ch === '\f'
+                        || ch === '\v'
+                    ) {
+                        // skip consecutive whitespace
+                        while (i < str.length && /\s/.test(str[i])) {
+                            i += 1;
+                        }
+                        if (current !== '') {
+                            parts.push(current);
+                            current = '';
+                        }
+                        continue;
+                    }
+
+                    // detect VALUE_MARKER followed by '/'
+                    if (str.startsWith(VALUE_MARKER, i)) {
+                        current += VALUE_MARKER;
+                        i += VALUE_MARKER.length;
+                        if (str[i] === '/') {
+                            // enter regex mode and consume opening '/'
+                            insideRegex = true;
+                            escapeActive = false;
+                            current += '/';
+                            i += 1;
+                            continue;
+                        }
+                        // no regex begins; continue as normal
+                        continue;
+                    }
+
+                    current += ch;
+                    i += 1;
+                    continue;
+                }
+
+                // inside regex body: copy until we hit an unescaped '/'
+                current += ch;
+                if (ch === '\\') {
+                    escapeActive = !escapeActive;
+                } else if (ch === '/' && !escapeActive) {
+                    insideRegex = false;
+                    escapeActive = false;
+                } else {
+                    escapeActive = false;
+                }
+                i += 1;
+            }
+
+            if (current !== '') {
+                parts.push(current);
+            }
+
+            return parts;
+        }
+
+        const rawParts = splitProps(props);
+        const parts = rawParts.map((part) => {
             const splitPart = part.split(VALUE_MARKER);
             const path = splitPart[0];
             let value = splitPart[1] as any;
