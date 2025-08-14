@@ -4,6 +4,7 @@
 - [trusted-create-element](#trusted-create-element)
 - [trusted-dispatch-event](#trusted-dispatch-event)
 - [trusted-prune-inbound-object](#trusted-prune-inbound-object)
+- [trusted-replace-argument](#trusted-replace-argument)
 - [trusted-replace-fetch-response](#trusted-replace-fetch-response)
 - [trusted-replace-node-text](#trusted-replace-node-text)
 - [trusted-replace-outbound-text](#trusted-replace-outbound-text)
@@ -436,6 +437,136 @@ example.org#%#//scriptlet('trusted-prune-inbound-object', functionName[, propsTo
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-prune-inbound-object.js)
+
+* * *
+
+## <a id="trusted-replace-argument"></a> ⚡️ trusted-replace-argument
+
+> Added in unknown.
+
+Replaces a specific argument of a native method with a constant value, JSON parsed value
+or a value derived from a regular expression replacement.
+
+Related UBO scriptlet:
+https://github.com/gorhill/ublock/wiki/Resources-Library#trusted-replace-argumentjs-
+
+### Syntax
+
+<!-- markdownlint-disable line-length -->
+
+```text
+example.org#%#//scriptlet('trusted-replace-argument', methodPath, [argumentIndex, [argumentValue[, pattern[, stack[, verbose]]]]])
+```
+
+
+- `methodPath` – required, string path to a native method (joined with `.` if needed). The property must be attached to `window`.
+- `argumentIndex` – required, string index of the argument to replace (0-based).
+- `argumentValue` – required, string value to set for the argument.
+  If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`.
+  To replace all occurrences of a pattern, the replacement string must include the global flag `g`, like this: `replace:/foo/bar/g`, otherwise only the first occurrence will be replaced.
+  If it starts with `json:`, it is treated as a JSON string to parse and set for the argument. For example, `json:{"key": "value"}` will set the argument to an object `{ key: 'value' }`.
+  If it does not start with `replace:` or `json:`, it is treated as a constant value to set for the argument, or as one of the following predefined constants:
+    - `undefined`
+    - `false`
+    - `true`
+    - `null`
+    - `emptyObj` — empty object
+    - `emptyArr` — empty array
+    - `noopFunc` — function with empty body
+    - `noopCallbackFunc` — function returning noopFunc
+    - `trueFunc` — function returning true
+    - `falseFunc` — function returning false
+    - `throwFunc` — function throwing an error
+    - `noopPromiseResolve` — function returning Promise object that is resolved with an empty response
+    - `noopPromiseReject` — function returning Promise.reject()
+- `pattern` – optional, string or regular expression pattern to match the argument against. If provided, the argument will only be replaced if it matches this pattern.
+- `stack` — optional, string or regular expression that must match the current function call stack trace.
+- `verbose` — optional, string, if set to `'true'`, logs the method arguments. Defaults to `'false'`.
+   It may be useful for debugging but it is not allowed for prod versions of filter lists.
+
+
+### Examples
+
+1. Set the first argument of `eval` with a constant value `"Replacement"` if the pattern matches:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-argument', 'eval', '0', '"Replacement"', 'Foo bar')
+    ```
+
+    For instance, the following call will return `"Replacement"`:
+
+    ```html
+    eval('"Foo bar"');
+    ```
+
+1. Replace the part `foo` of the first argument of `eval` with a `bar` value if the pattern matches:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-argument', 'eval', '0', 'replace:/foo/bar/', 'Text content foo')
+    ```
+
+    For instance, the following call will return `"Text content bar"`:
+
+    ```html
+    eval('"Text content foo"');
+    ```
+
+1. Replace all occurrences of the first argument of `JSON.parse` with a constant value `"no_ads"` if the pattern matches:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-argument', 'JSON.parse', '0', 'replace:/ads/no_ads/g', 'ads')
+    ```
+
+    For instance, the following call:
+
+    ```html
+    const jsonString = '{ "ads1": 1, "ads2": 2, "content": "fooBar", "ads3": 3 }';
+    const result = JSON.parse(jsonString);
+    ```
+
+    will return the object:
+
+    ```json
+    {
+        no_ads1: 1,
+        no_ads2: 2,
+        content: 'fooBar',
+        no_ads3: 3
+    }
+    ```
+
+1. Replace the third argument of `Object.defineProperty` with a JSON object `{"value": "disabled"}` if the pattern matches:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-argument', 'Object.defineProperty', '2', 'json:{"value": "disabled"}', 'enabled')
+    ```
+
+    For instance, `window.adblock` property for the following call will return `"disabled"`:
+
+    ```html
+    Object.defineProperty(window, 'adblock', { value: 'enabled' });
+    ```
+
+1. Replace first argument of `MutationObserver` with `noopFunc` if the pattern matches:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-replace-argument', 'MutationObserver', '0', 'noopFunc', 'Adblock')
+    ```
+
+    For instance, `callback` function for the following call will be replaced with `noopFunc`:
+
+    ```html
+    const callback = () => {
+        if(adblock) {
+           document.body.innerHTML = 'Adblock detected';
+        }
+    };
+    const observerToPrevent = new MutationObserver(callback);
+    ```
+
+<!-- markdownlint-enable line-length -->
+
+[Scriptlet source](../src/scriptlets/trusted-replace-argument.ts)
 
 * * *
 
