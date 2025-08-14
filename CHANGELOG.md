@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.2.9] - 2025-08-14
 
 ### Added
 
@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `TrustedScriptURL` in `prevent-element-src-loading` scriptlet [#514].
 - Fix scriptlets compilation error in Safari 15 due to unsupported regex lookbehind [#519].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...HEAD
+[v2.2.9]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...v2.2.9
 [#405]: https://github.com/AdguardTeam/Scriptlets/issues/405
 [#514]: https://github.com/AdguardTeam/Scriptlets/issues/514
 [#517]: https://github.com/AdguardTeam/Scriptlets/issues/517

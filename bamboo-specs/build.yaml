@@ -5,7 +5,7 @@ plan:
   key: SCRIPTLETSBUILD
   name: scriptlets - build
 variables:
-  dockerContainer: adguard/node-ssh:22.14--0
+  dockerContainer: adguard/node-ssh:22.17--0
 
 stages:
   - Build:
