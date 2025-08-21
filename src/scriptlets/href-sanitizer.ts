@@ -32,6 +32,7 @@ import { type Source } from './scriptlets';
  *     - `?<parameter-name>` copy the value from URL parameter `parameter-name` of the same element's `href` attribute.
  * - `transform` — optional, defaults to no transforming. Possible values:
  *     - `base64decode` — decode the base64 string from specified attribute.
+ *       `-base64` can be used as an alias.
  *     - `removeHash` — remove the hash from the URL.
  *     - `removeParam[:<parameters>]` — remove the specified parameters from the URL,
  *       where `<parameters>` is a comma-separated list of parameter names;
@@ -183,7 +184,10 @@ export function hrefSanitizer(
     }
 
     // transform markers
-    const BASE64_DECODE_TRANSFORM_MARKER = 'base64decode';
+    const BASE64_DECODE_TRANSFORM_MARKER = new Set([
+        'base64decode',
+        '-base64',
+    ]);
     const REMOVE_HASH_TRANSFORM_MARKER = 'removeHash';
     const REMOVE_PARAM_TRANSFORM_MARKER = 'removeParam';
     // separator markers
@@ -510,7 +514,7 @@ export function hrefSanitizer(
                 // apply transform if specified
                 if (transform) {
                     switch (true) {
-                        case transform === BASE64_DECODE_TRANSFORM_MARKER:
+                        case BASE64_DECODE_TRANSFORM_MARKER.has(transform):
                             newHref = base64Decode(newHref);
                             break;
                         case transform === REMOVE_HASH_TRANSFORM_MARKER:

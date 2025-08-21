@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- `-base64` as an alias of `base64decode` in `href-sanitizer` scriptlet [#493].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.9...HEAD
+[#493]: https://github.com/AdguardTeam/Scriptlets/issues/493
+
 ## [v2.2.9] - 2025-08-14
 
 ### Added

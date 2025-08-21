@@ -214,6 +214,18 @@ test('Sanitize href - base64 where link decoded in object in search query ', (as
     assert.strictEqual(window.hit, 'FIRED');
 });
 
+test('Sanitize href - decode base64 string in href attribute - test for alias "-base64"', (assert) => {
+    const expectedHref = 'http://example.com/?v=123';
+    const hrefWithBase64 = 'http://www.foo.com/out/?aHR0cDovL2V4YW1wbGUuY29tLz92PTEyMw==';
+    const elem = createElem(hrefWithBase64);
+    const selector = 'a[href*="out/?"]';
+    const scriptletArgs = [selector, '[href]', '-base64'];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized and base64 was decoded');
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
 test('Sanitize href - text content', (assert) => {
     const expectedHref = 'https://example.org/';
     const elem = createElem('https://example.com/foo?redirect=https%3A%2F%2Fexample.org%2F', expectedHref);
