@@ -131,6 +131,14 @@ function getScriptletCode(source: Source): string {
 
     const scriptletFunctionString = scriptletFunction.toString();
 
+    /**
+     * `corelibs` (and `test`) environments expect a function definition
+     * that they will invoke later with their own injection mechanism,
+     * so we wrap the scriptlet in an anonymous function that accepts parameters — source and args.
+     *
+     * `extension` environment need the scriptlet to execute immediately upon injection,
+     * so we wrap it in an IIFE with the source configuration and arguments passed directly.
+     */
     const result = source.engine === 'corelibs' || source.engine === 'test'
         ? wrapInNonameFunc(scriptletFunctionString)
         : passSourceAndProps(source, scriptletFunctionString);
