@@ -914,6 +914,7 @@ example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
     - `?<parameter-name>` copy the value from URL parameter `parameter-name` of the same element's `href` attribute.
 - `transform` — optional, defaults to no transforming. Possible values:
     - `base64decode` — decode the base64 string from specified attribute.
+      `-base64` can be used as an alias.
     - `removeHash` — remove the hash from the URL.
     - `removeParam[:<parameters>]` — remove the specified parameters from the URL,
       where `<parameters>` is a comma-separated list of parameter names;
