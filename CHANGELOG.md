@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [v2.2.11] - 2025-10-17
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.2.4`.
+
+[v2.2.11]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.10...v2.2.11
+
 ## [v2.2.10] - 2025-09-11
 
 ### Added
