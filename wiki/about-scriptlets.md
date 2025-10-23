@@ -903,7 +903,7 @@ https://github.com/uBlockOrigin/uBlock-issues/wiki/Resources-Library#href-saniti
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
+example.org#%#//scriptlet('href-sanitizer', selector[, attribute[, transform]])
 ```
 
 - `selector` — required, a CSS selector to match the elements to be sanitized,
@@ -1059,38 +1059,38 @@ example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
 
 > Added in v1.8.2.
 
-Injects CSS rule into selected Shadow DOM subtrees on a page
+Injects CSS rule into selected Shadow DOM subtrees on a page.
 
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
+example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector[, cssInjectionMethod]])
 ```
 
-- `cssRule` — required, string representing a single css rule
+- `cssRule` — required, string representing a single CSS rule.
 - `hostSelector` — optional, string, selector to match shadow host elements.
   CSS rule will be only applied to shadow roots inside these elements.
-  Defaults to injecting css rule into all available roots.
-- `cssInjectionMethod` — optional, string, method to inject css rule into shadow dom.
+  Defaults to injecting CSS rule into all available roots.
+- `cssInjectionMethod` — optional, string, method to inject CSS rule into shadow dom.
   Available methods are:
     - `adoptedStyleSheets` — injects the CSS rule using adopted style sheets (default option).
     - `styleTag` — injects the CSS rule using a `style` tag.
 
 ### Examples
 
-1. Apply style to all shadow dom subtrees
+1. Apply style to all shadow DOM subtrees:
 
     ```adblock
     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
     ```
 
-1. Apply style to a specific shadow dom subtree
+1. Apply style to a specific shadow DOM subtree:
 
     ```adblock
     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '#banner')
     ```
 
-1. Apply style to all shadow dom subtrees using style tag
+1. Apply style to all shadow DOM subtrees using style tag:
 
    ```adblock
    example.org#%#//scriptlet('inject-css-in-shadow-dom', '.ads { display: none !important; }', '', 'styleTag')
@@ -1115,31 +1115,31 @@ https://github.com/gorhill/uBlock/commit/749cec0f095f659d6c0b90eb89b729e9deb07c8
 example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
 ```
 
-- `propsToRemove` — optional, string of space-separated properties to remove
+- `propsToRemove` — optional, string of space-separated properties to remove.
 - `obligatoryProps` — optional, string of space-separated properties
-  which must be all present for the pruning to occur
+  which must be all present for the pruning to occur.
 - `propsToMatch` — optional, string of space-separated properties to match; possible props:
-    - string or regular expression for matching the URL passed to fetch call;
-      empty string, wildcard `*` or invalid regular expression will match all fetch calls
-    - colon-separated pairs `name:value` where
+    - String or regular expression for matching the URL passed to fetch call;
+      empty string, wildcard `*` or invalid regular expression will match all fetch calls.
+    - Colon-separated pairs `name:value` where:
         <!-- markdownlint-disable-next-line line-length -->
-        - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+        - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters).
         - `value` is string or regular expression for matching the value of the option passed to fetch call;
-          invalid regular expression will cause any value matching
+          invalid regular expression will cause any value matching.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
-  if regular expression is invalid it will be skipped
+  if regular expression is invalid it will be skipped.
 
 > Note please that you can use wildcard `*` for chain property name,
 > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
 
-> Usage with with only propsToMatch argument will log fetch calls to browser console.
-> It may be useful for debugging but it is not allowed for prod versions of filter lists.
+> Usage with only propsToMatch argument will log fetch calls to browser console.
+> It may be useful for debugging, but it is not allowed for prod versions of filter lists.
 
 > Scriptlet does nothing if response body can't be converted to JSON.
 
 ### Examples
 
-1. Removes property `example` from the JSON response of any fetch call
+1. Removes property `example` from the JSON response of any fetch call:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'example')
@@ -1157,31 +1157,31 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
     {one: 1}
     ```
 
-2. A property in a list of properties can be a chain of properties
+2. A property in a list of properties can be a chain of properties:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'a.b', 'ads.url.first')
     ```
 
-3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`
+3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', 'content.json')
     ```
 
-4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`
+4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', '', 'test.js')
     ```
 
-5. A property in a list of properties can be a chain of properties with wildcard in it
+5. A property in a list of properties can be a chain of properties with wildcard in it:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.*.media.src', 'content.*.media.ad')
     ```
 
-6. Log all JSON responses of a fetch call
+6. Log all JSON responses of a fetch call:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response')
