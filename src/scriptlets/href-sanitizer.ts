@@ -21,7 +21,7 @@ import { type Source } from './scriptlets';
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
+ * example.org#%#//scriptlet('href-sanitizer', selector[, attribute[, transform]])
  * ```
  *
  * - `selector` — required, a CSS selector to match the elements to be sanitized,
@@ -39,7 +39,7 @@ import { type Source } from './scriptlets';
  *       if no parameter is specified, remove all parameters.
  *
  * > Note that in the case where the discovered value does not correspond to a valid URL with the appropriate
- * > http or https protocols, the value will not be set.
+ * > HTTP or HTTPS protocols, the value will not be set.
  *
  * ### Examples
  *
