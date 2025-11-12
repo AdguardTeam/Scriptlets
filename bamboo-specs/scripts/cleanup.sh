@@ -20,12 +20,11 @@ echo "Top 5 files:" && du -h | sort -hr | head -n 5
 ARTIFACTS_ARG="${1:-}"
 if [ -z "$ARTIFACTS_ARG" ]; then
   echo "No artifacts specified, cleaning entire workspace (preserving .git)"
-  ARTIFACTS=".git"
+  ARTIFACTS=""
 else
-  # Convert comma-separated string to space-separated and always preserve .git
+  # Convert comma-separated string to space-separated
   ARTIFACTS=$(echo "$ARTIFACTS_ARG" | tr ',' ' ')
-  ARTIFACTS=".git $ARTIFACTS"
-  echo "Preserving artifacts: $ARTIFACTS"
+  echo "Preserving artifacts: $ARTIFACTS (+ .git)"
 fi
 
 TMP="$(mktemp -d)"
@@ -39,8 +38,9 @@ for f in $ARTIFACTS; do
   mv "$f" "$TMP/$f"
 done
 
-# Clean entire workspace (including dotfiles and .git)
-find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+# Clean entire workspace:
+# including dotfiles, but excluding .git since it is needed for postbuild script
+find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf -- {} +
 
 # Restore artifacts
 for f in $ARTIFACTS; do
