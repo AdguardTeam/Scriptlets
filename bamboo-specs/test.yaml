@@ -82,20 +82,18 @@ Build lib:
             pnpm build
   artifacts:
     - name: scriptlets.corelibs.json
-      location: dist
+      location: artifacts
       pattern: scriptlets.corelibs.json
-      shared: true
       required: true
     - name: redirects.json
-      location: dist
+      location: artifacts
       pattern: redirects.json
-      shared: true
       required: true
   final-tasks:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh scriptlets.corelibs.json redirects.json"
+          - "./bamboo-specs/scripts/cleanup.sh artifacts/scriptlets.corelibs.json artifacts/redirects.json"
   requirements: *requirements
 
 Test qunit:
