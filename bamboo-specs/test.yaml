@@ -147,6 +147,9 @@ Lint:
   key: LINT
   docker: *docker
   tasks:
+    - artifact-download:
+        artifacts:
+          - name: redirects.json
     - checkout
     - script: *setup-script
     - script:
