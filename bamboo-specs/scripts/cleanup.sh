@@ -38,9 +38,8 @@ for f in $ARTIFACTS; do
   mv "$f" "$TMP/$f"
 done
 
-# Clean entire workspace:
-# including dotfiles, but excluding .git since it is needed for postbuild script
-find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf -- {} +
+# Clean entire workspace (including dotfiles and .git)
+find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 
 # Restore artifacts
 for f in $ARTIFACTS; do
