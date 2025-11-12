@@ -182,3 +182,4 @@
 |  | outbrain-widget.js |  |
 |  | noeval.js |  |
 |  | noop-0.5s.mp3 |  |
+|  | sensors-analytics.js |  |
