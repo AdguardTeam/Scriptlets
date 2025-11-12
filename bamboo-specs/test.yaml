@@ -22,11 +22,6 @@ stages:
         - Test smoke
         # lint should be run after building of docs and lib
         - Lint
-  - Cleanup:
-      <<: *stage
-      final: true
-      jobs:
-        - Cleanup
 
 Build docs:
   key: BUILDDOCS
@@ -64,6 +59,11 @@ Build docs:
             # build docs to lint them later
             # check compatibility table updates and build it and build wiki docs
             pnpm wiki
+  final-tasks:
+    - script: &cleanup-script
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh"
   requirements: &requirements
     - adg-docker: 'true'
     - extension: 'true'
@@ -89,6 +89,11 @@ Build lib:
       location: dist
       pattern: redirects.json
       required: true
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh scriptlets.corelibs.json redirects.json"
   requirements: *requirements
 
 Test qunit:
@@ -103,6 +108,8 @@ Test qunit:
         scripts:
           - |-
             pnpm test:qunit
+  final-tasks:
+    - script: *cleanup-script
   requirements: *requirements
 
 Test vitest:
@@ -116,6 +123,8 @@ Test vitest:
         scripts:
           - |-
             pnpm test:vitest
+  final-tasks:
+    - script: *cleanup-script
   requirements: *requirements
 
 Test smoke:
@@ -130,6 +139,8 @@ Test smoke:
         scripts:
           - |-
             pnpm test:smoke
+  final-tasks:
+    - script: *cleanup-script
   requirements: *requirements
 
 Lint:
@@ -143,28 +154,8 @@ Lint:
         scripts:
           - |-
             pnpm lint
-  requirements: *requirements
-
-Cleanup:
-  key: CLEAN
-  docker: *docker
-  tasks:
-    - checkout
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-            rm -rf node_modules
-            echo "Size after cleanup:" && du -h | tail -n 1
+  final-tasks:
+    - script: *cleanup-script
   requirements: *requirements
 
 branches:
