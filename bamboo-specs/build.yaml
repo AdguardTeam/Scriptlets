@@ -53,18 +53,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-            rm -rf node_modules
-            echo "Size after cleanup:" && du -h | tail -n 1
+          - "./bamboo-specs/scripts/cleanup.sh scriptlets.tgz"
   artifacts:
     - name: scriptlets.tgz
       location: .

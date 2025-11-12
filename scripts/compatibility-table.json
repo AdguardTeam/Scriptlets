@@ -594,6 +594,9 @@
         },
         {
             "ubo": "noop-0.5s.mp3"
+        },
+        {
+            "ubo": "sensors-analytics.js"
         }
     ]
 }
