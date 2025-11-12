@@ -84,12 +84,12 @@ Build lib:
     - name: scriptlets.corelibs.json
       location: dist
       pattern: scriptlets.corelibs.json
-      shared: false
+      shared: true
       required: true
     - name: redirects.json
       location: dist
       pattern: redirects.json
-      shared: false
+      shared: true
       required: true
   final-tasks:
     - script:
