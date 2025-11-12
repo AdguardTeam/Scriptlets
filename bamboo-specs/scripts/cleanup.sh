@@ -19,11 +19,12 @@ echo "Top 5 files:" && du -h | sort -hr | head -n 5
 # Parse artifacts from command line argument
 ARTIFACTS_ARG="${1:-}"
 if [ -z "$ARTIFACTS_ARG" ]; then
-  echo "No artifacts specified, cleaning entire workspace"
-  ARTIFACTS=""
+  echo "No artifacts specified, cleaning entire workspace (preserving .git)"
+  ARTIFACTS=".git"
 else
-  # Convert comma-separated string to space-separated
+  # Convert comma-separated string to space-separated and always preserve .git
   ARTIFACTS=$(echo "$ARTIFACTS_ARG" | tr ',' ' ')
+  ARTIFACTS=".git $ARTIFACTS"
   echo "Preserving artifacts: $ARTIFACTS"
 fi
 
