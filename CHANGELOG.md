@@ -12,12 +12,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## Unreleased
 
+### Added
+
+- New value to `set-cookie` and `set-cookie-reload` scriptlets: `denied` [#512].
+
 ### Fixed
 
 - Determination of string values more precisely
   for `trusted-set-constant` scriptlet [#499].
 
 [#499]: https://github.com/AdguardTeam/Scriptlets/issues/499
+[#512]: https://github.com/AdguardTeam/Scriptlets/issues/512
 
 ## [v2.2.12] - 2025-11-12
 
