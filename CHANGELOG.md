@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## Unreleased
+
+### Fixed
+
+- Determination of string values more precisely
+  for `trusted-set-constant` scriptlet [#499].
+
+[#499]: https://github.com/AdguardTeam/Scriptlets/issues/499
+
 ## [v2.2.12] - 2025-11-12
 
 ### Changed

@@ -420,12 +420,17 @@ export function generateRandomResponse(customResponseText: string): string | nul
 
 /**
  * Infers value from string argument
+ *
  * Inferring goes from more specific to more ambiguous options
  * Arrays, objects and strings are parsed via JSON.parse
  *
+ * If a value cannot be parsed, it is treated as a string
+ *
  * @param value arbitrary string
+ *
  * @returns converted value
- * @throws an error on unexpected input
+ *
+ * @throws an error only for numbers bigger than 32767
  */
 export function inferValue(value: string): unknown {
     if (value === 'undefined') {
@@ -455,7 +460,6 @@ export function inferValue(value: string): unknown {
         return numVal;
     }
 
-    let errorMessage = `'${value}' value type can't be inferred`;
     try {
         // Parse strings, arrays and objects represented as JSON strings
         // '[1,2,3,"string"]' > [1, 2, 3, 'string']
@@ -465,10 +469,14 @@ export function inferValue(value: string): unknown {
             return parsableVal;
         }
     } catch (e) {
-        errorMessage += `: ${e}`;
+        // If JSON parsing fails, treat the value as a string
+        // This allows simple strings like 'no', 'yes', etc. without requiring double quotes
+        // https://github.com/AdguardTeam/Scriptlets/issues/499
+        return value;
     }
 
-    throw new TypeError(errorMessage);
+    // Fallback to string if no other type matched
+    return value;
 }
 
 /**

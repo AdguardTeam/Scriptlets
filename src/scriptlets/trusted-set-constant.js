@@ -44,7 +44,10 @@ import {
  *
  * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
  * - `value` — required, an arbitrary value to be set; value type is being inferred from the argument,
- *   e.g '500' will be set as number; to set string type value wrap argument into another pair of quotes: `'"500"'`;
+ *   e.g '500' will be set as number; simple strings that do not match
+ *   other types are automatically set as strings, e.g 'yes', 'no', 'allow';
+ *   to set string type value that looks like other types,
+ *   wrap argument into another pair of quotes, e.g. `'"500"'` for a string;
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if regular expression is invalid it will be skipped
  *
@@ -74,6 +77,12 @@ import {
  *     ! Set array or object as property value, argument should be a JSON string
  *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '[1,"string"]')
  *     example.org#%#//scriptlet('trusted-set-constant', 'click_r', '{"aaa":123,"bbb":{"ccc":"string"}}')
+ *
+ *     ! Set simple string value without quotes
+ *     example.org#%#//scriptlet('trusted-set-constant', 'test', 'no')
+ *
+ *     ✔ window.test === 'no'
+ *     ✔ typeof window.test === 'string'
  *     ```
  *
  * 1. Use script stack matching to set value
