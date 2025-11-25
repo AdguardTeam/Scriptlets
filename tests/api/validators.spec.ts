@@ -76,6 +76,11 @@ describe('validators', () => {
             // $redirect-rule
             '||example.org$xmlhttprequest,redirect-rule=noopvast-2.0',
             '||example.org/script.js$script,redirect-rule=googletagmanager-gtm',
+            // with positive priority
+            '||example.org^$xmlhttprequest,redirect=nooptext:1',
+            '||example.org^$xmlhttprequest,redirect-rule=nooptext:100',
+            // with negative priority
+            '||example.org^$xmlhttprequest,redirect=nooptext:-1',
         ];
         test.each(validRules)('%s', (rule: string) => {
             expect(isValidAdgRedirectRule(rule)).toBeTruthy();
@@ -89,6 +94,9 @@ describe('validators', () => {
             // invalid adg redirect name
             '||example.com/banner$image,redirect=redirect.png',
             '||example.com/banner$image,redirect-rule=redirect.png',
+            // invalid redirect resource with priority
+            '||example.com/banner$image,redirect=invalid:1',
+            '||example.com/banner$image,redirect-rule=invalid:-1',
         ];
         test.each(invalidRules)('%s', (rule: string) => {
             expect(isValidAdgRedirectRule(rule)).toBeFalsy();
@@ -99,6 +107,11 @@ describe('validators', () => {
         const validRedirectNames = [
             'noopvast-4.0', // adg only
             'empty', // adg/ubo
+            // with positive priority
+            'nooptext:1',
+            'nooptext:100',
+            // with negative priority
+            'nooptext:-1',
         ];
         test.each(validRedirectNames)('%s', (name: string) => {
             expect(isRedirectResourceCompatibleWithAdg(name)).toBeTruthy();
@@ -107,6 +120,8 @@ describe('validators', () => {
         const invalidRedirectNames = [
             'outbrain-widget.js', // ubo only
             'stylesheet', // ubo only
+            'invalid:1', // invalid resource even with priority
+            'invalid:-1', // invalid resource even with negative priority
         ];
         test.each(invalidRedirectNames)('%s', (name: string) => {
             expect(isRedirectResourceCompatibleWithAdg(name)).toBeFalsy();

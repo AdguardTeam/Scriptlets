@@ -10,17 +10,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## Unreleased
+## [v2.2.13] - 2025-11-25
 
 ### Added
 
 - New value to `set-cookie` and `set-cookie-reload` scriptlets: `denied` [#512].
 
+### Changed
+
+- Updated [@adguard/agtree] to `3.3.1`.
+
 ### Fixed
 
 - Determination of string values more precisely
   for `trusted-set-constant` scriptlet [#499].
+- Support for negative priority suffix in UBO redirects rules.
 
+[v2.2.13]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.12...v2.2.13
 [#499]: https://github.com/AdguardTeam/Scriptlets/issues/499
 [#512]: https://github.com/AdguardTeam/Scriptlets/issues/512
 
