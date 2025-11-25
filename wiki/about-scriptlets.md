@@ -3372,7 +3372,7 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
         - `accept`/ `accepted` / `notaccepted`
         - `reject` / `rejected`
         - `allow` / `allowed`
-        - `disallow` / `deny`
+        - `disallow` / `deny` / `denied`
         - `enable` / `enabled`
         - `disable` / `disabled`
         - `necessary` / `required`
@@ -3437,7 +3437,7 @@ example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
         - `accept`/ `accepted` / `notaccepted`
         - `reject` / `rejected`
         - `allow` / `allowed`
-        - `disallow` / `deny`
+        - `disallow` / `deny` / `denied`
         - `enable` / `enabled`
         - `disable` / `disabled`
         - `necessary` / `required`
