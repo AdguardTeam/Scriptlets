@@ -265,6 +265,78 @@ test('Multiple elements clicked, non-ordered render', (assert) => {
     }, 400);
 });
 
+test('Multiple elements - breaks when middle element not found', (assert) => {
+    const CLICK_ORDER = [1, 2, 3];
+    // Element 2 is missing, so only element 1 should be clicked
+    // Element 3 should NOT be clicked because element 2 is missing
+    const ASSERTIONS = 3; // element1 clicked, element3 not clicked, hit not fired
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = createSelectorsString(CLICK_ORDER);
+
+    runScriptlet(name, [selectorsString]);
+    const panel = createPanel();
+
+    // Only create elements 1 and 3, skip element 2
+    const clickable1 = createClickable(1);
+    panel.appendChild(clickable1);
+
+    const clickable3 = createClickable(3);
+    panel.appendChild(clickable3);
+
+    setTimeout(() => {
+        assert.ok(clickable1.getAttribute('clicked'), 'Element 1 should be clicked');
+        assert.notOk(clickable3.getAttribute('clicked'), 'Element 3 should NOT be clicked (element 2 missing)');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire (sequence incomplete)');
+        done();
+    }, 400);
+});
+
+test('Multiple elements - element disconnected then reconnected', (assert) => {
+    const CLICK_ORDER = [1, 2, 3];
+    const DELAY = 300; // Delay before clicking starts
+    // Element 2 will be disconnected after being found but before clicking starts
+    // The scriptlet should handle the disconnected element and re-find it
+    const ASSERTIONS = 4; // 3 elements clicked + hit fired
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = createSelectorsString(CLICK_ORDER);
+    const panel = createPanel();
+
+    // Create all elements first
+    const clickable1 = createClickable(1);
+    panel.appendChild(clickable1);
+
+    const clickable2 = createClickable(2);
+    panel.appendChild(clickable2);
+
+    const clickable3 = createClickable(3);
+    panel.appendChild(clickable3);
+
+    // Disconnect element 2 before clicking starts (but after observer finds it)
+    setTimeout(() => {
+        clickable2.remove();
+    }, 100);
+
+    // Reconnect element 2 so findAndClickElement can find it again
+    setTimeout(() => {
+        panel.appendChild(clickable2);
+    }, 250);
+
+    // Start scriptlet with delay so elements are found first
+    runScriptlet(name, [selectorsString, '', DELAY]);
+
+    setTimeout(() => {
+        assert.ok(clickable1.getAttribute('clicked'), 'Element 1 should be clicked');
+        assert.ok(clickable2.getAttribute('clicked'), 'Element 2 should be clicked (after reconnection)');
+        assert.ok(clickable3.getAttribute('clicked'), 'Element 3 should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 800);
+});
+
 test('extraMatch - single cookie match, matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieData = serializeCookie(cookieKey1, 'true', '/');
@@ -955,4 +1027,110 @@ test('Closed shadow dom element clicked - text', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 150);
+});
+
+test('observerTimeout - valid time limit parameter', (assert) => {
+    const ELEM_COUNT = 1;
+    const OBSERVER_TIMEOUT_SEC = 15; // 15 seconds
+    // Check elements for being clicked and hit func execution
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    // Pass empty strings for extraMatch, delay, and reload, then observerTimeout
+    runScriptlet(name, [selectorsString, '', '', '', OBSERVER_TIMEOUT_SEC]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('observerTimeout - invalid time limit (negative)', (assert) => {
+    const ELEM_COUNT = 1;
+    const OBSERVER_TIMEOUT_SEC = -10;
+    // Check elements for NOT being clicked (scriptlet should exit early due to invalid param)
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, '', '', '', OBSERVER_TIMEOUT_SEC]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.notOk(clickable.getAttribute('clicked'), 'Element should not be clicked - invalid observerTimeout');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        done();
+    }, 150);
+});
+
+test('observerTimeout - invalid time limit (NaN string)', (assert) => {
+    const ELEM_COUNT = 1;
+    const OBSERVER_TIMEOUT_SEC = 'invalid';
+    // Check elements for NOT being clicked (scriptlet should exit early due to invalid param)
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    runScriptlet(name, [selectorsString, '', '', '', OBSERVER_TIMEOUT_SEC]);
+    const panel = createPanel();
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.notOk(clickable.getAttribute('clicked'), 'Element should not be clicked - invalid observerTimeout');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        done();
+    }, 150);
+});
+
+test('observerTimeout - observer stops after timeout expires', (assert) => {
+    const OBSERVER_TIMEOUT_SEC = 1; // 1 second timeout
+
+    // Check first element is clicked before timeout, second element is not clicked after timeout
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > .${CLICKABLE_NAME}`;
+    const panel = createPanel();
+
+    runScriptlet(name, [selectorsString, '', '', '', OBSERVER_TIMEOUT_SEC]);
+
+    // Add first clickable element before timeout
+    const clickable1 = createClickable(1);
+    clickable1.className = CLICKABLE_NAME;
+    panel.appendChild(clickable1);
+
+    // Check first element is clicked before observer timeout (1 second) expires
+    setTimeout(() => {
+        assert.ok(clickable1.getAttribute('clicked'), 'First element should be clicked before timeout');
+    }, 500);
+
+    // Add second clickable element after timeout expires
+    const clickable2 = createClickable(2);
+    clickable2.className = CLICKABLE_NAME;
+    setTimeout(() => {
+        panel.appendChild(clickable2);
+    }, 1500);
+
+    // Verify second element is not clicked after observer timeout (1 second) expires
+    setTimeout(() => {
+        assert.notOk(clickable2.getAttribute('clicked'), 'Second element should not be clicked after timeout');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed for first element');
+        done();
+    }, 1500);
 });

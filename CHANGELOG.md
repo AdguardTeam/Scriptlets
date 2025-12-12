@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## Unreleased
+
+### Added
+
+- Ability to configure observer timeout for `trusted-click-element` scriptlet
+  with a new `observerTimeout` parameter [#400].
+
+[#400]: https://github.com/AdguardTeam/Scriptlets/issues/400
+
 ## [v2.2.13] - 2025-11-25
 
 ### Added

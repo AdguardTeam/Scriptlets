@@ -597,6 +597,9 @@
         },
         {
             "ubo": "sensors-analytics.js"
+        },
+        {
+            "ubo": "nitropay_ads.js"
         }
     ]
 }

@@ -21,12 +21,12 @@ import { type Source } from './scriptlets';
  * First matched element is clicked unless `containsText` is specified.
  * If `containsText` is specified, then it searches for all given selectors and clicks
  * the first element containing the specified text.
- * Deactivates after all elements have been clicked or by 10s timeout.
+ * Deactivates after all elements have been clicked or by timeout (configurable).
  *
  * ### Syntax
  *
  * ```text
- * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay[, reload]]])
+ * example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay[, reload[, observerTimeout]]]])
  * ```
  * <!-- markdownlint-disable-next-line line-length -->
  * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
@@ -40,14 +40,18 @@ import { type Source } from './scriptlets';
  *     - `cookie` — test string or regex against cookies on a page
  *     - `localStorage` — check if localStorage item is present
  *     - `containsText` — check if clicked element contains specified text
- * - `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
- *             Must be a number less than 10000 ms (10s)
+ * - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
+ *   Must be a number less than `observerTimeout` (default 10 _seconds_)
+ *   which can be configured.
  * - `reload` — optional, string with reloadAfterClick marker and optional value. Possible values:
  *     - `reloadAfterClick` - reloads the page after all elements have been clicked,
  *        with default delay — 500ms
  *     - colon-separated pair `reloadAfterClick:value` where
  *         - `value` — time delay in milliseconds before reloading the page, after all elements
- *            have been clicked. Must be a number less than 10000 ms (10s)
+ *            have been clicked. Must be a number less than `observerTimeout`.
+ * - `observerTimeout` — optional, time in **seconds** to use
+ *   instead default 10 seconds observer timeout.
+ *   Must be an integer number and more than 0.
  *
  * <!-- markdownlint-disable line-length -->
  *
@@ -127,6 +131,12 @@ import { type Source } from './scriptlets';
  *    example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '1000', 'reloadAfterClick:200')
  *    ```
  *
+ * 1. Extend observer timeout to 40 seconds to allow clicking elements that appear after user interaction
+ *
+ *    ```adblock
+ *    example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '', '', '40')
+ *    ```
+ *
  * <!-- markdownlint-enable line-length -->
  *
  * @added v1.7.3.
@@ -159,13 +169,19 @@ export function trustedClickElement(
     extraMatch = '',
     delay = NaN,
     reload = '',
+    observerTimeoutSec = NaN,
 ) {
     if (!selectors) {
         return;
     }
 
     const SHADOW_COMBINATOR = ' >>> ';
-    const OBSERVER_TIMEOUT_MS = 10000;
+
+    /**
+     * Default observer timeout in seconds.
+     */
+    const DEFAULT_OBSERVER_TIMEOUT_SEC = 10;
+
     const THROTTLE_DELAY_MS = 20;
     const STATIC_CLICK_DELAY_MS = 150;
     const STATIC_RELOAD_DELAY_MS = 500;
@@ -204,19 +220,35 @@ export function trustedClickElement(
         window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
     }
 
-    let parsedDelay;
+    let observerTimeoutMs = DEFAULT_OBSERVER_TIMEOUT_SEC * 1000;
+    if (observerTimeoutSec) {
+        const parsedTimeout = Number(observerTimeoutSec);
+
+        if (!Number.isInteger(parsedTimeout) || parsedTimeout <= 0) {
+            logMessage(source, `Passed observer timeout '${observerTimeoutSec}' is invalid`);
+            return;
+        }
+
+        observerTimeoutMs = parsedTimeout * 1000;
+    }
+
+    let parsedDelayMs;
     if (delay) {
-        parsedDelay = parseInt(String(delay), 10);
-        const isValidDelay = !Number.isNaN(parsedDelay) || parsedDelay < OBSERVER_TIMEOUT_MS;
-        if (!isValidDelay) {
-            // eslint-disable-next-line max-len
-            const message = `Passed delay '${delay}' is invalid or bigger than ${OBSERVER_TIMEOUT_MS} ms`;
+        parsedDelayMs = Number(delay);
+
+        if (!Number.isInteger(parsedDelayMs) || parsedDelayMs < 0) {
+            logMessage(source, `Passed delay '${delay}' is invalid`);
+            return;
+        }
+
+        if (parsedDelayMs >= observerTimeoutMs) {
+            const message = `Passed delay '${delay}' is bigger than ${observerTimeoutMs} ms`;
             logMessage(source, message);
             return;
         }
     }
 
-    let canClick = !parsedDelay;
+    let canClick = !parsedDelayMs;
 
     const cookieMatches: string[] = [];
     const localStorageMatches: string[] = [];
@@ -380,10 +412,10 @@ export function trustedClickElement(
                 return;
             }
 
-            // check if passed reload value is less than 10s
-            if (passedReload > OBSERVER_TIMEOUT_MS) {
+            // check if passed reload value is less than observer timeout
+            if (passedReload > observerTimeoutMs) {
                 // eslint-disable-next-line max-len
-                logMessage(source, `Passed reload delay value '${passedReload}' is bigger than maximum ${OBSERVER_TIMEOUT_MS} ms`);
+                logMessage(source, `Passed reload delay value '${passedReload}' is bigger than maximum ${observerTimeoutMs} ms`);
                 return;
             }
 
@@ -515,7 +547,7 @@ export function trustedClickElement(
         });
 
         // Set timeout to disconnect observer if elements are not found within the specified time
-        setTimeout(() => observer.disconnect(), OBSERVER_TIMEOUT_MS);
+        setTimeout(() => observer.disconnect(), observerTimeoutMs);
     };
 
     /**
@@ -544,12 +576,12 @@ export function trustedClickElement(
     checkInitialElements();
 
     // If there's a delay before clicking elements, use a timeout
-    if (parsedDelay) {
+    if (parsedDelayMs) {
         setTimeout(() => {
             // Click previously collected elements
             clickElementsBySequence();
             canClick = true;
-        }, parsedDelay);
+        }, parsedDelayMs);
     }
 }
 
