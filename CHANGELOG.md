@@ -10,16 +10,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## Unreleased
+## [v2.2.14] - 2025-12-16
 
 ### Added
 
+- `prevent-innerHTML` scriptlet [#488].
 - Ability to configure observer timeout for `trusted-click-element` scriptlet
   with a new `observerTimeout` parameter [#400].
 - Support for `window.Fingerprint` variable in `fingerprintjs2` redirect (and
   scriptlet as well since it is an alias for redirect) [#541].
 
+### Changed
+
+- Updated [@adguard/agtree] to `3.4.3`.
+
+[v2.2.14]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.13...v2.2.14
 [#400]: https://github.com/AdguardTeam/Scriptlets/issues/400
+[#488]: https://github.com/AdguardTeam/Scriptlets/issues/488
 [#541]: https://github.com/AdguardTeam/Scriptlets/issues/541
 
 ## [v2.2.13] - 2025-11-25

@@ -168,6 +168,10 @@
             "ubo": "prevent-fetch.js (no-fetch-if.js)"
         },
         {
+            "adg": "prevent-innerHTML",
+            "ubo": "prevent-innerHTML"
+        },
+        {
             "adg": "prevent-xhr",
             "ubo": "prevent-xhr.js (no-xhr-if.js)"
         },
