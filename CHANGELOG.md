@@ -16,8 +16,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Ability to configure observer timeout for `trusted-click-element` scriptlet
   with a new `observerTimeout` parameter [#400].
+- Support for `window.Fingerprint` variable in `fingerprintjs2` redirect (and
+  scriptlet as well since it is an alias for redirect) [#541].
 
 [#400]: https://github.com/AdguardTeam/Scriptlets/issues/400
+[#541]: https://github.com/AdguardTeam/Scriptlets/issues/541
 
 ## [v2.2.13] - 2025-11-25
 
