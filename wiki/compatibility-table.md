@@ -56,6 +56,7 @@
 | [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
 | [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
 | [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | prevent-fetch.js (no-fetch-if.js) |  |
+| [prevent-innerHTML](../wiki/about-scriptlets.md#prevent-innerHTML) | prevent-innerHTML |  |
 | [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | prevent-xhr.js (no-xhr-if.js) |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
 | [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | prevent-refresh.js (refresh-defuser.js) |  |
@@ -183,3 +184,4 @@
 |  | noeval.js |  |
 |  | noop-0.5s.mp3 |  |
 |  | sensors-analytics.js |  |
+|  | nitropay_ads.js |  |

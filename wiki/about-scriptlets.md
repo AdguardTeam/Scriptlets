@@ -53,6 +53,7 @@
 - [prevent-eval-if](#prevent-eval-if)
 - [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 - [prevent-fetch](#prevent-fetch)
+- [prevent-innerHTML](#prevent-innerhtml)
 - [prevent-popads-net](#prevent-popads-net)
 - [prevent-refresh](#prevent-refresh)
 - [prevent-requestAnimationFrame](#prevent-requestanimationframe)
@@ -2252,6 +2253,79 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-fetch.js)
+
+* * *
+
+## <a id="prevent-innerhtml"></a> ⚡️ prevent-innerHTML
+
+> Added in v2.2.14.
+
+Conditionally prevents assignment to `innerHTML` property
+and can replace the value returned by the getter.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-innerhtmljs-
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('prevent-innerHTML'[, selector[, pattern[, replacement]]])
+```
+
+- `selector` — optional, CSS selector to match element. If not specified, matches all elements.
+- `pattern` — optional, string or regular expression to match against the assigned/returned value.
+  Prepend with `!` to invert the match. If not specified, matches all values.
+- `replacement` — optional, replacement value to return from getter when pattern matches.
+  If not specified, the getter returns the original value unchanged (setter-only mode).
+  If specified, enables getter manipulation mode. Possible values:
+    - empty string — `''`,
+    - custom text.
+
+### Examples
+
+1. Prevent any `innerHTML` assignment
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML')
+    ```
+
+1. Prevent `innerHTML` assignment on elements matching selector
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '#ads')
+    ```
+
+1. Prevent `innerHTML` assignment when the value contains "ad"
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '', 'ad')
+    ```
+
+1. Prevent `innerHTML` assignment on specific element when value matches regex
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', 'div.ads', '/banner|sponsor/')
+    ```
+
+1. Prevent `innerHTML` assignment when value does NOT match pattern (inverted match)
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '', '!allowed-content')
+    ```
+
+1. Replace innerHTML getter value with empty string when it contains "delete window"
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '', 'delete window', '')
+    ```
+
+1. Replace innerHTML getter value with custom text when pattern matches
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', 'div.code', '/evil-script/', 'safe-replacement')
+    ```
+
+[Scriptlet source](../src/scriptlets/prevent-innerHTML.ts)
 
 * * *
 

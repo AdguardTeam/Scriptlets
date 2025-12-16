@@ -28,12 +28,12 @@ and waiting for them to render in the DOM first.
 First matched element is clicked unless `containsText` is specified.
 If `containsText` is specified, then it searches for all given selectors and clicks
 the first element containing the specified text.
-Deactivates after all elements have been clicked or by 10s timeout.
+Deactivates after all elements have been clicked or by timeout (configurable).
 
 ### Syntax
 
 ```text
-example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay[, reload]]])
+example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, delay[, reload[, observerTimeout]]]])
 ```
 <!-- markdownlint-disable-next-line line-length -->
 - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
@@ -47,14 +47,18 @@ and each of them should match the syntax. Possible `names`:
     - `cookie` — test string or regex against cookies on a page
     - `localStorage` — check if localStorage item is present
     - `containsText` — check if clicked element contains specified text
-- `delay` — optional, time in ms to delay scriptlet execution, defaults to instant execution.
-            Must be a number less than 10000 ms (10s)
+- `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
+  Must be a number less than `observerTimeout` (default 10 _seconds_)
+  which can be configured.
 - `reload` — optional, string with reloadAfterClick marker and optional value. Possible values:
     - `reloadAfterClick` - reloads the page after all elements have been clicked,
        with default delay — 500ms
     - colon-separated pair `reloadAfterClick:value` where
         - `value` — time delay in milliseconds before reloading the page, after all elements
-           have been clicked. Must be a number less than 10000 ms (10s)
+           have been clicked. Must be a number less than `observerTimeout`.
+- `observerTimeout` — optional, time in **seconds** to use
+  instead default 10 seconds observer timeout.
+  Must be an integer number and more than 0.
 
 <!-- markdownlint-disable line-length -->
 
@@ -132,6 +136,12 @@ and each of them should match the syntax. Possible `names`:
 
    ```adblock
    example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"], button[name="check"], input[type="submit"][value="akkoord"]', '', '1000', 'reloadAfterClick:200')
+   ```
+
+1. Extend observer timeout to 40 seconds to allow clicking elements that appear after user interaction
+
+   ```adblock
+   example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '', '', '', '40')
    ```
 
 <!-- markdownlint-enable line-length -->
