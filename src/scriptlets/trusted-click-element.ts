@@ -6,6 +6,7 @@ import {
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    clickElement,
     doesElementContainText,
     findElementWithText,
 } from '../helpers';
@@ -378,7 +379,7 @@ export function trustedClickElement(
                 logMessage(source, `Could not find element: '${elementObj.selectorText}'`);
                 return;
             }
-            element.click();
+            clickElement(element);
             elementObj.clicked = true;
         } catch (error) {
             logMessage(source, `Could not click element: '${elementObj.selectorText}'`);
@@ -453,7 +454,7 @@ export function trustedClickElement(
                 // if not, try to find the element again
                 // https://github.com/AdguardTeam/Scriptlets/issues/391
                 if (elementObj.element.isConnected) {
-                    elementObj.element.click();
+                    clickElement(elementObj.element);
                     elementObj.clicked = true;
                 } else {
                     findAndClickElement(elementObj);
@@ -601,6 +602,7 @@ trustedClickElement.injections = [
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    clickElement,
     doesElementContainText,
     findElementWithText,
 ];

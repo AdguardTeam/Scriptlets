@@ -1134,3 +1134,44 @@ test('observerTimeout - observer stops after timeout expires', (assert) => {
         done();
     }, 1500);
 });
+
+test('React element with __reactProps$ is clicked via React handlers', (assert) => {
+    const ELEM_COUNT = 1;
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+    const panel = createPanel();
+
+    // Create element that simulates a React component
+    const reactElement = document.createElement('button');
+    reactElement.id = `${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    // Simulate React's internal props structure
+    const reactPropsKey = '__reactProps$testkey123';
+    let onFocusCalled = false;
+    let onClickCalled = false;
+
+    reactElement[reactPropsKey] = {
+        onFocus: () => {
+            onFocusCalled = true;
+        },
+        onClick: () => {
+            onClickCalled = true;
+            reactElement.setAttribute('clicked', 'true');
+            window.clickOrder.push(ELEM_COUNT);
+        },
+    };
+
+    panel.appendChild(reactElement);
+
+    runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        assert.ok(onFocusCalled, 'React onFocus handler should be called');
+        assert.ok(onClickCalled, 'React onClick handler should be called');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});

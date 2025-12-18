@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## Unreleased
+
+### Added
+
+- Support for React elements that don't respond to native clicks
+  in `trusted-click-element` scriptlet [#542].
+
+[#542]: https://github.com/AdguardTeam/Scriptlets/issues/542
+
 ## [v2.2.14] - 2025-12-16
 
 ### Added
