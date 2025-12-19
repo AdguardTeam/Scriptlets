@@ -17,6 +17,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Support for React elements that don't respond to native clicks
   in `trusted-click-element` scriptlet [#542].
 
+### Fixed
+
+- Do not throw error on `null` event type in `prevent-addEventListener` scriptlet [#539].
+
+[#539]: https://github.com/AdguardTeam/Scriptlets/issues/539
+
 [#542]: https://github.com/AdguardTeam/Scriptlets/issues/542
 
 ## [v2.2.14] - 2025-12-16

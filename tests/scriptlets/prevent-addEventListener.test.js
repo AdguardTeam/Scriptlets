@@ -82,6 +82,27 @@ test('should not prevent addEventListener if event is undefined', (assert) => {
     clearGlobalProps(testProp);
 });
 
+test('should not throw error when event type is null', (assert) => {
+    const TEST_EVENT_NAME = 'testEvent';
+    runScriptlet(name, [TEST_EVENT_NAME]);
+
+    const testProp = 'test';
+    window[testProp] = 'start';
+
+    // This should not throw an error
+    assert.expect(2);
+    try {
+        document.addEventListener(null, () => {});
+        window[testProp] = 'end';
+    } catch (e) {
+        assert.ok(false, `Should not throw error: ${e.message}`);
+    }
+
+    assert.strictEqual(window[testProp], 'end', 'property should be changed to end');
+    assert.strictEqual(window.hit, undefined, 'hit should not be fired');
+    clearGlobalProps(testProp);
+});
+
 test('does not allow to add event listener', (assert) => {
     const scriptletArgs = ['click', 'clicked'];
     runScriptlet(name, scriptletArgs);
