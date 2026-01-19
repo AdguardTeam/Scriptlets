@@ -604,6 +604,9 @@
         },
         {
             "ubo": "nitropay_ads.js"
+        },
+        {
+            "ubo": "adthrive_abd.js"
         }
     ]
 }

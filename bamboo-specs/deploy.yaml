@@ -70,7 +70,6 @@ npmjs: &npmjs
           # do not change commitMessage
           commitMessage: 'deploy: update docs for v${bamboo.inject.version}'
   requirements:
-    - adg-docker: 'true'
     - extension: 'true'
   notifications:
     - events:
