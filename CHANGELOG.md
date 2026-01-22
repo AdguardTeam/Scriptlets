@@ -10,12 +10,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## Unreleased
+## [v2.2.15] - 2026-01-22
 
 ### Added
 
 - Support for React elements that don't respond to native clicks
   in `trusted-click-element` scriptlet [#542].
+
+### Changed
+
+- Updated [@adguard/agtree] to `4.0.0`.
 
 ### Fixed
 
