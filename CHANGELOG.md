@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## Unreleased
+
+### Added
+
+- `prevent-constructor` scriptlet to prevent constructor calls
+  like `new Promise()` or `new MutationObserver()` [#461].
+
+[#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
+
 ## [v2.2.15] - 2026-01-22
 
 ### Added
@@ -25,8 +34,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Do not throw error on `null` event type in `prevent-addEventListener` scriptlet [#539].
 
+[v2.2.15]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.14...v2.2.15
 [#539]: https://github.com/AdguardTeam/Scriptlets/issues/539
-
 [#542]: https://github.com/AdguardTeam/Scriptlets/issues/542
 
 ## [v2.2.14] - 2025-12-16

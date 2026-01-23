@@ -154,6 +154,9 @@
             "ubo": "prevent-canvas.js"
         },
         {
+            "adg": "prevent-constructor"
+        },
+        {
             "adg": "prevent-element-src-loading"
         },
         {
