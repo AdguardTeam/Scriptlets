@@ -14,9 +14,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `remove-request-query-parameter` scriptlet [#329].
 - `-base64` as an alias of `base64decode` in `href-sanitizer` scriptlet [#493].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.9...HEAD
+[#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
 [#493]: https://github.com/AdguardTeam/Scriptlets/issues/493
 
 ## [v2.2.9] - 2025-08-14
