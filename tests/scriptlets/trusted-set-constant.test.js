@@ -93,6 +93,22 @@ if (!isSupported) {
         assert.strictEqual(window[stringProp5], 'null', '"null" is set as string');
         clearGlobalProps(stringProp5);
 
+        // setting constant to simple string without quotes
+        const stringProp6 = 'stringProp6';
+        runScriptletFromTag(stringProp6, 'no');
+        assert.strictEqual(window[stringProp6], 'no', '"no" is inferred as string');
+        clearGlobalProps(stringProp6);
+
+        const stringProp7 = 'stringProp7';
+        runScriptletFromTag(stringProp7, 'yes');
+        assert.strictEqual(window[stringProp7], 'yes', '"yes" is inferred as string');
+        clearGlobalProps(stringProp7);
+
+        const stringProp8 = 'stringProp8';
+        runScriptletFromTag(stringProp8, 'allow');
+        assert.strictEqual(window[stringProp8], 'allow', '"allow" is inferred as string');
+        clearGlobalProps(stringProp8);
+
         // setting constant to NaN
         const nanProp1 = 'nanProp';
         runScriptletFromTag(nanProp1, 'NaN');
@@ -131,15 +147,14 @@ if (!isSupported) {
     });
 
     test('illegal values are handled', (assert) => {
-        assert.expect(4);
+        assert.expect(2);
         const illegalProp = 'illegalProp';
 
         console.log = function log(input) {
             if (typeof input !== 'string') {
                 return;
             }
-            const messageLogged = input.includes('number values bigger than 32767 are not allowed')
-                || input.includes('value type can\'t be inferred');
+            const messageLogged = input.includes('number values bigger than 32767 are not allowed');
 
             assert.ok(messageLogged, 'appropriate message is logged');
         };
@@ -148,11 +163,15 @@ if (!isSupported) {
         runScriptletFromTag(illegalProp, '32768');
         assert.strictEqual(window[illegalProp], undefined);
         clearGlobalProps(illegalProp);
+    });
 
-        // not setting constant to unknown value
-        runScriptletFromTag(illegalProp, '{|');
-        assert.strictEqual(window[illegalProp], undefined);
-        clearGlobalProps(illegalProp);
+    test('non-parseable values are treated as strings', (assert) => {
+        // Previously non-parseable values like '{|' would throw errors
+        // Now they are treated as strings
+        const stringProp = 'stringProp';
+        runScriptletFromTag(stringProp, '{|');
+        assert.strictEqual(window[stringProp], '{|', 'non-parseable value is set as string');
+        clearGlobalProps(stringProp);
     });
 
     test('keep other keys after setting a value', (assert) => {

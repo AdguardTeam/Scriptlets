@@ -43,6 +43,8 @@ export function Fingerprintjs2(source) {
     };
 
     window.Fingerprint2 = Fingerprint2;
+    // https://github.com/AdguardTeam/Scriptlets/issues/541
+    window.Fingerprint = Fingerprint2;
 
     hit(source);
 }

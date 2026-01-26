@@ -6,7 +6,9 @@
  */
 export const validateType = (type: unknown): boolean => {
     // https://github.com/AdguardTeam/Scriptlets/issues/125
-    return typeof type !== 'undefined';
+    return typeof type !== 'undefined'
+        // https://github.com/AdguardTeam/Scriptlets/issues/539
+        && type !== null;
 };
 
 /**

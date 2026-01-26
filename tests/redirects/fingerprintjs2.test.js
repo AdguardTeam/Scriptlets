@@ -24,6 +24,8 @@ test('Fingerprint2 works', (assert) => {
     const done = assert.async();
 
     assert.ok(window.Fingerprint2, 'Fingerprint2 object was created');
+    assert.ok(window.Fingerprint, 'Fingerprint object was created');
+    assert.strictEqual(window.Fingerprint, window.Fingerprint2, 'Fingerprint equals Fingerprint2');
     assert.notOk(window.Fingerprint2.get(), 'getter returns nothing');
 
     const cb = () => {

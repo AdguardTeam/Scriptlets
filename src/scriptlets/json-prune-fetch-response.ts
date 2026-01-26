@@ -43,31 +43,31 @@ import { type Source } from './scriptlets';
  * example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
  * ```
  *
- * - `propsToRemove` — optional, string of space-separated properties to remove
+ * - `propsToRemove` — optional, string of space-separated properties to remove.
  * - `obligatoryProps` — optional, string of space-separated properties
- *   which must be all present for the pruning to occur
+ *   which must be all present for the pruning to occur.
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
- *     - string or regular expression for matching the URL passed to fetch call;
- *       empty string, wildcard `*` or invalid regular expression will match all fetch calls
- *     - colon-separated pairs `name:value` where
+ *     - String or regular expression for matching the URL passed to fetch call;
+ *       empty string, wildcard `*` or invalid regular expression will match all fetch calls.
+ *     - Colon-separated pairs `name:value` where:
  *         <!-- markdownlint-disable-next-line line-length -->
- *         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+ *         - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters).
  *         - `value` is string or regular expression for matching the value of the option passed to fetch call;
- *           invalid regular expression will cause any value matching
+ *           invalid regular expression will cause any value matching.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- *   if regular expression is invalid it will be skipped
+ *   if regular expression is invalid it will be skipped.
  *
  * > Note please that you can use wildcard `*` for chain property name,
  * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
  *
- * > Usage with with only propsToMatch argument will log fetch calls to browser console.
- * > It may be useful for debugging but it is not allowed for prod versions of filter lists.
+ * > Usage with only propsToMatch argument will log fetch calls to browser console.
+ * > It may be useful for debugging, but it is not allowed for prod versions of filter lists.
  *
  * > Scriptlet does nothing if response body can't be converted to JSON.
  *
  * ### Examples
  *
- * 1. Removes property `example` from the JSON response of any fetch call
+ * 1. Removes property `example` from the JSON response of any fetch call:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'example')
@@ -85,31 +85,31 @@ import { type Source } from './scriptlets';
  *     {one: 1}
  *     ```
  *
- * 2. A property in a list of properties can be a chain of properties
+ * 2. A property in a list of properties can be a chain of properties:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'a.b', 'ads.url.first')
  *     ```
  *
- * 3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`
+ * 3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', 'content.json')
  *     ```
  *
- * 4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`
+ * 4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', '', 'test.js')
  *     ```
  *
- * 5. A property in a list of properties can be a chain of properties with wildcard in it
+ * 5. A property in a list of properties can be a chain of properties with wildcard in it:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'content.*.media.src', 'content.*.media.ad')
  *     ```
  *
- * 6. Log all JSON responses of a fetch call
+ * 6. Log all JSON responses of a fetch call:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response')
@@ -124,9 +124,9 @@ export function jsonPruneFetchResponse(
     propsToMatch = '',
     stack = '',
 ) {
-    // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
-    // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+    // Do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer):
+    // https://developer.mozilla.org/docs/Web/API/Window/fetch
+    // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof fetch === 'undefined'
         || typeof Proxy === 'undefined'
         || typeof Response === 'undefined') {
@@ -197,7 +197,7 @@ export function jsonPruneFetchResponse(
 
 export const jsonPruneFetchResponseNames = [
     'json-prune-fetch-response',
-    // aliases are needed for matching the related scriptlet converted into our syntax
+    // Aliases are needed for matching the related scriptlet converted into our syntax:
     'json-prune-fetch-response.js',
     'ubo-json-prune-fetch-response.js',
     'ubo-json-prune-fetch-response',

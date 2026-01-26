@@ -36,7 +36,7 @@ import {
  *         - `accept`/ `accepted` / `notaccepted`
  *         - `reject` / `rejected`
  *         - `allow` / `allowed`
- *         - `disallow` / `deny`
+ *         - `disallow` / `deny` / `denied`
  *         - `enable` / `enabled`
  *         - `disable` / `disabled`
  *         - `necessary` / `required`

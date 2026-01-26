@@ -14,11 +14,99 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `prevent-constructor` scriptlet to prevent constructor calls
+  like `new Promise()` or `new MutationObserver()` [#461].
 - `remove-request-query-parameter` scriptlet [#329].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
+[#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
+[#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
+
+## [v2.2.15] - 2026-01-22
+
+### Added
+
+- Support for React elements that don't respond to native clicks
+  in `trusted-click-element` scriptlet [#542].
+
+### Changed
+
+- Updated [@adguard/agtree] to `4.0.0`.
+
+### Fixed
+
+- Do not throw error on `null` event type in `prevent-addEventListener` scriptlet [#539].
+
+[v2.2.15]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.14...v2.2.15
+[#539]: https://github.com/AdguardTeam/Scriptlets/issues/539
+[#542]: https://github.com/AdguardTeam/Scriptlets/issues/542
+
+## [v2.2.14] - 2025-12-16
+
+### Added
+
+- `prevent-innerHTML` scriptlet [#488].
+- Ability to configure observer timeout for `trusted-click-element` scriptlet
+  with a new `observerTimeout` parameter [#400].
+- Support for `window.Fingerprint` variable in `fingerprintjs2` redirect (and
+  scriptlet as well since it is an alias for redirect) [#541].
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.4.3`.
+
+[v2.2.14]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.13...v2.2.14
+[#400]: https://github.com/AdguardTeam/Scriptlets/issues/400
+[#488]: https://github.com/AdguardTeam/Scriptlets/issues/488
+[#541]: https://github.com/AdguardTeam/Scriptlets/issues/541
+
+## [v2.2.13] - 2025-11-25
+
+### Added
+
+- New value to `set-cookie` and `set-cookie-reload` scriptlets: `denied` [#512].
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.3.1`.
+
+### Fixed
+
+- Determination of string values more precisely
+  for `trusted-set-constant` scriptlet [#499].
+- Support for negative priority suffix in UBO redirects rules.
+
+[v2.2.13]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.12...v2.2.13
+[#499]: https://github.com/AdguardTeam/Scriptlets/issues/499
+[#512]: https://github.com/AdguardTeam/Scriptlets/issues/512
+
+## [v2.2.12] - 2025-11-12
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.2.5`.
+
+[v2.2.12]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.11...v2.2.12
+
+## [v2.2.11] - 2025-10-17
+
+### Changed
+
+- Updated [@adguard/agtree] to `3.2.4`.
+
+[v2.2.11]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.10...v2.2.11
+
+## [v2.2.10] - 2025-09-11
+
+### Added
+
 - `-base64` as an alias of `base64decode` in `href-sanitizer` scriptlet [#493].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.9...HEAD
-[#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
+### Changed
+
+- Updated [@adguard/agtree] to `3.2.3`.
+
+[v2.2.10]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.9...v2.2.10
 [#493]: https://github.com/AdguardTeam/Scriptlets/issues/493
 
 ## [v2.2.9] - 2025-08-14

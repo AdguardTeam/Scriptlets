@@ -47,6 +47,7 @@ const cookies = [
     ['__test-cookie_allow', 'allow'],
     ['__test-cookie_deny', 'deny'],
     ['__test-cookie_dENy', 'dENy'],
+    ['__test-cookie_denied', 'denied'],
     ['__test-cookie_0', '0'],
     ['__test-cookie_1', '1'],
     ['__test-cookie_on', 'on'],

@@ -5,38 +5,38 @@ import { hit, logMessage, hijackAttachShadow } from '../helpers';
  * @scriptlet inject-css-in-shadow-dom
  *
  * @description
- * Injects CSS rule into selected Shadow DOM subtrees on a page
+ * Injects CSS rule into selected Shadow DOM subtrees on a page.
  *
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
+ * example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector[, cssInjectionMethod]])
  * ```
  *
- * - `cssRule` — required, string representing a single css rule
+ * - `cssRule` — required, string representing a single CSS rule.
  * - `hostSelector` — optional, string, selector to match shadow host elements.
  *   CSS rule will be only applied to shadow roots inside these elements.
- *   Defaults to injecting css rule into all available roots.
- * - `cssInjectionMethod` — optional, string, method to inject css rule into shadow dom.
+ *   Defaults to injecting CSS rule into all available roots.
+ * - `cssInjectionMethod` — optional, string, method to inject CSS rule into shadow DOM.
  *   Available methods are:
  *     - `adoptedStyleSheets` — injects the CSS rule using adopted style sheets (default option).
  *     - `styleTag` — injects the CSS rule using a `style` tag.
  *
  * ### Examples
  *
- * 1. Apply style to all shadow dom subtrees
+ * 1. Apply style to all shadow DOM subtrees:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
  *     ```
  *
- * 1. Apply style to a specific shadow dom subtree
+ * 1. Apply style to a specific shadow DOM subtree:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '#banner')
  *     ```
  *
- * 1. Apply style to all shadow dom subtrees using style tag
+ * 1. Apply style to all shadow DOM subtrees using style tag:
  *
  *    ```adblock
  *    example.org#%#//scriptlet('inject-css-in-shadow-dom', '.ads { display: none !important; }', '', 'styleTag')
@@ -52,7 +52,7 @@ export function injectCssInShadowDom(
     hostSelector = '',
     cssInjectionMethod = 'adoptedStyleSheets',
 ) {
-    // do nothing if browser does not support ShadowRoot, Proxy or Reflect
+    // Do nothing if browser does not support ShadowRoot, Proxy or Reflect:
     // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
     if (!Element.prototype.attachShadow || typeof Proxy === 'undefined' || typeof Reflect === 'undefined') {
         return;
@@ -63,7 +63,7 @@ export function injectCssInShadowDom(
         return;
     }
 
-    // Prevent url() and image-set() styles from being applied
+    // Prevent url() and image-set() styles from being applied:
     if (cssRule.match(/(url|image-set)\(.*\)/i)) {
         logMessage(source, '"url()" function is not allowed for css rules');
         return;
@@ -81,7 +81,7 @@ export function injectCssInShadowDom(
     };
 
     /**
-     * Injects CSS rules into a shadow root using the adoptedStyleSheets API
+     * Injects CSS rules into a shadow root using the adoptedStyleSheets API.
      *
      * @param {ShadowRoot} shadowRoot - The shadow root to inject styles into
      * @private
@@ -93,7 +93,7 @@ export function injectCssInShadowDom(
      */
     const injectAdoptedStyleSheets = (shadowRoot) => {
         try {
-            // adoptedStyleSheets and CSSStyleSheet constructor are not supported by old browsers
+            // adoptedStyleSheets and CSSStyleSheet constructor are not supported by old browsers:
             // https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets
             // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/CSSStyleSheet
             const stylesheet = new CSSStyleSheet();

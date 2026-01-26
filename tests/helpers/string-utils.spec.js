@@ -209,6 +209,30 @@ describe('Test string utils', () => {
             expect(res instanceof RegExp).toBeTruthy();
             expect(res.toString()).toStrictEqual(actual);
         });
+
+        test('simple string without quotes - "no"', () => {
+            const actual = 'no';
+            const expected = 'no';
+            expect(inferValue(actual)).toStrictEqual(expected);
+        });
+
+        test('simple string without quotes - "yes"', () => {
+            const actual = 'yes';
+            const expected = 'yes';
+            expect(inferValue(actual)).toStrictEqual(expected);
+        });
+
+        test('simple string without quotes - "allow"', () => {
+            const actual = 'allow';
+            const expected = 'allow';
+            expect(inferValue(actual)).toStrictEqual(expected);
+        });
+
+        test('unparseable value treated as string', () => {
+            const actual = '{|';
+            const expected = '{|';
+            expect(inferValue(actual)).toStrictEqual(expected);
+        });
     });
 
     describe('Test regex and replacement extraction using "extractRegexAndReplacement"', () => {

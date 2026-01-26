@@ -154,6 +154,9 @@
             "ubo": "prevent-canvas.js"
         },
         {
+            "adg": "prevent-constructor"
+        },
+        {
             "adg": "prevent-element-src-loading"
         },
         {
@@ -166,6 +169,10 @@
         {
             "adg": "prevent-fetch",
             "ubo": "prevent-fetch.js (no-fetch-if.js)"
+        },
+        {
+            "adg": "prevent-innerHTML",
+            "ubo": "prevent-innerHTML"
         },
         {
             "adg": "prevent-xhr",
@@ -594,6 +601,15 @@
         },
         {
             "ubo": "noop-0.5s.mp3"
+        },
+        {
+            "ubo": "sensors-analytics.js"
+        },
+        {
+            "ubo": "nitropay_ads.js"
+        },
+        {
+            "ubo": "adthrive_abd.js"
         }
     ]
 }

@@ -48,8 +48,13 @@ Increment:
         configuration:
           commitMessage: 'skipci: Automatic increment build number'
           selectedRepository: defaultRepository
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh"
   requirements:
-    - adg-docker: 'true'
+    - extension: 'true'
 
 branches:
   create: manually

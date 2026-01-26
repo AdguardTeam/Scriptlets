@@ -53,6 +53,7 @@
 - [prevent-eval-if](#prevent-eval-if)
 - [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 - [prevent-fetch](#prevent-fetch)
+- [prevent-innerHTML](#prevent-innerhtml)
 - [prevent-popads-net](#prevent-popads-net)
 - [prevent-refresh](#prevent-refresh)
 - [prevent-requestAnimationFrame](#prevent-requestanimationframe)
@@ -903,7 +904,7 @@ https://github.com/uBlockOrigin/uBlock-issues/wiki/Resources-Library#href-saniti
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
+example.org#%#//scriptlet('href-sanitizer', selector[, attribute[, transform]])
 ```
 
 - `selector` — required, a CSS selector to match the elements to be sanitized,
@@ -914,13 +915,14 @@ example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
     - `?<parameter-name>` copy the value from URL parameter `parameter-name` of the same element's `href` attribute.
 - `transform` — optional, defaults to no transforming. Possible values:
     - `base64decode` — decode the base64 string from specified attribute.
+      `-base64` can be used as an alias.
     - `removeHash` — remove the hash from the URL.
     - `removeParam[:<parameters>]` — remove the specified parameters from the URL,
       where `<parameters>` is a comma-separated list of parameter names;
       if no parameter is specified, remove all parameters.
 
 > Note that in the case where the discovered value does not correspond to a valid URL with the appropriate
-> http or https protocols, the value will not be set.
+> HTTP or HTTPS protocols, the value will not be set.
 
 ### Examples
 
@@ -1058,38 +1060,38 @@ example.org#%#//scriptlet('href-sanitizer', selector[, attribute, [ transform]])
 
 > Added in v1.8.2.
 
-Injects CSS rule into selected Shadow DOM subtrees on a page
+Injects CSS rule into selected Shadow DOM subtrees on a page.
 
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector])
+example.org#%#//scriptlet('inject-css-in-shadow-dom', cssRule[, hostSelector[, cssInjectionMethod]])
 ```
 
-- `cssRule` — required, string representing a single css rule
+- `cssRule` — required, string representing a single CSS rule.
 - `hostSelector` — optional, string, selector to match shadow host elements.
   CSS rule will be only applied to shadow roots inside these elements.
-  Defaults to injecting css rule into all available roots.
-- `cssInjectionMethod` — optional, string, method to inject css rule into shadow dom.
+  Defaults to injecting CSS rule into all available roots.
+- `cssInjectionMethod` — optional, string, method to inject CSS rule into shadow DOM.
   Available methods are:
     - `adoptedStyleSheets` — injects the CSS rule using adopted style sheets (default option).
     - `styleTag` — injects the CSS rule using a `style` tag.
 
 ### Examples
 
-1. Apply style to all shadow dom subtrees
+1. Apply style to all shadow DOM subtrees:
 
     ```adblock
     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#advertisement { display: none !important; }')
     ```
 
-1. Apply style to a specific shadow dom subtree
+1. Apply style to a specific shadow DOM subtree:
 
     ```adblock
     example.org#%#//scriptlet('inject-css-in-shadow-dom', '#content { margin-top: 0 !important; }', '#banner')
     ```
 
-1. Apply style to all shadow dom subtrees using style tag
+1. Apply style to all shadow DOM subtrees using style tag:
 
    ```adblock
    example.org#%#//scriptlet('inject-css-in-shadow-dom', '.ads { display: none !important; }', '', 'styleTag')
@@ -1114,31 +1116,31 @@ https://github.com/gorhill/uBlock/commit/749cec0f095f659d6c0b90eb89b729e9deb07c8
 example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
 ```
 
-- `propsToRemove` — optional, string of space-separated properties to remove
+- `propsToRemove` — optional, string of space-separated properties to remove.
 - `obligatoryProps` — optional, string of space-separated properties
-  which must be all present for the pruning to occur
+  which must be all present for the pruning to occur.
 - `propsToMatch` — optional, string of space-separated properties to match; possible props:
-    - string or regular expression for matching the URL passed to fetch call;
-      empty string, wildcard `*` or invalid regular expression will match all fetch calls
-    - colon-separated pairs `name:value` where
+    - String or regular expression for matching the URL passed to fetch call;
+      empty string, wildcard `*` or invalid regular expression will match all fetch calls.
+    - Colon-separated pairs `name:value` where:
         <!-- markdownlint-disable-next-line line-length -->
-        - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters)
+        - `name` is [`init` option name](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#parameters).
         - `value` is string or regular expression for matching the value of the option passed to fetch call;
-          invalid regular expression will cause any value matching
+          invalid regular expression will cause any value matching.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
-  if regular expression is invalid it will be skipped
+  if regular expression is invalid it will be skipped.
 
 > Note please that you can use wildcard `*` for chain property name,
 > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
 
-> Usage with with only propsToMatch argument will log fetch calls to browser console.
-> It may be useful for debugging but it is not allowed for prod versions of filter lists.
+> Usage with only propsToMatch argument will log fetch calls to browser console.
+> It may be useful for debugging, but it is not allowed for prod versions of filter lists.
 
 > Scriptlet does nothing if response body can't be converted to JSON.
 
 ### Examples
 
-1. Removes property `example` from the JSON response of any fetch call
+1. Removes property `example` from the JSON response of any fetch call:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'example')
@@ -1156,31 +1158,31 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
     {one: 1}
     ```
 
-2. A property in a list of properties can be a chain of properties
+2. A property in a list of properties can be a chain of properties:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'a.b', 'ads.url.first')
     ```
 
-3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`
+3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', 'content.json')
     ```
 
-4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`
+4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', '', 'test.js')
     ```
 
-5. A property in a list of properties can be a chain of properties with wildcard in it
+5. A property in a list of properties can be a chain of properties with wildcard in it:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.*.media.src', 'content.*.media.ad')
     ```
 
-6. Log all JSON responses of a fetch call
+6. Log all JSON responses of a fetch call:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response')
@@ -2251,6 +2253,79 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-fetch.js)
+
+* * *
+
+## <a id="prevent-innerhtml"></a> ⚡️ prevent-innerHTML
+
+> Added in v2.2.14.
+
+Conditionally prevents assignment to `innerHTML` property
+and can replace the value returned by the getter.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#prevent-innerhtmljs-
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('prevent-innerHTML'[, selector[, pattern[, replacement]]])
+```
+
+- `selector` — optional, CSS selector to match element. If not specified, matches all elements.
+- `pattern` — optional, string or regular expression to match against the assigned/returned value.
+  Prepend with `!` to invert the match. If not specified, matches all values.
+- `replacement` — optional, replacement value to return from getter when pattern matches.
+  If not specified, the getter returns the original value unchanged (setter-only mode).
+  If specified, enables getter manipulation mode. Possible values:
+    - empty string — `''`,
+    - custom text.
+
+### Examples
+
+1. Prevent any `innerHTML` assignment
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML')
+    ```
+
+1. Prevent `innerHTML` assignment on elements matching selector
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '#ads')
+    ```
+
+1. Prevent `innerHTML` assignment when the value contains "ad"
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '', 'ad')
+    ```
+
+1. Prevent `innerHTML` assignment on specific element when value matches regex
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', 'div.ads', '/banner|sponsor/')
+    ```
+
+1. Prevent `innerHTML` assignment when value does NOT match pattern (inverted match)
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '', '!allowed-content')
+    ```
+
+1. Replace innerHTML getter value with empty string when it contains "delete window"
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', '', 'delete window', '')
+    ```
+
+1. Replace innerHTML getter value with custom text when pattern matches
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-innerHTML', 'div.code', '/evil-script/', 'safe-replacement')
+    ```
+
+[Scriptlet source](../src/scriptlets/prevent-innerHTML.ts)
 
 * * *
 
@@ -3371,7 +3446,7 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
         - `accept`/ `accepted` / `notaccepted`
         - `reject` / `rejected`
         - `allow` / `allowed`
-        - `disallow` / `deny`
+        - `disallow` / `deny` / `denied`
         - `enable` / `enabled`
         - `disable` / `disabled`
         - `necessary` / `required`
@@ -3436,7 +3511,7 @@ example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
         - `accept`/ `accepted` / `notaccepted`
         - `reject` / `rejected`
         - `allow` / `allowed`
-        - `disallow` / `deny`
+        - `disallow` / `deny` / `denied`
         - `enable` / `enabled`
         - `disable` / `disabled`
         - `necessary` / `required`
