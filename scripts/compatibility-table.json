@@ -219,6 +219,10 @@
             "ubo": "remove-node-text.js (rmnt.js)"
         },
         {
+            "adg": "remove-request-query-parameter",
+            "abp": "strip-fetch-query-parameter"
+        },
+        {
             "adg": "scorecardresearch-beacon"
         },
         {
@@ -284,9 +288,6 @@
         },
         {
             "abp": "simulate-mouse-event"
-        },
-        {
-            "abp": "strip-fetch-query-parameter"
         },
         {
             "abp": "hide-if-contains"
