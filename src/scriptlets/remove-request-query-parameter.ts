@@ -1,4 +1,9 @@
-import { hit, logMessage, toRegExp } from '../helpers';
+import {
+    hit,
+    logMessage,
+    splitByNotEscapedDelimiter,
+    toRegExp,
+} from '../helpers';
 import { type Source } from './scriptlets';
 
 /**
@@ -13,8 +18,10 @@ import { type Source } from './scriptlets';
  * example.org#%#//scriptlet('remove-request-query-parameter', parametersToRemove[, urlPattern])
  * ```
  *
- * - `parametersToRemove`: List of query parameter names to be removed from outgoing requests, separated by `,`.
- * - `urlPattern`: A string pattern to match URLs.
+ * - `parametersToRemove` — required, either a single regular expression (starting with `/`)
+ *   or a list of literal query parameter names separated by `,`.
+ *   Mixing regular expressions and literal strings is not allowed.
+ * - `urlPattern` — optional, a string or regular expression to match request URLs.
  *
  * ### Examples
  *
@@ -24,10 +31,22 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('remove-request-query-parameter', 'utm_source')
  *     ```
  *
+ * 1. Remove multiple query parameters from all requests:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('remove-request-query-parameter', 'utm_source,utm_medium,utm_campaign')
+ *     ```
+ *
  * 1. Remove a specific query parameter from requests matching a URL pattern:
  *
  *     ```adblock
- *     example.org#%#//scriptlet('remove-request-query-parameter', 'utm_source', '/api')
+ *     example.org#%#//scriptlet('remove-request-query-parameter', 'ad_config_id', '/playback/')
+ *     ```
+ *
+ * 1. Remove query parameters matching a regular expression:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('remove-request-query-parameter', '/^utm_/', '/api/')
  *     ```
  *
  * @added unknown.
@@ -38,62 +57,40 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
         return;
     }
 
-    const splitByNotEscapedDelimiter = (string: string, delimiter: string) => {
-        const BACKSLASH = '\\';
-        let shouldFixEscaped = true;
-
-        const splitByDelimiter = {
-            [Symbol.split](str: string) {
-                let stringIndex = 0;
-                let currentIPosition = 0;
-                const result: string[] = [];
-                while (currentIPosition < str.length) {
-                    const matchPos = str.indexOf(delimiter, currentIPosition);
-                    if (matchPos === -1) {
-                        shouldFixEscaped = false;
-                        result.push(str);
-                        break;
-                    }
-                    if (matchPos > 0 && str[matchPos - 1] === BACKSLASH) {
-                        currentIPosition = matchPos + 1;
-                        continue;
-                    }
-                    result.push(str.substring(stringIndex, matchPos));
-                    stringIndex = matchPos + 1;
-                    currentIPosition = stringIndex;
-                }
-                return result;
-            },
-        };
-
-        const fixEscapedDelimiters = (arr: string[]) => {
-            const escapedDelimiterRegex = new RegExp(`\\\\${delimiter}`, 'g');
-            return arr.map((item) => item.replace(escapedDelimiterRegex, delimiter));
-        };
-
-        const result = string.split(splitByDelimiter);
-        return shouldFixEscaped ? fixEscapedDelimiters(result) : result;
-    };
-
-    // TODO: add tests
-    // console.log(splitByNotEscapedDelimiter("a,b,c\\,c5,d,3e\\,4,f", ','));
-    // Expected output: [ 'a', 'b', 'c,c5', 'd', '3e,4', 'f' ]
-
-    // console.log(splitByNotEscapedDelimiter("a,b,c,one\\;two;three\\,four,five", ','));
-    // Expected output: [ 'a', 'b', 'c', 'one\\;two;three,four', 'five' ]
-
     const urlPatternRegExp = urlPattern ? toRegExp(urlPattern) : null;
-    const SEPARATOR_MARK = '|';
-    const paramsToRemove = splitByNotEscapedDelimiter(parametersToRemove, SEPARATOR_MARK);
 
-    const removeParams = (url: string) => {
+    let regexpParamsToRemove: RegExp[];
+    // simple check if parametersToRemove is a regex pattern (starts with `/`)
+    if (parametersToRemove.startsWith('/')) {
+        regexpParamsToRemove = [toRegExp(parametersToRemove)];
+    } else {
+        // Comma-separated literal parameter names
+        const SEPARATOR_MARK = ',';
+        const paramsToRemove = splitByNotEscapedDelimiter(parametersToRemove, SEPARATOR_MARK);
+        // Convert each literal string to a RegExp (toRegExp escapes special chars for non-regex strings)
+        regexpParamsToRemove = paramsToRemove.map(toRegExp);
+    }
+
+    /**
+     * Removes query parameters from the URL.
+     *
+     * @param url URL to remove query parameters from.
+     *
+     * @returns Modified URL.
+     */
+    const removeParams = (url: string): string => {
         try {
             let modified = false;
             const urlObj = new URL(url, window.location.origin);
 
-            paramsToRemove.forEach((param) => {
-                if (urlObj.searchParams.has(param)) {
-                    urlObj.searchParams.delete(param);
+            // Get all parameter names to check against regexps
+            const paramNames = Array.from(urlObj.searchParams.keys());
+
+            paramNames.forEach((paramName) => {
+                // Check if any of the param patterns match this parameter name
+                const shouldRemove = regexpParamsToRemove.some((regex) => regex.test(paramName));
+                if (shouldRemove) {
+                    urlObj.searchParams.delete(paramName);
                     modified = true;
                 }
             });
@@ -103,7 +100,7 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
                 return urlObj.toString();
             }
         } catch (e) {
-            logMessage(source, `remove-request-query-parameter: Invalid URL - ${url}`);
+            logMessage(source, `Cannot remove query parameters from URL: ${url}`);
         }
         return url;
     };
@@ -127,15 +124,6 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
 
         return Reflect.apply(target, thisArg, argumentsList);
     };
-
-    const xhrHandler = {
-        apply: xhrWrapper,
-    };
-
-    window.XMLHttpRequest.prototype.open = new Proxy(
-        window.XMLHttpRequest.prototype.open,
-        xhrHandler,
-    );
 
     const fetchWrapper = (
         target: typeof window.fetch,
@@ -169,17 +157,32 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
         }
 
         const newUrl = removeParams(requestUrl.url);
+        if (newUrl === requestUrl.url) {
+            // No modification was made
+            return Reflect.apply(target, thisArg, argumentsList);
+        }
         if (requestUrl.type === 'string') {
             argumentsList[0] = newUrl;
         } else if (requestUrl.type === 'object') {
-            (argumentsList[0] as { url: string }).url = newUrl;
+            // Request.url is read-only, so we need to create a new Request with the modified URL
+            const originalRequest = argumentsList[0] as Request;
+            argumentsList[0] = new Request(newUrl, originalRequest);
         }
         return Reflect.apply(target, thisArg, argumentsList);
+    };
+
+    const xhrHandler = {
+        apply: xhrWrapper,
     };
 
     const fetchHandler = {
         apply: fetchWrapper,
     };
+
+    window.XMLHttpRequest.prototype.open = new Proxy(
+        window.XMLHttpRequest.prototype.open,
+        xhrHandler,
+    );
 
     window.fetch = new Proxy(
         window.fetch,
@@ -197,5 +200,6 @@ removeRequestQueryParameter.primaryName = removeRequestQueryParameterNames[0];
 removeRequestQueryParameter.injections = [
     hit,
     logMessage,
+    splitByNotEscapedDelimiter,
     toRegExp,
 ];

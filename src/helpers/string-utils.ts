@@ -567,3 +567,47 @@ export const extractRegexAndReplacement = (
 
     return objReplacementWithRegex;
 };
+
+/**
+ * Splits a string by a delimiter, ignoring escaped delimiters.
+ *
+ * @param string String to split.
+ * @param delimiter Delimiter to split by.
+ *
+ * @returns Array of substrings.
+ */
+export const splitByNotEscapedDelimiter = (string: string, delimiter: string) => {
+    const BACKSLASH = '\\';
+
+    const splitByDelimiter = {
+        [Symbol.split](str: string) {
+            let stringIndex = 0;
+            let currentIPosition = 0;
+            const result: string[] = [];
+            while (currentIPosition < str.length) {
+                const matchPos = str.indexOf(delimiter, currentIPosition);
+                if (matchPos === -1) {
+                    // No more delimiters found, push the remaining part of the string
+                    result.push(str.substring(stringIndex));
+                    break;
+                }
+                if (matchPos > 0 && str[matchPos - 1] === BACKSLASH) {
+                    currentIPosition = matchPos + 1;
+                    continue;
+                }
+                result.push(str.substring(stringIndex, matchPos));
+                stringIndex = matchPos + 1;
+                currentIPosition = stringIndex;
+            }
+            return result;
+        },
+    };
+
+    const fixEscapedDelimiters = (arr: string[]) => {
+        const escapedDelimiterRegex = new RegExp(`\\\\${delimiter}`, 'g');
+        return arr.map((item) => item.replace(escapedDelimiterRegex, delimiter));
+    };
+
+    const result = string.split(splitByDelimiter);
+    return fixEscapedDelimiters(result);
+};
