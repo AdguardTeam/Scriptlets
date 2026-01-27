@@ -13,7 +13,7 @@ import { type Source } from './scriptlets';
  * Removes a specified query parameter from matched outgoing requests.
  *
  * Related ABP source:
- * https://gitlab.com/eyeo/anti-cv/snippets/-/blob/main/source/behavioral/strip-fetch-query-parameter.js
+ * https://gitlab.com/eyeo/anti-cv/snippets/-/blob/92f9b84bd0d34dbd0e3c1bfe3ff2062863c7714a/source/behavioral/strip-fetch-query-parameter.js
  *
  * ### Syntax
  *
