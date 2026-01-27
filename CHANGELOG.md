@@ -16,7 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `prevent-constructor` scriptlet to prevent constructor calls
   like `new Promise()` or `new MutationObserver()` [#461].
-- `remove-request-query-parameter` scriptlet [#329].
+- `remove-request-query-parameter` scriptlet to remove query parameters
+  from `fetch` and `XMLHttpRequest` requests [#329].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
 [#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
