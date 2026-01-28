@@ -146,9 +146,12 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
         if (typeof urlArg === 'string') {
             requestUrl.url = urlArg;
             requestUrl.type = 'string';
+        } else if (urlArg instanceof URL) {
+            requestUrl.url = urlArg.toString();
+            requestUrl.type = 'string';
         } else if (urlArg instanceof Request) {
-            requestUrl.url = (urlArg as { url: string }).url;
-            requestUrl.type = 'object';
+            requestUrl.url = urlArg.url;
+            requestUrl.type = 'request';
         }
 
         if (!requestUrl.url) {
@@ -166,7 +169,7 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
         }
         if (requestUrl.type === 'string') {
             argumentsList[0] = newUrl;
-        } else if (requestUrl.type === 'object') {
+        } else if (requestUrl.type === 'request') {
             // Request.url is read-only, so we need to create a new Request with the modified URL
             const originalRequest = argumentsList[0] as Request;
             argumentsList[0] = new Request(newUrl, originalRequest);
