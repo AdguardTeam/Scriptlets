@@ -17,6 +17,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `prevent-constructor` scriptlet to prevent constructor calls
   like `new Promise()` or `new MutationObserver()` [#461].
 
+### Fixed
+
+- Anti-adblock detection in `spoof-css` scriptlet
+  by using cloaked bound functions instead of Proxies [#422].
+
+[#422]: https://github.com/AdguardTeam/Scriptlets/issues/422
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
 
 ## [v2.2.15] - 2026-01-22
