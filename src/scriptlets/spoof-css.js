@@ -119,6 +119,33 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
             : realCssValue;
     };
 
+    /**
+     * Cloaks a function to make it appear as native code.
+     *
+     * This helps avoid detection by anti-adblock scripts that check:
+     * - `fn.toString()` for native code appearance;
+     * - `fn.toString.toString()` for nested toString checks;
+     * - Error stack traces for 'Proxy' keyword.
+     *
+     * @param {Function} fn Function to cloak.
+     * @param {object} thisArg `this` context to bind.
+     * @param {string} fnName Name to use for the function.
+     *
+     * @returns {Function} Cloaked function.
+     */
+    const cloakFunc = (fn, thisArg, fnName) => {
+        const cloakedToString = () => `function ${fnName}() { [native code] }`;
+        // toString.toString() should return 'function toString() { [native code] }'
+        const toStringOfToString = () => 'function toString() { [native code] }';
+        toStringOfToString.toString = toStringOfToString;
+        cloakedToString.toString = toStringOfToString;
+
+        const bound = fn.bind(thisArg);
+        Object.defineProperty(bound, 'name', { value: fnName });
+        Object.defineProperty(bound, 'toString', { value: cloakedToString });
+        return bound;
+    };
+
     const setRectValue = (rect, prop, value) => {
         Object.defineProperty(
             rect,
@@ -129,10 +156,46 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
         );
     };
 
+    /**
+     * Creates a cloaked toString function for native-looking output.
+     *
+     * @param {string} fnName Function name to use in the output.
+     *
+     * @returns {Function} `toString` function that returns native code format.
+     */
+    const cloakedToStringFactory = (fnName) => {
+        // Use named function expression so that .name returns 'toString'
+        const toString = function toString() {
+            return `function ${fnName}() { [native code] }`;
+        };
+        // toString.toString() should return 'function toString() { [native code] }'
+        const toStringOfToString = function toString() {
+            return 'function toString() { [native code] }';
+        };
+        toStringOfToString.toString = toStringOfToString;
+        toString.toString = toStringOfToString;
+        return toString;
+    };
+
+    // Properties that need to be bound to avoid 'Proxy' appearing in error stack traces
+    const propsToBindSet = new Set([
+        '__defineGetter__',
+        '__defineSetter__',
+        '__lookupGetter__',
+        '__lookupSetter__',
+    ]);
+
     const getter = (target, prop, receiver) => {
         hit(source);
         if (prop === 'toString') {
-            return target.toString.bind(target);
+            return cloakedToStringFactory(target.name || 'getComputedStyle');
+        }
+        // Bind introspection methods to original target to avoid 'Proxy' in error stack
+        if (propsToBindSet.has(prop)) {
+            const nativeFn = target[prop];
+            if (typeof nativeFn === 'function') {
+                return nativeFn.bind(target);
+            }
         }
         return Reflect.get(target, prop, receiver);
     };
@@ -154,19 +217,18 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
                 }
 
                 if (prop !== 'getPropertyValue') {
-                    return CSSStyleProp.bind(target);
+                    // Use cloakFunc to avoid 'Proxy' in stack traces
+                    return cloakFunc(CSSStyleProp, target, prop);
                 }
 
-                const getPropertyValueFunc = new Proxy(CSSStyleProp, {
-                    apply(target, thisArg, args) {
-                        const cssName = args[0];
-                        const cssValue = thisArg[cssName];
-                        return spoofStyle(cssName, cssValue);
-                    },
-                    get: getter,
-                });
+                // Create a cloaked getPropertyValue function instead of using Proxy
+                // This avoids 'Proxy' appearing in error stack traces
+                const getPropertyValueWrapper = function getPropertyValue(cssPropName) {
+                    const cssValue = target[cssPropName] || '';
+                    return spoofStyle(cssPropName, cssValue);
+                };
 
-                return getPropertyValueFunc;
+                return cloakFunc(getPropertyValueWrapper, target, 'getPropertyValue');
             },
             getOwnPropertyDescriptor(target, prop) {
                 if (propToValueMap.has(prop)) {

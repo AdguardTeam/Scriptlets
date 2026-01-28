@@ -558,3 +558,95 @@ test('Native code check', (assert) => {
     matchElem.remove();
     clearGlobalProps('hit');
 });
+
+// https://github.com/AdguardTeam/Scriptlets/issues/422
+test('Anti-detection: toString.toString() check', (assert) => {
+    const matchClassName = 'testClassToStringToString';
+    const matchElem = createElem(matchClassName);
+
+    const scriptletArgs = [`.${matchClassName}`, 'display', 'block'];
+    runScriptlet(name, scriptletArgs);
+
+    const elGetComputedStyle = window.getComputedStyle(matchElem);
+    const getPropertyValueFn = elGetComputedStyle.getPropertyValue;
+
+    // Check that toString.toString() also returns native code format
+    // This is a common anti-adblock detection technique
+    const toStringToString = getPropertyValueFn.toString.toString();
+
+    assert.ok(
+        toStringToString.includes('[native code]'),
+        'getPropertyValue.toString.toString() should return native code format',
+    );
+
+    // Check that String(getComputedStyle.toString) returns 'function toString() { [native code] }'
+    // Some anti-adblock scripts check: String(getComputedStyle.toString).indexOf('toString') === -1
+    const getComputedStyleToString = String(window.getComputedStyle.toString);
+    assert.strictEqual(
+        getComputedStyleToString,
+        'function toString() { [native code] }',
+        'String(getComputedStyle.toString) should return toString native code format',
+    );
+
+    // Also verify getPropertyValue.toString.toString() returns correct toString format
+    assert.strictEqual(
+        toStringToString,
+        'function toString() { [native code] }',
+        'getPropertyValue.toString.toString() should return toString native code format',
+    );
+
+    // Check that toString.name returns 'toString'
+    // Some anti-adblock scripts check: getComputedStyle.toString.name === 'toString'
+    assert.strictEqual(
+        window.getComputedStyle.toString.name,
+        'toString',
+        'getComputedStyle.toString.name should be "toString"',
+    );
+
+    matchElem.remove();
+    clearGlobalProps('hit');
+});
+
+// https://github.com/AdguardTeam/Scriptlets/issues/422
+test('Anti-detection: __defineGetter__ stack trace should not contain Proxy', (assert) => {
+    const matchClassName = 'testClassDefineGetter';
+    const matchElem = createElem(matchClassName);
+
+    const scriptletArgs = [`.${matchClassName}`, 'display', 'block'];
+    runScriptlet(name, scriptletArgs);
+
+    const elGetComputedStyle = window.getComputedStyle(matchElem);
+    const getPropertyValueFn = elGetComputedStyle.getPropertyValue;
+
+    // Anti-adblock scripts call __defineGetter__ to trigger an error
+    // and check if 'Proxy' appears in the stack trace
+    let stackTrace = '';
+    try {
+        // eslint-disable-next-line no-restricted-properties
+        getPropertyValueFn.__defineGetter__('test', () => {});
+    } catch (e) {
+        stackTrace = e.stack || '';
+    }
+
+    assert.notOk(
+        stackTrace.includes('Proxy'),
+        'getPropertyValue.__defineGetter__ error stack should not contain "Proxy"',
+    );
+
+    // Also test getComputedStyle.__defineGetter__
+    let stackTraceGCS = '';
+    try {
+        // eslint-disable-next-line no-restricted-properties
+        window.getComputedStyle.__defineGetter__('test', () => {});
+    } catch (e) {
+        stackTraceGCS = e.stack || '';
+    }
+
+    assert.notOk(
+        stackTraceGCS.includes('Proxy'),
+        'getComputedStyle.__defineGetter__ error stack should not contain "Proxy"',
+    );
+
+    matchElem.remove();
+    clearGlobalProps('hit');
+});
