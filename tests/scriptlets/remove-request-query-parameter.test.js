@@ -184,6 +184,29 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('XHR with URL object: remove query parameter', async (assert) => {
+        const METHOD = 'GET';
+        const urlObj = new URL('/test?utm=1', window.location.origin);
+
+        const expectedUrl = `${window.location.origin}/test`;
+
+        const done = assert.async();
+
+        const PARAMETER = 'utm';
+        const URL_TO_MATCH = '/test';
+
+        runScriptlet(name, [PARAMETER, URL_TO_MATCH]);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, urlObj);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseURL, expectedUrl, 'Response URL modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('Fetch: remove single query parameter', async (assert) => {
         const URL = '/test?utm=1';
 
