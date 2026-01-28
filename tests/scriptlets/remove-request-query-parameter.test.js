@@ -257,6 +257,25 @@ if (isSupported) {
         done();
     });
 
+    test('Fetch with URL object: remove query parameter', async (assert) => {
+        const urlPath = '/test?utm=1';
+        const urlObj = new URL(urlPath, window.location.origin);
+
+        const expectedUrl = `${window.location.origin}/test`;
+
+        const done = assert.async();
+
+        const PARAMETER = 'utm';
+        const URL_TO_MATCH = '/test';
+
+        runScriptlet(name, [PARAMETER, URL_TO_MATCH]);
+
+        const response = await fetch(urlObj);
+        assert.strictEqual(response.url, expectedUrl, 'Response URL modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('Escaped comma in parameter name', async (assert) => {
         const METHOD = 'GET';
         // Unusual but valid: parameter name containing a comma
