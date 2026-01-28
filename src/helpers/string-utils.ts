@@ -578,36 +578,32 @@ export const extractRegexAndReplacement = (
  */
 export const splitByNotEscapedDelimiter = (string: string, delimiter: string) => {
     const BACKSLASH = '\\';
+    const result: string[] = [];
+    let start = 0;
+    let pos = 0;
 
-    const splitByDelimiter = {
-        [Symbol.split](str: string) {
-            let stringIndex = 0;
-            let currentIPosition = 0;
-            const result: string[] = [];
-            while (currentIPosition < str.length) {
-                const matchPos = str.indexOf(delimiter, currentIPosition);
-                if (matchPos === -1) {
-                    // No more delimiters found, push the remaining part of the string
-                    result.push(str.substring(stringIndex));
-                    break;
-                }
-                if (matchPos > 0 && str[matchPos - 1] === BACKSLASH) {
-                    currentIPosition = matchPos + 1;
-                    continue;
-                }
-                result.push(str.substring(stringIndex, matchPos));
-                stringIndex = matchPos + 1;
-                currentIPosition = stringIndex;
-            }
-            return result;
-        },
-    };
+    while (pos <= string.length) {
+        const matchPos = string.indexOf(delimiter, pos);
 
-    const fixEscapedDelimiters = (arr: string[]) => {
-        const escapedDelimiterRegex = new RegExp(`\\\\${delimiter}`, 'g');
-        return arr.map((item) => item.replace(escapedDelimiterRegex, delimiter));
-    };
+        if (matchPos === -1) {
+            result.push(string.substring(start));
+            break;
+        }
 
-    const result = string.split(splitByDelimiter);
-    return fixEscapedDelimiters(result);
+        if (matchPos > 0 && string[matchPos - 1] === BACKSLASH) {
+            pos = matchPos + delimiter.length;
+            continue;
+        }
+        result.push(string.substring(start, matchPos));
+
+        start = matchPos + delimiter.length;
+
+        pos = start;
+    }
+
+    // Escape special regex characters in delimiter
+    const escapedDelimiter = delimiter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedDelimiterRegex = new RegExp(`\\\\${escapedDelimiter}`, 'g');
+
+    return result.map((item) => item.replace(escapedDelimiterRegex, delimiter));
 };
