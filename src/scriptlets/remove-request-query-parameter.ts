@@ -91,7 +91,11 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
 
             paramNames.forEach((paramName) => {
                 // Check if any of the param patterns match this parameter name
-                const shouldRemove = regexpParamsToRemove.some((regex) => regex.test(paramName));
+                // Reset lastIndex before each test to avoid stateful issues with `g` or `y` flags
+                const shouldRemove = regexpParamsToRemove.some((regex) => {
+                    regex.lastIndex = 0;
+                    return regex.test(paramName);
+                });
                 if (shouldRemove) {
                     urlObj.searchParams.delete(paramName);
                     modified = true;
