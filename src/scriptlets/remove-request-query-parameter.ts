@@ -195,6 +195,7 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
 
 export const removeRequestQueryParameterNames = [
     'remove-request-query-parameter',
+    'abp-strip-fetch-query-parameter',
 ];
 
 // eslint-disable-next-line prefer-destructuring
