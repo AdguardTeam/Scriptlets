@@ -60,18 +60,31 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
         return;
     }
 
-    const urlPatternRegExp = urlPattern ? toRegExp(urlPattern) : null;
+    let urlPatternRegExp: RegExp | null = null;
+    if (urlPattern) {
+        try {
+            urlPatternRegExp = toRegExp(urlPattern);
+        } catch (e) {
+            logMessage(source, `Invalid URL pattern: ${urlPattern}`);
+            return;
+        }
+    }
 
     let regexpParamsToRemove: RegExp[];
-    // simple check if parametersToRemove is a regex pattern (starts with `/`)
-    if (parametersToRemove.startsWith('/')) {
-        regexpParamsToRemove = [toRegExp(parametersToRemove)];
-    } else {
-        // Comma-separated literal parameter names
-        const SEPARATOR_MARK = ',';
-        const paramsToRemove = splitByNotEscapedDelimiter(parametersToRemove, SEPARATOR_MARK);
-        // Convert each literal string to a RegExp (toRegExp escapes special chars for non-regex strings)
-        regexpParamsToRemove = paramsToRemove.map(toRegExp);
+    try {
+        // If starts with `/`, treat the entire value as a single regex pattern
+        if (parametersToRemove.startsWith('/')) {
+            regexpParamsToRemove = [toRegExp(parametersToRemove)];
+        } else {
+            // Comma-separated literal parameter names
+            const SEPARATOR_MARK = ',';
+            const paramsToRemove = splitByNotEscapedDelimiter(parametersToRemove, SEPARATOR_MARK);
+            // Convert each literal string to a RegExp (toRegExp escapes special chars for non-regex strings)
+            regexpParamsToRemove = paramsToRemove.map((param) => toRegExp(param));
+        }
+    } catch (e) {
+        logMessage(source, `Invalid parameter pattern: ${parametersToRemove}`);
+        return;
     }
 
     /**
