@@ -54,7 +54,7 @@ import { type Source } from './scriptlets';
  *
  * @added unknown.
  */
-export function removeRequestQueryParameter(source: Source, parametersToRemove: string, urlPattern: string) {
+export function removeRequestQueryParameter(source: Source, parametersToRemove: string, urlPattern?: string) {
     if (!parametersToRemove) {
         logMessage(source, 'Missing parameters to remove');
         return;
