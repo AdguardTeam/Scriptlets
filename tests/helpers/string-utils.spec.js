@@ -1,6 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { toRegExp, inferValue, extractRegexAndReplacement } from '../../src/helpers';
+import {
+    toRegExp,
+    inferValue,
+    extractRegexAndReplacement,
+    splitByNotEscapedDelimiter,
+} from '../../src/helpers';
 
 describe('Test string utils', () => {
     describe('Test toRegExp for valid inputs', () => {
@@ -428,6 +433,98 @@ describe('Test string utils', () => {
             const result2 = extractRegexAndReplacement('replace:/foo/bar\\n/');
             expect(result2.regexPart).toStrictEqual(/foo/);
             expect(result2.replacementPart).toBe('bar\\n');
+        });
+    });
+
+    describe('splitByNotEscapedDelimiter', () => {
+        test('Basic split with no escaped delimiters', () => {
+            const result = splitByNotEscapedDelimiter('foo,bar,baz', ',');
+            expect(result).toStrictEqual(['foo', 'bar', 'baz']);
+        });
+
+        test('Split with single escaped delimiter', () => {
+            const result = splitByNotEscapedDelimiter('foo\\,bar,baz', ',');
+            expect(result).toStrictEqual(['foo,bar', 'baz']);
+        });
+
+        test('Split with multiple escaped delimiters', () => {
+            const result = splitByNotEscapedDelimiter('foo\\,bar\\,baz,qux', ',');
+            expect(result).toStrictEqual(['foo,bar,baz', 'qux']);
+        });
+
+        test('Split with escaped and unescaped delimiters', () => {
+            const result = splitByNotEscapedDelimiter('a\\,b,c\\,d,e', ',');
+            expect(result).toStrictEqual(['a,b', 'c,d', 'e']);
+        });
+
+        test('Split with no delimiters', () => {
+            const result = splitByNotEscapedDelimiter('foobar', ',');
+            expect(result).toStrictEqual(['foobar']);
+        });
+
+        test('Split with only escaped delimiters', () => {
+            const result = splitByNotEscapedDelimiter('foo\\,bar\\,baz', ',');
+            expect(result).toStrictEqual(['foo,bar,baz']);
+        });
+
+        test('Split empty string', () => {
+            const result = splitByNotEscapedDelimiter('', ',');
+            expect(result).toStrictEqual(['']);
+        });
+
+        test('Split with delimiter at start', () => {
+            const result = splitByNotEscapedDelimiter(',foo,bar', ',');
+            expect(result).toStrictEqual(['', 'foo', 'bar']);
+        });
+
+        test('Split with delimiter at end', () => {
+            const result = splitByNotEscapedDelimiter('foo,bar,', ',');
+            expect(result).toStrictEqual(['foo', 'bar', '']);
+        });
+
+        test('Split with consecutive delimiters', () => {
+            const result = splitByNotEscapedDelimiter('foo,,bar', ',');
+            expect(result).toStrictEqual(['foo', '', 'bar']);
+        });
+
+        test('Split with escaped delimiter at start', () => {
+            const result = splitByNotEscapedDelimiter('\\,foo,bar', ',');
+            expect(result).toStrictEqual([',foo', 'bar']);
+        });
+
+        test('Split with escaped delimiter at end', () => {
+            const result = splitByNotEscapedDelimiter('foo,bar\\,', ',');
+            expect(result).toStrictEqual(['foo', 'bar,']);
+        });
+
+        test('Split with different delimiter', () => {
+            const result = splitByNotEscapedDelimiter('foo|bar\\|baz|qux', '|');
+            expect(result).toStrictEqual(['foo', 'bar|baz', 'qux']);
+        });
+
+        test('Split with multi-character delimiter', () => {
+            const result = splitByNotEscapedDelimiter('foo::bar\\::baz::qux', '::');
+            expect(result).toStrictEqual(['foo', 'bar::baz', 'qux']);
+        });
+
+        test('Split with special regex characters as delimiter', () => {
+            const result = splitByNotEscapedDelimiter('foo.bar\\.baz.qux', '.');
+            expect(result).toStrictEqual(['foo', 'bar.baz', 'qux']);
+        });
+
+        test('Complex case with multiple escapes', () => {
+            const result = splitByNotEscapedDelimiter('a\\,b\\,c,d,e\\,f', ',');
+            expect(result).toStrictEqual(['a,b,c', 'd', 'e,f']);
+        });
+
+        test('Single character string that is delimiter', () => {
+            const result = splitByNotEscapedDelimiter(',', ',');
+            expect(result).toStrictEqual(['', '']);
+        });
+
+        test('Single character string that is escaped delimiter', () => {
+            const result = splitByNotEscapedDelimiter('\\,', ',');
+            expect(result).toStrictEqual([',']);
         });
     });
 });

@@ -60,3 +60,4 @@ import './trusted-prune-inbound-object.test';
 import './trusted-suppress-native-method.test';
 import './prevent-canvas.test';
 import './trusted-replace-argument.test';
+import './remove-request-query-parameter.test';

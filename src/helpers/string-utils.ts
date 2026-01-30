@@ -567,3 +567,42 @@ export const extractRegexAndReplacement = (
 
     return objReplacementWithRegex;
 };
+
+/**
+ * Splits a string by a delimiter, ignoring escaped delimiters.
+ *
+ * @param string String to split.
+ * @param delimiter Delimiter to split by.
+ *
+ * @returns Array of substrings.
+ */
+export const splitByNotEscapedDelimiter = (string: string, delimiter: string) => {
+    const BACKSLASH = '\\';
+    const result: string[] = [];
+    let current = '';
+    let i = 0;
+
+    while (i < string.length) {
+        if (string[i] === BACKSLASH && i + 1 < string.length) {
+            const next = string.substring(i + 1, i + 1 + delimiter.length);
+            if (next === delimiter) {
+                current += delimiter;
+                i += 1 + delimiter.length;
+                continue;
+            }
+        }
+
+        const substr = string.substring(i, i + delimiter.length);
+        if (substr === delimiter) {
+            result.push(current);
+            current = '';
+            i += delimiter.length;
+        } else {
+            current += string[i];
+            i += 1;
+        }
+    }
+
+    result.push(current);
+    return result;
+};

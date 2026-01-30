@@ -10,18 +10,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## Unreleased
+## [Unreleased]
 
 ### Added
 
 - `prevent-constructor` scriptlet to prevent constructor calls
   like `new Promise()` or `new MutationObserver()` [#461].
+- `remove-request-query-parameter` scriptlet to remove query parameters
+  from `fetch` and `XMLHttpRequest` requests [#329].
 
 ### Fixed
 
 - Anti-adblock detection in `spoof-css` scriptlet
   by using cloaked bound functions instead of Proxies [#422].
 
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
+[#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
 [#422]: https://github.com/AdguardTeam/Scriptlets/issues/422
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
 

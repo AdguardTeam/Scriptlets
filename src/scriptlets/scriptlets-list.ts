@@ -77,6 +77,7 @@ export { preventCanvas } from './prevent-canvas';
 export { trustedReplaceArgument } from './trusted-replace-argument';
 export { preventInnerHTML } from './prevent-innerHTML';
 export { preventConstructor } from './prevent-constructor';
+export { removeRequestQueryParameter } from './remove-request-query-parameter';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
 export { AmazonApstag } from './amazon-apstag';
