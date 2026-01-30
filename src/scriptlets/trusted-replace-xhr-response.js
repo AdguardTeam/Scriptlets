@@ -124,6 +124,12 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
 
+    // Store matched XHR requests and their data in private structures
+    // to prevent bypass via thisArg property manipulation
+    // https://github.com/AdguardTeam/Scriptlets/issues/386
+    const matchedXhrRequests = new Set();
+    const xhrRequestHeaders = new Map();
+
     let xhrData;
 
     const openWrapper = (target, thisArg, args) => {
@@ -139,17 +145,18 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         }
 
         if (matchRequestProps(source, propsToMatch, xhrData)) {
-            thisArg.shouldBePrevented = true;
-            thisArg.headersReceived = !!thisArg.headersReceived;
+            matchedXhrRequests.add(thisArg);
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (thisArg.shouldBePrevented && !thisArg.headersReceived) {
-            thisArg.headersReceived = true;
-            thisArg.collectedHeaders = [];
+        if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
+            xhrRequestHeaders.set(thisArg, []);
             const setRequestHeaderWrapper = (target, thisArg, args) => {
                 // Collect headers
-                thisArg.collectedHeaders.push(args);
+                const headers = xhrRequestHeaders.get(thisArg);
+                if (headers) {
+                    headers.push(args);
+                }
                 return Reflect.apply(target, thisArg, args);
             };
 
@@ -166,7 +173,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     };
 
     const sendWrapper = (target, thisArg, args) => {
-        if (!thisArg.shouldBePrevented) {
+        if (!matchedXhrRequests.has(thisArg)) {
             return Reflect.apply(target, thisArg, args);
         }
 
@@ -176,6 +183,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
          * listeners on original XHR object
          */
         const forgedRequest = new XMLHttpRequest();
+        forgedRequest.withCredentials = thisArg.withCredentials;
         forgedRequest.addEventListener('readystatechange', () => {
             if (forgedRequest.readyState !== 4) {
                 return;
@@ -201,12 +209,17 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 ? /(\n|.)*/
                 : toRegExp(pattern);
 
-            if (shouldLogContent) {
-                logMessage(source, `Original text content: ${content}`);
-            }
-            const modifiedContent = content.replace(patternRegexp, replacement);
-            if (shouldLogContent) {
-                logMessage(source, `Modified text content: ${modifiedContent}`);
+            const isPatternFound = pattern === '*' || patternRegexp.test(content);
+
+            let responseContent = content;
+            if (isPatternFound) {
+                if (shouldLogContent) {
+                    logMessage(source, `Original text content: ${content}`);
+                }
+                responseContent = content.replace(patternRegexp, replacement);
+                if (shouldLogContent) {
+                    logMessage(source, `Modified text content: ${responseContent}`);
+                }
             }
 
             // Manually put required values into target XHR object
@@ -218,9 +231,9 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 responseXML: { value: responseXML, writable: false },
                 status: { value: status, writable: false },
                 statusText: { value: statusText, writable: false },
-                // modified values
-                response: { value: modifiedContent, writable: false },
-                responseText: { value: modifiedContent, writable: false },
+                // modified values only if pattern matched, otherwise original
+                response: { value: responseContent, writable: false },
+                responseText: { value: responseContent, writable: false },
             });
 
             // Mock events
@@ -228,27 +241,31 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 const stateEvent = new Event('readystatechange');
                 thisArg.dispatchEvent(stateEvent);
 
-                const loadEvent = new Event('load');
+                const loadEvent = new ProgressEvent('load');
                 thisArg.dispatchEvent(loadEvent);
 
-                const loadEndEvent = new Event('loadend');
+                const loadEndEvent = new ProgressEvent('loadend');
                 thisArg.dispatchEvent(loadEndEvent);
             }, 1);
 
-            hit(source);
+            if (isPatternFound) {
+                hit(source);
+            }
         });
 
         nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
-        thisArg.collectedHeaders.forEach((header) => {
+        const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
+        collectedHeaders.forEach((header) => {
             const name = header[0];
             const value = header[1];
 
             forgedRequest.setRequestHeader(name, value);
         });
-        thisArg.collectedHeaders = [];
+        xhrRequestHeaders.delete(thisArg);
+        matchedXhrRequests.delete(thisArg);
 
         try {
             nativeSend.call(forgedRequest, args);

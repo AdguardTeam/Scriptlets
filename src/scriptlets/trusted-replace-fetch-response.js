@@ -160,11 +160,16 @@ export function trustedReplaceFetchResponse(
         // eslint-disable-next-line prefer-spread
         return nativeFetch.apply(null, args)
             .then((response) => {
-                return response.text()
+                return response.clone().text()
                     .then((bodyText) => {
                         const patternRegexp = pattern === '*'
                             ? /(\n|.)*/
                             : toRegExp(pattern);
+
+                        const isPatternFound = pattern === '*' || patternRegexp.test(bodyText);
+                        if (!isPatternFound) {
+                            return response;
+                        }
 
                         if (shouldLogContent) {
                             logMessage(source, `Original text content: ${bodyText}`);
@@ -183,7 +188,7 @@ export function trustedReplaceFetchResponse(
                         const fetchDataStr = objectToString(fetchData);
                         const message = `Response body can't be converted to text: ${fetchDataStr}`;
                         logMessage(source, message);
-                        return Reflect.apply(target, thisArg, args);
+                        return response;
                     });
             })
             .catch(() => Reflect.apply(target, thisArg, args));

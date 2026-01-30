@@ -112,6 +112,12 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     const nativeGetResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
     const nativeGetAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
 
+    // Store matched XHR requests and their data in private structures
+    // to prevent bypass via thisArg property manipulation
+    // https://github.com/AdguardTeam/Scriptlets/issues/386
+    const matchedXhrRequests = new Map();
+    const xhrRequestHeaders = new Map();
+
     let xhrData;
     let modifiedResponse = '';
     let modifiedResponseText = '';
@@ -126,19 +132,21 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             logMessage(source, `xhr( ${objectToString(xhrData)} )`, true);
             hit(source);
         } else if (matchRequestProps(source, propsToMatch, xhrData)) {
-            thisArg.shouldBePrevented = true;
-            // Add xhrData to thisArg to keep original values in case of multiple requests
+            // Store xhrData in map to keep original values in case of multiple requests
             // https://github.com/AdguardTeam/Scriptlets/issues/347
-            thisArg.xhrData = xhrData;
+            matchedXhrRequests.set(thisArg, xhrData);
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later;
         // needed for getResponseHeader() and getAllResponseHeaders() methods
-        if (thisArg.shouldBePrevented) {
-            thisArg.collectedHeaders = [];
+        if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
+            xhrRequestHeaders.set(thisArg, []);
             const setRequestHeaderWrapper = (target, thisArg, args) => {
                 // Collect headers
-                thisArg.collectedHeaders.push(args);
+                const headers = xhrRequestHeaders.get(thisArg);
+                if (headers) {
+                    headers.push(args);
+                }
                 return Reflect.apply(target, thisArg, args);
             };
             const setRequestHeaderHandler = {
@@ -152,9 +160,11 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     };
 
     const sendWrapper = (target, thisArg, args) => {
-        if (!thisArg.shouldBePrevented) {
+        if (!matchedXhrRequests.has(thisArg)) {
             return Reflect.apply(target, thisArg, args);
         }
+
+        const storedXhrData = matchedXhrRequests.get(thisArg);
 
         if (thisArg.responseType === 'blob') {
             modifiedResponse = new Blob();
@@ -198,7 +208,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
                 Object.defineProperties(thisArg, {
                     readyState: { value: 4, writable: false },
                     statusText: { value: 'OK', writable: false },
-                    responseURL: { value: responseURL || thisArg.xhrData.url, writable: false },
+                    responseURL: { value: responseURL || storedXhrData.url, writable: false },
                     responseXML: { value: responseXML, writable: false },
                     status: { value: 200, writable: false },
                     response: { value: modifiedResponse, writable: false },
@@ -237,15 +247,18 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             thisArg.dispatchEvent(loadEndEvent);
         }, 1);
 
-        nativeOpen.apply(forgedRequest, [thisArg.xhrData.method, thisArg.xhrData.url]);
+        nativeOpen.apply(forgedRequest, [storedXhrData.method, storedXhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
-        thisArg.collectedHeaders.forEach((header) => {
+        const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
+        collectedHeaders.forEach((header) => {
             const name = header[0];
             const value = header[1];
             forgedRequest.setRequestHeader(name, value);
         });
+        // Note: We do NOT delete from xhrRequestHeaders here because
+        // getResponseHeader() and getAllResponseHeaders() need access to the headers later
 
         return undefined;
     };
@@ -260,16 +273,17 @@ export function preventXHR(source, propsToMatch, customResponseText) {
      * @returns {string|null} Header value or null if header is not set.
      */
     const getHeaderWrapper = (target, thisArg, args) => {
-        if (!thisArg.shouldBePrevented) {
+        const collectedHeaders = xhrRequestHeaders.get(thisArg);
+        if (!collectedHeaders) {
             return nativeGetResponseHeader.apply(thisArg, args);
         }
-        if (!thisArg.collectedHeaders.length) {
+        if (!collectedHeaders.length) {
             return null;
         }
         // The search for the header name is case-insensitive
         // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getResponseHeader
         const searchHeaderName = args[0].toLowerCase();
-        const matchedHeader = thisArg.collectedHeaders.find((header) => {
+        const matchedHeader = collectedHeaders.find((header) => {
             const headerName = header[0].toLowerCase();
             return headerName === searchHeaderName;
         });
@@ -287,13 +301,14 @@ export function preventXHR(source, propsToMatch, customResponseText) {
      * @returns {string} All headers as a string. For no headers an empty string is returned.
      */
     const getAllHeadersWrapper = (target, thisArg) => {
-        if (!thisArg.shouldBePrevented) {
+        const collectedHeaders = xhrRequestHeaders.get(thisArg);
+        if (!collectedHeaders) {
             return nativeGetAllResponseHeaders.call(thisArg);
         }
-        if (!thisArg.collectedHeaders.length) {
+        if (!collectedHeaders.length) {
             return '';
         }
-        const allHeadersStr = thisArg.collectedHeaders
+        const allHeadersStr = collectedHeaders
             .map((header) => {
                 /**
                  * TODO: array destructuring may be used here

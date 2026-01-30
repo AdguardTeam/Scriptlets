@@ -362,6 +362,91 @@ if (isSupported) {
         xhr1.send();
         setTimeout(() => xhr2.send(), 1);
     });
+    test('URL matches but content pattern does not match, response is not modified', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+
+        // Use a broad URL pattern that matches, but a content pattern that doesn't exist
+        const PATTERN = 'nonexistent_pattern_xyz';
+        const REPLACEMENT = 'replacement';
+        // /\\W/ matches any non-word character, so it matches all URLs
+        const PROPS_TO_MATCH = '/\\W/';
+        const MATCH_DATA = [PATTERN, REPLACEMENT, PROPS_TO_MATCH];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.ok(xhr.response.includes('a1'), 'Response is intact');
+            assert.ok(xhr.response.includes('test'), 'Response content is intact');
+            assert.notOk(xhr.response.includes(REPLACEMENT), 'Replacement is not present');
+
+            assert.strictEqual(window.hit, undefined, 'hit should NOT fire when content pattern does not match');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('URL matches with broad regex, content pattern matches, response is modified', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+
+        const PATTERN = 'test';
+        const REPLACEMENT = 'modified';
+        // /\\W/ matches any non-word character, so it matches all URLs
+        const PROPS_TO_MATCH = '/\\W/';
+        const MATCH_DATA = [PATTERN, REPLACEMENT, PROPS_TO_MATCH];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.notOk(xhr.response.includes('test'), 'Pattern is replaced');
+            assert.ok(xhr.response.includes('modified'), 'Replacement is present');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    // bypass prevention: https://github.com/AdguardTeam/Scriptlets/issues/386
+    test('Cannot be bypassed by setting shouldBePrevented = false on XHR object', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+
+        const PATTERN = 'test';
+        const REPLACEMENT = 'replaced';
+        const PROPS_TO_MATCH = '';
+        const MATCH_DATA = [PATTERN, REPLACEMENT, PROPS_TO_MATCH];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        // Attempt to bypass the scriptlet by setting shouldBePrevented to false
+        xhr.shouldBePrevented = false;
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            // The scriptlet should still work despite the bypass attempt
+            assert.notOk(xhr.response.includes('test'), 'Pattern is replaced despite bypass attempt');
+            assert.ok(xhr.response.includes('replaced'), 'Replacement is present');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

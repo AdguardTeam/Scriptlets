@@ -909,6 +909,33 @@ if (isSupported) {
         // use timeout to avoid hit collisions
         setTimeout(() => xhr2.send(), 10);
     });
+
+    // bypass prevention: https://github.com/AdguardTeam/Scriptlets/issues/386
+    test('Cannot be bypassed by setting shouldBePrevented = false on XHR object', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [''];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        // Attempt to bypass the scriptlet by setting shouldBePrevented to false
+        xhr.shouldBePrevented = false;
+        xhr.onload = () => {
+            // The scriptlet should still prevent the request despite the bypass attempt
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.strictEqual(xhr.status, 200, 'Status is 200');
+            // Response should be empty (prevented) despite bypass attempt
+            assert.strictEqual(xhr.responseText, '', 'Response is empty despite bypass attempt');
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

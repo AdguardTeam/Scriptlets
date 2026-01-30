@@ -23,11 +23,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Anti-adblock detection in `spoof-css` scriptlet
   by using cloaked bound functions instead of Proxies [#422].
+- Response corruption in `trusted-replace-fetch-response` and `trusted-replace-xhr-response`
+  scriptlets when URL pattern matches but content pattern does not [#486].
+- XHR handling in `trusted-replace-xhr-response` and `xml-prune` scriptlets:
+    - added `withCredentials` to forged requests,
+    - fixed duplicate headers when multiple scriptlets are used,
+    - used `ProgressEvent` for `load` and `loadend` events [#486].
+- XHR scriptlet bypass vulnerability in `trusted-replace-xhr-response`,
+  `prevent-xhr`, and `xml-prune` scriptlets where
+  setting `xhr.shouldBePrevented = false` could disable the scriptlet [#386].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
 [#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
+[#386]: https://github.com/AdguardTeam/Scriptlets/issues/386
 [#422]: https://github.com/AdguardTeam/Scriptlets/issues/422
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
+[#486]: https://github.com/AdguardTeam/Scriptlets/issues/486
 
 ## [v2.2.15] - 2026-01-22
 

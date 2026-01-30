@@ -289,6 +289,60 @@ if (!isSupported) {
         done();
     });
 
+    test('URL matches but content pattern does not match, response is not modified', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const TEST_METHOD = 'GET';
+        const init = {
+            method: TEST_METHOD,
+        };
+
+        const expectedJson = {
+            a1: 1,
+            b2: 'test',
+            c3: 3,
+        };
+
+        const done = assert.async();
+
+        // Use a broad URL pattern that matches, but a content pattern that doesn't exist
+        const PATTERN = 'nonexistent_pattern_xyz';
+        const REPLACEMENT = 'replacement';
+        // /\\W/ matches any non-word character, so it matches all URLs
+        const PROPS_TO_MATCH = '/\\W/';
+        runScriptlet(name, [PATTERN, REPLACEMENT, PROPS_TO_MATCH]);
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire when content pattern does not match');
+        assert.deepEqual(actualJson, expectedJson, 'Response content is intact');
+        done();
+    });
+
+    test('URL matches with broad regex, content pattern matches, response is modified', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const TEST_METHOD = 'GET';
+        const init = {
+            method: TEST_METHOD,
+        };
+
+        const done = assert.async();
+
+        const PATTERN = 'test';
+        const REPLACEMENT = 'modified';
+        // /\\W/ matches any non-word character, so it matches all URLs
+        const PROPS_TO_MATCH = '/\\W/';
+        runScriptlet(name, [PATTERN, REPLACEMENT, PROPS_TO_MATCH]);
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const textContent = await response.text();
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.notOk(textContent.includes('test'), 'Pattern is replaced');
+        assert.ok(textContent.includes('modified'), 'Replacement is present');
+        done();
+    });
+
     test('Data URL request, URL set by Object.defineProperty, content should NOT be replaced', async (assert) => {
         const JSON_CONTENT = '{"adPlacements":true,"playerAds":true,}';
         const BASE64 = btoa(JSON_CONTENT);

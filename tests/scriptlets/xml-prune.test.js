@@ -541,4 +541,80 @@ if (!isSupported) {
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });
+
+    test('fetch - URL matches but selector does not match, response is not modified', async (assert) => {
+        const MATCH_DATA = "Period[id*='nonexistent-selector']";
+        const OPTIONAL_MATCH = '';
+        const MATCH_URL = '/./';
+        const scriptletArgs = [MATCH_DATA, OPTIONAL_MATCH, MATCH_URL];
+
+        runScriptlet(name, scriptletArgs);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+
+        assert.ok(responseMPD.includes('pre-roll-1-ad-1'), 'Response content is intact');
+        assert.strictEqual(window.hit, undefined, 'hit should NOT fire when selector does not match');
+        done();
+    });
+
+    test('fetch - URL matches with broad regex, selector matches, response is modified', async (assert) => {
+        const MATCH_DATA = "Period[id*='-ad-']";
+        const OPTIONAL_MATCH = '';
+        const MATCH_URL = '/./';
+        const scriptletArgs = [MATCH_DATA, OPTIONAL_MATCH, MATCH_URL];
+
+        runScriptlet(name, scriptletArgs);
+
+        const done = assert.async();
+
+        const response = await fetch(MPD_OBJECTS_PATH);
+        const responseMPD = await response.text();
+
+        assert.notOk(responseMPD.includes('pre-roll-1-ad-1'), 'Ads are removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('xhr - URL matches but selector does not match, response is not modified', async (assert) => {
+        const MATCH_DATA = "Period[id*='nonexistent-selector']";
+        const OPTIONAL_MATCH = '';
+        const MATCH_URL = '/./';
+        const scriptletArgs = [MATCH_DATA, OPTIONAL_MATCH, MATCH_URL];
+
+        runScriptlet(name, scriptletArgs);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
+        xhr.onload = () => {
+            assert.ok(xhr.responseText.includes('pre-roll-1-ad-1'), 'Response content is intact');
+            assert.strictEqual(window.hit, undefined, 'hit should NOT fire when selector does not match');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('xhr - URL matches with broad regex, selector matches, response is modified', async (assert) => {
+        const MATCH_DATA = "Period[id*='-ad-']";
+        const OPTIONAL_MATCH = '';
+        const MATCH_URL = '/./';
+        const scriptletArgs = [MATCH_DATA, OPTIONAL_MATCH, MATCH_URL];
+
+        runScriptlet(name, scriptletArgs);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(GET_METHOD, MPD_OBJECTS_PATH);
+        xhr.onload = () => {
+            assert.notOk(xhr.responseText.includes('pre-roll-1-ad-1'), 'Ads are removed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
 }

@@ -294,6 +294,12 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
 
+    // Store matched XHR requests and their data in private structures
+    // to prevent bypass via thisArg property manipulation
+    // https://github.com/AdguardTeam/Scriptlets/issues/386
+    const matchedXhrRequests = new Set();
+    const xhrRequestHeaders = new Map();
+
     let xhrData;
 
     const openWrapper = (target, thisArg, args) => {
@@ -301,15 +307,18 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
         xhrData = getXhrData.apply(null, args);
 
         if (matchRequestProps(source, urlToMatch, xhrData)) {
-            thisArg.shouldBePruned = true;
+            matchedXhrRequests.add(thisArg);
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (thisArg.shouldBePruned) {
-            thisArg.collectedHeaders = [];
+        if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
+            xhrRequestHeaders.set(thisArg, []);
             const setRequestHeaderWrapper = (target, thisArg, args) => {
                 // Collect headers
-                thisArg.collectedHeaders.push(args);
+                const headers = xhrRequestHeaders.get(thisArg);
+                if (headers) {
+                    headers.push(args);
+                }
                 return Reflect.apply(target, thisArg, args);
             };
 
@@ -329,7 +338,10 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
         const allowedResponseTypeValues = ['', 'text'];
         // Do nothing if request do not match
         // or response type is not a string
-        if (!thisArg.shouldBePruned || !allowedResponseTypeValues.includes(thisArg.responseType)) {
+        if (
+            !matchedXhrRequests.has(thisArg)
+            || !allowedResponseTypeValues.includes(thisArg.responseType)
+        ) {
             return Reflect.apply(target, thisArg, args);
         }
 
@@ -339,6 +351,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
          * listeners on original XHR object
          */
         const forgedRequest = new XMLHttpRequest();
+        forgedRequest.withCredentials = thisArg.withCredentials;
         forgedRequest.addEventListener('readystatechange', () => {
             if (forgedRequest.readyState !== 4) {
                 return;
@@ -389,26 +402,31 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
                 const stateEvent = new Event('readystatechange');
                 thisArg.dispatchEvent(stateEvent);
 
-                const loadEvent = new Event('load');
+                const loadEvent = new ProgressEvent('load');
                 thisArg.dispatchEvent(loadEvent);
 
-                const loadEndEvent = new Event('loadend');
+                const loadEndEvent = new ProgressEvent('loadend');
                 thisArg.dispatchEvent(loadEndEvent);
             }, 1);
-            hit(source);
+
+            if (shouldPruneResponse) {
+                hit(source);
+            }
         });
 
         nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
 
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
-        thisArg.collectedHeaders.forEach((header) => {
+        const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
+        collectedHeaders.forEach((header) => {
             const name = header[0];
             const value = header[1];
 
             forgedRequest.setRequestHeader(name, value);
         });
-        thisArg.collectedHeaders = [];
+        xhrRequestHeaders.delete(thisArg);
+        matchedXhrRequests.delete(thisArg);
 
         try {
             nativeSend.call(forgedRequest, args);
