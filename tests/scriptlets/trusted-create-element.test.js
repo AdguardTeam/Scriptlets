@@ -329,3 +329,91 @@ test('creating iframe', (assert) => {
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('creating script element with textContent', (assert) => {
+    const { children } = createRoot(ROOT_ID);
+
+    const childTagName = 'script';
+    const textContent = 'window.scriptTestVar = "trusted-create-element-script";';
+
+    assert.strictEqual(children.length, 0, 'Parent element has no children before scriptlet is run');
+
+    runScriptlet(name, [ROOT_SELECTOR, childTagName, '', textContent]);
+
+    assert.strictEqual(children.length, 1, 'Script element was appended');
+
+    const child = children[0];
+
+    assert.strictEqual(child.tagName.toLowerCase(), childTagName, 'Tag name is set correctly');
+    assert.strictEqual(child.textContent, textContent, 'Text content is set correctly');
+    assert.strictEqual(window.scriptTestVar, 'trusted-create-element-script', 'Script was executed');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+
+    clearGlobalProps('scriptTestVar');
+});
+
+test('creating script element with attributes', (assert) => {
+    const { children } = createRoot(ROOT_ID);
+
+    const childTagName = 'script';
+    const attributesParam = 'type="text/javascript" data-test="value"';
+    const textContent = 'window.scriptTestVar2 = "script-with-attrs";';
+
+    assert.strictEqual(children.length, 0, 'Parent element has no children before scriptlet is run');
+
+    runScriptlet(name, [ROOT_SELECTOR, childTagName, attributesParam, textContent]);
+
+    assert.strictEqual(children.length, 1, 'Script element was appended');
+
+    const child = children[0];
+
+    assert.strictEqual(child.tagName.toLowerCase(), childTagName, 'Tag name is set correctly');
+    assert.strictEqual(child.getAttribute('type'), 'text/javascript', 'Type attribute is set correctly');
+    assert.strictEqual(child.getAttribute('data-test'), 'value', 'Data attribute is set correctly');
+    assert.strictEqual(child.textContent, textContent, 'Text content is set correctly');
+    assert.strictEqual(window.scriptTestVar2, 'script-with-attrs', 'Script was executed');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+
+    clearGlobalProps('scriptTestVar2');
+});
+
+test('trustedTypes.createScript is called for script textContent', (assert) => {
+    if (!window.trustedTypes) {
+        assert.expect(0);
+        return;
+    }
+
+    const { children } = createRoot(ROOT_ID);
+
+    const nativeCreatePolicy = window.trustedTypes.createPolicy.bind(window.trustedTypes);
+    let createScriptCalled = false;
+    let createScriptArg = null;
+
+    window.trustedTypes.createPolicy = (name, rules) => {
+        const wrappedRules = {
+            ...rules,
+            createScript: (input) => {
+                createScriptCalled = true;
+                createScriptArg = input;
+                return rules.createScript ? rules.createScript(input) : input;
+            },
+        };
+        return nativeCreatePolicy(name, wrappedRules);
+    };
+
+    const childTagName = 'script';
+    const textContent = 'window.scriptTestVar3 = "trusted-types-verify";';
+
+    runScriptlet(name, [ROOT_SELECTOR, childTagName, '', textContent]);
+
+    assert.strictEqual(children.length, 1, 'Script element was appended');
+    assert.true(createScriptCalled, 'trustedTypes createScript was called');
+    assert.strictEqual(createScriptArg, textContent, 'createScript was called with correct textContent');
+    assert.strictEqual(window.scriptTestVar3, 'trusted-types-verify', 'Script was executed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+
+    window.trustedTypes.createPolicy = nativeCreatePolicy;
+    clearGlobalProps('scriptTestVar3');
+});

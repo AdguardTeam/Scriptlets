@@ -882,12 +882,12 @@ declare function convertAdgRedirectToUbo(rule: string): string;
 
 | Browser               | Version |
 |-----------------------|:--------|
-| Chrome                | ✅ 55    |
-| Firefox               | ✅ 52    |
-| Edge                  | ✅ 15    |
-| Opera                 | ✅ 42    |
-| Safari                | ✅ 13    |
-| Internet Explorer     | ❌       |
+| Chrome                | ✅ 55   |
+| Firefox               | ✅ 52   |
+| Edge                  | ✅ 15   |
+| Opera                 | ✅ 42   |
+| Safari                | ✅ 13   |
+| Internet Explorer     | ❌      |
 
 ## <a name="used-by"> Projects using Scriptlets
 

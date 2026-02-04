@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   like `new Promise()` or `new MutationObserver()` [#461].
 - `remove-request-query-parameter` scriptlet to remove query parameters
   from `fetch` and `XMLHttpRequest` requests [#329].
+- [Trusted Types API] support in `trusted-create-element` scriptlet [#507].
 
 ### Fixed
 
@@ -39,6 +40,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#422]: https://github.com/AdguardTeam/Scriptlets/issues/422
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
 [#486]: https://github.com/AdguardTeam/Scriptlets/issues/486
+[#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
 
 ## [v2.2.15] - 2026-01-22
 
@@ -207,7 +209,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Ability to set random response content in `prevent-fetch` scriptlet [#416].
 - Ability to choose CSS injection method in `inject-css-in-shadow-dom` scriptlet [#477].
 - TypeScript types for CoreLibs provided [`ContentScriptApi`](./README.md#scriptlets-api--content-script-api).
-- Trusted Types API utility — [`PolicyApi`](./README.md#scriptlets-api--content-script-api--policy-api).
+- [Trusted Types API] utility — [`PolicyApi`](./README.md#scriptlets-api--content-script-api--policy-api).
 
 ### Changed
 
@@ -294,7 +296,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - `prevent-canvas` scriptlet [#451].
-- `trusted-types` policy to `trusted-replace-node-text` scriptlet [#457].
+- [Trusted Types API] support in `trusted-replace-node-text` scriptlet [#457].
 - `parentSelector` option to search for nodes for `remove-node-text` scriptlet [#397].
 - `transform` option with `base64decode` value for `href-sanitizer` scriptlet [#455].
 - `removeParam` and `removeHash` values in `transform` option  for `href-sanitizer` scriptlet [#460].
@@ -911,3 +913,5 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#255]: https://github.com/AdguardTeam/Scriptlets/issues/255
 
 [@adguard/agtree]: https://www.npmjs.com/package/@adguard/agtree
+
+[Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API

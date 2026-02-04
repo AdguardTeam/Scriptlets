@@ -5,6 +5,7 @@ import {
     nativeIsNaN,
     parseAttributePairs,
     getErrorMessage,
+    getTrustedTypesApi,
 } from '../helpers';
 import type { ParsedAttributePair } from '../helpers';
 import { type Source } from './scriptlets';
@@ -100,10 +101,17 @@ export function trustedCreateElement(
         logMessage(source, `${prefix} due to ${getErrorMessage(error)}`);
     };
 
+    const trustedTypesApi = getTrustedTypesApi(source);
+
     let element: HTMLElement;
     try {
         element = document.createElement(tagName);
-        element.textContent = textContent;
+        // For script elements, use Trusted Types API
+        if (tagName.toLowerCase() === 'script' && textContent) {
+            element.textContent = trustedTypesApi.createScript(textContent);
+        } else {
+            element.textContent = textContent;
+        }
     } catch (e) {
         logError(`Cannot create element with tag name '${tagName}'`, e);
         return;
@@ -120,7 +128,13 @@ export function trustedCreateElement(
 
     attributes.forEach((attr) => {
         try {
-            element.setAttribute(attr.name, attr.value);
+            // Use Trusted Types API for attributes that require it
+            const trustedValue = trustedTypesApi.convertAttributeToTrusted(
+                tagName,
+                attr.name,
+                attr.value,
+            );
+            element.setAttribute(attr.name, trustedValue);
         } catch (e) {
             logError(`Cannot set attribute '${attr.name}' with value '${attr.value}'`, e);
         }
@@ -206,4 +220,5 @@ trustedCreateElement.injections = [
     nativeIsNaN,
     parseAttributePairs,
     getErrorMessage,
+    getTrustedTypesApi,
 ];
