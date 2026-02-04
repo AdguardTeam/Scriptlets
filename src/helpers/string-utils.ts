@@ -606,3 +606,76 @@ export const splitByNotEscapedDelimiter = (string: string, delimiter: string) =>
     result.push(current);
     return result;
 };
+
+/**
+ * Splits a string by pipe `|` delimiter, but respects regex boundaries.
+ * Content between `/` and `/` (including optional flags) is preserved.
+ *
+ * **!IMPORTANT**: Do not change this to an arrow function, as it will not be bundled correctly!
+ *
+ * @param str String to split.
+ *
+ * @returns Array of substrings.
+ *
+ * @example
+ * splitByPipeRespectingRegex('/(foo|bar)/|"test"') // ['/(foo|bar)/', '"test"']
+ * splitByPipeRespectingRegex('/pattern/gi|123')    // ['/pattern/gi', '123']
+ */
+export function splitByPipeRespectingRegex(str: string): string[] {
+    const PIPE = '|';
+    const SLASH = '/';
+    const BACKSLASH = '\\';
+    const result: string[] = [];
+    let current = '';
+    let insideRegex = false;
+    let i = 0;
+
+    while (i < str.length) {
+        const char = str[i];
+
+        if (!insideRegex) {
+            // Check if entering regex (current segment starts with /)
+            if (char === SLASH && current === '') {
+                insideRegex = true;
+                current += char;
+                i += 1;
+                continue;
+            }
+
+            // Split on pipe when outside regex
+            if (char === PIPE) {
+                result.push(current);
+                current = '';
+                i += 1;
+                continue;
+            }
+        } else if (char === SLASH) {
+            // Inside regex: check for closing slash (unescaped)
+            // Check if escaped by counting preceding backslashes
+            let backslashCount = 0;
+            let j = current.length - 1;
+            while (j >= 0 && current[j] === BACKSLASH) {
+                backslashCount += 1;
+                j -= 1;
+            }
+            // Slash is escaped if preceded by odd number of backslashes
+            if (backslashCount % 2 === 0) {
+                current += char;
+                i += 1;
+                // Consume optional regex flags (g, i, m, s, u, y, d)
+                while (i < str.length && /[gimsuy]/.test(str[i])) {
+                    current += str[i];
+                    i += 1;
+                }
+                insideRegex = false;
+                continue;
+            }
+        }
+
+        current += char;
+        i += 1;
+    }
+
+    result.push(current);
+    return result;
+}

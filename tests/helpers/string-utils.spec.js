@@ -5,6 +5,7 @@ import {
     inferValue,
     extractRegexAndReplacement,
     splitByNotEscapedDelimiter,
+    splitByPipeRespectingRegex,
 } from '../../src/helpers';
 
 describe('Test string utils', () => {
@@ -525,6 +526,155 @@ describe('Test string utils', () => {
         test('Single character string that is escaped delimiter', () => {
             const result = splitByNotEscapedDelimiter('\\,', ',');
             expect(result).toStrictEqual([',']);
+        });
+    });
+
+    describe('splitByPipeRespectingRegex', () => {
+        test('regexp with pipe character - issue #473', () => {
+            const result = splitByPipeRespectingRegex('/(foo|bar)/');
+            expect(result).toStrictEqual(['/(foo|bar)/']);
+        });
+
+        test('regexp with pipe and additional string argument', () => {
+            const result = splitByPipeRespectingRegex('/(foo|bar)/|"test"');
+            expect(result).toStrictEqual([
+                '/(foo|bar)/',
+                '"test"',
+            ]);
+        });
+
+        test('regexp with pipe and multiple string arguments', () => {
+            const result = splitByPipeRespectingRegex('/(key|other)/|"test-value"|"prevent"');
+            expect(result).toStrictEqual([
+                '/(key|other)/',
+                '"test-value"',
+                '"prevent"',
+            ]);
+        });
+
+        test('multiple regexp patterns with pipes and string argument', () => {
+            const result = splitByPipeRespectingRegex('/(a|b)/|/(#c|d)/|"string"');
+            expect(result).toStrictEqual([
+                '/(a|b)/',
+                '/(#c|d)/',
+                '"string"',
+            ]);
+        });
+
+        test('regexp with flags', () => {
+            const result = splitByPipeRespectingRegex('/pattern/gi|123');
+            expect(result).toStrictEqual([
+                '/pattern/gi',
+                '123',
+            ]);
+        });
+
+        test('regexp with escaped slash inside', () => {
+            const result = splitByPipeRespectingRegex('/foo\\/bar/|"test"');
+            expect(result).toStrictEqual([
+                '/foo\\/bar/',
+                '"test"',
+            ]);
+        });
+
+        test('Complex regex with multiple pipes and escaped slashes', () => {
+            const result = splitByPipeRespectingRegex('/(a\\/b|c\\/d)/|"value"');
+            expect(result).toStrictEqual([
+                '/(a\\/b|c\\/d)/',
+                '"value"',
+            ]);
+        });
+
+        test('No regex, only strings', () => {
+            const result = splitByPipeRespectingRegex('"string1"|"string2"|"string3"');
+            expect(result).toStrictEqual([
+                '"string1"',
+                '"string2"',
+                '"string3"',
+            ]);
+        });
+
+        test('Empty string', () => {
+            const result = splitByPipeRespectingRegex('');
+            expect(result).toStrictEqual(['']);
+        });
+
+        test('String with no pipes', () => {
+            const result = splitByPipeRespectingRegex('"single-value"');
+            expect(result).toStrictEqual(['"single-value"']);
+        });
+
+        test('regexp at the end', () => {
+            const result = splitByPipeRespectingRegex('"test"|/(a|b)/');
+            expect(result).toStrictEqual([
+                '"test"',
+                '/(a|b)/',
+            ]);
+        });
+
+        test('regexp with all supported flags', () => {
+            const result = splitByPipeRespectingRegex('/(test|value)/gimsu|"arg"');
+            expect(result).toStrictEqual([
+                '/(test|value)/gimsu',
+                '"arg"',
+            ]);
+        });
+
+        test('Object notation with pipes', () => {
+            const result = splitByPipeRespectingRegex('{"a":1}|{"b":2}');
+            expect(result).toStrictEqual([
+                '{"a":1}',
+                '{"b":2}',
+            ]);
+        });
+
+        test('Mixed types: regex, object, string', () => {
+            const result = splitByPipeRespectingRegex('/(a|b)/|{"key":"val"}|"string"');
+            expect(result).toStrictEqual([
+                '/(a|b)/',
+                '{"key":"val"}',
+                '"string"',
+            ]);
+        });
+
+        test('Pipe at start (empty first segment)', () => {
+            const result = splitByPipeRespectingRegex('|"test"');
+            expect(result).toStrictEqual([
+                '',
+                '"test"',
+            ]);
+        });
+
+        test('Pipe at end (empty last segment)', () => {
+            const result = splitByPipeRespectingRegex('"test"|');
+            expect(result).toStrictEqual([
+                '"test"',
+                '',
+            ]);
+        });
+
+        test('Consecutive pipes (empty segments)', () => {
+            const result = splitByPipeRespectingRegex('"a"||"b"');
+            expect(result).toStrictEqual([
+                '"a"',
+                '',
+                '"b"',
+            ]);
+        });
+
+        test('regexp with no closing slash (stays in regex mode)', () => {
+            const result = splitByPipeRespectingRegex('/incomplete|"test"');
+            expect(result).toStrictEqual([
+                '/incomplete|"test"',
+            ]);
+        });
+
+        test('Real-world example from localStorage.setItem', () => {
+            const result = splitByPipeRespectingRegex('/key/|"test-value"');
+            expect(result).toStrictEqual([
+                '/key/',
+                '"test-value"',
+            ]);
         });
     });
 });

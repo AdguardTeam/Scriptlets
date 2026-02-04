@@ -20,6 +20,7 @@ import {
     isObjectMatched,
     backupRegExpValues,
     restoreRegExpValues,
+    splitByPipeRespectingRegex,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -121,7 +122,7 @@ export function trustedSuppressNativeMethod(
 
     let signatureMatcher: unknown[];
     try {
-        signatureMatcher = signatureStr.split('|').map((value) => {
+        signatureMatcher = splitByPipeRespectingRegex(signatureStr).map((value) => {
             return value === IGNORE_ARG_SYMBOL ? value : inferValue(value);
         });
     } catch (e) {
@@ -222,6 +223,7 @@ trustedSuppressNativeMethod.injections = [
     getAbortFunc,
     matchStackTrace,
     getErrorMessage,
+    splitByPipeRespectingRegex,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,

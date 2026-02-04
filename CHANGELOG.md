@@ -34,12 +34,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - XHR scriptlet bypass vulnerability in `trusted-replace-xhr-response`,
   `prevent-xhr`, and `xml-prune` scriptlets where
   setting `xhr.shouldBePrevented = false` could disable the scriptlet [#386].
+- Parsing of regexp patterns containing pipe `|` character in `signatureStr` arg
+  of `trusted-suppress-native-method` scriptlet [#473].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
 [#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
 [#386]: https://github.com/AdguardTeam/Scriptlets/issues/386
 [#422]: https://github.com/AdguardTeam/Scriptlets/issues/422
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
+[#473]: https://github.com/AdguardTeam/Scriptlets/issues/473
 [#486]: https://github.com/AdguardTeam/Scriptlets/issues/486
 [#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
 [#528]: https://github.com/AdguardTeam/Scriptlets/issues/528

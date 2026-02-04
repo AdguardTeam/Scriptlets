@@ -45,6 +45,8 @@ const afterEach = () => {
     window.testMatching = testMatching;
     Object.keys(natives).forEach(restoreNativeMethod);
     clearGlobalProps('hit', '__debug');
+    localStorage.clear();
+    sessionStorage.clear();
 };
 
 module(name, { beforeEach, afterEach });
@@ -327,4 +329,29 @@ test('Match: stack trace', (assert) => {
     const testFunc1 = () => document.querySelector('body');
     const result3 = testFunc1();
     assert.strictEqual(result3, undefined, 'testFunc1 should return undefined when prevented');
+});
+
+test('Regexp with pipe as signatureStr', (assert) => {
+    let item = window.localStorage.getItem('key1');
+    assert.strictEqual(item, null, 'Item is not set');
+
+    runScriptlet(name, ['localStorage.setItem', '/(key1|key2)/|"value"', 'prevent']);
+
+    window.localStorage.setItem('key1', 'test-value-1');
+    item = window.localStorage.getItem('key1');
+    assert.strictEqual(item, null, 'Call with "key" regexp part was prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+    clearGlobalProps('hit');
+
+    window.localStorage.setItem('key2', 'test-value-2');
+    item = window.localStorage.getItem('key2');
+    assert.strictEqual(item, null, 'Call with "key2" regexp part was prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+    clearGlobalProps('hit');
+
+    window.localStorage.setItem('other3', 'test-value-3');
+    item = window.localStorage.getItem('other3');
+    assert.strictEqual(item, 'test-value-3', 'Call with "other3" regexp part was not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    clearGlobalProps('hit');
 });
