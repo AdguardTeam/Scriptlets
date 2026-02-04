@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `remove-request-query-parameter` scriptlet to remove query parameters
   from `fetch` and `XMLHttpRequest` requests [#329].
 - [Trusted Types API] support in `trusted-create-element` scriptlet [#507].
+- [Trusted Types API] support in Firefox [#528].
 
 ### Fixed
 
@@ -41,6 +42,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
 [#486]: https://github.com/AdguardTeam/Scriptlets/issues/486
 [#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
+[#528]: https://github.com/AdguardTeam/Scriptlets/issues/528
 
 ## [v2.2.15] - 2026-01-22
 
