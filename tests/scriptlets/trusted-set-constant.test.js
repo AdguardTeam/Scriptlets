@@ -309,6 +309,29 @@ if (!isSupported) {
         clearGlobalProps(property);
     });
 
+    // https://github.com/AdguardTeam/Scriptlets/issues/500
+    test('stack matching prevents value access from arrow function caller', (assert) => {
+        window.stackArrowProp = 'original';
+
+        // 'arrowCaller' in stack arg should match the arrow function name in the call stack
+        runScriptletFromTag('stackArrowProp', '"replaced"', 'arrowCaller');
+
+        const script = document.createElement('script');
+        script.textContent = `
+            const arrowCaller = (arg = 'test') => {
+                window._resultFromCaller = window.stackArrowProp;
+            };
+            arrowCaller();
+            window._resultFromOther = window.stackArrowProp;
+        `;
+        document.body.append(script);
+
+        assert.strictEqual(window._resultFromCaller, 'replaced', 'constant returned from matching arrow caller');
+        assert.strictEqual(window._resultFromOther, 'original', 'original returned from non-matching context');
+
+        clearGlobalProps('stackArrowProp', '_resultFromCaller', '_resultFromOther');
+    });
+
     test('stack matching with named function caller', (assert) => {
         const prop = 'stackNamedFuncProp';
         window[prop] = 'original';
@@ -331,29 +354,6 @@ if (!isSupported) {
         assert.strictEqual(window._resultFromOther, 'original', 'original returned from non-matching context');
 
         clearGlobalProps(prop, '_resultFromTarget', '_resultFromOther');
-    });
-
-    test('stack matching prevents value access from arrow function caller', (assert) => {
-        const prop = 'stackArrowProp';
-        window[prop] = 'original';
-
-        // 'testCaller' in stack arg should match the arrow function name
-        runScriptletFromTag(prop, '"replaced"', 'testCaller');
-
-        const script = document.createElement('script');
-        script.textContent = `
-            const testCaller = () => {
-                window._resultFromCaller = window.${prop};
-            };
-            testCaller();
-            window._resultFromOther = window.${prop};
-        `;
-        document.body.append(script);
-
-        assert.strictEqual(window._resultFromCaller, 'replaced', 'constant returned from matching caller');
-        assert.strictEqual(window._resultFromOther, 'original', 'original returned from non-matching context');
-
-        clearGlobalProps(prop, '_resultFromCaller', '_resultFromOther');
     });
 
     test('no value setting if chain is not relevant', (assert) => {

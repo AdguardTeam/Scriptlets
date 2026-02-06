@@ -315,6 +315,30 @@ if (!isSupported) {
         clearGlobalProps(property);
     });
 
+    // https://github.com/AdguardTeam/Scriptlets/issues/500
+    test('stack matching prevents function call from arrow function caller', (assert) => {
+        // eslint-disable-next-line func-names
+        window.testAlert = function () { return 'original'; };
+
+        // 'arrowCaller' in stack arg should match the arrow function name in the call stack
+        runScriptletFromTag('testAlert', 'trueFunc', 'arrowCaller');
+
+        const script = document.createElement('script');
+        script.textContent = `
+            const arrowCaller = (arg = 'test') => {
+                window._resultFromCaller = window.testAlert(arg);
+            };
+            arrowCaller();
+            window._resultFromOther = window.testAlert();
+        `;
+        document.body.append(script);
+
+        assert.strictEqual(window._resultFromCaller, true, 'trueFunc called from matching arrow caller returns true');
+        assert.strictEqual(window._resultFromOther, 'original', 'original returned from non-matching context');
+
+        clearGlobalProps('testAlert', '_resultFromCaller', '_resultFromOther');
+    });
+
     test('stack matching with named function caller', (assert) => {
         const prop = 'stackNamedFuncProp';
         window[prop] = 0;
@@ -337,28 +361,6 @@ if (!isSupported) {
         assert.strictEqual(window._resultFromOther, 0, 'original returned from non-matching context');
 
         clearGlobalProps(prop, '_resultFromTarget', '_resultFromOther');
-    });
-
-    // https://github.com/user/repo - stack matching should prevent function call from specific caller
-    test('stack matching prevents function call from arrow function caller', (assert) => {
-        let originalCalled = false;
-        window.testAlertFunc = function () { originalCalled = true; };
-
-        // 'testCaller' in stack arg should match the arrow function name
-        runScriptletFromTag('testAlertFunc', 'trueFunc', 'testCaller');
-
-        const script = document.createElement('script');
-        script.textContent = `
-            const testCaller = (arg = 'test') => {
-                window.testAlertFunc(arg);
-            };
-            testCaller();
-        `;
-        document.body.append(script);
-
-        assert.strictEqual(originalCalled, false, 'original func not called from matching caller');
-
-        clearGlobalProps('testAlertFunc');
     });
 
     test('set-constant: does not work - invalid regexp pattern for stack arg', (assert) => {
