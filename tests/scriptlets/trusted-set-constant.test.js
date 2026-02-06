@@ -309,6 +309,53 @@ if (!isSupported) {
         clearGlobalProps(property);
     });
 
+    test('stack matching with named function caller', (assert) => {
+        const prop = 'stackNamedFuncProp';
+        window[prop] = 'original';
+
+        // Stack arg 'myTargetFunc' should match when property is accessed from myTargetFunc
+        runScriptletFromTag(prop, '"modified"', 'myTargetFunc');
+
+        // Access from a named function that matches the stack pattern
+        const script = document.createElement('script');
+        script.textContent = `
+            function myTargetFunc() {
+                window._resultFromTarget = window.${prop};
+            }
+            myTargetFunc();
+            window._resultFromOther = window.${prop};
+        `;
+        document.body.append(script);
+
+        assert.strictEqual(window._resultFromTarget, 'modified', 'constant returned from matching func');
+        assert.strictEqual(window._resultFromOther, 'original', 'original returned from non-matching context');
+
+        clearGlobalProps(prop, '_resultFromTarget', '_resultFromOther');
+    });
+
+    test('stack matching prevents value access from arrow function caller', (assert) => {
+        const prop = 'stackArrowProp';
+        window[prop] = 'original';
+
+        // 'testCaller' in stack arg should match the arrow function name
+        runScriptletFromTag(prop, '"replaced"', 'testCaller');
+
+        const script = document.createElement('script');
+        script.textContent = `
+            const testCaller = () => {
+                window._resultFromCaller = window.${prop};
+            };
+            testCaller();
+            window._resultFromOther = window.${prop};
+        `;
+        document.body.append(script);
+
+        assert.strictEqual(window._resultFromCaller, 'replaced', 'constant returned from matching caller');
+        assert.strictEqual(window._resultFromOther, 'original', 'original returned from non-matching context');
+
+        clearGlobalProps(prop, '_resultFromCaller', '_resultFromOther');
+    });
+
     test('no value setting if chain is not relevant', (assert) => {
         window.chain = { property: {} };
         runScriptletFromTag('noprop.property.aaa', 'true');

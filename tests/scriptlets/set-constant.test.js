@@ -315,6 +315,52 @@ if (!isSupported) {
         clearGlobalProps(property);
     });
 
+    test('stack matching with named function caller', (assert) => {
+        const prop = 'stackNamedFuncProp';
+        window[prop] = 0;
+
+        // Stack arg 'myTargetFunc' should match when property is accessed from myTargetFunc
+        runScriptletFromTag(prop, '42', 'myTargetFunc');
+
+        // Access from a named function that matches the stack pattern
+        const script = document.createElement('script');
+        script.textContent = `
+            function myTargetFunc() {
+                window._resultFromTarget = window.${prop};
+            }
+            myTargetFunc();
+            window._resultFromOther = window.${prop};
+        `;
+        document.body.append(script);
+
+        assert.strictEqual(window._resultFromTarget, 42, 'constant returned from matching func');
+        assert.strictEqual(window._resultFromOther, 0, 'original returned from non-matching context');
+
+        clearGlobalProps(prop, '_resultFromTarget', '_resultFromOther');
+    });
+
+    // https://github.com/user/repo - stack matching should prevent function call from specific caller
+    test('stack matching prevents function call from arrow function caller', (assert) => {
+        let originalCalled = false;
+        window.testAlertFunc = function () { originalCalled = true; };
+
+        // 'testCaller' in stack arg should match the arrow function name
+        runScriptletFromTag('testAlertFunc', 'trueFunc', 'testCaller');
+
+        const script = document.createElement('script');
+        script.textContent = `
+            const testCaller = (arg = 'test') => {
+                window.testAlertFunc(arg);
+            };
+            testCaller();
+        `;
+        document.body.append(script);
+
+        assert.strictEqual(originalCalled, false, 'original func not called from matching caller');
+
+        clearGlobalProps('testAlertFunc');
+    });
+
     test('set-constant: does not work - invalid regexp pattern for stack arg', (assert) => {
         const stackArg = '/\\/';
 
