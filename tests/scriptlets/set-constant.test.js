@@ -364,7 +364,7 @@ if (!isSupported) {
     test('set-constant: does not work - invalid regexp pattern for stack arg', (assert) => {
         const stackArg = '/\\/';
 
-        const property = 'customProp';
+        const property = 'customProp1';
         const value = 10;
 
         runScriptletFromTag(property, value, stackArg);
