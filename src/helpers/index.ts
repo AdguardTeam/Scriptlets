@@ -40,3 +40,4 @@ export * from './node-text-utils';
 export * from './trusted-types-utils';
 export * from './value-matchers';
 export * from './click-utils';
+export * from './set-constant-utils';
