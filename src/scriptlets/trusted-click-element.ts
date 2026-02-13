@@ -673,6 +673,7 @@ trustedClickElement.injections = [
     triggerMainObserver,
     bridgeIframeLoads,
     clickElement,
+    // following helpers are needed for helpers above
     doesElementContainText,
     findElementWithText,
     randomId,
