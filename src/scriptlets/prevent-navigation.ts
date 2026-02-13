@@ -45,26 +45,43 @@ import { type Source } from './scriptlets';
  *
  * @added unknown.
  */
+declare global {
+    interface Window {
+        navigation?: NavigationLike;
+    }
+}
 
-export function preventNavigation(source: Source, urlPattern?: string | RegExp): void {
-    const nav = (window as any).navigation;
+type NavigateEventLike = Event & {
+    destination: {
+        url: string;
+    };
+};
+type NavigationLike = {
+    addEventListener: (
+        type: 'navigate',
+        listener: (event: NavigateEventLike) => void
+    ) => void;
+};
+export function preventNavigation(source: Source, urlPattern?: string | RegExp | undefined): void {
+    const nav = window.navigation;
     if (!nav) {
         return;
     }
 
-    const CURRENT_URL_PATTERN = 'location.href';
-    const SHOULD_LOG: boolean = !urlPattern;
-    let pattern: string | RegExp;
+    const currentUrlKeyword = 'location.href';
+    const shouldLog: boolean = !urlPattern;
+    let pattern: string | RegExp | null = null;
 
-    if (urlPattern === CURRENT_URL_PATTERN) {
+    if (urlPattern === currentUrlKeyword) {
         pattern = window.location.href;
     } else if (typeof urlPattern === 'string') {
         pattern = toRegExp(urlPattern as string);
-    } else {
-        pattern = '';
     }
 
-    const shouldPrevent = (patternUrl: string | RegExp, url: string): boolean => {
+    const shouldPrevent = (patternUrl: string | RegExp | null, url: string): boolean => {
+        if (!patternUrl) {
+            return false;
+        }
         // Match whole URL if pattern "location.href" is used, otherwise test regex pattern
         if (typeof patternUrl === 'string') {
             return url === patternUrl;
@@ -72,10 +89,14 @@ export function preventNavigation(source: Source, urlPattern?: string | RegExp):
         return patternUrl.test(url);
     };
 
-    nav.addEventListener('navigate', (event: any) => {
-        const destinationURL = event.destination.url;
+    nav.addEventListener('navigate', (event) => {
+        const destinationURL = event?.destination?.url;
 
-        if (SHOULD_LOG) {
+        if (!destinationURL || typeof destinationURL !== 'string') {
+            return;
+        }
+
+        if (shouldLog) {
             hit(source);
             logMessage(source, `Navigating to: ${destinationURL}`);
             return;

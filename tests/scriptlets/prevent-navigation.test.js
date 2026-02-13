@@ -27,25 +27,33 @@ if (!isSupported) {
     });
 } else {
     test('Prevent website reload', (assert) => {
+        assert.expect(1);
         const url = 'location.href';
 
         const scriptletArgs = [url];
         runScriptlet(name, scriptletArgs);
 
-        window.location.reload();
-
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        try {
+            window.location.reload();
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        } catch (error) {
+            assert.ok(false, `Navigation should be prevented, but an error was thrown: ${error}`);
+        }
     });
 
     test('Prevent navigation to "advert" URL', (assert) => {
+        assert.expect(1);
         const url = 'advert';
 
         const scriptletArgs = [url];
         runScriptlet(name, scriptletArgs);
 
-        window.location.href = '/advert';
-
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        try {
+            window.location.href = '/advert';
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        } catch (error) {
+            assert.ok(false, `Navigation should be prevented, but an error was thrown: ${error}`);
+        }
     });
 
     test('Prevent navigation - regex', (assert) => {
@@ -60,6 +68,7 @@ if (!isSupported) {
     });
 
     test('Prevent navigation - URL does not match', (assert) => {
+        assert.expect(1);
         const url = 'SHOULD_NOT_MATCH';
         const redirectUrl = '/test-foo';
 
@@ -75,9 +84,12 @@ if (!isSupported) {
             }
         });
 
-        window.location.href = redirectUrl;
-
-        assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+        try {
+            window.location.href = redirectUrl;
+            assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+        } catch (error) {
+            assert.ok(false, `Navigation should be prevented, but an error was thrown: ${error}`);
+        }
     });
 
     test('Log navigation URL to console', (assert) => {
@@ -109,9 +121,13 @@ if (!isSupported) {
         };
         window.console.log = new Proxy(window.console.log, handlerLog);
 
-        window.location.href = redirectUrl;
+        try {
+            window.location.href = redirectUrl;
 
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
-        assert.ok(testPassed, 'log should contain the expected message');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            assert.ok(testPassed, 'log should contain the expected message');
+        } catch (error) {
+            assert.ok(false, `Navigation should be prevented, but an error was thrown: ${error}`);
+        }
     });
 }
