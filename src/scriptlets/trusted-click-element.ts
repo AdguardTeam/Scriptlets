@@ -216,6 +216,7 @@ export function trustedClickElement(
      * @see https://github.com/AdguardTeam/Scriptlets/issues/491
      */
     const closedShadowRoots = new WeakMap<Element, ShadowRoot>();
+    const bridgeObservers = new Set<MutationObserver>();
 
     // If shadow combinator is present in selector, intercept attachShadow
     // to track closed shadow roots and observe each new shadow root for mutations,
@@ -250,6 +251,7 @@ export function trustedClickElement(
                 });
             });
             bridgeObserver.observe(shadowRoot, { childList: true, subtree: true });
+            bridgeObservers.add(bridgeObserver);
 
             return shadowRoot;
         };
@@ -260,6 +262,11 @@ export function trustedClickElement(
 
         window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
     }
+
+    const disconnectBridgeObservers = () => {
+        bridgeObservers.forEach((obs) => obs.disconnect());
+        bridgeObservers.clear();
+    };
 
     let observerTimeoutMs = DEFAULT_OBSERVER_TIMEOUT_SEC * 1000;
     if (observerTimeoutSec) {
@@ -581,6 +588,7 @@ export function trustedClickElement(
         const allSelectorsFulfilled = selectorsSequence.every((selector) => selector === null);
         if (allSelectorsFulfilled) {
             observer.disconnect();
+            disconnectBridgeObservers();
         }
     };
 
@@ -598,7 +606,10 @@ export function trustedClickElement(
         });
 
         // Set timeout to disconnect observer if elements are not found within the specified time
-        setTimeout(() => observer.disconnect(), observerTimeoutMs);
+        setTimeout(() => {
+            observer.disconnect();
+            disconnectBridgeObservers();
+        }, observerTimeoutMs);
     };
 
     /**
@@ -622,6 +633,7 @@ export function trustedClickElement(
         if (foundElements) {
             // Click previously collected elements
             fulfillAndHandleSelectors();
+            disconnectBridgeObservers();
         } else {
             // Initialize MutationObserver if elements were not found initially
             initializeMutationObserver();

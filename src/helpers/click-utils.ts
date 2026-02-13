@@ -9,6 +9,12 @@ import { randomId } from './random-id';
  * @see {@link https://github.com/AdguardTeam/Scriptlets/issues/491}
  */
 export const spoofClickEventsIsTrusted = (): void => {
+    // Guard against double-patching when multiple scriptlet injections run
+    const PATCHED_FLAG = Symbol.for('adg-spoof-click-isTrusted');
+    if ((EventTarget.prototype as any)[PATCHED_FLAG]) {
+        return;
+    }
+
     const SPOOFED_EVENTS = new Set([
         'click',
         'mousedown',
@@ -20,9 +26,46 @@ export const spoofClickEventsIsTrusted = (): void => {
         'pointerover',
         'pointerenter',
     ]);
+
     const nativeAddEventListener = EventTarget.prototype.addEventListener;
     const nativeRemoveEventListener = EventTarget.prototype.removeEventListener;
-    const wrappedListeners = new WeakMap<Function, Map<string, Function>>();
+
+    /**
+     * Single WeakMap keyed by the original listener reference (function or EventListenerObject).
+     * Value is a Map from "type\0capture" composite key to the wrapped function.
+     */
+    const wrappedListeners = new WeakMap<object, Map<string, EventListener>>();
+
+    /**
+     * Normalizes the capture option from various addEventListener signatures.
+     *
+     * @param options Options parameter from addEventListener.
+     *
+     * @returns Capture boolean value.
+     */
+    const normalizeCapture = (
+        options?: boolean | AddEventListenerOptions | EventListenerOptions,
+    ): boolean => {
+        if (typeof options === 'boolean') {
+            return options;
+        }
+        return options?.capture ?? false;
+    };
+
+    /**
+     * Generates a composite key for the wrapped listeners map.
+     *
+     * @param type Event type.
+     * @param options Options parameter from addEventListener.
+     *
+     * @returns Composite key.
+     */
+    const getMapKey = (
+        type: string,
+        options?: boolean | AddEventListenerOptions | EventListenerOptions,
+    ): string => {
+        return `${type}\0${normalizeCapture(options)}`;
+    };
 
     EventTarget.prototype.addEventListener = function addEventListenerWrapper(
         type: string,
@@ -33,8 +76,10 @@ export const spoofClickEventsIsTrusted = (): void => {
             return nativeAddEventListener.call(this, type, listener, options);
         }
 
-        const original = typeof listener === 'function' ? listener : listener.handleEvent.bind(listener);
-        const wrapped = function wrappedListener(this: any, event: Event) {
+        const isFn = typeof listener === 'function';
+        const key = getMapKey(type, options);
+
+        const wrapped: EventListener = function wrappedListener(this: any, event: Event) {
             const proxied = new Proxy(event, {
                 get(target, prop) {
                     if (prop === 'isTrusted') {
@@ -47,17 +92,25 @@ export const spoofClickEventsIsTrusted = (): void => {
                     return val;
                 },
             });
-            return original.call(this, proxied);
+            if (isFn) {
+                return (listener as EventListener).call(this, proxied);
+            }
+            return (listener as EventListenerObject).handleEvent.call(listener, proxied);
         };
 
-        let listenersMap = wrappedListeners.get(original);
-        if (!listenersMap) {
-            listenersMap = new Map();
-            wrappedListeners.set(original, listenersMap);
+        const listenerRef = listener as object;
+        let map = wrappedListeners.get(listenerRef);
+        if (!map) {
+            map = new Map();
+            wrappedListeners.set(listenerRef, map);
         }
-        listenersMap.set(type, wrapped);
+        // Do not overwrite if same listener already registered with same (type, capture)
+        const existing = map.get(key);
+        if (!existing) {
+            map.set(key, wrapped);
+        }
 
-        return nativeAddEventListener.call(this, type, wrapped, options);
+        return nativeAddEventListener.call(this, type, existing || wrapped, options);
     };
 
     EventTarget.prototype.removeEventListener = function removeEventListenerWrapper(
@@ -69,17 +122,21 @@ export const spoofClickEventsIsTrusted = (): void => {
             return nativeRemoveEventListener.call(this, type, listener, options);
         }
 
-        const original = typeof listener === 'function' ? listener : listener.handleEvent.bind(listener);
-        const map = wrappedListeners.get(original);
-        if (map && map.has(type)) {
-            const wrapped = map.get(type)!;
-            map.delete(type);
-            const w = wrapped as EventListener;
-            return nativeRemoveEventListener.call(this, type, w, options);
+        const listenerRef = listener as object;
+        const key = getMapKey(type, options);
+        const map = wrappedListeners.get(listenerRef);
+
+        if (map && map.has(key)) {
+            const wrapped = map.get(key)!;
+            map.delete(key);
+            return nativeRemoveEventListener.call(this, type, wrapped, options);
         }
 
         return nativeRemoveEventListener.call(this, type, listener, options);
     };
+
+    // Mark as patched to prevent double-wrapping
+    (EventTarget.prototype as any)[PATCHED_FLAG] = true;
 };
 
 /**
@@ -89,7 +146,7 @@ export const spoofClickEventsIsTrusted = (): void => {
 export const triggerMainObserver = () => {
     // randomize attribute name to avoid conflicts
     // prefix with 'a' to ensure valid attribute name (must start with a letter)
-    const randomName = `a${randomId()}`;
+    const randomName = `adg-${randomId()}`;
     const el = document.documentElement;
     el.setAttribute(randomName, '');
     el.removeAttribute(randomName);
@@ -161,7 +218,7 @@ export const clickElement = (element: HTMLElement): void => {
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
 
-    const commonOpts: PointerEventInit = {
+    const commonOpts: MouseEventInit = {
         bubbles: true,
         cancelable: true,
         composed: true,
@@ -174,17 +231,26 @@ export const clickElement = (element: HTMLElement): void => {
         buttons: 1,
     };
 
-    const noBubbleOpts: PointerEventInit = Object.assign({}, commonOpts, { bubbles: false });
-    const releaseOpts: PointerEventInit = Object.assign({}, commonOpts, { buttons: 0 });
+    const noBubbleOpts: MouseEventInit = Object.assign({}, commonOpts, { bubbles: false });
+    const releaseOpts: MouseEventInit = Object.assign({}, commonOpts, { buttons: 0 });
 
-    element.dispatchEvent(new PointerEvent('pointerover', commonOpts));
-    element.dispatchEvent(new PointerEvent('pointerenter', noBubbleOpts));
+    // Feature-detect PointerEvent for environments that don't support it
+    const hasPointerEvent = typeof PointerEvent === 'function';
+
+    if (hasPointerEvent) {
+        element.dispatchEvent(new PointerEvent('pointerover', commonOpts));
+        element.dispatchEvent(new PointerEvent('pointerenter', noBubbleOpts));
+    }
     element.dispatchEvent(new MouseEvent('mouseover', commonOpts));
     element.dispatchEvent(new MouseEvent('mouseenter', noBubbleOpts));
-    element.dispatchEvent(new PointerEvent('pointerdown', commonOpts));
+    if (hasPointerEvent) {
+        element.dispatchEvent(new PointerEvent('pointerdown', commonOpts));
+    }
     element.dispatchEvent(new MouseEvent('mousedown', commonOpts));
     element.focus();
-    element.dispatchEvent(new PointerEvent('pointerup', releaseOpts));
+    if (hasPointerEvent) {
+        element.dispatchEvent(new PointerEvent('pointerup', releaseOpts));
+    }
     element.dispatchEvent(new MouseEvent('mouseup', releaseOpts));
     element.dispatchEvent(new MouseEvent('click', releaseOpts));
 };

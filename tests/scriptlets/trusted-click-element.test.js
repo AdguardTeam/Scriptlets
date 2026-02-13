@@ -1184,6 +1184,38 @@ test('isTrusted spoofing - removeEventListener still works', (assert) => {
     }, 150);
 });
 
+test('isTrusted spoofing - removeEventListener works with EventListenerObject', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+    const panel = createPanel();
+
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    let listenerCalled = false;
+    const listenerObj = {
+        handleEvent() {
+            listenerCalled = true;
+        },
+    };
+
+    // Add then immediately remove the EventListenerObject
+    clickable.addEventListener('click', listenerObj);
+    clickable.removeEventListener('click', listenerObj);
+
+    runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(listenerCalled, false, 'Removed EventListenerObject should not be called');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
 test('Shadow DOM bridge observer - deferred content triggers click', (assert) => {
     // Element added to shadow DOM after a delay should still be found and clicked
     // thanks to the bridge MutationObserver on the shadow root.
