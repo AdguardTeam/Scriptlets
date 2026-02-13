@@ -161,7 +161,7 @@ export const triggerMainObserver = () => {
  * @param nodes NodeList or array of nodes to check for iframes.
  */
 export const bridgeIframeLoads = (nodes: NodeList) => {
-    nodes.forEach((node) => {
+    Array.from(nodes).forEach((node) => {
         if (node instanceof HTMLIFrameElement) {
             node.addEventListener('load', () => {
                 triggerMainObserver();
