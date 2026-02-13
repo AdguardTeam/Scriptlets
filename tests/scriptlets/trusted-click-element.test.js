@@ -1029,8 +1029,9 @@ test('Closed shadow dom element clicked - text', (assert) => {
     }, 150);
 });
 
-test('Closed shadow DOM forced open and element clicked', (assert) => {
-    // Closed shadow DOMs are forced open so that elements inside can be queried and clicked.
+test('Closed shadow DOM remains closed and element clicked', (assert) => {
+    // Closed shadow DOMs should remain closed (shadowRoot stays null)
+    // while elements inside are still queried and clicked via internal WeakMap tracking.
     const ASSERTIONS = 3;
     assert.expect(ASSERTIONS);
     const done = assert.async();
@@ -1039,7 +1040,7 @@ test('Closed shadow DOM forced open and element clicked', (assert) => {
 
     runScriptlet(name, [selectorsString]);
 
-    // Create shadow DOM with mode: 'closed' — scriptlet forces it open
+    // Create shadow DOM with mode: 'closed' — scriptlet should NOT force it open
     const panel = createPanel();
     const panelShadowRoot = panel.attachShadow({ mode: 'closed' });
     const div = document.createElement('div');
@@ -1048,8 +1049,8 @@ test('Closed shadow DOM forced open and element clicked', (assert) => {
     panelShadowRoot.appendChild(div);
 
     setTimeout(() => {
-        // Shadow root is accessible because mode was forced to 'open'
-        assert.notStrictEqual(panel.shadowRoot, null, 'Shadow DOM mode is forced open');
+        // Shadow root should remain closed — not exposed to external code
+        assert.strictEqual(panel.shadowRoot, null, 'Shadow DOM mode should remain closed');
 
         // Element inside shadow DOM should be clicked
         assert.ok(clickable.getAttribute('clicked'), 'Element inside shadow DOM should be clicked');
@@ -1058,8 +1059,43 @@ test('Closed shadow DOM forced open and element clicked', (assert) => {
     }, 150);
 });
 
+test('Closed shadow DOM not exposed to external code', (assert) => {
+    // Verify that other elements with closed shadow DOM are not exposed
+    // when the scriptlet uses >>> combinator — prevents breaking Cloudflare Turnstile etc.
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> div > #${CLICKABLE_NAME}1`;
+
+    runScriptlet(name, [selectorsString]);
+
+    // Target element with closed shadow DOM (scriptlet should track it internally)
+    const panel = createPanel();
+    const panelShadowRoot = panel.attachShadow({ mode: 'closed' });
+    const div = document.createElement('div');
+    const clickable = createClickable(1);
+    div.appendChild(clickable);
+    panelShadowRoot.appendChild(div);
+
+    // Unrelated element with closed shadow DOM (should also remain unexposed)
+    const unrelated = document.createElement('div');
+    unrelated.id = 'unrelated-shadow-host';
+    document.body.appendChild(unrelated);
+    unrelated.attachShadow({ mode: 'closed' });
+
+    setTimeout(() => {
+        // Neither shadow host should expose its shadow root
+        assert.strictEqual(panel.shadowRoot, null, 'Target shadow host should remain closed');
+        assert.strictEqual(unrelated.shadowRoot, null, 'Unrelated shadow host should remain closed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        unrelated.remove();
+        done();
+    }, 150);
+});
+
 test('Nested closed shadow DOM element clicked', (assert) => {
-    // Two levels of closed shadow DOM, both forced open so elements can be queried.
+    // Two levels of closed shadow DOM, both tracked via WeakMap so elements can be queried.
     const ELEM_COUNT = 1;
     const ASSERTIONS = ELEM_COUNT + 1;
     assert.expect(ASSERTIONS);
