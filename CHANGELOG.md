@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `prevent-navigation` scriptlet to prevent navigation to another URL, or reload website [#532].
 - `prevent-constructor` scriptlet to prevent constructor calls
   like `new Promise()` or `new MutationObserver()` [#461].
 - `remove-request-query-parameter` scriptlet to remove query parameters
@@ -52,6 +53,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#500]: https://github.com/AdguardTeam/Scriptlets/issues/500
 [#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
 [#528]: https://github.com/AdguardTeam/Scriptlets/issues/528
+[#532]: https://github.com/AdguardTeam/Scriptlets/issues/532
 
 ## [v2.2.15] - 2026-01-22
 

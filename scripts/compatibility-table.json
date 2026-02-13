@@ -175,6 +175,9 @@
             "ubo": "prevent-innerHTML"
         },
         {
+            "adg": "prevent-navigation"
+        },
+        {
             "adg": "prevent-xhr",
             "ubo": "prevent-xhr.js (no-xhr-if.js)"
         },
