@@ -6,9 +6,13 @@ import {
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    spoofClickEventsIsTrusted,
+    triggerMainObserver,
+    bridgeIframeLoads,
     clickElement,
     doesElementContainText,
     findElementWithText,
+    randomId,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -200,7 +204,15 @@ export function trustedClickElement(
         return new Promise((resolve) => { setTimeout(resolve, delayMs); });
     };
 
-    // If shadow combinator is present in selector, then override attachShadow and set mode to 'open'
+    // Spoof isTrusted for click-related events so that programmatic clicks
+    // appear as real user interactions to the page's event handlers.
+    // @see https://github.com/AdguardTeam/Scriptlets/issues/491
+    spoofClickEventsIsTrusted();
+
+    // If shadow combinator is present in selector, intercept attachShadow
+    // to force mode: 'open' so that shadow roots can be queried later.
+    // Also observe each new shadow root for mutations and bridge them
+    // to the document-level MutationObserver which cannot see inside shadow DOMs.
     if (selectors.includes(SHADOW_COMBINATOR)) {
         const attachShadowWrapper = (
             target: typeof Element.prototype.attachShadow,
@@ -211,7 +223,26 @@ export function trustedClickElement(
             if (mode === 'closed') {
                 argumentsList[0].mode = 'open';
             }
-            return Reflect.apply(target, thisArg, argumentsList);
+
+            const shadowRoot = Reflect.apply(target, thisArg, argumentsList);
+
+            /**
+             * Bridge shadow root mutations to the document-level observer.
+             * Without this, content added inside shadow DOMs would never trigger
+             * the main MutationObserver and selectors would never be re-checked.
+             * Also detect iframes added inside shadow roots and bridge their load events.
+             *
+             * @see {@link https://github.com/AdguardTeam/Scriptlets/issues/491}
+             */
+            const bridgeObserver = new MutationObserver((mutations) => {
+                triggerMainObserver();
+                mutations.forEach((mutation) => {
+                    bridgeIframeLoads(mutation.addedNodes);
+                });
+            });
+            bridgeObserver.observe(shadowRoot, { childList: true, subtree: true });
+
+            return shadowRoot;
         };
 
         const attachShadowHandler = {
@@ -602,7 +633,11 @@ trustedClickElement.injections = [
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    spoofClickEventsIsTrusted,
+    triggerMainObserver,
+    bridgeIframeLoads,
     clickElement,
     doesElementContainText,
     findElementWithText,
+    randomId,
 ];

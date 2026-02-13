@@ -36,6 +36,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   setting `xhr.shouldBePrevented = false` could disable the scriptlet [#386].
 - Parsing of regexp patterns containing pipe `|` character in `signatureStr` arg
   of `trusted-suppress-native-method` scriptlet [#473].
+- Cloudflare captcha broken when `>>>` combinator
+  is used in `trusted-click-element` scriptlet [#491].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
 [#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
@@ -44,6 +46,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
 [#473]: https://github.com/AdguardTeam/Scriptlets/issues/473
 [#486]: https://github.com/AdguardTeam/Scriptlets/issues/486
+[#491]: https://github.com/AdguardTeam/Scriptlets/issues/491
 [#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
 [#528]: https://github.com/AdguardTeam/Scriptlets/issues/528
 
