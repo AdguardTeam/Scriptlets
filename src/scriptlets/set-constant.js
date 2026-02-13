@@ -2,6 +2,7 @@ import {
     hit,
     logMessage,
     getNumberFromString,
+    createSetChainPropAccessor,
     noopArray,
     noopObject,
     noopCallbackFunc,
@@ -11,16 +12,17 @@ import {
     throwFunc,
     noopPromiseReject,
     noopPromiseResolve,
-    getPropertyInChain,
-    matchStackTrace,
     nativeIsNaN,
-    isEmptyObject,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     setPropertyAccess,
     toRegExp,
     backupRegExpValues,
     restoreRegExpValues,
+    getPropertyInChain,
+    matchStackTrace,
+    isEmptyObject,
+    getDescriptorAddon,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -160,8 +162,7 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
         stack = undefined;
     }
 
-    if (!property
-        || !matchStackTrace(stack, new Error().stack)) {
+    if (!property) {
         return;
     }
 
@@ -333,92 +334,14 @@ export function setConstant(source, property, value, stack = '', valueWrapper = 
         return true;
     };
 
-    /**
-     * Traverses given chain to set constant value to its end prop
-     * Chains that yet include non-object values (e.g null) are valid and will be
-     * traversed when appropriate chain member is set by an external script
-     *
-     * IMPORTANT! this duplicates corresponding func in trusted-set-constant scriptlet as
-     * reorganizing this to common helpers will most definitely complicate debugging
-     *
-     * @param {object} owner object that owns chain
-     * @param {string} property chain of owner properties
-     */
-    const setChainPropAccess = (owner, property) => {
-        const chainInfo = getPropertyInChain(owner, property);
-        const { base } = chainInfo;
-        const { prop, chain } = chainInfo;
-
-        // Handler method init is used to keep track of factual value
-        // and apply mustCancel() check only on end prop
-        const inChainPropHandler = {
-            factValue: undefined,
-            init(a) {
-                this.factValue = a;
-                return true;
-            },
-            get() {
-                return this.factValue;
-            },
-            set(a) {
-                // Prevent breakage due to loop assignments like win.obj = win.obj
-                if (this.factValue === a) {
-                    return;
-                }
-
-                this.factValue = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            },
-        };
-        const endPropHandler = {
-            init(a) {
-                if (mustCancel(a)) {
-                    return false;
-                }
-                return true;
-            },
-            get() {
-                return constantValue;
-            },
-            set(a) {
-                if (!mustCancel(a)) {
-                    return;
-                }
-                constantValue = a;
-            },
-        };
-
-        // End prop case
-        if (!chain) {
-            const isTrapped = trapProp(base, prop, false, endPropHandler);
-            if (isTrapped) {
-                hit(source);
-            }
-            return;
-        }
-
-        // Null prop in chain
-        if (base !== undefined && base[prop] === null) {
-            trapProp(base, prop, true, inChainPropHandler);
-            return;
-        }
-
-        // Empty object prop in chain
-        if ((base instanceof Object || typeof base === 'object') && isEmptyObject(base)) {
-            trapProp(base, prop, true, inChainPropHandler);
-        }
-
-        // Defined prop in chain
-        const propValue = owner[prop];
-        if (propValue instanceof Object || (typeof propValue === 'object' && propValue !== null)) {
-            setChainPropAccess(propValue, chain);
-        }
-
-        // Undefined prop in chain
-        trapProp(base, prop, true, inChainPropHandler);
-    };
+    const setChainPropAccess = createSetChainPropAccessor({
+        source,
+        stack,
+        mustCancel,
+        trapProp,
+        getConstantValue: () => constantValue,
+        setConstantValue: (v) => { constantValue = v; },
+    });
     setChainPropAccess(window, property);
 }
 
@@ -440,6 +363,7 @@ setConstant.primaryName = setConstantNames[0];
 setConstant.injections = [
     hit,
     logMessage,
+    createSetChainPropAccessor,
     getNumberFromString,
     noopArray,
     noopObject,
@@ -450,10 +374,7 @@ setConstant.injections = [
     throwFunc,
     noopPromiseReject,
     noopPromiseResolve,
-    getPropertyInChain,
-    matchStackTrace,
     nativeIsNaN,
-    isEmptyObject,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
@@ -462,4 +383,8 @@ setConstant.injections = [
     toRegExp,
     backupRegExpValues,
     restoreRegExpValues,
+    getPropertyInChain,
+    matchStackTrace,
+    isEmptyObject,
+    getDescriptorAddon,
 ];

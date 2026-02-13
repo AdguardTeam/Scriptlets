@@ -936,6 +936,223 @@ if (isSupported) {
         };
         xhr.send();
     });
+
+    test('Check if URL is mocked on state 2', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [`test01.json method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+
+        const xhrEvents = [false, false, false, false];
+
+        let adblockDetected = false;
+
+        const checkDetection = (detected) => {
+            if (detected) {
+                adblockDetected = true;
+                return;
+            }
+            const allEventsPassed = xhrEvents.every((state) => state);
+            if (!allEventsPassed) {
+                adblockDetected = true;
+            }
+        };
+
+        xhr.onreadystatechange = () => {
+            xhrEvents[xhr.readyState - 1] = true;
+            if (xhr.readyState >= 2 && xhr.responseURL !== URL) {
+                checkDetection(true);
+            }
+            if (xhr.readyState === 4) {
+                checkDetection();
+            }
+        };
+
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.strictEqual(xhr.response, '', 'Response data mocked');
+            assert.strictEqual(xhr.responseURL, URL, 'Original URL mocked');
+            assert.strictEqual(adblockDetected, false, 'Adblock detection bypassed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+
+        try {
+            xhr.open('GET', URL, true);
+            xhr.send();
+        } catch (ex) {
+            console.error(ex);
+            checkDetection(true);
+            done();
+        }
+    });
+
+    test('Check if there are only 3 states if xhr.onreadystatechange is assigned after xhr.open', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [`test01.json method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+
+        const xhrEvents = [false, false, false];
+
+        let adblockDetected = false;
+
+        const checkDetection = (detected) => {
+            if (detected) {
+                adblockDetected = true;
+                return;
+            }
+            const allEventsPassed = xhrEvents.every((state) => state);
+            if (!allEventsPassed) {
+                adblockDetected = true;
+            }
+        };
+
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.strictEqual(xhr.response, '', 'Response data mocked');
+            assert.strictEqual(xhr.responseURL, URL, 'Original URL mocked');
+            assert.strictEqual(adblockDetected, false, 'Adblock detection bypassed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+
+        try {
+            xhr.open('GET', URL, true);
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === 1) {
+                    checkDetection(true);
+                    return;
+                }
+                xhrEvents[xhr.readyState - 2] = true;
+                if (xhr.readyState >= 2 && xhr.responseURL !== URL) {
+                    checkDetection(true);
+                    return;
+                }
+                if (xhr.readyState === 4) {
+                    checkDetection();
+                }
+            };
+            xhr.send();
+        } catch (ex) {
+            console.error(ex);
+            checkDetection(true);
+            done();
+        }
+    });
+
+    test('Combined - URL is mocked on state 2 + xhr.onreadystatechange is assigned after xhr.open', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [`test01.json method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr1 = new XMLHttpRequest();
+
+        const xhrEvents1 = [false, false, false, false];
+
+        let adblockDetected1 = false;
+
+        const checkDetection1 = (detected) => {
+            if (detected) {
+                adblockDetected1 = true;
+                return;
+            }
+            const allEventsPassed = xhrEvents1.every((state) => state);
+            if (!allEventsPassed) {
+                adblockDetected1 = true;
+            }
+        };
+
+        xhr1.onreadystatechange = () => {
+            xhrEvents1[xhr1.readyState - 1] = true;
+            if (xhr1.readyState >= 2 && xhr1.responseURL !== URL) {
+                checkDetection1(true);
+            }
+            if (xhr1.readyState === 4) {
+                checkDetection1();
+            }
+        };
+
+        xhr1.onload = () => {
+            assert.strictEqual(xhr1.readyState, 4, 'Response done');
+            assert.strictEqual(xhr1.response, '', 'Response data mocked');
+            assert.strictEqual(xhr1.responseURL, URL, 'Original URL mocked');
+            assert.strictEqual(adblockDetected1, false, 'Adblock detection bypassed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        };
+
+        try {
+            xhr1.open('GET', URL, true);
+            xhr1.send();
+        } catch (ex) {
+            console.error(ex);
+            checkDetection1(true);
+            done();
+        }
+
+        const xhr2 = new XMLHttpRequest();
+
+        const xhrEvents2 = [false, false, false];
+
+        let adblockDetected2 = false;
+
+        const checkDetection2 = (detected) => {
+            if (detected) {
+                adblockDetected2 = true;
+                return;
+            }
+            const allEventsPassed = xhrEvents2.every((state) => state);
+            if (!allEventsPassed) {
+                adblockDetected2 = true;
+            }
+        };
+
+        xhr2.onload = () => {
+            assert.strictEqual(xhr2.readyState, 4, 'Response done');
+            assert.strictEqual(xhr2.response, '', 'Response data mocked');
+            assert.strictEqual(xhr2.responseURL, URL, 'Original URL mocked');
+            assert.strictEqual(adblockDetected2, false, 'Adblock detection bypassed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+
+        try {
+            xhr2.open('GET', URL, true);
+            xhr2.onreadystatechange = () => {
+                if (xhr2.readyState === 1) {
+                    checkDetection2(true);
+                    return;
+                }
+                xhrEvents2[xhr2.readyState - 2] = true;
+                if (xhr2.readyState >= 2 && xhr2.responseURL !== URL) {
+                    checkDetection2(true);
+                    return;
+                }
+                if (xhr2.readyState === 4) {
+                    checkDetection2();
+                }
+            };
+            xhr2.send();
+        } catch (ex) {
+            console.error(ex);
+            checkDetection2(true);
+            done();
+        }
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

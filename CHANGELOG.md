@@ -23,6 +23,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `prevent-xhr` scriptlet, `responseURL` is now set at `readyState` 2, and the first
+  state is skipped when `onreadystatechange` is assigned after `xhr.open()` [#485].
 - Anti-adblock detection in `spoof-css` scriptlet
   by using cloaked bound functions instead of Proxies [#422].
 - Response corruption in `trusted-replace-fetch-response` and `trusted-replace-xhr-response`
@@ -36,6 +38,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   setting `xhr.shouldBePrevented = false` could disable the scriptlet [#386].
 - Parsing of regexp patterns containing pipe `|` character in `signatureStr` arg
   of `trusted-suppress-native-method` scriptlet [#473].
+- Stack matching in `set-constant` and `trusted-set-constant` scriptlets —
+  now checked at property access time instead of scriptlet initialization [#500].
 - Cloudflare captcha broken when `>>>` combinator
   is used in `trusted-click-element` scriptlet [#491].
 
@@ -45,8 +49,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#422]: https://github.com/AdguardTeam/Scriptlets/issues/422
 [#461]: https://github.com/AdguardTeam/Scriptlets/issues/461
 [#473]: https://github.com/AdguardTeam/Scriptlets/issues/473
+[#485]: https://github.com/AdguardTeam/Scriptlets/issues/485
 [#486]: https://github.com/AdguardTeam/Scriptlets/issues/486
 [#491]: https://github.com/AdguardTeam/Scriptlets/issues/491
+[#500]: https://github.com/AdguardTeam/Scriptlets/issues/500
 [#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
 [#528]: https://github.com/AdguardTeam/Scriptlets/issues/528
 

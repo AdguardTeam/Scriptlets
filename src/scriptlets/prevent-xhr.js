@@ -132,6 +132,11 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             logMessage(source, `xhr( ${objectToString(xhrData)} )`, true);
             hit(source);
         } else if (matchRequestProps(source, propsToMatch, xhrData)) {
+            // First stage of the request lifecycle should be fired only if onreadystatechange is assigned
+            // https://github.com/AdguardTeam/Scriptlets/issues/485
+            if (typeof thisArg.onreadystatechange === 'function') {
+                xhrData.shouldFireFirstStage = true;
+            }
             // Store xhrData in map to keep original values in case of multiple requests
             // https://github.com/AdguardTeam/Scriptlets/issues/347
             matchedXhrRequests.set(thisArg, xhrData);
@@ -198,17 +203,22 @@ export function preventXHR(source, propsToMatch, customResponseText) {
          * @param {number} state - request status number.
          */
         const transitionReadyState = (state) => {
+            // For readyState 2, we need to set responseURL
+            // https://github.com/AdguardTeam/Scriptlets/issues/485
+            if (state === 2) {
+                const { responseURL } = forgedRequest;
+                Object.defineProperties(thisArg, {
+                    responseURL: { value: responseURL || storedXhrData.url, writable: false },
+                });
+            }
+
             if (state === 4) {
-                const {
-                    responseURL,
-                    responseXML,
-                } = forgedRequest;
+                const { responseXML } = forgedRequest;
 
                 // Mock response object
                 Object.defineProperties(thisArg, {
                     readyState: { value: 4, writable: false },
                     statusText: { value: 'OK', writable: false },
-                    responseURL: { value: responseURL || storedXhrData.url, writable: false },
                     responseXML: { value: responseXML, writable: false },
                     status: { value: 200, writable: false },
                     response: { value: modifiedResponse, writable: false },
@@ -230,7 +240,9 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         // https://github.com/AdguardTeam/Scriptlets/issues/414
         forgedRequest.addEventListener('readystatechange', () => {
             // simulate the lifecycle
-            transitionReadyState(1);
+            if (matchedXhrRequests.get(thisArg).shouldFireFirstStage) {
+                transitionReadyState(1);
+            }
             const loadStartEvent = new ProgressEvent('loadstart');
             thisArg.dispatchEvent(loadStartEvent);
             transitionReadyState(2);
