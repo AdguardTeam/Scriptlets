@@ -101,14 +101,12 @@ FROM source AS test-qunit
 
 ARG BUILD_RUN_ID
 
+# Use trap to ensure exit-code.txt is always written, even on unexpected failures
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
-    set +e; \
-    pnpm test:qunit; \
-    EXIT_CODE=$?; \
-    echo ${EXIT_CODE} > /out/exit-code.txt; \
-    exit ${EXIT_CODE}
+    trap 'echo $? > /out/exit-code.txt' EXIT && \
+    pnpm test:qunit
 
 FROM scratch AS test-qunit-output
 COPY --from=test-qunit /out/ /
@@ -121,14 +119,12 @@ FROM source AS test-vitest
 
 ARG BUILD_RUN_ID
 
+# Use trap to ensure exit-code.txt is always written, even on unexpected failures
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
-    set +e; \
-    pnpm test:vitest; \
-    EXIT_CODE=$?; \
-    echo ${EXIT_CODE} > /out/exit-code.txt; \
-    exit ${EXIT_CODE}
+    trap 'echo $? > /out/exit-code.txt' EXIT && \
+    pnpm test:vitest
 
 FROM scratch AS test-vitest-output
 COPY --from=test-vitest /out/ /
@@ -141,14 +137,12 @@ FROM source AS test-smoke
 
 ARG BUILD_RUN_ID
 
+# Use trap to ensure exit-code.txt is always written, even on unexpected failures
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
-    set +e; \
-    pnpm test:smoke; \
-    EXIT_CODE=$?; \
-    echo ${EXIT_CODE} > /out/exit-code.txt; \
-    exit ${EXIT_CODE}
+    trap 'echo $? > /out/exit-code.txt' EXIT && \
+    pnpm test:smoke
 
 FROM scratch AS test-smoke-output
 COPY --from=test-smoke /out/ /
