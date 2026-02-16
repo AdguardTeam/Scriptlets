@@ -8,9 +8,13 @@ variables:
   dockerPuppeteer: adguard/puppeteer-runner:22.14--24.5--1
 
 stages:
-  - Build: &stage
+  - Setup: &stage
       manual: false
       final: false
+      jobs:
+        - Setup dependencies
+  - Build:
+      <<: *stage
       jobs:
         - Build docs
         - Build lib
@@ -23,8 +27,8 @@ stages:
         # lint should be run after building of docs and lib
         - Lint
 
-Build docs:
-  key: BUILDDOCS
+Setup dependencies:
+  key: SETUP
   docker: &docker
     image: "${bamboo.dockerPuppeteer}"
     volumes:
@@ -32,7 +36,7 @@ Build docs:
   tasks:
     - checkout:
         force-clean-build: true
-    - script: &setup-script
+    - script:
         interpreter: SHELL
         scripts:
           - |-
@@ -50,12 +54,47 @@ Build docs:
             originalPnpmArgs="$bamboo_varsPnpm"
             modifiedPnpmArgs=$(echo "$originalPnpmArgs" | sed 's/--ignore-scripts//g')
 
-            # Install common dependencies
-            pnpm install ${modifiedPnpmArgs}
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+
+            # Install dependencies once with optimization flags
+            pnpm install --frozen-lockfile --prefer-offline ${modifiedPnpmArgs}
+  artifacts:
+    - name: node_modules
+      location: .
+      pattern: node_modules/**
+      shared: true
+      required: true
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh node_modules"
+  requirements: &requirements
+    - extension: 'true'
+
+Build docs:
+  key: BUILDDOCS
+  docker:
+    image: "${bamboo.dockerPuppeteer}"
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - artifact-download:
+        artifacts:
+          - name: node_modules
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
             # build docs to lint them later
             # check compatibility table updates and build it and build wiki docs
             pnpm wiki
@@ -69,15 +108,26 @@ Build docs:
 
 Build lib:
   key: BUILDLIB
-  docker: *docker
+  docker:
+    image: "${bamboo.dockerPuppeteer}"
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: true
-    - script: *setup-script
+    - artifact-download:
+        artifacts:
+          - name: node_modules
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
             pnpm build
   artifacts:
     - name: scriptlets.corelibs.json
@@ -97,15 +147,25 @@ Build lib:
 
 Test qunit:
   key: TESTQUNIT
-  docker: *docker
+  docker:
+    image: "${bamboo.dockerPuppeteer}"
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
-    - checkout:
-        force-clean-build: true
-    - script: *setup-script
+    - checkout
+    - artifact-download:
+        artifacts:
+          - name: node_modules
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
             pnpm test:qunit
   final-tasks:
     - script: *cleanup-script
@@ -113,14 +173,25 @@ Test qunit:
 
 Test vitest:
   key: TESTVITEST
-  docker: *docker
+  docker:
+    image: "${bamboo.dockerPuppeteer}"
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout
-    - script: *setup-script
+    - artifact-download:
+        artifacts:
+          - name: node_modules
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
             pnpm test:vitest
   final-tasks:
     - script: *cleanup-script
@@ -128,15 +199,25 @@ Test vitest:
 
 Test smoke:
   key: TESTSMOKE
-  docker: *docker
+  docker:
+    image: "${bamboo.dockerPuppeteer}"
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
-    - checkout:
-        force-clean-build: true
-    - script: *setup-script
+    - checkout
+    - artifact-download:
+        artifacts:
+          - name: node_modules
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
             pnpm test:smoke
   final-tasks:
     - script: *cleanup-script
@@ -144,14 +225,25 @@ Test smoke:
 
 Lint:
   key: LINT
-  docker: *docker
+  docker:
+    image: "${bamboo.dockerPuppeteer}"
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout
-    - script: *setup-script
+    - artifact-download:
+        artifacts:
+          - name: node_modules
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
             pnpm lint
   final-tasks:
     - script: *cleanup-script
