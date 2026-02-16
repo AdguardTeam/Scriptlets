@@ -40,6 +40,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   of `trusted-suppress-native-method` scriptlet [#473].
 - Stack matching in `set-constant` and `trusted-set-constant` scriptlets —
   now checked at property access time instead of scriptlet initialization [#500].
+- Cloudflare captcha broken when `>>>` combinator
+  is used in `trusted-click-element` scriptlet [#491].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
 [#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
@@ -49,6 +51,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#473]: https://github.com/AdguardTeam/Scriptlets/issues/473
 [#485]: https://github.com/AdguardTeam/Scriptlets/issues/485
 [#486]: https://github.com/AdguardTeam/Scriptlets/issues/486
+[#491]: https://github.com/AdguardTeam/Scriptlets/issues/491
 [#500]: https://github.com/AdguardTeam/Scriptlets/issues/500
 [#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
 [#528]: https://github.com/AdguardTeam/Scriptlets/issues/528

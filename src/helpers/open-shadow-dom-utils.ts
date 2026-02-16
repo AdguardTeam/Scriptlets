@@ -130,6 +130,7 @@ export function queryShadowSelector(
     selector: string,
     context: { querySelector: QueryFunc } = document.documentElement,
     textContent: RegExp | null = null,
+    shadowRootsMap?: WeakMap<Element, ShadowRoot>,
 ): ReturnType<QueryFunc> {
     const SHADOW_COMBINATOR = ' >>> ';
     const pos = selector.indexOf(SHADOW_COMBINATOR);
@@ -142,10 +143,16 @@ export function queryShadowSelector(
 
     const shadowHostSelector = selector.slice(0, pos).trim();
     const elem = context.querySelector(shadowHostSelector);
-    if (!elem || !elem.shadowRoot) {
+    if (!elem) {
+        return null;
+    }
+
+    // Use native shadowRoot first; fall back to WeakMap for closed shadow DOMs
+    const root = elem.shadowRoot || shadowRootsMap?.get(elem);
+    if (!root) {
         return null;
     }
 
     const shadowRootSelector = selector.slice(pos + SHADOW_COMBINATOR.length).trim();
-    return queryShadowSelector(shadowRootSelector, elem.shadowRoot, textContent);
+    return queryShadowSelector(shadowRootSelector, root, textContent, shadowRootsMap);
 }

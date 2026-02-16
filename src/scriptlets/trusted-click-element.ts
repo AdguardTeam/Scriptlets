@@ -6,9 +6,13 @@ import {
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    spoofClickEventsIsTrusted,
+    triggerMainObserver,
+    bridgeIframeLoads,
     clickElement,
     doesElementContainText,
     findElementWithText,
+    randomId,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -200,18 +204,56 @@ export function trustedClickElement(
         return new Promise((resolve) => { setTimeout(resolve, delayMs); });
     };
 
-    // If shadow combinator is present in selector, then override attachShadow and set mode to 'open'
+    // Spoof isTrusted for click-related events so that programmatic clicks
+    // appear as real user interactions to the page's event handlers.
+    // @see https://github.com/AdguardTeam/Scriptlets/issues/491
+    spoofClickEventsIsTrusted();
+
+    /**
+     * WeakMap to track closed shadow roots so queryShadowSelector can access them
+     * without forcing mode to 'open' (which may break some websites).
+     *
+     * @see https://github.com/AdguardTeam/Scriptlets/issues/491
+     */
+    const closedShadowRoots = new WeakMap<Element, ShadowRoot>();
+    const bridgeObservers = new Set<MutationObserver>();
+
+    // If shadow combinator is present in selector, intercept attachShadow
+    // to track closed shadow roots and observe each new shadow root for mutations,
+    // bridging them to the document-level MutationObserver which cannot see inside shadow DOMs.
     if (selectors.includes(SHADOW_COMBINATOR)) {
         const attachShadowWrapper = (
             target: typeof Element.prototype.attachShadow,
             thisArg: Element,
             argumentsList: any[],
         ) => {
+            const shadowRoot = Reflect.apply(target, thisArg, argumentsList);
+
+            // Track closed shadow roots so queryShadowSelector can look them up
+            // via the WeakMap instead of requiring elem.shadowRoot to be non-null.
             const mode = argumentsList[0]?.mode;
             if (mode === 'closed') {
-                argumentsList[0].mode = 'open';
+                closedShadowRoots.set(thisArg, shadowRoot);
             }
-            return Reflect.apply(target, thisArg, argumentsList);
+
+            /**
+             * Bridge shadow root mutations to the document-level observer.
+             * Without this, content added inside shadow DOMs would never trigger
+             * the main MutationObserver and selectors would never be re-checked.
+             * Also detect iframes added inside shadow roots and bridge their load events.
+             *
+             * @see {@link https://github.com/AdguardTeam/Scriptlets/issues/491}
+             */
+            const bridgeObserver = new MutationObserver((mutations) => {
+                triggerMainObserver();
+                mutations.forEach((mutation) => {
+                    bridgeIframeLoads(mutation.addedNodes);
+                });
+            });
+            bridgeObserver.observe(shadowRoot, { childList: true, subtree: true });
+            bridgeObservers.add(bridgeObserver);
+
+            return shadowRoot;
         };
 
         const attachShadowHandler = {
@@ -220,6 +262,11 @@ export function trustedClickElement(
 
         window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
     }
+
+    const disconnectBridgeObservers = () => {
+        bridgeObservers.forEach((obs) => obs.disconnect());
+        bridgeObservers.clear();
+    };
 
     let observerTimeoutMs = DEFAULT_OBSERVER_TIMEOUT_SEC * 1000;
     if (observerTimeoutSec) {
@@ -374,7 +421,12 @@ export function trustedClickElement(
             if (!elementObj.selectorText) {
                 return;
             }
-            const element = queryShadowSelector(elementObj.selectorText) as HTMLElement;
+            const element = queryShadowSelector(
+                elementObj.selectorText,
+                document.documentElement,
+                null,
+                closedShadowRoots,
+            ) as HTMLElement;
             if (!element) {
                 logMessage(source, `Could not find element: '${elementObj.selectorText}'`);
                 return;
@@ -489,15 +541,20 @@ export function trustedClickElement(
      * Processes a sequence of selectors, handling elements found in DOM (and shadow DOM),
      * and updates the sequence.
      *
-     * @returns {string[]} The updated selectors sequence, with fulfilled selectors set to null.
+     * @returns The updated selectors sequence, with fulfilled selectors set to null.
      */
-    const fulfillAndHandleSelectors = () => {
+    const fulfillAndHandleSelectors = (): Array<string | null> => {
         const fulfilledSelectors: string[] = [];
         selectorsSequence.forEach((selector, i) => {
             if (!selector) {
                 return;
             }
-            const element = queryShadowSelector(selector, document.documentElement, textMatchRegexp);
+            const element = queryShadowSelector(
+                selector,
+                document.documentElement,
+                textMatchRegexp,
+                closedShadowRoots,
+            );
             if (!element) {
                 return;
             }
@@ -531,6 +588,7 @@ export function trustedClickElement(
         const allSelectorsFulfilled = selectorsSequence.every((selector) => selector === null);
         if (allSelectorsFulfilled) {
             observer.disconnect();
+            disconnectBridgeObservers();
         }
     };
 
@@ -548,7 +606,10 @@ export function trustedClickElement(
         });
 
         // Set timeout to disconnect observer if elements are not found within the specified time
-        setTimeout(() => observer.disconnect(), observerTimeoutMs);
+        setTimeout(() => {
+            observer.disconnect();
+            disconnectBridgeObservers();
+        }, observerTimeoutMs);
     };
 
     /**
@@ -561,12 +622,18 @@ export function trustedClickElement(
             if (!selector) {
                 return false;
             }
-            const element = queryShadowSelector(selector, document.documentElement, textMatchRegexp);
+            const element = queryShadowSelector(
+                selector,
+                document.documentElement,
+                textMatchRegexp,
+                closedShadowRoots,
+            );
             return !!element;
         });
         if (foundElements) {
             // Click previously collected elements
             fulfillAndHandleSelectors();
+            disconnectBridgeObservers();
         } else {
             // Initialize MutationObserver if elements were not found initially
             initializeMutationObserver();
@@ -602,7 +669,12 @@ trustedClickElement.injections = [
     logMessage,
     parseMatchArg,
     queryShadowSelector,
+    spoofClickEventsIsTrusted,
+    triggerMainObserver,
+    bridgeIframeLoads,
     clickElement,
+    // following helpers are needed for helpers above
     doesElementContainText,
     findElementWithText,
+    randomId,
 ];

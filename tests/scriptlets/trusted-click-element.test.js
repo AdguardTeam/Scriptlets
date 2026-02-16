@@ -1029,6 +1029,224 @@ test('Closed shadow dom element clicked - text', (assert) => {
     }, 150);
 });
 
+test('Closed shadow DOM remains closed and element clicked', (assert) => {
+    // Closed shadow DOMs should remain closed (shadowRoot stays null)
+    // while elements inside are still queried and clicked via internal WeakMap tracking.
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> div > #${CLICKABLE_NAME}1`;
+
+    runScriptlet(name, [selectorsString]);
+
+    // Create shadow DOM with mode: 'closed' — scriptlet should NOT force it open
+    const panel = createPanel();
+    const panelShadowRoot = panel.attachShadow({ mode: 'closed' });
+    const div = document.createElement('div');
+    const clickable = createClickable(1);
+    div.appendChild(clickable);
+    panelShadowRoot.appendChild(div);
+
+    setTimeout(() => {
+        // Shadow root should remain closed — not exposed to external code
+        assert.strictEqual(panel.shadowRoot, null, 'Shadow DOM mode should remain closed');
+
+        // Element inside shadow DOM should be clicked
+        assert.ok(clickable.getAttribute('clicked'), 'Element inside shadow DOM should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('Closed shadow DOM not exposed to external code', (assert) => {
+    // Verify that other elements with closed shadow DOM are not exposed
+    // when the scriptlet uses >>> combinator — prevents breaking Cloudflare Turnstile etc.
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> div > #${CLICKABLE_NAME}1`;
+
+    runScriptlet(name, [selectorsString]);
+
+    // Target element with closed shadow DOM (scriptlet should track it internally)
+    const panel = createPanel();
+    const panelShadowRoot = panel.attachShadow({ mode: 'closed' });
+    const div = document.createElement('div');
+    const clickable = createClickable(1);
+    div.appendChild(clickable);
+    panelShadowRoot.appendChild(div);
+
+    // Unrelated element with closed shadow DOM (should also remain unexposed)
+    const unrelated = document.createElement('div');
+    unrelated.id = 'unrelated-shadow-host';
+    document.body.appendChild(unrelated);
+    unrelated.attachShadow({ mode: 'closed' });
+
+    setTimeout(() => {
+        // Neither shadow host should expose its shadow root
+        assert.strictEqual(panel.shadowRoot, null, 'Target shadow host should remain closed');
+        assert.strictEqual(unrelated.shadowRoot, null, 'Unrelated shadow host should remain closed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        unrelated.remove();
+        done();
+    }, 150);
+});
+
+test('Nested closed shadow DOM element clicked', (assert) => {
+    // Two levels of closed shadow DOM, both tracked via WeakMap so elements can be queried.
+    const ELEM_COUNT = 1;
+    const ASSERTIONS = ELEM_COUNT + 1;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> .inner-host >>> div > #${CLICKABLE_NAME}1`;
+
+    runScriptlet(name, [selectorsString]);
+
+    // First level: #panel with closed shadow DOM (forced open)
+    const panel = createPanel();
+    const firstShadowRoot = panel.attachShadow({ mode: 'closed' });
+
+    // Inside first shadow DOM: .inner-host element with its own closed shadow DOM
+    const innerHost = document.createElement('div');
+    innerHost.className = 'inner-host';
+    firstShadowRoot.appendChild(innerHost);
+
+    // Second level: .inner-host with closed shadow DOM (forced open)
+    const secondShadowRoot = innerHost.attachShadow({ mode: 'closed' });
+    const div = document.createElement('div');
+    const clickable = createClickable(1);
+    div.appendChild(clickable);
+    secondShadowRoot.appendChild(div);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element in nested closed shadow DOM should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('isTrusted is spoofed for click events', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+    const panel = createPanel();
+
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    let receivedIsTrusted = null;
+    clickable.addEventListener('click', (e) => {
+        receivedIsTrusted = e.isTrusted;
+    });
+
+    runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(receivedIsTrusted, true, 'isTrusted should be spoofed to true');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('isTrusted spoofing - removeEventListener still works', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+    const panel = createPanel();
+
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    let listenerCalled = false;
+    const listener = () => {
+        listenerCalled = true;
+    };
+
+    // Add then immediately remove the listener
+    clickable.addEventListener('click', listener);
+    clickable.removeEventListener('click', listener);
+
+    runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(listenerCalled, false, 'Removed listener should not be called');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('isTrusted spoofing - removeEventListener works with EventListenerObject', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+    const panel = createPanel();
+
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    let listenerCalled = false;
+    const listenerObj = {
+        handleEvent() {
+            listenerCalled = true;
+        },
+    };
+
+    // Add then immediately remove the EventListenerObject
+    clickable.addEventListener('click', listenerObj);
+    clickable.removeEventListener('click', listenerObj);
+
+    runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(listenerCalled, false, 'Removed EventListenerObject should not be called');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('Shadow DOM bridge observer - deferred content triggers click', (assert) => {
+    // Element added to shadow DOM after a delay should still be found and clicked
+    // thanks to the bridge MutationObserver on the shadow root.
+    const ASSERTIONS = 2;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> div > #${CLICKABLE_NAME}1`;
+
+    runScriptlet(name, [selectorsString]);
+
+    // Create shadow DOM first, but don't add content yet
+    const panel = createPanel();
+    const shadowRoot = panel.attachShadow({ mode: 'closed' });
+
+    let clickable;
+    // Add content inside shadow DOM after a delay
+    setTimeout(() => {
+        const div = document.createElement('div');
+        clickable = createClickable(1);
+        div.appendChild(clickable);
+        shadowRoot.appendChild(div);
+    }, 50);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Deferred element inside shadow DOM should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 300);
+});
+
 test('observerTimeout - valid time limit parameter', (assert) => {
     const ELEM_COUNT = 1;
     const OBSERVER_TIMEOUT_SEC = 15; // 15 seconds
