@@ -5,6 +5,20 @@ import { CORELIBS_REDIRECTS_FILE_NAME, CORELIBS_SCRIPTLETS_FILE_NAME, DIST_DIR_N
 const { error: logError, log } = console;
 
 /**
+ * Checks if the current directory is a git repository.
+ *
+ * @returns {boolean} True if inside a git repository, false otherwise.
+ */
+const isGitRepository = () => {
+    try {
+        execSync('git rev-parse --git-dir', { stdio: 'ignore' });
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+/**
  * Returns a string output of a `command`.
  *
  * Wrapper for `execSync()` function.
@@ -74,4 +88,9 @@ const checkScriptletsChanges = (isCorelibsRedirectsUpdated) => {
     }
 };
 
-checkScriptletsChanges(isRedirectsFileChanged());
+// Skip git checks if not in a git repository (e.g., in CI environments like Bamboo)
+if (!isGitRepository()) {
+    log('Not in a git repository, skipping corelibs dist checks...');
+} else {
+    checkScriptletsChanges(isRedirectsFileChanged());
+}
