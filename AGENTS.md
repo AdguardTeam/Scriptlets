@@ -30,6 +30,8 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
 - **Storage**: None
 - **Testing**: QUnit (scriptlets, redirects, helpers — browser-level via
   Puppeteer) and Vitest (API, validators, converters — jsdom)
+- **Known issues**:
+    - Puppeteer@24.5.0 is deprecated, this is known and acceptable for the project's needs
 - **Target platform**: Browser extension and Corelibs
 - **Project type**: single
 - **Performance goals**: N/A
@@ -115,6 +117,10 @@ You MUST follow the following rules for EVERY task that you perform:
   MUST BE specified is `extension: 'true'`, which pins jobs to Docker-capable
   extension agents. The build scripts explicitly use Docker. IMPORTANT: Do NOT
   add anything else to requirements.
+
+  **Note**: This is an implicit contract with the infrastructure.
+  If an extension agent is misconfigured or lacks Docker, CI will fail —
+  and this is acceptable and preferred over silently using a non-Docker environment.
 
 - If the prompt essentially asks you to refactor or improve existing code, check
   if you can phrase it as a code guideline. If it's possible, add it to
