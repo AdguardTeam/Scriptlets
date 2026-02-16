@@ -108,7 +108,11 @@ You MUST follow the following rules for EVERY task that you perform:
 - When the task is finished update `CHANGELOG.md` file and explain changes in
   the `Unreleased` section. Add entries to the appropriate subsection (`Added`,
   `Changed`, or `Fixed`) if it already exists; do not create duplicate
-  subsections.
+  subsections. Changes limited to `bamboo-specs/` or CI configuration may skip
+  CHANGELOG updates.
+
+- When modifying Bamboo specs (`bamboo-specs/*.yaml`), the only requirement that
+  should be specified is `extension: 'true'`. Do not add anything else.
 
 - If the prompt essentially asks you to refactor or improve existing code, check
   if you can phrase it as a code guideline. If it's possible, add it to
