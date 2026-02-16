@@ -15,6 +15,9 @@ WORKDIR /scriptlets
 
 ENV PNPM_STORE=/pnpm-store
 
+# Configure pnpm store globally so it doesn't need to be set in each stage
+RUN pnpm config set store-dir /pnpm-store
+
 # ============================================================================
 # Stage: deps
 # Cached until package.json/pnpm-lock.yaml changes
@@ -24,7 +27,6 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    pnpm config set store-dir /pnpm-store && \
     pnpm install \
         --frozen-lockfile \
         --prefer-offline
@@ -48,7 +50,6 @@ ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm config set store-dir /pnpm-store && \
     pnpm build && \
     mkdir -p /out/artifacts && \
     cp dist/scriptlets.corelibs.json /out/artifacts/ && \
@@ -68,7 +69,6 @@ ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm config set store-dir /pnpm-store && \
     pnpm wiki && \
     mkdir -p /out && \
     touch /out/wiki.txt
@@ -86,7 +86,6 @@ ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm config set store-dir /pnpm-store && \
     pnpm lint && \
     mkdir -p /out && \
     touch /out/lint.txt
@@ -104,13 +103,12 @@ ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && \
     set +e; \
     pnpm test:qunit; \
     EXIT_CODE=$?; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
-    exit 0
+    exit ${EXIT_CODE}
 
 FROM scratch AS test-qunit-output
 COPY --from=test-qunit /out/ /
@@ -125,13 +123,12 @@ ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && \
     set +e; \
     pnpm test:vitest; \
     EXIT_CODE=$?; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
-    exit 0
+    exit ${EXIT_CODE}
 
 FROM scratch AS test-vitest-output
 COPY --from=test-vitest /out/ /
@@ -146,13 +143,12 @@ ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm config set store-dir /pnpm-store && \
     mkdir -p /out && \
     set +e; \
     pnpm test:smoke; \
     EXIT_CODE=$?; \
     echo ${EXIT_CODE} > /out/exit-code.txt; \
-    exit 0
+    exit ${EXIT_CODE}
 
 FROM scratch AS test-smoke-output
 COPY --from=test-smoke /out/ /
@@ -167,7 +163,6 @@ ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm config set store-dir /pnpm-store && \
     pnpm build && \
     pnpm pack --out scriptlets.tgz && \
     mkdir -p /out/artifacts && \
