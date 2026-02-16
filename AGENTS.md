@@ -112,7 +112,8 @@ You MUST follow the following rules for EVERY task that you perform:
   CHANGELOG updates.
 
 - When modifying Bamboo specs (`bamboo-specs/*.yaml`), the only requirement that
-  should be specified is `extension: 'true'`. Do not add anything else.
+  MUST BE specified is `extension: 'true'` which already ensures that the
+  build is run in a Docker container. IMPORTANT: Do not add anything else.
 
 - If the prompt essentially asks you to refactor or improve existing code, check
   if you can phrase it as a code guideline. If it's possible, add it to
