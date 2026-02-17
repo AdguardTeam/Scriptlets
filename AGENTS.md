@@ -30,8 +30,6 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
 - **Storage**: None
 - **Testing**: QUnit (scriptlets, redirects, helpers — browser-level via
   Puppeteer) and Vitest (API, validators, converters — jsdom)
-- **Known issues**:
-    - Puppeteer@24.5.0 is deprecated, this is known and acceptable for the project's needs
 - **Target platform**: Browser extension and Corelibs
 - **Project type**: single
 - **Performance goals**: N/A
