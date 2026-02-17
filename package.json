@@ -118,7 +118,7 @@
         "markdownlint-cli": "^0.34.0",
         "node-qunit-puppeteer": "^2.2.1",
         "openurl": "^1.1.1",
-        "puppeteer": "24.5.0",
+        "puppeteer": "24.35.0",
         "qunit": "^2.22.0",
         "rimraf": "^6.0.1",
         "rollup": "^4.28.1",

@@ -2,7 +2,7 @@
 # Dependencies are cached until package.json/pnpm-lock.yaml change
 # Each stage can be built independently via --target
 
-FROM adguard/puppeteer-runner:22.14--24.5--1 AS base
+FROM ghcr.io/puppeteer/puppeteer:24.35.0 AS base
 SHELL ["/bin/bash", "-lc"]
 
 # Install additional tools if needed
