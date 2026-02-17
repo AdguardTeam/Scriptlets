@@ -2,14 +2,17 @@
 # Dependencies are cached until package.json/pnpm-lock.yaml change
 # Each stage can be built independently via --target
 
+# node v22.21.1 is used in this image
 FROM ghcr.io/puppeteer/puppeteer:24.35.0 AS base
 SHELL ["/bin/bash", "-lc"]
 
-# Install additional tools if needed
-RUN npm install -g pnpm@10.7.1
+# by default the puppeteer image is run as a non-root user "pptruser"
+# but root user is needed for global npm installs
+USER root
 
-# Prevent "dubious ownership" error in git
-RUN git config --global --add safe.directory '*'
+# Install pnpm globally and configure git
+RUN npm install -g pnpm@10.7.1 && \
+    git config --global --add safe.directory '*'
 
 WORKDIR /scriptlets
 
