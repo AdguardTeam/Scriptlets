@@ -4,8 +4,6 @@ plan:
   project-key: AJL
   key: SCRIPTLETSTEST
   name: scriptlets - test new
-variables:
-  dockerPuppeteer: adguard/puppeteer-runner:22.14--24.5--1
 
 stages:
   - Build: &stage
@@ -25,40 +23,29 @@ stages:
 
 Build docs:
   key: BUILDDOCS
-  docker: &docker
-    image: "${bamboo.dockerPuppeteer}"
-    volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  other:
+    clean-working-dir: true
   tasks:
     - checkout:
         force-clean-build: true
-    - script: &setup-script
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -e
-            set -x
-
-            ls -laht
-
-            # Fix mixed logs
-            exec 2>&1
-
-            # Exclude '--ignore-scripts' from pnpm arguments
-            # since it prevents postinstall scripts from running
-            # so Chrome is not installed which is crucial for tests
-            originalPnpmArgs="$bamboo_varsPnpm"
-            modifiedPnpmArgs=$(echo "$originalPnpmArgs" | sed 's/--ignore-scripts//g')
-
-            # Install common dependencies
-            pnpm install ${modifiedPnpmArgs}
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            # build docs to lint them later
-            # check compatibility table updates and build it and build wiki docs
-            pnpm wiki
+            set -ex
+
+            # Fix mixed logs
+            exec 2>&1
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg BUILD_RUN_ID=${bamboo.buildNumber} \
+              --target wiki-output \
+              --output type=local,dest=output \
+              .
   final-tasks:
     - script: &cleanup-script
         interpreter: SHELL
@@ -69,90 +56,184 @@ Build docs:
 
 Build lib:
   key: BUILDLIB
-  docker: *docker
+  other:
+    clean-working-dir: true
   tasks:
     - checkout:
         force-clean-build: true
-    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm build
+            set -ex
+
+            # Fix mixed logs
+            exec 2>&1
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg BUILD_RUN_ID=${bamboo.buildNumber} \
+              --target build-output \
+              --output type=local,dest=output \
+              .
   artifacts:
     - name: scriptlets.corelibs.json
-      location: dist
+      location: output/artifacts
       pattern: scriptlets.corelibs.json
       required: true
     - name: redirects.json
-      location: dist
+      location: output/artifacts
       pattern: redirects.json
       required: true
   final-tasks:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/cleanup.sh dist/scriptlets.corelibs.json,dist/redirects.json"
+          - "./bamboo-specs/scripts/cleanup.sh output/artifacts/scriptlets.corelibs.json,output/artifacts/redirects.json"
   requirements: *requirements
 
 Test qunit:
   key: TESTQUNIT
-  docker: *docker
+  other:
+    clean-working-dir: true
   tasks:
     - checkout:
         force-clean-build: true
-    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm test:qunit
+            set -ex
+
+            # Fix mixed logs
+            exec 2>&1
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg BUILD_RUN_ID=${bamboo.buildNumber} \
+              --target test-qunit-output \
+              --output type=local,dest=output \
+              .
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            if [ -f output/exit-code.txt ]; then
+              exit $(cat output/exit-code.txt)
+            fi
+            echo "output/exit-code.txt not found"
+            exit 1
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
 
 Test vitest:
   key: TESTVITEST
-  docker: *docker
+  other:
+    clean-working-dir: true
   tasks:
-    - checkout
-    - script: *setup-script
+    - checkout:
+        force-clean-build: true
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm test:vitest
+            set -ex
+
+            # Fix mixed logs
+            exec 2>&1
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg BUILD_RUN_ID=${bamboo.buildNumber} \
+              --target test-vitest-output \
+              --output type=local,dest=output \
+              .
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            if [ -f output/exit-code.txt ]; then
+              exit $(cat output/exit-code.txt)
+            fi
+            echo "output/exit-code.txt not found"
+            exit 1
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
 
 Test smoke:
   key: TESTSMOKE
-  docker: *docker
+  other:
+    clean-working-dir: true
   tasks:
     - checkout:
         force-clean-build: true
-    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm test:smoke
+            set -ex
+
+            # Fix mixed logs
+            exec 2>&1
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg BUILD_RUN_ID=${bamboo.buildNumber} \
+              --target test-smoke-output \
+              --output type=local,dest=output \
+              .
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            if [ -f output/exit-code.txt ]; then
+              exit $(cat output/exit-code.txt)
+            fi
+            echo "output/exit-code.txt not found"
+            exit 1
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
 
 Lint:
   key: LINT
-  docker: *docker
+  other:
+    clean-working-dir: true
   tasks:
-    - checkout
-    - script: *setup-script
+    - checkout:
+        force-clean-build: true
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            pnpm lint
+            set -ex
+
+            # Fix mixed logs
+            exec 2>&1
+
+            export DOCKER_BUILDKIT=1
+
+            docker build \
+              --file Dockerfile \
+              --progress plain \
+              --build-arg BUILD_RUN_ID=${bamboo.buildNumber} \
+              --target lint-output \
+              --output type=local,dest=output \
+              .
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
