@@ -78,6 +78,7 @@ export { trustedReplaceArgumentNames } from './trusted-replace-argument';
 export { preventInnerHTMLNames } from './prevent-innerHTML';
 export { preventConstructorNames } from './prevent-constructor';
 export { removeRequestQueryParameterNames } from './remove-request-query-parameter';
+export { preventNavigationNames } from './prevent-navigation';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
 export { AmazonApstagNames } from './amazon-apstag';

@@ -75,3 +75,4 @@ import './trusted-create-element.test';
 import './trusted-dispatch-event.test';
 import './trusted-replace-outbound-text.test';
 import './trusted-set-attr.test';
+import './prevent-navigation.test';
