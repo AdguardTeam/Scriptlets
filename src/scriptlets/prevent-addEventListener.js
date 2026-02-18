@@ -25,7 +25,7 @@ import {
  * <!-- markdownlint-disable line-length -->
  *
  * ```text
- * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch[, additionalArgName, additionalArgValue]]])
+ * example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch[, additionalArgName, additionalArgValue[, noProtect]]]])
  * ```
  *
  * <!-- markdownlint-enable line-length -->
@@ -40,6 +40,11 @@ import {
  *   for `elements` it can be a CSS selector or one of the following values:
  *     - `window`
  *     - `document`
+ * - `noProtect` — optional, if set to `'true'`, the scriptlet will use simple assignment instead of
+ *   `Object.defineProperty` with a no-op setter. This allows other scriptlets or tools to override
+ *   `addEventListener` later if needed. By default, the scriptlet protects the override from being
+ *   overwritten by website scripts. If compatibility with other scriptlets is needed,
+ *   set this parameter to `'true'`.
  *
  * ### Examples
  *
@@ -87,10 +92,23 @@ import {
  *     });
  *     ```
  *
+ * 1. Prevent 'click' listeners and allow other scriptlets to override `addEventListener`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('prevent-addEventListener', 'click', '', '', '', 'true')
+ *     ```
+ *
  * @added v1.0.4.
  */
 /* eslint-enable max-len */
-export function preventAddEventListener(source, typeSearch, listenerSearch, additionalArgName, additionalArgValue) {
+export function preventAddEventListener(
+    source,
+    typeSearch,
+    listenerSearch,
+    additionalArgName,
+    additionalArgValue,
+    noProtect,
+) {
     const typeSearchRegexp = toRegExp(typeSearch);
     const listenerSearchRegexp = toRegExp(listenerSearch);
 
@@ -157,16 +175,26 @@ export function preventAddEventListener(source, typeSearch, listenerSearch, addi
         return nativeAddEventListener.apply(context, [type, listener, ...args]);
     }
 
-    const descriptor = {
-        configurable: true,
-        set: () => {},
-        get: () => addEventListenerWrapper,
-    };
-    // https://github.com/AdguardTeam/Scriptlets/issues/215
-    // https://github.com/AdguardTeam/Scriptlets/issues/143
-    Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
-    Object.defineProperty(window, 'addEventListener', descriptor);
-    Object.defineProperty(document, 'addEventListener', descriptor);
+    // https://github.com/AdguardTeam/Scriptlets/issues/550
+    if (noProtect === 'true') {
+        // Simple assignment allows other scriptlets to override addEventListener later.
+        // Only override EventTarget.prototype to avoid recursion issues —
+        // window and document inherit from EventTarget, so they'll use the wrapper
+        // through the prototype chain.
+        window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    } else {
+        // Use Object.defineProperty with no-op setter to protect against website overrides
+        const descriptor = {
+            configurable: true,
+            set: () => {},
+            get: () => addEventListenerWrapper,
+        };
+        // https://github.com/AdguardTeam/Scriptlets/issues/215
+        // https://github.com/AdguardTeam/Scriptlets/issues/143
+        Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
+        Object.defineProperty(window, 'addEventListener', descriptor);
+        Object.defineProperty(document, 'addEventListener', descriptor);
+    }
 }
 
 export const preventAddEventListenerNames = [

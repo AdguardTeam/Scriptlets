@@ -21,6 +21,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - [Trusted Types API] support in `trusted-create-element` scriptlet [#507].
 - [Trusted Types API] support in Firefox [#528].
 
+### Changed
+
+- `prevent-addEventListener` scriptlet: added new optional `noProtect` parameter,
+  improving compatibility with other scriptlets that need to override `addEventListener` [#550].
+
 ### Fixed
 
 - `prevent-xhr` scriptlet, `responseURL` is now set at `readyState` 2, and the first
@@ -55,6 +60,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#500]: https://github.com/AdguardTeam/Scriptlets/issues/500
 [#507]: https://github.com/AdguardTeam/Scriptlets/issues/507
 [#528]: https://github.com/AdguardTeam/Scriptlets/issues/528
+[#550]: https://github.com/AdguardTeam/Scriptlets/issues/550
 
 ## [v2.2.15] - 2026-01-22
 

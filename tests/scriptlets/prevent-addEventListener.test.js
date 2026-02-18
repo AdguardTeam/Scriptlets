@@ -342,3 +342,87 @@ test('match document', (assert) => {
 
     clearGlobalProps(testPropMatch, testPropDoesNotMatch1, testPropDoesNotMatch2);
 });
+
+test('noProtect parameter allows subsequent override of addEventListener', (assert) => {
+    const scriptletArgs = ['click', 'clicked', '', '', 'true'];
+    runScriptlet(name, scriptletArgs);
+
+    // Verify the scriptlet works on element
+    const testProp = 'testProp';
+    const element = document.createElement('div');
+    element.addEventListener('click', () => {
+        window[testProp] = 'clicked';
+    });
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testProp], undefined, 'property should be undefined');
+    clearGlobalProps('hit');
+
+    // Verify window.addEventListener works without recursion/stack overflow
+    const windowTestProp = 'windowTestProp';
+    window.addEventListener('customEvent', () => {
+        window[windowTestProp] = 'windowListenerCalled';
+    });
+    window.dispatchEvent(new Event('customEvent'));
+    assert.strictEqual(window[windowTestProp], 'windowListenerCalled', 'window.addEventListener should work');
+    clearGlobalProps(windowTestProp);
+
+    // Verify document.addEventListener works without recursion/stack overflow
+    const docTestProp = 'docTestProp';
+    document.addEventListener('customDocEvent', () => {
+        window[docTestProp] = 'docListenerCalled';
+    });
+    document.dispatchEvent(new Event('customDocEvent'));
+    assert.strictEqual(window[docTestProp], 'docListenerCalled', 'document.addEventListener should work');
+    clearGlobalProps(docTestProp);
+
+    // Now verify that addEventListener can be overridden
+    let overrideWorked = false;
+    window.EventTarget.prototype.addEventListener = function customWrapper() {
+        overrideWorked = true;
+    };
+
+    const element2 = document.createElement('div');
+    element2.addEventListener('click', () => {});
+
+    assert.strictEqual(overrideWorked, true, 'addEventListener should be overridable with noProtect');
+    clearGlobalProps(testProp);
+});
+
+test('default behavior (no noProtect) protects addEventListener from override', (assert) => {
+    const scriptletArgs = ['click', 'clicked'];
+    runScriptlet(name, scriptletArgs);
+
+    // Verify descriptor has protective setter and getter
+    const descriptor = Object.getOwnPropertyDescriptor(
+        window.EventTarget.prototype,
+        'addEventListener',
+    );
+
+    assert.strictEqual(typeof descriptor.get, 'function', 'descriptor should have a getter');
+    assert.strictEqual(typeof descriptor.set, 'function', 'descriptor should have a setter');
+    assert.strictEqual(descriptor.configurable, true, 'descriptor should be configurable');
+
+    const originalWrapper = descriptor.get();
+
+    // Try to override addEventListener - should be silently ignored due to no-op setter
+    window.EventTarget.prototype.addEventListener = function maliciousWrapper() {
+        throw new Error('This should not be called');
+    };
+
+    // The getter should still return the scriptlet's wrapper, not the malicious one
+    const currentAddEventListener = window.EventTarget.prototype.addEventListener;
+    assert.strictEqual(
+        currentAddEventListener,
+        originalWrapper,
+        'addEventListener should still be the scriptlet wrapper after attempted override',
+    );
+
+    // Verify the setter is effectively a no-op by checking the getter still returns original
+    assert.strictEqual(
+        descriptor.get(),
+        originalWrapper,
+        'getter should still return original wrapper after setter was called',
+    );
+});
