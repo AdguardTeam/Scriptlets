@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.2.16] - 2026-02-19
 
 ### Added
 
@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `prevent-addEventListener` scriptlet: added new optional `noProtect` parameter,
   improving compatibility with other scriptlets that need to override `addEventListener` [#550].
+- Updated [@adguard/agtree] to `4.0.1`.
 
 ### Fixed
 
@@ -49,7 +50,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Cloudflare captcha broken when `>>>` combinator
   is used in `trusted-click-element` scriptlet [#491].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...HEAD
+[v2.2.16]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...v2.2.16
 [#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
 [#386]: https://github.com/AdguardTeam/Scriptlets/issues/386
 [#422]: https://github.com/AdguardTeam/Scriptlets/issues/422

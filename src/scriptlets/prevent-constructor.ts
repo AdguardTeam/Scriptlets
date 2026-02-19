@@ -61,7 +61,7 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('prevent-constructor', 'MutationObserver', '["*", "attributes"]')
  *     ```
  *
- * @added unknown
+ * @added v2.2.16.
  */
 /* eslint-enable max-len */
 export function preventConstructor(

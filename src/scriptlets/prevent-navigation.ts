@@ -89,7 +89,7 @@ type NavigationLike = {
  *     example.org#%#//scriptlet('prevent-navigation')
  *     ```
  *
- * @added unknown.
+ * @added v2.2.16.
  */
 export function preventNavigation(source: Source, urlPattern?: string | RegExp | undefined): void {
     const nav = window.navigation;

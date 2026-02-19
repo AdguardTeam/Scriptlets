@@ -52,7 +52,7 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('remove-request-query-parameter', '/^utm_/', '/api/')
  *     ```
  *
- * @added unknown.
+ * @added v2.2.16.
  */
 export function removeRequestQueryParameter(source: Source, parametersToRemove: string, urlPattern?: string) {
     if (!parametersToRemove) {
