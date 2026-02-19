@@ -2,38 +2,38 @@
     "scriptlets": [
         {
             "adg": "abort-current-inline-script",
-            "ubo": "abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js)",
+            "ubo": "abort-current-script.js (abort-current-script, acs, acs.js, abort-current-inline-script, abort-current-inline-script.js, acis, acis.js)",
             "abp": "abort-current-inline-script"
         },
         {
             "adg": "abort-on-property-read",
-            "ubo": "abort-on-property-read.js (aopr.js)",
+            "ubo": "abort-on-property-read.js (abort-on-property-read, aopr, aopr.js)",
             "abp": "abort-on-property-read"
         },
         {
             "adg": "abort-on-property-write",
-            "ubo": "abort-on-property-write.js (aopw.js)",
+            "ubo": "abort-on-property-write.js (abort-on-property-write, aopw, aopw.js)",
             "abp": "abort-on-property-write"
         },
         {
             "adg": "abort-on-stack-trace",
-            "ubo": "abort-on-stack-trace.js (aost.js)"
+            "ubo": "abort-on-stack-trace.js (abort-on-stack-trace, aost, aost.js)"
         },
         {
             "adg": "adjust-setInterval",
-            "ubo": "adjust-setInterval.js (nano-setInterval-booster.js, nano-sib.js)"
+            "ubo": "adjust-setInterval.js (adjust-setInterval, nano-setInterval-booster, nano-setInterval-booster.js, nano-sib, nano-sib.js)"
         },
         {
             "adg": "adjust-setTimeout",
-            "ubo": "adjust-setTimeout.js (nano-setTimeout-booster.js, nano-stb.js)"
+            "ubo": "adjust-setTimeout.js (adjust-setTimeout, nano-setTimeout-booster, nano-setTimeout-booster.js, nano-stb, nano-stb.js)"
         },
         {
             "adg": "call-nothrow",
-            "ubo": "call-nothrow.js"
+            "ubo": "call-nothrow.js (call-nothrow)"
         },
         {
             "adg": "close-window",
-            "ubo": "close-window.js (window-close-if.js)"
+            "ubo": "close-window.js (window-close-if.js, window-close-if)"
         },
         {
             "adg": "debug-current-inline-script"
@@ -45,7 +45,8 @@
             "adg": "debug-on-property-write"
         },
         {
-            "adg": "amazon-apstag"
+            "adg": "amazon-apstag",
+            "ubo": "amazon-apstag.js (amazon-apstag)"
         },
         {
             "adg": "didomi-loader"
@@ -59,22 +60,26 @@
         },
         {
             "adg": "evaldata-prune",
-            "ubo": "evaldata-prune.js"
+            "ubo": "evaldata-prune.js (evaldata-prune)"
         },
         {
-            "adg": "fingerprintjs2"
+            "adg": "fingerprintjs2",
+            "ubo": "fingerprint2.js (fingerprint2)"
         },
         {
-            "adg": "fingerprintjs3"
+            "adg": "fingerprintjs3",
+            "ubo": "fingerprintjs3.js (fingerprintjs3)"
         },
         {
             "adg": "gemius"
         },
         {
-            "adg": "google-analytics"
+            "adg": "google-analytics",
+            "ubo": "google-analytics_analytics.js (google-analytics_analytics)"
         },
         {
-            "adg": "google-analytics-ga"
+            "adg": "google-analytics-ga",
+            "ubo": "google-analytics-ga.js (google-analytics-ga)"
         },
         {
             "adg": "google-ima3"
@@ -83,11 +88,12 @@
             "adg": "googlesyndication-adsbygoogle"
         },
         {
-            "adg": "googletagservices-gpt"
+            "adg": "googletagservices-gpt",
+            "ubo": "googletagservices_gpt.js (ubo-googletagservices_gpt.js, ubo-googletagservices_gpt)"
         },
         {
             "adg": "json-prune",
-            "ubo": "json-prune.js",
+            "ubo": "json-prune.js (json-prune)",
             "abp": "json-prune"
         },
         {
@@ -105,7 +111,7 @@
         },
         {
             "adg": "m3u-prune",
-            "ubo": "m3u-prune.js"
+            "ubo": "m3u-prune.js (m3u-prune)"
         },
         {
             "adg": "matomo"
@@ -120,11 +126,12 @@
             "adg": "naver-wcslog"
         },
         {
-            "adg": "noeval"
+            "adg": "noeval",
+            "ubo": "noeval.js (noeval)"
         },
         {
             "adg": "nowebrtc",
-            "ubo": "nowebrtc.js"
+            "ubo": "nowebrtc.js (nowebrtc)"
         },
         {
             "adg": "no-protected-audience"
@@ -140,18 +147,19 @@
         },
         {
             "adg": "prevent-addEventListener",
-            "ubo": "addEventListener-defuser.js (aeld.js, prevent-addEventListener.js)",
+            "ubo": "addEventListener-defuser.js (addEventListener-defuser, aeld, aeld.js, prevent-addEventListener, prevent-addEventListener.js)",
             "abp": "prevent-listener"
         },
         {
             "adg": "prevent-adfly"
         },
         {
-            "adg": "prevent-bab"
+            "adg": "prevent-bab",
+            "ubo": "nobab.js (nobab)"
         },
         {
             "adg": "prevent-canvas",
-            "ubo": "prevent-canvas.js"
+            "ubo": "prevent-canvas.js (prevent-canvas)"
         },
         {
             "adg": "prevent-constructor"
@@ -161,65 +169,66 @@
         },
         {
             "adg": "prevent-eval-if",
-            "ubo": "noeval-if.js (prevent-eval-if.js)"
+            "ubo": "noeval-if.js (prevent-eval-if.js, prevent-eval-if, noeval-if)"
         },
         {
-            "adg": "prevent-fab-3.2.0"
+            "adg": "prevent-fab-3.2.0",
+            "ubo": "nofab.js"
         },
         {
             "adg": "prevent-fetch",
-            "ubo": "prevent-fetch.js (no-fetch-if.js)"
+            "ubo": "prevent-fetch.js (prevent-fetch, no-fetch-if, no-fetch-if.js)"
         },
         {
             "adg": "prevent-innerHTML",
-            "ubo": "prevent-innerHTML"
+            "ubo": "prevent-innerHTML.js (prevent-innerHTML)"
         },
         {
             "adg": "prevent-navigation"
         },
         {
             "adg": "prevent-xhr",
-            "ubo": "prevent-xhr.js (no-xhr-if.js)"
+            "ubo": "no-xhr-if.js (no-xhr-if, prevent-xhr, prevent-xhr.js)"
         },
         {
             "adg": "prevent-popads-net"
         },
         {
             "adg": "prevent-refresh",
-            "ubo": "prevent-refresh.js (refresh-defuser.js)"
+            "ubo": "prevent-refresh.js (refresh-defuser.js, refresh-defuser)"
         },
         {
             "adg": "prevent-requestAnimationFrame",
-            "ubo": "no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js)"
+            "ubo": "no-requestAnimationFrame-if.js (no-requestAnimationFrame-if.js, no-requestAnimationFrame-if, norafif.js, norafif)"
         },
         {
             "adg": "prevent-setInterval",
-            "ubo": "no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js)"
+            "ubo": "prevent-setInterval.js (prevent-setInterval, no-setInterval-if.js, no-setInterval-if, nosiif.js, nosiif, setInterval-defuser.js, setInterval-defuser)"
         },
         {
             "adg": "prevent-setTimeout",
-            "ubo": "no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js)"
+            "ubo": "no-setTimeout-if.js (no-setTimeout-if, nostif, nostif.js, prevent-setTimeout, prevent-setTimeout.js, setTimeout-defuser, setTimeout-defuser.js)"
         },
         {
             "adg": "prevent-window-open",
-            "ubo": "prevent-window-open.js (nowoif.js, no-window-open-if.js, window.open-defuser.js)"
+            "ubo": "no-window-open-if.js (no-window-open-if, nowoif, nowoif.js, prevent-window-open, prevent-window-open.js, window.open-defuser, window.open-defuser.js)"
         },
         {
             "adg": "remove-attr",
-            "ubo": "remove-attr.js (ra.js)"
+            "ubo": "remove-attr.js (ra.js, ra, remove-attr)"
         },
         {
             "adg": "remove-class",
-            "ubo": "remove-class.js (rc.js)"
+            "ubo": "remove-class.js (rc.js, rc, remove-class)"
         },
         {
             "adg": "remove-cookie",
-            "ubo": "remove-cookie.js (cookie-remover.js)",
+            "ubo": "remove-cookie.js (remove-cookie, cookie-remover, cookie-remover.js)",
             "abp": "cookie-remover"
         },
         {
             "adg": "remove-node-text",
-            "ubo": "remove-node-text.js (rmnt.js)"
+            "ubo": "remove-node-text.js (remove-node-text, rmnt, rmnt.js)"
         },
         {
             "adg": "remove-request-query-parameter",
@@ -230,31 +239,31 @@
         },
         {
             "adg": "set-attr",
-            "ubo": "set-attr.js (removed)"
+            "ubo": "set-attr.js (set-attr)"
         },
         {
             "adg": "set-constant",
-            "ubo": "set-constant.js (set.js)",
+            "ubo": "set-constant.js (set-constant, set, set.js)",
             "abp": "override-property-read"
         },
         {
             "adg": "set-cookie",
-            "ubo": "set-cookie.js"
+            "ubo": "set-cookie.js (set-cookie)"
         },
         {
             "adg": "set-cookie-reload",
-            "ubo": "set-cookie-reload.js"
+            "ubo": "set-cookie.js (set-cookie)"
         },
         {
             "adg": "set-local-storage-item",
-            "ubo": "set-local-storage-item.js"
+            "ubo": "set-local-storage-item.js (set-local-storage-item)"
         },
         {
             "adg": "set-popads-dummy"
         },
         {
             "adg": "set-session-storage-item",
-            "ubo": "set-session-storage-item.js"
+            "ubo": "set-session-storage-item.js (set-session-storage-item)"
         },
         {
             "adg": "spoof-css",
@@ -262,20 +271,29 @@
         },
         {
             "adg": "xml-prune",
-            "ubo": "xml-prune.js"
+            "ubo": "xml-prune.js (xml-prune)"
         },
         {
-            "ubo": "webrtc-if.js"
+            "adg": "remove-in-shadow-dom"
         },
         {
-            "ubo": "overlay-buster.js"
+            "adg": "inject-css-in-shadow-dom"
         },
         {
-            "ubo": "alert-buster.js"
+            "adg": "hide-in-shadow-dom"
+        },
+        {
+            "ubo": "webrtc-if.js (webrtc-if)"
+        },
+        {
+            "ubo": "overlay-buster.js (overlay-buster)"
+        },
+        {
+            "ubo": "alert-buster.js (alert-buster)"
         },
         {
             "adg": "href-sanitizer",
-            "ubo": "href-sanitizer.js"
+            "ubo": "href-sanitizer.js (href-sanitizer)"
         },
         {
             "abp": "abort-on-iframe-property-read"
@@ -338,30 +356,30 @@
             "abp": "race"
         },
         {
-            "ubo": "window.name-defuser.js"
+            "ubo": "window.name-defuser.js (window.name-defuser)"
         },
         {
-            "ubo": "trusted-set-constant.js (trusted-set.js)"
+            "ubo": "trusted-set-constant.js (trusted-set.js, trusted-set)"
         },
         {
-            "ubo": "trusted-set-cookie.js"
+            "ubo": "trusted-set-cookie.js (trusted-set-cookie)"
         },
         {
-            "ubo": "trusted-set-local-storage-item.js"
+            "ubo": "trusted-set-local-storage-item.js (trusted-set-local-storage-item)"
         },
         {
-            "ubo": "trusted-replace-fetch-response.js (trusted-rpfr.js)"
+            "ubo": "trusted-replace-fetch-response.js (trusted-replace-fetch-response)"
         },
         {
             "adg": "json-prune-fetch-response",
-            "ubo": "json-prune-fetch-response.js"
+            "ubo": "json-prune-fetch-response.js (json-prune-fetch-response)"
         },
         {
             "adg": "json-prune-xhr-response",
-            "ubo": "json-prune-xhr-response.js"
+            "ubo": "json-prune-xhr-response.js (json-prune-xhr-response)"
         },
         {
-            "ubo": "trusted-replace-xhr-response.js"
+            "ubo": "trusted-replace-xhr-response.js (trusted-replace-xhr-response)"
         },
         {
             "ubo": "multiup.js"
@@ -370,19 +388,19 @@
             "ubo": "trusted-set-cookie-reload.js"
         },
         {
-            "ubo": "trusted-click-element.js"
+            "ubo": "trusted-click-element.js (trusted-click-element)"
         },
         {
-            "ubo": "trusted-prune-inbound-object.js"
+            "ubo": "trusted-prune-inbound-object.js (trusted-prune-inbound-object)"
         },
         {
-            "ubo": "trusted-prune-outbound-object.js"
+            "ubo": "trusted-prune-outbound-object.js (trusted-prune-outbound-object)"
         },
         {
-            "ubo": "trusted-set-session-storage-item.js"
+            "ubo": "trusted-set-session-storage-item.js (trusted-set-session-storage-item)"
         },
         {
-            "ubo": "trusted-replace-node-text.js (trusted-rpnt.js, replace-node-text.js, rpnt.js)"
+            "ubo": "trusted-replace-node-text.js (trusted-rpnt.js, trusted-rpnt, replace-node-text.js, replace-node-text, rpnt.js, rpnt)"
         },
         {
             "ubo": "remove-cache-storage-item.js"
@@ -394,7 +412,7 @@
             "ubo": "trusted-replace-outbound-text.js"
         },
         {
-            "ubo": "trusted-suppress-native-method.js"
+            "ubo": "trusted-suppress-native-method.js (trusted-suppress-native-method)"
         },
         {
             "ubo": "trusted-prevent-xhr.js"
