@@ -8,86 +8,91 @@
 
 | AdGuard | uBO | Adblock Plus |
 |---|---|---|
-| [abort-current-inline-script](../wiki/about-scriptlets.md#abort-current-inline-script) | abort-current-script.js (acs.js, abort-current-inline-script.js, acis.js) | abort-current-inline-script |
-| [abort-on-property-read](../wiki/about-scriptlets.md#abort-on-property-read) | abort-on-property-read.js (aopr.js) | abort-on-property-read |
-| [abort-on-property-write](../wiki/about-scriptlets.md#abort-on-property-write) | abort-on-property-write.js (aopw.js) | abort-on-property-write |
-| [abort-on-stack-trace](../wiki/about-scriptlets.md#abort-on-stack-trace) | abort-on-stack-trace.js (aost.js) |  |
-| [adjust-setInterval](../wiki/about-scriptlets.md#adjust-setInterval) | adjust-setInterval.js (nano-setInterval-booster.js, nano-sib.js) |  |
-| [adjust-setTimeout](../wiki/about-scriptlets.md#adjust-setTimeout) | adjust-setTimeout.js (nano-setTimeout-booster.js, nano-stb.js) |  |
-| [call-nothrow](../wiki/about-scriptlets.md#call-nothrow) | call-nothrow.js |  |
-| [close-window](../wiki/about-scriptlets.md#close-window) | close-window.js (window-close-if.js) |  |
+| [abort-current-inline-script](../wiki/about-scriptlets.md#abort-current-inline-script) | abort-current-script.js (abort-current-script, acs, acs.js, abort-current-inline-script, abort-current-inline-script.js, acis, acis.js) | abort-current-inline-script |
+| [abort-on-property-read](../wiki/about-scriptlets.md#abort-on-property-read) | abort-on-property-read.js (abort-on-property-read, aopr, aopr.js) | abort-on-property-read |
+| [abort-on-property-write](../wiki/about-scriptlets.md#abort-on-property-write) | abort-on-property-write.js (abort-on-property-write, aopw, aopw.js) | abort-on-property-write |
+| [abort-on-stack-trace](../wiki/about-scriptlets.md#abort-on-stack-trace) | abort-on-stack-trace.js (abort-on-stack-trace, aost, aost.js) |  |
+| [adjust-setInterval](../wiki/about-scriptlets.md#adjust-setInterval) | adjust-setInterval.js (adjust-setInterval, nano-setInterval-booster, nano-setInterval-booster.js, nano-sib, nano-sib.js) |  |
+| [adjust-setTimeout](../wiki/about-scriptlets.md#adjust-setTimeout) | adjust-setTimeout.js (adjust-setTimeout, nano-setTimeout-booster, nano-setTimeout-booster.js, nano-stb, nano-stb.js) |  |
+| [call-nothrow](../wiki/about-scriptlets.md#call-nothrow) | call-nothrow.js (call-nothrow) |  |
+| [close-window](../wiki/about-scriptlets.md#close-window) | close-window.js (window-close-if.js, window-close-if) |  |
 | [debug-current-inline-script](../wiki/about-scriptlets.md#debug-current-inline-script) |  |  |
 | [debug-on-property-read](../wiki/about-scriptlets.md#debug-on-property-read) |  |  |
 | [debug-on-property-write](../wiki/about-scriptlets.md#debug-on-property-write) |  |  |
-| [amazon-apstag](../wiki/about-scriptlets.md#amazon-apstag) |  |  |
+| [amazon-apstag](../wiki/about-scriptlets.md#amazon-apstag) | amazon-apstag.js (amazon-apstag) |  |
 | [didomi-loader](../wiki/about-scriptlets.md#didomi-loader) |  |  |
 | [dir-string](../wiki/about-scriptlets.md#dir-string) |  |  |
 | [disable-newtab-links](../wiki/about-scriptlets.md#disable-newtab-links) | disable-newtab-links.js |  |
-| [evaldata-prune](../wiki/about-scriptlets.md#evaldata-prune) | evaldata-prune.js |  |
-| [fingerprintjs2](../wiki/about-scriptlets.md#fingerprintjs2) |  |  |
-| [fingerprintjs3](../wiki/about-scriptlets.md#fingerprintjs3) |  |  |
+| [evaldata-prune](../wiki/about-scriptlets.md#evaldata-prune) | evaldata-prune.js (evaldata-prune) |  |
+| [fingerprintjs2](../wiki/about-scriptlets.md#fingerprintjs2) | fingerprint2.js (fingerprint2) |  |
+| [fingerprintjs3](../wiki/about-scriptlets.md#fingerprintjs3) | fingerprintjs3.js (fingerprintjs3) |  |
 | [gemius](../wiki/about-scriptlets.md#gemius) |  |  |
-| [google-analytics](../wiki/about-scriptlets.md#google-analytics) |  |  |
-| [google-analytics-ga](../wiki/about-scriptlets.md#google-analytics-ga) |  |  |
+| [google-analytics](../wiki/about-scriptlets.md#google-analytics) | google-analytics_analytics.js (google-analytics_analytics) |  |
+| [google-analytics-ga](../wiki/about-scriptlets.md#google-analytics-ga) | google-analytics-ga.js (google-analytics-ga) |  |
 | [google-ima3](../wiki/about-scriptlets.md#google-ima3) |  |  |
 | [googlesyndication-adsbygoogle](../wiki/about-scriptlets.md#googlesyndication-adsbygoogle) |  |  |
-| [googletagservices-gpt](../wiki/about-scriptlets.md#googletagservices-gpt) |  |  |
-| [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js | json-prune |
+| [googletagservices-gpt](../wiki/about-scriptlets.md#googletagservices-gpt) | googletagservices_gpt.js (ubo-googletagservices_gpt.js, ubo-googletagservices_gpt) |  |
+| [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js (json-prune) | json-prune |
 | [log](../wiki/about-scriptlets.md#log) |  | log |
 | [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) |  |  |
 | [log-eval](../wiki/about-scriptlets.md#log-eval) |  |  |
 | [log-on-stack-trace](../wiki/about-scriptlets.md#log-on-stack-trace) |  |  |
-| [m3u-prune](../wiki/about-scriptlets.md#m3u-prune) | m3u-prune.js |  |
+| [m3u-prune](../wiki/about-scriptlets.md#m3u-prune) | m3u-prune.js (m3u-prune) |  |
 | [matomo](../wiki/about-scriptlets.md#matomo) |  |  |
 | [metrika-yandex-watch](../wiki/about-scriptlets.md#metrika-yandex-watch) |  |  |
 | [metrika-yandex-tag](../wiki/about-scriptlets.md#metrika-yandex-tag) |  |  |
 | [naver-wcslog](../wiki/about-scriptlets.md#naver-wcslog) |  |  |
-| [noeval](../wiki/about-scriptlets.md#noeval) |  |  |
-| [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js |  |
+| [noeval](../wiki/about-scriptlets.md#noeval) | noeval.js (noeval) |  |
+| [nowebrtc](../wiki/about-scriptlets.md#nowebrtc) | nowebrtc.js (nowebrtc) |  |
 | [no-protected-audience](../wiki/about-scriptlets.md#no-protected-audience) |  |  |
 | [no-topics](../wiki/about-scriptlets.md#no-topics) |  |  |
 | [pardot-1.0](../wiki/about-scriptlets.md#pardot-1.0) |  |  |
 | [prebid](../wiki/about-scriptlets.md#prebid) |  |  |
-| [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (aeld.js, prevent-addEventListener.js) | prevent-listener |
+| [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (addEventListener-defuser, aeld, aeld.js, prevent-addEventListener, prevent-addEventListener.js) | prevent-listener |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) |  |  |
-| [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
-| [prevent-canvas](../wiki/about-scriptlets.md#prevent-canvas) | prevent-canvas.js |  |
+| [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) | nobab.js (nobab) |  |
+| [prevent-canvas](../wiki/about-scriptlets.md#prevent-canvas) | prevent-canvas.js (prevent-canvas) |  |
+| [prevent-constructor](../wiki/about-scriptlets.md#prevent-constructor) |  |  |
 | [prevent-element-src-loading](../wiki/about-scriptlets.md#prevent-element-src-loading) |  |  |
-| [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js) |  |
-| [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) |  |  |
-| [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | prevent-fetch.js (no-fetch-if.js) |  |
-| [prevent-innerHTML](../wiki/about-scriptlets.md#prevent-innerHTML) | prevent-innerHTML |  |
-| [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | prevent-xhr.js (no-xhr-if.js) |  |
+| [prevent-eval-if](../wiki/about-scriptlets.md#prevent-eval-if) | noeval-if.js (prevent-eval-if.js, prevent-eval-if, noeval-if) |  |
+| [prevent-fab-3.2.0](../wiki/about-scriptlets.md#prevent-fab-3.2.0) | nofab.js |  |
+| [prevent-fetch](../wiki/about-scriptlets.md#prevent-fetch) | prevent-fetch.js (prevent-fetch, no-fetch-if, no-fetch-if.js) |  |
+| [prevent-innerHTML](../wiki/about-scriptlets.md#prevent-innerHTML) | prevent-innerHTML.js (prevent-innerHTML) |  |
+| [prevent-navigation](../wiki/about-scriptlets.md#prevent-navigation) |  |  |
+| [prevent-xhr](../wiki/about-scriptlets.md#prevent-xhr) | no-xhr-if.js (no-xhr-if, prevent-xhr, prevent-xhr.js) |  |
 | [prevent-popads-net](../wiki/about-scriptlets.md#prevent-popads-net) |  |  |
-| [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | prevent-refresh.js (refresh-defuser.js) |  |
-| [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (norafif.js, prevent-requestAnimationFrame.js) |  |
-| [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | no-setInterval-if.js (nosiif.js, prevent-setInterval.js, setInterval-defuser.js) |  |
-| [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (nostif.js, prevent-setTimeout.js, setTimeout-defuser.js) |  |
-| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) | prevent-window-open.js (nowoif.js, no-window-open-if.js, window.open-defuser.js) |  |
-| [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js) |  |
-| [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js) |  |
-| [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | remove-cookie.js (cookie-remover.js) | cookie-remover |
-| [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (rmnt.js) |  |
+| [prevent-refresh](../wiki/about-scriptlets.md#prevent-refresh) | prevent-refresh.js (refresh-defuser.js, refresh-defuser) |  |
+| [prevent-requestAnimationFrame](../wiki/about-scriptlets.md#prevent-requestAnimationFrame) | no-requestAnimationFrame-if.js (no-requestAnimationFrame-if.js, no-requestAnimationFrame-if, norafif.js, norafif) |  |
+| [prevent-setInterval](../wiki/about-scriptlets.md#prevent-setInterval) | prevent-setInterval.js (prevent-setInterval, no-setInterval-if.js, no-setInterval-if, nosiif.js, nosiif, setInterval-defuser.js, setInterval-defuser) |  |
+| [prevent-setTimeout](../wiki/about-scriptlets.md#prevent-setTimeout) | no-setTimeout-if.js (no-setTimeout-if, nostif, nostif.js, prevent-setTimeout, prevent-setTimeout.js, setTimeout-defuser, setTimeout-defuser.js) |  |
+| [prevent-window-open](../wiki/about-scriptlets.md#prevent-window-open) | no-window-open-if.js (no-window-open-if, nowoif, nowoif.js, prevent-window-open, prevent-window-open.js, window.open-defuser, window.open-defuser.js) |  |
+| [remove-attr](../wiki/about-scriptlets.md#remove-attr) | remove-attr.js (ra.js, ra, remove-attr) |  |
+| [remove-class](../wiki/about-scriptlets.md#remove-class) | remove-class.js (rc.js, rc, remove-class) |  |
+| [remove-cookie](../wiki/about-scriptlets.md#remove-cookie) | remove-cookie.js (remove-cookie, cookie-remover, cookie-remover.js) | cookie-remover |
+| [remove-node-text](../wiki/about-scriptlets.md#remove-node-text) | remove-node-text.js (remove-node-text, rmnt, rmnt.js) |  |
+| [remove-request-query-parameter](../wiki/about-scriptlets.md#remove-request-query-parameter) |  | strip-fetch-query-parameter |
 | [scorecardresearch-beacon](../wiki/about-scriptlets.md#scorecardresearch-beacon) |  |  |
-| [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js (removed) |  |
-| [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set.js) | override-property-read |
-| [set-cookie](../wiki/about-scriptlets.md#set-cookie) | set-cookie.js |  |
-| [set-cookie-reload](../wiki/about-scriptlets.md#set-cookie-reload) | set-cookie-reload.js |  |
-| [set-local-storage-item](../wiki/about-scriptlets.md#set-local-storage-item) | set-local-storage-item.js |  |
+| [set-attr](../wiki/about-scriptlets.md#set-attr) | set-attr.js (set-attr) |  |
+| [set-constant](../wiki/about-scriptlets.md#set-constant) | set-constant.js (set-constant, set, set.js) | override-property-read |
+| [set-cookie](../wiki/about-scriptlets.md#set-cookie) | set-cookie.js (set-cookie) |  |
+| [set-cookie-reload](../wiki/about-scriptlets.md#set-cookie-reload) | set-cookie.js (set-cookie) |  |
+| [set-local-storage-item](../wiki/about-scriptlets.md#set-local-storage-item) | set-local-storage-item.js (set-local-storage-item) |  |
 | [set-popads-dummy](../wiki/about-scriptlets.md#set-popads-dummy) |  |  |
-| [set-session-storage-item](../wiki/about-scriptlets.md#set-session-storage-item) | set-session-storage-item.js |  |
+| [set-session-storage-item](../wiki/about-scriptlets.md#set-session-storage-item) | set-session-storage-item.js (set-session-storage-item) |  |
 | [spoof-css](../wiki/about-scriptlets.md#spoof-css) | spoof-css.js |  |
-| [xml-prune](../wiki/about-scriptlets.md#xml-prune) | xml-prune.js |  |
-|  | webrtc-if.js |  |
-|  | overlay-buster.js |  |
-|  | alert-buster.js |  |
-| [href-sanitizer](../wiki/about-scriptlets.md#href-sanitizer) | href-sanitizer.js |  |
+| [xml-prune](../wiki/about-scriptlets.md#xml-prune) | xml-prune.js (xml-prune) |  |
+| [remove-in-shadow-dom](../wiki/about-scriptlets.md#remove-in-shadow-dom) |  |  |
+| [inject-css-in-shadow-dom](../wiki/about-scriptlets.md#inject-css-in-shadow-dom) |  |  |
+| [hide-in-shadow-dom](../wiki/about-scriptlets.md#hide-in-shadow-dom) |  |  |
+|  | webrtc-if.js (webrtc-if) |  |
+|  | overlay-buster.js (overlay-buster) |  |
+|  | alert-buster.js (alert-buster) |  |
+| [href-sanitizer](../wiki/about-scriptlets.md#href-sanitizer) | href-sanitizer.js (href-sanitizer) |  |
 |  |  | abort-on-iframe-property-read |
 |  |  | abort-on-iframe-property-write |
 |  |  | freeze-element |
 |  |  | json-override |
 |  |  | simulate-mouse-event |
-|  |  | strip-fetch-query-parameter |
 |  |  | hide-if-contains |
 |  |  | hide-if-contains-image |
 |  |  | hide-if-contains-image-hash |
@@ -103,25 +108,25 @@
 |  |  | debug |
 |  |  | trace |
 |  |  | race |
-|  | window.name-defuser.js |  |
-|  | trusted-set-constant.js (trusted-set.js) |  |
-|  | trusted-set-cookie.js |  |
-|  | trusted-set-local-storage-item.js |  |
-|  | trusted-replace-fetch-response.js (trusted-rpfr.js) |  |
-| [json-prune-fetch-response](../wiki/about-scriptlets.md#json-prune-fetch-response) | json-prune-fetch-response.js |  |
-| [json-prune-xhr-response](../wiki/about-scriptlets.md#json-prune-xhr-response) | json-prune-xhr-response.js |  |
-|  | trusted-replace-xhr-response.js |  |
+|  | window.name-defuser.js (window.name-defuser) |  |
+|  | trusted-set-constant.js (trusted-set.js, trusted-set) |  |
+|  | trusted-set-cookie.js (trusted-set-cookie) |  |
+|  | trusted-set-local-storage-item.js (trusted-set-local-storage-item) |  |
+|  | trusted-replace-fetch-response.js (trusted-replace-fetch-response) |  |
+| [json-prune-fetch-response](../wiki/about-scriptlets.md#json-prune-fetch-response) | json-prune-fetch-response.js (json-prune-fetch-response) |  |
+| [json-prune-xhr-response](../wiki/about-scriptlets.md#json-prune-xhr-response) | json-prune-xhr-response.js (json-prune-xhr-response) |  |
+|  | trusted-replace-xhr-response.js (trusted-replace-xhr-response) |  |
 |  | multiup.js |  |
 |  | trusted-set-cookie-reload.js |  |
-|  | trusted-click-element.js |  |
-|  | trusted-prune-inbound-object.js |  |
-|  | trusted-prune-outbound-object.js |  |
-|  | trusted-set-session-storage-item.js |  |
-|  | trusted-replace-node-text.js (trusted-rpnt.js, replace-node-text.js, rpnt.js) |  |
+|  | trusted-click-element.js (trusted-click-element) |  |
+|  | trusted-prune-inbound-object.js (trusted-prune-inbound-object) |  |
+|  | trusted-prune-outbound-object.js (trusted-prune-outbound-object) |  |
+|  | trusted-set-session-storage-item.js (trusted-set-session-storage-item) |  |
+|  | trusted-replace-node-text.js (trusted-rpnt.js, trusted-rpnt, replace-node-text.js, replace-node-text, rpnt.js, rpnt) |  |
 |  | remove-cache-storage-item.js |  |
 |  | trusted-replace-argument.js |  |
 |  | trusted-replace-outbound-text.js |  |
-|  | trusted-suppress-native-method.js |  |
+|  | trusted-suppress-native-method.js (trusted-suppress-native-method) |  |
 |  | trusted-prevent-xhr.js |  |
 |  | trusted-prevent-dom-bypass.js |  |
 |  | trusted-override-element-method.js |  |

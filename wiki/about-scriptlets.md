@@ -49,11 +49,13 @@
 - [prevent-adfly](#prevent-adfly)
 - [prevent-bab](#prevent-bab)
 - [prevent-canvas](#prevent-canvas)
+- [prevent-constructor](#prevent-constructor)
 - [prevent-element-src-loading](#prevent-element-src-loading)
 - [prevent-eval-if](#prevent-eval-if)
 - [prevent-fab-3.2.0](#prevent-fab-3.2.0)
 - [prevent-fetch](#prevent-fetch)
 - [prevent-innerHTML](#prevent-innerhtml)
+- [prevent-navigation](#prevent-navigation)
 - [prevent-popads-net](#prevent-popads-net)
 - [prevent-refresh](#prevent-refresh)
 - [prevent-requestAnimationFrame](#prevent-requestanimationframe)
@@ -66,6 +68,7 @@
 - [remove-cookie](#remove-cookie)
 - [remove-in-shadow-dom](#remove-in-shadow-dom)
 - [remove-node-text](#remove-node-text)
+- [remove-request-query-parameter](#remove-request-query-parameter)
 - [scorecardresearch-beacon](#scorecardresearch-beacon)
 - [set-attr](#set-attr)
 - [set-constant](#set-constant)
@@ -1923,7 +1926,7 @@ https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/prevent-listener.
 <!-- markdownlint-disable line-length -->
 
 ```text
-example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch[, additionalArgName, additionalArgValue]]])
+example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSearch[, additionalArgName, additionalArgValue[, noProtect]]]])
 ```
 
 <!-- markdownlint-enable line-length -->
@@ -1938,6 +1941,11 @@ example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSear
   for `elements` it can be a CSS selector or one of the following values:
     - `window`
     - `document`
+- `noProtect` — optional, if set to `'true'`, the scriptlet will use simple assignment instead of
+  `Object.defineProperty` with a no-op setter. This allows other scriptlets or tools to override
+  `addEventListener` later if needed. By default, the scriptlet protects the override from being
+  overwritten by website scripts. If compatibility with other scriptlets is needed,
+  set this parameter to `'true'`.
 
 ### Examples
 
@@ -1983,6 +1991,12 @@ example.org#%#//scriptlet('prevent-addEventListener'[, typeSearch[, listenerSear
     el.addEventListener('click', () => {
         window.test = 'foo';
     });
+    ```
+
+1. Prevent 'click' listeners and allow other scriptlets to override `addEventListener`
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-addEventListener', 'click', '', '', '', 'true')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-addEventListener.js)
@@ -2071,6 +2085,64 @@ example.org#%#//scriptlet('prevent-canvas'[, contextType])
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-canvas.ts)
+
+* * *
+
+## <a id="prevent-constructor"></a> ⚡️ prevent-constructor
+
+> Added in v2.2.16.
+
+Prevents a constructor call if the constructor name
+and optionally the first argument match the specified criteria.
+This scriptlet is useful for blocking constructors like `Promise` or `MutationObserver`
+that can be used to circumvent existing scriptlets like `prevent-addEventListener`.
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('prevent-constructor', constructorName[, argumentSearch])
+```
+
+- `constructorName` — required, string, the name of the constructor to prevent,
+  e.g., "Promise", "MutationObserver".
+  Must be a property of the global `window` object.
+- `argumentsMatch` — optional, string or regular expression,
+  or JSON array of patterns matching arguments passed to the constructor.
+  Defaults to match all constructors if not specified.
+  Possible values:
+    - string — matches the first argument only;
+    - JSON array — matches arguments positionally, should be wrapped in `[]`;
+      use `"*"` to skip positions, e.g., if only second argument should be matched.
+      Invalid regular expression or JSON will cause exit and rule will not work.
+
+### Examples
+
+1. Prevent all `MutationObserver` constructor calls
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-constructor', 'MutationObserver')
+    ```
+
+1. Prevent `Promise` constructor calls where the first argument contains `adblock`
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-constructor', 'Promise', 'adblock')
+    ```
+
+1. Prevent `MutationObserver` calls where the first argument matches a regexp
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-constructor', 'MutationObserver', '/detect.*ad/')
+    ```
+
+1. Prevent `MutationObserver` calls where the second argument contains `attributes`,
+   and matching of the first argument is skipped
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-constructor', 'MutationObserver', '["*", "attributes"]')
+    ```
+
+[Scriptlet source](../src/scriptlets/prevent-constructor.ts)
 
 * * *
 
@@ -2326,6 +2398,52 @@ example.org#%#//scriptlet('prevent-innerHTML'[, selector[, pattern[, replacement
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-innerHTML.ts)
+
+* * *
+
+## <a id="prevent-navigation"></a> ⚡️ prevent-navigation
+
+> Added in v2.2.16.
+
+Prevents navigation to URL matching the specified pattern by intercepting the `navigate` event.
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('prevent-navigation'[, urlPattern])
+```
+
+- `urlPattern` — optional, string, regular expression or `location.href` keyword to match URL.
+
+> Usage with no arguments will log navigation attempts to browser console.
+
+### Examples
+
+1. Prevent navigation to URL containing `ads`:
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-navigation', 'ads')
+    ```
+
+1. Prevent navigation to URLs matching regex:
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-navigation', '/foo.*bar/')
+    ```
+
+1. Prevent `location.reload`:
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-navigation', 'location.href')
+    ```
+
+1. Log all navigation attempts without blocking:
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-navigation')
+    ```
+
+[Scriptlet source](../src/scriptlets/prevent-navigation.ts)
 
 * * *
 
@@ -3192,6 +3310,56 @@ If matched, the whole text will be removed. Case sensitive.
     ```
 
 [Scriptlet source](../src/scriptlets/remove-node-text.js)
+
+* * *
+
+## <a id="remove-request-query-parameter"></a> ⚡️ remove-request-query-parameter
+
+> Added in v2.2.16.
+
+Removes a specified query parameter from matched outgoing requests.
+
+Related ABP source:
+https://gitlab.com/eyeo/anti-cv/snippets/-/blob/92f9b84bd0d34dbd0e3c1bfe3ff2062863c7714a/source/behavioral/strip-fetch-query-parameter.js
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('remove-request-query-parameter', parametersToRemove[, urlPattern])
+```
+
+- `parametersToRemove` — required, either a single regular expression (starting with `/`)
+  or a list of literal query parameter names separated by `,`.
+  Mixing regular expressions and literal strings is not allowed.
+- `urlPattern` — optional, a string or regular expression to match request URLs.
+
+### Examples
+
+1. Remove a specific query parameter from all requests:
+
+    ```adblock
+    example.org#%#//scriptlet('remove-request-query-parameter', 'utm_source')
+    ```
+
+1. Remove multiple query parameters from all requests:
+
+    ```adblock
+    example.org#%#//scriptlet('remove-request-query-parameter', 'utm_source,utm_medium,utm_campaign')
+    ```
+
+1. Remove a specific query parameter from requests matching a URL pattern:
+
+    ```adblock
+    example.org#%#//scriptlet('remove-request-query-parameter', 'ad_config_id', '/playback/')
+    ```
+
+1. Remove query parameters matching a regular expression:
+
+    ```adblock
+    example.org#%#//scriptlet('remove-request-query-parameter', '/^utm_/', '/api/')
+    ```
+
+[Scriptlet source](../src/scriptlets/remove-request-query-parameter.ts)
 
 * * *
 
