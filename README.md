@@ -326,7 +326,7 @@ There are two scripts to update wiki:
 
 ### <a name="corelibs"></a> CoreLibs
 
-For CoreLibs usage you should use `dist/scriptlets.corelibs.json` and `dist/redirects.json`.
+For [CoreLibs] usage you should use `dist/scriptlets.corelibs.json` and `dist/redirects.json`.
 
 File example:
 
@@ -504,7 +504,7 @@ Current version of scriptlets library.
 
 #### <a name="scriptlets-api--content-script-api"></a> `ContentScriptApi`
 
-API provided by CoreLibs content script.
+API provided by [CoreLibs] content script.
 
 This API is used to provide a set of utilities and shared state for scriptlets
 running in the context of a web page. Particularly, it includes:
@@ -891,15 +891,21 @@ declare function convertAdgRedirectToUbo(rule: string): string;
 
 ## <a name="used-by"> Projects using Scriptlets
 
-- [CoreLibs](https://github.com/AdguardTeam/CoreLibs) (updates automatically)
-- [TSUrlFilter](https://github.com/AdguardTeam/tsurlfilter)
-- [FiltersCompiler](https://github.com/AdguardTeam/FiltersCompiler)
-  (`tsurlfilter`'s update might be required as well)
-- [AdguardBrowserExtension](https://github.com/AdguardTeam/AdguardBrowserExtension)
-  (`tsurlfilter` also should be updated)
-- [AdguardForSafari](https://github.com/AdguardTeam/AdGuardForSafari) (`adguard-resources` should be updated)
-- [AdguardForiOS](https://github.com/AdguardTeam/AdguardForiOS)
-  (`tsurlfilter` should be updated in `advanced-adblocker-web-extension`)
+- [CoreLibs] — updates automatically
+- [TSUrlFilter monorepo] — [tsurlfilter] and [tswebextension] packages
+- [FiltersCompiler] — [tsurlfilter] should be updated
+- [AdguardBrowserExtension] — both [tsurlfilter] and [tswebextension] should be updated
+- [SafariConverterLib] — needed for [AdGuardMiniForMac] and [AdguardForiOS]
+
+[CoreLibs]: https://github.com/AdguardTeam/CoreLibs
+[TSUrlFilter monorepo]: https://github.com/AdguardTeam/tsurlfilter
+[tsurlfilter]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter
+[tswebextension]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension
+[FiltersCompiler]: https://github.com/AdguardTeam/FiltersCompiler
+[AdguardBrowserExtension]: https://github.com/AdguardTeam/AdguardBrowserExtension
+[SafariConverterLib]: https://github.com/AdguardTeam/SafariConverterLib
+[AdGuardMiniForMac]: https://github.com/AdguardTeam/AdGuardMiniForMac
+[AdguardForiOS]: https://github.com/AdguardTeam/AdguardForiOS
 
 [ubo-redirect]: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
 [kb-basic-rules]: https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
