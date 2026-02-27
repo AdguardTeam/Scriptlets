@@ -168,6 +168,22 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         return;
     }
 
+    const EXTENSION_SCHEMES = [
+        'chrome-extension:',
+        'moz-extension:',
+        'ms-browser-extension:',
+        'safari-web-extension:',
+    ];
+
+    /**
+     * Check whether a URL uses a known browser extension scheme.
+     * https://github.com/AdguardTeam/Scriptlets/issues/545
+     *
+     * @param {string} url - URL string to check.
+     * @returns {boolean} `true` if the URL starts with a known extension scheme.
+     */
+    const isExtensionScheme = (url) => EXTENSION_SCHEMES.some((scheme) => url.startsWith(scheme));
+
     /**
      * Get the response type based on the given request object.
      *
@@ -210,7 +226,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
                 // In the case of apps, the blocked request has status 500
                 // and no error is thrown, so it's necessary to check response.ok
                 // https://github.com/AdguardTeam/Scriptlets/issues/334
-                if (!origResponse.ok) {
+                if (!origResponse.ok || isExtensionScheme(origResponse.url)) {
                     return noopPromiseResolve(strResponseBody, fetchData.url, finalResponseType);
                 }
                 return modifyResponse(

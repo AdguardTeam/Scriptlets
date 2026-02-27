@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `prevent-fetch` — do not use `modifyResponse` on redirected requests [#545].
 - issue with assigning `window` to property which was not set in
   `abort-on-property-read`, `abort-on-property-write`, `abort-on-stack-trace`,
   `abort-current-inline-script`, `debug-on-property-write`, `debug-on-property-read`,
@@ -28,6 +29,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...HEAD
 [#513]: https://github.com/AdguardTeam/Scriptlets/issues/513
+[#545]: https://github.com/AdguardTeam/Scriptlets/issues/545
 
 ## [v2.2.16] - 2026-02-19
 

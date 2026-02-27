@@ -551,4 +551,36 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
+
+    test('extension-redirected response should preserve content-length and original URL', async (assert) => {
+        const REQUESTED_URL = `${FETCH_OBJECTS_PATH}/pagead/js/adsbygoogle.js`;
+        const EXTENSION_URL = 'chrome-extension://foo/pagead/js/adsbygoogle.js';
+        const RESPONSE_BODY = 'Response body test';
+
+        // Mock native fetch to simulate browser extension redirect
+        window.fetch = () => {
+            const resp = new Response(RESPONSE_BODY, {
+                status: 200,
+                statusText: 'OK',
+                headers: {
+                    // Extension response is missing Content-Length header
+                },
+            });
+            // Simulate extension-provided URL
+            Object.defineProperty(resp, 'url', { value: EXTENSION_URL });
+            return Promise.resolve(resp);
+        };
+
+        runScriptlet(name, ['adsbygoogle']);
+        const done = assert.async();
+
+        const response = await fetch(REQUESTED_URL);
+
+        const contentLengthHeader = response.headers.get('Content-Length');
+
+        assert.ok(contentLengthHeader !== null, 'Content-Length header is present');
+        assert.strictEqual(response.url, REQUESTED_URL, 'Response URL is the original requested URL');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
 }
