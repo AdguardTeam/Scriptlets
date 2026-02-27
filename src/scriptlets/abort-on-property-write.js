@@ -5,6 +5,7 @@ import {
     createOnErrorHandler,
     hit,
     isEmptyObject,
+    interceptChainProp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -51,19 +52,9 @@ export function abortOnPropertyWrite(source, property) {
     };
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
+        const { base, prop, chain } = chainInfo;
         if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
+            interceptChainProp(owner, prop, chain, setChainPropAccess);
             return;
         }
 
@@ -97,4 +88,5 @@ abortOnPropertyWrite.injections = [
     createOnErrorHandler,
     hit,
     isEmptyObject,
+    interceptChainProp,
 ];

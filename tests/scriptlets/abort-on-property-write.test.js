@@ -108,3 +108,12 @@ test('Works with an empty object in chain', (assert) => {
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('check if chained property is undefined', (assert) => {
+    const property = 'foo.bar';
+    const scriptletArgs = [property];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(window.foo, undefined, 'window.foo is undefined');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});

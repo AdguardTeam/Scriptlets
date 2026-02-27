@@ -132,3 +132,13 @@ test('does not abort script -- invalid regexp pattern', (assert) => {
     assert.strictEqual(window.hit, undefined, 'should not hit');
     clearGlobalProps('___aaa6');
 });
+
+test('check if chained property is undefined', (assert) => {
+    const property = 'foo.bar';
+    const search = 'baz_whatever';
+    const scriptletArgs = [property, search];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(window.foo, undefined, 'window.foo is undefined');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});

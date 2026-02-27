@@ -8,6 +8,7 @@ import {
     logMessage,
     isEmptyObject,
     getDescriptorAddon,
+    interceptChainProp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -135,8 +136,7 @@ export function abortCurrentInlineScript(source, property, search) {
 
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
+        const { base, prop, chain } = chainInfo;
 
         // The scriptlet might be executed before the chain property has been created
         // (for instance, document.body before the HTML body was loaded).
@@ -154,16 +154,7 @@ export function abortCurrentInlineScript(source, property, search) {
         }
 
         if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
+            interceptChainProp(owner, prop, chain, setChainPropAccess);
             return;
         }
 
@@ -247,4 +238,5 @@ abortCurrentInlineScript.injections = [
     logMessage,
     isEmptyObject,
     getDescriptorAddon,
+    interceptChainProp,
 ];

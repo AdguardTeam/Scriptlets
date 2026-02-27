@@ -6,6 +6,7 @@ import {
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    interceptChainProp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -23,10 +24,18 @@ import {
  * ### Syntax
  *
  * ```text
- * example.com#%#//scriptlet('log-on-stack-trace', 'property')
+ * example.com#%#//scriptlet('log-on-stack-trace', property)
  * ```
  *
  * - `property` — required, path to a property. The property must be attached to window.
+ *
+ * ### Examples
+ *
+ * 1. Log stack trace when it tries to access `window.open`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('log-on-stack-trace', 'open')
+ *     ```
  *
  * @added v1.5.0.
  */
@@ -80,19 +89,9 @@ export function logOnStackTrace(source, property) {
 
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
+        const { base, prop, chain } = chainInfo;
         if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
+            interceptChainProp(owner, prop, chain, setChainPropAccess);
             return;
         }
 
@@ -133,4 +132,5 @@ logOnStackTrace.injections = [
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    interceptChainProp,
 ];

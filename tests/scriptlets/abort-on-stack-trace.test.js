@@ -477,6 +477,84 @@ test('abort Math.max in injected script, but not abort inline script', (assert) 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
 
+test('check if chained property is undefined', (assert) => {
+    const property = 'foo.bar';
+    const stackMatch = 'baz_whatever';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    assert.strictEqual(window.foo, undefined, 'window.foo is undefined');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
+test('abort foo.bar chained property with WhateverStack stack', (assert) => {
+    const property = 'foo.bar';
+    const stackMatch = 'WhateverStack';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    window.foo = {
+        bar: false,
+        baz: false,
+    };
+
+    function barWhateverStack() {
+        window.foo.bar = true;
+    }
+
+    function bazWhateverStack() {
+        window.foo.baz = true;
+    }
+
+    assert.throws(
+        barWhateverStack,
+        /ReferenceError/,
+        'Reference error thrown when trying to access property foo.bar in barWhateverStack',
+    );
+
+    bazWhateverStack();
+
+    assert.strictEqual(window.foo.bar, false, 'window.foo.bar is still false');
+    assert.strictEqual(window.foo.baz, true, 'window.foo.baz is true');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('foo');
+});
+
+test('abort foo.bar.qwerty chained property with WhateverStack stack', (assert) => {
+    const property = 'foo.bar.qwerty';
+    const stackMatch = 'WhateverStack';
+    const scriptletArgs = [property, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    window.foo = {
+        bar: {
+            qwerty: false,
+        },
+        baz: false,
+    };
+
+    function barWhateverStack() {
+        window.foo.bar.qwerty = true;
+    }
+
+    function bazWhateverStack() {
+        window.foo.baz = true;
+    }
+
+    assert.throws(
+        barWhateverStack,
+        /ReferenceError/,
+        'Reference error thrown when trying to access property foo.bar.qwerty in barWhateverStack',
+    );
+
+    bazWhateverStack();
+
+    assert.strictEqual(window.foo.bar.qwerty, false, 'window.foo.bar.qwerty is still false');
+    assert.strictEqual(window.foo.baz, true, 'window.foo.baz is true');
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+    clearGlobalProps('foo');
+});
+
 test('abort RegExp, matches stack', (assert) => {
     const property = 'RegExp';
     const stackMatch = 'triggerFunc';

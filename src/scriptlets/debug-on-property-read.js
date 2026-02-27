@@ -6,6 +6,7 @@ import {
     hit,
     noopFunc,
     isEmptyObject,
+    interceptChainProp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -20,13 +21,17 @@ import {
  *
  * ### Examples
  *
- * ```adblock
- * ! Debug script if it tries to access `window.alert`
- * example.org#%#//scriptlet('debug-on-property-read', 'alert')
+ * 1. Debug script if it tries to access `window.alert`
  *
- * ! or `window.open`
- * example.org#%#//scriptlet('debug-on-property-read', 'open')
- * ```
+ *     ```adblock
+ *     example.org#%#//scriptlet('debug-on-property-read', 'alert')
+ *     ```
+ *
+ * 1. Debug script if it tries to access `window.open`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('debug-on-property-read', 'open')
+ *     ```
  *
  * @added v1.0.4.
  */
@@ -42,19 +47,9 @@ export function debugOnPropertyRead(source, property) {
     };
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
+        const { base, prop, chain } = chainInfo;
         if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
+            interceptChainProp(owner, prop, chain, setChainPropAccess);
             return;
         }
 
@@ -84,4 +79,5 @@ debugOnPropertyRead.injections = [
     hit,
     noopFunc,
     isEmptyObject,
+    interceptChainProp,
 ];

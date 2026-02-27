@@ -5,6 +5,7 @@ import {
     createOnErrorHandler,
     hit,
     isEmptyObject,
+    interceptChainProp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -19,10 +20,11 @@ import {
  *
  * ### Examples
  *
- * ```adblock
- * ! Aborts script when it tries to write in property `window.test`
- * example.org#%#//scriptlet('debug-on-property-write', 'test')
- * ```
+ * 1. Debug script when it tries to write in property `window.test`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('debug-on-property-write', 'test')
+ *     ```
  *
  * @added v1.0.4.
  */
@@ -38,19 +40,9 @@ export function debugOnPropertyWrite(source, property) {
     };
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
+        const { base, prop, chain } = chainInfo;
         if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
+            interceptChainProp(owner, prop, chain, setChainPropAccess);
             return;
         }
 
@@ -76,4 +68,5 @@ debugOnPropertyWrite.injections = [
     createOnErrorHandler,
     hit,
     isEmptyObject,
+    interceptChainProp,
 ];

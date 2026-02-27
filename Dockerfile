@@ -40,6 +40,8 @@ RUN npm install -g pnpm@10.7.1 && \
 WORKDIR /scriptlets
 
 ENV PNPM_STORE=/pnpm-store
+# Point puppeteer to the cache directory where Chrome is pre-installed in the Docker image
+ENV PUPPETEER_CACHE_DIR=/home/pptruser/.cache/puppeteer
 
 # Configure pnpm store globally so it doesn't need to be set in each stage
 RUN pnpm config set store-dir /pnpm-store

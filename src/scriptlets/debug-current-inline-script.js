@@ -7,6 +7,7 @@ import {
     hit,
     logMessage,
     isEmptyObject,
+    interceptChainProp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -21,10 +22,11 @@ import {
  *
  * ### Examples
  *
- * ```adblock
- * ! Aborts script when it tries to access `window.alert`
- * example.org#%#//scriptlet('debug-current-inline-script', 'alert')
- * ```
+ * 1. Debug script when it tries to access `window.alert`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('debug-current-inline-script', 'alert')
+ *     ```
  *
  * @added v1.0.4.
  */
@@ -70,8 +72,7 @@ export function debugCurrentInlineScript(source, property, search) {
 
     const setChainPropAccess = (owner, property) => {
         const chainInfo = getPropertyInChain(owner, property);
-        let { base } = chainInfo;
-        const { prop, chain } = chainInfo;
+        const { base, prop, chain } = chainInfo;
 
         // The scriptlet might be executed before the chain property has been created
         // (for instance, document.body before the HTML body was loaded).
@@ -89,16 +90,7 @@ export function debugCurrentInlineScript(source, property, search) {
         }
 
         if (chain) {
-            const setter = (a) => {
-                base = a;
-                if (a instanceof Object) {
-                    setChainPropAccess(a, chain);
-                }
-            };
-            Object.defineProperty(owner, prop, {
-                get: () => base,
-                set: setter,
-            });
+            interceptChainProp(owner, prop, chain, setChainPropAccess);
             return;
         }
 
@@ -136,4 +128,5 @@ debugCurrentInlineScript.injections = [
     hit,
     logMessage,
     isEmptyObject,
+    interceptChainProp,
 ];
