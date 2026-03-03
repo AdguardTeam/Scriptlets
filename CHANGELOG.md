@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- `getCreativeId` method to `Ad` class in `google-ima3` redirect [#515].
+
 ### Changed
 
 - Added `interceptChainProp` helper to share intermediate chain property access logic
@@ -30,6 +34,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...HEAD
 [#513]: https://github.com/AdguardTeam/Scriptlets/issues/513
+[#515]: https://github.com/AdguardTeam/Scriptlets/issues/515
 [#545]: https://github.com/AdguardTeam/Scriptlets/issues/545
 [#549]: https://github.com/AdguardTeam/Scriptlets/issues/549
 

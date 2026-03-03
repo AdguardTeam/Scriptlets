@@ -20,7 +20,7 @@ import { hit, noopFunc, logMessage } from '../helpers';
  */
 
 export function GoogleIma3(source) {
-    const VERSION = '3.453.0';
+    const VERSION = '3.746.0';
 
     const ima = {};
 
@@ -288,6 +288,7 @@ export function GoogleIma3(source) {
         getApiFramework: () => null,
         getCompanionAds: () => [],
         getContentType: () => '',
+        getCreativeId: () => '',
         getCreativeAdId: () => '',
         getDealId: () => '',
         getDescription: () => '',

@@ -210,3 +210,22 @@ test('Ima - EventHandler bind context', (assert) => {
         done();
     });
 });
+
+test('Ima - getCreativeId', (assert) => {
+    evalWrapper(redirects.getRedirect(name).content);
+
+    let testPassed;
+
+    const adEvent = new window.google.ima.AdEvent();
+    const ad = adEvent.getAd();
+    let creativeId;
+    try {
+        creativeId = ad.getCreativeId();
+        testPassed = true;
+    } catch (error) {
+        testPassed = false;
+    }
+
+    assert.strictEqual(creativeId, '', 'creativeId is set to empty string');
+    assert.strictEqual(testPassed, true, 'testPassed set to true');
+});
