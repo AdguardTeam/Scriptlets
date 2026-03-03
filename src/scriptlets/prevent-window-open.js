@@ -22,7 +22,7 @@ import {
  * @scriptlet prevent-window-open
  *
  * @description
- * Prevents `window.open` calls when URL either matches or not matches the specified string/regexp.
+ * Prevents `window.open` calls when URL or any other parameter either matches or not matches the specified string/regexp.
  * Using it without parameters prevents all `window.open` calls.
  *
  * Related UBO scriptlet:
@@ -102,6 +102,20 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
     const nativeOpen = window.open;
     const isNewSyntax = match !== '0' && match !== '1';
 
+    /**
+     * Combine `url` and additional `args` into a single string for matching.
+     *
+     * @param {string} url - The URL or first argument passed to `window.open`.
+     * @param {Array<string>|undefined} args - Additional arguments to include.
+     * @returns {string} The concatenated string used for matching.
+     */
+    const combineArgs = (url, args) => {
+        if (args && args.length > 0) {
+            return `${url} ${args.join(' ')}`;
+        }
+        return url;
+    };
+
     const oldOpenWrapper = (str, ...args) => {
         match = Number(match) > 0;
         // 'delay' was 'search' prop for matching in old syntax
@@ -110,7 +124,11 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
             return nativeOpen.apply(window, [str, ...args]);
         }
         const searchRegexp = toRegExp(delay);
-        if (match !== searchRegexp.test(str)) {
+
+        // Check all arguments of window.open, not only the first one
+        // https://github.com/AdguardTeam/Scriptlets/issues/549
+        const argsToCheck = combineArgs(str, args);
+        if (match !== searchRegexp.test(argsToCheck)) {
             return nativeOpen.apply(window, [str, ...args]);
         }
         hit(source);
@@ -133,7 +151,10 @@ export function preventWindowOpen(source, match = '*', delay, replacement) {
             shouldPrevent = true;
         } else if (isValidMatchStr(match)) {
             const { isInvertedMatch, matchRegexp } = parseMatchArg(match);
-            shouldPrevent = matchRegexp.test(url) !== isInvertedMatch;
+            // Check all arguments of window.open, not only the first one
+            // https://github.com/AdguardTeam/Scriptlets/issues/549
+            const argsToCheck = combineArgs(url, args);
+            shouldPrevent = matchRegexp.test(argsToCheck) !== isInvertedMatch;
         } else {
             logMessage(source, `Invalid parameter: ${match}`);
             shouldPrevent = false;

@@ -96,6 +96,13 @@ test('old syntax: does not work - invalid regexp pattern', (assert) => {
     assert.ok(window[CHECK_PROP], 'window.open has been executed');
 });
 
+test('old syntax: target parameter ', (assert) => {
+    const scriptletArgs = ['1', '_blank'];
+    runScriptlet(name, scriptletArgs);
+    window.open('test url', '_blank');
+    assert.equal(window.hit, 'value', 'Hit function was executed');
+});
+
 test('new syntax: no args', (assert) => {
     runScriptlet(name);
     window.open('some url');
@@ -251,4 +258,11 @@ test('new syntax: invalid regexp', (assert) => {
     runScriptlet(name, scriptletArgs);
     window.open('test url', 'some target');
     assert.equal(window.hit, undefined, 'Hit function was executed');
+});
+
+test('new syntax: target parameter ', (assert) => {
+    const scriptletArgs = ['_blank'];
+    runScriptlet(name, scriptletArgs);
+    window.open('foo bar baz', '_blank');
+    assert.equal(window.hit, 'value', 'Hit function was executed');
 });

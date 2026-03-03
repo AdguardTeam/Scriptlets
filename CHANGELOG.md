@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   across `abort-on-property-read`, `abort-on-property-write`, `abort-on-stack-trace`,
   `abort-current-inline-script`, `debug-on-property-write`, `debug-on-property-read`,
   `debug-current-inline-script` and `log-on-stack-trace` scriptlets [#513].
+- `prevent-window-open` now checks all parameters [#549].
 
 ### Fixed
 
@@ -30,6 +31,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...HEAD
 [#513]: https://github.com/AdguardTeam/Scriptlets/issues/513
 [#545]: https://github.com/AdguardTeam/Scriptlets/issues/545
+[#549]: https://github.com/AdguardTeam/Scriptlets/issues/549
 
 ## [v2.2.16] - 2026-02-19
 
