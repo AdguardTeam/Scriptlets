@@ -85,6 +85,7 @@ export { AmazonApstagNames } from './amazon-apstag';
 export { DidomiLoaderNames } from './didomi-loader';
 export { Fingerprintjs2Names } from './fingerprintjs2';
 export { Fingerprintjs3Names } from './fingerprintjs3';
+export { FreewheelAdManagerNames } from './freewheel-admanager';
 export { GemiusNames } from './gemius';
 export { GoogleAnalyticsNames } from './google-analytics';
 export { GoogleAnalyticsGaNames } from './google-analytics-ga';

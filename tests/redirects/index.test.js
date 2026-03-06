@@ -19,3 +19,4 @@ import './prebid-ads.test';
 import './naver-wcslog.test';
 import './pardot-1.0.test';
 import './noeval.test';
+import './freewheel-admanager.test';

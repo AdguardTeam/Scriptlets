@@ -23,3 +23,4 @@ export { DidomiLoaderNames } from './didomi-loader';
 export { PrebidNames } from './prebid';
 export { prebidAdsNames } from './prebid-ads';
 export { NaverWcslogNames } from './naver-wcslog';
+export { FreewheelAdManagerNames } from './freewheel-admanager';

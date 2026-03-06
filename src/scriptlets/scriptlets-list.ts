@@ -85,6 +85,7 @@ export { AmazonApstag } from './amazon-apstag';
 export { DidomiLoader } from './didomi-loader';
 export { Fingerprintjs2 } from './fingerprintjs2';
 export { Fingerprintjs3 } from './fingerprintjs3';
+export { FreewheelAdManager } from './freewheel-admanager';
 export { Gemius } from './gemius';
 export { GoogleAnalytics } from './google-analytics';
 export { GoogleAnalyticsGa } from './google-analytics-ga';

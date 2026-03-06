@@ -71,6 +71,9 @@
             "ubo": "fingerprintjs3.js (fingerprintjs3)"
         },
         {
+            "adg": "freewheel-admanager"
+        },
+        {
             "adg": "gemius"
         },
         {
@@ -466,6 +469,9 @@
         {
             "adg": "fingerprintjs3",
             "ubo": "fingerprint3.js"
+        },
+        {
+            "adg": "freewheel-admanager"
         },
         {
             "adg": "google-analytics",
