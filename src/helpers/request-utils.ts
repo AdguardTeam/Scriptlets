@@ -11,7 +11,7 @@ type SharedRequestData<T> = {
 };
 
 export interface XMLHttpRequestSharedRequestData<T> extends SharedRequestData<T> {
-    async: boolean | string;
+    async: boolean | undefined;
 }
 
 /**
@@ -121,7 +121,13 @@ export const getFetchData = (args: [FetchResource, RequestInit], nativeRequestCl
  * @param password request password prop
  * @returns aggregated request data
  */
-export const getXhrData = (method: string, url: string, async: string, user: string, password: string) => {
+export const getXhrData = (
+    method: string,
+    url: string,
+    async?: boolean,
+    user?: string,
+    password?: string,
+) => {
     return {
         method,
         url,

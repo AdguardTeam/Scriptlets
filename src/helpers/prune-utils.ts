@@ -182,6 +182,98 @@ export const jsonPruner = (
 };
 
 /**
+ * Sets a value at a given path in an object, supporting wildcards and value filters.
+ *
+ * - Supports wildcards (`*`, `[]`) and value filters (`.[=].value`) just like `json-prune`.
+ * - When the path matches existing nodes (including wildcards), those nodes are updated.
+ * - When the path is a plain dot-separated chain with no wildcards and no value filter,
+ *   missing intermediate objects are created so that the value is always set.
+ * - If no `setPath` is provided, the object is logged to the console.
+ * - If `requiredPaths` are given, the value is only set when all of them exist in `root`.
+ *
+ * @param source required, scriptlet properties
+ * @param root object to modify
+ * @param setPath path at which to set the value; may contain `*` / `[]` wildcards
+ * @param valueFilter optional value the property must currently hold to be updated
+ * @param getValue function receiving the current node value and returning the new value to write
+ * @param requiredPaths array of required property chains that must all be present for the set to occur
+ * @param stack string which should be matched by stack trace
+ * @param nativeObjects reference to native objects
+ * @returns the modified root object
+ */
+export const jsonSetter = (
+    source: Source,
+    root: ChainBase,
+    setPath: string,
+    valueFilter: any,
+    getValue: (current: any) => any,
+    requiredPaths: { path: string; value?: any }[],
+    stack: string,
+    nativeObjects: any,
+): ArbitraryObject => {
+    const { nativeStringify } = nativeObjects;
+
+    if (!setPath) {
+        logMessage(
+            source,
+            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${new Error().stack}`,
+            true,
+        );
+        if (root && typeof root === 'object') {
+            logMessage(source, root, true, false);
+        }
+        return root;
+    }
+
+    try {
+        // Pass setPath as a dummy prune path so that isPruningNeeded skips its
+        // "logging-only" mode (triggered when prunePaths is empty) and goes straight
+        // to the required-paths and stack-trace checks
+        if (isPruningNeeded(source, root, [{ path: setPath }], requiredPaths, stack, nativeObjects) === false) {
+            return root;
+        }
+
+        const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
+        const hasWildcard = wildcardSymbols.some((symbol) => setPath.includes(symbol));
+        const matchedNodes = getWildcardPropertyInChain(root, setPath, hasWildcard, [], valueFilter);
+
+        if (matchedNodes.length > 0) {
+            // Update each matched node — supports wildcards and value filter
+            for (let i = 0; i < matchedNodes.length; i += 1) {
+                const node = matchedNodes[i];
+                if (node && node.base) {
+                    node.base[node.prop] = getValue(node.base[node.prop]);
+                    hit(source);
+                }
+            }
+        } else if (!hasWildcard && valueFilter === undefined) {
+            // Plain dot-separated path with no wildcard and no value filter:
+            // create any missing intermediate objects and set the value
+            const pathParts = setPath.split('.');
+            let current = root;
+            for (let i = 0; i < pathParts.length - 1; i += 1) {
+                const part = pathParts[i];
+                if (
+                    current[part] === undefined
+                    || current[part] === null
+                    || typeof current[part] !== 'object'
+                ) {
+                    current[part] = {};
+                }
+                current = current[part];
+            }
+            const lastPart = pathParts[pathParts.length - 1];
+            current[lastPart] = getValue(current[lastPart]);
+            hit(source);
+        }
+    } catch (e) {
+        logMessage(source, e);
+    }
+
+    return root;
+};
+
+/**
  * Checks if props is a string and returns array of properties
  * or empty array if props is not a string
  *

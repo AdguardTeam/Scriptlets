@@ -79,6 +79,9 @@ export { preventInnerHTMLNames } from './prevent-innerHTML';
 export { preventConstructorNames } from './prevent-constructor';
 export { removeRequestQueryParameterNames } from './remove-request-query-parameter';
 export { preventNavigationNames } from './prevent-navigation';
+export { trustedJsonSetNames } from './trusted-json-set';
+export { trustedJsonSetFetchResponseNames } from './trusted-json-set-fetch-response';
+export { trustedJsonSetXhrResponseNames } from './trusted-json-set-xhr-response';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
 export { AmazonApstagNames } from './amazon-apstag';

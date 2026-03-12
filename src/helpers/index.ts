@@ -27,6 +27,7 @@ export * from './get-descriptor-addon';
 export * from './get-error-message';
 export * from './get-property-in-chain';
 export * from './get-wildcard-property-in-chain';
+export * from './json-set-utils';
 export * from './hit';
 export * from './match-request-props';
 export * from './match-stack';

@@ -429,7 +429,7 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
         matchedXhrRequests.delete(thisArg);
 
         try {
-            nativeSend.call(forgedRequest, args);
+            Reflect.apply(nativeSend, forgedRequest, args);
         } catch {
             return Reflect.apply(target, thisArg, args);
         }

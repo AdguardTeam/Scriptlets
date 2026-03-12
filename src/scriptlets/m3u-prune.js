@@ -472,7 +472,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '', verbose = false
         thisArg.collectedHeaders = [];
 
         try {
-            nativeSend.call(forgedRequest, args);
+            Reflect.apply(nativeSend, forgedRequest, args);
         } catch {
             return Reflect.apply(target, thisArg, args);
         }

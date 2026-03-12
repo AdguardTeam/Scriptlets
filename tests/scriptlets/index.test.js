@@ -76,3 +76,6 @@ import './trusted-dispatch-event.test';
 import './trusted-replace-outbound-text.test';
 import './trusted-set-attr.test';
 import './prevent-navigation.test';
+import './trusted-json-set.test';
+import './trusted-json-set-fetch-response.test';
+import './trusted-json-set-xhr-response.test';

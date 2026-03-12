@@ -115,12 +115,6 @@ import { type Source } from './scriptlets';
  * @added v1.10.25.
  */
 
-interface CustomXMLHttpRequest extends XMLHttpRequest {
-    xhrShouldBePruned: boolean;
-    headersReceived: boolean;
-    collectedHeaders: string[];
-}
-
 export function jsonPruneXhrResponse(
     source: Source,
     propsToRemove: string,
@@ -145,13 +139,18 @@ export function jsonPruneXhrResponse(
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
 
+    const matchedXhrRequests = new Map<XMLHttpRequest, XMLHttpRequestSharedRequestData<any>>();
+    const xhrRequestHeaders = new Map<XMLHttpRequest, any[]>();
+
     const setRequestHeaderWrapper = (
         setRequestHeader: typeof XMLHttpRequest.prototype.setRequestHeader,
-        thisArgument: CustomXMLHttpRequest,
+        thisArgument: XMLHttpRequest,
         argsList: any,
     ): void => {
-        // Collect headers
-        thisArgument.collectedHeaders.push(argsList);
+        const headers = xhrRequestHeaders.get(thisArgument);
+        if (headers) {
+            headers.push(argsList);
+        }
         return Reflect.apply(setRequestHeader, thisArgument, argsList);
     };
 
@@ -159,25 +158,27 @@ export function jsonPruneXhrResponse(
         apply: setRequestHeaderWrapper,
     };
 
-    let xhrData: XMLHttpRequestSharedRequestData<any>;
-
     const openWrapper = (
         target: typeof XMLHttpRequest.prototype.open,
-        thisArg: CustomXMLHttpRequest,
-        args: [method: string, url: string, async: string, user: string, password: string],
+        thisArg: XMLHttpRequest,
+        args: [
+            method: string,
+            url: string,
+            async?: boolean,
+            user?: string,
+            password?: string,
+        ],
     ): void => {
         // eslint-disable-next-line prefer-spread
-        xhrData = getXhrData.apply(null, args);
+        const xhrData: XMLHttpRequestSharedRequestData<any> = getXhrData.apply(null, args);
 
         if (matchRequestProps(source, propsToMatch, xhrData) || shouldLog) {
-            thisArg.xhrShouldBePruned = true;
-            thisArg.headersReceived = !!thisArg.headersReceived;
+            matchedXhrRequests.set(thisArg, xhrData);
         }
 
         // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (thisArg.xhrShouldBePruned && !thisArg.headersReceived) {
-            thisArg.headersReceived = true;
-            thisArg.collectedHeaders = [];
+        if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
+            xhrRequestHeaders.set(thisArg, []);
 
             // setRequestHeader can only be called on open xhr object,
             // so we can safely proxy it here
@@ -189,15 +190,23 @@ export function jsonPruneXhrResponse(
 
     const sendWrapper = (
         target: typeof XMLHttpRequest.prototype.send,
-        thisArg: CustomXMLHttpRequest,
+        thisArg: XMLHttpRequest,
         args: any,
     ): void => {
+        if (!matchedXhrRequests.has(thisArg)) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        const xhrData = matchedXhrRequests.get(thisArg);
+
         // Stack trace cannot be checked in jsonPruner helper,
         // because in this case it returns stack trace of our script,
         // so it has to be checked earlier
         const stackTrace = new Error().stack || '';
 
-        if (!thisArg.xhrShouldBePruned || (stack && !matchStackTrace(stack, stackTrace))) {
+        if (!xhrData || (stack && !matchStackTrace(stack, stackTrace))) {
+            xhrRequestHeaders.delete(thisArg);
+            matchedXhrRequests.delete(thisArg);
             return Reflect.apply(target, thisArg, args);
         }
 
@@ -207,6 +216,7 @@ export function jsonPruneXhrResponse(
          * listeners on original XHR object
          */
         const forgedRequest = new XMLHttpRequest();
+        forgedRequest.withCredentials = thisArg.withCredentials;
         forgedRequest.addEventListener('readystatechange', () => {
             if (forgedRequest.readyState !== 4) {
                 return;
@@ -311,15 +321,17 @@ export function jsonPruneXhrResponse(
 
         nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url, Boolean(xhrData.async)]);
 
+        const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
-        thisArg.collectedHeaders.forEach((header) => {
+        collectedHeaders.forEach((header) => {
             forgedRequest.setRequestHeader(header[0], header[1]);
         });
-        thisArg.collectedHeaders = [];
+        xhrRequestHeaders.delete(thisArg);
+        matchedXhrRequests.delete(thisArg);
 
         try {
-            nativeSend.call(forgedRequest, args);
+            Reflect.apply(nativeSend, forgedRequest, args);
         } catch {
             return Reflect.apply(target, thisArg, args);
         }

@@ -261,6 +261,30 @@ Project-specific rules:
 
 7. External and internal imports MUST be separated by an empty line.
 
+8. TypeScript tuple type annotations with 3 or more elements MUST be formatted
+   as multiline, with each element on its own line.
+
+    **Good**:
+
+    ```typescript
+    args: [
+        method: string,
+        url: string,
+        async?: boolean,
+        user?: string,
+        password?: string,
+    ],
+   ```
+
+    **Bad**:
+
+    ```typescript
+    args: [ method: string, url: string, async?: boolean, user?: string, password?: string],
+    ```
+
+    **Rationale**: Improves readability and makes diffs cleaner when parameters
+    are added or modified.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,

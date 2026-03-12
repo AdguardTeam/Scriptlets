@@ -268,7 +268,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         matchedXhrRequests.delete(thisArg);
 
         try {
-            nativeSend.call(forgedRequest, args);
+            Reflect.apply(nativeSend, forgedRequest, args);
         } catch {
             return Reflect.apply(target, thisArg, args);
         }

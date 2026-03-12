@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `trusted-json-set`, `trusted-json-set-fetch-response`
+  and `trusted-json-set-xhr-response` scriptlets [#308].
 - `freewheel-admanager` redirect resource and scriptlet [#401].
 - `getCreativeId` method to `Ad` class in `google-ima3` redirect [#515].
 
@@ -34,6 +36,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `debug-current-inline-script` and `log-on-stack-trace` scriptlets [#513].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...HEAD
+[#308]: https://github.com/AdguardTeam/Scriptlets/issues/308
 [#401]: https://github.com/AdguardTeam/Scriptlets/issues/401
 [#513]: https://github.com/AdguardTeam/Scriptlets/issues/513
 [#515]: https://github.com/AdguardTeam/Scriptlets/issues/515
