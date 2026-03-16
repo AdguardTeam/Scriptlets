@@ -35,12 +35,15 @@ import {
  *         - `no` / `n`
  *         - `ok`
  *         - `on` / `off`
+ *         - `all`
  *         - `accept`/ `accepted` / `notaccepted`
  *         - `reject` / `rejected`
  *         - `allow` / `allowed`
+ *         - `declined`
  *         - `disallow` / `deny` / `denied`
  *         - `enable` / `enabled`
  *         - `disable` / `disabled`
+ *         - `mandatory`
  *         - `necessary` / `required`
  *         - `hide` / `hidden`
  *         - `essential` / `nonessential`

@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- New value to `set-cookie` and `set-cookie-reload` scriptlets: `all` [#501].
+- New value to `set-cookie` and `set-cookie-reload` scriptlets: `mandatory` [#518].
+- New value to `set-cookie` and `set-cookie-reload` scriptlets: `declined` [#552].
 - `trusted-json-set`, `trusted-json-set-fetch-response`
   and `trusted-json-set-xhr-response` scriptlets [#308].
 - `freewheel-admanager` redirect resource and scriptlet [#401].
@@ -38,10 +41,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...HEAD
 [#308]: https://github.com/AdguardTeam/Scriptlets/issues/308
 [#401]: https://github.com/AdguardTeam/Scriptlets/issues/401
+[#501]: https://github.com/AdguardTeam/Scriptlets/issues/501
 [#513]: https://github.com/AdguardTeam/Scriptlets/issues/513
 [#515]: https://github.com/AdguardTeam/Scriptlets/issues/515
+[#518]: https://github.com/AdguardTeam/Scriptlets/issues/518
 [#545]: https://github.com/AdguardTeam/Scriptlets/issues/545
 [#549]: https://github.com/AdguardTeam/Scriptlets/issues/549
+[#552]: https://github.com/AdguardTeam/Scriptlets/issues/552
 
 ## [v2.2.16] - 2026-02-19
 

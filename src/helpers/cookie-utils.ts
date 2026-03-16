@@ -134,6 +134,9 @@ export const getLimitedCookieValue = (value: string): string | number | null => 
         'unchecked',
         'forbidden',
         'forever',
+        'declined',
+        'mandatory',
+        'all',
     ]);
 
     let validValue;
