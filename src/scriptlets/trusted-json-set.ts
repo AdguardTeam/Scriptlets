@@ -79,8 +79,6 @@ import { type Source } from './scriptlets';
  *     - `throwFunc` — function throwing an error
  *     - `noopPromiseResolve` — function returning Promise resolved with an empty response
  *     - `noopPromiseReject` — function returning Promise.reject()
- *     - `json:{...}` — parses the provided JSON value; if the current target value is also an object,
- *       the parsed object is merged into it
  *     - any other string is set as a string literal
  *   Can also be a replacement applied to the current string value at the target path,
  *   in the format `replace:/regex/replacement/`:
@@ -90,7 +88,6 @@ import { type Source } from './scriptlets';
  *     if the current target value is also an object, the parsed object is merged into it.
  * - `requiredInitialProps` — optional, space-separated list of property paths.
  *   All listed paths must be present in the JSON object for the modification to occur.
- *   the value at the target path even if it does not exist unless the path includes wildcards.
  * - `jsonSource` — optional, where to read and modify the JSON value from. Defaults to `result`.
  *   Supported values:
  *     - `arg` — only the first argument
