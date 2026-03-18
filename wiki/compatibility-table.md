@@ -26,6 +26,7 @@
 | [evaldata-prune](../wiki/about-scriptlets.md#evaldata-prune) | evaldata-prune.js (evaldata-prune) |  |
 | [fingerprintjs2](../wiki/about-scriptlets.md#fingerprintjs2) | fingerprint2.js (fingerprint2) |  |
 | [fingerprintjs3](../wiki/about-scriptlets.md#fingerprintjs3) | fingerprintjs3.js (fingerprintjs3) |  |
+| [freewheel-admanager](../wiki/about-scriptlets.md#freewheel-admanager) |  |  |
 | [gemius](../wiki/about-scriptlets.md#gemius) |  |  |
 | [google-analytics](../wiki/about-scriptlets.md#google-analytics) | google-analytics_analytics.js (google-analytics_analytics) |  |
 | [google-analytics-ga](../wiki/about-scriptlets.md#google-analytics-ga) | google-analytics-ga.js (google-analytics-ga) |  |
@@ -146,6 +147,7 @@
 | [didomi-loader](../wiki/about-redirects.md#didomi-loader) |  |  |
 | [fingerprintjs2](../wiki/about-redirects.md#fingerprintjs2) | fingerprint2.js |  |
 | [fingerprintjs3](../wiki/about-redirects.md#fingerprintjs3) | fingerprint3.js |  |
+| [freewheel-admanager](../wiki/about-redirects.md#freewheel-admanager) |  |  |
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
 | [google-ima3](../wiki/about-redirects.md#google-ima3) | google-ima.js |  |

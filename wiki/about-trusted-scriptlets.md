@@ -3,6 +3,9 @@
 - [trusted-click-element](#trusted-click-element)
 - [trusted-create-element](#trusted-create-element)
 - [trusted-dispatch-event](#trusted-dispatch-event)
+- [trusted-json-set-fetch-response](#trusted-json-set-fetch-response)
+- [trusted-json-set-xhr-response](#trusted-json-set-xhr-response)
+- [trusted-json-set](#trusted-json-set)
 - [trusted-prune-inbound-object](#trusted-prune-inbound-object)
 - [trusted-replace-argument](#trusted-replace-argument)
 - [trusted-replace-fetch-response](#trusted-replace-fetch-response)
@@ -29,6 +32,7 @@ First matched element is clicked unless `containsText` is specified.
 If `containsText` is specified, then it searches for all given selectors and clicks
 the first element containing the specified text.
 Deactivates after all elements have been clicked or by timeout (configurable).
+Click behavior can be forced to native dispatch through `extraMatch`.
 
 ### Syntax
 
@@ -47,6 +51,7 @@ and each of them should match the syntax. Possible `names`:
     - `cookie` — test string or regex against cookies on a page
     - `localStorage` — check if localStorage item is present
     - `containsText` — check if clicked element contains specified text
+    - `clickType` — set click behavior; supported value is `native`
 - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
   Must be a number less than `observerTimeout` (default 10 _seconds_)
   which can be configured.
@@ -124,6 +129,12 @@ and each of them should match the syntax. Possible `names`:
 
     ```adblock
     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:consent, !localStorage:promo')
+    ```
+
+1. Force native click dispatch even if React handlers are detected
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'clickType:native')
     ```
 
 1. Click element inside open shadow DOM, which could be selected by `div > button`, but is inside shadow host element with host element selected by `article .container`
@@ -255,6 +266,387 @@ example.org#%#//scriptlet('trusted-dispatch-event', event[, target])
     ```
 
 [Scriptlet source](../src/scriptlets/trusted-dispatch-event.ts)
+
+* * *
+
+## <a id="trusted-json-set-fetch-response"></a> ⚡️ trusted-json-set-fetch-response
+
+> Added in v2.3.0.
+
+Sets a property at the given path in the JSON response of a fetch call.
+If the path does not exist, it is created together with any missing intermediate objects.
+
+### Syntax
+
+<!-- markdownlint-disable line-length -->
+
+```text
+example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, verbose]]]])
+```
+
+<!-- markdownlint-enable line-length -->
+
+- `propsPath` — required, dot-separated path to the property to set.
+  Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
+- `argumentValue` — required, value to write at the target path.
+  Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax
+  as `trusted-json-set`.
+- `requiredInitialProps` — optional, space-separated list of property paths
+  which must all be present for the modification to occur.
+- `propsToMatch` — optional, string of space-separated properties to match.
+  Possible props:
+    - string or regular expression for matching the URL passed to fetch call;
+    - colon-separated pairs `name:value` for matching fetch init options.
+- `stack` — optional, string or regular expression that must match the current function call stack trace.
+- `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
+
+> Scriptlet does nothing if response body cannot be converted to JSON.
+
+### Examples
+
+1. Sets `ads.enabled` to `false` in the JSON response of any fetch call
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', 'ads.enabled', 'false')
+    ```
+
+1. Creates `config.flags.blocked` path in matching fetch responses
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', 'config.flags.blocked', 'true', '', 'api/config')
+    ```
+
+1. Merges a parsed JSON object into an existing response object property
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+    ```
+
+1. Replaces a value in the JSON response using a regular expression
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', 'foo', 'replace:/advertisement/article/')
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-json-set-fetch-response.ts)
+
+* * *
+
+## <a id="trusted-json-set-xhr-response"></a> ⚡️ trusted-json-set-xhr-response
+
+> Added in v2.3.0.
+
+Sets a property at the given path in the JSON response of an XMLHttpRequest call.
+If the path does not exist, it is created together with any missing intermediate objects.
+
+### Syntax
+
+<!-- markdownlint-disable line-length -->
+
+```text
+example.org#%#//scriptlet('trusted-json-set-xhr-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, verbose]]]])
+```
+
+<!-- markdownlint-enable line-length -->
+
+- `propsPath` — required, dot-separated path to the property to set.
+  Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
+- `argumentValue` — required, value to write at the target path.
+  Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax as `trusted-json-set`.
+- `requiredInitialProps` — optional, space-separated list of property paths
+  which must all be present for the modification to occur.
+- `propsToMatch` — optional, string of space-separated properties to match for extra condition.
+- `stack` — optional, string or regular expression that must match the current function call stack trace.
+- `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
+
+> Scriptlet does nothing if response body cannot be converted to JSON.
+
+### Example
+
+```adblock
+example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+```
+
+[Scriptlet source](../src/scriptlets/trusted-json-set-xhr-response.ts)
+
+* * *
+
+## <a id="trusted-json-set"></a> ⚡️ trusted-json-set
+
+> Added in v2.3.0.
+
+Intercepts a specified method and sets a property at the given path in the JSON value selected by `jsonSource`.
+If the path does not exist, it is created, including any missing intermediate objects.
+
+Depending on `jsonSource`, the scriptlet can modify:
+
+1. one or more arguments;
+1. the intercepted method `thisArg`;
+1. the return value if it is an object or a JSON string.
+
+### Syntax
+
+<!-- markdownlint-disable line-length -->
+
+```text
+example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentValue[, requiredInitialProps[, jsonSource[, stack[, verbose]]]])
+```
+
+<!-- markdownlint-enable line-length -->
+
+- `methodPath` — required, chain of dot-separated properties leading to the target method,
+  e.g. `JSON.stringify`, `JSON.parse`.
+  The method may receive a JSON object as its first argument or return one.
+- `propsPath` — required, dot-separated path to the property to set.
+  Supports wildcards:
+    - `*` — matches any object property key
+    - `[]` — matches any array element index
+  Supports value filtering: append `.[=].value` to only modify nodes where the property equals `value`.
+- `argumentValue` — required, the value to write at the target path.
+  Can be one of the predefined constants:
+    - `undefined`
+    - `false`
+    - `true`
+    - `null`
+    - `NaN`
+    - numeric value, e.g. `42` or `-1`
+    - `emptyObj` — empty object
+    - `emptyArr` — empty array
+    - `noopFunc` — function with empty body
+    - `noopCallbackFunc` — function returning noopFunc
+    - `trueFunc` — function returning true
+    - `falseFunc` — function returning false
+    - `throwFunc` — function throwing an error
+    - `noopPromiseResolve` — function returning Promise resolved with an empty response
+    - `noopPromiseReject` — function returning Promise.reject()
+    - any other string is set as a string literal
+  Can also be a replacement applied to the current string value at the target path,
+  in the format `replace:/regex/replacement/`:
+    - `replace:/foo/bar/` — replaces the first occurrence of `foo` with `bar`
+    - `replace:/foo/bar/g` — replaces all occurrences
+  Or `json:{...}` — parses the provided JSON value, can be used to apply multiple modifications at once;
+    if the current target value is also an object, the parsed object is merged into it.
+- `requiredInitialProps` — optional, space-separated list of property paths.
+  All listed paths must be present in the JSON object for the modification to occur.
+- `jsonSource` — optional, where to read and modify the JSON value from. Defaults to `result`.
+  Supported values:
+    - `arg` — only the first argument
+    - `arg:N` — only argument `N` using 0-based indexing, e.g. `arg:1`
+    - `arg:N|M|K` — only the listed arguments using 0-based indexing, e.g. `arg:0|1|3`
+    - `args` — all arguments
+    - `this` — `thisArg` of the intercepted method
+    - `result` — only the return value
+    - `all` — all arguments, `thisArg`, and the return value
+- `stack` — optional, string or regular expression that must match the current function call stack trace;
+  if a regular expression is invalid it will be skipped.
+- `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
+
+> [!IMPORTANT]
+> Please note that, if `requiredInitialProps` is not specified, the scriptlet will attempt to set
+> the value at the target path even if it does not exist, unless the path includes wildcards (`*`),
+> array element index (`[]`), or value filters (`.[=].value`).
+
+### Examples
+
+1. Sets `ads.enabled` to `false` in the result of `JSON.parse`
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'ads.enabled', 'false')
+    ```
+
+    For instance, the following call:
+
+    ```js
+    JSON.parse('{"ads":{"enabled":true},"content":"article"}')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+        "ads": { "enabled": true },
+        "content": "article"
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+        "ads": { "enabled": false },
+        "content": "article"
+    }
+    ```
+
+1. Creates a new nested path `config.ads.blocked` and sets it to `true` in `JSON.stringify` input;
+   missing intermediate objects are created automatically
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.stringify', 'config.ads.blocked', 'true')
+    ```
+
+    For instance, the following call:
+
+    ```js
+    JSON.stringify({ config: {} })
+    ```
+
+    Input JSON:
+
+    ```json
+    { "config": {} }
+    ```
+
+    Output:
+
+    ```json
+    { "config": { "ads": { "blocked": true } } }
+    ```
+
+1. Sets `enabled` to `false` for every element in the `items` array using the `[]` wildcard
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'items.[].enabled', 'false')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+        "items": [
+            { "id": 1, "enabled": true },
+            { "id": 2, "enabled": true }
+        ]
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+        "items": [
+            { "id": 1, "enabled": false },
+            { "id": 2, "enabled": false }
+        ]
+    }
+    ```
+
+1. Uses the `*` wildcard and the value filter `.[=].true`
+   to set `enabled` only for nodes where it currently equals `true`
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'items.*.enabled.[=].true', 'false')
+    ```
+
+    Input JSON:
+
+    ```json
+    {
+        "items": {
+            "a": { "enabled": true },
+            "b": { "enabled": 1 }
+        }
+    }
+    ```
+
+    Output:
+
+    ```json
+    {
+        "items": {
+            "a": { "enabled": false },
+            "b": { "enabled": 1 }
+        }
+    }
+    ```
+
+1. Replaces part of a string value at the target path using the `replace:` syntax
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'content', 'replace:/advertisement/article/')
+    ```
+
+    Input JSON:
+
+    ```json
+    { "content": "The advertisement block" }
+    ```
+
+    Output:
+
+    ```json
+    { "content": "The article block" }
+    ```
+
+1. Merges a parsed JSON object into the existing target object using the `json:` marker
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+    ```
+
+    Input JSON:
+
+    ```json
+    { "foo": { "a": { "old": 0 }, "c": 3 } }
+    ```
+
+    Output:
+
+    ```json
+    { "foo": { "a": { "test": 1 }, "c": 3, "b": { "c": 1 } } }
+    ```
+
+1. Only modifies the JSON object if `tracking.enabled` property is present
+
+    ```adblock
+    example.org#%#//scriptlet(
+      'trusted-json-set', 'JSON.parse', 'tracking.enabled', 'false', 'tracking.enabled', 'result')
+
+    Input JSON:
+
+    ```json
+    { "tracking": { "enabled": true }, "meta": { "v": 1 } }
+    ```
+
+    Output:
+
+    ```json
+    { "tracking": { "enabled": false }, "meta": { "v": 1 } }
+    ```
+
+1. Modifies the first argument before the target method is called
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', 'ads.enabled', 'false', '', 'arg:0')
+    ```
+
+1. Modifies selected arguments before the target method is called
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', 'ads.enabled', 'false', '', 'arg:0|2')
+    ```
+
+1. Only applies when the call originates from a script matching the `adManager` stack trace
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'ads.enabled', 'false', '', 'result', 'adManager')
+    ```
+
+    Input:
+
+    ```js
+    function adManager() {
+        return JSON.parse('{"ads":{"enabled":true},"content":"article"}');
+    }
+    ```
+
+    Output:
+
+    ```js
+    { ads: { enabled: false }, content: 'article' }
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-json-set.ts)
 
 * * *
 

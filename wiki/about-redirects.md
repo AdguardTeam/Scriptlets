@@ -21,6 +21,7 @@
 - [didomi-loader](#didomi-loader)
 - [fingerprintjs2](#fingerprintjs2)
 - [fingerprintjs3](#fingerprintjs3)
+- [freewheel-admanager](#freewheel-admanager)
 - [gemius](#gemius)
 - [google-analytics-ga](#google-analytics-ga)
 - [google-analytics](#google-analytics)
@@ -370,6 +371,22 @@ https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/finge
 ```
 
 [Redirect source](../src/redirects/fingerprintjs3.js)
+
+* * *
+
+## <a id="freewheel-admanager"></a> ⚡️ freewheel-admanager
+
+> Added in v2.3.0.
+
+Mocks the FreeWheel Ad Manager.
+
+### Examples
+
+```adblock
+||mssl.fwmrm.net/libs/adm/6.55.0/AdManager.js$script,redirect=freewheel-admanager
+```
+
+[Redirect source](../src/redirects/freewheel-admanager.js)
 
 * * *
 

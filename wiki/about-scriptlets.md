@@ -18,6 +18,7 @@
 - [evaldata-prune](#evaldata-prune)
 - [fingerprintjs2](#fingerprintjs2)
 - [fingerprintjs3](#fingerprintjs3)
+- [freewheel-admanager](#freewheel-admanager)
 - [gemius](#gemius)
 - [google-analytics-ga](#google-analytics-ga)
 - [google-analytics](#google-analytics)
@@ -527,10 +528,11 @@ but instead of aborting it starts the debugger.
 
 ### Examples
 
-```adblock
-! Aborts script when it tries to access `window.alert`
-example.org#%#//scriptlet('debug-current-inline-script', 'alert')
-```
+1. Debug script when it tries to access `window.alert`
+
+    ```adblock
+    example.org#%#//scriptlet('debug-current-inline-script', 'alert')
+    ```
 
 [Scriptlet source](../src/scriptlets/debug-current-inline-script.js)
 
@@ -547,13 +549,17 @@ but instead of aborting it starts the debugger.
 
 ### Examples
 
-```adblock
-! Debug script if it tries to access `window.alert`
-example.org#%#//scriptlet('debug-on-property-read', 'alert')
+1. Debug script if it tries to access `window.alert`
 
-! or `window.open`
-example.org#%#//scriptlet('debug-on-property-read', 'open')
-```
+    ```adblock
+    example.org#%#//scriptlet('debug-on-property-read', 'alert')
+    ```
+
+1. Debug script if it tries to access `window.open`
+
+    ```adblock
+    example.org#%#//scriptlet('debug-on-property-read', 'open')
+    ```
 
 [Scriptlet source](../src/scriptlets/debug-on-property-read.js)
 
@@ -570,10 +576,11 @@ but instead of aborting it starts the debugger.
 
 ### Examples
 
-```adblock
-! Aborts script when it tries to write in property `window.test`
-example.org#%#//scriptlet('debug-on-property-write', 'test')
-```
+1. Debug script when it tries to write in property `window.test`
+
+    ```adblock
+    example.org#%#//scriptlet('debug-on-property-write', 'test')
+    ```
 
 [Scriptlet source](../src/scriptlets/debug-on-property-write.js)
 
@@ -759,6 +766,22 @@ example.org#%#//scriptlet('fingerprintjs3')
 ```
 
 [Scriptlet source](../src/scriptlets/fingerprintjs3.ts)
+
+* * *
+
+## <a id="freewheel-admanager"></a> ⚡️ freewheel-admanager
+
+> Added in v2.3.0.
+
+Mocks the FreeWheel Ad Manager.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('freewheel-admanager')
+```
+
+[Scriptlet source](../src/scriptlets/freewheel-admanager.ts)
 
 * * *
 
@@ -1641,10 +1664,18 @@ but instead of aborting it logs:
 ### Syntax
 
 ```text
-example.com#%#//scriptlet('log-on-stack-trace', 'property')
+example.com#%#//scriptlet('log-on-stack-trace', property)
 ```
 
 - `property` — required, path to a property. The property must be attached to window.
+
+### Examples
+
+1. Log stack trace when it tries to access `window.open`
+
+    ```adblock
+    example.org#%#//scriptlet('log-on-stack-trace', 'open')
+    ```
 
 [Scriptlet source](../src/scriptlets/log-on-stack-trace.js)
 
@@ -2856,7 +2887,7 @@ example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
 
 > Added in v1.0.4.
 
-Prevents `window.open` calls when URL either matches or not matches the specified string/regexp.
+Prevents `window.open` calls when URL or any other parameter either matches or not matches the specified string/regexp.
 Using it without parameters prevents all `window.open` calls.
 
 Related UBO scriptlet:
@@ -3611,12 +3642,15 @@ example.org#%#//scriptlet('set-cookie-reload', name, value[, path[, domain]])
         - `no` / `n`
         - `ok`
         - `on` / `off`
+        - `all`
         - `accept`/ `accepted` / `notaccepted`
         - `reject` / `rejected`
         - `allow` / `allowed`
+        - `declined`
         - `disallow` / `deny` / `denied`
         - `enable` / `enabled`
         - `disable` / `disabled`
+        - `mandatory`
         - `necessary` / `required`
         - `hide` / `hidden`
         - `essential` / `nonessential`
@@ -3676,12 +3710,15 @@ example.org#%#//scriptlet('set-cookie', name, value[, path[, domain]])
         - `no` / `n`
         - `ok`
         - `on` / `off`
+        - `all`
         - `accept`/ `accepted` / `notaccepted`
         - `reject` / `rejected`
         - `allow` / `allowed`
+        - `declined`
         - `disallow` / `deny` / `denied`
         - `enable` / `enabled`
         - `disable` / `disabled`
+        - `mandatory`
         - `necessary` / `required`
         - `hide` / `hidden`
         - `essential` / `nonessential`
