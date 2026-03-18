@@ -14,6 +14,10 @@ import { serializeCookie } from '../../src/helpers';
 const { test, module } = QUnit;
 const name = 'trusted-click-element';
 
+const nativeAddEventListener = EventTarget.prototype.addEventListener;
+const nativeRemoveEventListener = EventTarget.prototype.removeEventListener;
+const patchedIsTrustedFlag = Symbol.for('adg-spoof-click-isTrusted');
+
 const clearCookie = (cName) => {
     // Without "path=/;" cookie is not removed
     document.cookie = `${cName}=; path=/; max-age=0`;
@@ -29,6 +33,10 @@ const beforeEach = () => {
 const afterEach = () => {
     removePanel();
     clearGlobalProps('hit', '__debug', 'clickOrder');
+    // Restore native event listener methods in case they were patched
+    EventTarget.prototype.addEventListener = nativeAddEventListener;
+    EventTarget.prototype.removeEventListener = nativeRemoveEventListener;
+    delete EventTarget.prototype[patchedIsTrustedFlag];
 };
 
 module(name, { beforeEach, afterEach });
@@ -1134,6 +1142,11 @@ test('isTrusted is spoofed for click events', (assert) => {
     const done = assert.async();
 
     const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+
+    // Run scriptlet before adding event listener to ensure isTrusted is spoofed
+    // and before creating the panel and clickable to ensure they are tracked by the scriptlet
+    runScriptlet(name, [selectorsString]);
+
     const panel = createPanel();
 
     const clickable = createClickable(1);
@@ -1143,8 +1156,6 @@ test('isTrusted is spoofed for click events', (assert) => {
     clickable.addEventListener('click', (e) => {
         receivedIsTrusted = e.isTrusted;
     });
-
-    runScriptlet(name, [selectorsString]);
 
     setTimeout(() => {
         assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
@@ -1211,6 +1222,36 @@ test('isTrusted spoofing - removeEventListener works with EventListenerObject', 
     setTimeout(() => {
         assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
         assert.strictEqual(listenerCalled, false, 'Removed EventListenerObject should not be called');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('isTrusted is spoofed for onclick events', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+
+    runScriptlet(name, [selectorsString]);
+
+    const panel = createPanel();
+
+    let receivedIsTrustedClick = null;
+
+    const clickable = createClickable(1);
+
+    clickable.onclick = (e) => {
+        e.currentTarget.setAttribute('clicked', true);
+        receivedIsTrustedClick = e.isTrusted;
+    };
+
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(receivedIsTrustedClick, true, 'isTrusted should be spoofed to true');
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 150);
@@ -1389,6 +1430,111 @@ test('React element with __reactProps$ is clicked via React handlers', (assert) 
     setTimeout(() => {
         assert.ok(onFocusCalled, 'React onFocus handler should be called');
         assert.ok(onClickCalled, 'React onClick handler should be called');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('React element with __reactProps$ is clicked via React handlers and preventDefault is called', (assert) => {
+    const ELEM_COUNT = 1;
+    const ASSERTIONS = 5;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
+    const panel = createPanel();
+
+    // Create element that simulates a React component
+    const reactElement = document.createElement('button');
+    reactElement.id = `${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    // Simulate React's internal props structure
+    const reactPropsKey = '__reactProps$testkey0000';
+    let onFocusCalled = false;
+    let onClickCalled = false;
+    let receivedIsTrustedFocus = null;
+    let receivedIsTrustedClick = null;
+
+    reactElement[reactPropsKey] = {
+        onFocus: (e) => {
+            onFocusCalled = true;
+            receivedIsTrustedFocus = e.isTrusted;
+        },
+        onClick: (e) => {
+            onClickCalled = true;
+            reactElement.setAttribute('clicked', 'true');
+            e.preventDefault();
+            receivedIsTrustedClick = e.isTrusted;
+            window.clickOrder.push(ELEM_COUNT);
+        },
+    };
+
+    panel.appendChild(reactElement);
+
+    runScriptlet(name, [selectorsString]);
+
+    setTimeout(() => {
+        assert.ok(onFocusCalled, 'React onFocus handler should be called');
+        assert.ok(onClickCalled, 'React onClick handler should be called');
+        assert.strictEqual(receivedIsTrustedFocus, true, 'React onFocus handler should receive isTrusted=true');
+        assert.strictEqual(receivedIsTrustedClick, true, 'React onClick handler should receive isTrusted=true');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
+test('clickType:native forces native dispatch over React internal handlers', (assert) => {
+    const ELEM_COUNT = 1;
+    const ASSERTIONS = 8;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+
+    runScriptlet(name, [selectorsString, 'clickType:native']);
+
+    const panel = createPanel();
+
+    // Create element that simulates a React component
+    const reactElement = document.createElement('button');
+    reactElement.id = `${CLICKABLE_NAME}${ELEM_COUNT}`;
+
+    // Simulate React's internal props structure
+    const reactPropsKey = '__reactProps$test_abc123';
+    let onFocusCalled = false;
+    let onClickCalled = false;
+    let receivedIsTrustedFocus = null;
+    let receivedIsTrustedClick = null;
+
+    // React handlers should be present but should not be called due to clickType:native
+    reactElement[reactPropsKey] = {
+        onFocus: (e) => {
+            onFocusCalled = true;
+            receivedIsTrustedFocus = e.isTrusted;
+            reactElement.setAttribute('react-focused', 'true');
+        },
+        onClick: (e) => {
+            onClickCalled = true;
+            receivedIsTrustedClick = e.isTrusted;
+            reactElement.setAttribute('react-clicked', 'true');
+            e.preventDefault();
+        },
+    };
+
+    reactElement.onclick = () => {
+        reactElement.setAttribute('clicked', 'true');
+    };
+
+    panel.appendChild(reactElement);
+
+    setTimeout(() => {
+        assert.ok(reactElement.getAttribute('clicked'), 'Element should be clicked via native dispatch');
+        assert.notOk(reactElement.getAttribute('react-focused'), 'React focus handler should not be called');
+        assert.notOk(reactElement.getAttribute('react-clicked'), 'React click handler should not be called');
+        assert.strictEqual(onFocusCalled, false, 'React onFocus handler should not be called');
+        assert.strictEqual(onClickCalled, false, 'React onClick handler should not be called');
+        assert.strictEqual(receivedIsTrustedFocus, null, 'React onFocus handler should not be called');
+        assert.strictEqual(receivedIsTrustedClick, null, 'React onClick handler should not be called');
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 150);

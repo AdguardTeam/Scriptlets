@@ -188,29 +188,11 @@ export const bridgeIframeLoads = (nodes: NodeList) => {
  * so we need to trigger React's synthetic event handlers directly.
  *
  * @param element HTML element to click.
+ * @param clickType Optional click mode. Use 'native' to bypass React internal handlers.
  */
-export const clickElement = (element: HTMLElement): void => {
+export const clickElement = (element: HTMLElement, clickType = ''): void => {
     const REACT_PROPS_KEY_PREFIX = '__reactProps$';
-
-    // Find React internal props key on the element
-    const reactPropsKey = Object.keys(element).find((key) => key.startsWith(REACT_PROPS_KEY_PREFIX));
-
-    // If React props are found, try to use React's handlers
-    if (reactPropsKey) {
-        const reactProps = (element as unknown as Record<string, unknown>)[reactPropsKey] as {
-            onFocus?: () => void;
-            onClick?: () => void;
-        } | undefined;
-
-        if (reactProps && typeof reactProps.onClick === 'function') {
-            // Call onFocus first if available, as some React components require it
-            if (typeof reactProps.onFocus === 'function') {
-                reactProps.onFocus();
-            }
-            reactProps.onClick();
-            return;
-        }
-    }
+    const NATIVE_CLICK_TYPE = 'native';
 
     // Simulate a realistic click because it may not be enough to execute element.click()
     // https://github.com/AdguardTeam/Scriptlets/issues/491
@@ -234,23 +216,214 @@ export const clickElement = (element: HTMLElement): void => {
     const noBubbleOpts: MouseEventInit = Object.assign({}, commonOpts, { bubbles: false });
     const releaseOpts: MouseEventInit = Object.assign({}, commonOpts, { buttons: 0 });
 
-    // Feature-detect PointerEvent for environments that don't support it
-    const hasPointerEvent = typeof PointerEvent === 'function';
+    /**
+     * Creates a trusted-looking event proxy for either React handlers or native
+     * inline handlers.
+     *
+     * React handlers need extra SyntheticEvent-like fields such as
+     * `nativeEvent`, `persist()`, `isDefaultPrevented()` and stable
+     * `currentTarget`. Native inline handlers only need the original event with
+     * `isTrusted` spoofed to `true`.
+     *
+     * @param nativeEvent Original DOM event.
+     * @param eventType Event type exposed to the handler.
+     * @param isReactEvent Whether to expose React-specific SyntheticEvent-like fields.
+     *
+     * @returns Proxied event object with the fields needed for the target handler type.
+     */
+    const createEventProxy = (nativeEvent: Event, eventType: string, isReactEvent = false): Event => {
+        let defaultPrevented = nativeEvent.defaultPrevented;
+        let propagationStopped = false;
 
-    if (hasPointerEvent) {
-        element.dispatchEvent(new PointerEvent('pointerover', commonOpts));
-        element.dispatchEvent(new PointerEvent('pointerenter', noBubbleOpts));
+        return new Proxy(nativeEvent, {
+            get(target, prop) {
+                if (prop === 'isTrusted') {
+                    return true;
+                }
+                if (!isReactEvent) {
+                    const value = Reflect.get(target, prop);
+                    if (typeof value === 'function') {
+                        return value.bind(target);
+                    }
+
+                    return value;
+                }
+                if (prop === 'nativeEvent') {
+                    return target;
+                }
+                if (prop === 'target' || prop === 'srcElement' || prop === 'currentTarget') {
+                    return element;
+                }
+                if (prop === 'type') {
+                    return eventType;
+                }
+                if (prop === 'defaultPrevented') {
+                    return defaultPrevented;
+                }
+                if (prop === 'persist') {
+                    return () => {};
+                }
+                if (prop === 'isDefaultPrevented') {
+                    return () => defaultPrevented;
+                }
+                if (prop === 'isPropagationStopped') {
+                    return () => propagationStopped;
+                }
+                if (prop === 'preventDefault') {
+                    return () => {
+                        defaultPrevented = true;
+                        target.preventDefault();
+                    };
+                }
+                if (prop === 'stopPropagation') {
+                    return () => {
+                        propagationStopped = true;
+                        target.stopPropagation();
+                    };
+                }
+                if (prop === 'stopImmediatePropagation') {
+                    return () => {
+                        propagationStopped = true;
+                        if (typeof target.stopImmediatePropagation === 'function') {
+                            target.stopImmediatePropagation();
+                        }
+                    };
+                }
+
+                const value = Reflect.get(target, prop);
+                if (typeof value === 'function') {
+                    return value.bind(target);
+                }
+
+                return value;
+            },
+        });
+    };
+
+    /**
+     * Temporarily wraps inline `on...` handlers on the clicked element so they receive
+     * a proxied event with spoofed `isTrusted`.
+     *
+     * @param target Event target to inspect for inline handlers.
+     * @param eventTypes Event types whose `on...` properties should be wrapped.
+     *
+     * @returns Cleanup function that restores original inline handlers.
+     */
+    const wrapInlineHandlers = (target: EventTarget, eventTypes: Set<string>): (() => void) => {
+        const originalHandlers = new Map<string, OnErrorEventHandler | EventListener | null>();
+        const targetRecord = target as unknown as Record<string, unknown>;
+
+        eventTypes.forEach((eventType) => {
+            const propertyName = `on${eventType}`;
+            const handler = targetRecord[propertyName];
+
+            if (typeof handler !== 'function' || originalHandlers.has(propertyName)) {
+                return;
+            }
+
+            originalHandlers.set(propertyName, handler as EventListener);
+            targetRecord[propertyName] = function wrappedInlineHandler(this: unknown, event: Event) {
+                const onEventProxy = createEventProxy(event, eventType);
+                return handler.call(this, onEventProxy);
+            };
+        });
+
+        return () => {
+            originalHandlers.forEach((handler, propertyName) => {
+                targetRecord[propertyName] = handler;
+            });
+        };
+    };
+
+    /**
+     * Creates a focus event for the direct React handler path.
+     *
+     * @returns Focus event object compatible with the current environment.
+     */
+    const createFocusEvent = (): Event => {
+        if (typeof FocusEvent === 'function') {
+            return new FocusEvent('focus', {
+                bubbles: false,
+                cancelable: false,
+                composed: true,
+                relatedTarget: null,
+            });
+        }
+
+        return new Event('focus', {
+            bubbles: false,
+            cancelable: false,
+            composed: true,
+        });
+    };
+
+    /**
+     * Dispatches the synthetic pointer and mouse sequence used by the native
+     * click path while temporarily wrapping inline handlers on the bubbling path.
+     */
+    const dispatchNativeClick = (): void => {
+        // Feature-detect PointerEvent for environments that don't support it
+        const hasPointerEvent = typeof PointerEvent === 'function';
+        const spoofedEventTypes = new Set([
+            'click',
+            'mousedown',
+            'mouseup',
+            'mouseover',
+            'mouseenter',
+            'pointerdown',
+            'pointerup',
+            'pointerover',
+            'pointerenter',
+        ]);
+        const restoreInlineHandlers = wrapInlineHandlers(element, spoofedEventTypes);
+
+        try {
+            if (hasPointerEvent) {
+                element.dispatchEvent(new PointerEvent('pointerover', commonOpts));
+                element.dispatchEvent(new PointerEvent('pointerenter', noBubbleOpts));
+            }
+            element.dispatchEvent(new MouseEvent('mouseover', commonOpts));
+            element.dispatchEvent(new MouseEvent('mouseenter', noBubbleOpts));
+            if (hasPointerEvent) {
+                element.dispatchEvent(new PointerEvent('pointerdown', commonOpts));
+            }
+            element.dispatchEvent(new MouseEvent('mousedown', commonOpts));
+            element.focus();
+            if (hasPointerEvent) {
+                element.dispatchEvent(new PointerEvent('pointerup', releaseOpts));
+            }
+            element.dispatchEvent(new MouseEvent('mouseup', releaseOpts));
+            element.dispatchEvent(new MouseEvent('click', releaseOpts));
+        } finally {
+            restoreInlineHandlers();
+        }
+    };
+
+    // Find React internal props key on the element
+    const reactPropsKey = Object.keys(element).find((key) => key.startsWith(REACT_PROPS_KEY_PREFIX));
+
+    // If React props are found, try to use React's handlers
+    // If clickType is 'native', skip React handlers and dispatch native click directly
+    // https://github.com/AdguardTeam/Scriptlets/issues/554
+    if (reactPropsKey && clickType !== NATIVE_CLICK_TYPE) {
+        const reactProps = (element as unknown as Record<string, unknown>)[reactPropsKey] as {
+            onFocus?: (event?: Event) => void;
+            onClick?: (event?: Event) => void;
+        } | undefined;
+
+        if (reactProps && typeof reactProps.onClick === 'function') {
+            // Call onFocus first if available, as some React components require it
+            if (typeof reactProps.onFocus === 'function') {
+                const focusEvent = createFocusEvent();
+                const eventFocusProxy = createEventProxy(focusEvent, 'focus', true);
+                reactProps.onFocus.call(element, eventFocusProxy);
+            }
+            const clickEvent = new MouseEvent('click', releaseOpts);
+            const eventClickProxy = createEventProxy(clickEvent, 'click', true);
+            reactProps.onClick.call(element, eventClickProxy);
+            return;
+        }
     }
-    element.dispatchEvent(new MouseEvent('mouseover', commonOpts));
-    element.dispatchEvent(new MouseEvent('mouseenter', noBubbleOpts));
-    if (hasPointerEvent) {
-        element.dispatchEvent(new PointerEvent('pointerdown', commonOpts));
-    }
-    element.dispatchEvent(new MouseEvent('mousedown', commonOpts));
-    element.focus();
-    if (hasPointerEvent) {
-        element.dispatchEvent(new PointerEvent('pointerup', releaseOpts));
-    }
-    element.dispatchEvent(new MouseEvent('mouseup', releaseOpts));
-    element.dispatchEvent(new MouseEvent('click', releaseOpts));
+
+    dispatchNativeClick();
 };

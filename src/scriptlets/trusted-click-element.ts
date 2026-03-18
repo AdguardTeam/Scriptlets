@@ -27,6 +27,7 @@ import { type Source } from './scriptlets';
  * If `containsText` is specified, then it searches for all given selectors and clicks
  * the first element containing the specified text.
  * Deactivates after all elements have been clicked or by timeout (configurable).
+ * Click behavior can be forced to native dispatch through `extraMatch`.
  *
  * ### Syntax
  *
@@ -45,6 +46,7 @@ import { type Source } from './scriptlets';
  *     - `cookie` — test string or regex against cookies on a page
  *     - `localStorage` — check if localStorage item is present
  *     - `containsText` — check if clicked element contains specified text
+ *     - `clickType` — set click behavior; supported value is `native`
  * - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
  *   Must be a number less than `observerTimeout` (default 10 _seconds_)
  *   which can be configured.
@@ -124,6 +126,12 @@ import { type Source } from './scriptlets';
  *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', '!cookie:consent, !localStorage:promo')
  *     ```
  *
+ * 1. Force native click dispatch even if React handlers are detected
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'clickType:native')
+ *     ```
+ *
  * 1. Click element inside open shadow DOM, which could be selected by `div > button`, but is inside shadow host element with host element selected by `article .container`
  *
  *    ```adblock
@@ -193,12 +201,14 @@ export function trustedClickElement(
     const COOKIE_MATCH_MARKER = 'cookie:';
     const LOCAL_STORAGE_MATCH_MARKER = 'localStorage:';
     const TEXT_MATCH_MARKER = 'containsText:';
+    const CLICK_TYPE_MATCH_MARKER = 'clickType:';
+    const CLICK_TYPE_NATIVE = 'native';
     const RELOAD_ON_FINAL_CLICK_MARKER = 'reloadAfterClick';
     const SELECTORS_DELIMITER = ',';
     const COOKIE_STRING_DELIMITER = ';';
     const COLON = ':';
     // Regex to split match pairs by commas, avoiding the ones included in regexes
-    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:)/;
+    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:|clickType:)/;
 
     const sleep = (delayMs: number) => {
         return new Promise((resolve) => { setTimeout(resolve, delayMs); });
@@ -301,6 +311,7 @@ export function trustedClickElement(
     const cookieMatches: string[] = [];
     const localStorageMatches: string[] = [];
     let textMatches = '';
+    let clickType = '';
     let isInvertedMatchCookie = false;
     let isInvertedMatchLocalStorage = false;
 
@@ -328,6 +339,21 @@ export function trustedClickElement(
                 const { matchValue } = parseMatchArg(matchStr);
                 const textMatch = matchValue.replace(TEXT_MATCH_MARKER, '');
                 textMatches = textMatch;
+            }
+            if (matchStr.includes(CLICK_TYPE_MATCH_MARKER)) {
+                const { isInvertedMatch, matchValue } = parseMatchArg(matchStr);
+                if (isInvertedMatch) {
+                    logMessage(source, `Passed click type '${matchStr}' is invalid`);
+                    return;
+                }
+
+                const passedClickType = matchValue.replace(CLICK_TYPE_MATCH_MARKER, '');
+                if (passedClickType !== CLICK_TYPE_NATIVE) {
+                    logMessage(source, `Passed click type '${passedClickType}' is invalid`);
+                    return;
+                }
+
+                clickType = passedClickType;
             }
         });
     }
@@ -431,7 +457,7 @@ export function trustedClickElement(
                 logMessage(source, `Could not find element: '${elementObj.selectorText}'`);
                 return;
             }
-            clickElement(element);
+            clickElement(element, clickType);
             elementObj.clicked = true;
         } catch (error) {
             logMessage(source, `Could not click element: '${elementObj.selectorText}'`);
@@ -506,7 +532,7 @@ export function trustedClickElement(
                 // if not, try to find the element again
                 // https://github.com/AdguardTeam/Scriptlets/issues/391
                 if (elementObj.element.isConnected) {
-                    clickElement(elementObj.element);
+                    clickElement(elementObj.element, clickType);
                     elementObj.clicked = true;
                 } else {
                     findAndClickElement(elementObj);

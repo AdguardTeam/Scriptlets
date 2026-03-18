@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `trusted-click-element` now passes synthetic-like event objects to React handlers
+  and supports `clickType:native` in `extraMatch` to force native click [#554].
 - Added `interceptChainProp` helper to share intermediate chain property access logic
   across `abort-on-property-read`, `abort-on-property-write`, `abort-on-stack-trace`,
   `abort-current-inline-script`, `debug-on-property-write`, `debug-on-property-read`,
@@ -48,6 +50,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#545]: https://github.com/AdguardTeam/Scriptlets/issues/545
 [#549]: https://github.com/AdguardTeam/Scriptlets/issues/549
 [#552]: https://github.com/AdguardTeam/Scriptlets/issues/552
+[#554]: https://github.com/AdguardTeam/Scriptlets/issues/554
 
 ## [v2.2.16] - 2026-02-19
 
