@@ -12,6 +12,6 @@ import { FreewheelAdManager, FreewheelAdManagerNames } from '../redirects/freewh
  * example.org#%#//scriptlet('freewheel-admanager')
  * ```
  *
- * @added unknown.
+ * @added v2.3.0.
  */
 export { FreewheelAdManager, FreewheelAdManagerNames };

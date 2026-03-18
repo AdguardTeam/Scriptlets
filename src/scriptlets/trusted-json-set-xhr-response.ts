@@ -75,7 +75,7 @@ import { type Source } from './scriptlets';
  * example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
  * ```
  *
- * @added unknown.
+ * @added v2.3.0.
  */
 /* eslint-enable max-len */
 export function trustedJsonSetXhrResponse(

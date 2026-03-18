@@ -306,7 +306,7 @@ import { type Source } from './scriptlets';
  *     { ads: { enabled: false }, content: 'article' }
  *     ```
  *
- * @added unknown.
+ * @added v2.3.0.
  */
 /* eslint-enable max-len */
 export function trustedJsonSet(

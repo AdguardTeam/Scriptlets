@@ -101,7 +101,7 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'foo', 'replace:/advertisement/article/')
  *     ```
  *
- * @added unknown.
+ * @added v2.3.0.
  */
 /* eslint-enable max-len */
 export function trustedJsonSetFetchResponse(

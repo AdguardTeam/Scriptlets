@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [v2.3.0] - 2026-03-18
 
 ### Added
 
@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `abort-current-inline-script`, `debug-on-property-write`, `debug-on-property-read`,
   `debug-current-inline-script` and `log-on-stack-trace` scriptlets [#513].
 - `prevent-window-open` now checks all parameters [#549].
+- Updated [@adguard/agtree] to `4.0.2`.
 
 ### Fixed
 
@@ -40,7 +41,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `abort-current-inline-script`, `debug-on-property-write`, `debug-on-property-read`,
   `debug-current-inline-script` and `log-on-stack-trace` scriptlets [#513].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...HEAD
+[v2.3.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...v2.3.0
 [#308]: https://github.com/AdguardTeam/Scriptlets/issues/308
 [#401]: https://github.com/AdguardTeam/Scriptlets/issues/401
 [#501]: https://github.com/AdguardTeam/Scriptlets/issues/501

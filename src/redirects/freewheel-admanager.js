@@ -12,7 +12,7 @@ import { hit, noopFunc, noopThis } from '../helpers';
  * ||mssl.fwmrm.net/libs/adm/6.55.0/AdManager.js$script,redirect=freewheel-admanager
  * ```
  *
- * @added unknown.
+ * @added v2.3.0.
  */
 
 export function FreewheelAdManager(source) {
