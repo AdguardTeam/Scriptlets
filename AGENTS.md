@@ -64,6 +64,7 @@ scriptlets/
 ├── rollup.config.js          # Rollup bundle configuration
 ├── tsconfig.json             # TypeScript configuration
 ├── vitest.config.ts          # Vitest configuration
+├── DEVELOPMENT.md            # Development guide and SDD lifecycle
 └── package.json              # Package manifest and scripts
 ```
 
@@ -163,6 +164,14 @@ You MUST follow the following rules for EVERY task that you perform:
   scriptlets).
 
 - Use `pnpm` as the package manager. Do not use `npm` or `yarn`.
+
+### Spec-Driven Development (SDD)
+
+Non-trivial changes MUST be preceded by a spec created with the SDD slash
+commands, which should be available globally (preferred).
+
+Specs are local-only and never committed — `specs/.current/` contents are
+gitignored.
 
 ## Code guidelines
 
