@@ -18,7 +18,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   assignments (including `blob:` URLs) and replaces matched content in the fetched
   script text before execution [#516].
 
+### Fixed
+
+- `disable-newtab-links` not preventing clicks when the element has its own `click` handler
+  added via `addEventListener` [#483].
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...HEAD
+[#483]: https://github.com/AdguardTeam/Scriptlets/issues/483
 [#516]: https://github.com/AdguardTeam/Scriptlets/issues/516
 
 ## [v2.3.0] - 2026-03-18
