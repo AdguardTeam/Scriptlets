@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Fixed
+
+- `disable-newtab-links` not preventing clicks when the element has its own `click` handler
+  added via `addEventListener` [#483].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...HEAD
+[#483]: https://github.com/AdguardTeam/Scriptlets/issues/483
+
 ## [v2.3.0] - 2026-03-18
 
 ### Added

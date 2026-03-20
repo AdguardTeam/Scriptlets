@@ -1,4 +1,5 @@
 import { hit } from '../helpers';
+import { type Source } from './scriptlets';
 
 /**
  * @scriptlet disable-newtab-links
@@ -17,10 +18,10 @@ import { hit } from '../helpers';
  *
  * @added v1.0.4.
  */
-export function disableNewtabLinks(source) {
+export function disableNewtabLinks(source: Source) {
     document.addEventListener('click', (ev) => {
         let { target } = ev;
-        while (target !== null) {
+        while (target instanceof Element) {
             if (target.localName === 'a' && target.hasAttribute('target')) {
                 ev.stopPropagation();
                 ev.preventDefault();
@@ -29,7 +30,7 @@ export function disableNewtabLinks(source) {
             }
             target = target.parentNode;
         }
-    });
+    }, { capture: true });
 }
 
 export const disableNewtabLinksNames = [

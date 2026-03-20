@@ -54,3 +54,21 @@ test('adg works', (assert) => {
         done();
     });
 });
+
+test('addEventListener click should not fire', (assert) => {
+    let called = false;
+    runScriptlet(name);
+
+    const elem = createLink();
+    elem.addEventListener('click', () => {
+        called = true;
+    });
+    elem.click();
+
+    const done = assert.async();
+    setTimeout(() => {
+        assert.strictEqual(called, false, 'click handler not called');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        done();
+    });
+});
