@@ -79,3 +79,4 @@ import './prevent-navigation.test';
 import './trusted-json-set.test';
 import './trusted-json-set-fetch-response.test';
 import './trusted-json-set-xhr-response.test';
+import './trusted-replace-script-text.test';
