@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- `trusted-replace-script-text` scriptlet that intercepts `HTMLScriptElement.src`
+  assignments (including `blob:` URLs) and replaces matched content in the fetched
+  script text before execution [#516].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...HEAD
+[#516]: https://github.com/AdguardTeam/Scriptlets/issues/516
+
 ## [v2.3.0] - 2026-03-18
 
 ### Added

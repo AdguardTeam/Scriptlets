@@ -75,6 +75,7 @@ export { trustedDispatchEvent } from './trusted-dispatch-event';
 export { trustedReplaceOutboundText } from './trusted-replace-outbound-text';
 export { preventCanvas } from './prevent-canvas';
 export { trustedReplaceArgument } from './trusted-replace-argument';
+export { trustedReplaceScriptText } from './trusted-replace-script-text';
 export { preventInnerHTML } from './prevent-innerHTML';
 export { preventConstructor } from './prevent-constructor';
 export { removeRequestQueryParameter } from './remove-request-query-parameter';
