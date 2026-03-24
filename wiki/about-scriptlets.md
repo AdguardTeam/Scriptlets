@@ -647,7 +647,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#disable-newtab-linksjs-
 example.org#%#//scriptlet('disable-newtab-links')
 ```
 
-[Scriptlet source](../src/scriptlets/disable-newtab-links.js)
+[Scriptlet source](../src/scriptlets/disable-newtab-links.ts)
 
 * * *
 
