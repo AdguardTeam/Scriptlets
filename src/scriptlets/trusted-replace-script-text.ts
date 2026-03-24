@@ -16,8 +16,18 @@ import { type Source } from './scriptlets';
  *
  * @description
  * Intercepts scripts loaded via `HTMLScriptElement.src` (including `blob:` URLs),
- * fetches their text content, applies a regex/string replacement, and re-assigns
- * a new `blob:` URL with the modified text before the script is executed.
+ * fetches their text content, applies a regex/string replacement, and delivers the
+ * modified script before it is executed.
+ *
+ * **Delivery strategy** — automatically selected per interception:
+ * - If the intercepted `src` is a `blob:` URL (blob: already proven CSP-allowed)
+ *   or the element is already in the DOM, a new `blob:` URL is created with the
+ *   modified text and assigned as `src` (original behaviour).
+ * - Otherwise (e.g. a regular `https:` URL on a site that may block `blob:` via CSP),
+ *   the modified text is injected directly into `script.textContent`
+ *   and the `src` setter is skipped. When the element is later appended
+ *   to the DOM it executes as an inline script. On sites that use nonces,
+ *   the element's existing nonce is preserved so the inline execution passes CSP.
  *
  * This fills the gap between `prevent-element-src-loading` (which can only block)
  * and `trusted-replace-xhr-response` (which targets `XMLHttpRequest` calls).
@@ -66,7 +76,7 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-replace-script-text', 'var adEnabled = true', 'var adEnabled = false')
  *     ```
  *
- * 1. Remove ad initialisation code from blob scripts on mega.nz embed pages:
+ * 1. Remove ad initialization code from blob scripts on mega.nz embed pages:
  *
  *     ```adblock
  *     mega.nz#%#//scriptlet('trusted-replace-script-text', '/adPattern/g', '', 'blob:')
@@ -122,15 +132,14 @@ export function trustedReplaceScriptText(
     }
 
     /**
-     * Core replacement logic shared by the setter and setAttribute interceptors.
-     * Fetches the script at srcUrl, applies the pattern→replacement, creates a
-     * new blob URL with the modified text, and returns it.
+     * Fetches the script at srcUrl, applies the pattern→replacement,
+     * and returns the modified text.
      * Returns null if the fetch fails or the pattern does not match.
      *
-     * @param srcUrl the src URL being assigned
-     * @returns new blob URL with modified content, or null
+     * @param srcUrl Source URL being assigned.
+     * @returns Modified script text, or null.
      */
-    function getReplacedBlobUrl(srcUrl: string): string | null {
+    function getModifiedScriptText(srcUrl: string): string | null {
         const originalText = fetchContentSync(srcUrl);
         if (originalText === null) {
             return null;
@@ -152,20 +161,56 @@ export function trustedReplaceScriptText(
             logMessage(source, `Modified script text:\n${modifiedText}`);
         }
 
-        const blob = new Blob([modifiedText], { type: 'text/javascript' });
-        return URL.createObjectURL(blob);
+        return modifiedText;
+    }
+
+    /**
+     * Determines whether to deliver the modified script via a new blob: URL
+     * (original strategy) or via element.textContent (CSP-safe fallback).
+     *
+     * Blob strategy is used when:
+     * - The element is already in the DOM (textContent won't re-execute), OR
+     * - The original src is already a blob: URL (proves blob: is CSP-allowed), OR
+     * - A <meta> CSP tag explicitly includes blob: in script-src / default-src.
+     *
+     * Otherwise the textContent strategy is used to avoid creating a blob: URL
+     * that may be blocked by CSP (e.g. on youtube.com where CSP is header-based).
+     *
+     * @param el the script element being intercepted
+     * @param srcUrl the src value being assigned
+     * @returns true to use blob strategy, false to use textContent strategy
+     */
+    function shouldUseBlobStrategy(el: HTMLScriptElement, srcUrl: string): boolean {
+        if (document.contains(el)) {
+            return true;
+        }
+        if (srcUrl.startsWith('blob:')) {
+            return true;
+        }
+        const metaElements = document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]');
+        for (let i = 0; i < metaElements.length; i += 1) {
+            const content = metaElements[i].getAttribute('content') || '';
+            if (/(?:script-src|default-src)[^;]*blob:/i.test(content)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Handles an intercepted src value: logs in logging mode, or applies
      * replacement in replacement mode.
-     * Returns the URL to actually assign (possibly a new blob URL),
-     * or the original srcUrl as fallback.
      *
-     * @param srcUrl the src value being assigned
-     * @returns URL to assign to the element
+     * Returns:
+     * - The original srcUrl (passthrough — logging mode, no match, or url filter miss)
+     * - A new blob: URL (blob strategy — modified content delivered via src)
+     * - null (textContent strategy — caller must set el.textContent and skip the setter)
+     *
+     * @param el Script element being intercepted.
+     * @param srcUrl Src value being assigned.
+     * @returns URL to assign, or null when textContent strategy is used.
      */
-    function handleSrcAssignment(srcUrl: string): string {
+    function handleSrcAssignment(el: HTMLScriptElement, srcUrl: string): string | null {
         if (isLoggingMode) {
             logMessage(source, `script src assigned: ${srcUrl}`);
             return srcUrl;
@@ -175,13 +220,28 @@ export function trustedReplaceScriptText(
             return srcUrl;
         }
 
-        const newUrl = getReplacedBlobUrl(srcUrl);
-        if (newUrl === null) {
+        const modifiedText = getModifiedScriptText(srcUrl);
+        if (modifiedText === null) {
             return srcUrl;
         }
 
+        if (shouldUseBlobStrategy(el, srcUrl)) {
+            if (isVerbose) {
+                logMessage(source, 'Using blob strategy');
+            }
+            const blob = new Blob([modifiedText], { type: 'text/javascript' });
+            hit(source);
+            return URL.createObjectURL(blob);
+        }
+
+        if (isVerbose) {
+            logMessage(source, 'Using textContent strategy (blob: may be CSP-blocked)');
+        }
+
+        el.textContent = modifiedText;
         hit(source);
-        return newUrl;
+
+        return null;
     }
 
     const origSrcDescriptor = safeGetDescriptor(HTMLScriptElement.prototype as unknown as PropertyDescriptorMap, 'src');
@@ -200,7 +260,12 @@ export function trustedReplaceScriptText(
         },
         set(urlValue: string | object) {
             const urlStr = String(urlValue);
-            const finalUrl = handleSrcAssignment(urlStr);
+            const finalUrl = handleSrcAssignment(this as HTMLScriptElement, urlStr);
+
+            // textContent strategy: el.textContent already set, skip the src setter
+            if (finalUrl === null) {
+                return;
+            }
 
             let assignValue: string | object = finalUrl;
 
@@ -233,7 +298,13 @@ export function trustedReplaceScriptText(
         }
 
         const urlStr = String(args[1]);
-        const finalUrl = handleSrcAssignment(urlStr);
+        const finalUrl = handleSrcAssignment(thisArg, urlStr);
+
+        // textContent strategy: el.textContent already set, skip setAttribute
+        if (finalUrl === null) {
+            return;
+        }
+
         Reflect.apply(target, thisArg, [args[0], finalUrl]);
     };
 

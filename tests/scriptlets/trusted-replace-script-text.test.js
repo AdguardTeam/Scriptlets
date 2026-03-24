@@ -265,3 +265,119 @@ test('replaces all occurrences when regex has global flag', (assert) => {
         done();
     };
 });
+
+/**
+ * Replaces window.XMLHttpRequest with a minimal mock that returns `responseText`
+ * for requests to `url`, and empty string for all others.
+ * Returns a restore function.
+ *
+ * @param {string} url URL to intercept
+ * @param {string} responseText Response text to return
+ * @returns {() => void} call to restore the original XMLHttpRequest
+ */
+const mockXhrForUrl = (url, responseText) => {
+    const OriginalXHR = window.XMLHttpRequest;
+    function MockXHR() {
+        this._openUrl = '';
+        this.responseText = '';
+    }
+    MockXHR.prototype.open = function open(method, openUrl) {
+        this._openUrl = openUrl;
+    };
+    MockXHR.prototype.send = function send() {
+        this.responseText = this._openUrl === url ? responseText : '';
+    };
+    window.XMLHttpRequest = MockXHR;
+    return () => {
+        window.XMLHttpRequest = OriginalXHR;
+    };
+};
+
+// textContent strategy — non-blob src, element not in DOM, textContent is used
+test('uses textContent strategy for non-blob src when element is not in DOM', (assert) => {
+    const done = assert.async();
+
+    const fakeUrl = 'https://example.com/fake-script.js';
+    const originalText = 'window.scriptResult = "original";';
+    const expectedText = 'window.scriptResult = "replaced";';
+
+    const restoreXhr = mockXhrForUrl(fakeUrl, originalText);
+
+    runScriptlet(name, ['original', 'replaced']);
+
+    const el = document.createElement('script');
+    // Assign src before DOM insertion — element is NOT in DOM
+    el.src = fakeUrl;
+
+    assert.strictEqual(el.textContent, expectedText, 'textContent should be set to the modified script');
+    // src setter was skipped: src attribute must NOT be a blob URL
+    assert.notOk(el.getAttribute('src') && el.getAttribute('src').startsWith('blob:'), 'src should not be a blob URL');
+    assert.strictEqual(window.hit, 'FIRED', 'hit should fire after textContent strategy');
+
+    // Appending triggers inline execution
+    document.body.appendChild(el);
+
+    setTimeout(() => {
+        assert.strictEqual(window.scriptResult, 'replaced', 'inline script should execute after append');
+        restoreXhr();
+        el.remove();
+        done();
+    }, 50);
+});
+
+// textContent strategy via setAttribute — same element-not-in-DOM path via setAttribute
+test('uses textContent strategy when src set via setAttribute before DOM insertion', (assert) => {
+    const done = assert.async();
+
+    const fakeUrl = 'https://example.com/fake-script-attr.js';
+    const originalText = 'window.scriptResult = "original";';
+    const expectedText = 'window.scriptResult = "replaced";';
+
+    const restoreXhr = mockXhrForUrl(fakeUrl, originalText);
+
+    runScriptlet(name, ['original', 'replaced']);
+
+    const el = document.createElement('script');
+    // setAttribute before DOM insertion
+    el.setAttribute('src', fakeUrl);
+
+    assert.strictEqual(el.textContent, expectedText, 'textContent should be set via setAttribute path');
+    assert.notOk(el.getAttribute('src') && el.getAttribute('src').startsWith('blob:'), 'src should not be a blob URL');
+    assert.strictEqual(window.hit, 'FIRED', 'hit should fire');
+
+    document.body.appendChild(el);
+
+    setTimeout(() => {
+        assert.strictEqual(window.scriptResult, 'replaced', 'inline script should execute after append');
+        restoreXhr();
+        el.remove();
+        done();
+    }, 50);
+});
+
+// blob strategy forced — element already in DOM when src is assigned
+test('uses blob strategy when element is already in the DOM', (assert) => {
+    const done = assert.async();
+
+    const fakeUrl = 'https://example.com/in-dom-script.js';
+    const originalText = 'window.scriptResult = "original";';
+
+    const restoreXhr = mockXhrForUrl(fakeUrl, originalText);
+
+    runScriptlet(name, ['original', 'replaced']);
+
+    const el = document.createElement('script');
+    // Insert into DOM BEFORE assigning src
+    document.body.appendChild(el);
+
+    el.src = fakeUrl;
+
+    // Blob strategy: textContent must NOT be set by the scriptlet
+    assert.strictEqual(el.textContent, '', 'blob strategy should not set textContent');
+    // Hit fires because content matched and a blob URL was produced
+    assert.strictEqual(window.hit, 'FIRED', 'hit should fire when blob strategy is used');
+
+    restoreXhr();
+    el.remove();
+    done();
+});
