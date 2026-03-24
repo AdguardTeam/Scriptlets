@@ -450,6 +450,8 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 
 ### Examples
 
+<!-- markdownlint-disable line-length -->
+
 1. Sets `ads.enabled` to `false` in the result of `JSON.parse`
 
     ```adblock
@@ -647,6 +649,8 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     ```js
     { ads: { enabled: false }, content: 'article' }
     ```
+
+<!-- markdownlint-enable line-length -->
 
 [Scriptlet source](../src/scriptlets/trusted-json-set.ts)
 

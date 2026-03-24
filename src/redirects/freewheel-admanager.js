@@ -18,6 +18,7 @@ import { hit, noopFunc, noopThis } from '../helpers';
 export function FreewheelAdManager(source) {
     const eventsMap = new Map();
     const adManagerFunc = noopFunc;
+    // eslint-disable-next-line func-names
     adManagerFunc.prototype.addEventListener = function (type, callback) {
         if (type) {
             eventsMap.set(type, callback);

@@ -110,6 +110,8 @@ import { type Source } from './scriptlets';
  *
  * ### Examples
  *
+ * <!-- markdownlint-disable line-length -->
+ *
  * 1. Sets `ads.enabled` to `false` in the result of `JSON.parse`
  *
  *     ```adblock
@@ -307,6 +309,8 @@ import { type Source } from './scriptlets';
  *     ```js
  *     { ads: { enabled: false }, content: 'article' }
  *     ```
+ *
+ * <!-- markdownlint-enable line-length -->
  *
  * @added v2.3.0.
  */
