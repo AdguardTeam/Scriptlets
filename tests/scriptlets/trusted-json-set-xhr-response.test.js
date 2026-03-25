@@ -141,6 +141,25 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('JSONPath mode can merge parsed json into an existing xhr response object', async (assert) => {
+        runScriptlet(name, ['$.cc+={"blocked":{"enabled":true}}', '', '', 'test03', '', 'jsonpath']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.deepEqual(
+                xhr.response.cc.blocked,
+                { enabled: true },
+                'jsonpath mode should merge parsed json into the target object',
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
     test('does not modify unmatched xhr responses', async (assert) => {
         runScriptlet(name, ['b2', 'changed', '', 'not-matching-url']);
 

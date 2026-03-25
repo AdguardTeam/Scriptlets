@@ -27,6 +27,9 @@ import {
     extractRegexAndReplacement,
     getJsonSetValue,
     parseJsonSetArgumentValue,
+    jsonPath,
+    resolveJsonSyntaxMode,
+    buildJsonPathExpression,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -49,7 +52,7 @@ import { type Source } from './scriptlets';
  * <!-- markdownlint-disable line-length -->
  *
  * ```text
- * example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentValue[, requiredInitialProps[, jsonSource[, stack[, verbose]]]])
+ * example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentValue[, requiredInitialProps[, jsonSource[, stack[, mode[, verbose]]]]])
  * ```
  *
  * <!-- markdownlint-enable line-length -->
@@ -62,6 +65,9 @@ import { type Source } from './scriptlets';
  *     - `*` — matches any object property key
  *     - `[]` — matches any array element index
  *   Supports value filtering: append `.[=].value` to only modify nodes where the property equals `value`.
+ *   In `jsonpath` mode this may also be a full JSONPath mutation expression such as `$..*[?(@.price==8.99)].price=10`.
+ *   JSONPath mode accepts only one expression string in `propsPath`; it does not
+ *   support combining multiple independent JSONPath expressions in one argument.
  * - `argumentValue` — required, the value to write at the target path.
  *   Can be one of the predefined constants:
  *     - `undefined`
@@ -88,8 +94,12 @@ import { type Source } from './scriptlets';
  *
  *   Or `json:{...}` — parses the provided `JSON` value, can be used to apply multiple modifications at once.
  *   If the current target value is also an object, the parsed object is merged into it.
+ *   In `jsonpath` mode this argument becomes optional when `propsPath` already includes
+ *   an inline mutation suffix such as `=` or `+=`; otherwise it is still required.
  * - `requiredInitialProps` — optional, space-separated list of property paths.
  *   All listed paths must be present in the JSON object for the modification to occur.
+ *   In `jsonpath` mode, express such preconditions directly in `propsPath`
+ *   with JSONPath guards and filters instead of using this argument.
  * - `jsonSource` — optional, where to read and modify the JSON value from. Defaults to `result`.
  *   Supported values:
  *     - `arg` — only the first argument
@@ -101,6 +111,12 @@ import { type Source } from './scriptlets';
  *     - `all` — all arguments, `thisArg`, and the return value
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if a regular expression is invalid it will be skipped.
+ * - `mode` — optional, syntax mode selector.
+ *   Supported values:
+ *     - `legacy` — force the existing legacy path syntax
+ *     - `jsonpath` — force JSONPath syntax and treat `propsPath` as a JSONPath selector
+ *   If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
+ *   otherwise it falls back to legacy syntax.
  * - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
  *
  * > [!IMPORTANT]
@@ -110,10 +126,18 @@ import { type Source } from './scriptlets';
  *
  * ### Examples
  *
+ * <!-- markdownlint-disable line-length -->
+ *
  * 1. Sets `ads.enabled` to `false` in the result of `JSON.parse`
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'ads.enabled', 'false')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads.enabled', 'false')
  *     ```
  *
  *     For instance, the following call:
@@ -147,6 +171,12 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.stringify', 'config.ads.blocked', 'true')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.stringify', '$.config+={"ads":{"blocked":true}}')
+ *     ```
+ *
  *     For instance, the following call:
  *
  *     ```js
@@ -169,6 +199,12 @@ import { type Source } from './scriptlets';
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'items.[].enabled', 'false')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.items.*.enabled', 'false')
  *     ```
  *
  *     Input JSON:
@@ -200,6 +236,12 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'items.*.enabled.[=].true', 'false')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.items.*[?(@.enabled==true)].enabled', 'false')
+ *     ```
+ *
  *     Input JSON:
  *
  *     ```json
@@ -228,6 +270,12 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'content', 'replace:/advertisement/article/')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.content=replace({"regex":"advertisement","replacement":"article"})')
+ *     ```
+ *
  *     Input JSON:
  *
  *     ```json
@@ -244,6 +292,12 @@ import { type Source } from './scriptlets';
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.foo', 'json:{"a":{"test":1},"b":{"c":1}}')
  *     ```
  *
  *     Input JSON:
@@ -264,6 +318,12 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'tracking.enabled', 'false', 'tracking.enabled', 'result')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '[?(@.tracking.enabled)]$.tracking.enabled', 'false', '', 'result')
+ *     ```
+ *
  *     Input JSON:
  *
  *     ```json
@@ -282,16 +342,34 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', 'ads.enabled', 'false', '', 'arg:0')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', '$.ads.enabled', 'false', '', 'arg:0')
+ *     ```
+ *
  * 1. Modifies selected arguments before the target method is called
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', 'ads.enabled', 'false', '', 'arg:0|2')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', '$.ads.enabled', 'false', '', 'arg:0|2')
+ *     ```
+ *
  * 1. Only applies when the call originates from a script matching the `adManager` stack trace
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'ads.enabled', 'false', '', 'result', 'adManager')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads.enabled', 'false', '', 'result', 'adManager')
  *     ```
  *
  *     Input:
@@ -308,6 +386,8 @@ import { type Source } from './scriptlets';
  *     { ads: { enabled: false }, content: 'article' }
  *     ```
  *
+ * <!-- markdownlint-enable line-length -->
+ *
  * @added v2.3.0.
  */
 /* eslint-enable max-len */
@@ -319,9 +399,24 @@ export function trustedJsonSet(
     requiredInitialProps: string,
     jsonSource = 'result',
     stack = '',
+    mode = '',
     verbose = '',
 ) {
-    if (!methodPath || !propsPath || argumentValue === undefined) {
+    const syntaxModeDetails = resolveJsonSyntaxMode(propsPath, mode);
+    const jsonPathExpression = syntaxModeDetails.mode === 'jsonpath'
+        ? buildJsonPathExpression(propsPath, argumentValue)
+        : '';
+
+    if (!methodPath || !propsPath) {
+        return;
+    }
+
+    if (syntaxModeDetails.mode === 'legacy' && argumentValue === undefined) {
+        return;
+    }
+
+    if (syntaxModeDetails.mode === 'jsonpath' && jsonPathExpression === '') {
+        logMessage(source, 'JSONPath mode requires argumentValue unless propsPath already contains an inline mutation');
         return;
     }
 
@@ -340,13 +435,17 @@ export function trustedJsonSet(
         ALL: 'all',
     };
 
-    const parsedArgumentValue = parseJsonSetArgumentValue(
-        source,
-        argumentValue,
-        nativeObjects.nativeParse,
-    );
-    if (!parsedArgumentValue) {
-        return;
+    let parsedArgumentValue: NonNullable<ReturnType<typeof parseJsonSetArgumentValue>> | undefined;
+    if (syntaxModeDetails.mode === 'legacy') {
+        const parsedLegacyArgumentValue = parseJsonSetArgumentValue(
+            source,
+            argumentValue,
+            nativeObjects.nativeParse,
+        );
+        if (!parsedLegacyArgumentValue) {
+            return;
+        }
+        parsedArgumentValue = parsedLegacyArgumentValue;
     }
 
     const getPathParts = getPropertyInChain as unknown as (base: Window, chain: string) => {
@@ -399,7 +498,7 @@ export function trustedJsonSet(
         return jsonSource;
     };
 
-    const parsedSetPaths = getPrunePath(propsPath);
+    const parsedSetPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsPath) : [];
     const setPathObj = parsedSetPaths[0];
     const requiredPaths = getPrunePath(requiredInitialProps);
     const normalizedJsonSource = normalizeJsonSource();
@@ -440,7 +539,56 @@ export function trustedJsonSet(
         return [];
     };
 
-    const getValueToSet = (currentValue: any): any => getJsonSetValue(currentValue, parsedArgumentValue);
+    /**
+     * Resolves the value to write for legacy-mode mutations.
+     *
+     * `parsedArgumentValue` is only populated in legacy mode. In `jsonpath` mode,
+     * this helper should never be used, so it defensively returns the current
+     * value unchanged when no parsed argument is available.
+     *
+     * @param currentValue current value at the matched path
+     * @returns value that should be written back to the matched path
+     */
+    const getValueToSet = (currentValue: any): any => {
+        if (parsedArgumentValue === undefined) {
+            // In non-legacy modes this function should not be called; defensively return the original value.
+            return currentValue;
+        }
+
+        // eslint-disable-next-line max-len
+        const nonNullParsedArgumentValue: NonNullable<ReturnType<typeof parseJsonSetArgumentValue>> = parsedArgumentValue;
+
+        return getJsonSetValue(
+            currentValue,
+            nonNullParsedArgumentValue,
+        );
+    };
+
+    /**
+     * Applies the configured mutation to a JSON-compatible object value.
+     *
+     * Uses `jsonPath` for `jsonpath` mode and falls back to the legacy
+     * `jsonSetter` implementation otherwise.
+     *
+     * @param jsonValue object value selected from args, thisArg, or result
+     * @returns mutated object value
+     */
+    const applyJsonMutation = (jsonValue: Record<string, any>) => {
+        if (syntaxModeDetails.mode === 'jsonpath') {
+            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), stack);
+        }
+
+        return jsonSetter(
+            source,
+            jsonValue,
+            setPathObj?.path || '',
+            setPathObj?.value,
+            getValueToSet,
+            requiredPaths,
+            stack,
+            nativeObjects,
+        );
+    };
 
     /**
      * Applies `jsonSetter` to an object value directly, or to a string value after JSON parsing.
@@ -458,16 +606,7 @@ export function trustedJsonSet(
                     logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(jsonValue, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
                     logMessage(source, jsonValue, true, false);
                 }
-                const modifiedJson = jsonSetter(
-                    source,
-                    jsonValue,
-                    setPathObj?.path || '',
-                    setPathObj?.value,
-                    getValueToSet,
-                    requiredPaths,
-                    stack,
-                    nativeObjects,
-                );
+                const modifiedJson = applyJsonMutation(jsonValue);
 
                 if (shouldLogContent) {
                     // eslint-disable-next-line max-len
@@ -492,16 +631,7 @@ export function trustedJsonSet(
                         logMessage(source, parsedValue, true, false);
                     }
 
-                    const modified = jsonSetter(
-                        source,
-                        parsedValue,
-                        setPathObj?.path || '',
-                        setPathObj?.value,
-                        getValueToSet,
-                        requiredPaths,
-                        stack,
-                        nativeObjects,
-                    );
+                    const modified = applyJsonMutation(parsedValue);
                     if (shouldLogContent) {
                         // eslint-disable-next-line max-len
                         logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modified, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
@@ -617,4 +747,7 @@ trustedJsonSet.injections = [
     extractRegexAndReplacement,
     getJsonSetValue,
     parseJsonSetArgumentValue,
+    jsonPath,
+    resolveJsonSyntaxMode,
+    buildJsonPathExpression,
 ];

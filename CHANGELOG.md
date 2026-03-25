@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- Support for `JSONPath` in `json-prune`, `json-prune-fetch-response`, `json-prune-xhr-response`,
+  `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response` scriptlets [#522].
+
 ### Fixed
 
 - `disable-newtab-links` not preventing clicks when the element has its own `click` handler
@@ -19,6 +24,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...HEAD
 [#483]: https://github.com/AdguardTeam/Scriptlets/issues/483
+[#522]: https://github.com/AdguardTeam/Scriptlets/issues/522
 
 ## [v2.3.0] - 2026-03-18
 

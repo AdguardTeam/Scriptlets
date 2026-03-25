@@ -3,6 +3,7 @@ import {
     logMessage,
     toRegExp,
     jsonPruner,
+    jsonPath,
     getPrunePath,
     objectToString,
     matchRequestProps,
@@ -10,6 +11,7 @@ import {
     type XMLHttpRequestSharedRequestData,
     isPruningNeeded,
     matchStackTrace,
+    resolveJsonSyntaxMode,
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -26,6 +28,7 @@ import {
 } from '../helpers';
 import { type Source } from './scriptlets';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet json-prune-xhr-response
  *
@@ -37,11 +40,16 @@ import { type Source } from './scriptlets';
  *
  * ### Syntax
  *
+ * <!-- markdownlint-disable line-length -->
+ *
  * ```text
- * example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
+ * example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack[, mode]]]]])
  * ```
  *
+ * <!-- markdownlint-enable line-length -->
+ *
  * - `propsToRemove` — optional, string of space-separated properties to remove
+ *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur
  * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
@@ -52,6 +60,11 @@ import { type Source } from './scriptlets';
  *           passed to `XMLHttpRequest.open()` call
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if regular expression is invalid it will be skipped
+ * - `mode` — optional, syntax mode selector.
+ *   Supported values:
+ *     - `legacy` — force the existing legacy path syntax
+ *     - `jsonpath` — force JSONPath syntax
+ *   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
  *
  * > Note please that you can use wildcard `*` for chain property name,
  * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
@@ -67,6 +80,12 @@ import { type Source } from './scriptlets';
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-xhr-response', 'example')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-xhr-response', '$.example')
  *     ```
  *
  *     For instance, if the JSON response of a XMLHttpRequest call is:
@@ -87,10 +106,22 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('json-prune-xhr-response', 'a.b', 'ads.url.first')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-xhr-response', '[?(@.ads.url.first)]$.a.b')
+ *     ```
+ *
  * 3. Removes property `content.ad` from the JSON response of a XMLHttpRequest call if URL contains `content.json`
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-xhr-response', 'content.ad', '', 'content.json')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-xhr-response', '$.content.ad', '', 'content.json')
  *     ```
  *
  * 4. Removes property `content.ad` from the JSON response of a XMLHttpRequest call
@@ -100,10 +131,22 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('json-prune-xhr-response', 'content.ad', '', '', 'test.js')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-xhr-response', '$.content.ad', '', '', 'test.js')
+ *     ```
+ *
  * 5. A property in a list of properties can be a chain of properties with wildcard in it
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-xhr-response', 'content.*.media.src', 'content.*.media.ad')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-xhr-response', '$.content.*.media[?(@.ad)].src')
  *     ```
  *
  * 6. Log all JSON responses of a XMLHttpRequest call
@@ -114,13 +157,14 @@ import { type Source } from './scriptlets';
  *
  * @added v1.10.25.
  */
-
+/* eslint-enable max-len */
 export function jsonPruneXhrResponse(
     source: Source,
     propsToRemove: string,
     obligatoryProps: string,
     propsToMatch = '',
     stack = '',
+    mode = '',
 ) {
     // Do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -130,11 +174,24 @@ export function jsonPruneXhrResponse(
 
     const shouldLog = !propsToRemove && !obligatoryProps;
 
-    const prunePaths = getPrunePath(propsToRemove);
-    const requiredPaths = getPrunePath(obligatoryProps);
+    const syntaxModeDetails = resolveJsonSyntaxMode(propsToRemove, mode);
+    const prunePaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsToRemove) : [];
+    const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(obligatoryProps) : [];
 
     const nativeParse = window.JSON.parse;
     const nativeStringify = window.JSON.stringify;
+    const nativeObjects = {
+        nativeParse,
+        nativeStringify,
+    };
+
+    const pruneJsonValue = (root: any) => {
+        if (syntaxModeDetails.mode === 'jsonpath') {
+            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), '');
+        }
+
+        return jsonPruner(source, root, prunePaths, requiredPaths, '', nativeObjects);
+    };
 
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
@@ -248,16 +305,7 @@ export function jsonPruneXhrResponse(
                         logMessage(source, jsonContent, true, false);
                         modifiedContent = content;
                     } else {
-                        modifiedContent = jsonPruner(
-                            source,
-                            jsonContent,
-                            prunePaths,
-                            requiredPaths,
-                            stack = '',
-                            {
-                                nativeStringify,
-                            },
-                        );
+                        modifiedContent = pruneJsonValue(jsonContent);
                         // Convert content to appropriate response type, only if it has been modified
                         try {
                             const { responseType } = thisArg;
@@ -278,7 +326,7 @@ export function jsonPruneXhrResponse(
                                     break;
                             }
                         } catch (error) {
-                            const message = `Response body cannot be converted to reponse type: '${content}'`;
+                            const message = `Response body cannot be converted to response type: '${content}'`;
                             logMessage(source, message);
                             modifiedContent = content;
                         }
@@ -366,12 +414,14 @@ jsonPruneXhrResponse.injections = [
     logMessage,
     toRegExp,
     jsonPruner,
+    jsonPath,
     getPrunePath,
     objectToString,
     matchRequestProps,
     getXhrData,
     isPruningNeeded,
     matchStackTrace,
+    resolveJsonSyntaxMode,
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,

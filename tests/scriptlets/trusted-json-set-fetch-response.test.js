@@ -135,6 +135,22 @@ if (!isSupported) {
         done();
     });
 
+    test('JSONPath mode can merge parsed json into an existing fetch response object', async (assert) => {
+        const done = assert.async();
+        runScriptlet(name, ['$.cc+={"blocked":{"enabled":true}}', '', '', 'test03', '', 'jsonpath']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test03.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(
+            actualJson.cc.blocked,
+            { enabled: true },
+            'jsonpath mode should merge parsed json into the target object',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('does not modify unmatched fetch responses', async (assert) => {
         const done = assert.async();
         runScriptlet(name, ['b2', 'changed', '', 'not-matching-url']);

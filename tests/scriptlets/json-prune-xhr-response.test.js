@@ -214,6 +214,24 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('JSONPath mode prunes object properties from xhr response', async (assert) => {
+        const done = assert.async();
+        runScriptlet(
+            name,
+            ['$.cc[?(@.src=="example.org")].src', '', `${FETCH_OBJECTS_PATH}/test03.json`, '', 'jsonpath'],
+        );
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.response.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
     test('Match request by url and method - json type, prune object + required props', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test04.json`;

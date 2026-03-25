@@ -128,6 +128,20 @@ if (!isSupported) {
         done();
     });
 
+    test('JSONPath mode prunes object properties from fetch response', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const done = assert.async();
+
+        runScriptlet(name, ['$.cc[?(@.src=="example.org")].src', '', 'test03', '', 'jsonpath']);
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualJson = await response.json();
+
+        assert.strictEqual(actualJson.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('Prune object if it contains "src" key with "example.org" value, regexp URL', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
         const TEST_METHOD = 'GET';
