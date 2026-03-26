@@ -73,6 +73,10 @@ describe('jsonPath tests', () => {
         expect(buildJsonPathExpression('$..*[?(@.price==8.99)].price', undefined)).toBe('');
     });
 
+    test('Builds remove expression when argumentValue is $remove$', () => {
+        expect(buildJsonPathExpression('$.store.book[*].price', '$remove$')).toBe('$.store.book[*].price');
+    });
+
     test('Removes first book', () => {
         const root = createStoreRoot();
 
@@ -958,6 +962,44 @@ describe('jsonPath tests', () => {
         expect(result.edges.node).toStrictEqual([
             { payload: { __typename: 'OrganicData' }, id: 2 },
         ]);
+    });
+
+    test('Removes ads and source from article and video content', () => {
+        const root = {
+            content: {
+                article: {
+                    source: 'example.com',
+                    ads: true,
+                    displayed: true,
+                },
+                video: {
+                    source: 'example.com',
+                    ads: true,
+                    displayed: true,
+                },
+                content: {
+                    source: 'example.com',
+                    displayed: true,
+                },
+            },
+        };
+
+        const result = jsonPath(source, root, '$.content[article, video].[ads, source]', nativeObjects);
+
+        expect(result).toStrictEqual({
+            content: {
+                article: {
+                    displayed: true,
+                },
+                video: {
+                    displayed: true,
+                },
+                content: {
+                    source: 'example.com',
+                    displayed: true,
+                },
+            },
+        });
     });
 
     test('Sets ads_audio to false everywhere', () => {

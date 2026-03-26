@@ -238,6 +238,49 @@ if (isSupported) {
         firstXhr.send();
         secondXhr.send();
     });
+
+    test('JSONPath mode prunes string-like JSON from xhr response', async (assert) => {
+        runScriptlet(name, ['$..ads', '$remove$', '', 'string-like-json01', '', 'jsonpath']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/string-like-json01.txt`);
+        xhr.onload = () => {
+            const { responseText } = xhr;
+            const adsIncluded = responseText.includes('"ads":{"content":"Sponsored"}');
+            const contentIncluded = responseText.includes('"article":{"node":true,"content":"Article"}');
+
+            assert.ok(contentIncluded, 'article object should still be present in the content');
+            assert.notOk(adsIncluded, 'ads object should be removed from the content');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('JSONPath modifies ads.visibility to hidden in json-like response from xhr', async (assert) => {
+        runScriptlet(name, ['$..ads.visibility=hidden', '', '', 'string-like-json01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/string-like-json01.txt`);
+        xhr.onload = () => {
+            const { responseText } = xhr;
+            const contentIncluded = responseText.includes('"article":{"node":true,"content":"Article"}');
+            // eslint-disable-next-line max-len
+            const adsVisibilityHiddenIncluded = responseText.includes('{"ads":{"content":"Sponsored","visibility":"hidden"}}');
+            // eslint-disable-next-line max-len
+            const adsVisibilityVisibleIncluded = responseText.includes('{"ads":{"content":"Sponsored","visibility":"visible"}}');
+
+            assert.ok(contentIncluded, 'article object should still be present in the content');
+            assert.ok(adsVisibilityHiddenIncluded, 'ads object should be removed from the content');
+            assert.notOk(adsVisibilityVisibleIncluded, 'ads object should not be visible in the content');
+            assert.ok(contentIncluded, 'article object should still be present in the content');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

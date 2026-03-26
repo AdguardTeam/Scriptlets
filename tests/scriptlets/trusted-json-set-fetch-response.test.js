@@ -178,4 +178,45 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
+
+    test('JSONPath mode prunes string-like JSON from fetch response', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/string-like-json01.txt`;
+        const done = assert.async();
+
+        runScriptlet(name, ['$..ads', '$remove$', '', 'string-like-json01', '', 'jsonpath']);
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualTextContent = await response.text();
+
+        const adsIncluded = actualTextContent.includes('"ads":{"content":"Sponsored"}');
+        const contentIncluded = actualTextContent.includes('"article":{"node":true,"content":"Article"}');
+
+        assert.ok(contentIncluded, 'article object should still be present in the content');
+        assert.notOk(adsIncluded, 'ads object should be removed from the content');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('JSONPath modifies ads.visibility to hidden in json-like response from fetch', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/string-like-json01.txt`;
+        const done = assert.async();
+
+        runScriptlet(name, ['$..ads.visibility=hidden', '', '', 'string-like-json01']);
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualTextContent = await response.text();
+
+        const contentIncluded = actualTextContent.includes('"article":{"node":true,"content":"Article"}');
+        // eslint-disable-next-line max-len
+        const adsVisibilityHiddenIncluded = actualTextContent.includes('{"ads":{"content":"Sponsored","visibility":"hidden"}}');
+        // eslint-disable-next-line max-len
+        const adsVisibilityVisibleIncluded = actualTextContent.includes('{"ads":{"content":"Sponsored","visibility":"visible"}}');
+
+        assert.ok(contentIncluded, 'article object should still be present in the content');
+        assert.ok(adsVisibilityHiddenIncluded, 'ads object should be removed from the content');
+        assert.notOk(adsVisibilityVisibleIncluded, 'ads object should not be visible in the content');
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
 }

@@ -121,12 +121,15 @@ export function resolveJsonSyntaxMode(
 /**
  * Builds a set-style JSONPath expression from a selector and mutation value.
  * Preserves the selector as-is when it already includes an inline mutation suffix.
+ * When `argumentValue` is `$remove$`, preserves the selector so the downstream
+ * JSONPath parser treats it as a remove command.
  *
  * @param selectorPath JSONPath selector without mutation suffix
  * @param argumentValue value to assign through JSONPath
  * @returns full JSONPath set expression or empty string when no mutation can be built
  */
 export function buildJsonPathExpression(selectorPath: string, argumentValue: any): string {
+    const REMOVE_VALUE_MARKER = '$remove$';
     const normalizedSelectorPath = selectorPath.trim();
     const EQUAL = '=';
     const PLUS_EQUAL = '+=';
@@ -195,6 +198,10 @@ export function buildJsonPathExpression(selectorPath: string, argumentValue: any
                 return normalizedSelectorPath;
             }
         }
+    }
+
+    if (argumentValue === REMOVE_VALUE_MARKER) {
+        return normalizedSelectorPath;
     }
 
     if (argumentValue === undefined) {

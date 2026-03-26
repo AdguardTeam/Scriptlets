@@ -131,6 +131,31 @@ test('modifies an existing path — JSON.parse result replace', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 
+test('modifies line-delimited JSON returned as a string', (assert) => {
+    window.getJsonLinesPayload = () => [
+        '{"ads":{"enabled":true},"id":1}',
+        '{"ads":{"enabled":true},"id":2}',
+        'plain-text',
+    ].join('\r\n');
+
+    runScriptlet(name, ['window.getJsonLinesPayload', 'ads.enabled', 'false']);
+
+    const result = window.getJsonLinesPayload();
+
+    assert.strictEqual(
+        result,
+        [
+            '{"ads":{"enabled":false},"id":1}',
+            '{"ads":{"enabled":false},"id":2}',
+            'plain-text',
+        ].join('\r\n'),
+        'should modify each JSON line and preserve line separators',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('getJsonLinesPayload');
+});
+
 test('sets value only when requiredInitialProps are present — JSON.stringify', (assert) => {
     runScriptlet(name, ['JSON.stringify', 'y', 'true', 'x']);
     assert.deepEqual(
@@ -335,6 +360,17 @@ test('auto-detects inline JSONPath mutation expressions without argumentValue �
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 
+test('removes matched properties when argumentValue is $remove$ in JSONPath mode', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads', '$remove$']);
+
+    const result = JSON.parse('{"ads":{"enabled":true,"type":"banner"},"content":"article"}');
+
+    assert.deepEqual(result, {
+        content: 'article',
+    }, 'should remove matched properties instead of setting them');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
 test('supports JSONPath syntax with stack match — JSON.parse result', (assert) => {
     runScriptlet(name, ['JSON.parse', '$..*[?(@==8.99)]', '10', '', 'result', 'jsonPathSetStack', 'jsonpath']);
 
@@ -345,6 +381,30 @@ test('supports JSONPath syntax with stack match — JSON.parse result', (assert)
         nested: { price: 10 },
         other: 1,
     }, 'should set values when jsonpath mode stack matches');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Sets price of first item to empty string', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.items[0].price', '']);
+
+    const result = JSON.parse(`
+        {
+            "items": [
+                { "id": 1, "price": 8.99 },
+                { "id": 2, "price": 12.99 }
+            ],
+            "basket": { "price": 8.99, "color": "red" }
+        }
+    `);
+
+    assert.deepEqual(result, {
+        items: [
+            { id: 1, price: '' },
+            { id: 2, price: 12.99 },
+        ],
+        basket: { price: 8.99, color: 'red' },
+    }, 'should update every value matched through jsonpath mode');
+
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 

@@ -39,6 +39,7 @@ import {
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     parseJsonSetArgumentValue,
 } from '../helpers';
@@ -85,6 +86,7 @@ import { type Source } from './scriptlets';
  * - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
  *
  * > Scriptlet does nothing if response body cannot be converted to JSON.
+ * > If the response is line-delimited JSON, each JSON line is processed independently.
  *
  * ### Examples
  *
@@ -248,32 +250,65 @@ export function trustedJsonSetFetchResponse(
             return Reflect.apply(target, thisArg, args);
         }
 
-        let json;
+        let textContent;
         try {
-            json = await originalResponse.json();
+            textContent = await originalResponse.text();
+        } catch {
+            const message = `Response body can't be converted to text: ${objectToString(fetchData)}`;
+            logMessage(source, message);
+            return clonedResponse;
+        }
+
+        try {
+            const json = nativeObjects.nativeParse(textContent);
             if (shouldLogContent) {
                 // eslint-disable-next-line max-len
                 logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
                 logMessage(source, json, true, false);
             }
+
+            const modifiedJson = applyJsonMutation(json);
+
+            if (shouldLogContent) {
+                // eslint-disable-next-line max-len
+                logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
+                logMessage(source, modifiedJson, true, false);
+            }
+
+            return forgeResponse(
+                originalResponse,
+                nativeObjects.nativeStringify(modifiedJson),
+            );
         } catch {
+            // If response body is not a single JSON document, try to process it as line-delimited JSON
+        }
+
+        try {
+            const lineEditResult = jsonLineEdit(
+                (parsedLine) => applyJsonMutation(parsedLine),
+                nativeObjects,
+                textContent,
+            );
+
+            if (lineEditResult.hasJsonLines) {
+                if (shouldLogContent) {
+                    // eslint-disable-next-line max-len
+                    logMessage(source, `Original content:\n${window.location.hostname}\n${textContent}\nStack trace:\n${new Error().stack || ''}`, true);
+                    // eslint-disable-next-line max-len
+                    logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${new Error().stack || ''}`, true);
+                }
+
+                return forgeResponse(originalResponse, lineEditResult.text);
+            }
+
+            const message = `Response body can't be converted to json: ${objectToString(fetchData)}`;
+            logMessage(source, message);
+            return clonedResponse;
+        } catch (error) {
             const message = `Response body can't be converted to json: ${objectToString(fetchData)}`;
             logMessage(source, message);
             return clonedResponse;
         }
-
-        const modifiedJson = applyJsonMutation(json);
-
-        if (shouldLogContent) {
-            // eslint-disable-next-line max-len
-            logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-            logMessage(source, modifiedJson, true, false);
-        }
-
-        return forgeResponse(
-            originalResponse,
-            nativeObjects.nativeStringify(modifiedJson),
-        );
     };
 
     const getWrapper = (target: typeof fetch, propName: string, receiver: any) => {
@@ -339,6 +374,7 @@ trustedJsonSetFetchResponse.injections = [
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     parseJsonSetArgumentValue,
 ];

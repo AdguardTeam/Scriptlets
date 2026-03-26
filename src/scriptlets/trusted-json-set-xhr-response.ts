@@ -33,6 +33,7 @@ import {
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     isPruningNeeded,
     parseJsonSetArgumentValue,
@@ -79,6 +80,7 @@ import { type Source } from './scriptlets';
  * - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
  *
  * > Scriptlet does nothing if response body cannot be converted to JSON.
+ * > If the response is line-delimited JSON, each JSON line is processed independently.
  *
  * ### Example
  *
@@ -297,9 +299,59 @@ export function trustedJsonSetXhrResponse(
 
             let modifiedContent = content;
             if (typeof content === 'string') {
-                try {
-                    const jsonContent = nativeObjects.nativeParse(content);
+                let jsonContent;
+                let parseFailed = false;
 
+                try {
+                    jsonContent = nativeObjects.nativeParse(content);
+                } catch {
+                    parseFailed = true;
+                }
+
+                if (parseFailed) {
+                    try {
+                        const lineEditResult = jsonLineEdit(
+                            (parsedLine) => applyJsonMutation(parsedLine),
+                            nativeObjects,
+                            content,
+                        );
+
+                        if (lineEditResult.hasJsonLines) {
+                            modifiedContent = lineEditResult.text;
+
+                            if (shouldLogContent) {
+                                // eslint-disable-next-line max-len
+                                logMessage(source, `Original content:\n${window.location.hostname}\n${content}\nStack trace:\n${stackTrace}`, true);
+                                // eslint-disable-next-line max-len
+                                logMessage(source, `Modified content:\n${window.location.hostname}\n${modifiedContent}\nStack trace:\n${stackTrace}`, true);
+                            }
+
+                            try {
+                                const { responseType } = thisArg;
+                                switch (responseType) {
+                                    case 'arraybuffer':
+                                        modifiedContent = new TextEncoder().encode(modifiedContent).buffer;
+                                        break;
+                                    case 'blob':
+                                        modifiedContent = new Blob([modifiedContent]);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            } catch {
+                                modifiedContent = content;
+                            }
+                        } else {
+                            const message = `Response body cannot be converted to json: '${content}'`;
+                            logMessage(source, message);
+                            modifiedContent = content;
+                        }
+                    } catch {
+                        const message = `Response body cannot be converted to json: '${content}'`;
+                        logMessage(source, message);
+                        modifiedContent = content;
+                    }
+                } else {
                     if (shouldLogContent) {
                         // eslint-disable-next-line max-len
                         logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
@@ -335,10 +387,6 @@ export function trustedJsonSetXhrResponse(
                     } catch {
                         modifiedContent = content;
                     }
-                } catch {
-                    const message = `Response body cannot be converted to json: '${content}'`;
-                    logMessage(source, message);
-                    modifiedContent = content;
                 }
             } else if (content !== null) {
                 modifiedContent = applyJsonMutation(content);
@@ -439,6 +487,7 @@ trustedJsonSetXhrResponse.injections = [
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     isPruningNeeded,
     parseJsonSetArgumentValue,

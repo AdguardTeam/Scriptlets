@@ -27,6 +27,7 @@ import {
     extractRegexAndReplacement,
     getJsonSetValue,
     parseJsonSetArgumentValue,
+    jsonLineEdit,
     jsonPath,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
@@ -85,6 +86,7 @@ import { type Source } from './scriptlets';
  *     - `throwFunc` — function throwing an error
  *     - `noopPromiseResolve` — function returning `Promise` resolved with an empty response
  *     - `noopPromiseReject` — function returning `Promise.reject()`
+ *     - `$remove$` — in `jsonpath` mode, removes each property or array item matched by `propsPath`
  *     - any other string is set as a string literal
  *
  *   Can also be a replacement applied to the current string value at the target path,
@@ -95,7 +97,8 @@ import { type Source } from './scriptlets';
  *   Or `json:{...}` — parses the provided `JSON` value, can be used to apply multiple modifications at once.
  *   If the current target value is also an object, the parsed object is merged into it.
  *   In `jsonpath` mode this argument becomes optional when `propsPath` already includes
- *   an inline mutation suffix such as `=` or `+=`; otherwise it is still required.
+ *   an inline mutation suffix such as `=` or `+=`; it may also be set to `$remove$`
+ *   to remove the nodes matched by `propsPath`.
  * - `requiredInitialProps` — optional, space-separated list of property paths.
  *   All listed paths must be present in the JSON object for the modification to occur.
  *   In `jsonpath` mode, express such preconditions directly in `propsPath`
@@ -334,6 +337,24 @@ import { type Source } from './scriptlets';
  *
  *     ```json
  *     { "tracking": { "enabled": false }, "meta": { "v": 1 } }
+ *     ```
+ *
+ * 1. Removes `ads.enabled` from the parsed object in `JSONPath` mode
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads', '$remove$')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "ads": { "enabled": true, "type": "banner" }, "content": "article" }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "content": "article" }
  *     ```
  *
  * 1. Modifies the first argument before the target method is called
@@ -640,6 +661,28 @@ export function trustedJsonSet(
                     return nativeObjects.nativeStringify(modified);
                 }
             } catch (error) {
+                // If parsing fails, try to process it as line-delimited JSON
+            }
+
+            try {
+                const lineEditResult = jsonLineEdit(
+                    (parsedLine) => applyJsonMutation(parsedLine),
+                    nativeObjects,
+                    jsonValue,
+                );
+
+                if (lineEditResult.hasJsonLines) {
+                    if (shouldLogContent) {
+                        // eslint-disable-next-line max-len
+                        logMessage(source, `Original content:\n${window.location.hostname}\n${jsonValue}\nStack trace:\n${new Error().stack || ''}`, true);
+                        // eslint-disable-next-line max-len
+                        logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${new Error().stack || ''}`, true);
+                    }
+
+                    return lineEditResult.text;
+                }
+                return jsonValue;
+            } catch (error) {
                 logMessage(source, `${errorMessage}: ${(error as Error).message}`);
                 return jsonValue;
             }
@@ -747,6 +790,7 @@ trustedJsonSet.injections = [
     extractRegexAndReplacement,
     getJsonSetValue,
     parseJsonSetArgumentValue,
+    jsonLineEdit,
     jsonPath,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
