@@ -119,6 +119,34 @@ describe('jsonPath tests', () => {
         });
     });
 
+    test('All books besides that at the path pointing to the first', () => {
+        const root = createStoreRoot();
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.store.book[1:]',
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({
+            store: {
+                book: [
+                    {
+                        category: 'reference',
+                        author: 'Nigel Rees',
+                        title: 'Sayings of the Century',
+                        price: 8.95,
+                    },
+                ],
+                bicycle: {
+                    color: 'red',
+                    price: 19.95,
+                },
+            },
+        });
+    });
+
     test('Removes all author fields from books', () => {
         const root = createStoreRoot();
 
@@ -1609,5 +1637,263 @@ describe('jsonPath tests', () => {
         const result = jsonPath(source, root, '$..magazine[0]', nativeObjects);
 
         expect(result).toStrictEqual(createStoreRoot());
+    });
+
+    test('Removes books matching OR filter where both conditions are individually parenthesized', () => {
+        const root = createStoreRoot();
+
+        const result = jsonPath(
+            source,
+            root,
+            '$..book[?(@.category == "reference") || (@.price > 20)]',
+            nativeObjects,
+        );
+
+        expect(result.store.book).toStrictEqual([
+            {
+                category: 'fiction',
+                author: 'Evelyn Waugh',
+                title: 'Sword of Honour',
+                price: 12.99,
+            },
+            {
+                category: 'fiction',
+                author: 'Herman Melville',
+                title: 'Moby Dick',
+                isbn: '0-553-21311-3',
+                price: 8.99,
+            },
+        ]);
+    });
+
+    test('Removes books matching AND filter where both conditions are individually parenthesized', () => {
+        const root = createStoreRoot();
+
+        const result = jsonPath(
+            source,
+            root,
+            '$..book[?(@.category == "fiction") && (@.price < 15)]',
+            nativeObjects,
+        );
+
+        expect(result.store.book).toStrictEqual([
+            {
+                category: 'reference',
+                author: 'Nigel Rees',
+                title: 'Sayings of the Century',
+                price: 8.95,
+            },
+            {
+                category: 'fiction',
+                author: 'J. R. R. Tolkien',
+                title: 'The Lord of the Rings',
+                isbn: '0-395-19395-8',
+                price: 22.99,
+            },
+        ]);
+    });
+
+    test('Handles bracket-notation access on a property key ending with a backslash', () => {
+        const root = {
+            'prefix\\': 'value',
+            other: 'kept',
+        };
+
+        // JSONPath $['prefix\\'] — the key contains one trailing backslash.
+        // As a JavaScript string literal that is "$['prefix\\\\']".
+        const result = jsonPath(
+            source,
+            root,
+            "$['prefix\\\\']",
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({ other: 'kept' });
+    });
+
+    test('Removes books cheaper than root-level maxPrice using root-relative filter path', () => {
+        const root = {
+            maxPrice: 10,
+            store: {
+                book: [
+                    { title: 'Cheap', price: 5 },
+                    { title: 'Mid', price: 15 },
+                    { title: 'Expensive', price: 25 },
+                ],
+            },
+        };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.store.book[?(@.price < $.maxPrice)]',
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({
+            maxPrice: 10,
+            store: {
+                book: [
+                    { title: 'Mid', price: 15 },
+                    { title: 'Expensive', price: 25 },
+                ],
+            },
+        });
+    });
+
+    test('Removes books cheaper than maxPrice using recursive descent', () => {
+        const root = {
+            store: {
+                maxPrice: 10,
+                book: [
+                    { title: 'Cheap', price: 5 },
+                    { title: 'Mid', price: 15 },
+                    { title: 'Expensive', price: 25 },
+                ],
+            },
+        };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.store.book[?(@.price < $..maxPrice)]',
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({
+            store: {
+                maxPrice: 10,
+                book: [
+                    { title: 'Mid', price: 15 },
+                    { title: 'Expensive', price: 25 },
+                ],
+            },
+        });
+    });
+
+    test('Removes books cheaper than maxPrice using recursive descent with bracket notation', () => {
+        const root = {
+            store: {
+                maxPrice: 10,
+                book: [
+                    { title: 'Cheap', price: 5 },
+                    { title: 'Mid', price: 15 },
+                    { title: 'Expensive', price: 25 },
+                ],
+            },
+        };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.store.book[?(@.price < $..[maxPrice])]',
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({
+            store: {
+                maxPrice: 10,
+                book: [
+                    { title: 'Mid', price: 15 },
+                    { title: 'Expensive', price: 25 },
+                ],
+            },
+        });
+    });
+
+    test('Handles filter comparison whose left-hand side path contains a nested filter expression', () => {
+        const root = {
+            rows: [
+                {
+                    // Row 1 has a tag named "sponsored".
+                    tags: [{ name: 'sponsored', active: true }, { name: 'organic' }],
+                    id: 1,
+                },
+                {
+                    // Row 2 has no "sponsored" tag.
+                    tags: [{ name: 'organic' }],
+                    id: 2,
+                },
+            ],
+        };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.rows[?(@.tags[?(@.name == "sponsored")].name == "sponsored")]',
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({
+            rows: [
+                {
+                    tags: [{ name: 'organic' }],
+                    id: 2,
+                },
+            ],
+        });
+    });
+
+    test('Returns original data when replace payload has missing regex field', () => {
+        const root = {
+            request: {
+                referer: 'https://example.org/video',
+            },
+        };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$..referer=replace({"replacement":"#broken"})',
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({
+            request: {
+                referer: 'https://example.org/video',
+            },
+        });
+    });
+
+    test('Returns original data when replace payload has non-string regex field', () => {
+        const root = {
+            request: {
+                referer: 'https://example.org/video',
+            },
+        };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$..referer=replace({"regex":123,"replacement":"#broken"})',
+            nativeObjects,
+        );
+
+        expect(result).toStrictEqual({
+            request: {
+                referer: 'https://example.org/video',
+            },
+        });
+    });
+
+    test('Recursive descent traverses deeply nested structures', () => {
+        // Builds a 100-level deep structure to verify index-based BFS
+        // does not degrade with depth.
+        let root = { value: 'test' };
+        for (let i = 0; i < 100; i += 1) {
+            root = { child: root };
+        }
+
+        const result = jsonPath(source, root, '$..value', nativeObjects);
+
+        // The deeply nested "value" property should be removed
+        const findValue = (obj) => {
+            if (obj && typeof obj === 'object') {
+                if ('value' in obj) return true;
+                return Object.values(obj).some(findValue);
+            }
+            return false;
+        };
+        expect(findValue(result)).toBe(false);
     });
 });

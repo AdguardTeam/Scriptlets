@@ -371,6 +371,18 @@ test('removes matched properties when argumentValue is $remove$ in JSONPath mode
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 
+test('Sets ads to false when argumentValue is $remove$ in JSONPath mode', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads=false', '$remove$']);
+
+    const result = JSON.parse('{"ads":true,"content":"article"}');
+
+    assert.deepEqual(result, {
+        ads: false,
+        content: 'article',
+    }, 'should remove matched properties instead of setting them');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
 test('supports JSONPath syntax with stack match — JSON.parse result', (assert) => {
     runScriptlet(name, ['JSON.parse', '$..*[?(@==8.99)]', '10', '', 'result', 'jsonPathSetStack', 'jsonpath']);
 

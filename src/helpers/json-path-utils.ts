@@ -5,8 +5,16 @@ import { toRegExp } from './string-utils';
 import { type Source } from '../scriptlets';
 
 type JsonPathMutationMode = 'append' | 'remove' | 'set';
-// eslint-disable-next-line max-len
-type JsonPathFilterOperator = 'exists' | 'contains' | 'regex' | 'equal' | 'not_equal' | 'greater_than' | 'greater_than_or_equal' | 'less_than' | 'less_than_or_equal';
+type JsonPathFilterOperator =
+    | 'contains'
+    | 'equal'
+    | 'exists'
+    | 'greater_than'
+    | 'greater_than_or_equal'
+    | 'less_than'
+    | 'less_than_or_equal'
+    | 'not_equal'
+    | 'regex';
 type JsonPathSyntaxMode = 'jsonpath' | 'legacy';
 
 type JsonPathSelector = {
@@ -41,8 +49,10 @@ type JsonPathStep = {
 type JsonPathLogicalOperator = 'and' | 'or';
 
 type JsonPathComparisonFilter = {
+    comparisonSelectorPath?: string;
     comparisonValue?: any;
     operator: JsonPathFilterOperator;
+    resolveComparisonAgainstRoot?: boolean;
     selectorPath: string;
 };
 
@@ -154,11 +164,18 @@ export function buildJsonPathExpression(selectorPath: string, argumentValue: any
 
     for (let i = 0; i < normalizedSelectorPath.length; i += 1) {
         const currentChar = normalizedSelectorPath[i];
-        const previousChar = i > 0 ? normalizedSelectorPath[i - 1] : '';
 
         if (quote) {
-            if (currentChar === quote && previousChar !== BACKSLASH) {
-                quote = null;
+            if (currentChar === quote) {
+                let backslashCount = 0;
+                let k = i - 1;
+                while (k >= 0 && normalizedSelectorPath[k] === BACKSLASH) {
+                    backslashCount += 1;
+                    k -= 1;
+                }
+                if (backslashCount % 2 === 0) {
+                    quote = null;
+                }
             }
             continue;
         }
@@ -312,6 +329,23 @@ export const jsonPath = (
     }
 
     /**
+     * Checks whether the character at a given index is preceded by an odd number of backslashes.
+     *
+     * @param str string to check in
+     * @param index index of the character
+     * @returns true when the character is escaped
+     */
+    function isEscaped(str: string, index: number): boolean {
+        let count = 0;
+        let j = index - 1;
+        while (j >= 0 && str[j] === BACKSLASH) {
+            count += 1;
+            j -= 1;
+        }
+        return count % 2 !== 0;
+    }
+
+    /**
      * Resolves the JSON.parse implementation to use.
      *
      * @param runtimeNativeObjects optional native object bag
@@ -359,7 +393,9 @@ export const jsonPath = (
                 .split(BACKSLASH + SINGLE_QUOTE)
                 .join(SINGLE_QUOTE)
                 .split(BACKSLASH + DOUBLE_QUOTE)
-                .join(DOUBLE_QUOTE);
+                .join(DOUBLE_QUOTE)
+                .split(BACKSLASH + BACKSLASH)
+                .join(BACKSLASH);
         }
 
         return normalizedValue;
@@ -408,15 +444,17 @@ export const jsonPath = (
     }
 
     /**
-     * Splits a string by a separator while ignoring nested structures.
+     * Walks a string character by character, tracking quote and nesting state.
+     * Invokes the callback for every non-quote, non-delimiter character that
+     * sits at nesting depth zero. Return `true` from the callback to stop early.
      *
-     * @param value input to split
-     * @param separator separator character
-     * @returns top-level parts
+     * @param value string to walk
+     * @param callback visitor receiving the current index; return true to stop
      */
-    function splitTopLevel(value: string, separator: string): string[] {
-        const parts: string[] = [];
-        let current = EMPTY_STRING;
+    function walkTopLevelChars(
+        value: string,
+        callback: (index: number, isTopLevel: boolean) => boolean | void,
+    ): void {
         let bracketDepth = 0;
         let braceDepth = 0;
         let parenthesisDepth = 0;
@@ -424,66 +462,72 @@ export const jsonPath = (
 
         for (let i = 0; i < value.length; i += 1) {
             const currentChar = value[i];
-            const previousChar = i > 0 ? value[i - 1] : EMPTY_STRING;
 
             if (quote) {
-                current += currentChar;
-                if (currentChar === quote && previousChar !== BACKSLASH) {
+                if (currentChar === quote && !isEscaped(value, i)) {
                     quote = null;
+                }
+                if (callback(i, false)) {
+                    return;
                 }
                 continue;
             }
 
             if (isQuoteCharacter(currentChar)) {
                 quote = currentChar;
-                current += currentChar;
+                if (callback(i, false)) {
+                    return;
+                }
                 continue;
             }
 
+            let isDelimiter = true;
             if (currentChar === SQUARE_BRACKET_OPEN) {
                 bracketDepth += 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === SQUARE_BRACKET_CLOSE) {
+            } else if (currentChar === SQUARE_BRACKET_CLOSE) {
                 bracketDepth -= 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === CURLY_BRACKET_OPEN) {
+            } else if (currentChar === CURLY_BRACKET_OPEN) {
                 braceDepth += 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === CURLY_BRACKET_CLOSE) {
+            } else if (currentChar === CURLY_BRACKET_CLOSE) {
                 braceDepth -= 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === ROUND_BRACKET_OPEN) {
+            } else if (currentChar === ROUND_BRACKET_OPEN) {
                 parenthesisDepth += 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === ROUND_BRACKET_CLOSE) {
+            } else if (currentChar === ROUND_BRACKET_CLOSE) {
                 parenthesisDepth -= 1;
-                current += currentChar;
-                continue;
+            } else {
+                isDelimiter = false;
             }
 
-            if (
-                currentChar === separator
+            const isTopLevel = !isDelimiter
                 && bracketDepth === 0
                 && braceDepth === 0
-                && parenthesisDepth === 0
-            ) {
+                && parenthesisDepth === 0;
+
+            if (callback(i, isTopLevel)) {
+                return;
+            }
+        }
+    }
+
+    /**
+     * Splits a string by a single-character separator while ignoring nested structures.
+     *
+     * @param value input to split
+     * @param separator single separator character
+     * @returns top-level parts
+     */
+    function splitTopLevel(value: string, separator: string): string[] {
+        const parts: string[] = [];
+        let current = EMPTY_STRING;
+
+        walkTopLevelChars(value, (index, isTopLevel) => {
+            if (isTopLevel && value[index] === separator) {
                 parts.push(current.trim());
                 current = EMPTY_STRING;
-                continue;
+            } else {
+                current += value[index];
             }
-
-            current += currentChar;
-        }
+        });
 
         if (current !== EMPTY_STRING) {
             parts.push(current.trim());
@@ -501,46 +545,15 @@ export const jsonPath = (
     function splitSliceExpression(value: string): string[] {
         const parts: string[] = [];
         let current = EMPTY_STRING;
-        let parenthesisDepth = 0;
-        let quote: string | null = null;
 
-        for (let i = 0; i < value.length; i += 1) {
-            const currentChar = value[i];
-            const previousChar = i > 0 ? value[i - 1] : EMPTY_STRING;
-
-            if (quote) {
-                current += currentChar;
-                if (currentChar === quote && previousChar !== BACKSLASH) {
-                    quote = null;
-                }
-                continue;
-            }
-
-            if (isQuoteCharacter(currentChar)) {
-                quote = currentChar;
-                current += currentChar;
-                continue;
-            }
-
-            if (currentChar === ROUND_BRACKET_OPEN) {
-                parenthesisDepth += 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === ROUND_BRACKET_CLOSE) {
-                parenthesisDepth -= 1;
-                current += currentChar;
-                continue;
-            }
-
-            if (currentChar === COLON && parenthesisDepth === 0) {
+        walkTopLevelChars(value, (index, isTopLevel) => {
+            if (isTopLevel && value[index] === COLON) {
                 parts.push(current.trim());
                 current = EMPTY_STRING;
-                continue;
+            } else {
+                current += value[index];
             }
-
-            current += currentChar;
-        }
+        });
 
         parts.push(current.trim());
         return parts;
@@ -559,10 +572,9 @@ export const jsonPath = (
 
         for (let i = startIndex; i < value.length; i += 1) {
             const currentChar = value[i];
-            const previousChar = i > 0 ? value[i - 1] : EMPTY_STRING;
 
             if (quote) {
-                if (currentChar === quote && previousChar !== BACKSLASH) {
+                if (currentChar === quote && !isEscaped(value, i)) {
                     quote = null;
                 }
                 continue;
@@ -595,22 +607,11 @@ export const jsonPath = (
      * @returns operator descriptor or null
      */
     function findTopLevelOperator(value: string): { index: number; operator: string } | null {
-        let quote: string | null = null;
+        let result: { index: number; operator: string } | null = null;
 
-        for (let i = 0; i < value.length; i += 1) {
-            const currentChar = value[i];
-            const previousChar = i > 0 ? value[i - 1] : EMPTY_STRING;
-
-            if (quote) {
-                if (currentChar === quote && previousChar !== BACKSLASH) {
-                    quote = null;
-                }
-                continue;
-            }
-
-            if (isQuoteCharacter(currentChar)) {
-                quote = currentChar;
-                continue;
+        walkTopLevelChars(value, (index, isTopLevel) => {
+            if (!isTopLevel) {
+                return false;
             }
 
             // Multiple operators can match at the same position (`=~` vs `=`,
@@ -620,7 +621,7 @@ export const jsonPath = (
 
             for (let j = 0; j < OPERATORS.length; j += 1) {
                 const operator = OPERATORS[j];
-                if (value.startsWith(operator, i)) {
+                if (value.startsWith(operator, index)) {
                     if (matchedOperator === null || operator.length > matchedOperator.length) {
                         matchedOperator = operator;
                     }
@@ -628,14 +629,14 @@ export const jsonPath = (
             }
 
             if (matchedOperator !== null) {
-                return {
-                    index: i,
-                    operator: matchedOperator,
-                };
+                result = { index, operator: matchedOperator };
+                return true;
             }
-        }
 
-        return null;
+            return false;
+        });
+
+        return result;
     }
 
     /**
@@ -648,74 +649,23 @@ export const jsonPath = (
     function splitByTopLevelToken(value: string, token: string): string[] {
         const parts: string[] = [];
         let current = EMPTY_STRING;
-        let bracketDepth = 0;
-        let braceDepth = 0;
-        let parenthesisDepth = 0;
-        let quote: string | null = null;
+        const skipIndexes = new Set<number>();
 
-        for (let i = 0; i < value.length; i += 1) {
-            const currentChar = value[i];
-            const previousChar = i > 0 ? value[i - 1] : EMPTY_STRING;
-
-            if (quote) {
-                current += currentChar;
-                if (currentChar === quote && previousChar !== BACKSLASH) {
-                    quote = null;
-                }
-                continue;
+        walkTopLevelChars(value, (index, isTopLevel) => {
+            if (skipIndexes.has(index)) {
+                return;
             }
 
-            if (isQuoteCharacter(currentChar)) {
-                quote = currentChar;
-                current += currentChar;
-                continue;
-            }
-
-            if (currentChar === SQUARE_BRACKET_OPEN) {
-                bracketDepth += 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === SQUARE_BRACKET_CLOSE) {
-                bracketDepth -= 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === CURLY_BRACKET_OPEN) {
-                braceDepth += 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === CURLY_BRACKET_CLOSE) {
-                braceDepth -= 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === ROUND_BRACKET_OPEN) {
-                parenthesisDepth += 1;
-                current += currentChar;
-                continue;
-            }
-            if (currentChar === ROUND_BRACKET_CLOSE) {
-                parenthesisDepth -= 1;
-                current += currentChar;
-                continue;
-            }
-
-            if (
-                bracketDepth === 0
-                && braceDepth === 0
-                && parenthesisDepth === 0
-                && value.startsWith(token, i)
-            ) {
+            if (isTopLevel && value.startsWith(token, index)) {
                 parts.push(current.trim());
                 current = EMPTY_STRING;
-                i += token.length - 1;
-                continue;
+                for (let k = 1; k < token.length; k += 1) {
+                    skipIndexes.add(index + k);
+                }
+            } else {
+                current += value[index];
             }
-
-            current += currentChar;
-        }
+        });
 
         if (current !== EMPTY_STRING) {
             parts.push(current.trim());
@@ -767,6 +717,10 @@ export const jsonPath = (
             return ROOT_PATH;
         }
 
+        if (normalizedPath.startsWith(ROOT_PATH)) {
+            return normalizedPath;
+        }
+
         if (
             normalizedPath.startsWith(DOT)
             || normalizedPath.startsWith(DOUBLE_DOT)
@@ -787,7 +741,30 @@ export const jsonPath = (
     function parseFilterExpression(rawExpression: string): JsonPathFilter {
         let expression = rawExpression.trim();
         if (expression.startsWith(ROUND_BRACKET_OPEN) && expression.endsWith(ROUND_BRACKET_CLOSE)) {
-            expression = expression.slice(1, -1).trim();
+            let parenDepth = 0;
+            let innerQuote: string | null = null;
+            let matchesEnd = false;
+            for (let i = 0; i < expression.length; i += 1) {
+                const currentChar = expression[i];
+                if (innerQuote) {
+                    if (currentChar === innerQuote && !isEscaped(expression, i)) {
+                        innerQuote = null;
+                    }
+                } else if (isQuoteCharacter(currentChar)) {
+                    innerQuote = currentChar;
+                } else if (currentChar === ROUND_BRACKET_OPEN) {
+                    parenDepth += 1;
+                } else if (currentChar === ROUND_BRACKET_CLOSE) {
+                    parenDepth -= 1;
+                    if (parenDepth === 0) {
+                        matchesEnd = i === expression.length - 1;
+                        break;
+                    }
+                }
+            }
+            if (matchesEnd) {
+                expression = expression.slice(1, -1).trim();
+            }
         }
 
         const orParts = splitByTopLevelToken(expression, '||');
@@ -841,6 +818,23 @@ export const jsonPath = (
             operator = FILTER_OPERATORS.REGEX;
         } else if (operatorMatch.operator === EQUAL && /^\/.*\/[a-z]*$/i.test(rightPart)) {
             operator = FILTER_OPERATORS.REGEX;
+        }
+
+        const rightTrimmed = rightPart.trim();
+        const isRightRootPath = rightTrimmed === ROOT_PATH
+            || rightTrimmed.startsWith(ROOT_PATH + DOT)
+            || rightTrimmed.startsWith(ROOT_PATH + SQUARE_BRACKET_OPEN);
+        const isRightCurrentPath = rightTrimmed === AT_SIGN
+            || rightTrimmed.startsWith(AT_SIGN + DOT)
+            || rightTrimmed.startsWith(AT_SIGN + SQUARE_BRACKET_OPEN);
+
+        if (isRightRootPath || isRightCurrentPath) {
+            return {
+                comparisonSelectorPath: normalizeFilterPath(rightTrimmed),
+                operator,
+                resolveComparisonAgainstRoot: isRightRootPath,
+                selectorPath: normalizeFilterPath(leftPart),
+            };
         }
 
         return {
@@ -999,75 +993,41 @@ export const jsonPath = (
         selectorPart: string;
         valuePart: string;
     } {
-        let bracketDepth = 0;
-        let braceDepth = 0;
-        let parenthesisDepth = 0;
-        let quote: string | null = null;
+        let foundIndex = -1;
+        let foundMode: JsonPathMutationMode = 'remove';
+        let tokenLength = 0;
 
-        for (let i = 0; i < expression.length; i += 1) {
-            const currentChar = expression[i];
-            const previousChar = i > 0 ? expression[i - 1] : EMPTY_STRING;
+        walkTopLevelChars(expression, (index, isTopLevel) => {
+            if (!isTopLevel) {
+                return false;
+            }
+            if (expression.startsWith(PLUS_EQUAL, index)) {
+                foundIndex = index;
+                foundMode = 'append';
+                tokenLength = PLUS_EQUAL.length;
+                return true;
+            }
+            if (expression[index] === EQUAL) {
+                foundIndex = index;
+                foundMode = 'set';
+                tokenLength = 1;
+                return true;
+            }
+            return false;
+        });
 
-            if (quote) {
-                if (currentChar === quote && previousChar !== BACKSLASH) {
-                    quote = null;
-                }
-                continue;
-            }
-
-            if (isQuoteCharacter(currentChar)) {
-                quote = currentChar;
-                continue;
-            }
-
-            if (currentChar === SQUARE_BRACKET_OPEN) {
-                bracketDepth += 1;
-                continue;
-            }
-            if (currentChar === SQUARE_BRACKET_CLOSE) {
-                bracketDepth -= 1;
-                continue;
-            }
-            if (currentChar === CURLY_BRACKET_OPEN) {
-                braceDepth += 1;
-                continue;
-            }
-            if (currentChar === CURLY_BRACKET_CLOSE) {
-                braceDepth -= 1;
-                continue;
-            }
-            if (currentChar === ROUND_BRACKET_OPEN) {
-                parenthesisDepth += 1;
-                continue;
-            }
-            if (currentChar === ROUND_BRACKET_CLOSE) {
-                parenthesisDepth -= 1;
-                continue;
-            }
-
-            if (bracketDepth === 0 && braceDepth === 0 && parenthesisDepth === 0) {
-                if (expression.startsWith(PLUS_EQUAL, i)) {
-                    return {
-                        mode: 'append',
-                        selectorPart: expression.slice(0, i).trim(),
-                        valuePart: expression.slice(i + PLUS_EQUAL.length).trim(),
-                    };
-                }
-
-                if (currentChar === EQUAL) {
-                    return {
-                        mode: 'set',
-                        selectorPart: expression.slice(0, i).trim(),
-                        valuePart: expression.slice(i + 1).trim(),
-                    };
-                }
-            }
+        if (foundIndex === -1) {
+            return {
+                mode: 'remove',
+                selectorPart: expression.trim(),
+                valuePart: EMPTY_STRING,
+            };
         }
 
         return {
-            mode: 'remove',
-            selectorPart: expression.trim(),
-            valuePart: EMPTY_STRING,
+            mode: foundMode,
+            selectorPart: expression.slice(0, foundIndex).trim(),
+            valuePart: expression.slice(foundIndex + tokenLength).trim(),
         };
     }
 
@@ -1186,6 +1146,10 @@ export const jsonPath = (
             replacement: string;
         };
 
+        if (typeof replaceConfig.regex !== 'string' || typeof replaceConfig.replacement !== 'string') {
+            throw new Error('Invalid replace payload: "regex" and "replacement" must be strings');
+        }
+
         const regex = replaceConfig.regex.startsWith('/')
             ? toRegExp(replaceConfig.regex)
             : new RegExp(replaceConfig.regex, replaceConfig.flags || EMPTY_STRING);
@@ -1294,19 +1258,18 @@ export const jsonPath = (
      */
     function getRecursiveCandidates(candidate: JsonPathCandidate): JsonPathCandidate[] {
         const output: JsonPathCandidate[] = [candidate];
-        const queue = getChildCandidates(candidate);
+        const initialChildren = getChildCandidates(candidate);
+        for (let i = 0; i < initialChildren.length; i += 1) {
+            output.push(initialChildren[i]);
+        }
 
-        while (queue.length > 0) {
-            const currentCandidate = queue.shift();
-            if (!currentCandidate) {
-                continue;
-            }
-
-            output.push(currentCandidate);
-            const childCandidates = getChildCandidates(currentCandidate);
+        let head = 1;
+        while (head < output.length) {
+            const childCandidates = getChildCandidates(output[head]);
             for (let i = 0; i < childCandidates.length; i += 1) {
-                queue.push(childCandidates[i]);
+                output.push(childCandidates[i]);
             }
+            head += 1;
         }
 
         return output;
@@ -1497,43 +1460,56 @@ export const jsonPath = (
                 return matchedCandidates.length > 0;
             }
 
+            let comparisonValue = filter.comparisonValue;
+            if (filter.comparisonSelectorPath) {
+                const comparisonRoot = filter.resolveComparisonAgainstRoot ? root : value;
+                const comparisonMatches = evaluateSelector(
+                    comparisonRoot,
+                    parseJsonPathSelector(filter.comparisonSelectorPath),
+                );
+                if (comparisonMatches.length === 0) {
+                    return false;
+                }
+                comparisonValue = comparisonMatches[0].value;
+            }
+
             for (let i = 0; i < matchedCandidates.length; i += 1) {
                 const matchedValue = matchedCandidates[i].value;
                 if (filter.operator === FILTER_OPERATORS.CONTAINS) {
-                    if (typeof matchedValue === 'string' && matchedValue.includes(String(filter.comparisonValue))) {
+                    if (typeof matchedValue === 'string' && matchedValue.includes(String(comparisonValue))) {
                         return true;
                     }
                     continue;
                 }
 
                 if (filter.operator === FILTER_OPERATORS.REGEX) {
-                    if (typeof matchedValue === 'string' && filter.comparisonValue instanceof RegExp) {
-                        filter.comparisonValue.lastIndex = 0;
-                        if (filter.comparisonValue.test(matchedValue)) {
+                    if (typeof matchedValue === 'string' && comparisonValue instanceof RegExp) {
+                        comparisonValue.lastIndex = 0;
+                        if (comparisonValue.test(matchedValue)) {
                             return true;
                         }
                     }
                     continue;
                 }
 
-                if (filter.operator === FILTER_OPERATORS.EQUAL && matchedValue === filter.comparisonValue) {
+                if (filter.operator === FILTER_OPERATORS.EQUAL && matchedValue === comparisonValue) {
                     return true;
                 }
-                if (filter.operator === FILTER_OPERATORS.NOT_EQUAL && matchedValue !== filter.comparisonValue) {
+                if (filter.operator === FILTER_OPERATORS.NOT_EQUAL && matchedValue !== comparisonValue) {
                     return true;
                 }
-                if (filter.operator === FILTER_OPERATORS.LESS_THAN && matchedValue < filter.comparisonValue) {
+                if (filter.operator === FILTER_OPERATORS.LESS_THAN && matchedValue < comparisonValue) {
                     return true;
                 }
-                if (filter.operator === FILTER_OPERATORS.LESS_THAN_OR_EQUAL && matchedValue <= filter.comparisonValue) {
+                if (filter.operator === FILTER_OPERATORS.LESS_THAN_OR_EQUAL && matchedValue <= comparisonValue) {
                     return true;
                 }
-                if (filter.operator === FILTER_OPERATORS.GREATER_THAN && matchedValue > filter.comparisonValue) {
+                if (filter.operator === FILTER_OPERATORS.GREATER_THAN && matchedValue > comparisonValue) {
                     return true;
                 }
                 if (
                     filter.operator === FILTER_OPERATORS.GREATER_THAN_OR_EQUAL
-                    && matchedValue >= filter.comparisonValue
+                    && matchedValue >= comparisonValue
                 ) {
                     return true;
                 }
