@@ -1,0 +1,5 @@
+{"data":{"articles":[{"article":{"node":true,"content":"Article"}},{"ads":{"content":"Sponsored","visibility":"visible"}}]}}
+{"data":{"articles":[{"article":{"node":true,"content":"Article"}},{"ads":{"content":"Sponsored","visibility":"visible"}}]}}
+{"data":{"articles":[{"article":{"node":true,"content":"Article"}},{"ads":{"content":"Sponsored","visibility":"visible"}}]}}
+{"data":{"articles":[{"article":{"node":true,"content":"Article"}},{"ads":{"content":"Sponsored","visibility":"visible"}}]}}
+[{"arrayData":{"articles":[{"article":{"node":true,"content":"Article"}},{"ads":{"content":"Sponsored","visibility":"visible"}}]}}]

@@ -1,9 +1,10 @@
 import { describe, test, expect } from 'vitest';
 
-import { jsonPruner, getPrunePath } from '../../src/helpers';
+import { jsonPruner, getPrunePath, jsonLineEdit } from '../../src/helpers';
 
 const name = 'json-prune';
 const nativeObjects = {
+    nativeParse: window.JSON.parse,
     nativeStringify: window.JSON.stringify,
 };
 
@@ -1228,5 +1229,40 @@ describe('jsonPruner tests', () => {
         const result = jsonPruner(name, root, pathToPrune, requiredPaths, stack, nativeObjects);
 
         expect(result).toStrictEqual(expected);
+    });
+});
+
+describe('jsonLineEdit tests', () => {
+    test('edits line-delimited JSON and preserves CRLF separators', () => {
+        const input = '{"foo":1}\r\n{"foo":2}\r\nplain-text';
+
+        const result = jsonLineEdit(
+            (jsonValue) => {
+                jsonValue.foo = 99;
+                return jsonValue;
+            },
+            nativeObjects,
+            input,
+        );
+
+        expect(result).toStrictEqual({
+            hasJsonLines: true,
+            text: '{"foo":99}\r\n{"foo":99}\r\nplain-text',
+        });
+    });
+
+    test('preserves original JSON line formatting when callback makes no semantic change', () => {
+        const input = '{ "foo": 1 }\nplain-text';
+
+        const result = jsonLineEdit(
+            (jsonValue) => jsonValue,
+            nativeObjects,
+            input,
+        );
+
+        expect(result).toStrictEqual({
+            hasJsonLines: true,
+            text: input,
+        });
     });
 });

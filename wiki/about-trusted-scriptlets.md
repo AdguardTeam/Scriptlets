@@ -417,15 +417,17 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     - `trueFunc` — function returning true
     - `falseFunc` — function returning false
     - `throwFunc` — function throwing an error
-    - `noopPromiseResolve` — function returning Promise resolved with an empty response
-    - `noopPromiseReject` — function returning Promise.reject()
+    - `noopPromiseResolve` — function returning `Promise` resolved with an empty response
+    - `noopPromiseReject` — function returning `Promise.reject()`
     - any other string is set as a string literal
+
   Can also be a replacement applied to the current string value at the target path,
   in the format `replace:/regex/replacement/`:
     - `replace:/foo/bar/` — replaces the first occurrence of `foo` with `bar`
     - `replace:/foo/bar/g` — replaces all occurrences
-  Or `json:{...}` — parses the provided JSON value, can be used to apply multiple modifications at once;
-    if the current target value is also an object, the parsed object is merged into it.
+
+  Or `json:{...}` — parses the provided `JSON` value, can be used to apply multiple modifications at once.
+  If the current target value is also an object, the parsed object is merged into it.
 - `requiredInitialProps` — optional, space-separated list of property paths.
   All listed paths must be present in the JSON object for the modification to occur.
 - `jsonSource` — optional, where to read and modify the JSON value from. Defaults to `result`.
@@ -447,6 +449,8 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 > array element index (`[]`), or value filters (`.[=].value`).
 
 ### Examples
+
+<!-- markdownlint-disable line-length -->
 
 1. Sets `ads.enabled` to `false` in the result of `JSON.parse`
 
@@ -599,8 +603,8 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 1. Only modifies the JSON object if `tracking.enabled` property is present
 
     ```adblock
-    example.org#%#//scriptlet(
-      'trusted-json-set', 'JSON.parse', 'tracking.enabled', 'false', 'tracking.enabled', 'result')
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'tracking.enabled', 'false', 'tracking.enabled', 'result')
+    ```
 
     Input JSON:
 
@@ -645,6 +649,8 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     ```js
     { ads: { enabled: false }, content: 'article' }
     ```
+
+<!-- markdownlint-enable line-length -->
 
 [Scriptlet source](../src/scriptlets/trusted-json-set.ts)
 

@@ -128,6 +128,45 @@ if (!isSupported) {
         done();
     });
 
+    test('JSONPath mode prunes object properties from fetch response', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const done = assert.async();
+
+        runScriptlet(name, ['$.cc[?(@.src=="example.org")].src', '', 'test03', '', 'jsonpath']);
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualJson = await response.json();
+
+        assert.strictEqual(actualJson.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('Request is not modified because json-prune-fetch does not support setting values', async (assert) => {
+        assert.expect(2);
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const done = assert.async();
+
+        runScriptlet(name, ['$.cc[?(@.src=="example.org")].src=test.com', '', 'test03', '', 'jsonpath']);
+
+        const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';
+
+        // mock console.log function for log checking
+        console.log = function log(input) {
+            if (input.includes('trace')) {
+                return;
+            }
+            console.debug(input);
+            assert.ok(input.includes(message), 'should log message in console');
+        };
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualJson = await response.json();
+
+        assert.strictEqual(actualJson.cc.src, 'example.org', 'Content correctly fetched and not modified');
+        done();
+    });
+
     test('Prune object if it contains "src" key with "example.org" value, regexp URL', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
         const TEST_METHOD = 'GET';

@@ -212,6 +212,137 @@ test('removes nested propsToRemove', (assert) => {
     );
 });
 
+test('supports explicit jsonpath mode, removes every key with value equals to 8.99', (assert) => {
+    runScriptlet('json-prune', '$..*[?(@==8.99)]', '', '', 'jsonpath');
+
+    const result = JSON.parse(`
+        {
+            "store": {
+                "book": [
+                    { "title": "One", "price": 8.99 },
+                    { "title": "Two", "price": 12.99 }
+                ],
+                "bicycle": { "price": 8.99, "color": "red" },
+                "food": { "fast": { "pizza": 8.99, "hotDog": 2.66 } }
+            }
+        }
+    `);
+
+    assert.deepEqual(result, {
+        store: {
+            book: [
+                { title: 'One' },
+                { title: 'Two', price: 12.99 },
+            ],
+            bicycle: { color: 'red' },
+            food: { fast: { hotDog: 2.66 } },
+        },
+    }, 'should remove every value matched through jsonpath mode');
+});
+
+test('json-prune does not support setting values, so it should do nothing', (assert) => {
+    assert.expect(2);
+
+    runScriptlet('json-prune', '$.ads=false', '', '', 'jsonpath');
+
+    const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';
+
+    console.log = (...args) => {
+        if (args.length === 1) {
+            assert.ok(args[0].includes(message), 'should log message in console');
+        }
+        nativeConsole(...args);
+    };
+
+    const result = JSON.parse(`
+        {
+            "ads": true
+        }
+    `);
+
+    assert.deepEqual(result, {
+        ads: true,
+    }, 'should do nothing when attempting to set values in json-prune');
+});
+
+test('auto-detects jsonpath syntax', (assert) => {
+    runScriptlet('json-prune', '$..*[?(@==8.99)]');
+
+    const result = JSON.parse('{"price":8.99,"nested":{"price":8.99},"other":1}');
+
+    assert.deepEqual(result, {
+        nested: {},
+        other: 1,
+    }, 'should switch to jsonpath mode when selector clearly uses jsonpath syntax');
+});
+
+test('supports JSONPath guards instead of obligatoryProps', (assert) => {
+    runScriptlet('json-prune', '[?(@.meta.ready)]$..*[?(@==8.99)]', '', '', 'jsonpath');
+
+    const matchingResult = JSON.parse('{"meta":{"ready":true},"price":8.99,"nested":{"price":8.99}}');
+    const nonMatchingResult = JSON.parse('{"meta":{},"price":8.99,"nested":{"price":8.99}}');
+
+    assert.deepEqual(matchingResult, {
+        meta: { ready: true },
+        nested: {},
+    }, 'should prune when the leading guard matches');
+    assert.deepEqual(nonMatchingResult, {
+        meta: {},
+        nested: { price: 8.99 },
+        price: 8.99,
+    }, 'should skip pruning when the leading guard does not match');
+});
+
+test('supports JSONPath guards with equality check instead of obligatoryProps', (assert) => {
+    runScriptlet('json-prune', '[?(@.meta.ready==true)]$..*[?(@==8.99)]', '', '', 'jsonpath');
+
+    const matchingResult = JSON.parse('{"meta":{"ready":true},"price":8.99,"nested":{"price":8.99}}');
+    const nonMatchingResult = JSON.parse('{"meta":{"ready":false},"price":8.99,"nested":{"price":8.99}}');
+
+    assert.deepEqual(matchingResult, {
+        meta: { ready: true },
+        nested: {},
+    }, 'should prune when the leading guard matches');
+    assert.deepEqual(nonMatchingResult, {
+        meta: { ready: false },
+        nested: { price: 8.99 },
+        price: 8.99,
+    }, 'should skip pruning when the leading guard does not match');
+});
+
+test('supports JSONPath syntax with stack match', (assert) => {
+    runScriptlet('json-prune', '$..*[?(@==8.99)]', '', 'jsonPathPruneStack', 'jsonpath');
+
+    const jsonPathPruneStack = () => JSON.parse('{"price":8.99,"nested":{"price":8.99},"other":1}');
+
+    assert.deepEqual(jsonPathPruneStack(), {
+        nested: {},
+        other: 1,
+    }, 'should prune when jsonpath mode stack matches');
+});
+
+test('does not prune with JSONPath syntax when stack does not match', (assert) => {
+    runScriptlet('json-prune', '$..*[?(@==8.99)]', '', 'missingJsonPathPruneStack', 'jsonpath');
+
+    const jsonPathPruneNoStackMatch = () => JSON.parse('{"price":8.99,"nested":{"price":8.99},"other":1}');
+
+    assert.deepEqual(jsonPathPruneNoStackMatch(), {
+        nested: { price: 8.99 },
+        other: 1,
+        price: 8.99,
+    }, 'should leave payload unchanged when jsonpath mode stack does not match');
+});
+
+test('supports explicit legacy mode', (assert) => {
+    runScriptlet('json-prune', 'nested.b', '', '', 'legacy');
+
+    assert.deepEqual(
+        JSON.parse('{"nested":{"a":1,"b":2}}'),
+        { nested: { a: 1 } },
+        'should keep legacy parsing when mode is forced explicitly',
+    );
+});
+
 test('can NOT remove nested propsToRemove if parental parameter is absent in the object', (assert) => {
     runScriptlet('json-prune', 'nested.test');
     assert.deepEqual(

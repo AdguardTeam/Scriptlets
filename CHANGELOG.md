@@ -14,18 +14,33 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- New `mode` parameter to all `json-prune` and `trusted-json-set` related scriptlets,
+  which allows to specify the way of pruning JSON objects [#522].
+- Line-delimited JSON processing in `trusted-json-set` related scriptlets [#522].
+- `$remove$` value to all `trusted-json-set` related scriptlets, which allows removing specific properties [#522].
+- Support for `JSONPath` in `json-prune`, `json-prune-fetch-response`, `json-prune-xhr-response`,
+  `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response` scriptlets [#522].
 - `trusted-replace-script-text` scriptlet that intercepts `HTMLScriptElement.src`
   assignments (including `blob:` URLs) and replaces matched content in the fetched
   script text before execution [#516].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...HEAD
+[#516]: https://github.com/AdguardTeam/Scriptlets/issues/516
+[#522]: https://github.com/AdguardTeam/Scriptlets/issues/522
+
+## [v2.3.1] - 2026-03-24
+
+### Changed
+
+- Updated [@adguard/agtree] to `4.0.3`.
 
 ### Fixed
 
 - `disable-newtab-links` not preventing clicks when the element has its own `click` handler
   added via `addEventListener` [#483].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...HEAD
+[v2.3.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...v2.3.1
 [#483]: https://github.com/AdguardTeam/Scriptlets/issues/483
-[#516]: https://github.com/AdguardTeam/Scriptlets/issues/516
 
 ## [v2.3.0] - 2026-03-18
 
