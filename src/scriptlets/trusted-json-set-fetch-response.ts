@@ -4,11 +4,14 @@ import {
     objectToString,
     matchRequestProps,
     jsonSetter,
+    jsonPath,
     getPrunePath,
     forgeResponse,
     type FetchResource,
     isPruningNeeded,
     matchStackTrace,
+    resolveJsonSyntaxMode,
+    buildJsonPathExpression,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -36,6 +39,7 @@ import {
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     parseJsonSetArgumentValue,
 } from '../helpers';
@@ -54,16 +58,19 @@ import { type Source } from './scriptlets';
  * <!-- markdownlint-disable line-length -->
  *
  * ```text
- * example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, verbose]]]])
+ * example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, mode[, verbose]]]]])
  * ```
  *
  * <!-- markdownlint-enable line-length -->
  *
  * - `propsPath` — required, dot-separated path to the property to set.
  *   Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
+ *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `argumentValue` — required, value to write at the target path.
  *   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax
  *   as `trusted-json-set`.
+ *   In `jsonpath` mode this argument may be omitted when `propsPath` already includes
+ *   an inline mutation suffix such as `=` or `+=`.
  * - `requiredInitialProps` — optional, space-separated list of property paths
  *   which must all be present for the modification to occur.
  * - `propsToMatch` — optional, string of space-separated properties to match.
@@ -71,16 +78,30 @@ import { type Source } from './scriptlets';
  *     - string or regular expression for matching the URL passed to fetch call;
  *     - colon-separated pairs `name:value` for matching fetch init options.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace.
+ * - `mode` — optional, syntax mode selector.
+ *   Supported values:
+ *     - `legacy` — force the existing legacy path syntax
+ *     - `jsonpath` — force JSONPath syntax
+ *   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
  * - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
  *
  * > Scriptlet does nothing if response body cannot be converted to JSON.
+ * > If the response is line-delimited JSON, each JSON line is processed independently.
  *
  * ### Examples
+ *
+ * <!-- markdownlint-disable line-length -->
  *
  * 1. Sets `ads.enabled` to `false` in the JSON response of any fetch call
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'ads.enabled', 'false')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.ads.enabled', 'false')
  *     ```
  *
  * 1. Creates `config.flags.blocked` path in matching fetch responses
@@ -89,10 +110,22 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'config.flags.blocked', 'true', '', 'api/config')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.+={"config":{"flags":{"blocked":true}}}', '', '', 'api/config')
+ *     ```
+ *
  * 1. Merges a parsed JSON object into an existing response object property
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.foo', 'json:{"a":{"test":1},"b":{"c":1}}')
  *     ```
  *
  * 1. Replaces a value in the JSON response using a regular expression
@@ -100,6 +133,14 @@ import { type Source } from './scriptlets';
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'foo', 'replace:/advertisement/article/')
  *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.foo=replace({"regex":"advertisement","replacement":"article"})')
+ *     ```
+ *
+ * <!-- markdownlint-enable line-length -->
  *
  * @added v2.3.0.
  */
@@ -111,9 +152,15 @@ export function trustedJsonSetFetchResponse(
     requiredInitialProps = '',
     propsToMatch = '',
     stack = '',
+    mode = '',
     verbose = '',
 ) {
-    if (!propsPath || argumentValue === undefined) {
+    const syntaxModeDetails = resolveJsonSyntaxMode(propsPath, mode);
+    const jsonPathExpression = syntaxModeDetails.mode === 'jsonpath'
+        ? buildJsonPathExpression(propsPath, argumentValue)
+        : '';
+
+    if (!propsPath) {
         return;
     }
 
@@ -125,27 +172,60 @@ export function trustedJsonSetFetchResponse(
         return;
     }
 
-    const parsedArgumentValue = parseJsonSetArgumentValue(
-        source,
-        argumentValue,
-        window.JSON.parse,
-    );
-    if (!parsedArgumentValue) {
+    if (syntaxModeDetails.mode === 'legacy' && argumentValue === undefined) {
+        return;
+    }
+
+    if (syntaxModeDetails.mode === 'jsonpath' && jsonPathExpression === '') {
+        logMessage(source, 'JSONPath mode requires argumentValue unless propsPath already contains an inline mutation');
         return;
     }
 
     const shouldLogContent = verbose === 'true';
 
-    const parsedSetPaths = getPrunePath(propsPath);
+    const nativeObjects = {
+        nativeFetch: window.fetch,
+        nativeParse: window.JSON.parse,
+        nativeStringify: window.JSON.stringify,
+        nativeRequestClone: window.Request.prototype.clone,
+        nativeResponseClone: window.Response.prototype.clone,
+    };
+
+    const parsedArgumentValue = syntaxModeDetails.mode === 'legacy'
+        ? parseJsonSetArgumentValue(source, argumentValue, nativeObjects.nativeParse)
+        : null;
+    if (syntaxModeDetails.mode === 'legacy' && !parsedArgumentValue) {
+        return;
+    }
+
+    const parsedSetPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsPath) : [];
     const setPathObj = parsedSetPaths[0];
-    const requiredPaths = getPrunePath(requiredInitialProps);
+    const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(requiredInitialProps) : [];
 
-    const nativeStringify = window.JSON.stringify;
-    const nativeRequestClone = window.Request.prototype.clone;
-    const nativeResponseClone = window.Response.prototype.clone;
-    const nativeFetch = window.fetch;
+    const getValueToSet = (currentValue: any): any => {
+        if (!parsedArgumentValue) {
+            return currentValue;
+        }
 
-    const getValueToSet = (currentValue: any): any => getJsonSetValue(currentValue, parsedArgumentValue);
+        return getJsonSetValue(currentValue, parsedArgumentValue);
+    };
+
+    const applyJsonMutation = (jsonValue: Record<string, any>) => {
+        if (syntaxModeDetails.mode === 'jsonpath') {
+            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), stack);
+        }
+
+        return jsonSetter(
+            source,
+            jsonValue,
+            setPathObj?.path || '',
+            setPathObj?.value,
+            getValueToSet,
+            requiredPaths,
+            stack,
+            nativeObjects,
+        );
+    };
 
     // TODO: Consider to move it to helper and share it with json-prune-fetch-response scriptlet
     const fetchHandlerWrapper = async (
@@ -153,7 +233,7 @@ export function trustedJsonSetFetchResponse(
         thisArg: any,
         args: [FetchResource, RequestInit],
     ): Promise<Response> => {
-        const fetchData = getFetchData(args, nativeRequestClone);
+        const fetchData = getFetchData(args, nativeObjects.nativeRequestClone);
 
         if (!matchRequestProps(source, propsToMatch, fetchData)) {
             return Reflect.apply(target, thisArg, args);
@@ -163,53 +243,72 @@ export function trustedJsonSetFetchResponse(
         let clonedResponse;
         try {
             // eslint-disable-next-line prefer-spread
-            originalResponse = await nativeFetch.apply(null, args);
-            clonedResponse = nativeResponseClone.call(originalResponse);
+            originalResponse = await nativeObjects.nativeFetch.apply(null, args);
+            clonedResponse = nativeObjects.nativeResponseClone.call(originalResponse);
         } catch {
             logMessage(source, `Could not make an original fetch request: ${fetchData.url}`);
             return Reflect.apply(target, thisArg, args);
         }
 
-        let json;
+        let textContent;
         try {
-            json = await originalResponse.json();
-            if (shouldLogContent) {
-                // eslint-disable-next-line max-len
-                logMessage(source, `Original content:\n${window.location.hostname}\n${nativeStringify(json, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-                logMessage(source, json, true, false);
-            }
+            textContent = await originalResponse.text();
         } catch {
-            const message = `Response body can't be converted to json: ${objectToString(fetchData)}`;
+            const message = `Response body can't be converted to text: ${objectToString(fetchData)}`;
             logMessage(source, message);
             return clonedResponse;
         }
 
-        const modifiedJson = jsonSetter(
-            source,
-            json,
-            setPathObj?.path || '',
-            setPathObj?.value,
-            getValueToSet,
-            requiredPaths,
-            stack,
-            {
-                nativeStringify,
-                nativeRequestClone,
-                nativeResponseClone,
-                nativeFetch,
-            },
-        );
+        try {
+            const json = nativeObjects.nativeParse(textContent);
+            if (shouldLogContent) {
+                // eslint-disable-next-line max-len
+                logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
+                logMessage(source, json, true, false);
+            }
 
-        if (shouldLogContent) {
-            // eslint-disable-next-line max-len
-            logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-            logMessage(source, modifiedJson, true, false);
+            const modifiedJson = applyJsonMutation(json);
+
+            if (shouldLogContent) {
+                // eslint-disable-next-line max-len
+                logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
+                logMessage(source, modifiedJson, true, false);
+            }
+
+            return forgeResponse(
+                originalResponse,
+                nativeObjects.nativeStringify(modifiedJson),
+            );
+        } catch {
+            // If response body is not a single JSON document, try to process it as line-delimited JSON
         }
 
-        return forgeResponse(
-            originalResponse,
-            nativeStringify(modifiedJson),
-        );
+        try {
+            const lineEditResult = jsonLineEdit(
+                (parsedLine) => applyJsonMutation(parsedLine),
+                nativeObjects,
+                textContent,
+            );
+
+            if (lineEditResult.hasJsonLines) {
+                if (shouldLogContent) {
+                    // eslint-disable-next-line max-len
+                    logMessage(source, `Original content:\n${window.location.hostname}\n${textContent}\nStack trace:\n${new Error().stack || ''}`, true);
+                    // eslint-disable-next-line max-len
+                    logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${new Error().stack || ''}`, true);
+                }
+
+                return forgeResponse(originalResponse, lineEditResult.text);
+            }
+
+            const message = `Response body can't be converted to json: ${objectToString(fetchData)}`;
+            logMessage(source, message);
+            return clonedResponse;
+        } catch (error) {
+            const message = `Response body can't be converted to json: ${objectToString(fetchData)}`;
+            logMessage(source, message);
+            return clonedResponse;
+        }
     };
 
     const getWrapper = (target: typeof fetch, propName: string, receiver: any) => {
@@ -241,10 +340,13 @@ trustedJsonSetFetchResponse.injections = [
     objectToString,
     matchRequestProps,
     jsonSetter,
+    jsonPath,
     getPrunePath,
     forgeResponse,
     isPruningNeeded,
     matchStackTrace,
+    resolveJsonSyntaxMode,
+    buildJsonPathExpression,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -272,6 +374,7 @@ trustedJsonSetFetchResponse.injections = [
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     parseJsonSetArgumentValue,
 ];

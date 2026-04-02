@@ -402,3 +402,72 @@ export const getPrunePath = (props: unknown) => {
 
     return [];
 };
+
+type JsonLineEditNativeObjects = {
+    nativeParse?: typeof JSON.parse;
+    nativeStringify?: typeof JSON.stringify;
+};
+
+type JsonLineEditResult = {
+    hasJsonLines: boolean;
+    text: string;
+};
+
+/**
+ * Applies a mutation callback to each line that can be parsed as JSON.
+ *
+ * Non-JSON lines are preserved as-is. If a parsed line is unchanged after the
+ * callback runs, its original text is preserved to avoid needless reformatting.
+ *
+ * @param callback function applied to every parsed JSON line
+ * @param nativeObjects optional native JSON methods to use for parsing and stringifying
+ * @param text source text that may contain line-delimited JSON
+ * @returns edited text together with a flag indicating whether any JSON lines were found
+ */
+export const jsonLineEdit = (
+    callback: (jsonValue: any) => any,
+    nativeObjects: JsonLineEditNativeObjects,
+    text = '',
+): JsonLineEditResult => {
+    const lineSeparator = text.includes('\r\n') ? '\r\n' : '\n';
+    const linesBefore = text.split(/\r?\n/);
+    const linesAfter: string[] = [];
+    const nativeParse = nativeObjects.nativeParse || JSON.parse;
+    const nativeStringify = nativeObjects.nativeStringify || JSON.stringify;
+    let hasJsonLines = false;
+
+    for (let i = 0; i < linesBefore.length; i += 1) {
+        const lineBefore = linesBefore[i];
+        let obj;
+        try {
+            obj = nativeParse(lineBefore);
+        } catch {
+            // Not a JSON line, keep it as is
+        }
+        if (typeof obj !== 'object' || obj === null) {
+            linesAfter.push(lineBefore);
+            continue;
+        }
+
+        hasJsonLines = true;
+        const lineBeforeNormalized = nativeStringify(obj);
+        const objAfter = callback(obj);
+        if (objAfter === undefined) {
+            linesAfter.push(lineBefore);
+            continue;
+        }
+
+        const lineAfter = nativeStringify(objAfter);
+        if (lineAfter === lineBeforeNormalized) {
+            linesAfter.push(lineBefore);
+            continue;
+        }
+
+        linesAfter.push(lineAfter);
+    }
+
+    return {
+        hasJsonLines,
+        text: linesAfter.join(lineSeparator),
+    };
+};

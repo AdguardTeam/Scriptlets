@@ -3,6 +3,7 @@ import {
     getPrunePath,
     objectToString,
     matchRequestProps,
+    jsonPath,
     getXhrData,
     type XMLHttpRequestSharedRequestData,
     jsonSetter,
@@ -32,10 +33,13 @@ import {
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     isPruningNeeded,
     parseJsonSetArgumentValue,
     toRegExp,
+    resolveJsonSyntaxMode,
+    buildJsonPathExpression,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -52,28 +56,73 @@ import { type Source } from './scriptlets';
  * <!-- markdownlint-disable line-length -->
  *
  * ```text
- * example.org#%#//scriptlet('trusted-json-set-xhr-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, verbose]]]])
+ * example.org#%#//scriptlet('trusted-json-set-xhr-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, mode[, verbose]]]]])
  * ```
  *
  * <!-- markdownlint-enable line-length -->
  *
  * - `propsPath` — required, dot-separated path to the property to set.
  *   Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
+ *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `argumentValue` — required, value to write at the target path.
  *   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax as `trusted-json-set`.
+ *   In `jsonpath` mode this argument may be omitted when `propsPath` already includes
+ *   an inline mutation suffix such as `=` or `+=`.
  * - `requiredInitialProps` — optional, space-separated list of property paths
  *   which must all be present for the modification to occur.
  * - `propsToMatch` — optional, string of space-separated properties to match for extra condition.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace.
+ * - `mode` — optional, syntax mode selector.
+ *   Supported values:
+ *     - `legacy` — force the existing legacy path syntax
+ *     - `jsonpath` — force JSONPath syntax
+ *   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
  * - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
  *
  * > Scriptlet does nothing if response body cannot be converted to JSON.
+ * > If the response is line-delimited JSON, each JSON line is processed independently.
  *
  * ### Example
  *
- * ```adblock
- * example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
- * ```
+ * <!-- markdownlint-disable line-length -->
+ *
+ * 1. Sets `foo` property to `{"a":{"test":1},"b":{"c":1}}` in the JSON response of any XMLHttpRequest call:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-xhr-response', '$.foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+ *     ```
+ *
+ * 1. Creates `config.flags.blocked` path in matching XMLHttpRequest responses
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-xhr-response', 'config.flags.blocked', 'true', '', 'api/config')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-xhr-response', '$.+={"config":{"flags":{"blocked":true}}}', '', '', 'api/config')
+ *     ```
+ *
+ * 1. Replaces a value in the JSON response using a regular expression
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'replace:/advertisement/article/')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-xhr-response', '$.foo=replace({"regex":"advertisement","replacement":"article"})')
+ *     ```
+ *
+ * <!-- markdownlint-enable line-length -->
  *
  * @added v2.3.0.
  */
@@ -85,9 +134,15 @@ export function trustedJsonSetXhrResponse(
     requiredInitialProps = '',
     propsToMatch = '',
     stack = '',
+    mode = '',
     verbose = '',
 ) {
-    if (!propsPath || argumentValue === undefined) {
+    const syntaxModeDetails = resolveJsonSyntaxMode(propsPath, mode);
+    const jsonPathExpression = syntaxModeDetails.mode === 'jsonpath'
+        ? buildJsonPathExpression(propsPath, argumentValue)
+        : '';
+
+    if (!propsPath) {
         return;
     }
 
@@ -95,23 +150,32 @@ export function trustedJsonSetXhrResponse(
         return;
     }
 
-    const parsedArgumentValue = parseJsonSetArgumentValue(
-        source,
-        argumentValue,
-        window.JSON.parse,
-    );
-    if (!parsedArgumentValue) {
+    if (syntaxModeDetails.mode === 'legacy' && argumentValue === undefined) {
+        return;
+    }
+
+    if (syntaxModeDetails.mode === 'jsonpath' && jsonPathExpression === '') {
+        logMessage(source, 'JSONPath mode requires argumentValue unless propsPath already contains an inline mutation');
         return;
     }
 
     const shouldLogContent = verbose === 'true';
 
-    const parsedSetPaths = getPrunePath(propsPath);
-    const setPathObj = parsedSetPaths[0];
-    const requiredPaths = getPrunePath(requiredInitialProps);
+    const parsedArgumentValue = syntaxModeDetails.mode === 'legacy'
+        ? parseJsonSetArgumentValue(source, argumentValue, window.JSON.parse)
+        : null;
+    if (syntaxModeDetails.mode === 'legacy' && !parsedArgumentValue) {
+        return;
+    }
 
-    const nativeParse = window.JSON.parse;
-    const nativeStringify = window.JSON.stringify;
+    const parsedSetPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsPath) : [];
+    const setPathObj = parsedSetPaths[0];
+    const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(requiredInitialProps) : [];
+
+    const nativeObjects = {
+        nativeParse: window.JSON.parse,
+        nativeStringify: window.JSON.stringify,
+    };
 
     const nativeOpen = window.XMLHttpRequest.prototype.open;
     const nativeSend = window.XMLHttpRequest.prototype.send;
@@ -119,7 +183,30 @@ export function trustedJsonSetXhrResponse(
     const matchedXhrRequests = new Map<XMLHttpRequest, XMLHttpRequestSharedRequestData<any>>();
     const xhrRequestHeaders = new Map<XMLHttpRequest, any[]>();
 
-    const getValueToSet = (currentValue: any): any => getJsonSetValue(currentValue, parsedArgumentValue);
+    const getValueToSet = (currentValue: any): any => {
+        if (!parsedArgumentValue) {
+            return currentValue;
+        }
+
+        return getJsonSetValue(currentValue, parsedArgumentValue);
+    };
+
+    const applyJsonMutation = (jsonValue: Record<string, any>) => {
+        if (syntaxModeDetails.mode === 'jsonpath') {
+            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), '');
+        }
+
+        return jsonSetter(
+            source,
+            jsonValue,
+            setPathObj?.path || '',
+            setPathObj?.value,
+            getValueToSet,
+            requiredPaths,
+            '',
+            nativeObjects,
+        );
+    };
 
     const setRequestHeaderWrapper = (
         setRequestHeader: typeof XMLHttpRequest.prototype.setRequestHeader,
@@ -212,31 +299,70 @@ export function trustedJsonSetXhrResponse(
 
             let modifiedContent = content;
             if (typeof content === 'string') {
-                try {
-                    const jsonContent = nativeParse(content);
+                let jsonContent;
+                let parseFailed = false;
 
+                try {
+                    jsonContent = nativeObjects.nativeParse(content);
+                } catch {
+                    parseFailed = true;
+                }
+
+                if (parseFailed) {
+                    try {
+                        const lineEditResult = jsonLineEdit(
+                            (parsedLine) => applyJsonMutation(parsedLine),
+                            nativeObjects,
+                            content,
+                        );
+
+                        if (lineEditResult.hasJsonLines) {
+                            modifiedContent = lineEditResult.text;
+
+                            if (shouldLogContent) {
+                                // eslint-disable-next-line max-len
+                                logMessage(source, `Original content:\n${window.location.hostname}\n${content}\nStack trace:\n${stackTrace}`, true);
+                                // eslint-disable-next-line max-len
+                                logMessage(source, `Modified content:\n${window.location.hostname}\n${modifiedContent}\nStack trace:\n${stackTrace}`, true);
+                            }
+
+                            try {
+                                const { responseType } = thisArg;
+                                switch (responseType) {
+                                    case 'arraybuffer':
+                                        modifiedContent = new TextEncoder().encode(modifiedContent).buffer;
+                                        break;
+                                    case 'blob':
+                                        modifiedContent = new Blob([modifiedContent]);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            } catch {
+                                modifiedContent = content;
+                            }
+                        } else {
+                            const message = `Response body cannot be converted to json: '${content}'`;
+                            logMessage(source, message);
+                            modifiedContent = content;
+                        }
+                    } catch {
+                        const message = `Response body cannot be converted to json: '${content}'`;
+                        logMessage(source, message);
+                        modifiedContent = content;
+                    }
+                } else {
                     if (shouldLogContent) {
                         // eslint-disable-next-line max-len
-                        logMessage(source, `Original content:\n${window.location.hostname}\n${nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
+                        logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
                         logMessage(source, jsonContent, true, false);
                     }
 
-                    modifiedContent = jsonSetter(
-                        source,
-                        jsonContent,
-                        setPathObj?.path || '',
-                        setPathObj?.value,
-                        getValueToSet,
-                        requiredPaths,
-                        '',
-                        {
-                            nativeStringify,
-                        },
-                    );
+                    modifiedContent = applyJsonMutation(jsonContent);
 
                     if (shouldLogContent) {
                         // eslint-disable-next-line max-len
-                        logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeStringify(modifiedContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
+                        logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
                         logMessage(source, modifiedContent, true, false);
                     }
 
@@ -245,15 +371,15 @@ export function trustedJsonSetXhrResponse(
                         switch (responseType) {
                             case '':
                             case 'text':
-                                modifiedContent = nativeStringify(modifiedContent);
+                                modifiedContent = nativeObjects.nativeStringify(modifiedContent);
                                 break;
                             case 'arraybuffer':
                                 modifiedContent = new TextEncoder()
-                                    .encode(nativeStringify(modifiedContent))
+                                    .encode(nativeObjects.nativeStringify(modifiedContent))
                                     .buffer;
                                 break;
                             case 'blob':
-                                modifiedContent = new Blob([nativeStringify(modifiedContent)]);
+                                modifiedContent = new Blob([nativeObjects.nativeStringify(modifiedContent)]);
                                 break;
                             default:
                                 break;
@@ -261,24 +387,9 @@ export function trustedJsonSetXhrResponse(
                     } catch {
                         modifiedContent = content;
                     }
-                } catch {
-                    const message = `Response body cannot be converted to json: '${content}'`;
-                    logMessage(source, message);
-                    modifiedContent = content;
                 }
             } else if (content !== null) {
-                modifiedContent = jsonSetter(
-                    source,
-                    content,
-                    setPathObj?.path || '',
-                    setPathObj?.value,
-                    getValueToSet,
-                    requiredPaths,
-                    '',
-                    {
-                        nativeStringify,
-                    },
-                );
+                modifiedContent = applyJsonMutation(content);
             }
 
             Object.defineProperties(thisArg, {
@@ -346,8 +457,11 @@ trustedJsonSetXhrResponse.injections = [
     objectToString,
     matchRequestProps,
     getXhrData,
+    jsonPath,
     jsonSetter,
     matchStackTrace,
+    resolveJsonSyntaxMode,
+    buildJsonPathExpression,
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -373,6 +487,7 @@ trustedJsonSetXhrResponse.injections = [
     nativeIsNaN,
     extractRegexAndReplacement,
     getJsonSetValue,
+    jsonLineEdit,
     hit,
     isPruningNeeded,
     parseJsonSetArgumentValue,

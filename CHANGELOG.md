@@ -12,12 +12,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- New `mode` parameter to all `json-prune` and `trusted-json-set` related scriptlets,
+  which allows to specify the way of pruning JSON objects [#522].
+- Line-delimited JSON processing in `trusted-json-set` related scriptlets [#522].
+- `$remove$` value to all `trusted-json-set` related scriptlets, which allows removing specific properties [#522].
+- Support for `JSONPath` in `json-prune`, `json-prune-fetch-response`, `json-prune-xhr-response`,
+  `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response` scriptlets [#522].
+
 ### Fixed
 
 - `trusted-click-element` no longer throws when event handlers set `cancelBubble`
   on spoofed events [#555].
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...HEAD
+[#522]: https://github.com/AdguardTeam/Scriptlets/issues/522
 [#555]: https://github.com/AdguardTeam/Scriptlets/issues/555
 
 ## [v2.3.1] - 2026-03-24
