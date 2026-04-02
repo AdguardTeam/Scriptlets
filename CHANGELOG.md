@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Fixed
+
+- `trusted-click-element` no longer throws when event handlers set `cancelBubble`
+  on spoofed events [#555].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...HEAD
+[#555]: https://github.com/AdguardTeam/Scriptlets/issues/555
+
 ## [v2.3.1] - 2026-03-24
 
 ### Changed
