@@ -13,6 +13,19 @@ import {
     restoreRegExpValues,
     nativeIsNaN,
     isKeyInObject,
+    jsonPath,
+    resolveJsonSyntaxMode,
+    getJsonSetValue,
+    parseJsonSetArgumentValue,
+    noopArray,
+    noopObject,
+    noopCallbackFunc,
+    noopFunc,
+    trueFunc,
+    falseFunc,
+    throwFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -31,27 +44,42 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
+ * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack [, mode]]]])
  * ```
  *
  * - `propsToRemove` — optional, string of space-separated properties to remove
+ *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur
+ *   In `jsonpath` mode this argument is ignored. Express such preconditions
+ *   directly in `propsToRemove` with leading JSONPath guards and filters.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if regular expression is invalid it will be skipped
+ * - `mode` — optional, syntax mode selector.
+ *   Supported values:
+ *     - `legacy` — force the existing legacy path syntax
+ *     - `jsonpath` — force JSONPath syntax
+ *   If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
+ *   otherwise it falls back to legacy syntax.
  *
  * > Note please that you can use wildcard `*` for chain property name,
  * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
  *
  * ### Examples
  *
- * 1. Removes property `example` from the results of JSON.parse call
+ * 1. Removes property `example` from the results of `JSON.parse` call
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'example')
  *     ```
  *
- *     JSON.parse call:
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$.example')
+ *     ```
+ *
+ *     `JSON.parse` call:
  *
  *     ```html
  *     JSON.parse('{"one":1,"example":true}')
@@ -74,13 +102,19 @@ import {
  *     }
  *     ```
  *
- * 1. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
+ * 1. If there are no specified properties in the result of `JSON.parse` call, pruning will NOT occur
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
  *     ```
  *
- *     JSON.parse call:
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '[?(@.obligatoryProp)]$.one')
+ *     ```
+ *
+ *     `JSON.parse` call:
  *
  *     ```html
  *     JSON.parse('{"one":1,"two":2}')
@@ -110,7 +144,13 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'a.b', 'ads.url.first')
  *     ```
  *
- *     JSON.parse call:
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '[?(@.ads.url.first)]$.a.b')
+ *     ```
+ *
+ *     `JSON.parse` call:
  *
  *     ```html
  *     JSON.parse('{"a":{"b":123},"ads":{"url":{"first":"abc"}}}')
@@ -144,13 +184,19 @@ import {
  *     }
  *     ```
  *
- * 1. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
+ * 1. Removes property `content.ad` from the results of `JSON.parse` call if its error stack trace contains `test.js`
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
  *     ```
  *
- *     JSON.parse call:
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$.content.ad', '', 'test.js')
+ *     ```
+ *
+ *     `JSON.parse` call:
  *
  *     ```html
  *     JSON.parse('{"content":{"ad":{"src":"a.js"}}}')
@@ -182,7 +228,13 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.ad')
  *     ```
  *
- *     JSON.parse call:
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '[?(@.content.*.media.ad)]$.content.*.media.src')
+ *     ```
+ *
+ *     `JSON.parse` call:
  *
  *     ```html
  *     JSON.parse('{"content":{"block1":{"media":{"src":"1.jpg","ad":true}},"block2":{"media":{"src":"2.jpg"}}}}')
@@ -231,7 +283,13 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd')
  *     ```
  *
- *     JSON.parse call:
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$.videos.*[?(@.isAd)]')
+ *     ```
+ *
+ *     `JSON.parse` call:
  *
  *     ```html
  *     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"src":"video1.mp4"}}}')
@@ -271,7 +329,13 @@ import {
  *     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd.[=].true')
  *     ```
  *
- *     JSON.parse call:
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$.videos.*[?(@.isAd==true)]')
+ *     ```
+ *
+ *     `JSON.parse` call:
  *
  *     ```html
  *     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"isAd":false,"src":"video1.mp4"}}}')
@@ -322,24 +386,33 @@ import {
  * @added v1.1.0.
  */
 /* eslint-enable max-len */
-export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '') {
-    const prunePaths = getPrunePath(propsToRemove);
-    const requiredPaths = getPrunePath(requiredInitialProps);
+export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '', mode = '') {
+    const syntaxModeDetails = resolveJsonSyntaxMode(propsToRemove, mode);
+    const prunePaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsToRemove) : [];
+    const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(requiredInitialProps) : [];
 
     const nativeObjects = {
+        nativeParse: window.JSON.parse,
         nativeStringify: window.JSON.stringify,
     };
 
-    const nativeJSONParse = JSON.parse;
-    const jsonParseWrapper = (...args) => {
-        // dealing with stringified json in args, which should be parsed.
-        // so we call nativeJSONParse as JSON.parse which is bound to JSON object
-        const root = nativeJSONParse.apply(JSON, args);
+    const pruneJsonValue = (root) => {
+        if (syntaxModeDetails.mode === 'jsonpath') {
+            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stack);
+        }
+
         return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
     };
 
+    const jsonParseWrapper = (...args) => {
+        // dealing with stringified json in args, which should be parsed.
+        // so we call nativeJSONParse as JSON.parse which is bound to JSON object
+        const root = nativeObjects.nativeParse.apply(JSON, args);
+        return pruneJsonValue(root);
+    };
+
     // JSON.parse mocking
-    jsonParseWrapper.toString = nativeJSONParse.toString.bind(nativeJSONParse);
+    jsonParseWrapper.toString = nativeObjects.nativeParse.toString.bind(nativeObjects.nativeParse);
     JSON.parse = jsonParseWrapper;
 
     const nativeResponseJson = Response.prototype.json;
@@ -347,7 +420,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
     const responseJsonWrapper = function () {
         const promise = nativeResponseJson.apply(this);
         return promise.then((obj) => {
-            return jsonPruner(source, obj, prunePaths, requiredPaths, stack, nativeObjects);
+            return pruneJsonValue(obj);
         });
     };
 
@@ -388,4 +461,17 @@ jsonPrune.injections = [
     restoreRegExpValues,
     nativeIsNaN,
     isKeyInObject,
+    jsonPath,
+    resolveJsonSyntaxMode,
+    getJsonSetValue,
+    parseJsonSetArgumentValue,
+    noopArray,
+    noopObject,
+    noopCallbackFunc,
+    noopFunc,
+    trueFunc,
+    falseFunc,
+    throwFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
 ];

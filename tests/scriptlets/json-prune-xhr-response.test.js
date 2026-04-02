@@ -214,6 +214,53 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('JSONPath mode prunes object properties from xhr response', async (assert) => {
+        const done = assert.async();
+        runScriptlet(
+            name,
+            ['$.cc[?(@.src=="example.org")].src', '', `${FETCH_OBJECTS_PATH}/test03.json`, '', 'jsonpath'],
+        );
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.response.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('Request is not modified because json-prune-xhr does not support setting values', async (assert) => {
+        assert.expect(3);
+        const done = assert.async();
+        runScriptlet(
+            name,
+            ['$.cc[?(@.src=="example.org")].src=test.com', '', `${FETCH_OBJECTS_PATH}/test03.json`, '', 'jsonpath'],
+        );
+
+        const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';
+
+        // mock console.log function for log checking
+        console.log = function log(input) {
+            if (input.includes('trace')) {
+                return;
+            }
+            console.debug(input);
+            assert.ok(input.includes(message), 'should log message in console');
+        };
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.response.cc.src, 'example.org', 'Content correctly fetched and not modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
     test('Match request by url and method - json type, prune object + required props', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test04.json`;

@@ -6,6 +6,7 @@ const name = 'trusted-json-set';
 
 const nativeStringify = JSON.stringify;
 const nativeParse = JSON.parse;
+const nativeConsole = console.log;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -17,6 +18,7 @@ const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     JSON.stringify = nativeStringify;
     JSON.parse = nativeParse;
+    console.log = nativeConsole;
 };
 
 module(name, { beforeEach, afterEach });
@@ -131,6 +133,31 @@ test('modifies an existing path — JSON.parse result replace', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 
+test('modifies line-delimited JSON returned as a string', (assert) => {
+    window.getJsonLinesPayload = () => [
+        '{"ads":{"enabled":true},"id":1}',
+        '{"ads":{"enabled":true},"id":2}',
+        'plain-text',
+    ].join('\r\n');
+
+    runScriptlet(name, ['window.getJsonLinesPayload', 'ads.enabled', 'false']);
+
+    const result = window.getJsonLinesPayload();
+
+    assert.strictEqual(
+        result,
+        [
+            '{"ads":{"enabled":false},"id":1}',
+            '{"ads":{"enabled":false},"id":2}',
+            'plain-text',
+        ].join('\r\n'),
+        'should modify each JSON line and preserve line separators',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('getJsonLinesPayload');
+});
+
 test('sets value only when requiredInitialProps are present — JSON.stringify', (assert) => {
     runScriptlet(name, ['JSON.stringify', 'y', 'true', 'x']);
     assert.deepEqual(
@@ -242,6 +269,316 @@ test('sets value on array wildcard children — JSON.stringify', (assert) => {
         result,
         { items: [{ enabled: false, id: 1 }, { enabled: false, id: 2 }] },
         'should set enabled=false on every array element',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('supports explicit jsonpath mode — JSON.parse result', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$..*[?(@==8.99)]', '10', '', 'result', '', 'jsonpath']);
+
+    const result = JSON.parse(`
+        {
+            "store": {
+                "book": [
+                    { "title": "One", "price": 8.99 },
+                    { "title": "Two", "price": 12.99 }
+                ],
+                "bicycle": { "price": 8.99, "color": "red" },
+                "food": { "fast": { "pizza": 8.99, "hotDog": 2.66 } }
+            }
+        }
+    `);
+
+    assert.deepEqual(result, {
+        store: {
+            book: [
+                { title: 'One', price: 10 },
+                { title: 'Two', price: 12.99 },
+            ],
+            bicycle: { color: 'red', price: 10 },
+            food: { fast: { pizza: 10, hotDog: 2.66 } },
+        },
+    }, 'should update every value matched through jsonpath mode');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('supports inline JSONPath mutation expressions without argumentValue — JSON.parse result', (assert) => {
+    const args = ['JSON.parse', '$..*[?(@.price==8.99)].price=10', '', '', 'result', '', 'jsonpath'];
+    runScriptlet(name, args);
+
+    const result = JSON.parse(`
+        {
+            "items": [
+                { "id": 1, "price": 8.99 },
+                { "id": 2, "price": 12.99 }
+            ],
+            "basket": { "price": 8.99, "color": "red" }
+        }
+    `);
+
+    assert.deepEqual(result, {
+        items: [
+            { id: 1, price: 10 },
+            { id: 2, price: 12.99 },
+        ],
+        basket: { price: 10, color: 'red' },
+    }, 'should update every value matched through jsonpath mode');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('supports root append JSONPath mutation expressions without argumentValue — JSON.parse result', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.+={"ads":"false"}', '', '', 'result', '', 'jsonpath']);
+
+    const result = JSON.parse('{}');
+
+    assert.deepEqual(result, {
+        ads: 'false',
+    }, 'should append properties to the root object');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('auto-detects inline JSONPath mutation expressions without argumentValue — JSON.parse result', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$..*[?(@.price==8.99)].price=10', '']);
+
+    const result = JSON.parse(`
+        {
+            "items": [
+                { "id": 1, "price": 8.99 },
+                { "id": 2, "price": 12.99 }
+            ],
+            "basket": { "price": 8.99, "color": "red" }
+        }
+    `);
+
+    assert.deepEqual(result, {
+        items: [
+            { id: 1, price: 10 },
+            { id: 2, price: 12.99 },
+        ],
+        basket: { price: 10, color: 'red' },
+    }, 'should update every value matched through jsonpath mode');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('removes matched properties when argumentValue is $remove$ in JSONPath mode', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads', '$remove$']);
+
+    const result = JSON.parse('{"ads":{"enabled":true,"type":"banner"},"content":"article"}');
+
+    assert.deepEqual(result, {
+        content: 'article',
+    }, 'should remove matched properties instead of setting them');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Sets ads to false when argumentValue is $remove$ and there is value to set in JSONPath expression', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads=false', '$remove$']);
+
+    const result = JSON.parse('{"ads":true,"content":"article"}');
+
+    assert.deepEqual(result, {
+        ads: false,
+        content: 'article',
+    }, 'should set ads to false when argumentValue is $remove$ and there is value to set in JSONPath expression');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('supports JSONPath syntax with stack match — JSON.parse result', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$..*[?(@==8.99)]', '10', '', 'result', 'jsonPathSetStack', 'jsonpath']);
+
+    const jsonPathSetStack = () => JSON.parse('{"price":8.99,"nested":{"price":8.99},"other":1}');
+
+    assert.deepEqual(jsonPathSetStack(), {
+        price: 10,
+        nested: { price: 10 },
+        other: 1,
+    }, 'should set values when jsonpath mode stack matches');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Sets price of first item to empty string', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.items[0].price', '']);
+
+    const result = JSON.parse(`
+        {
+            "items": [
+                { "id": 1, "price": 8.99 },
+                { "id": 2, "price": 12.99 }
+            ],
+            "basket": { "price": 8.99, "color": "red" }
+        }
+    `);
+
+    assert.deepEqual(result, {
+        items: [
+            { id: 1, price: '' },
+            { id: 2, price: 12.99 },
+        ],
+        basket: { price: 8.99, color: 'red' },
+    }, 'should update every value matched through jsonpath mode');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('supports inline JSONPath mutation expressions with stack match — JSON.parse result', (assert) => {
+    runScriptlet(
+        name,
+        ['JSON.parse', '$..*[?(@.price==8.99)].price=10', '', '', 'result', 'jsonPathInlineSetStack', 'jsonpath'],
+    );
+
+    const jsonPathInlineSetStack = () => JSON.parse('{"items":[{"id":1,"price":8.99}],"basket":{"price":8.99}}');
+
+    const result = jsonPathInlineSetStack();
+
+    assert.deepEqual(result, {
+        items: [
+            { id: 1, price: 10 },
+        ],
+        basket: { price: 10 },
+    }, 'should update the matching values when stack matches');
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('supports inline JSONPath guards with inline mutation expressions — JSON.parse result', (assert) => {
+    runScriptlet(
+        name,
+        ['JSON.parse', '[?(@.meta.ready)]$..*[?(@.price==8.99)].price=10', '', '', 'result', '', 'jsonpath'],
+    );
+
+    const matchingResult = JSON.parse('{"meta":{"ready":true},"price":8.99,"nested":{"price":8.99}}');
+    const nonMatchingResult = JSON.parse('{"meta":{},"price":8.99,"nested":{"price":8.99}}');
+
+    assert.deepEqual(matchingResult, {
+        meta: { ready: true },
+        price: 8.99,
+        nested: { price: 10 },
+    }, 'should apply the inline mutation when the leading guard matches');
+    assert.deepEqual(nonMatchingResult, {
+        meta: {},
+        price: 8.99,
+        nested: { price: 8.99 },
+    }, 'should skip the inline mutation when the leading guard does not match');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the matching payload');
+});
+
+test('supports inline JSONPath guards with inline mutation expressions on price fields', (assert) => {
+    runScriptlet(
+        name,
+        ['JSON.parse', '[?(@.meta.ready)]$..price[?(@==8.99)]=10', '', '', 'result', '', 'jsonpath'],
+    );
+
+    const matchingResult = JSON.parse('{"meta":{"ready":true},"price":8.99,"nested":{"price":8.99}}');
+    const nonMatchingResult = JSON.parse('{"meta":{},"price":8.99,"nested":{"price":8.99}}');
+
+    assert.deepEqual(matchingResult, {
+        meta: { ready: true },
+        price: 10,
+        nested: { price: 10 },
+    }, 'should apply the inline mutation when the leading guard matches');
+    assert.deepEqual(nonMatchingResult, {
+        meta: {},
+        price: 8.99,
+        nested: { price: 8.99 },
+    }, 'should skip the inline mutation when the leading guard does not match');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the matching payload');
+});
+
+test('does not set values with JSONPath syntax when stack does not match — JSON.parse result', (assert) => {
+    runScriptlet(
+        name,
+        ['JSON.parse', '$..*[?(@==8.99)]', '10', '', 'result', 'missingJsonPathSetStack', 'jsonpath'],
+    );
+
+    const jsonPathSetNoStackMatch = () => JSON.parse('{"price":8.99,"nested":{"price":8.99},"other":1}');
+
+    assert.deepEqual(jsonPathSetNoStackMatch(), {
+        price: 8.99,
+        nested: { price: 8.99 },
+        other: 1,
+    }, 'should leave values unchanged when jsonpath mode stack does not match');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+});
+
+test('auto-detects jsonpath syntax — JSON.parse result', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$..*[?(@==8.99)]', '10']);
+
+    const result = JSON.parse('{"price":8.99,"nested":{"price":8.99},"other":1}');
+
+    assert.deepEqual(result, {
+        price: 10,
+        nested: { price: 10 },
+        other: 1,
+    }, 'should choose jsonpath mode automatically when selector starts with `$`');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('supports JSONPath guards instead of requiredInitialProps — JSON.parse result', (assert) => {
+    runScriptlet(
+        name,
+        ['JSON.parse', '[?(@.meta.ready)]$..*[?(@==8.99)]', '10', '', 'result', '', 'jsonpath'],
+    );
+
+    const matchingResult = JSON.parse('{"meta":{"ready":true},"price":8.99,"nested":{"price":8.99}}');
+    const nonMatchingResult = JSON.parse('{"meta":{},"price":8.99,"nested":{"price":8.99}}');
+
+    assert.deepEqual(matchingResult, {
+        meta: { ready: true },
+        price: 10,
+        nested: { price: 10 },
+    }, 'should set values when the leading guard matches');
+    assert.deepEqual(nonMatchingResult, {
+        meta: {},
+        price: 8.99,
+        nested: { price: 8.99 },
+    }, 'should leave values unchanged when the leading guard does not match');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the matching payload');
+});
+
+test('should log message when input is not valid JSON', (assert) => {
+    assert.expect(2);
+
+    const message = 'is not valid JSON';
+    // mock console.log function for log checking
+    console.log = function log(input) {
+        if (input.includes('trace')) {
+            return;
+        }
+        console.debug(input);
+        assert.ok(input.includes(message), 'should log message in console');
+    };
+
+    runScriptlet(name, ['String', '$.ads.enabled', '$remove$', '', 'result', '', 'jsonpath']);
+
+    const input = 'plain-text\r\nplain-text\r\nplain-text';
+    const result = String(input);
+
+    assert.deepEqual(result, input, 'should leave values unchanged when input is not valid JSON');
+});
+
+test('should remove "ads" properties when using JSONPath syntax — String input', (assert) => {
+    runScriptlet(name, ['String', '$..ads', '$remove$', '', 'result', '', 'jsonpath']);
+
+    const input = '{"ads":true}\r\n{"content":{"ads":"enabled","article":"test"}}\r\nplain-text';
+
+    const expectedResult = '{}\r\n{"content":{"article":"test"}}\r\nplain-text';
+
+    const result = String(input);
+
+    assert.deepEqual(result, expectedResult, 'should remove "ads" properties');
+});
+
+test('supports explicit legacy mode — JSON.parse result', (assert) => {
+    runScriptlet(name, ['JSON.parse', 'foo.bar', 'true', '', 'result', '', 'legacy']);
+
+    const result = JSON.parse('{"foo":{"bar":false,"abc":1}}');
+
+    assert.deepEqual(
+        result,
+        { foo: { abc: 1, bar: true } },
+        'should keep legacy parsing when mode is forced explicitly',
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });

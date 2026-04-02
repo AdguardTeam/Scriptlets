@@ -5,11 +5,24 @@ import {
     objectToString,
     matchRequestProps,
     jsonPruner,
+    jsonPath,
+    getJsonSetValue,
+    parseJsonSetArgumentValue,
+    noopArray,
+    noopObject,
+    noopCallbackFunc,
+    noopFunc,
+    trueFunc,
+    falseFunc,
+    throwFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
     getPrunePath,
     forgeResponse,
     type FetchResource,
     isPruningNeeded,
     matchStackTrace,
+    resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -28,6 +41,7 @@ import {
 } from '../helpers';
 import { type Source } from './scriptlets';
 
+/* eslint-disable max-len */
 /**
  * @scriptlet json-prune-fetch-response
  *
@@ -39,11 +53,16 @@ import { type Source } from './scriptlets';
  *
  * ### Syntax
  *
+ * <!-- markdownlint-disable line-length -->
+ *
  * ```text
- * example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
+ * example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack[, mode]]]]])
  * ```
  *
+ * <!-- markdownlint-enable line-length -->
+ *
  * - `propsToRemove` — optional, string of space-separated properties to remove.
+ *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur.
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -56,6 +75,11 @@ import { type Source } from './scriptlets';
  *           invalid regular expression will cause any value matching.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if regular expression is invalid it will be skipped.
+ * - `mode` — optional, syntax mode selector.
+ *   Supported values:
+ *     - `legacy` — force the existing legacy path syntax
+ *     - `jsonpath` — force JSONPath syntax
+ *   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
  *
  * > Note please that you can use wildcard `*` for chain property name,
  * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
@@ -67,10 +91,18 @@ import { type Source } from './scriptlets';
  *
  * ### Examples
  *
+ * <!-- markdownlint-disable line-length -->
+ *
  * 1. Removes property `example` from the JSON response of any fetch call:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'example')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-fetch-response', '$.example')
  *     ```
  *
  *     For instance, if the JSON response of a fetch call is:
@@ -91,10 +123,22 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'a.b', 'ads.url.first')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-fetch-response', '[?(@.ads.url.first)]$.a.b')
+ *     ```
+ *
  * 3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', 'content.json')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-fetch-response', '$.content.ad', '', 'content.json')
  *     ```
  *
  * 4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`:
@@ -103,10 +147,22 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', '', 'test.js')
  *     ```
  *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-fetch-response', '$.content.ad', '', '', 'test.js')
+ *     ```
+ *
  * 5. A property in a list of properties can be a chain of properties with wildcard in it:
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-fetch-response', 'content.*.media.src', 'content.*.media.ad')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-fetch-response', '$.content.*.media[?(@.ad)].src')
  *     ```
  *
  * 6. Log all JSON responses of a fetch call:
@@ -115,14 +171,18 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('json-prune-fetch-response')
  *     ```
  *
+ * <!-- markdownlint-enable line-length -->
+ *
  * @added v1.10.25.
  */
+/* eslint-enable max-len */
 export function jsonPruneFetchResponse(
     source: Source,
     propsToRemove: string,
     obligatoryProps: string,
     propsToMatch = '',
     stack = '',
+    mode = '',
 ) {
     // Do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer):
     // https://developer.mozilla.org/docs/Web/API/Window/fetch
@@ -133,13 +193,25 @@ export function jsonPruneFetchResponse(
         return;
     }
 
-    const prunePaths = getPrunePath(propsToRemove);
-    const requiredPaths = getPrunePath(obligatoryProps);
+    const syntaxModeDetails = resolveJsonSyntaxMode(propsToRemove, mode);
+    const prunePaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsToRemove) : [];
+    const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(obligatoryProps) : [];
 
-    const nativeStringify = window.JSON.stringify;
     const nativeRequestClone = window.Request.prototype.clone;
     const nativeResponseClone = window.Response.prototype.clone;
     const nativeFetch = window.fetch;
+    const nativeObjects = {
+        nativeParse: window.JSON.parse,
+        nativeStringify: window.JSON.stringify,
+    };
+
+    const pruneJsonValue = (root: any) => {
+        if (syntaxModeDetails.mode === 'jsonpath') {
+            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stack);
+        }
+
+        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
+    };
 
     const fetchHandlerWrapper = async (
         target: typeof fetch,
@@ -172,16 +244,11 @@ export function jsonPruneFetchResponse(
             return clonedResponse;
         }
 
-        const modifiedJson = jsonPruner(source, json, prunePaths, requiredPaths, stack, {
-            nativeStringify,
-            nativeRequestClone,
-            nativeResponseClone,
-            nativeFetch,
-        });
+        const modifiedJson = pruneJsonValue(json);
 
         const forgedResponse = forgeResponse(
             originalResponse,
-            nativeStringify(modifiedJson),
+            nativeObjects.nativeStringify(modifiedJson),
         );
         hit(source);
 
@@ -213,10 +280,23 @@ jsonPruneFetchResponse.injections = [
     objectToString,
     matchRequestProps,
     jsonPruner,
+    jsonPath,
+    getJsonSetValue,
+    parseJsonSetArgumentValue,
+    noopArray,
+    noopObject,
+    noopCallbackFunc,
+    noopFunc,
+    trueFunc,
+    falseFunc,
+    throwFunc,
+    noopPromiseReject,
+    noopPromiseResolve,
     getPrunePath,
     forgeResponse,
     isPruningNeeded,
     matchStackTrace,
+    resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
