@@ -1227,6 +1227,44 @@ test('isTrusted spoofing - removeEventListener works with EventListenerObject', 
     }, 150);
 });
 
+test('cancelBubble can be set without error in spoofed event', (assert) => {
+    const ASSERTIONS = 4;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+
+    // Run scriptlet before adding event listener to ensure isTrusted is spoofed
+    // and before creating the panel and clickable to ensure they are tracked by the scriptlet
+    runScriptlet(name, [selectorsString]);
+
+    const panel = createPanel();
+
+    const clickable = createClickable(1);
+    panel.appendChild(clickable);
+
+    let receivedIsTrusted = null;
+    let cancelBubbleIsSet = null;
+    clickable.addEventListener('click', (e) => {
+        try {
+            receivedIsTrusted = e.isTrusted;
+            e.cancelBubble = true;
+            cancelBubbleIsSet = e.cancelBubble;
+        } catch (error) {
+            console.error('Error in click event listener:', error);
+            cancelBubbleIsSet = false;
+        }
+    });
+
+    setTimeout(() => {
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(receivedIsTrusted, true, 'isTrusted should be spoofed to true');
+        assert.strictEqual(cancelBubbleIsSet, true, 'cancelBubble should be settable to true');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
 test('isTrusted is spoofed for onclick events', (assert) => {
     const ASSERTIONS = 3;
     assert.expect(ASSERTIONS);

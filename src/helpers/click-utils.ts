@@ -91,6 +91,11 @@ export const spoofClickEventsIsTrusted = (): void => {
                     }
                     return val;
                 },
+                // Required for setting properties like "cancelBubble" in event handlers
+                // https://github.com/AdguardTeam/Scriptlets/issues/555
+                set(target, prop, value) {
+                    return Reflect.set(target, prop, value);
+                },
             });
             if (isFn) {
                 return (listener as EventListener).call(this, proxied);

@@ -21,8 +21,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Support for `JSONPath` in `json-prune`, `json-prune-fetch-response`, `json-prune-xhr-response`,
   `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response` scriptlets [#522].
 
+### Fixed
+
+- `trusted-click-element` no longer throws when event handlers set `cancelBubble`
+  on spoofed events [#555].
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...HEAD
 [#522]: https://github.com/AdguardTeam/Scriptlets/issues/522
+[#555]: https://github.com/AdguardTeam/Scriptlets/issues/555
 
 ## [v2.3.1] - 2026-03-24
 
