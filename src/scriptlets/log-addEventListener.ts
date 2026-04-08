@@ -9,6 +9,7 @@ import {
     isEmptyObject,
     getElementAttributesWithValues,
 } from '../helpers';
+import { type Source } from './scriptlets';
 
 /**
  * @scriptlet log-addEventListener
@@ -21,20 +22,31 @@ import {
  *
  * ### Syntax
  *
- * ```adblock
- * example.org#%#//scriptlet('log-addEventListener')
+ * ```text
+ * example.org#%#//scriptlet('log-addEventListener'[, noProtect])
  * ```
+ *
+ * - `noProtect` — optional, if set to `'true'`, the scriptlet will use simple assignment instead of
+ *   `Object.defineProperty` with a no-op setter. This allows other scriptlets or tools to override
+ *   `addEventListener` later if needed. By default, the scriptlet protects the override from being
+ *   overwritten by website scripts. If compatibility with other scriptlets is needed,
+ *   set this parameter to `'true'`.
  *
  * @added v1.0.4.
  */
-export function logAddEventListener(source) {
+export function logAddEventListener(source: Source, noProtect?: string) {
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
 
-    function addEventListenerWrapper(type, listener, ...args) {
+    function addEventListenerWrapper(
+        this: EventTarget | null | undefined,
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        ...args: [options?: boolean | AddEventListenerOptions]
+    ) {
         if (validateType(type) && validateListener(listener)) {
-            let targetElement;
-            let targetElementInfo;
-            const listenerInfo = listenerToString(listener);
+            let targetElement: Element | undefined;
+            let targetElementInfo: string | undefined;
+            const listenerInfo = listenerToString(listener as EventListener | EventListenerObject);
 
             if (this) {
                 if (this instanceof Window) {
@@ -76,16 +88,21 @@ export function logAddEventListener(source) {
         return nativeAddEventListener.apply(context, [type, listener, ...args]);
     }
 
-    const descriptor = {
-        configurable: true,
-        set: () => {},
-        get: () => addEventListenerWrapper,
-    };
-    // https://github.com/AdguardTeam/Scriptlets/issues/215
-    // https://github.com/AdguardTeam/Scriptlets/issues/143
-    Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
-    Object.defineProperty(window, 'addEventListener', descriptor);
-    Object.defineProperty(document, 'addEventListener', descriptor);
+    // https://github.com/AdguardTeam/Scriptlets/issues/551
+    if (noProtect === 'true') {
+        window.EventTarget.prototype.addEventListener = addEventListenerWrapper;
+    } else {
+        const descriptor = {
+            configurable: true,
+            set: () => { },
+            get: () => addEventListenerWrapper,
+        };
+        // https://github.com/AdguardTeam/Scriptlets/issues/215
+        // https://github.com/AdguardTeam/Scriptlets/issues/143
+        Object.defineProperty(window.EventTarget.prototype, 'addEventListener', descriptor);
+        Object.defineProperty(window, 'addEventListener', descriptor);
+        Object.defineProperty(document, 'addEventListener', descriptor);
+    }
 }
 
 export const logAddEventListenerNames = [

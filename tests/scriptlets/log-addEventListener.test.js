@@ -121,6 +121,206 @@ test('logs events to console - listener added to window', (assert) => {
     clearGlobalProps(agLogAddEventListenerProp);
 });
 
+test('forwards addEventListener options', (assert) => {
+    assert.expect(6);
+
+    const useCaptureElement = document.createElement('div');
+    const onceElement = document.createElement('div');
+    const passiveCaptureElement = document.createElement('div');
+    const combinedOptionsElement = document.createElement('div');
+    let useCaptureCallCount = 0;
+    let onceCallCount = 0;
+    let passiveCaptureCallCount = 0;
+    let combinedCallCount = 0;
+
+    runScriptlet(name);
+
+    useCaptureElement.addEventListener('click', () => {
+        useCaptureCallCount += 1;
+    }, true);
+
+    onceElement.addEventListener('click', () => {
+        onceCallCount += 1;
+    }, { once: true });
+
+    passiveCaptureElement.addEventListener('click', () => {
+        passiveCaptureCallCount += 1;
+    }, { capture: true, passive: true });
+
+    combinedOptionsElement.addEventListener('click', () => {
+        combinedCallCount += 1;
+    }, { capture: true, passive: true, once: true });
+
+    useCaptureElement.click();
+    useCaptureElement.click();
+    onceElement.click();
+    onceElement.click();
+    passiveCaptureElement.click();
+    combinedOptionsElement.click();
+    combinedOptionsElement.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(
+        useCaptureCallCount,
+        2,
+        'boolean capture option should be forwarded to native addEventListener',
+    );
+    assert.strictEqual(
+        onceCallCount,
+        1,
+        'once option should be forwarded to native addEventListener',
+    );
+    assert.strictEqual(
+        passiveCaptureCallCount,
+        1,
+        'capture and passive options should be forwarded to native addEventListener',
+    );
+    assert.strictEqual(
+        combinedCallCount,
+        1,
+        'combined options object should be forwarded to native addEventListener',
+    );
+    assert.strictEqual(
+        typeof onceElement.addEventListener,
+        'function',
+        'wrapped addEventListener should stay callable',
+    );
+});
+
+test('noProtect parameter allows subsequent override of addEventListener', (assert) => {
+    assert.expect(9);
+
+    const scriptletArgs = ['true'];
+    runScriptlet(name, scriptletArgs);
+
+    const elementId = 'noProtectElement';
+    const elementProp = 'elementProp';
+    const elementEventName = 'click';
+    const callback = function callback() {
+        window[elementProp] = 'clicked';
+    };
+
+    const element = document.createElement('div');
+    element.setAttribute('id', elementId);
+    console.log = function log(...args) {
+        const input = args[0];
+        const elementArg = args[1];
+        if (input.includes('trace')) {
+            return;
+        }
+
+        if (input.includes('log-addEventListener Element:')) {
+            assert.true(elementArg.matches(`div#${elementId}`), 'target element should match the noProtect element');
+        } else {
+            assert.ok(input.includes(elementEventName), 'event name should be logged for noProtect');
+            assert.ok(input.includes(callback.toString()), 'callback should be logged for noProtect');
+            assert.ok(
+                input.includes(`Element: div[id="${elementId}"]`),
+                'target element should be logged for noProtect',
+            );
+            assert.notOk(
+                input.includes(INVALID_MESSAGE_START),
+                'Invalid message should not be displayed for noProtect',
+            );
+        }
+
+        nativeConsole(...args);
+    };
+
+    element.addEventListener(elementEventName, callback);
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[elementProp], 'clicked', 'element listener should still be logged and called');
+    clearGlobalProps('hit', elementProp);
+
+    let overrideWorked = false;
+    window.EventTarget.prototype.addEventListener = function customWrapper() {
+        overrideWorked = true;
+    };
+
+    const elementAfterOverride = document.createElement('div');
+    elementAfterOverride.addEventListener('click', () => {});
+
+    assert.strictEqual(overrideWorked, true, 'addEventListener should be overridable with noProtect');
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
+test('default behavior (no noProtect) protects addEventListener from override', (assert) => {
+    assert.expect(12);
+
+    runScriptlet(name);
+
+    const descriptor = Object.getOwnPropertyDescriptor(
+        window.EventTarget.prototype,
+        'addEventListener',
+    );
+
+    assert.strictEqual(typeof descriptor.get, 'function', 'descriptor should have a getter');
+    assert.strictEqual(typeof descriptor.set, 'function', 'descriptor should have a setter');
+    assert.strictEqual(descriptor.configurable, true, 'descriptor should be configurable');
+
+    const originalWrapper = descriptor.get();
+
+    window.EventTarget.prototype.addEventListener = function maliciousWrapper() {
+        throw new Error('This should not be called');
+    };
+
+    const currentAddEventListener = window.EventTarget.prototype.addEventListener;
+    assert.strictEqual(
+        currentAddEventListener,
+        originalWrapper,
+        'addEventListener should still be the scriptlet wrapper after attempted override',
+    );
+
+    assert.strictEqual(
+        descriptor.get(),
+        originalWrapper,
+        'getter should still return original wrapper after setter was called',
+    );
+
+    const elementId = 'protectedElement';
+    const protectedProp = 'protectedProp';
+    const eventName = 'click';
+    const callback = function callback() {
+        window[protectedProp] = 'clicked';
+    };
+
+    const element = document.createElement('div');
+    element.setAttribute('id', elementId);
+    console.log = function log(...args) {
+        const input = args[0];
+        const elementArg = args[1];
+        if (input.includes('trace')) {
+            return;
+        }
+
+        if (input.includes('log-addEventListener Element:')) {
+            assert.true(elementArg.matches(`div#${elementId}`), 'target element should match the protected element');
+        } else {
+            assert.ok(input.includes(eventName), 'event name should be logged after blocked override');
+            assert.ok(input.includes(callback.toString()), 'callback should be logged after blocked override');
+            assert.ok(
+                input.includes(`Element: div[id="${elementId}"]`),
+                'target element should be logged after blocked override',
+            );
+            assert.notOk(
+                input.includes(INVALID_MESSAGE_START),
+                'Invalid message should not be displayed after blocked override',
+            );
+        }
+
+        nativeConsole(...args);
+    };
+
+    element.addEventListener(eventName, callback);
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired after blocked override');
+    assert.strictEqual(window[protectedProp], 'clicked', 'listener should still use the original protected wrapper');
+    clearGlobalProps(protectedProp);
+});
+
 test('logs events to console - listener is null', (assert) => {
     const eventName = 'click';
     const listener = null;
