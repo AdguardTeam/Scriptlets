@@ -23,11 +23,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `trusted-json-set` now supports method-only logging, filtered log-only output,
+  JSONPath-based log-only filters, and verbose logs only when a write actually happens [#308].
 - `log-addEventListener` scriptlet: added new optional `noProtect` parameter,
   improving compatibility with other scriptlets that need to override `addEventListener` [#551].
 
 ### Fixed
 
+- Logging original object in `trusted-json-set` scriptlet, previously original and modified object were pointing
+  to the same reference, so the same content was logged, now deep copy is created for original object [#308].
 - `trusted-click-element` no longer throws when event handlers set `cancelBubble`
   on spoofed events [#555].
 

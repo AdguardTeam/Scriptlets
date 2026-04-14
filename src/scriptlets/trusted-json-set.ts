@@ -29,6 +29,7 @@ import {
     parseJsonSetArgumentValue,
     jsonLineEdit,
     jsonPath,
+    matchesJsonPath,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
 } from '../helpers';
@@ -41,6 +42,7 @@ import { type Source } from './scriptlets';
  * @description
  * Intercepts a specified method and sets a property at the given path in the JSON value selected by `jsonSource`.
  * If the path does not exist, it is created, including any missing intermediate objects.
+ * If `propsPath` is omitted, the scriptlet switches to logging-only mode and logs the original selected content.
  *
  * Depending on `jsonSource`, the scriptlet can modify:
  *
@@ -53,7 +55,7 @@ import { type Source } from './scriptlets';
  * <!-- markdownlint-disable line-length -->
  *
  * ```text
- * example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentValue[, requiredInitialProps[, jsonSource[, stack[, mode[, verbose]]]]])
+ * example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentValue[, requiredInitialProps[, jsonSource[, stack[, mode[, verbose]]]]]]])
  * ```
  *
  * <!-- markdownlint-enable line-length -->
@@ -61,7 +63,8 @@ import { type Source } from './scriptlets';
  * - `methodPath` — required, chain of dot-separated properties leading to the target method,
  *   e.g. `JSON.stringify`, `JSON.parse`.
  *   The method may receive a JSON object as its first argument or return one.
- * - `propsPath` — required, dot-separated path to the property to set.
+ * - `propsPath` — optional, dot-separated path to the property to set.
+ *   If omitted, the scriptlet logs the original selected content and does not mutate it.
  *   Supports wildcards:
  *     - `*` — matches any object property key
  *     - `[]` — matches any array element index
@@ -69,7 +72,8 @@ import { type Source } from './scriptlets';
  *   In `jsonpath` mode this may also be a full JSONPath mutation expression such as `$..*[?(@.price==8.99)].price=10`.
  *   JSONPath mode accepts only one expression string in `propsPath`; it does not
  *   support combining multiple independent JSONPath expressions in one argument.
- * - `argumentValue` — required, the value to write at the target path.
+ * - `argumentValue` — required when `propsPath` is provided, the value to write at the target path.
+ *   Ignored in logging-only mode.
  *   Can be one of the predefined constants:
  *     - `undefined`
  *     - `false`
@@ -101,6 +105,8 @@ import { type Source } from './scriptlets';
  *   to remove the nodes matched by `propsPath`.
  * - `requiredInitialProps` — optional, space-separated list of property paths.
  *   All listed paths must be present in the JSON object for the modification to occur.
+ *   In logging-only mode, this argument is treated as a string, regular-expression,
+ *   or JSONPath filter against the selected content, and only matching payloads are logged.
  *   In `jsonpath` mode, express such preconditions directly in `propsPath`
  *   with JSONPath guards and filters instead of using this argument.
  * - `jsonSource` — optional, where to read and modify the JSON value from. Defaults to `result`.
@@ -120,7 +126,10 @@ import { type Source } from './scriptlets';
  *     - `jsonpath` — force JSONPath syntax and treat `propsPath` as a JSONPath selector
  *   If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
  *   otherwise it falls back to legacy syntax.
- * - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
+ * - `verbose` — optional.
+ *   In mutation mode, if set to `true`, the scriptlet logs the original and modified JSON content
+ *   only when a write actually happens.
+ *   In logging-only mode, the original content is logged even without `verbose`.
  *
  * > [!IMPORTANT]
  * > Please note that, if `requiredInitialProps` is not specified, the scriptlet will attempt to set
@@ -339,6 +348,24 @@ import { type Source } from './scriptlets';
  *     { "tracking": { "enabled": false }, "meta": { "v": 1 } }
  *     ```
  *
+ * 1. Logs the original `JSON.parse` result without modifying it
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse')
+ *     ```
+ *
+ * 1. Logs only `JSON.parse` results containing a specific string
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '', '', '"id":"117458"')
+ *     ```
+ *
+ * 1. Logs only `JSON.parse` results matching a JSONPath selector
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '', '', '$.tracking.enabled')
+ *     ```
+ *
  * 1. Removes `ads.enabled` from the parsed object in `JSONPath` mode
  *
  *     ```adblock
@@ -423,29 +450,187 @@ export function trustedJsonSet(
     mode = '',
     verbose = '',
 ) {
-    const syntaxModeDetails = resolveJsonSyntaxMode(propsPath, mode);
-    const jsonPathExpression = syntaxModeDetails.mode === 'jsonpath'
+    const isLogOnlyMode = !propsPath;
+    const shouldLogVerboseContent = verbose === 'true' && !isLogOnlyMode;
+    const syntaxModeDetails = isLogOnlyMode
+        ? { mode: 'legacy' as const }
+        : resolveJsonSyntaxMode(propsPath, mode);
+    const jsonPathExpression = !isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath'
         ? buildJsonPathExpression(propsPath, argumentValue)
         : '';
 
-    if (!methodPath || !propsPath) {
+    if (!methodPath) {
         return;
     }
 
-    if (syntaxModeDetails.mode === 'legacy' && argumentValue === undefined) {
+    if (!isLogOnlyMode && syntaxModeDetails.mode === 'legacy' && argumentValue === undefined) {
         return;
     }
 
-    if (syntaxModeDetails.mode === 'jsonpath' && jsonPathExpression === '') {
+    if (!isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath' && jsonPathExpression === '') {
         logMessage(source, 'JSONPath mode requires argumentValue unless propsPath already contains an inline mutation');
         return;
     }
 
-    const shouldLogContent = verbose === 'true';
+    const isStructuredCloneSupported = typeof structuredClone === 'function';
 
     const nativeObjects = {
         nativeStringify: window.JSON.stringify,
         nativeParse: window.JSON.parse,
+    };
+
+    /**
+     * Creates the console message for an object snapshot log entry.
+     *
+     * Uses `structuredClone()` when available and falls back to JSON
+     * serialization so original-content logging can be deferred until after a
+     * confirmed mutation.
+     *
+     * @param label log prefix describing the cloned payload
+     * @param value candidate value to clone for debug logging
+     * @returns message passed to `logMessage()` without string conversion
+     */
+    const createClonedObjectLogMessage = (label: string, value: unknown): [string, unknown] => {
+        if (isStructuredCloneSupported) {
+            try {
+                return [label, structuredClone(value)] as [string, unknown];
+            } catch (error) {
+                try {
+                    return [
+                        label,
+                        nativeObjects.nativeParse(nativeObjects.nativeStringify(value)),
+                    ] as [string, unknown];
+                } catch {
+                    // eslint-disable-next-line max-len
+                    return [`Could not clone content of ${methodPath} (original and modified objects are the same): ${(error as Error).message}\n`, value];
+                }
+            }
+        }
+
+        try {
+            return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))] as [string, unknown];
+        } catch {
+            // eslint-disable-next-line max-len
+            return [`Structured cloning is not supported (original and modified objects are the same) for ${label}\n`, value];
+        }
+    };
+
+    /**
+     * Logs a structured-cloned snapshot of a value when cloning is supported.
+     * Falls back to logging the original value when cloning is not possible.
+     *
+     * @param label log prefix describing the cloned payload
+     * @param value candidate value to clone for debug logging
+     */
+    const logClonedObject = (label: string, value: unknown) => {
+        const message = createClonedObjectLogMessage(label, value);
+        logMessage(source, message, true, false);
+    };
+
+    /**
+     * Builds the log label for original or modified string/object content.
+     *
+     * @param kind whether the logged payload is stringified text or an object snapshot
+     * @param isModified whether the label should describe modified content
+     * @returns formatted log label prefix
+     */
+    const createContentLabel = (
+        kind: 'string' | 'object',
+        isModified = false,
+    ) => {
+        const prefix = isModified ? 'Modified' : 'Original';
+        let details = '';
+
+        if (propsPath) {
+            details = ` (propsPath: ${propsPath}, argumentValue: ${argumentValue})`;
+        } else if (isLogOnlyMode && requiredInitialProps) {
+            details = ` (requiredInitialProps: ${requiredInitialProps})`;
+        }
+
+        return `${prefix} content ${kind} of ${methodPath}${details}:\n`;
+    };
+
+    /**
+     * Logs a string payload together with hostname and stack trace context.
+     *
+     * @param content serialized payload to log
+     * @param stackTrace stack trace captured for the current interception
+     * @param isModified whether the payload represents post-mutation content
+     */
+    const logStringContent = (
+        content: string,
+        stackTrace: string,
+        isModified = false,
+    ) => {
+        const logEntry = [
+            createContentLabel('string', isModified),
+            window.location.hostname,
+            content,
+            'Stack trace:',
+            stackTrace,
+        ].join('\n');
+
+        logMessage(
+            source,
+            logEntry,
+            true,
+        );
+    };
+
+    /**
+     * Logs the original structured payload as both a prettified JSON string and an object snapshot.
+     *
+     * @param value original object payload before any mutation attempt
+     * @param stackTrace stack trace captured for the current interception
+     */
+    const logOriginalStructuredContent = (value: unknown, stackTrace: string) => {
+        logStringContent(nativeObjects.nativeStringify(value, null, 2), stackTrace);
+        logClonedObject(createContentLabel('object'), value);
+    };
+
+    /**
+     * Logs the modified structured payload as both a prettified JSON string and an object snapshot.
+     *
+     * @param value mutated object payload after a successful change
+     * @param stackTrace stack trace captured for the current interception
+     */
+    const logModifiedStructuredContent = (value: unknown, stackTrace: string) => {
+        logStringContent(nativeObjects.nativeStringify(value, null, 2), stackTrace, true);
+        const message = [createContentLabel('object', true), value];
+        logMessage(source, message, true, false);
+    };
+
+    /**
+     * Captures the original structured payload so verbose logs can be emitted
+     * only after a mutation is confirmed.
+     *
+     * @param value original object payload before mutation
+     * @returns deferred original-content log snapshot
+     */
+    const captureOriginalStructuredContent = (value: unknown) => {
+        return {
+            objectLogMessage: createClonedObjectLogMessage(createContentLabel('object'), value),
+            stringContent: nativeObjects.nativeStringify(value, null, 2),
+        };
+    };
+
+    /**
+     * Emits a previously captured original structured payload snapshot.
+     *
+     * @param snapshot deferred original-content log snapshot
+     * @param snapshot.objectLogMessage tuple passed to `logMessage()` for the object snapshot
+     * @param snapshot.stringContent prettified original JSON content
+     * @param stackTrace stack trace captured for the current interception
+     */
+    const logCapturedOriginalStructuredContent = (
+        snapshot: {
+            objectLogMessage: [string, unknown];
+            stringContent: string;
+        },
+        stackTrace: string,
+    ) => {
+        logStringContent(snapshot.stringContent, stackTrace);
+        logMessage(source, snapshot.objectLogMessage, true, false);
     };
 
     const JSON_SOURCES = {
@@ -457,7 +642,7 @@ export function trustedJsonSet(
     };
 
     let parsedArgumentValue: NonNullable<ReturnType<typeof parseJsonSetArgumentValue>> | undefined;
-    if (syntaxModeDetails.mode === 'legacy') {
+    if (!isLogOnlyMode && syntaxModeDetails.mode === 'legacy') {
         const parsedLegacyArgumentValue = parseJsonSetArgumentValue(
             source,
             argumentValue,
@@ -521,8 +706,22 @@ export function trustedJsonSet(
 
     const parsedSetPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsPath) : [];
     const setPathObj = parsedSetPaths[0];
-    const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(requiredInitialProps) : [];
+    const requiredPaths = !isLogOnlyMode && syntaxModeDetails.mode === 'legacy'
+        ? getPrunePath(requiredInitialProps)
+        : [];
+    const logOnlyRequiredInitialPropsSyntax = isLogOnlyMode
+        ? resolveJsonSyntaxMode(requiredInitialProps, undefined)
+        : { mode: 'legacy' as const };
+    const logOnlyRequiredPaths = isLogOnlyMode && logOnlyRequiredInitialPropsSyntax.mode === 'legacy'
+        ? getPrunePath(requiredInitialProps)
+        : [];
     const normalizedJsonSource = normalizeJsonSource();
+    const logOnlyJsonPathFilter = isLogOnlyMode && logOnlyRequiredInitialPropsSyntax.mode === 'jsonpath'
+        ? requiredInitialProps
+        : '';
+    const logOnlyMatchPattern = isLogOnlyMode
+        ? logOnlyRequiredPaths.map((obj) => obj.path).join('')
+        : '';
 
     /**
      * Resolves the list of target argument indexes for `arg` / `arg:N|M` jsonSource values.
@@ -592,14 +791,24 @@ export function trustedJsonSet(
      * `jsonSetter` implementation otherwise.
      *
      * @param jsonValue object value selected from args, thisArg, or result
-     * @returns mutated object value
+     * @returns mutated object value together with a change flag
      */
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
+        let changed = false;
+
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), stack);
+            const value = jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => {
+                changed = true;
+                hit(source);
+            }, stack);
+
+            return {
+                changed,
+                value,
+            };
         }
 
-        return jsonSetter(
+        const value = jsonSetter(
             source,
             jsonValue,
             setPathObj?.path || '',
@@ -608,7 +817,86 @@ export function trustedJsonSet(
             requiredPaths,
             stack,
             nativeObjects,
+            () => {
+                changed = true;
+            },
         );
+
+        return {
+            changed,
+            value,
+        };
+    };
+
+    /**
+     * Checks whether the original payload should be logged in log-only mode.
+     *
+     * Uses JSONPath matching when `requiredInitialProps` was detected as JSONPath;
+     * otherwise falls back to the existing string/regex matching against serialized content.
+     *
+     * @param content serialized payload used for string or regex matching
+     * @param jsonValue parsed object payload used for JSONPath matching
+     * @returns true when the payload matches the configured log-only filter
+     */
+    const shouldLogOriginalContent = (content: string, jsonValue?: Record<string, any>) => {
+        if (logOnlyJsonPathFilter) {
+            if (jsonValue == null || typeof jsonValue !== 'object') {
+                return false;
+            }
+
+            return matchesJsonPath(source, jsonValue, logOnlyJsonPathFilter, nativeObjects);
+        }
+
+        if (!logOnlyMatchPattern) {
+            return true;
+        }
+
+        return toRegExp(logOnlyMatchPattern).test(content);
+    };
+
+    /**
+     * Logs the original payload in log-only mode when it matches the configured filter.
+     *
+     * Objects are logged as both structured and stringified content. String inputs are
+     * first parsed as JSON to allow object-level filtering and structured logging, and
+     * fall back to raw string logging when parsing is not possible.
+     *
+     * @param jsonValue intercepted payload selected by `jsonSource`
+     * @param stackTrace stack trace captured for the current interception
+     */
+    const logOriginalOnlyContent = (jsonValue: any, stackTrace: string) => {
+        if (jsonValue !== null && typeof jsonValue === 'object') {
+            const serializedContent = nativeObjects.nativeStringify(jsonValue);
+            if (!shouldLogOriginalContent(serializedContent, jsonValue)) {
+                return;
+            }
+
+            logOriginalStructuredContent(jsonValue, stackTrace);
+            return;
+        }
+
+        if (typeof jsonValue === 'string') {
+            try {
+                const parsedValue = nativeObjects.nativeParse(jsonValue);
+                if (parsedValue !== null && typeof parsedValue === 'object') {
+                    const serializedContent = nativeObjects.nativeStringify(parsedValue);
+                    if (!shouldLogOriginalContent(serializedContent, parsedValue)) {
+                        return;
+                    }
+
+                    logOriginalStructuredContent(parsedValue, stackTrace);
+                    return;
+                }
+            } catch {
+                // Ignore parse errors in log-only mode and fall back to raw string logging.
+            }
+
+            if (!shouldLogOriginalContent(jsonValue)) {
+                return;
+            }
+
+            logStringContent(jsonValue, stackTrace);
+        }
     };
 
     /**
@@ -620,22 +908,34 @@ export function trustedJsonSet(
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
     const modifyJsonValue = (jsonValue: any, errorMessage: string) => {
+        const currentStackTrace = new Error().stack || '';
+
+        if (isLogOnlyMode) {
+            if (!stack || matchStackTrace(stack, currentStackTrace)) {
+                try {
+                    logOriginalOnlyContent(jsonValue, currentStackTrace);
+                } catch (error) {
+                    logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+                }
+            }
+            return jsonValue;
+        }
+
         if (jsonValue !== null && typeof jsonValue === 'object') {
             try {
-                if (shouldLogContent) {
-                    // eslint-disable-next-line max-len
-                    logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(jsonValue, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-                    logMessage(source, jsonValue, true, false);
-                }
-                const modifiedJson = applyJsonMutation(jsonValue);
+                const originalSnapshot = shouldLogVerboseContent
+                    ? captureOriginalStructuredContent(jsonValue)
+                    : null;
+                const mutationResult = applyJsonMutation(jsonValue);
 
-                if (shouldLogContent) {
-                    // eslint-disable-next-line max-len
-                    logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-                    logMessage(source, modifiedJson, true, false);
+                if (shouldLogVerboseContent) {
+                    if (mutationResult.changed && originalSnapshot) {
+                        logCapturedOriginalStructuredContent(originalSnapshot, currentStackTrace);
+                        logModifiedStructuredContent(mutationResult.value, currentStackTrace);
+                    }
                 }
 
-                return modifiedJson;
+                return mutationResult.value;
             } catch (error) {
                 logMessage(source, `${errorMessage}: ${(error as Error).message}`);
                 return jsonValue;
@@ -647,19 +947,18 @@ export function trustedJsonSet(
             try {
                 const parsedValue = nativeObjects.nativeParse(jsonValue);
                 if (parsedValue !== null && typeof parsedValue === 'object') {
-                    if (shouldLogContent) {
-                        // eslint-disable-next-line max-len
-                        logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(parsedValue, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-                        logMessage(source, parsedValue, true, false);
-                    }
+                    const originalSnapshot = shouldLogVerboseContent
+                        ? captureOriginalStructuredContent(parsedValue)
+                        : null;
 
-                    const modified = applyJsonMutation(parsedValue);
-                    if (shouldLogContent) {
-                        // eslint-disable-next-line max-len
-                        logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modified, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-                        logMessage(source, modified, true, false);
+                    const mutationResult = applyJsonMutation(parsedValue);
+                    if (shouldLogVerboseContent) {
+                        if (mutationResult.changed && originalSnapshot) {
+                            logCapturedOriginalStructuredContent(originalSnapshot, currentStackTrace);
+                            logModifiedStructuredContent(mutationResult.value, currentStackTrace);
+                        }
                     }
-                    return nativeObjects.nativeStringify(modified);
+                    return nativeObjects.nativeStringify(mutationResult.value);
                 }
             } catch (error) {
                 messageError = error instanceof Error ? error.message : String(error);
@@ -667,18 +966,24 @@ export function trustedJsonSet(
 
             // If parsing fails, try to process it as line-delimited JSON
             try {
+                let changed = false;
                 const lineEditResult = jsonLineEdit(
-                    (parsedLine) => applyJsonMutation(parsedLine),
+                    (parsedLine) => {
+                        const mutationResult = applyJsonMutation(parsedLine);
+                        if (mutationResult.changed) {
+                            changed = true;
+                        }
+
+                        return mutationResult.value;
+                    },
                     nativeObjects,
                     jsonValue,
                 );
 
                 if (lineEditResult.hasJsonLines) {
-                    if (shouldLogContent) {
-                        // eslint-disable-next-line max-len
-                        logMessage(source, `Original content:\n${window.location.hostname}\n${jsonValue}\nStack trace:\n${new Error().stack || ''}`, true);
-                        // eslint-disable-next-line max-len
-                        logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${new Error().stack || ''}`, true);
+                    if (shouldLogVerboseContent && changed) {
+                        logStringContent(jsonValue, currentStackTrace);
+                        logStringContent(lineEditResult.text, currentStackTrace, true);
                     }
 
                     return lineEditResult.text;
@@ -800,6 +1105,7 @@ trustedJsonSet.injections = [
     parseJsonSetArgumentValue,
     jsonLineEdit,
     jsonPath,
+    matchesJsonPath,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
 ];

@@ -33,7 +33,11 @@ export const logMessage = (
         // Template literals convert object to string,
         // so 'message' should not be passed to template literals
         // as it will not be logged correctly
-        nativeConsole(`${name}:`, message);
+        if (Array.isArray(message)) {
+            nativeConsole(`${name}:`, ...message);
+        } else {
+            nativeConsole(`${name}:`, message);
+        }
         return;
     }
 

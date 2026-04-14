@@ -266,6 +266,66 @@ describe('jsonSetter tests', () => {
         });
     });
 
+    test('calls onMutation when a value is written', () => {
+        const root = {
+            foo: {
+                bar: false,
+            },
+        };
+        let mutationCount = 0;
+
+        const result = jsonSetter(
+            source,
+            root,
+            'foo.bar',
+            undefined,
+            () => true,
+            getPrunePath(''),
+            '',
+            nativeObjects,
+            () => {
+                mutationCount += 1;
+            },
+        );
+
+        expect(result).toStrictEqual({
+            foo: {
+                bar: true,
+            },
+        });
+        expect(mutationCount).toBe(1);
+    });
+
+    test('does not call onMutation when no value is written', () => {
+        const root = {
+            foo: {
+                bar: 1,
+            },
+        };
+        let mutationCount = 0;
+
+        const result = jsonSetter(
+            source,
+            root,
+            'foo.bar',
+            99,
+            () => true,
+            getPrunePath(''),
+            '',
+            nativeObjects,
+            () => {
+                mutationCount += 1;
+            },
+        );
+
+        expect(result).toStrictEqual({
+            foo: {
+                bar: 1,
+            },
+        });
+        expect(mutationCount).toBe(0);
+    });
+
     test('supports object values', () => {
         const root = {
             foo: 1,

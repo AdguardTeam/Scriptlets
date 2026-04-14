@@ -5,7 +5,7 @@ import {
     vi,
 } from 'vitest';
 
-import { buildJsonPathExpression, jsonPath } from '../../src/helpers';
+import { buildJsonPathExpression, jsonPath, matchesJsonPath } from '../../src/helpers';
 
 const source = {
     args: [],
@@ -1336,6 +1336,26 @@ describe('jsonPath tests', () => {
             price: 8.99,
             nested: { price: 8.99 },
         });
+    });
+
+    test('Matches JSONPath selector without mutating the input', () => {
+        const root = createStoreRoot();
+        const snapshot = JSON.parse(JSON.stringify(root));
+
+        const result = matchesJsonPath(source, root, '$..book[?(@.isbn)]', nativeObjects);
+
+        expect(result).toBe(true);
+        expect(root).toStrictEqual(snapshot);
+    });
+
+    test('Returns false when JSONPath selector does not match', () => {
+        const root = createStoreRoot();
+        const snapshot = JSON.parse(JSON.stringify(root));
+
+        const result = matchesJsonPath(source, root, '$..book[?(@.price>100)]', nativeObjects);
+
+        expect(result).toBe(false);
+        expect(root).toStrictEqual(snapshot);
     });
 
     test('Logs payload when selector is empty', () => {

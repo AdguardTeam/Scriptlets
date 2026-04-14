@@ -178,6 +178,155 @@ test('does NOT set value when requiredInitialProps are absent — JSON.stringify
     assert.strictEqual(window.hit, undefined, 'hit function should not fire');
 });
 
+test('logs original result content when only methodPath is set', (assert) => {
+    assert.expect(5);
+
+    let logCount = 0;
+    console.log = function log(...input) {
+        const message = input[0];
+        console.debug(...input);
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Original content string of JSON.parse')
+        ) {
+            logCount += 1;
+            assert.notOk(message.includes('(propsPath:'), 'should omit empty props and value details');
+            assert.ok(message.includes(window.location.hostname), 'should log hostname in console');
+            assert.ok(message.includes('"a": 1'), 'should log the original JSON payload');
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse']);
+
+    const result = JSON.parse('{"a":1}');
+
+    assert.deepEqual(result, { a: 1 }, 'should leave the payload unchanged in log-only mode');
+    assert.strictEqual(logCount, 1, 'should log the original payload once');
+});
+
+test('logs original result content only when it matches requiredInitialProps in log-only mode', (assert) => {
+    assert.expect(5);
+
+    let logCount = 0;
+    console.log = function log(...input) {
+        console.debug(...input);
+        const message = input[0];
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Original content string of JSON.parse')
+        ) {
+            logCount += 1;
+            assert.ok(message.includes('(requiredInitialProps: "a":1)'), 'should log requiredInitialProps details');
+            assert.ok(message.includes(window.location.hostname), 'should log hostname for matching payloads');
+            assert.ok(message.includes('"a": 1'), 'should log only the matching JSON payload');
+            assert.notOk(message.includes('"b": 2'), 'should not log non-matching payloads');
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse', '', '', '"a":1']);
+
+    JSON.parse('{"a":1}');
+    JSON.parse('{"b":2}');
+
+    assert.strictEqual(logCount, 1, 'should not log payloads that do not match the filter');
+});
+
+test('logs original result content only when it matches stack trace in log-only mode', (assert) => {
+    assert.expect(6);
+
+    let logCount = 0;
+    console.log = function log(...input) {
+        console.debug(...input);
+        const message = input[0];
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Original content string of JSON.parse')
+        ) {
+            logCount += 1;
+            assert.ok(message.includes(window.location.hostname), 'should log hostname for matching payloads');
+            assert.ok(message.includes('"a": 1'), 'should log only the matching JSON payload');
+            assert.notOk(message.includes('"b": 2'), 'should not log non-matching payloads');
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse', '', '', '', 'result', 'callStackMatch']);
+
+    const callStackMatch = () => JSON.parse('{"a":1}');
+    const callStackNoMatch = () => JSON.parse('{"b":2}');
+
+    assert.deepEqual(callStackMatch(), { a: 1 }, 'should return the correct result for matching stack');
+    assert.deepEqual(callStackNoMatch(), { b: 2 }, 'should return the correct result for non-matching stack');
+    assert.strictEqual(logCount, 1, 'should not log payloads that do not match the filter');
+});
+
+test('logs original result content only when it matches requiredInitialProps and stack in log-only mode', (assert) => {
+    assert.expect(10);
+
+    let logCount = 0;
+    console.log = function log(...input) {
+        console.debug(...input);
+        const message = input[0];
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Original content string of JSON.parse')
+        ) {
+            logCount += 1;
+            assert.ok(message.includes('(requiredInitialProps: $.a)'), 'should log requiredInitialProps details');
+            assert.ok(message.includes(window.location.hostname), 'should log hostname for matching payloads');
+            assert.ok(message.includes('"a": 1'), 'should log only the matching JSON payload');
+            assert.notOk(message.includes('"a": 3'), 'should not log non-matching payloads');
+            assert.notOk(message.includes('"b": 2'), 'should not log non-matching payloads');
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse', '', '', '$.a', 'result', 'callStackMatch']);
+
+    const callStackMatchOne = () => JSON.parse('{"a":1}');
+    const callStackMatchTwo = () => JSON.parse('{"b":2}');
+    const callStackNoMatchOne = () => JSON.parse('{"c":3}');
+    const callStackNoMatchTwo = () => JSON.parse('{"a":3}');
+
+    assert.deepEqual(callStackMatchOne(), { a: 1 }, 'should return the correct result for matching stack');
+    assert.deepEqual(callStackMatchTwo(), { b: 2 }, 'should return the correct result for matching stack');
+    assert.deepEqual(callStackNoMatchOne(), { c: 3 }, 'should return the correct result for non-matching stack');
+    assert.deepEqual(callStackNoMatchTwo(), { a: 3 }, 'should return the correct result for non-matching stack');
+    assert.strictEqual(logCount, 1, 'should not log payloads that do not match the filter');
+});
+
+test('logs original result content only when requiredInitialProps JSONPath matches in log-only mode', (assert) => {
+    assert.expect(4);
+
+    let logCount = 0;
+    console.log = function log(...input) {
+        console.debug(...input);
+        const message = input[0];
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Original content string of JSON.parse')
+        ) {
+            logCount += 1;
+            assert.ok(
+                message.includes('(requiredInitialProps: $.tracking.enabled)'),
+                'should log requiredInitialProps JSONPath details',
+            );
+            assert.ok(message.includes(window.location.hostname), 'should log hostname for JSONPath matches');
+            assert.ok(message.includes('"enabled": true'), 'should log only the matching JSONPath payload');
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse', '', '', '$.tracking.enabled']);
+
+    JSON.parse('{"tracking":{"enabled":true},"meta":{"v":1}}');
+    JSON.parse('{"meta":{"v":1}}');
+
+    assert.strictEqual(logCount, 1, 'should not log payloads that do not match the JSONPath filter');
+});
+
 test('sets value only when stack matches — JSON.stringify', (assert) => {
     const callStringify = () => JSON.stringify({ flag: false });
     runScriptlet(name, ['JSON.stringify', 'flag', 'true', '', 'result', 'callStringify']);
@@ -605,6 +754,195 @@ test('modifies thisArg when jsonSource is this', (assert) => {
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 
     clearGlobalProps('contextHolder');
+});
+
+test('does not abort thisArg mutation when debug logging cannot clone function-valued properties', (assert) => {
+    window.nonCloneableContextHolder = {
+        state: {
+            enabled: true,
+            version: 2,
+        },
+        readState() {
+            return this.state;
+        },
+        helper() {
+            return 'helper';
+        },
+    };
+
+    runScriptlet(name, ['window.nonCloneableContextHolder.readState', 'state.enabled', 'false', '', 'this']);
+
+    const result = window.nonCloneableContextHolder.readState();
+
+    assert.deepEqual(result, { enabled: false, version: 2 }, 'should still mutate thisArg state');
+    assert.strictEqual(
+        window.nonCloneableContextHolder.helper(),
+        'helper',
+        'should preserve function-valued properties on the original object',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('nonCloneableContextHolder');
+});
+
+test('does not abort result mutation when debug logging cannot clone function-valued properties', (assert) => {
+    window.getNonCloneablePayload = () => ({
+        ads: {
+            enabled: true,
+        },
+        helper() {
+            return 'helper';
+        },
+    });
+
+    runScriptlet(name, ['window.getNonCloneablePayload', 'ads.enabled', 'false']);
+
+    const result = window.getNonCloneablePayload();
+
+    assert.strictEqual(result.ads.enabled, false, 'should still mutate the result payload');
+    assert.strictEqual(result.helper(), 'helper', 'should preserve function-valued properties on the result');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('getNonCloneablePayload');
+});
+
+test('checks if structuredClone logging works correctly', (assert) => {
+    assert.expect(6);
+
+    const originalContentMessage = 'Original content object of';
+    const modifiedContentMessage = 'Modified content object of';
+    const originalObject = JSON.parse('{"ads":{"enabled":true,"type":"banner"},"content":"article"}');
+    let originalObjectFromLog;
+
+    // mock console.log function for log checking
+    console.log = function log(...input) {
+        console.debug(...input);
+        if (input.some((msg) => msg?.includes?.(originalContentMessage))) {
+            assert.ok(input.some((msg) => msg?.includes?.(originalContentMessage)), 'should log message in console');
+            // input[2] is the original content object passed to the console.log
+            assert.deepEqual(input[2], originalObject, 'should log the original content object');
+            // eslint-disable-next-line prefer-destructuring
+            originalObjectFromLog = input[2];
+        }
+
+        if (input.some((msg) => msg?.includes?.(modifiedContentMessage))) {
+            assert.ok(input.some((msg) => msg?.includes?.(modifiedContentMessage)), 'should log message in console');
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse', '$.ads', '$remove$', '', '', '', '', 'true']);
+
+    const result = JSON.parse('{"ads":{"enabled":true,"type":"banner"},"content":"article"}');
+
+    assert.deepEqual(result, {
+        content: 'article',
+    }, 'should remove matched properties instead of setting them');
+    // Check that the original content object logged is the same as the one we expect
+    assert.deepEqual(originalObjectFromLog, originalObject, 'should log the original content object');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('marks verbose modified logs as changed when a mutation happens', (assert) => {
+    assert.expect(4);
+
+    let changedLogCount = 0;
+    console.log = function log(...input) {
+        console.debug(...input);
+        if (input.some((msg) => msg?.includes?.('Modified content object of JSON.parse'))) {
+            changedLogCount += 1;
+            assert.ok(
+                input.some((msg) => msg?.includes?.('(propsPath: ads.enabled, argumentValue: false)')),
+                'should include propsPath and argumentValue details for mutation logs',
+            );
+            assert.ok(true, 'should log changed status for modified object output');
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse', 'ads.enabled', 'false', '', 'result', '', '', 'true']);
+
+    const result = JSON.parse('{"ads":{"enabled":true}}');
+
+    assert.deepEqual(result, { ads: { enabled: false } }, 'should modify the payload');
+    assert.strictEqual(changedLogCount, 1, 'should log one modified object entry for changed content');
+});
+
+test('logs only original content when verbose mode does not modify an object payload', (assert) => {
+    assert.expect(4);
+
+    let originalLogCount = 0;
+    let modifiedLogCount = 0;
+    console.log = function log(...input) {
+        console.debug(...input);
+        if (input.some((msg) => msg?.includes?.('Original content object of JSON.parse'))) {
+            originalLogCount += 1;
+        }
+
+        if (input.some((msg) => msg?.includes?.('Modified content object of JSON.parse'))) {
+            modifiedLogCount += 1;
+        }
+    };
+
+    runScriptlet(name, ['JSON.parse', 'ads.enabled.[=].false', 'true', '', 'result', '', '', 'true']);
+
+    const result = JSON.parse('{"ads":{"enabled":true}}');
+
+    assert.deepEqual(result, { ads: { enabled: true } }, 'should leave the payload unchanged');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire when nothing changes');
+    assert.strictEqual(originalLogCount, 0, 'should not log original object output');
+    assert.strictEqual(modifiedLogCount, 0, 'should not log modified object output');
+});
+
+test('logs only original content when verbose mode does not modify line-delimited JSON', (assert) => {
+    assert.expect(3);
+
+    let originalLogCount = 0;
+    let modifiedLogCount = 0;
+
+    window.getUnchangedJsonLinesPayload = () => [
+        '{"ads":{"enabled":true},"id":1}',
+        '{"ads":{"enabled":true},"id":2}',
+    ].join('\r\n');
+
+    console.log = function log(...input) {
+        console.debug(...input);
+        const message = input[0];
+
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Original content string of window.getUnchangedJsonLinesPayload')
+        ) {
+            originalLogCount += 1;
+        }
+
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Modified content string of window.getUnchangedJsonLinesPayload')
+        ) {
+            modifiedLogCount += 1;
+        }
+    };
+
+    runScriptlet(
+        name,
+        ['window.getUnchangedJsonLinesPayload', 'ads.enabled.[=].false', 'true', '', 'result', '', '', 'true'],
+    );
+
+    const result = window.getUnchangedJsonLinesPayload();
+
+    assert.strictEqual(
+        result,
+        [
+            '{"ads":{"enabled":true},"id":1}',
+            '{"ads":{"enabled":true},"id":2}',
+        ].join('\r\n'),
+        'should leave line-delimited JSON unchanged',
+    );
+    assert.strictEqual(originalLogCount, 0, 'should not log original string output');
+    assert.strictEqual(modifiedLogCount, 0, 'should not log modified string output');
+
+    clearGlobalProps('getUnchangedJsonLinesPayload');
 });
 
 test('modifies all JSON sources when jsonSource is all', (assert) => {

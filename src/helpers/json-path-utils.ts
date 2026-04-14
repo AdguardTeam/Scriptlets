@@ -243,6 +243,7 @@ export function buildJsonPathExpression(selectorPath: string, argumentValue: any
  * @param nativeObjects optional bag of native object references
  * @param onMutation optional callback fired once if any mutation happens
  * @param stack optional stack trace pattern that must match for processing to occur
+ * @param matchOnly when true, evaluates guards and selector matches without mutating `root`
  * @returns mutated root value
  */
 export const jsonPath = (
@@ -252,6 +253,7 @@ export const jsonPath = (
     nativeObjects: JsonPathNativeObjects,
     onMutation?: JsonPathMutationObserver,
     stack = '',
+    matchOnly = false,
 ): any => {
     const ROOT_PATH = '$';
     const DOT = '.';
@@ -1769,12 +1771,19 @@ export const jsonPath = (
             }
         }
 
+        const matches = evaluateSelector(root, command.selector);
+        if (matchOnly) {
+            if (matches.length > 0 && onMutation) {
+                onMutation();
+            }
+            return root;
+        }
+
         if (!isMutationAllowed(command.mutation.mode)) {
             logMessage(source, 'JSONPath set and append operations are allowed only in trusted scriptlets');
             return root;
         }
 
-        const matches = evaluateSelector(root, command.selector);
         if (command.mutation.mode === 'remove') {
             removeMatches(matches);
             if (didMutate && onMutation) {
@@ -1794,4 +1803,45 @@ export const jsonPath = (
     }
 
     return root;
+};
+
+/**
+ * Checks whether a JSON value matches a JSONPath selector without mutating it.
+ *
+ * Supports the same selector syntax and leading guards as `jsonPath`, but only
+ * reports whether the selector matched at least one candidate.
+ *
+ * @param source source descriptor used for logging and parsing
+ * @param root JSON object or array to inspect
+ * @param path JSONPath expression used for matching
+ * @param nativeObjects optional bag of native object references
+ * @param stack optional stack trace pattern that must match for processing to occur
+ * @returns true when the expression matches the input value
+ */
+export const matchesJsonPath = (
+    source: Source,
+    root: Record<string, any>,
+    path: string,
+    nativeObjects: JsonPathNativeObjects,
+    stack = '',
+): boolean => {
+    if (!path) {
+        return true;
+    }
+
+    let didMatch = false;
+
+    jsonPath(
+        source,
+        root,
+        path,
+        nativeObjects,
+        () => {
+            didMatch = true;
+        },
+        stack,
+        true,
+    );
+
+    return didMatch;
 };

@@ -199,6 +199,7 @@ export const jsonPruner = (
  * @param requiredPaths array of required property chains that must all be present for the set to occur
  * @param stack string which should be matched by stack trace
  * @param nativeObjects reference to native objects
+ * @param onMutation optional callback fired after each successful write
  * @returns the modified root object
  */
 export const jsonSetter = (
@@ -210,8 +211,16 @@ export const jsonSetter = (
     requiredPaths: { path: string; value?: any }[],
     stack: string,
     nativeObjects: any,
+    onMutation?: () => void,
 ): ArbitraryObject => {
     const { nativeStringify } = nativeObjects;
+
+    const notifyMutation = () => {
+        hit(source);
+        if (onMutation) {
+            onMutation();
+        }
+    };
 
     if (!setPath) {
         logMessage(
@@ -243,7 +252,7 @@ export const jsonSetter = (
                 const node = matchedNodes[i];
                 if (node && node.base) {
                     node.base[node.prop] = getValue(node.base[node.prop]);
-                    hit(source);
+                    notifyMutation();
                 }
             }
         } else if (!hasWildcard && valueFilter === undefined) {
@@ -264,7 +273,7 @@ export const jsonSetter = (
             }
             const lastPart = pathParts[pathParts.length - 1];
             current[lastPart] = getValue(current[lastPart]);
-            hit(source);
+            notifyMutation();
         }
     } catch (e) {
         logMessage(source, e);
