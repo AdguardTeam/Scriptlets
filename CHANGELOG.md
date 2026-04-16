@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## 2.4.0
 
 ### Added
 
@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   JSONPath-based log-only filters, and verbose logs only when a write actually happens [#308].
 - `log-addEventListener` scriptlet: added new optional `noProtect` parameter,
   improving compatibility with other scriptlets that need to override `addEventListener` [#551].
+- Updated [@adguard/agtree] to `4.1.0`.
 
 ### Fixed
 
@@ -35,7 +36,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `trusted-click-element` no longer throws when event handlers set `cancelBubble`
   on spoofed events [#555].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...HEAD
 [#522]: https://github.com/AdguardTeam/Scriptlets/issues/522
 [#551]: https://github.com/AdguardTeam/Scriptlets/issues/551
 [#555]: https://github.com/AdguardTeam/Scriptlets/issues/555
