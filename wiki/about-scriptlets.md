@@ -1138,11 +1138,16 @@ https://github.com/gorhill/uBlock/commit/749cec0f095f659d6c0b90eb89b729e9deb07c8
 
 ### Syntax
 
+<!-- markdownlint-disable line-length -->
+
 ```text
-example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
+example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack[, mode]]]]])
 ```
 
+<!-- markdownlint-enable line-length -->
+
 - `propsToRemove` — optional, string of space-separated properties to remove.
+  In `jsonpath` mode only single JSONPath prune expression is supported.
 - `obligatoryProps` — optional, string of space-separated properties
   which must be all present for the pruning to occur.
 - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -1155,6 +1160,11 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
           invalid regular expression will cause any value matching.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
   if regular expression is invalid it will be skipped.
+- `mode` — optional, syntax mode selector.
+  Supported values:
+    - `legacy` — force the existing legacy path syntax
+    - `jsonpath` — force JSONPath syntax
+  If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
 
 > Note please that you can use wildcard `*` for chain property name,
 > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
@@ -1166,10 +1176,18 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
 
 ### Examples
 
+<!-- markdownlint-disable line-length -->
+
 1. Removes property `example` from the JSON response of any fetch call:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'example')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', '$.example')
     ```
 
     For instance, if the JSON response of a fetch call is:
@@ -1190,10 +1208,22 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
     example.org#%#//scriptlet('json-prune-fetch-response', 'a.b', 'ads.url.first')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', '[?(@.ads.url.first)]$.a.b')
+    ```
+
 3. Removes property `content.ad` from the JSON response of a fetch call if URL contains `content.json`:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', 'content.json')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', '$.content.ad', '', 'content.json')
     ```
 
 4. Removes property `content.ad` from the JSON response of a fetch call if its error stack trace contains `test.js`:
@@ -1202,10 +1232,22 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.ad', '', '', 'test.js')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', '$.content.ad', '', '', 'test.js')
+    ```
+
 5. A property in a list of properties can be a chain of properties with wildcard in it:
 
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response', 'content.*.media.src', 'content.*.media.ad')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-fetch-response', '$.content.*.media[?(@.ad)].src')
     ```
 
 6. Log all JSON responses of a fetch call:
@@ -1213,6 +1255,8 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
     ```adblock
     example.org#%#//scriptlet('json-prune-fetch-response')
     ```
+
+<!-- markdownlint-enable line-length -->
 
 [Scriptlet source](../src/scriptlets/json-prune-fetch-response.ts)
 
@@ -1229,11 +1273,16 @@ https://github.com/gorhill/uBlock/commit/3152896d428c54c76cfd66c3da110bd4d6506cb
 
 ### Syntax
 
+<!-- markdownlint-disable line-length -->
+
 ```text
-example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack]]]])
+example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatoryProps[, propsToMatch[, stack[, mode]]]]])
 ```
 
+<!-- markdownlint-enable line-length -->
+
 - `propsToRemove` — optional, string of space-separated properties to remove
+  In `jsonpath` mode only single JSONPath prune expression is supported.
 - `obligatoryProps` — optional, string of space-separated properties
   which must be all present for the pruning to occur
 - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
@@ -1244,6 +1293,11 @@ example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatory
           passed to `XMLHttpRequest.open()` call
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
   if regular expression is invalid it will be skipped
+- `mode` — optional, syntax mode selector.
+  Supported values:
+    - `legacy` — force the existing legacy path syntax
+    - `jsonpath` — force JSONPath syntax
+  If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
 
 > Note please that you can use wildcard `*` for chain property name,
 > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
@@ -1259,6 +1313,12 @@ example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatory
 
     ```adblock
     example.org#%#//scriptlet('json-prune-xhr-response', 'example')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', '$.example')
     ```
 
     For instance, if the JSON response of a XMLHttpRequest call is:
@@ -1279,10 +1339,22 @@ example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatory
     example.org#%#//scriptlet('json-prune-xhr-response', 'a.b', 'ads.url.first')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', '[?(@.ads.url.first)]$.a.b')
+    ```
+
 3. Removes property `content.ad` from the JSON response of a XMLHttpRequest call if URL contains `content.json`
 
     ```adblock
     example.org#%#//scriptlet('json-prune-xhr-response', 'content.ad', '', 'content.json')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', '$.content.ad', '', 'content.json')
     ```
 
 4. Removes property `content.ad` from the JSON response of a XMLHttpRequest call
@@ -1292,10 +1364,22 @@ if its error stack trace contains `test.js`
     example.org#%#//scriptlet('json-prune-xhr-response', 'content.ad', '', '', 'test.js')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', '$.content.ad', '', '', 'test.js')
+    ```
+
 5. A property in a list of properties can be a chain of properties with wildcard in it
 
     ```adblock
     example.org#%#//scriptlet('json-prune-xhr-response', 'content.*.media.src', 'content.*.media.ad')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune-xhr-response', '$.content.*.media[?(@.ad)].src')
     ```
 
 6. Log all JSON responses of a XMLHttpRequest call
@@ -1323,27 +1407,42 @@ https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/json-prune.js
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack]]])
+example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack [, mode]]]])
 ```
 
 - `propsToRemove` — optional, string of space-separated properties to remove
+  In `jsonpath` mode only single JSONPath prune expression is supported.
 - `obligatoryProps` — optional, string of space-separated properties
   which must be all present for the pruning to occur
+  In `jsonpath` mode this argument is ignored. Express such preconditions
+  directly in `propsToRemove` with leading JSONPath guards and filters.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
   if regular expression is invalid it will be skipped
+- `mode` — optional, syntax mode selector.
+  Supported values:
+    - `legacy` — force the existing legacy path syntax
+    - `jsonpath` — force JSONPath syntax
+  If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
+  otherwise it falls back to legacy syntax.
 
 > Note please that you can use wildcard `*` for chain property name,
 > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
 
 ### Examples
 
-1. Removes property `example` from the results of JSON.parse call
+1. Removes property `example` from the results of `JSON.parse` call
 
     ```adblock
     example.org#%#//scriptlet('json-prune', 'example')
     ```
 
-    JSON.parse call:
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', '$.example')
+    ```
+
+    `JSON.parse` call:
 
     ```html
     JSON.parse('{"one":1,"example":true}')
@@ -1366,13 +1465,19 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     }
     ```
 
-1. If there are no specified properties in the result of JSON.parse call, pruning will NOT occur
+1. If there are no specified properties in the result of `JSON.parse` call, pruning will NOT occur
 
     ```adblock
     example.org#%#//scriptlet('json-prune', 'one', 'obligatoryProp')
     ```
 
-    JSON.parse call:
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', '[?(@.obligatoryProp)]$.one')
+    ```
+
+    `JSON.parse` call:
 
     ```html
     JSON.parse('{"one":1,"two":2}')
@@ -1402,7 +1507,13 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'a.b', 'ads.url.first')
     ```
 
-    JSON.parse call:
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', '[?(@.ads.url.first)]$.a.b')
+    ```
+
+    `JSON.parse` call:
 
     ```html
     JSON.parse('{"a":{"b":123},"ads":{"url":{"first":"abc"}}}')
@@ -1436,13 +1547,19 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     }
     ```
 
-1. Removes property `content.ad` from the results of JSON.parse call if its error stack trace contains `test.js`
+1. Removes property `content.ad` from the results of `JSON.parse` call if its error stack trace contains `test.js`
 
     ```adblock
     example.org#%#//scriptlet('json-prune', 'content.ad', '', 'test.js')
     ```
 
-    JSON.parse call:
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', '$.content.ad', '', 'test.js')
+    ```
+
+    `JSON.parse` call:
 
     ```html
     JSON.parse('{"content":{"ad":{"src":"a.js"}}}')
@@ -1474,7 +1591,13 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'content.*.media.src', 'content.*.media.ad')
     ```
 
-    JSON.parse call:
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', '[?(@.content.*.media.ad)]$.content.*.media.src')
+    ```
+
+    `JSON.parse` call:
 
     ```html
     JSON.parse('{"content":{"block1":{"media":{"src":"1.jpg","ad":true}},"block2":{"media":{"src":"2.jpg"}}}}')
@@ -1523,7 +1646,13 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd')
     ```
 
-    JSON.parse call:
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', '$.videos.*[?(@.isAd)]')
+    ```
+
+    `JSON.parse` call:
 
     ```html
     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"src":"video1.mp4"}}}')
@@ -1563,7 +1692,13 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
     example.org#%#//scriptlet('json-prune', 'videos.{-}.isAd.[=].true')
     ```
 
-    JSON.parse call:
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('json-prune', '$.videos.*[?(@.isAd==true)]')
+    ```
+
+    `JSON.parse` call:
 
     ```html
     JSON.parse('{"videos":{"video1":{"isAd":true,"src":"video1.mp4"},"video2":{"isAd":false,"src":"video1.mp4"}}}')
@@ -1626,11 +1761,17 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#addeventlistener-logger
 
 ### Syntax
 
-```adblock
-example.org#%#//scriptlet('log-addEventListener')
+```text
+example.org#%#//scriptlet('log-addEventListener'[, noProtect])
 ```
 
-[Scriptlet source](../src/scriptlets/log-addEventListener.js)
+- `noProtect` — optional, if set to `'true'`, the scriptlet will use simple assignment instead of
+  `Object.defineProperty` with a no-op setter. This allows other scriptlets or tools to override
+  `addEventListener` later if needed. By default, the scriptlet protects the override from being
+  overwritten by website scripts. If compatibility with other scriptlets is needed,
+  set this parameter to `'true'`.
+
+[Scriptlet source](../src/scriptlets/log-addEventListener.ts)
 
 * * *
 

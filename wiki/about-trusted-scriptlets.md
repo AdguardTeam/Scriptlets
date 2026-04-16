@@ -281,16 +281,19 @@ If the path does not exist, it is created together with any missing intermediate
 <!-- markdownlint-disable line-length -->
 
 ```text
-example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, verbose]]]])
+example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, mode[, verbose]]]]])
 ```
 
 <!-- markdownlint-enable line-length -->
 
 - `propsPath` — required, dot-separated path to the property to set.
   Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
+  In `jsonpath` mode only single JSONPath prune expression is supported.
 - `argumentValue` — required, value to write at the target path.
   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax
   as `trusted-json-set`.
+  In `jsonpath` mode this argument may be omitted when `propsPath` already includes
+  an inline mutation suffix such as `=` or `+=`.
 - `requiredInitialProps` — optional, space-separated list of property paths
   which must all be present for the modification to occur.
 - `propsToMatch` — optional, string of space-separated properties to match.
@@ -298,16 +301,30 @@ example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argument
     - string or regular expression for matching the URL passed to fetch call;
     - colon-separated pairs `name:value` for matching fetch init options.
 - `stack` — optional, string or regular expression that must match the current function call stack trace.
+- `mode` — optional, syntax mode selector.
+  Supported values:
+    - `legacy` — force the existing legacy path syntax
+    - `jsonpath` — force JSONPath syntax
+  If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
 - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
 
 > Scriptlet does nothing if response body cannot be converted to JSON.
+> If the response is line-delimited JSON, each JSON line is processed independently.
 
 ### Examples
+
+<!-- markdownlint-disable line-length -->
 
 1. Sets `ads.enabled` to `false` in the JSON response of any fetch call
 
     ```adblock
     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'ads.enabled', 'false')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.ads.enabled', 'false')
     ```
 
 1. Creates `config.flags.blocked` path in matching fetch responses
@@ -316,10 +333,22 @@ example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argument
     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'config.flags.blocked', 'true', '', 'api/config')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.+={"config":{"flags":{"blocked":true}}}', '', '', 'api/config')
+    ```
+
 1. Merges a parsed JSON object into an existing response object property
 
     ```adblock
     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.foo', 'json:{"a":{"test":1},"b":{"c":1}}')
     ```
 
 1. Replaces a value in the JSON response using a regular expression
@@ -327,6 +356,14 @@ example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argument
     ```adblock
     example.org#%#//scriptlet('trusted-json-set-fetch-response', 'foo', 'replace:/advertisement/article/')
     ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.foo=replace({"regex":"advertisement","replacement":"article"})')
+    ```
+
+<!-- markdownlint-enable line-length -->
 
 [Scriptlet source](../src/scriptlets/trusted-json-set-fetch-response.ts)
 
@@ -344,28 +381,73 @@ If the path does not exist, it is created together with any missing intermediate
 <!-- markdownlint-disable line-length -->
 
 ```text
-example.org#%#//scriptlet('trusted-json-set-xhr-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, verbose]]]])
+example.org#%#//scriptlet('trusted-json-set-xhr-response', propsPath, argumentValue[, requiredInitialProps[, propsToMatch[, stack[, mode[, verbose]]]]])
 ```
 
 <!-- markdownlint-enable line-length -->
 
 - `propsPath` — required, dot-separated path to the property to set.
   Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
+  In `jsonpath` mode only single JSONPath prune expression is supported.
 - `argumentValue` — required, value to write at the target path.
   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax as `trusted-json-set`.
+  In `jsonpath` mode this argument may be omitted when `propsPath` already includes
+  an inline mutation suffix such as `=` or `+=`.
 - `requiredInitialProps` — optional, space-separated list of property paths
   which must all be present for the modification to occur.
 - `propsToMatch` — optional, string of space-separated properties to match for extra condition.
 - `stack` — optional, string or regular expression that must match the current function call stack trace.
+- `mode` — optional, syntax mode selector.
+  Supported values:
+    - `legacy` — force the existing legacy path syntax
+    - `jsonpath` — force JSONPath syntax
+  If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
 - `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
 
 > Scriptlet does nothing if response body cannot be converted to JSON.
+> If the response is line-delimited JSON, each JSON line is processed independently.
 
 ### Example
 
-```adblock
-example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
-```
+<!-- markdownlint-disable line-length -->
+
+1. Sets `foo` property to `{"a":{"test":1},"b":{"c":1}}` in the JSON response of any XMLHttpRequest call:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-xhr-response', '$.foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+    ```
+
+1. Creates `config.flags.blocked` path in matching XMLHttpRequest responses
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-xhr-response', 'config.flags.blocked', 'true', '', 'api/config')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-xhr-response', '$.+={"config":{"flags":{"blocked":true}}}', '', '', 'api/config')
+    ```
+
+1. Replaces a value in the JSON response using a regular expression
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'replace:/advertisement/article/')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set-xhr-response', '$.foo=replace({"regex":"advertisement","replacement":"article"})')
+    ```
+
+<!-- markdownlint-enable line-length -->
 
 [Scriptlet source](../src/scriptlets/trusted-json-set-xhr-response.ts)
 
@@ -377,6 +459,7 @@ example.org#%#//scriptlet('trusted-json-set-xhr-response', 'foo', 'json:{"a":{"t
 
 Intercepts a specified method and sets a property at the given path in the JSON value selected by `jsonSource`.
 If the path does not exist, it is created, including any missing intermediate objects.
+If `propsPath` is omitted, the scriptlet switches to logging-only mode and logs the original selected content.
 
 Depending on `jsonSource`, the scriptlet can modify:
 
@@ -389,7 +472,7 @@ Depending on `jsonSource`, the scriptlet can modify:
 <!-- markdownlint-disable line-length -->
 
 ```text
-example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentValue[, requiredInitialProps[, jsonSource[, stack[, verbose]]]])
+example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentValue[, requiredInitialProps[, jsonSource[, stack[, mode[, verbose]]]]]]])
 ```
 
 <!-- markdownlint-enable line-length -->
@@ -397,12 +480,17 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 - `methodPath` — required, chain of dot-separated properties leading to the target method,
   e.g. `JSON.stringify`, `JSON.parse`.
   The method may receive a JSON object as its first argument or return one.
-- `propsPath` — required, dot-separated path to the property to set.
+- `propsPath` — optional, dot-separated path to the property to set.
+  If omitted, the scriptlet logs the original selected content and does not mutate it.
   Supports wildcards:
     - `*` — matches any object property key
     - `[]` — matches any array element index
   Supports value filtering: append `.[=].value` to only modify nodes where the property equals `value`.
-- `argumentValue` — required, the value to write at the target path.
+  In `jsonpath` mode this may also be a full JSONPath mutation expression such as `$..*[?(@.price==8.99)].price=10`.
+  JSONPath mode accepts only one expression string in `propsPath`; it does not
+  support combining multiple independent JSONPath expressions in one argument.
+- `argumentValue` — required when `propsPath` is provided, the value to write at the target path.
+  Ignored in logging-only mode.
   Can be one of the predefined constants:
     - `undefined`
     - `false`
@@ -419,6 +507,7 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     - `throwFunc` — function throwing an error
     - `noopPromiseResolve` — function returning `Promise` resolved with an empty response
     - `noopPromiseReject` — function returning `Promise.reject()`
+    - `$remove$` — in `jsonpath` mode, removes each property or array item matched by `propsPath`
     - any other string is set as a string literal
 
   Can also be a replacement applied to the current string value at the target path,
@@ -428,8 +517,15 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 
   Or `json:{...}` — parses the provided `JSON` value, can be used to apply multiple modifications at once.
   If the current target value is also an object, the parsed object is merged into it.
+  In `jsonpath` mode this argument becomes optional when `propsPath` already includes
+  an inline mutation suffix such as `=` or `+=`; it may also be set to `$remove$`
+  to remove the nodes matched by `propsPath`.
 - `requiredInitialProps` — optional, space-separated list of property paths.
   All listed paths must be present in the JSON object for the modification to occur.
+  In logging-only mode, this argument is treated as a string, regular-expression,
+  or JSONPath filter against the selected content, and only matching payloads are logged.
+  In `jsonpath` mode, express such preconditions directly in `propsPath`
+  with JSONPath guards and filters instead of using this argument.
 - `jsonSource` — optional, where to read and modify the JSON value from. Defaults to `result`.
   Supported values:
     - `arg` — only the first argument
@@ -441,7 +537,16 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     - `all` — all arguments, `thisArg`, and the return value
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
   if a regular expression is invalid it will be skipped.
-- `verbose` — optional, if set to `true`, the scriptlet will log the original and modified JSON content.
+- `mode` — optional, syntax mode selector.
+  Supported values:
+    - `legacy` — force the existing legacy path syntax
+    - `jsonpath` — force JSONPath syntax and treat `propsPath` as a JSONPath selector
+  If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
+  otherwise it falls back to legacy syntax.
+- `verbose` — optional.
+  In mutation mode, if set to `true`, the scriptlet logs the original and modified JSON content
+  only when a write actually happens.
+  In logging-only mode, the original content is logged even without `verbose`.
 
 > [!IMPORTANT]
 > Please note that, if `requiredInitialProps` is not specified, the scriptlet will attempt to set
@@ -456,6 +561,12 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 
     ```adblock
     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'ads.enabled', 'false')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads.enabled', 'false')
     ```
 
     For instance, the following call:
@@ -489,6 +600,12 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     example.org#%#//scriptlet('trusted-json-set', 'JSON.stringify', 'config.ads.blocked', 'true')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.stringify', '$.config+={"ads":{"blocked":true}}')
+    ```
+
     For instance, the following call:
 
     ```js
@@ -511,6 +628,12 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 
     ```adblock
     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'items.[].enabled', 'false')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.items.*.enabled', 'false')
     ```
 
     Input JSON:
@@ -542,6 +665,12 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'items.*.enabled.[=].true', 'false')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.items.*[?(@.enabled==true)].enabled', 'false')
+    ```
+
     Input JSON:
 
     ```json
@@ -570,6 +699,12 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'content', 'replace:/advertisement/article/')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.content=replace({"regex":"advertisement","replacement":"article"})')
+    ```
+
     Input JSON:
 
     ```json
@@ -586,6 +721,12 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
 
     ```adblock
     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'foo', 'json:{"a":{"test":1},"b":{"c":1}}')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.foo', 'json:{"a":{"test":1},"b":{"c":1}}')
     ```
 
     Input JSON:
@@ -606,6 +747,12 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'tracking.enabled', 'false', 'tracking.enabled', 'result')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '[?(@.tracking.enabled)]$.tracking.enabled', 'false', '', 'result')
+    ```
+
     Input JSON:
 
     ```json
@@ -618,10 +765,52 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     { "tracking": { "enabled": false }, "meta": { "v": 1 } }
     ```
 
+1. Logs the original `JSON.parse` result without modifying it
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse')
+    ```
+
+1. Logs only `JSON.parse` results containing a specific string
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '', '', '"id":"117458"')
+    ```
+
+1. Logs only `JSON.parse` results matching a JSONPath selector
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '', '', '$.tracking.enabled')
+    ```
+
+1. Removes `ads.enabled` from the parsed object in `JSONPath` mode
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads', '$remove$')
+    ```
+
+    Input JSON:
+
+    ```json
+    { "ads": { "enabled": true, "type": "banner" }, "content": "article" }
+    ```
+
+    Output:
+
+    ```json
+    { "content": "article" }
+    ```
+
 1. Modifies the first argument before the target method is called
 
     ```adblock
     example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', 'ads.enabled', 'false', '', 'arg:0')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', '$.ads.enabled', 'false', '', 'arg:0')
     ```
 
 1. Modifies selected arguments before the target method is called
@@ -630,10 +819,22 @@ example.org#%#//scriptlet('trusted-json-set', methodPath, propsPath, argumentVal
     example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', 'ads.enabled', 'false', '', 'arg:0|2')
     ```
 
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', '$.ads.enabled', 'false', '', 'arg:0|2')
+    ```
+
 1. Only applies when the call originates from a script matching the `adManager` stack trace
 
     ```adblock
     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', 'ads.enabled', 'false', '', 'result', 'adManager')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads.enabled', 'false', '', 'result', 'adManager')
     ```
 
     Input:
