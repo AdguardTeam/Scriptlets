@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## 2.4.0
+## 2.4.0-beta
 
 ### Added
 
@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   JSONPath-based log-only filters, and verbose logs only when a write actually happens [#308].
 - `log-addEventListener` scriptlet: added new optional `noProtect` parameter,
   improving compatibility with other scriptlets that need to override `addEventListener` [#551].
-- Updated [@adguard/agtree] to `4.1.0`.
+- Updated [@adguard/agtree] to `4.1.0-beta`.
 
 ### Fixed
 
