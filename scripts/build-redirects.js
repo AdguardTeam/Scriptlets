@@ -199,7 +199,7 @@ const getJsRedirects = async (options = {}) => {
     };
 
     const complementJsRedirects = (fileName) => {
-        const redirectName = fileName.replace(/\.js/, '');
+        const redirectName = fileName.replace(/\.(js|ts)$/, '');
         const complement = listOfRedirectsData.find((obj) => obj.name === redirectName);
         const comment = getComment(redirectName);
 

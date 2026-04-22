@@ -88,6 +88,9 @@
             "adg": "google-ima3"
         },
         {
+            "adg": "google-ima3-dai"
+        },
+        {
             "adg": "googlesyndication-adsbygoogle"
         },
         {
@@ -484,6 +487,9 @@
         {
             "adg": "google-ima3",
             "ubo": "google-ima.js"
+        },
+        {
+            "adg": "google-ima3-dai"
         },
         {
             "adg": "googlesyndication-adsbygoogle",

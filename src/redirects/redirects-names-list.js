@@ -19,6 +19,7 @@ export { GemiusNames } from './gemius';
 export { ATInternetSmartTagNames } from './ati-smarttag';
 export { preventBab2Names } from './prevent-bab2';
 export { GoogleIma3Names } from './google-ima3';
+export { GoogleIma3DaiNames } from './google-ima3-dai';
 export { DidomiLoaderNames } from './didomi-loader';
 export { PrebidNames } from './prebid';
 export { prebidAdsNames } from './prebid-ads';

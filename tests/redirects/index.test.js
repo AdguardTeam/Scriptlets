@@ -3,6 +3,7 @@ import './google-analytics.test';
 import './google-analytics-ga.test';
 import './googletagservices-gpt.test';
 import './google-ima3.test';
+import './google-ima3-dai.test';
 import './gemius.test';
 import './scorecardresearch-beacon.test';
 import './metrika-yandex-watch.test';

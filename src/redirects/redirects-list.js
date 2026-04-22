@@ -19,6 +19,7 @@ export { Gemius } from './gemius';
 export { ATInternetSmartTag } from './ati-smarttag';
 export { preventBab2 } from './prevent-bab2';
 export { GoogleIma3 } from './google-ima3';
+export { GoogleIma3Dai } from './google-ima3-dai';
 export { DidomiLoader } from './didomi-loader';
 export { Prebid } from './prebid';
 export { prebidAds } from './prebid-ads';

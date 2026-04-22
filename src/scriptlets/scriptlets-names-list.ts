@@ -93,6 +93,7 @@ export { GemiusNames } from './gemius';
 export { GoogleAnalyticsNames } from './google-analytics';
 export { GoogleAnalyticsGaNames } from './google-analytics-ga';
 export { GoogleIma3Names } from './google-ima3';
+export { GoogleIma3DaiNames } from './google-ima3-dai';
 export { GoogleSyndicationAdsByGoogleNames } from './googlesyndication-adsbygoogle';
 export { GoogleTagServicesGptNames } from './googletagservices-gpt';
 export { MatomoNames } from './matomo';

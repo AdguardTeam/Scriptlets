@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- `google-ima3-dai` redirect resource and scriptlet [#239].
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.0-beta...HEAD
+[#239]: https://github.com/AdguardTeam/Scriptlets/issues/239
+
 ## 2.4.0-beta
 
 ### Added
