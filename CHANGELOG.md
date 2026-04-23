@@ -10,16 +10,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [2.4.1] - 2026-04-23
 
 ### Added
 
 - `google-ima3-dai` redirect resource and scriptlet [#239].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.0-beta...HEAD
+## Changed
+
+- Updated [@adguard/agtree] to 4.1.1
+
+[2.4.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.0-beta...v2.4.1
 [#239]: https://github.com/AdguardTeam/Scriptlets/issues/239
 
-## 2.4.0-beta
+## [2.4.0-beta] - 2026-04-21
 
 ### Added
 
@@ -45,6 +49,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `trusted-click-element` no longer throws when event handlers set `cancelBubble`
   on spoofed events [#555].
 
+[2.4.0-beta]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...v2.4.0-beta
 [#522]: https://github.com/AdguardTeam/Scriptlets/issues/522
 [#551]: https://github.com/AdguardTeam/Scriptlets/issues/551
 [#555]: https://github.com/AdguardTeam/Scriptlets/issues/555
@@ -1034,3 +1039,4 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [@adguard/agtree]: https://www.npmjs.com/package/@adguard/agtree
 
 [Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API
+
