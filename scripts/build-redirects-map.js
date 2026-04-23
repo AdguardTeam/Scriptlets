@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const createRedirectsMap = (redirects) => {
-    const map = {};
+    const map = Object.create(null);
 
     redirects.forEach((item) => {
         const { title, aliases, file } = item;
