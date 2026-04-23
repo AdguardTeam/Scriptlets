@@ -8,7 +8,9 @@ import { redirectsMap } from '../../tmp/redirects-map';
  * @returns {string} — Redirect's filename with extension
  */
 const getRedirectFilename = (name) => {
-    return redirectsMap[name];
+    return Object.prototype.hasOwnProperty.call(redirectsMap, name)
+        ? redirectsMap[name]
+        : undefined;
 };
 
 export {
