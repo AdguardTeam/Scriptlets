@@ -31,6 +31,7 @@
 | [google-analytics](../wiki/about-scriptlets.md#google-analytics) | google-analytics_analytics.js (google-analytics_analytics) |  |
 | [google-analytics-ga](../wiki/about-scriptlets.md#google-analytics-ga) | google-analytics-ga.js (google-analytics-ga) |  |
 | [google-ima3](../wiki/about-scriptlets.md#google-ima3) |  |  |
+| [google-ima3-dai](../wiki/about-scriptlets.md#google-ima3-dai) |  |  |
 | [googlesyndication-adsbygoogle](../wiki/about-scriptlets.md#googlesyndication-adsbygoogle) |  |  |
 | [googletagservices-gpt](../wiki/about-scriptlets.md#googletagservices-gpt) | googletagservices_gpt.js (ubo-googletagservices_gpt.js, ubo-googletagservices_gpt) |  |
 | [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js (json-prune) | json-prune |
@@ -151,6 +152,7 @@
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
 | [google-ima3](../wiki/about-redirects.md#google-ima3) | google-ima.js |  |
+| [google-ima3-dai](../wiki/about-redirects.md#google-ima3-dai) |  |  |
 | [googlesyndication-adsbygoogle](../wiki/about-redirects.md#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js |  |
 | [googletagservices-gpt](../wiki/about-redirects.md#googletagservices-gpt) | googletagservices_gpt.js |  |
 | [gemius](../wiki/about-redirects.md#gemius) |  |  |

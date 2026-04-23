@@ -22,6 +22,7 @@
 - [gemius](#gemius)
 - [google-analytics-ga](#google-analytics-ga)
 - [google-analytics](#google-analytics)
+- [google-ima3-dai](#google-ima3-dai)
 - [google-ima3](#google-ima3)
 - [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
 - [googletagservices-gpt](#googletagservices-gpt)
@@ -831,6 +832,22 @@ example.org#%#//scriptlet('google-analytics')
 ```
 
 [Scriptlet source](../src/scriptlets/google-analytics.ts)
+
+* * *
+
+## <a id="google-ima3-dai"></a> ⚡️ google-ima3-dai
+
+> Added in unknown.
+
+Mocks the IMA DAI SDK of Google.
+
+### Examples
+
+```adblock
+example.org#%#//scriptlet('google-ima3-dai')
+```
+
+[Scriptlet source](../src/scriptlets/google-ima3-dai.ts)
 
 * * *
 

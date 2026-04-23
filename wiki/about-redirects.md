@@ -25,6 +25,7 @@
 - [gemius](#gemius)
 - [google-analytics-ga](#google-analytics-ga)
 - [google-analytics](#google-analytics)
+- [google-ima3-dai](#google-ima3-dai)
 - [google-ima3](#google-ima3)
 - [googlesyndication-adsbygoogle](#googlesyndication-adsbygoogle)
 - [googletagservices-gpt](#googletagservices-gpt)
@@ -445,6 +446,22 @@ https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/googl
 ```
 
 [Redirect source](../src/redirects/google-analytics.js)
+
+* * *
+
+## <a id="google-ima3-dai"></a> ⚡️ google-ima3-dai
+
+> Added in unknown.
+
+Mocks the IMA DAI SDK of Google.
+
+### Examples
+
+```adblock
+||imasdk.googleapis.com/js/sdkloader/ima3_dai.js$script,redirect=google-ima3-dai
+```
+
+[Redirect source](../src/redirects/google-ima3-dai.ts)
 
 * * *
 
