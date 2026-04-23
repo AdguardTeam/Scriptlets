@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [2.4.2] - 2026-04-24
+
+### Added
+
+- Scriptlets release version for `google-ima3-dai`.
+
+[2.4.2]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.1...v2.4.2
+
 ## [2.4.1] - 2026-04-23
 
 ### Added

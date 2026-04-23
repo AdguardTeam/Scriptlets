@@ -12,6 +12,6 @@ import { GoogleIma3Dai, GoogleIma3DaiNames } from '../redirects/google-ima3-dai'
  * example.org#%#//scriptlet('google-ima3-dai')
  * ```
  *
- * @added unknown.
+ * @added v2.4.2.
  */
 export { GoogleIma3Dai, GoogleIma3DaiNames };

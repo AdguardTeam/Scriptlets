@@ -14,7 +14,7 @@ import { type Source } from '../scriptlets';
  * ||imasdk.googleapis.com/js/sdkloader/ima3_dai.js$script,redirect=google-ima3-dai
  * ```
  *
- * @added unknown.
+ * @added v2.4.2.
  */
 
 type PlainRecord = Record<string, unknown>;
