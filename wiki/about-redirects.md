@@ -451,7 +451,7 @@ https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/googl
 
 ## <a id="google-ima3-dai"></a> ⚡️ google-ima3-dai
 
-> Added in unknown.
+> Added in v2.4.2.
 
 Mocks the IMA DAI SDK of Google.
 

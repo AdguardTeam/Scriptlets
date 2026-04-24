@@ -837,7 +837,7 @@ example.org#%#//scriptlet('google-analytics')
 
 ## <a id="google-ima3-dai"></a> ⚡️ google-ima3-dai
 
-> Added in unknown.
+> Added in v2.4.2.
 
 Mocks the IMA DAI SDK of Google.
 
