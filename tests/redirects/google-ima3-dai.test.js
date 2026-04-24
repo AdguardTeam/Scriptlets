@@ -216,6 +216,14 @@ test('Mocked - request classes and settings', (assert) => {
     );
     assert.strictEqual(uiSettings.getLocale(), 'en', 'UiSettings locale is stored');
     assert.deepEqual(daiSettings.getFeatureFlags(), { testFlag: true }, 'DaiSdkSettings stores feature flags');
+    assert.deepEqual(
+        api.StreamRequest.StreamFormat,
+        {
+            DASH: 'dash',
+            HLS: 'hls',
+        },
+        'StreamRequest exposes the StreamFormat enum',
+    );
 });
 
 test('Mocked - invalid runtime inputs do not get copied into requests or stream data', (assert) => {

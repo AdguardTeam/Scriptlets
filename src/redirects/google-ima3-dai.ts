@@ -142,6 +142,10 @@ type EventHandlerConstructor = {
 type StreamRequestConstructor = {
     new (streamRequest?: StreamRequestInput): StreamRequestInstance;
     prototype: StreamRequestInstance;
+    StreamFormat: {
+        DASH: 'dash';
+        HLS: 'hls';
+    };
 };
 
 type LiveStreamRequestConstructor = {
@@ -437,6 +441,11 @@ export function GoogleIma3Dai(source: Source) {
         }
     };
 
+    const streamFormats = {
+        DASH: 'dash',
+        HLS: 'hls',
+    } as const;
+
     /**
      * Creates a base stream request instance.
      *
@@ -448,6 +457,7 @@ export function GoogleIma3Dai(source: Source) {
     ) {
         initializeStreamRequest(this, streamRequest);
     } as unknown as StreamRequestConstructor;
+    StreamRequest.StreamFormat = streamFormats;
 
     /**
      * Creates a live stream request instance.

@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Fixed
+
+- Added the missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...HEAD
+
 ## [2.4.2] - 2026-04-24
 
 ### Added
@@ -1047,4 +1055,3 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [@adguard/agtree]: https://www.npmjs.com/package/@adguard/agtree
 
 [Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API
-
