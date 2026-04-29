@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import * as redirectsNamesLists from '../src/redirects/redirects-names-list';
 import { version } from '../package.json';
 import { rollupStandard } from './rollup-runners';
-import { writeFile, getDataFromFiles } from './helpers';
+import { writeFile, getDataFromFiles, convertTsFileNameToJs } from './helpers';
 import {
     redirectsFilenames,
     REDIRECTS_SRC_RELATIVE_DIR_PATH,
@@ -210,7 +210,7 @@ const getJsRedirects = async (options = {}) => {
                 aliases: complement.aliases,
                 contentType: 'application/javascript',
                 content: complement.redirect,
-                file: fileName,
+                file: convertTsFileNameToJs(fileName),
             };
         }
         throw new Error(`Couldn't find source for non-static redirect: ${fileName}`);

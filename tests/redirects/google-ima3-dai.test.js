@@ -47,6 +47,11 @@ test('Mocked - DAI namespace and main classes', (assert) => {
     assert.strictEqual(typeof api.StreamEvent, 'function', 'StreamEvent is mocked');
     assert.strictEqual(typeof api.StreamData, 'function', 'StreamData is mocked');
     assert.strictEqual(typeof api.UiSettings, 'function', 'UiSettings is mocked');
+    assert.strictEqual(typeof api.ui, 'function', 'ui wrapper is mocked');
+    assert.strictEqual(typeof api.ui.UiData, 'function', 'ui.UiData is mocked');
+    assert.strictEqual(typeof api.ui.UiOptions, 'function', 'ui.UiOptions is mocked');
+    assert.strictEqual(typeof api.customUi, 'object', 'customUi namespace is mocked');
+    assert.strictEqual(typeof api.customUi.UiOptions, 'function', 'customUi.UiOptions is mocked');
     assert.strictEqual(typeof api.DaiSdkSettings, 'object', 'DaiSdkSettings singleton is mocked');
     assert.strictEqual(
         typeof api.DaiSdkSettings.getFeatureFlags,
@@ -126,9 +131,44 @@ test('Mocked - request classes and settings', (assert) => {
         },
         vodConfigId: 'vod-config-id',
     });
+    const uiImage = new api.ui.UiData.UiImage({
+        altText: 'Why this ad',
+        height: 20,
+        url: 'https://cdn.example.test/icon.png',
+        width: 20,
+    });
+    const uiData = new api.ui.UiData({
+        clickable: true,
+        imageVariants: [uiImage],
+        required: true,
+        text: 'Skip Ad',
+    });
+    const uiOptions = new api.ui.UiOptions({
+        aboutThisAdSupport: true,
+        clickThroughNavigation: api.ui.UiOptions.ClickThroughNavigation.EXTERNAL,
+        skippableSupport: true,
+    });
+    const customUiOptions = new api.customUi.UiOptions({
+        aboutThisAdSupport: true,
+        skippableSupport: true,
+    });
+    const clickEvents = [];
+    const visibleElementsEvents = [];
+    const UiWrapper = api.ui;
+    const ui = new UiWrapper({
+        getConfig: () => new Map([[api.ui.UiKey.SKIP_BUTTON, uiData]]),
+        onClick: (uiKey, eventData) => {
+            clickEvents.push({ eventData, uiKey });
+        },
+        setVisibleElements: (uiElements) => {
+            visibleElementsEvents.push(uiElements);
+        },
+    });
     const uiSettings = new api.UiSettings();
     const daiSettings = api.DaiSdkSettings;
 
+    ui.onClick(api.ui.UiKey.SKIP_BUTTON, { from: 'test' });
+    ui.setVisibleElements(new Set([api.ui.UiKey.SKIP_BUTTON]));
     uiSettings.setLocale('en');
     daiSettings.setFeatureFlags({
         testFlag: true,
@@ -137,6 +177,7 @@ test('Mocked - request classes and settings', (assert) => {
     assert.strictEqual(liveStreamRequest.assetKey, 'asset-key', 'LiveStreamRequest stores assetKey');
     assert.strictEqual(liveStreamRequest.networkCode, '12345', 'LiveStreamRequest stores networkCode');
     assert.strictEqual(liveStreamRequest.adTagParameters.retry, '1', 'LiveStreamRequest stringifies ad tag parameters');
+    assert.deepEqual(liveStreamRequest.ui, { custom: null }, 'LiveStreamRequest initializes ui to the default shape');
     assert.strictEqual(podStreamRequest.customAssetKey, 'custom-asset-key', 'PodStreamRequest stores customAssetKey');
     assert.strictEqual(vodStreamRequest.contentSourceId, 'cms-id', 'VODStreamRequest stores contentSourceId');
     assert.strictEqual(vodStreamRequest.videoId, 'video-id', 'VODStreamRequest stores videoId');
@@ -214,6 +255,29 @@ test('Mocked - request classes and settings', (assert) => {
         { adTracking: 'enabled' },
         'VideoStitcherVodStreamRequest stores session options',
     );
+    assert.deepEqual(
+        ui.getConfig().get(api.ui.UiKey.SKIP_BUTTON),
+        uiData,
+        'ui wrapper exposes the delegated config map',
+    );
+    assert.deepEqual(
+        clickEvents,
+        [{ eventData: { from: 'test' }, uiKey: api.ui.UiKey.SKIP_BUTTON }],
+        'ui wrapper forwards click events',
+    );
+    assert.strictEqual(visibleElementsEvents.length, 1, 'ui wrapper forwards visible elements updates');
+    assert.strictEqual(uiData.required, true, 'ui.UiData stores required flag');
+    assert.strictEqual(uiData.clickable, true, 'ui.UiData stores clickable flag');
+    assert.strictEqual(uiData.imageVariants[0].url, 'https://cdn.example.test/icon.png', 'ui image data is kept');
+    assert.strictEqual(uiOptions.aboutThisAdSupport, true, 'ui.UiOptions stores aboutThisAdSupport');
+    assert.strictEqual(uiOptions.skippableSupport, true, 'ui.UiOptions stores skippableSupport');
+    assert.strictEqual(
+        uiOptions.clickThroughNavigation,
+        api.ui.UiOptions.ClickThroughNavigation.EXTERNAL,
+        'ui.UiOptions stores click-through navigation mode',
+    );
+    assert.strictEqual(customUiOptions.aboutThisAdSupport, true, 'customUi.UiOptions stores aboutThisAdSupport');
+    assert.strictEqual(customUiOptions.skippableSupport, true, 'customUi.UiOptions stores skippableSupport');
     assert.strictEqual(uiSettings.getLocale(), 'en', 'UiSettings locale is stored');
     assert.deepEqual(daiSettings.getFeatureFlags(), { testFlag: true }, 'DaiSdkSettings stores feature flags');
     assert.deepEqual(
@@ -235,6 +299,7 @@ test('Mocked - invalid runtime inputs do not get copied into requests or stream 
 
     assert.deepEqual(streamRequest.adTagParameters, {}, 'StreamRequest ignores string runtime input');
     assert.strictEqual(streamRequest.format, 'hls', 'StreamRequest keeps defaults for string runtime input');
+    assert.deepEqual(streamRequest.ui, { custom: null }, 'StreamRequest keeps the default ui container');
     assert.deepEqual(streamData.cuepoints, [], 'StreamData ignores string runtime input');
     assert.strictEqual(streamData.url, '', 'StreamData keeps defaults for string runtime input');
 });

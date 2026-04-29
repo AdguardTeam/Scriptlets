@@ -38,6 +38,11 @@ interface StreamRequestInstance extends PlainRecord {
     networkCode: string | null;
     omidAccessModeRules: PlainRecord | null;
     streamActivityMonitorId: string | null;
+    ui: StreamRequestUiInstance;
+}
+
+interface StreamRequestUiInstance extends PlainRecord {
+    custom: PlainRecord | null;
 }
 
 interface LiveStreamRequestInstance extends StreamRequestInstance {
@@ -100,6 +105,46 @@ interface UiSettingsInstance {
     locale: string;
     getLocale(): string;
     setLocale(locale: string): void;
+}
+
+interface UiImageInstance {
+    altText: string;
+    height: number;
+    url: string;
+    width: number;
+}
+
+interface UiDataInstance extends PlainRecord {
+    altText?: string;
+    clickable: boolean;
+    clickUrl?: string;
+    imageUrl?: string;
+    imageVariants?: UiImageInstance[];
+    required: boolean;
+    text?: string;
+}
+
+interface UiOptionsInstance {
+    aboutThisAdSupport: boolean;
+    clickThroughNavigation: string;
+    skippableSupport: boolean;
+}
+
+interface CustomUiOptionsInstance {
+    aboutThisAdSupport: boolean;
+    skippableSupport: boolean;
+}
+
+interface UiDelegateInstance extends PlainRecord {
+    getConfig?: () => Map<string, UiDataInstance>;
+    onClick?: (uiKey: string, eventData?: unknown) => void;
+    setVisibleElements?: (uiElements: unknown) => void;
+}
+
+interface UiInstance {
+    getConfig(): Map<string, UiDataInstance>;
+    onClick(uiKey: string, eventData?: unknown): void;
+    setVisibleElements(uiElements: unknown): void;
 }
 
 interface DaiSdkSettingsInstance {
@@ -187,6 +232,39 @@ type StreamEventConstructor = {
 type UiSettingsConstructor = {
     new (): UiSettingsInstance;
     prototype: UiSettingsInstance;
+};
+
+type UiImageConstructor = {
+    new (uiImage?: PlainRecord | null): UiImageInstance;
+    prototype: UiImageInstance;
+};
+
+type UiDataConstructor = {
+    new (uiData?: PlainRecord | null): UiDataInstance;
+    prototype: UiDataInstance;
+    UiImage: UiImageConstructor;
+};
+
+type UiOptionsConstructor = {
+    new (uiOptions?: PlainRecord | null): UiOptionsInstance;
+    prototype: UiOptionsInstance;
+    ClickThroughNavigation: {
+        EXTERNAL: 'external';
+        NOT_SUPPORTED: 'notSupported';
+    };
+};
+
+type CustomUiOptionsConstructor = {
+    new (uiOptions?: PlainRecord | null): CustomUiOptionsInstance;
+    prototype: CustomUiOptionsInstance;
+};
+
+type UiConstructor = {
+    new (uiDelegate?: PlainRecord | null): UiInstance;
+    prototype: UiInstance;
+    UiData: UiDataConstructor;
+    UiKey: PlainRecord;
+    UiOptions: UiOptionsConstructor;
 };
 
 type DaiSdkSettingsConstructor = {
@@ -280,6 +358,22 @@ export function GoogleIma3Dai(source: Source) {
     };
 
     /**
+     * Normalizes the stream request UI container.
+     *
+     * @param value - The candidate UI container to normalize.
+     */
+    const normalizeStreamRequestUi = (value: unknown): StreamRequestUiInstance => {
+        if (!isRecord(value)) {
+            return { custom: null };
+        }
+
+        const normalizedUi = Object.assign({ custom: null }, value);
+        normalizedUi.custom = isRecord(normalizedUi.custom) ? normalizedUi.custom : null;
+
+        return normalizedUi as StreamRequestUiInstance;
+    };
+
+    /**
      * Initializes the listener registry for an event handler instance.
      *
      * @param instance - The event handler to initialize.
@@ -331,11 +425,13 @@ export function GoogleIma3Dai(source: Source) {
         instance.networkCode = null;
         instance.omidAccessModeRules = null;
         instance.streamActivityMonitorId = null;
+        instance.ui = { custom: null };
 
         if (isRecord(streamRequest)) {
             Object.assign(instance, streamRequest);
         }
         instance.adTagParameters = toStringRecord(instance.adTagParameters);
+        instance.ui = normalizeStreamRequestUi(instance.ui);
 
         if (typeof instance.format !== 'string' || instance.format.length === 0) {
             instance.format = 'hls';
@@ -598,7 +694,7 @@ export function GoogleIma3Dai(source: Source) {
      * Creates a UI settings container.
      */
     const UiSettings = function (this: UiSettingsInstance) {
-        this.locale = '';
+        this.locale = 'en';
     } as unknown as UiSettingsConstructor;
     /**
      * Returns the configured locale.
@@ -612,8 +708,151 @@ export function GoogleIma3Dai(source: Source) {
      * @param locale - The locale string to store.
      */
     UiSettings.prototype.setLocale = function (this: UiSettingsInstance, locale: string): void {
-        this.locale = locale;
+        if (typeof locale === 'string' && locale.length > 0) {
+            this.locale = locale;
+        }
     };
+
+    const uiKeys = {
+        ABOUT_THIS_AD_FALLBACK_IMAGE: 'aboutThisAdFallbackImage',
+        ABOUT_THIS_AD_ICON: 'aboutThisAdIcon',
+        AD_TITLE: 'adTitle',
+        ATTRIBUTION: 'attribution',
+        AUTHOR_ICON: 'authorIcon',
+        AUTHOR_TITLE: 'authorTitle',
+        CALL_TO_ACTION: 'callToAction',
+        PRE_SKIP: 'preSkip',
+        SKIP_BUTTON: 'skipButton',
+        VIDEO_OVERLAY: 'videoOverlay',
+    } as const;
+
+    const clickThroughNavigation = {
+        EXTERNAL: 'external',
+        NOT_SUPPORTED: 'notSupported',
+    } as const;
+
+    /**
+     * Creates a UI image description.
+     *
+     * @param uiImage - Optional image fields to copy onto the instance.
+     */
+    const UiImage = function (this: UiImageInstance, uiImage?: PlainRecord | null) {
+        this.altText = '';
+        this.height = 0;
+        this.url = '';
+        this.width = 0;
+
+        if (isRecord(uiImage)) {
+            Object.assign(this, uiImage);
+        }
+
+        this.altText = getStringValue(this.altText) || '';
+        this.height = typeof this.height === 'number' ? this.height : 0;
+        this.url = getStringValue(this.url) || '';
+        this.width = typeof this.width === 'number' ? this.width : 0;
+    } as unknown as UiImageConstructor;
+
+    /**
+     * Creates a UI element configuration record.
+     *
+     * @param uiData - Optional UI data fields to copy onto the instance.
+     */
+    const UiData = function (this: UiDataInstance, uiData?: PlainRecord | null) {
+        this.clickable = false;
+        this.required = false;
+
+        if (isRecord(uiData)) {
+            Object.assign(this, uiData);
+        }
+
+        this.clickable = Boolean(this.clickable);
+        this.required = Boolean(this.required);
+
+        if (Array.isArray(this.imageVariants)) {
+            const imageVariants: UiImageInstance[] = [];
+
+            for (let imageVariantIndex = 0; imageVariantIndex < this.imageVariants.length; imageVariantIndex += 1) {
+                imageVariants.push(new UiImage(this.imageVariants[imageVariantIndex] as unknown as PlainRecord | null));
+            }
+
+            this.imageVariants = imageVariants;
+        }
+    } as unknown as UiDataConstructor;
+    UiData.UiImage = UiImage;
+
+    /**
+     * Creates public DAI UI options.
+     *
+     * @param uiOptions - Optional UI option fields to copy onto the instance.
+     */
+    const UiOptions = function (this: UiOptionsInstance, uiOptions?: PlainRecord | null) {
+        this.aboutThisAdSupport = false;
+        this.clickThroughNavigation = clickThroughNavigation.NOT_SUPPORTED;
+        this.skippableSupport = false;
+
+        if (isRecord(uiOptions)) {
+            Object.assign(this, uiOptions);
+        }
+
+        this.aboutThisAdSupport = Boolean(this.aboutThisAdSupport);
+        this.clickThroughNavigation = this.clickThroughNavigation === clickThroughNavigation.EXTERNAL
+            ? clickThroughNavigation.EXTERNAL
+            : clickThroughNavigation.NOT_SUPPORTED;
+        this.skippableSupport = Boolean(this.skippableSupport);
+    } as unknown as UiOptionsConstructor;
+    UiOptions.ClickThroughNavigation = clickThroughNavigation;
+
+    /**
+     * Creates custom UI options stored on stream requests.
+     *
+     * @param uiOptions - Optional UI option fields to copy onto the instance.
+     */
+    const CustomUiOptions = function (this: CustomUiOptionsInstance, uiOptions?: PlainRecord | null) {
+        this.aboutThisAdSupport = false;
+        this.skippableSupport = false;
+
+        if (isRecord(uiOptions)) {
+            Object.assign(this, uiOptions);
+        }
+
+        this.aboutThisAdSupport = Boolean(this.aboutThisAdSupport);
+        this.skippableSupport = Boolean(this.skippableSupport);
+    } as unknown as CustomUiOptionsConstructor;
+
+    const uiDelegates = new WeakMap<UiInstance, UiDelegateInstance>();
+    /**
+     * Creates the public `google.ima.dai.api.ui` wrapper.
+     *
+     * @param uiDelegate - Optional delegate used to back the wrapper methods.
+     */
+    const Ui = function (this: UiInstance, uiDelegate?: PlainRecord | null) {
+        uiDelegates.set(this, isRecord(uiDelegate) ? uiDelegate as UiDelegateInstance : {});
+    } as unknown as UiConstructor;
+    Ui.prototype.onClick = function (this: UiInstance, uiKey: string, eventData?: unknown): void {
+        const uiDelegate = uiDelegates.get(this);
+        if (uiDelegate && typeof uiDelegate.onClick === 'function') {
+            uiDelegate.onClick(uiKey, eventData);
+        }
+    };
+    Ui.prototype.setVisibleElements = function (this: UiInstance, uiElements: unknown): void {
+        const uiDelegate = uiDelegates.get(this);
+        if (uiDelegate && typeof uiDelegate.setVisibleElements === 'function') {
+            uiDelegate.setVisibleElements(uiElements);
+        }
+    };
+    Ui.prototype.getConfig = function (this: UiInstance): Map<string, UiDataInstance> {
+        const uiDelegate = uiDelegates.get(this);
+        if (!uiDelegate || typeof uiDelegate.getConfig !== 'function') {
+            return new Map();
+        }
+
+        const uiConfig = uiDelegate.getConfig();
+
+        return uiConfig instanceof Map ? uiConfig : new Map();
+    };
+    Ui.UiData = UiData;
+    Ui.UiKey = uiKeys;
+    Ui.UiOptions = UiOptions;
 
     const daiSdkFeatureFlagsStorage = new WeakMap<DaiSdkSettingsInstance, PlainRecord>();
     /**
@@ -1429,6 +1668,9 @@ export function GoogleIma3Dai(source: Source) {
     } as unknown as StreamManagerInstance['streamTimeForContentTime'];
 
     const api: PlainRecord = {
+        customUi: {
+            UiOptions: CustomUiOptions,
+        },
         DaiSdkSettings: new DaiSdkSettingsContainer(),
         LiveStreamRequest,
         PodStreamRequest,
@@ -1436,6 +1678,7 @@ export function GoogleIma3Dai(source: Source) {
         StreamEvent,
         StreamManager,
         StreamRequest,
+        ui: Ui,
         UiSettings,
         VideoStitcherLiveStreamRequest,
         VideoStitcherVodStreamRequest,

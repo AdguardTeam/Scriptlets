@@ -12,8 +12,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Changed
+
+- Redirect resources with a `.ts` extension are now converted to `.js`.
+
 ### Fixed
 
+- Added the missing `google.ima.dai.api.ui`, `google.ima.dai.api.customUi` surfaces and the
+  default `StreamRequest.ui` container in the `google-ima3-dai` redirect.
 - Added the missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...HEAD
@@ -32,7 +38,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `google-ima3-dai` redirect resource and scriptlet [#239].
 
-## Changed
+### Changed
 
 - Updated [@adguard/agtree] to 4.1.1
 

@@ -150,12 +150,22 @@ const generateHtmlTestFilename = (type, name) => {
     return `${type}-${name}.html`;
 };
 
+/**
+ * Converts a redirect source filename from ".ts" to ".js" extension.
+ * Filenames that already use ".js" or any other extension are returned unchanged.
+ *
+ * @param {string} fileName redirect source filename
+ * @returns {string} filename with ".ts" replaced by ".js"
+ */
+const convertTsFileNameToJs = (fileName) => fileName.replace(/\.ts$/, '.js');
+
 export {
     writeFile,
     getFilesList,
     getDataFromFiles,
     runTasks,
     generateHtmlTestFilename,
+    convertTsFileNameToJs,
     SCRIPTLET_TYPE,
     TRUSTED_SCRIPTLET_TYPE,
     REDIRECT_TYPE,
