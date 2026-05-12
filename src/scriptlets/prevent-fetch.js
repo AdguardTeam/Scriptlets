@@ -4,8 +4,16 @@ import {
     objectToString,
     matchRequestProps,
     logMessage,
-    noopPromiseResolve,
+    createResponse,
+    copyResponseHeaders,
+    defineReadonlyResponseProps,
+    getFilteredResponseDefaults,
+    getResolvedResponseConfig,
+    getSafeResponseStatus,
+    isSuccessResponseStatus,
+    isValidResponseStatus,
     modifyResponse,
+    parseResponseConfig,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,
@@ -36,7 +44,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
+ * example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseConfig]]])
  * ```
  *
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -56,11 +64,20 @@ import {
  *     - colon-separated pair `name:value` string value to customize `responseBody` where
  *         - `name` — only `length` supported for now
  *         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
- * - `responseType` — optional, string for defining response type,
- *   original response type is used if not specified. Possible values:
- *     - `basic`
- *     - `cors`
- *     - `opaque`
+ * - `responseConfig` — optional, string for defining response properties.
+ *   Original response values are used if not specified. Possible values:
+ *     - response type shorthand (for backwards compatibility):
+ *         - `basic`
+ *         - `cors`
+ *         - `error`
+ *         - `opaque`
+ *         - `opaqueredirect`
+ *     - JSON object string with quoted keys and any combination of these properties:
+ *         - `ok` — boolean
+ *         - `redirected` — boolean
+ *         - `status` — non-negative integer from range `0..599`
+ *         - `statusText` — one of `""`, `"OK"`, `"Continue"`, `"Not Found"`
+ *         - `type` — one of the supported response type values above
  *
  * > Usage with no arguments will log fetch calls to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -121,11 +138,21 @@ import {
  *     example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
  *     ```
  *
+ * 1. Prevent all fetch calls and specify response properties
+ *
+ *     ```adblock
+ *     ! Set multiple response properties at once
+ *     example.org#%#//scriptlet('prevent-fetch', '*', '', '{"status": 404, "statusText": "Not Found", "ok": false}')
+ *
+ *     ! Set response type together with other values
+ *     example.org#%#//scriptlet('prevent-fetch', '*', '', '{"type": "opaqueredirect", "redirected": true}')
+ *     ```
+ *
  * @added v1.3.18.
  */
 /* eslint-enable max-len */
 // eslint-disable-next-line default-param-last
-export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseType) {
+export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', responseConfig) {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -134,6 +161,9 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         || typeof Response === 'undefined') {
         return;
     }
+
+    const INVALID_RESPONSE_VALUE_MARKER = null;
+    const getInvalidResponseConfigMessage = (value) => `Invalid responseConfig parameter: '${value}'`;
 
     const nativeRequestClone = Request.prototype.clone;
 
@@ -151,20 +181,11 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         return;
     }
 
-    const isResponseTypeSpecified = typeof responseType !== 'undefined';
-    const isResponseTypeSupported = (responseType) => {
-        const SUPPORTED_TYPES = [
-            'basic',
-            'cors',
-            'opaque',
-        ];
-        return SUPPORTED_TYPES.includes(responseType);
-    };
-    // Skip disallowed response types,
-    // specified responseType has limited list of possible values
-    if (isResponseTypeSpecified
-        && !isResponseTypeSupported(responseType)) {
-        logMessage(source, `Invalid responseType parameter: '${responseType}'`);
+    const parsedResponseConfig = parseResponseConfig(
+        responseConfig,
+        (invalidValue) => logMessage(source, getInvalidResponseConfigMessage(invalidValue)),
+    );
+    if (parsedResponseConfig === INVALID_RESPONSE_VALUE_MARKER) {
         return;
     }
 
@@ -219,26 +240,46 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
 
         if (shouldPrevent) {
             hit(source);
-            let finalResponseType;
+            let resolvedResponseConfig = {};
             try {
-                finalResponseType = responseType || getResponseType(fetchData);
+                resolvedResponseConfig = getResolvedResponseConfig(parsedResponseConfig, getResponseType(fetchData));
                 const origResponse = await Reflect.apply(target, thisArg, args);
                 // In the case of apps, the blocked request has status 500
                 // and no error is thrown, so it's necessary to check response.ok
                 // https://github.com/AdguardTeam/Scriptlets/issues/334
                 if (!origResponse.ok || isExtensionScheme(origResponse.url)) {
-                    return noopPromiseResolve(strResponseBody, fetchData.url, finalResponseType);
+                    return createResponse({
+                        body: strResponseBody,
+                        ok: resolvedResponseConfig.ok,
+                        redirected: resolvedResponseConfig.redirected,
+                        requestUrl: fetchData.url,
+                        status: resolvedResponseConfig.status,
+                        statusText: resolvedResponseConfig.statusText,
+                        type: resolvedResponseConfig.type,
+                    });
                 }
                 return modifyResponse(
                     origResponse,
                     {
                         body: strResponseBody,
-                        type: finalResponseType,
+                        ok: resolvedResponseConfig.ok,
+                        redirected: resolvedResponseConfig.redirected,
+                        status: resolvedResponseConfig.status,
+                        statusText: resolvedResponseConfig.statusText,
+                        type: resolvedResponseConfig.type,
                     },
                 );
             } catch (ex) {
                 // https://github.com/AdguardTeam/Scriptlets/issues/334
-                return noopPromiseResolve(strResponseBody, fetchData.url, finalResponseType);
+                return createResponse({
+                    body: strResponseBody,
+                    ok: resolvedResponseConfig.ok,
+                    redirected: resolvedResponseConfig.redirected,
+                    requestUrl: fetchData.url,
+                    status: resolvedResponseConfig.status,
+                    statusText: resolvedResponseConfig.statusText,
+                    type: resolvedResponseConfig.type,
+                });
             }
         }
 
@@ -272,8 +313,16 @@ preventFetch.injections = [
     objectToString,
     matchRequestProps,
     logMessage,
-    noopPromiseResolve,
+    createResponse,
+    copyResponseHeaders,
+    defineReadonlyResponseProps,
+    getFilteredResponseDefaults,
+    getResolvedResponseConfig,
+    getSafeResponseStatus,
+    isSuccessResponseStatus,
+    isValidResponseStatus,
     modifyResponse,
+    parseResponseConfig,
     toRegExp,
     isValidStrPattern,
     escapeRegExp,

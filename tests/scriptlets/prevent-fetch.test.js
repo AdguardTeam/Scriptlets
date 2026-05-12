@@ -361,6 +361,27 @@ if (!isSupported) {
         done();
     });
 
+    test('simple fetch - error response type', async (assert) => {
+        const ERROR_RESPONSE_TYPE = 'error';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+
+        runScriptlet(name, ['*', '', ERROR_RESPONSE_TYPE]);
+        const done = assert.async();
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+
+        assert.strictEqual(response.type, ERROR_RESPONSE_TYPE, 'Response type is set');
+        assert.strictEqual(response.status, 0, 'Response status follows filtered type default');
+        assert.strictEqual(response.ok, false, 'Response ok follows filtered type default');
+        assert.strictEqual(response.body, null, 'Response body is null for filtered type');
+        assert.strictEqual(response.url, '', 'Response url is empty for filtered type');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('simple fetch - opaque response type', async (assert) => {
         const OPAQUE_RESPONSE_TYPE = 'opaque';
         // blocked_request.json doesn't exist,
@@ -376,6 +397,7 @@ if (!isSupported) {
         assert.strictEqual(response.status, 0, 'Response status is set to 0');
         assert.strictEqual(response.statusText, '', 'Response statusText is set to empty string');
         assert.strictEqual(response.body, null, 'Response body is set to null');
+        assert.strictEqual(response.headers.get('Content-Length'), null, 'Response hides content-length header');
         assert.strictEqual(response.ok, false, 'Response ok is set to false');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
@@ -405,6 +427,129 @@ if (!isSupported) {
 
         assert.strictEqual(response.type, BASIC_RESPONSE_TYPE, 'Response type is not modified');
         assert.strictEqual(window.hit, undefined, 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - invalid response config', async (assert) => {
+        const INVALID_RESPONSE_CONFIG = '{"status": "invalid"}';
+        const BASIC_RESPONSE_TYPE = 'basic';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+
+        const expectedJson = {
+            a1: 1,
+            b2: 'test',
+            c3: 3,
+        };
+
+        runScriptlet(name, ['*', '', INVALID_RESPONSE_CONFIG]);
+        const done = assert.async();
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, expectedJson, 'Request is not modified');
+        assert.strictEqual(response.type, BASIC_RESPONSE_TYPE, 'Response type is not modified');
+        assert.strictEqual(window.hit, undefined, 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - invalid response config statusText value', async (assert) => {
+        const INVALID_RESPONSE_VALUE = '{"statusText": "Created"}';
+        const BASIC_RESPONSE_TYPE = 'basic';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+
+        const expectedJson = {
+            a1: 1,
+            b2: 'test',
+            c3: 3,
+        };
+
+        runScriptlet(name, ['*', '', INVALID_RESPONSE_VALUE]);
+        const done = assert.async();
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, expectedJson, 'Request is not modified');
+        assert.strictEqual(response.type, BASIC_RESPONSE_TYPE, 'Response type is not modified');
+        assert.strictEqual(window.hit, undefined, 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - unquoted response config keys are invalid', async (assert) => {
+        const INVALID_RESPONSE_VALUE = '{status: 404}';
+        const BASIC_RESPONSE_TYPE = 'basic';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const init = {
+            method: 'GET',
+        };
+
+        const expectedJson = {
+            a1: 1,
+            b2: 'test',
+            c3: 3,
+        };
+
+        runScriptlet(name, ['*', '', INVALID_RESPONSE_VALUE]);
+        const done = assert.async();
+
+        const response = await fetch(INPUT_JSON_PATH, init);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, expectedJson, 'Request is not modified');
+        assert.strictEqual(response.type, BASIC_RESPONSE_TYPE, 'Response type is not modified');
+        assert.strictEqual(window.hit, undefined, 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - response config overrides modified response properties', async (assert) => {
+        const TEST_FILE_NAME = 'test01.json';
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/${TEST_FILE_NAME}`;
+        const inputRequest = new Request(INPUT_JSON_PATH);
+        const RESPONSE_VALUE = '{"status": 404, "statusText": "Not Found", "ok": false, '
+            + '"redirected": true, "type": "opaqueredirect"}';
+        const done = assert.async();
+
+        runScriptlet(name, ['*', 'emptyArr', RESPONSE_VALUE]);
+
+        const response = await fetch(inputRequest);
+
+        assert.strictEqual(response.type, 'opaqueredirect', 'response type is overridden');
+        assert.strictEqual(response.status, 404, 'response status is overridden');
+        assert.strictEqual(response.statusText, 'Not Found', 'response statusText is overridden');
+        assert.strictEqual(response.ok, false, 'response ok is overridden');
+        assert.strictEqual(response.redirected, true, 'response redirected is overridden');
+        assert.strictEqual(response.url, '', 'response url follows filtered type default');
+        assert.strictEqual(response.body, null, 'response body is null for filtered type');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('simple fetch - response config overrides synthetic response properties', async (assert) => {
+        const BLOCKED_REQUEST = `${FETCH_OBJECTS_PATH}/blocked_request.json`;
+        const RESPONSE_VALUE = '{"status": 100, "statusText": "Continue", "ok": true, '
+            + '"redirected": true, "type": "error"}';
+        const done = assert.async();
+
+        runScriptlet(name, ['blocked_request', 'emptyStr', RESPONSE_VALUE]);
+
+        const response = await fetch(BLOCKED_REQUEST);
+        const parsedData = await response.text();
+
+        assert.strictEqual(response.type, 'error', 'response type is overridden');
+        assert.strictEqual(response.status, 100, 'response status is overridden');
+        assert.strictEqual(response.statusText, 'Continue', 'response statusText is overridden');
+        assert.strictEqual(response.ok, true, 'response ok is overridden');
+        assert.strictEqual(response.redirected, true, 'response redirected is overridden');
+        assert.strictEqual(response.url, '', 'response url follows filtered type default');
+        assert.strictEqual(parsedData, '', 'response body is preserved as empty string');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
 
@@ -464,14 +609,12 @@ if (!isSupported) {
             TEST_RESPONSE_TYPE,
             `response type is modified, equals to ${TEST_RESPONSE_TYPE}`,
         );
-        assert.true(response.url.includes(TEST_FILE_NAME), 'response url not modified');
-        assert.true(headersCount > 1, 'original headers not modified');
-
-        const responseJsonData = await response.json();
-        assert.ok(
-            Array.isArray(responseJsonData) && responseJsonData.length === 0,
-            'response data is an empty array',
-        );
+        assert.strictEqual(response.url, '', 'response url follows filtered type default');
+        assert.strictEqual(headersCount, 0, 'headers are empty for filtered type');
+        assert.strictEqual(response.body, null, 'response body is null for filtered type');
+        assert.strictEqual(response.status, 0, 'response status follows filtered type default');
+        assert.strictEqual(response.statusText, '', 'response statusText follows filtered type default');
+        assert.strictEqual(response.ok, false, 'response ok follows filtered type default');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
