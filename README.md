@@ -159,7 +159,7 @@ Allowed sources of trusted scriptlets are:
 - custom filters which were installed as `trusted`,
 - user rules.
 
-> Trusted scriptlets has no compatibility table as they are not compatible with any other blocker.
+> Trusted scriptlets have no compatibility table as they are not compatible with any other blocker.
 
 **[Trusted scriptlets list](./wiki/about-trusted-scriptlets.md#trusted-scriptlets)**
 
