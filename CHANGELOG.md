@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- Delay range matching for `prevent-setTimeout` and `prevent-setInterval` scriptlets.
+  Supported formats: `min-max`, `min-`, `-max`, with `!` prefix for inversion [#467].
+
 ### Changed
 
 - `prevent-fetch` now supports a structured `responseConfig` argument for overriding synthetic response fields such as
@@ -26,6 +31,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...HEAD
 [#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
+[#467]: https://github.com/AdguardTeam/Scriptlets/issues/467
 
 ## [2.4.2] - 2026-04-24
 

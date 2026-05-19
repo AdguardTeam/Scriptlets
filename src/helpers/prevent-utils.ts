@@ -41,6 +41,43 @@ type PreventData = {
 };
 
 /**
+ * Checks whether the actual delay matches the configured delay condition.
+ *
+ * @param isDelayRange whether the delay arg is a range
+ * @param delayMinMatch minimum delay bound for range match, or null
+ * @param delayMaxMatch maximum delay bound for range match, or null
+ * @param delayMatch exact delay to match, or null
+ * @param isInvertedDelayMatch whether to invert the delay match result
+ * @param actualDelay parsed delay value from the intercepted call
+ * @returns whether the delay matches the condition
+ */
+export const isPreventDelayMatched = (
+    isDelayRange: boolean,
+    delayMinMatch: number | null,
+    delayMaxMatch: number | null,
+    delayMatch: number | null,
+    isInvertedDelayMatch: boolean,
+    actualDelay: unknown,
+): boolean => {
+    if (isDelayRange) {
+        // Invalid range (e.g. 'abc-100') — both bounds are null, never match
+        if (delayMinMatch === null && delayMaxMatch === null) {
+            return false;
+        }
+        if (typeof actualDelay !== 'number') {
+            return false;
+        }
+        const aboveMin = delayMinMatch === null || actualDelay >= delayMinMatch;
+        const belowMax = delayMaxMatch === null || actualDelay <= delayMaxMatch;
+        return (aboveMin && belowMax) !== isInvertedDelayMatch;
+    }
+    if (delayMatch === null) {
+        return true;
+    }
+    return (actualDelay === delayMatch) !== isInvertedDelayMatch;
+};
+
+/**
  * Checks whether 'callback' and 'delay' are matching
  * by given parameters 'matchCallback' and 'matchDelay'.
  * Used for prevent-setTimeout and prevent-setInterval.
@@ -64,13 +101,21 @@ export const isPreventionNeeded = ({
     if (!isValidCallback(callback)) {
         return false;
     }
-    if (!isValidMatchStr(matchCallback)
-        || (matchDelay && !isValidMatchNumber(matchDelay))) {
+    if (
+        !isValidMatchStr(matchCallback)
+        || (matchDelay && !isValidMatchNumber(matchDelay))
+    ) {
         return false;
     }
 
     const { isInvertedMatch, matchRegexp } = parseMatchArg(matchCallback);
-    const { isInvertedDelayMatch, delayMatch } = parseDelayArg(matchDelay);
+    const {
+        isInvertedDelayMatch,
+        delayMatch,
+        delayMinMatch,
+        delayMaxMatch,
+        isDelayRange,
+    } = parseDelayArg(matchDelay);
 
     // Parse delay for decimal, string and non-number values
     // https://github.com/AdguardTeam/Scriptlets/issues/247
@@ -79,13 +124,27 @@ export const isPreventionNeeded = ({
     let shouldPrevent = false;
     // https://github.com/AdguardTeam/Scriptlets/issues/105
     const callbackStr = String(callback);
-    if (delayMatch === null) {
+    if (!isDelayRange && delayMatch === null) {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
     } else if (!matchCallback) {
-        shouldPrevent = (parsedDelay === delayMatch) !== isInvertedDelayMatch;
+        shouldPrevent = isPreventDelayMatched(
+            isDelayRange,
+            delayMinMatch,
+            delayMaxMatch,
+            delayMatch,
+            isInvertedDelayMatch,
+            parsedDelay,
+        );
     } else {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch
-            && (parsedDelay === delayMatch) !== isInvertedDelayMatch;
+            && isPreventDelayMatched(
+                isDelayRange,
+                delayMinMatch,
+                delayMaxMatch,
+                delayMatch,
+                isInvertedDelayMatch,
+                parsedDelay,
+            );
     }
     return shouldPrevent;
 };

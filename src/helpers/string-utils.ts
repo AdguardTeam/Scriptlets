@@ -22,6 +22,9 @@ type MatchData = {
 type DelayData = {
     isInvertedDelayMatch: boolean;
     delayMatch: number | null;
+    delayMinMatch: number | null;
+    delayMaxMatch: number | null;
+    isDelayRange: boolean;
 };
 
 /**
@@ -264,6 +267,21 @@ export const isValidMatchNumber = (match: RawStrPattern): boolean => {
     if (match?.startsWith(INVERT_MARKER)) {
         str = match.slice(1);
     }
+    // Check for range pattern: 'min-max', 'min-', '-max'
+    const RANGE_SEPARATOR = '-';
+    const separatorIndex = str.indexOf(RANGE_SEPARATOR);
+    if (separatorIndex !== -1) {
+        const minStr = str.slice(0, separatorIndex);
+        const maxStr = str.slice(separatorIndex + 1);
+        const isMinValid = minStr === '' || (!nativeIsNaN(parseFloat(minStr)) && nativeIsFinite(parseFloat(minStr)));
+        const isMaxValid = maxStr === '' || (!nativeIsNaN(parseFloat(maxStr)) && nativeIsFinite(parseFloat(maxStr)));
+        // At least one bound must be specified and both parts must be valid
+        if (isMinValid && isMaxValid && (minStr !== '' || maxStr !== '')) {
+            return true;
+        }
+        // If separator is present but range is invalid, reject it
+        return false;
+    }
     const num = parseFloat(str);
     return !nativeIsNaN(num) && nativeIsFinite(num);
 };
@@ -294,11 +312,49 @@ export const parseMatchArg = (match: string): MatchData => {
  */
 export const parseDelayArg = (delay: string): DelayData => {
     const INVERT_MARKER = '!';
+    const RANGE_SEPARATOR = '-';
     const isInvertedDelayMatch = delay?.startsWith(INVERT_MARKER);
     const delayValue = isInvertedDelayMatch ? delay.slice(1) : delay;
+
+    // Check for range pattern: 'min-max', 'min-', '-max'
+    const separatorIndex = delayValue ? delayValue.indexOf(RANGE_SEPARATOR) : -1;
+
+    if (separatorIndex !== -1) {
+        const minStr = delayValue.slice(0, separatorIndex);
+        const maxStr = delayValue.slice(separatorIndex + 1);
+        const delayMinMatch = minStr === '' ? null : parseFloat(minStr);
+        const delayMaxMatch = maxStr === '' ? null : parseFloat(maxStr);
+        const minValid = minStr === '' || (delayMinMatch !== null && !nativeIsNaN(delayMinMatch));
+        const maxValid = maxStr === '' || (delayMaxMatch !== null && !nativeIsNaN(delayMaxMatch));
+        if (minValid && maxValid && (delayMinMatch !== null || delayMaxMatch !== null)) {
+            return {
+                isInvertedDelayMatch,
+                delayMatch: null,
+                delayMinMatch,
+                delayMaxMatch,
+                isDelayRange: true,
+            };
+        }
+        // Separator present but range is invalid — still mark as range
+        // so isPreventionNeeded can reject it
+        return {
+            isInvertedDelayMatch,
+            delayMatch: null,
+            delayMinMatch: null,
+            delayMaxMatch: null,
+            isDelayRange: true,
+        };
+    }
+
     const parsedDelay = parseInt(delayValue, 10);
     const delayMatch = nativeIsNaN(parsedDelay) ? null : parsedDelay;
-    return { isInvertedDelayMatch, delayMatch };
+    return {
+        isInvertedDelayMatch,
+        delayMatch,
+        delayMinMatch: null,
+        delayMaxMatch: null,
+        isDelayRange: false,
+    };
 };
 
 /**

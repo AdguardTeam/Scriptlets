@@ -2,6 +2,7 @@ import {
     hit,
     noopFunc,
     isPreventionNeeded,
+    isPreventDelayMatched,
     logMessage,
     toRegExp,
     nativeIsNaN,
@@ -44,10 +45,13 @@ import {
  *   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
  *   If do not start with `!`, the stringified callback will be matched.
  *   If not set, prevents all `setInterval` calls due to specified `matchDelay`.
- * - `matchDelay` — optional, must be an integer.
+ * - `matchDelay` — optional, must be an integer or a delay range.
  *   If starts with `!`, scriptlet will not match the delay but all other will be defused.
  *   If do not start with `!`, the delay passed to the `setInterval` call will be matched.
  *   Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
+ *   Delay ranges are supported in the format `min-max` (matches if `min <= delay <= max`),
+ *   `min-` (matches if `delay >= min`), or `-max` (matches if `delay <= max`).
+ *   Negative delay values behave the same as `0`, so use `-0` to match them.
  *
  * > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
  * > it means that no callback was passed to setInterval() and that's not scriptlet issue
@@ -149,6 +153,54 @@ import {
  *     }, 300 + Math.random());
  *     ```
  *
+ * 1. Prevents `setInterval` calls if the delay is in the `20-50` range
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('prevent-setInterval', '', '20-50')
+ *     ```
+ *
+ *     For instance, only the second of the following calls will be prevented:
+ *
+ *     ```javascript
+ *     setInterval(function () {
+ *         window.test = "10 -- executed";
+ *     }, 10);
+ *     setInterval(function () {
+ *         window.test = "30 -- prevented";
+ *     }, 30);
+ *     ```
+ *
+ * 1. Prevents `setInterval` calls if the delay is at least `30`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('prevent-setInterval', '', '30-')
+ *     ```
+ *
+ *     For instance, only the second of the following calls will be prevented:
+ *
+ *     ```javascript
+ *     setInterval(function () {
+ *         window.test = "10 -- executed";
+ *     }, 10);
+ *     setInterval(function () {
+ *         window.test = "60 -- prevented";
+ *     }, 60);
+ *     ```
+ *
+ * 1. Prevents `setInterval` calls if the delay is negative
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('prevent-setInterval', '', '-0')
+ *     ```
+ *
+ *     For instance, the following call will be prevented:
+ *
+ *     ```javascript
+ *     setInterval(function () {
+ *         window.test = "negative -- prevented";
+ *     }, -10);
+ *     ```
+ *
  * @added v1.0.4.
  */
 /* eslint-enable max-len */
@@ -216,6 +268,7 @@ preventSetInterval.injections = [
     nativeIsNaN,
     parseMatchArg,
     parseDelayArg,
+    isPreventDelayMatched,
     isValidCallback,
     isValidMatchStr,
     isValidStrPattern,

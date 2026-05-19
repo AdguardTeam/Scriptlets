@@ -6,6 +6,8 @@ import {
     extractRegexAndReplacement,
     splitByNotEscapedDelimiter,
     splitByPipeRespectingRegex,
+    isValidMatchNumber,
+    parseDelayArg,
 } from '../../src/helpers';
 
 describe('Test string utils', () => {
@@ -675,6 +677,221 @@ describe('Test string utils', () => {
                 '/key/',
                 '"test-value"',
             ]);
+        });
+    });
+
+    describe('isValidMatchNumber', () => {
+        describe('valid single numbers', () => {
+            const validCases = ['0', '50', '100', '!0', '!50'];
+            test.each(validCases)('"%s" is valid', (input) => {
+                expect(isValidMatchNumber(input)).toBe(true);
+            });
+        });
+
+        describe('valid ranges', () => {
+            const validCases = [
+                '0-1',
+                '!0-1',
+                '-0',
+                '0-',
+                '-1',
+                '1-',
+                '20-50',
+                '0-100',
+                '30-',
+                '-50',
+                '!20-50',
+                '!30-',
+                '!-50',
+                '50-20',
+            ];
+            test.each(validCases)('"%s" is valid', (input) => {
+                expect(isValidMatchNumber(input)).toBe(true);
+            });
+        });
+
+        describe('invalid inputs', () => {
+            const invalidCases = [
+                'abc',
+                'abc-def',
+                'abc-100',
+                '100-abc',
+                '!abc-100',
+                '!100-abc',
+                '-',
+                '!-',
+                '!abc-def',
+            ];
+            test.each(invalidCases)('"%s" is invalid', (input) => {
+                expect(isValidMatchNumber(input)).toBe(false);
+            });
+        });
+    });
+
+    describe('parseDelayArg', () => {
+        test('single number', () => {
+            const result = parseDelayArg('50');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: 50,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: false,
+            });
+        });
+
+        test('inverted single number', () => {
+            const result = parseDelayArg('!50');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: true,
+                delayMatch: 50,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: false,
+            });
+        });
+
+        test('min-max range', () => {
+            const result = parseDelayArg('20-50');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: 20,
+                delayMaxMatch: 50,
+                isDelayRange: true,
+            });
+        });
+
+        test('inverted min-max range', () => {
+            const result = parseDelayArg('!20-50');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: true,
+                delayMatch: null,
+                delayMinMatch: 20,
+                delayMaxMatch: 50,
+                isDelayRange: true,
+            });
+        });
+
+        test('min- range (open upper bound)', () => {
+            const result = parseDelayArg('30-');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: 30,
+                delayMaxMatch: null,
+                isDelayRange: true,
+            });
+        });
+
+        test('-max range (open lower bound)', () => {
+            const result = parseDelayArg('-50');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: 50,
+                isDelayRange: true,
+            });
+        });
+
+        test('inverted min- range', () => {
+            const result = parseDelayArg('!30-');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: true,
+                delayMatch: null,
+                delayMinMatch: 30,
+                delayMaxMatch: null,
+                isDelayRange: true,
+            });
+        });
+
+        test('inverted -max range', () => {
+            const result = parseDelayArg('!-50');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: true,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: 50,
+                isDelayRange: true,
+            });
+        });
+
+        test('min > max still parses as range', () => {
+            const result = parseDelayArg('50-20');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: 50,
+                delayMaxMatch: 20,
+                isDelayRange: true,
+            });
+        });
+
+        test('lone dash is marked as invalid range', () => {
+            const result = parseDelayArg('-');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: true,
+            });
+        });
+
+        test('non-numeric string falls back to non-range', () => {
+            const result = parseDelayArg('abc');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: false,
+            });
+        });
+
+        test('partially valid range num-abc is marked as invalid range', () => {
+            const result = parseDelayArg('100-def');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: true,
+            });
+        });
+
+        test('partially valid range abc-num is marked as invalid range', () => {
+            const result = parseDelayArg('abc-100');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: false,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: true,
+            });
+        });
+
+        test('inverted partially valid range is marked as invalid range', () => {
+            const result = parseDelayArg('!123-def');
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: true,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: true,
+            });
+        });
+
+        test('undefined input', () => {
+            const result = parseDelayArg(undefined);
+            expect(result).toStrictEqual({
+                isInvertedDelayMatch: undefined,
+                delayMatch: null,
+                delayMinMatch: null,
+                delayMaxMatch: null,
+                isDelayRange: false,
+            });
         });
     });
 });
