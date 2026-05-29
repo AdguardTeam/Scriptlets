@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `setConfig` and `getConfig` methods to `googletagservices-gpt` redirect [#560].
 - Delay range matching for `prevent-setTimeout` and `prevent-setInterval` scriptlets.
   Supported formats: `min-max`, `min-`, `-max`, with `!` prefix for inversion [#467].
 
@@ -30,6 +31,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Added the missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...HEAD
+[#560]: https://github.com/AdguardTeam/Scriptlets/issues/560
 [#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
 [#467]: https://github.com/AdguardTeam/Scriptlets/issues/467
 

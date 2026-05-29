@@ -49,7 +49,7 @@ test('AdGuard Syntax', (assert) => {
     assert.strictEqual(typeof mockedPubads.getTargeting, 'function', 'pubads().getTargeting() is function');
     assert.ok(mockedPubads.getTargeting() instanceof Array, 'pubads().getTargeting() returns array');
     assert.strictEqual(mockedPubads.getTargeting().length, 0, 'pubads().getTargeting() is mocked');
-    assert.true(mockedPubads.isInitialLoadDisabled(), 'pubads().isInitialLoadDisabled() returns true');
+    assert.false(mockedPubads.isInitialLoadDisabled(), 'pubads().isInitialLoadDisabled() returns false');
 });
 
 test('Test Slot', (assert) => {
@@ -139,4 +139,63 @@ test('Test setPrivacySettings', (assert) => {
     const setPrivacySettings = window.googletag.pubads().setPrivacySettings({});
     assert.ok(window.googletag, 'window.googletag have been created');
     assert.strictEqual(typeof setPrivacySettings, 'object', 'setPrivacySettings has been mocked');
+});
+
+test('Test slot setConfig and getConfig', (assert) => {
+    evalWrapper(redirects.getRedirect(name).content);
+
+    const slot = window.googletag.defineSlot('/1234567/sports', [160, 600], 'slot-config-div');
+    slot.setConfig({
+        clickUrl: 'https://example.com/click',
+        customKey: 'custom-value',
+        targeting: {
+            category: 'sports',
+            tags: ['a', ['b', 'c']],
+        },
+    });
+
+    const config = slot.getConfig(['clickUrl', 'customKey', 'targeting']);
+
+    assert.ok(Object.isFrozen(config), 'slot.getConfig() returns a frozen object');
+    assert.strictEqual(config.clickUrl, 'https://example.com/click', 'clickUrl from setConfig is stored');
+    assert.strictEqual(config.customKey, 'custom-value', 'custom key from setConfig is stored');
+    assert.ok(config.targeting instanceof Map, 'targeting is stored as Map');
+    assert.strictEqual(config.targeting.get('category')[0], 'sports', 'targeting string value is converted to array');
+    assert.strictEqual(config.targeting.get('tags')[2], 'c', 'nested targeting arrays are flattened');
+});
+
+test('Test googletag setConfig and getConfig', (assert) => {
+    evalWrapper(redirects.getRedirect(name).content);
+
+    window.googletag.setConfig({
+        customKey: 'global-value',
+        disableInitialLoad: true,
+        targeting: {
+            placement: 'homepage',
+            audiences: ['sports', 'news'],
+        },
+    });
+
+    const config = window.googletag.getConfig(['customKey', 'disableInitialLoad', 'targeting']);
+    const slot = window.googletag.defineSlot('/1234567/sports', [160, 600], 'global-config-div');
+
+    assert.ok(Object.isFrozen(config), 'googletag.getConfig() returns a frozen object');
+    assert.strictEqual(config.customKey, 'global-value', 'custom value is stored in googletag config');
+    assert.true(config.disableInitialLoad, 'disableInitialLoad from setConfig is stored');
+    assert.ok(config.targeting instanceof Map, 'global targeting is stored as Map');
+    assert.strictEqual(slot.getTargeting('placement')[0], 'homepage', 'slot reads global targeting key');
+    assert.strictEqual(slot.getTargeting('audiences')[1], 'news', 'slot reads global targeting array');
+});
+
+test('Test pubads disableInitialLoad state', (assert) => {
+    evalWrapper(redirects.getRedirect(name).content);
+
+    const pubads = window.googletag.pubads();
+
+    assert.false(pubads.isInitialLoadDisabled(), 'initial load is enabled by default');
+    assert.strictEqual(pubads.disableInitialLoad(), undefined, 'disableInitialLoad() returns nothing');
+    assert.true(pubads.isInitialLoadDisabled(), 'disableInitialLoad() sets initial-load state to disabled');
+
+    window.googletag.setConfig({ disableInitialLoad: 0 });
+    assert.false(pubads.isInitialLoadDisabled(), 'disableInitialLoad state is boolean-coerced by setConfig()');
 });

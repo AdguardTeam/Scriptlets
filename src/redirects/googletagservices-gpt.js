@@ -188,6 +188,7 @@ export function GoogleTagServicesGpt(source) {
         let clickUrl = '';
         let collapseEmptyDiv = null;
         const services = new Set();
+        const config = {};
         const slot = {
             addService(e) {
                 services.add(e);
@@ -211,6 +212,21 @@ export function GoogleTagServicesGpt(source) {
             getCategoryExclusions: () => Array.from(exclusions),
             getClickUrl: () => clickUrl,
             getCollapseEmptyDiv: () => collapseEmptyDiv,
+            getConfig: (keys) => {
+                const configKeys = Array.isArray(keys) ? keys : [keys];
+                const googleTagServicesConfig = {};
+                for (let i = 0; i < configKeys.length; i += 1) {
+                    const key = configKeys[i];
+                    if (key === 'clickUrl') {
+                        googleTagServicesConfig[key] = clickUrl;
+                    } else if (key === 'targeting') {
+                        googleTagServicesConfig[key] = targeting;
+                    } else {
+                        googleTagServicesConfig[key] = config[key];
+                    }
+                }
+                return Object.freeze(googleTagServicesConfig);
+            },
             getContentUrl: () => '',
             getDivStartsCollapsed: () => null,
             getDomId: () => optDiv,
@@ -249,6 +265,25 @@ export function GoogleTagServicesGpt(source) {
                 collapseEmptyDiv = !!v;
                 return slot;
             },
+            setConfig(obj) {
+                try {
+                    const entries = Object.entries(obj);
+                    for (let i = 0; i < entries.length; i += 1) {
+                        const entry = entries[i];
+                        const key = entry[0];
+                        const value = entry[1];
+                        if (key === 'clickUrl') {
+                            clickUrl = value;
+                        } else if (key === 'targeting') {
+                            updateTargeting(targeting, value);
+                        } else {
+                            config[key] = value;
+                        }
+                    }
+                } catch (ex) {
+                    // do nothing
+                }
+            },
             setSafeFrameConfig: noopThis,
             setTagForChildDirectedTreatment: noopThis,
             setTargeting(k, v) {
@@ -267,6 +302,8 @@ export function GoogleTagServicesGpt(source) {
         return slot;
     };
 
+    let initialLoadDisabled = false;
+
     const pubAdsService = {
         addEventListener,
         removeEventListener,
@@ -283,7 +320,9 @@ export function GoogleTagServicesGpt(source) {
         collapseEmptyDivs: noopFunc,
         defineOutOfPagePassback() { return new PassbackSlot(); },
         definePassback() { return new PassbackSlot(); },
-        disableInitialLoad: noopFunc,
+        disableInitialLoad() {
+            initialLoadDisabled = true;
+        },
         display: noopFunc,
         enableAsyncRendering: noopFunc,
         enableLazyLoad: noopFunc,
@@ -295,7 +334,7 @@ export function GoogleTagServicesGpt(source) {
         getTargeting: noopArray,
         getTargetingKeys: noopArray,
         getSlots: noopArray,
-        isInitialLoadDisabled: trueFunc,
+        isInitialLoadDisabled: () => initialLoadDisabled,
         refresh: noopFunc,
         set: noopThis,
         setCategoryExclusion: noopThis,
@@ -312,6 +351,8 @@ export function GoogleTagServicesGpt(source) {
         setVideoContent: noopThis,
         updateCorrelator: noopFunc,
     };
+
+    const config = {};
 
     const { googletag = {} } = window;
     const { cmd = [] } = googletag;
@@ -346,10 +387,44 @@ export function GoogleTagServicesGpt(source) {
         displaySlot(slotsById.get(id));
     };
     googletag.enableServices = noopFunc;
+    googletag.getConfig = function (keys) {
+        const configKeys = Array.isArray(keys) ? keys : [keys];
+        const googleTagServicesConfig = {};
+        for (let i = 0; i < configKeys.length; i += 1) {
+            const key = configKeys[i];
+            if (key === 'disableInitialLoad') {
+                googleTagServicesConfig[key] = initialLoadDisabled;
+            } else if (key === 'targeting') {
+                googleTagServicesConfig[key] = gTargeting;
+            } else {
+                googleTagServicesConfig[key] = config[key];
+            }
+        }
+        return Object.freeze(googleTagServicesConfig);
+    };
     googletag.getVersion = noopStr;
     googletag.pubads = () => pubAdsService;
     googletag.pubadsReady = true;
     googletag.setAdIframeTitle = noopFunc;
+    googletag.setConfig = function (obj) {
+        try {
+            const entries = Object.entries(obj);
+            for (let i = 0; i < entries.length; i += 1) {
+                const entry = entries[i];
+                const key = entry[0];
+                const value = entry[1];
+                if (key === 'disableInitialLoad') {
+                    initialLoadDisabled = !!value;
+                } else if (key === 'targeting') {
+                    updateTargeting(gTargeting, value);
+                } else {
+                    config[key] = value;
+                }
+            }
+        } catch (ex) {
+            // do nothing
+        }
+    };
     googletag.sizeMapping = () => new SizeMappingBuilder();
 
     window.googletag = googletag;
