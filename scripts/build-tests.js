@@ -1,14 +1,10 @@
 import fs from 'fs-extra';
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import babel from '@rollup/plugin-babel';
-import copy from 'rollup-plugin-copy';
-import json from '@rollup/plugin-json';
-import generateHtml from 'rollup-plugin-generate-html';
+import { rolldown } from 'rolldown';
+import copy from 'rolldown-plugin-copy';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import { rollupStandard } from './rollup-runners';
+import { inlineScriptToHtml } from './generate-html';
 import { generateHtmlTestFilename } from './helpers';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,68 +21,36 @@ const MULTIPLE_TEST_FILES_DIRS = [
 ];
 
 /**
- * Prepares rollup config for test file
+ * Prepares rolldown config for a single test file.
+ * Returns metadata alongside config for post-processing.
  *
- * @param {string} fileName test file name
- * @param {string} subDir subdirectory with test files
- * @returns {object} rollup config
+ * @param {string} fileName test file name (e.g. "abort-current-inline-script.test.js")
+ * @param {string} subDir subdirectory with test files (e.g. "scriptlets")
+ * @returns {{ config: object, subDir: string, finalFileName: string }}
  */
 const getTestConfig = (fileName, subDir) => {
     const dirPath = path.resolve(__dirname, TESTS_DIR, subDir);
-
-    // cut off '.test.js' test file name ending
     const finalFileName = fileName.slice(0, -TEST_FILE_NAME_MARKER.length);
-    return ({
+    const config = {
         input: {
             tests: `${dirPath}/${fileName}`,
         },
         output: {
             dir: TESTS_DIST,
-            entryFileNames: `${fileName}`,
+            // Prefix with subDir to avoid collisions (e.g. "scriptlets--abort.test.js")
+            entryFileNames: `${subDir}--${fileName}`,
             format: 'iife',
         },
-        plugins: [
-            resolve({ extensions: ['.js', '.ts'] }),
-            commonjs({
-                include: 'node_modules/**',
-            }),
-            json({
-                preferConst: true,
-                indent: '  ',
-                compact: true,
-                namedExports: true,
-            }),
-            babel({
-                extensions: ['.js', '.ts'],
-                babelHelpers: 'runtime',
-                plugins: ['@babel/plugin-transform-runtime'],
-            }),
-            generateHtml({
-                // add subDir to final file name to avoid files rewriting
-                // because there are some equal file names in different directories
-                filename: `${TESTS_DIST}/${generateHtmlTestFilename(subDir, finalFileName)}`,
-                template: 'tests/template.html',
-                selector: 'body',
-                inline: true,
-            }),
-            copy({
-                targets: [{
-                    src: [
-                        'tests/styles.css',
-                        'tests/scriptlets/test-files',
-                        'node_modules/qunit/qunit/qunit.js',
-                        'node_modules/sinon/pkg/sinon.js',
-                        'node_modules/js-reporters/dist/js-reporters.js',
-                    ],
-                    dest: TESTS_DIST,
-                }],
-            }),
-        ],
-    });
+    };
+    return {
+        config,
+        subDir,
+        finalFileName,
+    };
 };
 
 /**
- * Returns list of file names in <repo root>/tests/`subDir` which has `.test.js` ending.
+ * Returns list of file names in tests/{subDir} ending with .test.js.
  *
  * @param {string} subDir Subdirectory with test files.
  *
@@ -99,8 +63,8 @@ const getTestFilesFromDir = (subDir) => {
 };
 
 /**
- * Returns list of file names in <repo root>/tests/`subDir` which has `.test.js` ending
- * except `index.test.js`.
+ * Returns list of file names in tests/{subDir} ending with .test.js
+ * except index.test.js.
  *
  * @param {string} subDir Subdirectory with test files.
  *
@@ -112,13 +76,13 @@ const getMultipleTestFilesFromDir = (subDir) => {
 };
 
 /**
- * Returns list of rollup configs for tests.
+ * Returns list of { config, subDir, finalFileName } for tests.
  *
  * @param {object} limitData Optional data object for limited tests running. If not provided, all tests will be run.
  * @param {string} limitData.type Type of tests to run: scriptlets | redirects | helpers | api.
  * @param {string} limitData.name Optional name scriptlets or redirects test to run.
  *
- * @returns {object[]} Array of rollup configs for tests.
+ * @returns {object[]} Array of objects with config, subDir, finalFileName.
  */
 const getTestConfigs = (limitData) => {
     // run limited list of tests if limitData is provided
@@ -144,6 +108,7 @@ const getTestConfigs = (limitData) => {
 
     return allConfigs;
 };
+
 export const buildScriptletsForTests = async () => {
     const config = {
         input: path.resolve(__dirname, '../tests/scriptlets-entrypoint.js'),
@@ -152,13 +117,6 @@ export const buildScriptletsForTests = async () => {
             entryFileNames: 'index.js',
         },
         plugins: [
-            resolve(),
-            commonjs(),
-            babel({
-                extensions: ['.js', '.ts'],
-                babelHelpers: 'runtime',
-                plugins: ['@babel/plugin-transform-runtime'],
-            }),
             copy({
                 targets: [{
                     src: [path.resolve(__dirname, '../dist/redirects.yml')],
@@ -167,7 +125,8 @@ export const buildScriptletsForTests = async () => {
             }),
         ],
     };
-    await rollupStandard(config);
+    const build = await rolldown(config);
+    await build.write(config.output);
 };
 
 export const buildTests = async (limitData) => {
@@ -176,7 +135,52 @@ export const buildTests = async (limitData) => {
     } else {
         fs.emptyDirSync(TESTS_DIST);
     }
+
     const testConfigs = getTestConfigs(limitData);
-    await rollupStandard(testConfigs);
+
+    // Build each test JS with Rolldown, then inline into HTML, then delete JS
+    for (const { config, subDir, finalFileName } of testConfigs) {
+        // Step 1: Build JS with Rolldown
+        const build = await rolldown(config);
+        await build.write(config.output);
+
+        // Step 2: Read the built JS
+        const jsFileName = `${subDir}--${finalFileName}${TEST_FILE_NAME_MARKER}`;
+        const jsPath = path.join(TESTS_DIST, jsFileName);
+        const scriptContent = await fs.readFile(jsPath, 'utf8');
+
+        // Step 3: Generate HTML with inlined script
+        await inlineScriptToHtml({
+            templatePath: path.resolve(__dirname, TESTS_DIR, 'template.html'),
+            scriptContent,
+            outputPath: path.join(TESTS_DIST, generateHtmlTestFilename(subDir, finalFileName)),
+            injectionMarker: '<!-- test script injection -->',
+        });
+
+        // Step 4: Delete the JS file (code is now inlined in HTML)
+        await fs.remove(jsPath);
+    }
+
+    // Copy static test assets
+    const staticFiles = [
+        'tests/styles.css',
+        'tests/scriptlets/test-files',
+        'node_modules/qunit/qunit/qunit.js',
+        'node_modules/sinon/pkg/sinon.js',
+        'node_modules/js-reporters/dist/js-reporters.js',
+    ];
+    for (const src of staticFiles) {
+        const srcPath = path.resolve(__dirname, '..', src);
+        // eslint-disable-next-line no-await-in-loop
+        const stat = await fs.stat(srcPath);
+        if (stat.isDirectory()) {
+            // eslint-disable-next-line no-await-in-loop
+            await fs.copy(srcPath, path.join(TESTS_DIST, path.basename(src)));
+        } else {
+            // eslint-disable-next-line no-await-in-loop
+            await fs.copy(srcPath, path.join(TESTS_DIST, path.basename(src)));
+        }
+    }
+
     await buildScriptletsForTests();
 };

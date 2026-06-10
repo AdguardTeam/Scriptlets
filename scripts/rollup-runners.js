@@ -1,25 +1,25 @@
-import * as rollup from 'rollup';
+import { rolldown } from 'rolldown';
 import chalk from 'chalk';
 
 const { log } = console;
 
 /**
- * Builds scriptlets
+ * Builds scriptlets using Rolldown (Rust-based bundler)
  *
  * @param {object|object[]} config config may be list of configs or one config
  */
-export const rollupStandard = async (config) => {
+export const rolldownStandard = async (config) => {
     const runOneConfig = async (config) => {
-        log('Start building...', config.input);
-        const bundle = await rollup.rollup(config);
+        log('Start building [rolldown]...', config.input);
+        const build = await rolldown(config);
         if (Array.isArray(config.output)) {
             for (const outputOptions of config.output) {
-                await bundle.write(outputOptions);
+                await build.write(outputOptions);
             }
         } else {
-            await bundle.write(config.output);
+            await build.write(config.output);
         }
-        log(chalk.greenBright('Successfully built'), config.input);
+        log(chalk.greenBright('Successfully built [rolldown]'), config.input);
     };
 
     if (Array.isArray(config)) {
@@ -29,22 +29,4 @@ export const rollupStandard = async (config) => {
     } else {
         await runOneConfig(config);
     }
-};
-
-/**
- * Builds scriptlets in the watch mode
- *
- * @param {object|object[]} config - config may be list of configs or one config
- */
-export const rollupWatch = (config) => {
-    const watcher = rollup.watch(config);
-    watcher.on('event', (event) => {
-        if (event.code === 'BUNDLE_START') {
-            log('Start building...', event.input);
-        }
-        if (event.result) {
-            event.result.close();
-            log(chalk.yellowBright('Waiting for changes...'));
-        }
-    });
 };

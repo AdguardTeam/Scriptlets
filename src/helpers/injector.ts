@@ -37,8 +37,11 @@ export async function attachDependencies(scriptlet: Scriptlet | Redirect): Promi
     }));
 
     // Combine the minified dependencies with the scriptlet code
+    // NOTE: Semicolon separators are critical. Terser 5.x cannot parse 3+
+    // consecutive arrow expressions (e.g., () => {}, () => [], () => true)
+    // without explicit statement boundaries. See AG-51048.
     return minifiedDeps.reduce((acc: string, depCode: string) => {
-        return `${acc}\n${depCode}`;
+        return `${acc};\n${depCode}`;
     }, scriptlet.toString());
 }
 

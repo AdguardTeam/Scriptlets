@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 import * as redirectsNamesLists from '../src/redirects/redirects-names-list';
 import { version } from '../package.json';
-import { rollupStandard } from './rollup-runners';
+import { rolldownStandard } from './rollup-runners';
 import { writeFile, getDataFromFiles, convertTsFileNameToJs } from './helpers';
 import {
     redirectsFilenames,
@@ -17,13 +17,14 @@ import {
     DIST_DIR_NAME,
     CORELIBS_REDIRECTS_FILE_NAME,
 } from './constants';
-import { redirectsListConfig, click2LoadConfig, redirectsPrebuildConfig } from '../rollup.config';
+import { redirectsListConfig, click2LoadScriptConfig, redirectsPrebuildConfig } from '../rollup.config';
 import {
     addCall,
     attachDependencies,
     passSourceAndProps,
     wrapInNonameFunc,
 } from '../src/helpers/injector';
+import { inlineScriptToHtml } from './generate-html';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -309,21 +310,22 @@ const buildRedirectsYamlFile = async (mergedRedirects) => {
 };
 
 export const prebuildRedirects = async () => {
-    await rollupStandard(redirectsPrebuildConfig);
+    await rolldownStandard(redirectsPrebuildConfig);
 };
 
-/**
- * We need extra script file to calculate sha256 for extension.
- * Since using generateHtml will bundle and inline script code to html webpage
- * but no dist file will be created, clickToLoadScriptConfig is needed separately.
- * The extra script file will be removed from dist/redirect-files later while build-redirects.js run
- */
 export const buildClick2Load = async () => {
-    const buildClick2LoadScript = rollupStandard(click2LoadConfig.script);
+    // Build the JS bundle with Rolldown
+    await rolldownStandard(click2LoadScriptConfig);
 
-    const buildClick2LoadHtml = rollupStandard(click2LoadConfig.html);
-
-    await Promise.all([buildClick2LoadScript, buildClick2LoadHtml]);
+    // Read the built JS and inline it into the HTML template
+    const scriptPath = path.resolve(__dirname, '../tmp/click2load.js');
+    const scriptContent = await fs.readFile(scriptPath, 'utf8');
+    await inlineScriptToHtml({
+        templatePath: path.resolve(__dirname, '../src/redirects/blocking-redirects/click2load.html'),
+        scriptContent,
+        outputPath: path.resolve(__dirname, '../dist/redirect-files/click2load.html'),
+        injectionMarker: '<!-- script injection -->',
+    });
 };
 
 export const buildRedirectsFiles = async () => {
@@ -384,5 +386,5 @@ export const buildRedirectsForCorelibs = async () => {
 };
 
 export const buildRedirectsList = async () => {
-    await rollupStandard(redirectsListConfig);
+    await rolldownStandard(redirectsListConfig);
 };
