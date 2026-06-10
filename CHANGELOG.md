@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `listenerToString` helper now uses native `Function.prototype.toString`
+  to prevent issues where websites redefine it [#292].
 - `prevent-fetch` now supports a structured `responseConfig` argument for overriding synthetic response fields such as
   `ok`, `redirected`, `status`, `statusText`, and extended `type` values [#529].
 - Redirect resources with a `.ts` extension are now converted to `.js`.
@@ -34,6 +36,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#560]: https://github.com/AdguardTeam/Scriptlets/issues/560
 [#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
 [#467]: https://github.com/AdguardTeam/Scriptlets/issues/467
+[#292]: https://github.com/AdguardTeam/Scriptlets/issues/292
 
 ## [2.4.2] - 2026-04-24
 

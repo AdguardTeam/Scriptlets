@@ -5,6 +5,7 @@ const { test, module } = QUnit;
 const name = 'prevent-addEventListener';
 
 const nativeDescriptor = Object.getOwnPropertyDescriptor(window.EventTarget.prototype, 'addEventListener');
+const nativeToString = Function.prototype.toString;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -17,6 +18,8 @@ const afterEach = () => {
     Object.defineProperty(window.EventTarget.prototype, 'addEventListener', nativeDescriptor);
     Object.defineProperty(window, 'addEventListener', nativeDescriptor);
     Object.defineProperty(document, 'addEventListener', nativeDescriptor);
+    // eslint-disable-next-line no-extend-native
+    Function.prototype.toString = nativeToString;
 };
 
 module(name, { beforeEach, afterEach });
@@ -92,7 +95,7 @@ test('should not throw error when event type is null', (assert) => {
     // This should not throw an error
     assert.expect(2);
     try {
-        document.addEventListener(null, () => {});
+        document.addEventListener(null, () => { });
         window[testProp] = 'end';
     } catch (e) {
         assert.ok(false, `Should not throw error: ${e.message}`);
@@ -106,6 +109,30 @@ test('should not throw error when event type is null', (assert) => {
 test('does not allow to add event listener', (assert) => {
     const scriptletArgs = ['click', 'clicked'];
     runScriptlet(name, scriptletArgs);
+
+    const testProp = 'testProp';
+    const element = document.createElement('div');
+    element.addEventListener('click', () => {
+        window[testProp] = 'clicked';
+    });
+    element.click();
+
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    assert.strictEqual(window[testProp], undefined, 'property should be undefined');
+    clearGlobalProps(testProp);
+});
+
+test('does not allow to add event listener - native toString mocked', (assert) => {
+    const scriptletArgs = ['click', 'clicked'];
+    runScriptlet(name, scriptletArgs);
+
+    const nativeToString = Function.prototype.toString;
+    // eslint-disable-next-line no-extend-native
+    Function.prototype.toString = function mockToString() {
+        return nativeToString.call(this).includes('clicked')
+            ? ''
+            : nativeToString.call(this);
+    };
 
     const testProp = 'testProp';
     const element = document.createElement('div');
@@ -384,7 +411,7 @@ test('noProtect parameter allows subsequent override of addEventListener', (asse
     };
 
     const element2 = document.createElement('div');
-    element2.addEventListener('click', () => {});
+    element2.addEventListener('click', () => { });
 
     assert.strictEqual(overrideWorked, true, 'addEventListener should be overridable with noProtect');
     clearGlobalProps(testProp);

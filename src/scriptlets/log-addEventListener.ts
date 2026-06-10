@@ -36,6 +36,7 @@ import { type Source } from './scriptlets';
  */
 export function logAddEventListener(source: Source, noProtect?: string) {
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+    const nativeToString = Function.prototype.toString;
 
     function addEventListenerWrapper(
         this: EventTarget | null | undefined,
@@ -46,7 +47,7 @@ export function logAddEventListener(source: Source, noProtect?: string) {
         if (validateType(type) && validateListener(listener)) {
             let targetElement: Element | undefined;
             let targetElementInfo: string | undefined;
-            const listenerInfo = listenerToString(listener as EventListener | EventListenerObject);
+            const listenerInfo = listenerToString(listener as EventListener | EventListenerObject, nativeToString);
 
             if (this) {
                 if (this instanceof Window) {

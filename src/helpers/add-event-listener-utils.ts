@@ -33,10 +33,17 @@ export const validateListener = (listener: unknown): boolean => {
  * https://developer.mozilla.org/en-US/docs/Web/API/EventListener
  *
  * @param listener valid listener
+ * @param nativeToString native Function.prototype.toString method
  * @returns listener string
  */
-export const listenerToString = (listener: EventListener | EventListenerObject): string => {
+export const listenerToString = (
+    listener: EventListener | EventListenerObject,
+    nativeToString: typeof Function.prototype.toString,
+): string => {
     return typeof listener === 'function'
-        ? listener.toString()
-        : listener.handleEvent.toString();
+        // Using native toString() is required to fix issues
+        // where websites redefine Function.prototype.toString
+        // https://github.com/AdguardTeam/Scriptlets/issues/292
+        ? nativeToString.call(listener)
+        : nativeToString.call(listener.handleEvent);
 };

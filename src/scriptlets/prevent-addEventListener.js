@@ -152,12 +152,13 @@ export function preventAddEventListener(
     };
 
     const nativeAddEventListener = window.EventTarget.prototype.addEventListener;
+    const nativeToString = Function.prototype.toString;
 
     function addEventListenerWrapper(type, listener, ...args) {
         let shouldPrevent = false;
         if (validateType(type) && validateListener(listener)) {
             shouldPrevent = typeSearchRegexp.test(type.toString())
-                && listenerSearchRegexp.test(listenerToString(listener))
+                && listenerSearchRegexp.test(listenerToString(listener, nativeToString))
                 && elementMatches(this);
         }
 
