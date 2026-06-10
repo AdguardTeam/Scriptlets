@@ -28,11 +28,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Infinite loop in `getRecursiveCandidates` in `json-path-utils` [#563].
 - Added the missing `google.ima.dai.api.ui`, `google.ima.dai.api.customUi` surfaces and the
   default `StreamRequest.ui` container in the `google-ima3-dai` redirect.
 - Added the missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...HEAD
+[#563]: https://github.com/AdguardTeam/Scriptlets/issues/563
 [#560]: https://github.com/AdguardTeam/Scriptlets/issues/560
 [#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
 [#467]: https://github.com/AdguardTeam/Scriptlets/issues/467

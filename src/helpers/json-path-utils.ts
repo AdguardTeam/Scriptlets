@@ -289,6 +289,19 @@ export const jsonPath = (
         REGEX: 'regex',
     } as const;
     const OPERATORS = ['==', '!=', '<=', '>=', '*=', '=~', '<', '>', '='];
+    // Hard ceilings for a single recursive descent. Cycles are detected by
+    // object identity, but a non-caching proxy or getter that mints a fresh
+    // wrapper on every property read defeats identity checks, so traversal
+    // must also be bounded explicitly. Such a laundered cycle grows in depth
+    // (and the depth cap stops it after a few thousand nodes), while large
+    // legitimate payloads grow in width and stay far below both limits.
+    //
+    // Only object-valued candidates count toward MAX_RECURSIVE_CANDIDATES.
+    // Primitive values (numbers, strings, booleans) can never form a cycle,
+    // so counting them would fire the budget on large arrays of primitives.
+    const MAX_RECURSIVE_CANDIDATES = 100000;
+    const MAX_RECURSIVE_DEPTH = 1000;
+
     // Required for appendPath(): simple property names can be emitted as `.prop`,
     // but keys with spaces, punctuation, or leading digits must use bracket
     // notation so generated paths stay valid and reparsable JSONPath selectors.
@@ -1262,6 +1275,13 @@ export const jsonPath = (
             return [];
         }
 
+        // Typed arrays (Uint8Array, Float32Array, etc.) expose every element
+        // as a numbered key. A large buffer would exhaust the traversal budget
+        // before reaching any meaningful property, so they are skipped entirely.
+        if (ArrayBuffer.isView(candidate.value)) {
+            return [];
+        }
+
         const keys = Object.keys(candidate.value);
         const output: JsonPathCandidate[] = [];
 
@@ -1276,23 +1296,79 @@ export const jsonPath = (
     /**
      * Returns a candidate plus all of its descendants.
      *
+     * Cyclic structures are skipped by object identity. Inputs whose identity
+     * changes on every read (non-caching proxies, getters minting fresh
+     * wrappers) defeat identity checks, so traversal is additionally bounded
+     * by `MAX_RECURSIVE_CANDIDATES` and `MAX_RECURSIVE_DEPTH`; once a budget
+     * is exhausted the remaining branches are skipped and a message is logged.
+     *
      * @param candidate root candidate for recursive descent
-     * @returns recursive candidate list
+     * @returns recursive candidate list, possibly truncated to the budgets
      */
     function getRecursiveCandidates(candidate: JsonPathCandidate): JsonPathCandidate[] {
         const output: JsonPathCandidate[] = [candidate];
+        // Depth of each queued candidate, aligned with `output` by index
+        const candidateDepths: number[] = [0];
+        const visitedObjects = new WeakSet<object>();
+        if (isObjectLike(candidate.value)) {
+            visitedObjects.add(candidate.value);
+        }
+
+        let isBudgetExhausted = false;
+        // Counts only object-valued candidates. Primitives can never form a
+        // cycle so they are not counted, which avoids false positives on large
+        // arrays of numbers or strings.
+        let objectCandidateCount = isObjectLike(candidate.value) ? 1 : 0;
+
         const initialChildren = getChildCandidates(candidate);
         for (let i = 0; i < initialChildren.length; i += 1) {
+            if (isObjectLike(initialChildren[i].value)) {
+                if (visitedObjects.has(initialChildren[i].value)) {
+                    continue;
+                }
+                visitedObjects.add(initialChildren[i].value);
+                objectCandidateCount += 1;
+                if (objectCandidateCount >= MAX_RECURSIVE_CANDIDATES) {
+                    isBudgetExhausted = true;
+                    break;
+                }
+            }
             output.push(initialChildren[i]);
+            candidateDepths.push(1);
         }
 
         let head = 1;
-        while (head < output.length) {
+        while (head < output.length && !isBudgetExhausted) {
+            const childDepth = candidateDepths[head] + 1;
+            if (childDepth > MAX_RECURSIVE_DEPTH) {
+                isBudgetExhausted = true;
+                break;
+            }
+
             const childCandidates = getChildCandidates(output[head]);
             for (let i = 0; i < childCandidates.length; i += 1) {
+                if (isObjectLike(childCandidates[i].value)) {
+                    if (visitedObjects.has(childCandidates[i].value)) {
+                        continue;
+                    }
+                    visitedObjects.add(childCandidates[i].value);
+                    objectCandidateCount += 1;
+                    if (objectCandidateCount >= MAX_RECURSIVE_CANDIDATES) {
+                        isBudgetExhausted = true;
+                        break;
+                    }
+                }
                 output.push(childCandidates[i]);
+                candidateDepths.push(childDepth);
             }
             head += 1;
+        }
+
+        if (isBudgetExhausted) {
+            logMessage(
+                source,
+                'JSONPath recursive descent exceeded its traversal budget, results may be incomplete',
+            );
         }
 
         return output;
@@ -1610,7 +1686,19 @@ export const jsonPath = (
         for (let i = 0; i < selector.steps.length; i += 1) {
             const step = selector.steps[i];
             if (step.mode === 'filter' && step.filter) {
-                candidates = applyFilterStep(candidates, step.filter);
+                // `$..[?(...)]` must test every descendant, so recursive
+                // filter steps expand candidates the same way direct steps do
+                let candidatesToFilter = candidates;
+                if (step.recursive) {
+                    candidatesToFilter = [];
+                    for (let j = 0; j < candidates.length; j += 1) {
+                        const recursiveCandidates = getRecursiveCandidates(candidates[j]);
+                        for (let k = 0; k < recursiveCandidates.length; k += 1) {
+                            candidatesToFilter.push(recursiveCandidates[k]);
+                        }
+                    }
+                }
+                candidates = applyFilterStep(candidatesToFilter, step.filter);
                 continue;
             }
 

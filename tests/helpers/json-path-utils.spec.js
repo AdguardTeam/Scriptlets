@@ -1698,6 +1698,261 @@ describe('jsonPath tests', () => {
         });
     });
 
+    test('Does not hang on circular reference during recursive descent', () => {
+        const obj = { a: 1, nested: { b: 2 } };
+        obj.nested.parent = obj;
+
+        const result = jsonPath(source, obj, '$..a', nativeObjects);
+
+        // $..a removed all `a` properties; cycle protection means traversal
+        // terminated cleanly rather than hanging
+        expect(result.a).toBeUndefined();
+        expect(result.nested.b).toBe(2);
+    });
+
+    test('Does not hang on circular reference behind a non-caching proxy', () => {
+        // Same circular data as above, but wrapped by a proxy that returns
+        // a FRESH wrapper on every property read (a non-caching membrane).
+        // Object identity is different on each visit, so the WeakSet-based
+        // cycle protection never detects the cycle and recursive descent
+        // re-enters the same circular structure forever.
+        const data = { a: 1, nested: { b: 2 } };
+        data.nested.parent = data;
+
+        // The underlying data holds only 2 objects; the traversal budget
+        // (MAX_RECURSIVE_CANDIDATES) must stop the descent, so the guard sits
+        // well above it and only fires if the budget fails. The guard throws
+        // to fail fast instead of hanging the test runner — a synchronous
+        // infinite loop could not be interrupted by the test timeout. The
+        // throw is swallowed by jsonPath's internal try/catch, so the
+        // assertion below is on the wrap counter.
+        const WRAP_LIMIT = 250000;
+        let wrapCount = 0;
+        const wrap = (target) => {
+            if (target === null || typeof target !== 'object') {
+                return target;
+            }
+            wrapCount += 1;
+            if (wrapCount > WRAP_LIMIT) {
+                throw new Error('Recursive descent did not terminate');
+            }
+            return new Proxy(target, {
+                get(innerTarget, prop, receiver) {
+                    return wrap(Reflect.get(innerTarget, prop, receiver));
+                },
+            });
+        };
+
+        jsonPath(source, wrap(data), '$..b', nativeObjects);
+
+        expect(wrapCount).toBeLessThan(WRAP_LIMIT);
+    });
+
+    test('Applies recursive descent before a filter step', () => {
+        const root = { deep: { items: [{ val: 1 }, { val: 9 }] } };
+
+        // `$..[?(...)]` must test every descendant, like the equivalent
+        // `$..items[?(@.val==1)]` does, instead of applying the filter
+        // to the root candidate only
+        const result = jsonPath(source, root, '$..[?(@.val==1)].val=2', nativeObjects);
+
+        expect(result.deep.items[0].val).toBe(2);
+        expect(result.deep.items[1].val).toBe(9);
+    });
+
+    test('Recursive filter step matches candidates at multiple nesting levels', () => {
+        // Both the top-level array and the nested array contain items that
+        // satisfy the filter; `$..[?(...)]` must reach all of them.
+        const root = {
+            items: [{ enabled: true }, { enabled: false }],
+            group: {
+                items: [{ enabled: true }, { enabled: true }],
+            },
+        };
+
+        const result = jsonPath(source, root, '$..[?(@.enabled==true)].enabled=false', nativeObjects);
+
+        expect(result.items[0].enabled).toBe(false);
+        expect(result.items[1].enabled).toBe(false);
+        expect(result.group.items[0].enabled).toBe(false);
+        expect(result.group.items[1].enabled).toBe(false);
+    });
+
+    test('Recursive filter step remove mode', () => {
+        const root = {
+            ads: [{ blocked: true, id: 1 }, { blocked: false, id: 2 }],
+            sidebar: {
+                ads: [{ blocked: true, id: 3 }],
+            },
+        };
+
+        // remove every object that has `blocked: true` anywhere in the tree
+        const result = jsonPath(source, root, '$..[?(@.blocked==true)]', nativeObjects);
+
+        expect(result.ads.length).toBe(1);
+        expect(result.ads[0].id).toBe(2);
+        expect(result.sidebar.ads.length).toBe(0);
+    });
+
+    test('Recursive filter step with logical AND condition', () => {
+        const root = {
+            level1: {
+                level2: {
+                    items: [
+                        { type: 'ad', active: true },
+                        { type: 'ad', active: false },
+                        { type: 'content', active: true },
+                    ],
+                },
+            },
+        };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$..[?(@.type=="ad"&&@.active==true)].active=false',
+            nativeObjects,
+        );
+
+        expect(result.level1.level2.items[0].active).toBe(false);
+        expect(result.level1.level2.items[1].active).toBe(false);
+        expect(result.level1.level2.items[2].active).toBe(true);
+    });
+
+    test('Recursive descent depth limit: node at the limit is matched, node one step beyond is not', () => {
+        // MAX_RECURSIVE_DEPTH = 1000.
+        //
+        // The traversal queue is filled level-by-level:
+        //   - Expanding a node at depth 999 adds its children (depth 1000) to
+        //     the queue. Those children are collected and are matchable.
+        //   - When the traversal tries to expand the first depth-1000 node,
+        //     childDepth becomes 1001 > 1000, so the entire remaining queue
+        //     is abandoned — not just that one subtree.
+        //   - Nodes at depth 1001+ are never queued and never matchable.
+        //
+        // The depth limit therefore stops the whole remaining traversal, not
+        // just one branch. Nodes up to and including depth 1000 are still
+        // reachable because they were already queued by their parents.
+
+        // Build a linear chain 1002 levels deep: root -> n1 -> n2 -> ... -> n1001
+        const root = {};
+        let node = root;
+        for (let i = 1; i <= 1001; i += 1) {
+            node.next = {};
+            node = node.next;
+        }
+
+        // `node` is now at depth 1001 (beyond the limit).
+        // Walk from root to get the node exactly at the limit (depth 1000).
+        const nodeBeyondLimit = node;
+        let nodeAtLimit = root;
+        for (let i = 0; i < 1000; i += 1) {
+            nodeAtLimit = nodeAtLimit.next;
+        }
+
+        nodeAtLimit.marker = 'at-limit'; // depth 1000 — should be matched
+        nodeBeyondLimit.marker = 'beyond'; // depth 1001 — should be skipped
+
+        jsonPath(source, root, '$..marker', nativeObjects);
+
+        // The node at the limit was reachable: its `marker` was removed
+        expect(nodeAtLimit.marker).toBeUndefined();
+        // The node one step beyond was never queued: its `marker` is untouched
+        expect(nodeBeyondLimit.marker).toBe('beyond');
+    });
+
+    test('Can remove a Uint8Array property via direct path', () => {
+        const root = { payload: new Uint8Array(150000), other: 1 };
+
+        const result = jsonPath(source, root, '$.payload', nativeObjects);
+
+        expect(result.payload).toBeUndefined();
+        expect(result.other).toBe(1);
+    });
+
+    test('Can remove a Uint8Array property via recursive descent', () => {
+        const root = { data: { payload: new Uint8Array(150000), other: 1 } };
+
+        const result = jsonPath(source, root, '$..payload', nativeObjects);
+
+        expect(result.data.payload).toBeUndefined();
+        expect(result.data.other).toBe(1);
+    });
+
+    test('Can replace a Uint8Array property with an empty array', () => {
+        const root = { data: { payload: new Uint8Array(150000), other: 1 } };
+
+        const result = jsonPath(source, root, '$..payload=[]', nativeObjects);
+
+        expect(Array.isArray(result.data.payload)).toBe(true);
+        expect(result.data.payload.length).toBe(0);
+        expect(result.data.other).toBe(1);
+    });
+
+    test('Large array of primitives does not exhaust the traversal budget', () => {
+        // Primitives (numbers, strings, booleans) can never form a cycle, so
+        // they must not count against MAX_RECURSIVE_CANDIDATES. A real-world
+        // JSON response with a 100 000-element array of numbers would otherwise
+        // fire the budget before reaching any other property in the tree.
+        const root = {
+            data: new Array(150000).fill(0).map((_, i) => i),
+            config: { ads: { enabled: true } },
+        };
+
+        const result = jsonPath(source, root, '$..enabled=false', nativeObjects);
+
+        expect(result.config.ads.enabled).toBe(false);
+    });
+
+    test('Skips typed array elements during recursive descent', () => {
+        // A Uint8Array exposes every element as a numbered key via Object.keys.
+        // Without the ArrayBuffer.isView guard each byte becomes a
+        // JsonPathCandidate pushed to the traversal queue: 5,000,000 bytes
+        // generate ~5M objects and take ~500ms to process. With the guard
+        // the array is skipped in O(1) and only meaningful properties are queued.
+        const root = {
+            payload: new Uint8Array(5_000_000),
+            config: {
+                ads: { enabled: true },
+            },
+        };
+
+        const start = performance.now();
+        const result = jsonPath(source, root, '$..enabled=false', nativeObjects);
+        const elapsed = performance.now() - start;
+
+        expect(result.config.ads.enabled).toBe(false);
+        // Without the guard this takes ~500ms on modern hardware.
+        // A 200ms threshold gives enough headroom for slower machines while
+        // still catching the regression.
+        expect(elapsed).toBeLessThan(200);
+    });
+
+    test('Non-caching proxy traversal is bounded and returns partial results', () => {
+        // Unlike the hang test above, this verifies that once the budget fires
+        // the function still returns the root unchanged rather than throwing
+        // or returning undefined.
+        const data = { keep: 'this', nested: {} };
+        data.nested.parent = data;
+
+        const wrap = (target) => {
+            if (target === null || typeof target !== 'object') {
+                return target;
+            }
+            return new Proxy(target, {
+                get(innerTarget, prop, receiver) {
+                    return wrap(Reflect.get(innerTarget, prop, receiver));
+                },
+            });
+        };
+
+        const result = jsonPath(source, wrap(data), '$..missing', nativeObjects);
+
+        // traversal terminated early but the root object is returned intact
+        expect(result).toBeDefined();
+        expect(result.keep).toBe('this');
+    });
+
     test('Replaces referer when regex root guard matches', () => {
         const root = {
             meta: {
