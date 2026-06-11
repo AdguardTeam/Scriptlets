@@ -27,19 +27,19 @@ export const createPreventTimerTests = (config) => {
 
     const trackedTimers = [];
 
-    const beforeEach = () => {
+    function beforeEach() {
         window.__debug = () => {
             window.hit = 'FIRED';
         };
-    };
+    }
 
-    const afterEach = () => {
+    function afterEach() {
         window[timerMethodName] = setTimer;
         trackedTimers.forEach((id) => clearTimer(id));
         trackedTimers.length = 0;
         clearGlobalProps('hit', '__debug', 'one', 'two', 'three', 'four', 'five');
         console.log = nativeConsole; // eslint-disable-line no-console
-    };
+    }
 
     module(name, { beforeEach, afterEach });
 
@@ -114,12 +114,12 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // check if scriptlet works
-        const test = () => { window.one = 'new value'; };
+        function test() { window.one = 'new value'; }
         const timerId = window[timerMethodName](test, 50);
         trackedTimers.push(timerId);
 
         // check if scriptlet doesn't affect on others timeouts
-        const anotherCallback = () => { window.two = 'new value'; };
+        function anotherCallback() { window.two = 'new value'; }
         const anotherId = window[timerMethodName](anotherCallback);
         trackedTimers.push(anotherId);
     });
@@ -145,12 +145,12 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // check if scriptlet works
-        const testCallback = () => { window.one = 'new value'; };
+        function testCallback() { window.one = 'new value'; }
         const timerId = window[timerMethodName](testCallback, 50);
         trackedTimers.push(timerId);
 
         // check if scriptlet doesn't affect on others timeouts
-        const anotherCallback = () => { window.two = 'new value'; };
+        function anotherCallback() { window.two = 'new value'; }
         const anotherId = window[timerMethodName](anotherCallback);
         trackedTimers.push(anotherId);
     });
@@ -174,15 +174,15 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // only this one should not be prevented because of match = !first
-        const first = () => { window.one = 'NEW ONE'; };
+        function first() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](first, 30);
         trackedTimers.push(timerId1);
 
-        const second = () => { window.two = 'NEW TWO'; };
+        function second() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](second, 40);
         trackedTimers.push(timerId2);
 
-        const third = () => { window.three = 'NEW THREE'; };
+        function third() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](third, 50);
         trackedTimers.push(timerId3);
     });
@@ -206,15 +206,15 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // only this one SHOULD NOT be prevented because of delay mismatch
-        const first = () => { window.one = 'NEW ONE'; };
+        function first() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](first, 30);
         trackedTimers.push(timerId1);
 
-        const second = () => { window.two = 'NEW TWO'; };
+        function second() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](second, 0);
         trackedTimers.push(timerId2);
 
-        const third = () => { window.three = 'NEW THREE'; };
+        function third() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](third, 0);
         trackedTimers.push(timerId3);
     });
@@ -237,16 +237,16 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['test', '!50'];
         runScriptlet(name, scriptletArgs);
 
-        const test1 = () => { window.one = 'CHANGED1'; };
+        function test1() { window.one = 'CHANGED1'; }
         const timerId1 = window[timerMethodName](test1, 40);
         trackedTimers.push(timerId1);
 
-        const test2 = () => { window.two = 'CHANGED2'; };
+        function test2() { window.two = 'CHANGED2'; }
         // only this one should not be prevented because of delay = !50
         const timerId2 = window[timerMethodName](test2, 50);
         trackedTimers.push(timerId2);
 
-        const test3 = () => { window.three = 'CHANGED3'; };
+        function test3() { window.three = 'CHANGED3'; }
         const timerId3 = window[timerMethodName](test3, 60);
         trackedTimers.push(timerId3);
     });
@@ -271,20 +271,20 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['!one', '!50'];
         runScriptlet(name, scriptletArgs);
 
-        const one20 = () => { window.one = 'first20'; };
+        function one20() { window.one = 'first20'; }
         const timerId120 = window[timerMethodName](one20, 20);
         trackedTimers.push(timerId120);
 
-        const one50 = () => { window.two = 'first50'; };
+        function one50() { window.two = 'first50'; }
         const timerId150 = window[timerMethodName](one50, 50);
         trackedTimers.push(timerId150);
 
-        const second20 = () => { window.three = 'second20'; };
+        function second20() { window.three = 'second20'; }
         // only this one should be prevented because of match = !one && delay = !50
         const timerId220 = window[timerMethodName](second20, 20);
         trackedTimers.push(timerId220);
 
-        const second50 = () => { window.four = 'second50'; };
+        function second50() { window.four = 'second50'; }
         const timerId250 = window[timerMethodName](second50, 50);
         trackedTimers.push(timerId250);
     });
@@ -304,7 +304,7 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // check if scriptlet works
-        const callback = () => { window.one = 'changed'; };
+        function callback() { window.one = 'changed'; }
         const timerId = window[timerMethodName](callback, 50);
         trackedTimers.push(timerId);
     });
@@ -362,12 +362,12 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['baitFunc('];
         runScriptlet(name, scriptletArgs);
 
-        const callback = () => {
+        function callback() {
             const baitFunc = (value) => {
                 window.one = value;
             };
             baitFunc('new value');
-        };
+        }
         const timerId = window[timerMethodName](callback, 10);
         trackedTimers.push(timerId);
     });
@@ -385,13 +385,13 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['[1'];
         runScriptlet(name, scriptletArgs);
 
-        const callback = () => {
+        function callback() {
             const baitFunc = () => {
                 const bait = [1];
                 window.one = bait;
             };
             baitFunc();
-        };
+        }
         const timerId = window[timerMethodName](callback, 10);
         trackedTimers.push(timerId);
     });
@@ -415,15 +415,15 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // only this one SHOULD NOT be prevented because of delay mismatch
-        const first = () => { window.one = 'NEW ONE'; };
+        function first() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](first, 30);
         trackedTimers.push(timerId1);
 
-        const second = () => { window.two = 'NEW TWO'; };
+        function second() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](second, 10.05);
         trackedTimers.push(timerId2);
 
-        const third = () => { window.three = 'NEW THREE'; };
+        function third() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](third, 10.95);
         trackedTimers.push(timerId3);
     });
@@ -453,24 +453,24 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // only this one SHOULD NOT be prevented because of delay mismatch
-        const first = () => { window.one = 'NEW ONE'; };
+        function first() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](first, 25.123);
         trackedTimers.push(timerId1);
 
-        const second = () => { window.two = 'NEW TWO'; };
+        function second() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](second, null);
         trackedTimers.push(timerId2);
 
-        const third = () => { window.three = 'NEW THREE'; };
+        function third() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](third, true);
         trackedTimers.push(timerId3);
 
         // test with string delays
-        const fourth = () => { window.four = 'NEW FOUR'; };
+        function fourth() { window.four = 'NEW FOUR'; }
         const timerId4 = window[timerMethodName](fourth, '25.123');
         trackedTimers.push(timerId4);
 
-        const fifth = () => { window.five = 'NEW FIVE'; };
+        function fifth() { window.five = 'NEW FIVE'; }
         const timerId5 = window[timerMethodName](fifth, '10');
         trackedTimers.push(timerId5);
     });
@@ -494,15 +494,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['', '0'];
         runScriptlet(name, scriptletArgs);
 
-        const first = () => { window.one = 'NEW ONE'; };
+        function first() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](first, 0);
         trackedTimers.push(timerId1);
 
-        const second = () => { window.two = 'NEW TWO'; };
+        function second() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](second, null);
         trackedTimers.push(timerId2);
 
-        const third = () => { window.three = 'NEW THREE'; };
+        function third() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](third, undefined);
         trackedTimers.push(timerId3);
     });
@@ -531,7 +531,7 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // eslint-disable-next-line quotes
-        const callback = () => { window[markerProp] = ".css('display','block');"; };
+        function callback() { window[markerProp] = ".css('display','block');"; }
         const timerId1 = window[timerMethodName](callback, 30);
         trackedTimers.push(timerId1);
     });
@@ -555,7 +555,7 @@ export const createPreventTimerTests = (config) => {
         runScriptlet(name, scriptletArgs);
 
         // eslint-disable-next-line quotes
-        const callback = () => { window[markerProp] = ".css('display','block');"; };
+        function callback() { window[markerProp] = ".css('display','block');"; }
         const timerId1 = window[timerMethodName](callback, 30);
         trackedTimers.push(timerId1);
     });
@@ -578,7 +578,7 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = [CALLBACK_MATCH, '30'];
         runScriptlet(name, scriptletArgs);
 
-        const callback = () => { window[markerProp] = '.css("display","block");'; };
+        function callback() { window[markerProp] = '.css("display","block");'; }
         const timerId1 = window[timerMethodName](callback, 30);
         trackedTimers.push(timerId1);
     });
@@ -601,7 +601,7 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = [CALLBACK_MATCH, '30'];
         runScriptlet(name, scriptletArgs);
 
-        const callback = () => { window[markerProp] = '.css("display","block");'; };
+        function callback() { window[markerProp] = '.css("display","block");'; }
         const timerId1 = window[timerMethodName](callback, 30);
         trackedTimers.push(timerId1);
     });
@@ -622,15 +622,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['', '20-50'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 10);
         trackedTimers.push(timerId1);
 
-        const two = () => { window.two = 'NEW TWO'; };
+        function two() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](two, 30);
         trackedTimers.push(timerId2);
 
-        const three = () => { window.three = 'NEW THREE'; };
+        function three() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](three, 50);
         trackedTimers.push(timerId3);
     });
@@ -651,15 +651,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['', '30-'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 10);
         trackedTimers.push(timerId1);
 
-        const two = () => { window.two = 'NEW TWO'; };
+        function two() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](two, 30);
         trackedTimers.push(timerId2);
 
-        const three = () => { window.three = 'NEW THREE'; };
+        function three() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](three, 60);
         trackedTimers.push(timerId3);
     });
@@ -680,15 +680,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['', '-30'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 10);
         trackedTimers.push(timerId1);
 
-        const two = () => { window.two = 'NEW TWO'; };
+        function two() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](two, 30);
         trackedTimers.push(timerId2);
 
-        const three = () => { window.three = 'NEW THREE'; };
+        function three() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](three, 60);
         trackedTimers.push(timerId3);
     });
@@ -709,15 +709,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['', '!20-50'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 10);
         trackedTimers.push(timerId1);
 
-        const two = () => { window.two = 'NEW TWO'; };
+        function two() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](two, 30);
         trackedTimers.push(timerId2);
 
-        const three = () => { window.three = 'NEW THREE'; };
+        function three() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](three, 60);
         trackedTimers.push(timerId3);
     });
@@ -738,15 +738,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['test', '20-50'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 30);
         trackedTimers.push(timerId1);
 
-        const testCb = () => { window.two = 'NEW TWO'; };
+        function testCb() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](testCb, 30);
         trackedTimers.push(timerId2);
 
-        const testCb2 = () => { window.three = 'NEW THREE'; };
+        function testCb2() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](testCb2, 60);
         trackedTimers.push(timerId3);
     });
@@ -767,15 +767,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['test', '30-'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 30);
         trackedTimers.push(timerId1);
 
-        const testCb = () => { window.two = 'NEW TWO'; };
+        function testCb() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](testCb, 30);
         trackedTimers.push(timerId2);
 
-        const testCb2 = () => { window.three = 'NEW THREE'; };
+        function testCb2() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](testCb2, 10);
         trackedTimers.push(timerId3);
     });
@@ -796,15 +796,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['test', '-30'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 20);
         trackedTimers.push(timerId1);
 
-        const testCb = () => { window.two = 'NEW TWO'; };
+        function testCb() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](testCb, 20);
         trackedTimers.push(timerId2);
 
-        const testCb2 = () => { window.three = 'NEW THREE'; };
+        function testCb2() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](testCb2, 60);
         trackedTimers.push(timerId3);
     });
@@ -825,15 +825,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['test', '!20-50'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 60);
         trackedTimers.push(timerId1);
 
-        const testCb = () => { window.two = 'NEW TWO'; };
+        function testCb() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](testCb, 30);
         trackedTimers.push(timerId2);
 
-        const testCb2 = () => { window.three = 'NEW THREE'; };
+        function testCb2() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](testCb2, 60);
         trackedTimers.push(timerId3);
     });
@@ -850,7 +850,7 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs2 = ['', 'abc-def'];
         runScriptlet(name, scriptletArgs2);
 
-        const cb = () => { window.one = 'NEW ONE'; };
+        function cb() { window.one = 'NEW ONE'; }
         const timerId = window[timerMethodName](cb, 30);
         trackedTimers.push(timerId);
     });
@@ -867,7 +867,7 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs2 = ['', '123-def'];
         runScriptlet(name, scriptletArgs2);
 
-        const cb = () => { window.one = 'NEW ONE'; };
+        function cb() { window.one = 'NEW ONE'; }
         const timerId = window[timerMethodName](cb, 30);
         trackedTimers.push(timerId);
     });
@@ -884,7 +884,7 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs2 = ['', 'abc-999'];
         runScriptlet(name, scriptletArgs2);
 
-        const cb = () => { window.one = 'NEW ONE'; };
+        function cb() { window.one = 'NEW ONE'; }
         const timerId = window[timerMethodName](cb, 30);
         trackedTimers.push(timerId);
     });
@@ -901,7 +901,7 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs2 = ['', '-'];
         runScriptlet(name, scriptletArgs2);
 
-        const cb = () => { window.one = 'NEW ONE'; };
+        function cb() { window.one = 'NEW ONE'; }
         const timerId = window[timerMethodName](cb, 30);
         trackedTimers.push(timerId);
     });
@@ -923,15 +923,15 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['', '50-20'];
         runScriptlet(name, scriptletArgs);
 
-        const one = () => { window.one = 'NEW ONE'; };
+        function one() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](one, 10);
         trackedTimers.push(timerId1);
 
-        const two = () => { window.two = 'NEW TWO'; };
+        function two() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](two, 30);
         trackedTimers.push(timerId2);
 
-        const three = () => { window.three = 'NEW THREE'; };
+        function three() { window.three = 'NEW THREE'; }
         const timerId3 = window[timerMethodName](three, 60);
         trackedTimers.push(timerId3);
     });
@@ -950,11 +950,11 @@ export const createPreventTimerTests = (config) => {
         const scriptletArgs = ['test', '50-20'];
         runScriptlet(name, scriptletArgs);
 
-        const testCb = () => { window.one = 'NEW ONE'; };
+        function testCb() { window.one = 'NEW ONE'; }
         const timerId1 = window[timerMethodName](testCb, 30);
         trackedTimers.push(timerId1);
 
-        const other = () => { window.two = 'NEW TWO'; };
+        function other() { window.two = 'NEW TWO'; }
         const timerId2 = window[timerMethodName](other, 30);
         trackedTimers.push(timerId2);
     });

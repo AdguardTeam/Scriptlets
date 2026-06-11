@@ -38,12 +38,12 @@ export function nowebrtc(source) {
         return;
     }
 
-    const rtcReplacement = (config) => {
+    function rtcReplacement(config) {
         // eslint-disable-next-line max-len
         const message = `Document tried to create an RTCPeerConnection: ${convertRtcConfigToString(config)}`;
         logMessage(source, message);
         hit(source);
-    };
+    }
     rtcReplacement.prototype = {
         close: noopFunc,
         createDataChannel: noopFunc,

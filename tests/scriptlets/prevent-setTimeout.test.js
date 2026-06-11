@@ -39,7 +39,7 @@ test('match with escaped single quotes', (assert) => {
     runScriptlet('prevent-setTimeout', scriptletArgs);
 
     // eslint-disable-next-line quotes
-    const callback = () => { window[markerProp] = ".css('display','block');"; };
+    function callback() { window[markerProp] = ".css('display','block');"; }
     setTimeout(callback, 30);
 });
 
@@ -63,7 +63,7 @@ test('match with unescaped single quotes', (assert) => {
     runScriptlet('prevent-setTimeout', scriptletArgs);
 
     // eslint-disable-next-line quotes
-    const callback = () => { window[markerProp] = ".css('display','block');"; };
+    function callback() { window[markerProp] = ".css('display','block');"; }
     setTimeout(callback, 30);
 });
 
@@ -86,7 +86,7 @@ test('match with escaped double quotes', (assert) => {
     const scriptletArgs = [CALLBACK_MATCH, '30'];
     runScriptlet('prevent-setTimeout', scriptletArgs);
 
-    const callback = () => { window[markerProp] = '.css("display","block");'; };
+    function callback() { window[markerProp] = '.css("display","block");'; }
     setTimeout(callback, 30);
 });
 
@@ -109,6 +109,6 @@ test('match with unescaped double quotes', (assert) => {
     const scriptletArgs = [CALLBACK_MATCH, '30'];
     runScriptlet('prevent-setTimeout', scriptletArgs);
 
-    const callback = () => { window[markerProp] = '.css("display","block");'; };
+    function callback() { window[markerProp] = '.css("display","block");'; }
     setTimeout(callback, 30);
 });

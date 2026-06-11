@@ -81,9 +81,9 @@ test('prevent-requestAnimationFrame: by callback name', (assert) => {
 
     window.one = 'value';
 
-    const change = () => {
+    function change() {
         window.one = 'NEW VALUE';
-    };
+    }
     window.requestAnimationFrame(change);
 
     // do test checking after scriptlet's execution end
@@ -103,9 +103,9 @@ test('prevent-requestAnimationFrame: by regex match', (assert) => {
 
     window.aaa = 'one';
 
-    const change = () => {
+    function change() {
         window.aaa = 'NEW ONE';
-    };
+    }
     window.requestAnimationFrame(change);
 
     // do test checking after scriptlet's execution end
@@ -126,14 +126,14 @@ test('prevent-requestAnimationFrame: !match', (assert) => {
     window.one = 'one';
     window.two = 'two';
 
-    const changeOne = () => {
+    function changeOne() {
         window.one = 'NEW ONE';
-    };
+    }
     window.requestAnimationFrame(changeOne);
 
-    const changeTwo = () => {
+    function changeTwo() {
         window.two = 'NEW TWO';
-    };
+    }
     window.requestAnimationFrame(changeTwo);
 
     // do test checking after scriptlet's execution end
