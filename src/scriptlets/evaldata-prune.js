@@ -30,7 +30,7 @@ import {
  * example.org#%#//scriptlet('evaldata-prune'[, propsToRemove [, obligatoryProps [, stack]]])
  * ```
  *
- * - `propsToRemove` — optional, string of space-separated properties to remove
+ * - `propsToRemove` — optional, string of space-separated properties to remove.
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;

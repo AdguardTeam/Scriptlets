@@ -47,18 +47,18 @@ import {
  * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack [, mode]]]])
  * ```
  *
- * - `propsToRemove` — optional, string of space-separated properties to remove
+ * - `propsToRemove` — optional, string of space-separated properties to remove.
  *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `obligatoryProps` — optional, string of space-separated properties
- *   which must be all present for the pruning to occur
+ *   which must be all present for the pruning to occur.
  *   In `jsonpath` mode this argument is ignored. Express such preconditions
  *   directly in `propsToRemove` with leading JSONPath guards and filters.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- *   if regular expression is invalid it will be skipped
+ *   if regular expression is invalid it will be skipped.
  * - `mode` — optional, syntax mode selector.
  *   Supported values:
- *     - `legacy` — force the existing legacy path syntax
- *     - `jsonpath` — force JSONPath syntax
+ *     - `legacy` — force the existing legacy path syntax;
+ *     - `jsonpath` — force JSONPath syntax.
  *   If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
  *   otherwise it falls back to legacy syntax.
  *

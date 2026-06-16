@@ -59,22 +59,22 @@ import { type Source } from './scriptlets';
  *
  * <!-- markdownlint-enable line-length -->
  *
- * - `propsToRemove` — optional, string of space-separated properties to remove
+ * - `propsToRemove` — optional, string of space-separated properties to remove.
  *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `obligatoryProps` — optional, string of space-separated properties
- *   which must be all present for the pruning to occur
+ *   which must be all present for the pruning to occur.
  * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
  *     - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
- *     - colon-separated pairs `name:value` where
- *         - `name` — string or regular expression for matching XMLHttpRequest property name
+ *     - colon-separated pairs `name:value` where:
+ *         - `name` — string or regular expression for matching XMLHttpRequest property name;
  *         - `value` — string or regular expression for matching the value of the option
- *           passed to `XMLHttpRequest.open()` call
+ *           passed to `XMLHttpRequest.open()` call.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- *   if regular expression is invalid it will be skipped
+ *   if regular expression is invalid it will be skipped.
  * - `mode` — optional, syntax mode selector.
  *   Supported values:
- *     - `legacy` — force the existing legacy path syntax
- *     - `jsonpath` — force JSONPath syntax
+ *     - `legacy` — force the existing legacy path syntax;
+ *     - `jsonpath` — force JSONPath syntax.
  *   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
  *
  * > Note please that you can use wildcard `*` for chain property name,

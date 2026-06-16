@@ -1298,7 +1298,7 @@ example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatory
 
 <!-- markdownlint-enable line-length -->
 
-- `propsToRemove` — optional, string of space-separated properties to remove
+- `propsToRemove` — optional, string of space-separated properties to remove.
   In `jsonpath` mode only single JSONPath prune expression is supported.
 - `obligatoryProps` — optional, string of space-separated properties
   which must be all present for the pruning to occur
@@ -1427,7 +1427,7 @@ https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/json-prune.js
 example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack [, mode]]]])
 ```
 
-- `propsToRemove` — optional, string of space-separated properties to remove
+- `propsToRemove` — optional, string of space-separated properties to remove.
   In `jsonpath` mode only single JSONPath prune expression is supported.
 - `obligatoryProps` — optional, string of space-separated properties
   which must be all present for the pruning to occur
