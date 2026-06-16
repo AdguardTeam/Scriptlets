@@ -28,12 +28,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Issue with `Maximum call stack size exceeded` error when
+  `trusted-json-set` or `trusted-replace-argument` is called with method used inside scriptlet [#565].
 - Infinite loop in `getRecursiveCandidates` in `json-path-utils` [#563].
 - Added the missing `google.ima.dai.api.ui`, `google.ima.dai.api.customUi` surfaces and the
   default `StreamRequest.ui` container in the `google-ima3-dai` redirect.
 - Added the missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...HEAD
+[#565]: https://github.com/AdguardTeam/Scriptlets/issues/565
 [#563]: https://github.com/AdguardTeam/Scriptlets/issues/563
 [#560]: https://github.com/AdguardTeam/Scriptlets/issues/560
 [#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
