@@ -152,7 +152,7 @@ to be easily distinguished from common scriptlets.
 
 #### <a name="trusted-scriptlets-restriction"></a> Restriction
 
-Trusted scriptlets application must be restricted due to dangerous nature of their capabilities.
+Trusted scriptlets application must be restricted due to the dangerous nature of their capabilities.
 Allowed sources of trusted scriptlets are:
 
 - filters created by AdGuard Team,
