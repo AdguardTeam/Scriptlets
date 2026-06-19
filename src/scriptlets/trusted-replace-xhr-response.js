@@ -129,6 +129,10 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
     // https://github.com/AdguardTeam/Scriptlets/issues/386
     const matchedXhrRequests = new Set();
     const xhrRequestHeaders = new Map();
+    // Maps a matched XHR object to its forged request, which holds the real
+    // response headers — needed because the original XHR is never sent.
+    // https://github.com/AdguardTeam/Scriptlets/issues/419
+    const forgedRequests = new WeakMap();
 
     let xhrData;
 
@@ -167,6 +171,25 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
             // setRequestHeader can only be called on open xhr object,
             // so we can safely proxy it here
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
+
+            // The original XHR object is never actually sent — the forged request is —
+            // so its response headers would be empty. Proxy the header getters of the
+            // target xhr object to return the real headers from the forged request.
+            // Proxying (instead of reassigning) keeps `toString()` reporting native code.
+            const responseHeaderWrapper = (target, thisArg, args) => {
+                const forgedRequest = forgedRequests.get(thisArg);
+                if (forgedRequest) {
+                    return Reflect.apply(target, forgedRequest, args);
+                }
+                return Reflect.apply(target, thisArg, args);
+            };
+
+            const responseHeaderHandler = {
+                apply: responseHeaderWrapper,
+            };
+
+            thisArg.getResponseHeader = new Proxy(thisArg.getResponseHeader, responseHeaderHandler);
+            thisArg.getAllResponseHeaders = new Proxy(thisArg.getAllResponseHeaders, responseHeaderHandler);
         }
 
         return Reflect.apply(target, thisArg, args);
@@ -235,6 +258,11 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
                 response: { value: responseContent, writable: false },
                 responseText: { value: responseContent, writable: false },
             });
+
+            // The original XHR object is never actually sent — the forged request is —
+            // so its response headers would be empty. Keep a reference to the forged
+            // request so the proxied header getters can return the real headers.
+            forgedRequests.set(thisArg, forgedRequest);
 
             // Mock events
             setTimeout(() => {

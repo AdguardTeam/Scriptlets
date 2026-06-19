@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `trusted-replace-xhr-response` response headers (`getResponseHeader`, `getAllResponseHeaders`)
+  now return the correct values on intercepted XHR objects [#419].
 - Issue with `Maximum call stack size exceeded` error when
   `trusted-json-set` or `trusted-replace-argument` is called with method used inside scriptlet [#565].
 - Infinite loop in `getRecursiveCandidates` in `json-path-utils` [#563].
@@ -41,6 +43,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#560]: https://github.com/AdguardTeam/Scriptlets/issues/560
 [#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
 [#467]: https://github.com/AdguardTeam/Scriptlets/issues/467
+[#419]: https://github.com/AdguardTeam/Scriptlets/issues/419
 [#292]: https://github.com/AdguardTeam/Scriptlets/issues/292
 
 ## [2.4.2] - 2026-04-24
