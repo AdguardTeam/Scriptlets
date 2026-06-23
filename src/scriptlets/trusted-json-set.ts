@@ -1013,7 +1013,6 @@ export function trustedJsonSet(
     ) => {
         try {
             if (isMatchingSuspended) {
-                isMatchingSuspended = false;
                 return Reflect.apply(target, thisArg, args);
             }
             isMatchingSuspended = true;

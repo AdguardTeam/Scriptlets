@@ -1126,3 +1126,34 @@ test('creates missing nested path in JSON.parse result after earlier parse error
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
+
+test('modifies thisArg when jsonSource is this and uses property used inside scriptlet', (assert) => {
+    runScriptlet(name, ['Object.prototype.hasOwnProperty', '$.*.foo.bar', '$remove$', '', 'this']);
+
+    const obj = {
+        test: {
+            foo: {
+                bar: 1,
+                baz: 1,
+            },
+        },
+        qwerty: 1,
+    };
+
+    // To test if "Maximum call stack size exceeded" error is avoided
+    // when the scriptlet uses a property that is also used inside the scriptlet code
+    Object.prototype.hasOwnProperty.call(window, 'whatever');
+
+    // eslint-disable-next-line no-prototype-builtins
+    const result = obj.hasOwnProperty('test');
+    assert.strictEqual(result, true, 'should check if the object has the property');
+    assert.deepEqual(obj, {
+        test: {
+            foo: {
+                baz: 1,
+            },
+        },
+        qwerty: 1,
+    }, 'should modify the thisArg object by removing the specified property');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});

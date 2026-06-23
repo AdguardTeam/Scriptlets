@@ -12,6 +12,7 @@ const nativeDocumentQuerySelector = window.document.querySelector;
 const nativeDocumentQuerySelectorAll = window.document.querySelectorAll;
 const nativeMutationObserver = window.MutationObserver;
 const nativeObjectDefineProperty = window.Object.defineProperty;
+const nativeStringReplace = String.prototype.replace;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -29,6 +30,7 @@ const afterEach = () => {
     window.document.querySelectorAll = nativeDocumentQuerySelectorAll;
     window.MutationObserver = nativeMutationObserver;
     window.Object.defineProperty = nativeObjectDefineProperty;
+    window.String.prototype.replace = nativeStringReplace;
 };
 
 module(name, { beforeEach, afterEach });
@@ -240,5 +242,51 @@ test('Replace argument in Object.defineProperty if pattern matches, test for "js
 
     assert.strictEqual(objectIntact.foo, 'bar', "The property 'foo' should be 'bar'");
     assert.strictEqual(objectToReplace.adblock, expected, `"The property 'adblock' should be '${expected}'`);
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Replace argument in JSON.parse after earlier error inside the scriptlet', (assert) => {
+    // Test to check if the scriptlet works correctly
+    // after an error occurred inside the scriptlet code while matching was suspended
+    runScriptlet(name, ['JSON.parse', '0', 'replace:/ads/no_ads/g', 'ads']);
+
+    try {
+        // String conversion of the argument throws,
+        // so the error occurs inside the scriptlet during pattern matching
+        const throwingArgument = () => {};
+        throwingArgument.toString = () => {
+            throw new Error('test error');
+        };
+        JSON.parse(throwingArgument);
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
+
+    const jsonString = '{ "ads1": 1, "content": "fooBar" }';
+    const result = JSON.parse(jsonString);
+
+    assert.deepEqual(result, { no_ads1: 1, content: 'fooBar' }, 'Replaced "ads" with "no_ads" after the error');
+    assert.strictEqual(
+        JSON.parse.toString(),
+        nativeJSONParse.toString(),
+        'JSON.parse.toString() returns the original value',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Replace argument in String.prototype.replace to "test" if pattern matches', (assert) => {
+    // Test to check if "Maximum call stack size exceeded" error is avoided
+    // when the scriptlet uses a property that is also used inside the scriptlet code
+    runScriptlet(name, ['String.prototype.replace', '1', 'test', 'foo']);
+
+    const string = 'regex';
+    const result = string.replace(/regex/, 'foo bar');
+
+    assert.strictEqual(result, 'test', 'The scriptlet should change the method result');
+    assert.strictEqual(
+        String.prototype.replace.toString(),
+        nativeStringReplace.toString(),
+        'String.prototype.replace.toString() returns the original value',
+    );
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });

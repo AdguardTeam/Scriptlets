@@ -418,6 +418,45 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('Matched, response headers are available on modified XHR', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const PATTERN = 'a1';
+        const REPLACEMENT = 'z9';
+        const MATCH_DATA = [PATTERN, REPLACEMENT, `${URL} method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.notOk(xhr.response.includes(PATTERN), 'Response has been modified');
+
+            const allHeaders = xhr.getAllResponseHeaders();
+            assert.ok(typeof allHeaders === 'string' && allHeaders.length > 0, 'getAllResponseHeaders is not empty');
+            assert.ok(
+                allHeaders.toLowerCase().includes('content-type'),
+                'getAllResponseHeaders contains content-type header',
+            );
+            assert.ok(
+                xhr.getResponseHeader('Content-Type')?.includes('application/json'),
+                'getResponseHeader returns the correct content-type value',
+            );
+            assert.strictEqual(
+                xhr.getResponseHeader('non-existent-header'),
+                null,
+                'getResponseHeader returns null for missing header',
+            );
+
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     // bypass prevention: https://github.com/AdguardTeam/Scriptlets/issues/386
     test('Cannot be bypassed by setting shouldBePrevented = false on XHR object', async (assert) => {
         const METHOD = 'GET';

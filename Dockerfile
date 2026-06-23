@@ -2,17 +2,8 @@
 # Dependencies are cached until package.json/pnpm-lock.yaml change
 # Each stage can be built independently via --target
 
-FROM node:22.21.1-slim AS base
+FROM adguard/node-ssh:22.22--0 AS base
 SHELL ["/bin/bash", "-lc"]
-
-USER root
-
-# Install git (not included in slim image) and pnpm, then configure git
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
-    rm -rf /var/lib/apt/lists/* && \
-    npm install -g pnpm@10.7.1 && \
-    git config --global --add safe.directory '*'
 
 WORKDIR /scriptlets
 
@@ -24,18 +15,9 @@ RUN pnpm config set store-dir /pnpm-store
 # ============================================================================
 # Stage: base-puppeteer
 # Heavy base with bundled Chromium — used only for QUnit tests
-# node v22.21.1 is used in this image
 # ============================================================================
-FROM ghcr.io/puppeteer/puppeteer:24.35.0 AS base-puppeteer
+FROM adguard/puppeteer-runner:22.21.1--24.35.0--0 AS base-puppeteer
 SHELL ["/bin/bash", "-lc"]
-
-# by default the puppeteer image is run as a non-root user "pptruser"
-# but root user is needed for global npm installs
-USER root
-
-# Install pnpm globally and configure git
-RUN npm install -g pnpm@10.7.1 && \
-    git config --global --add safe.directory '*'
 
 WORKDIR /scriptlets
 

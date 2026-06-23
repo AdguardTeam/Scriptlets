@@ -328,99 +328,109 @@ export function trustedReplaceArgument(
     let isMatchingSuspended = false;
 
     const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
-        if (isMatchingSuspended) {
+        try {
+            if (isMatchingSuspended) {
+                return Reflect.apply(target, thisArg, argumentsList);
+            }
+            isMatchingSuspended = true;
+
+            // Log the original arguments before modification
+            if (verbose === 'true') {
+                const formattedMessage = createFormattedMessage(argumentsList);
+                logMessage(source, formattedMessage);
+            }
+
+            // If we only need to log the arguments, skip further processing
+            if (SHOULD_LOG_ONLY) {
+                isMatchingSuspended = false;
+                return Reflect.apply(target, thisArg, argumentsList);
+            }
+
+            const argumentToReplace = argumentsList[Number(argumentIndex)];
+
+            const shouldSetArgument = checkArgument(argumentToReplace);
+
+            if (!shouldSetArgument) {
+                isMatchingSuspended = false;
+                return Reflect.apply(target, thisArg, argumentsList);
+            }
+
+            if (typeof argumentToReplace === 'string' && shouldReplaceArgument) {
+                argumentsList[Number(argumentIndex)] = argumentToReplace
+                    .replace(replaceRegexValue, constantValue as string);
+            } else {
+                argumentsList[Number(argumentIndex)] = constantValue;
+            }
+
+            // Log the modified arguments after replacement
+            if (verbose === 'true') {
+                const formattedMessage = createFormattedMessage(argumentsList, 'modified');
+                logMessage(source, formattedMessage);
+            }
+
+            hit(source);
+
             isMatchingSuspended = false;
+
+            return Reflect.apply(target, thisArg, argumentsList);
+        } catch (error) {
+            isMatchingSuspended = false;
+            logMessage(source, `Unexpected error during argument replacement: ${(error as Error).message}`);
             return Reflect.apply(target, thisArg, argumentsList);
         }
-        isMatchingSuspended = true;
-
-        // Log the original arguments before modification
-        if (verbose === 'true') {
-            const formattedMessage = createFormattedMessage(argumentsList);
-            logMessage(source, formattedMessage);
-        }
-
-        // If we only need to log the arguments, skip further processing
-        if (SHOULD_LOG_ONLY) {
-            isMatchingSuspended = false;
-            return Reflect.apply(target, thisArg, argumentsList);
-        }
-
-        const argumentToReplace = argumentsList[Number(argumentIndex)];
-
-        const shouldSetArgument = checkArgument(argumentToReplace);
-
-        if (!shouldSetArgument) {
-            isMatchingSuspended = false;
-            return Reflect.apply(target, thisArg, argumentsList);
-        }
-
-        if (typeof argumentToReplace === 'string' && shouldReplaceArgument) {
-            argumentsList[Number(argumentIndex)] = argumentToReplace
-                .replace(replaceRegexValue, constantValue as string);
-        } else {
-            argumentsList[Number(argumentIndex)] = constantValue;
-        }
-
-        // Log the modified arguments after replacement
-        if (verbose === 'true') {
-            const formattedMessage = createFormattedMessage(argumentsList, 'modified');
-            logMessage(source, formattedMessage);
-        }
-
-        hit(source);
-
-        isMatchingSuspended = false;
-
-        return Reflect.apply(target, thisArg, argumentsList);
     };
 
     const constructWrapper = (target: Function, argumentsList: unknown[], newTarget: any) => {
-        if (isMatchingSuspended) {
+        try {
+            if (isMatchingSuspended) {
+                return Reflect.construct(target, argumentsList, newTarget);
+            }
+            isMatchingSuspended = true;
+
+            // Log the original arguments before modification
+            if (verbose === 'true') {
+                const formattedMessage = createFormattedMessage(argumentsList);
+                logMessage(source, formattedMessage);
+            }
+
+            // If we only need to log the arguments, skip further processing
+            if (SHOULD_LOG_ONLY) {
+                isMatchingSuspended = false;
+                return Reflect.construct(target, argumentsList, newTarget);
+            }
+
+            const argumentToReplace = argumentsList[Number(argumentIndex)];
+
+            const shouldSetArgument = checkArgument(argumentToReplace);
+
+            if (!shouldSetArgument) {
+                isMatchingSuspended = false;
+                return Reflect.construct(target, argumentsList, newTarget);
+            }
+
+            if (typeof argumentToReplace === 'string' && shouldReplaceArgument) {
+                argumentsList[Number(argumentIndex)] = argumentToReplace
+                    .replace(replaceRegexValue, constantValue as string);
+            } else {
+                argumentsList[Number(argumentIndex)] = constantValue;
+            }
+
+            // Log the modified arguments after replacement
+            if (verbose === 'true') {
+                const formattedMessage = createFormattedMessage(argumentsList, 'modified');
+                logMessage(source, formattedMessage);
+            }
+
+            hit(source);
+
             isMatchingSuspended = false;
+
+            return Reflect.construct(target, argumentsList, newTarget);
+        } catch (error) {
+            isMatchingSuspended = false;
+            logMessage(source, `Unexpected error during argument replacement: ${(error as Error).message}`);
             return Reflect.construct(target, argumentsList, newTarget);
         }
-        isMatchingSuspended = true;
-
-        // Log the original arguments before modification
-        if (verbose === 'true') {
-            const formattedMessage = createFormattedMessage(argumentsList);
-            logMessage(source, formattedMessage);
-        }
-
-        // If we only need to log the arguments, skip further processing
-        if (SHOULD_LOG_ONLY) {
-            isMatchingSuspended = false;
-            return Reflect.construct(target, argumentsList, newTarget);
-        }
-
-        const argumentToReplace = argumentsList[Number(argumentIndex)];
-
-        const shouldSetArgument = checkArgument(argumentToReplace);
-
-        if (!shouldSetArgument) {
-            isMatchingSuspended = false;
-            return Reflect.construct(target, argumentsList, newTarget);
-        }
-
-        if (typeof argumentToReplace === 'string' && shouldReplaceArgument) {
-            argumentsList[Number(argumentIndex)] = argumentToReplace
-                .replace(replaceRegexValue, constantValue as string);
-        } else {
-            argumentsList[Number(argumentIndex)] = constantValue;
-        }
-
-        // Log the modified arguments after replacement
-        if (verbose === 'true') {
-            const formattedMessage = createFormattedMessage(argumentsList, 'modified');
-            logMessage(source, formattedMessage);
-        }
-
-        hit(source);
-
-        isMatchingSuspended = false;
-
-        return Reflect.construct(target, argumentsList, newTarget);
     };
 
     const getWrapper = (target: Function, propName: string, receiver: any) => {

@@ -77,8 +77,8 @@ import { type Source } from './scriptlets';
  *   if regular expression is invalid it will be skipped.
  * - `mode` — optional, syntax mode selector.
  *   Supported values:
- *     - `legacy` — force the existing legacy path syntax
- *     - `jsonpath` — force JSONPath syntax
+ *     - `legacy` — force the existing legacy path syntax;
+ *     - `jsonpath` — force JSONPath syntax.
  *   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
  *
  * > Note please that you can use wildcard `*` for chain property name,
