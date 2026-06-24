@@ -19,6 +19,8 @@ export const inlineScriptToHtml = async ({
 }) => {
     const templateHtml = await fs.readFile(templatePath, 'utf8');
     const scriptTag = `<script>${scriptContent}</script>`;
-    const result = templateHtml.replace(injectionMarker, scriptTag);
+    // Use a replacement function instead of a string to avoid String.replace()
+    // interpreting special $ patterns (e.g. $`, $', $&) in the script content.
+    const result = templateHtml.replace(injectionMarker, () => scriptTag);
     await fs.outputFile(outputPath, result, 'utf8');
 };

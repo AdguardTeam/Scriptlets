@@ -411,8 +411,8 @@ test('abort String.fromCodePoint, inline script line number regexp', (assert) =>
 
 test('abort JSON.parse, inline script line number regexp, two scripts abort only second', (assert) => {
     const property = 'JSON.parse';
-    // Match the line number of the second JSON.parse call (line 267 in generated HTML)
-    const stackMatch = '/inlineScript:267/';
+    // Match the line number of the second JSON.parse call (line 410 in generated HTML)
+    const stackMatch = '/inlineScript:410/';
     const scriptletArgs = [property, stackMatch];
     runScriptlet(name, scriptletArgs);
 
