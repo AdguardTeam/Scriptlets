@@ -44,6 +44,10 @@ const getTestConfig = (fileName, subDir) => {
             // function source code (needed for callback.toString() matching in tests)
             minify: false,
         },
+        // Disable tree-shaking to prevent Rolldown from removing constant-
+        // assigned variable names used for callback.toString() matching
+        // in tests like prevent-constructor and trusted-replace-argument.
+        treeshake: false,
     };
     return {
         config,

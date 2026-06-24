@@ -97,11 +97,14 @@ test('Prevents MutationObserver - regex match', (assert) => {
 
     runScriptlet(name, ['MutationObserver', '/detect.*ad/i']);
 
-    const callback = () => {
+    // Use a named function expression so that callback.toString() contains
+    // 'detectTheAd' for regex matching (Rolldown preserves arrow function
+    // syntax, unlike Babel which converted them to named declarations).
+    function callback() {
         window.testProp = 'changed';
         const detectTheAd = true;
         return detectTheAd;
-    };
+    }
     const observer = new MutationObserver(callback);
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
@@ -141,8 +144,10 @@ test('Prevents Promise - with matching callback', (assert) => {
 
     runScriptlet(name, ['Promise', 'checkAdblock']);
 
-    // eslint-disable-next-line no-new
-    new Promise(() => {
+    // Use a named function expression so callback.toString() contains
+    // 'checkAdblock' for matching.
+    // eslint-disable-next-line no-new, prefer-arrow-callback
+    new Promise(function f1() {
         const checkAdblock = 'yes';
         window.testProp = checkAdblock;
     });
@@ -190,8 +195,10 @@ test('Array syntax - match first argument', (assert) => {
 
     runScriptlet(name, ['Promise', '["checkAdblock"]']);
 
-    // eslint-disable-next-line no-new
-    new Promise(() => {
+    // Use a named function expression so callback.toString() contains
+    // 'checkAdblock' for matching.
+    // eslint-disable-next-line no-new, prefer-arrow-callback
+    new Promise(function f2() {
         const checkAdblock = 'yes';
         window.testProp = checkAdblock;
     });
@@ -294,9 +301,11 @@ test('Array syntax - multiple patterns should be matched', (assert) => {
 
     runScriptlet(name, ['MutationObserver', '["/callback/", "attributes"]']);
 
-    const callback = () => {
+    // Use a named function expression so callback.toString() contains
+    // 'callback' for regex matching.
+    function callback() {
         window.testProp = 'changed';
-    };
+    }
     const observer = new MutationObserver(callback, { attributes: true });
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired when both args match');
@@ -321,9 +330,11 @@ test('Array syntax - first pattern matches but second does not', (assert) => {
 
     runScriptlet(name, ['MutationObserver', '["callback", "childList"]']);
 
-    const callback = () => {
+    // Use a named function expression so callback.toString() contains
+    // 'callback' for matching.
+    function callback() {
         window.testProp = 'changed';
-    };
+    }
     const observer = new MutationObserver(callback, { attributes: true });
 
     assert.strictEqual(window.hit, undefined, 'hit should not fire when second pattern fails');
@@ -413,8 +424,10 @@ test('Array syntax - regex pattern in array', (assert) => {
 
     runScriptlet(name, ['Promise', '["/check.*block/i"]']);
 
-    // eslint-disable-next-line no-new
-    new Promise(() => {
+    // Use a named function expression so callback.toString() contains
+    // 'checkAdblock' for regex matching.
+    // eslint-disable-next-line no-new, prefer-arrow-callback
+    new Promise(function f3() {
         const checkAdblock = 'yes';
         window.testProp = checkAdblock;
     });
@@ -430,17 +443,19 @@ test('Array syntax - multiple patterns and multiple constructors', (assert) => {
 
     runScriptlet(name, ['MutationObserver', '["/callback/", "attributes"]']);
 
-    const callback1 = () => {
+    // Use named function expressions so callback.toString() contains
+    // 'callback1' and 'callback2' for regex matching.
+    function callback1() {
         window.testProp = 'changed1';
-    };
+    }
     const observer1 = new MutationObserver(callback1, { attributes: true });
 
     assert.strictEqual(window.hit, 'FIRED', 'hit fired when both args match');
     assert.strictEqual(typeof observer1.observe, 'function', 'observer1 has observe method');
 
-    const callback2 = () => {
+    function callback2() {
         window.testProp = 'changed2';
-    };
+    }
     const observer2 = new MutationObserver(callback2, { childList: true });
 
     assert.strictEqual(typeof observer2.observe, 'function', 'observer2 has observe method');
