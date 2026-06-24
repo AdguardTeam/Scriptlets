@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [2.4.3] - 2026-06-24
 
 ### Added
 
@@ -24,27 +24,27 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   to prevent issues where websites redefine it [#292].
 - `prevent-fetch` now supports a structured `responseConfig` argument for overriding synthetic response fields such as
   `ok`, `redirected`, `status`, `statusText`, and extended `type` values [#529].
-- Redirect resources with a `.ts` extension are now converted to `.js`.
 
 ### Fixed
 
 - `trusted-replace-xhr-response` response headers (`getResponseHeader`, `getAllResponseHeaders`)
   now return the correct values on intercepted XHR objects [#419].
-- Issue with `Maximum call stack size exceeded` error when
+- `Maximum call stack size exceeded` error when
   `trusted-json-set` or `trusted-replace-argument` is called with method used inside scriptlet [#565].
 - Infinite loop in `getRecursiveCandidates` in `json-path-utils` [#563].
-- Added the missing `google.ima.dai.api.ui`, `google.ima.dai.api.customUi` surfaces and the
+- Missing `google.ima.dai.api.ui`, `google.ima.dai.api.customUi` surfaces and the
   default `StreamRequest.ui` container in the `google-ima3-dai` redirect.
-- Added the missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
+- Missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
+- Redirect resources with a `.ts` extension are now converted to `.js`.
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...HEAD
-[#565]: https://github.com/AdguardTeam/Scriptlets/issues/565
-[#563]: https://github.com/AdguardTeam/Scriptlets/issues/563
-[#560]: https://github.com/AdguardTeam/Scriptlets/issues/560
-[#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
-[#467]: https://github.com/AdguardTeam/Scriptlets/issues/467
-[#419]: https://github.com/AdguardTeam/Scriptlets/issues/419
+[2.4.3]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...v2.4.3
 [#292]: https://github.com/AdguardTeam/Scriptlets/issues/292
+[#419]: https://github.com/AdguardTeam/Scriptlets/issues/419
+[#467]: https://github.com/AdguardTeam/Scriptlets/issues/467
+[#529]: https://github.com/AdguardTeam/Scriptlets/issues/529
+[#560]: https://github.com/AdguardTeam/Scriptlets/issues/560
+[#563]: https://github.com/AdguardTeam/Scriptlets/issues/563
+[#565]: https://github.com/AdguardTeam/Scriptlets/issues/565
 
 ## [2.4.2] - 2026-04-24
 

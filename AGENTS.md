@@ -38,6 +38,8 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
 - **Scale/scope**: Used by AdGuard products (CoreLibs, Browser Extension,
   Safari, iOS) and filter list maintainers
 
+> All `dependencies` and `devDependencies` must be pinned to exact versions (no caret `^`, etc.).
+
 ## Project structure
 
 ```text
