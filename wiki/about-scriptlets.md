@@ -667,7 +667,7 @@ https://github.com/gorhill/uBlock/commit/c8de9041917b61035171e454df886706f27fc4f
 example.org#%#//scriptlet('evaldata-prune'[, propsToRemove [, obligatoryProps [, stack]]])
 ```
 
-- `propsToRemove` — optional, string of space-separated properties to remove
+- `propsToRemove` — optional, string of space-separated properties to remove.
 - `obligatoryProps` — optional, string of space-separated properties
   which must be all present for the pruning to occur
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
@@ -1179,8 +1179,8 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
   if regular expression is invalid it will be skipped.
 - `mode` — optional, syntax mode selector.
   Supported values:
-    - `legacy` — force the existing legacy path syntax
-    - `jsonpath` — force JSONPath syntax
+    - `legacy` — force the existing legacy path syntax;
+    - `jsonpath` — force JSONPath syntax.
   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
 
 > Note please that you can use wildcard `*` for chain property name,
@@ -1301,19 +1301,19 @@ example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatory
 - `propsToRemove` — optional, string of space-separated properties to remove.
   In `jsonpath` mode only single JSONPath prune expression is supported.
 - `obligatoryProps` — optional, string of space-separated properties
-  which must be all present for the pruning to occur
+  which must be all present for the pruning to occur.
 - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
     - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
-    - colon-separated pairs `name:value` where
-        - `name` — string or regular expression for matching XMLHttpRequest property name
+    - colon-separated pairs `name:value` where:
+        - `name` — string or regular expression for matching XMLHttpRequest property name;
         - `value` — string or regular expression for matching the value of the option
-          passed to `XMLHttpRequest.open()` call
+          passed to `XMLHttpRequest.open()` call.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
-  if regular expression is invalid it will be skipped
+  if regular expression is invalid it will be skipped.
 - `mode` — optional, syntax mode selector.
   Supported values:
-    - `legacy` — force the existing legacy path syntax
-    - `jsonpath` — force JSONPath syntax
+    - `legacy` — force the existing legacy path syntax;
+    - `jsonpath` — force JSONPath syntax.
   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
 
 > Note please that you can use wildcard `*` for chain property name,
@@ -1430,15 +1430,15 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
 - `propsToRemove` — optional, string of space-separated properties to remove.
   In `jsonpath` mode only single JSONPath prune expression is supported.
 - `obligatoryProps` — optional, string of space-separated properties
-  which must be all present for the pruning to occur
+  which must be all present for the pruning to occur.
   In `jsonpath` mode this argument is ignored. Express such preconditions
   directly in `propsToRemove` with leading JSONPath guards and filters.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
-  if regular expression is invalid it will be skipped
+  if regular expression is invalid it will be skipped.
 - `mode` — optional, syntax mode selector.
   Supported values:
-    - `legacy` — force the existing legacy path syntax
-    - `jsonpath` — force JSONPath syntax
+    - `legacy` — force the existing legacy path syntax;
+    - `jsonpath` — force JSONPath syntax.
   If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
   otherwise it falls back to legacy syntax.
 
@@ -2428,7 +2428,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-fetch-ifjs-
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseType]]])
+example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, responseConfig]]])
 ```
 
 - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -2448,11 +2448,20 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
     - colon-separated pair `name:value` string value to customize `responseBody` where
         - `name` — only `length` supported for now
         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
-- `responseType` — optional, string for defining response type,
-  original response type is used if not specified. Possible values:
-    - `basic`
-    - `cors`
-    - `opaque`
+- `responseConfig` — optional, string for defining response properties.
+  Original response values are used if not specified. Possible values:
+    - response type shorthand (for backwards compatibility):
+        - `basic`
+        - `cors`
+        - `error`
+        - `opaque`
+        - `opaqueredirect`
+    - JSON object string with quoted keys and any combination of these properties:
+        - `ok` — boolean
+        - `redirected` — boolean
+        - `status` — non-negative integer from range `0..599`
+        - `statusText` — one of `""`, `"OK"`, `"Continue"`, `"Not Found"`
+        - `type` — one of the supported response type values above
 
 > Usage with no arguments will log fetch calls to browser console;
 > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -2511,6 +2520,16 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
 
     ```adblock
     example.org#%#//scriptlet('prevent-fetch', '*', '', 'opaque')
+    ```
+
+1. Prevent all fetch calls and specify response properties
+
+    ```adblock
+    ! Set multiple response properties at once
+    example.org#%#//scriptlet('prevent-fetch', '*', '', '{"status": 404, "statusText": "Not Found", "ok": false}')
+
+    ! Set response type together with other values
+    example.org#%#//scriptlet('prevent-fetch', '*', '', '{"type": "opaqueredirect", "redirected": true}')
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-fetch.js)
@@ -2796,10 +2815,13 @@ example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
   If do not start with `!`, the stringified callback will be matched.
   If not set, prevents all `setInterval` calls due to specified `matchDelay`.
-- `matchDelay` — optional, must be an integer.
+- `matchDelay` — optional, must be an integer or a delay range.
   If starts with `!`, scriptlet will not match the delay but all other will be defused.
   If do not start with `!`, the delay passed to the `setInterval` call will be matched.
   Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
+  Delay ranges are supported in the format `min-max` (matches if `min <= delay <= max`),
+  `min-` (matches if `delay >= min`), or `-max` (matches if `delay <= max`).
+  Negative delay values behave the same as `0`, so use `-0` to match them.
 
 > If `prevent-setInterval` log looks like `setInterval(undefined, 1000)`,
 > it means that no callback was passed to setInterval() and that's not scriptlet issue
@@ -2901,6 +2923,54 @@ example.org#%#//scriptlet('prevent-setInterval'[, matchCallback[, matchDelay]])
     }, 300 + Math.random());
     ```
 
+1. Prevents `setInterval` calls if the delay is in the `20-50` range
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-setInterval', '', '20-50')
+    ```
+
+    For instance, only the second of the following calls will be prevented:
+
+    ```javascript
+    setInterval(function () {
+        window.test = "10 -- executed";
+    }, 10);
+    setInterval(function () {
+        window.test = "30 -- prevented";
+    }, 30);
+    ```
+
+1. Prevents `setInterval` calls if the delay is at least `30`
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-setInterval', '', '30-')
+    ```
+
+    For instance, only the second of the following calls will be prevented:
+
+    ```javascript
+    setInterval(function () {
+        window.test = "10 -- executed";
+    }, 10);
+    setInterval(function () {
+        window.test = "60 -- prevented";
+    }, 60);
+    ```
+
+1. Prevents `setInterval` calls if the delay is negative
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-setInterval', '', '-0')
+    ```
+
+    For instance, the following call will be prevented:
+
+    ```javascript
+    setInterval(function () {
+        window.test = "negative -- prevented";
+    }, -10);
+    ```
+
 [Scriptlet source](../src/scriptlets/prevent-setInterval.js)
 
 * * *
@@ -2932,10 +3002,13 @@ example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
   If starts with `!`, scriptlet will not match the stringified callback but all other will be defused.
   If do not start with `!`, the stringified callback will be matched.
   If not set, prevents all `setTimeout` calls due to specified `matchDelay`.
-- `matchDelay` — optional, must be an integer.
+- `matchDelay` — optional, must be an integer or a delay range.
   If starts with `!`, scriptlet will not match the delay but all other will be defused.
   If do not start with `!`, the delay passed to the `setTimeout` call will be matched.
   Decimal delay values will be rounded down, e.g `10.95` will be matched by `matchDelay` with value `10`.
+  Delay ranges are supported in the format `min-max` (matches if `min <= delay <= max`),
+  `min-` (matches if `delay >= min`), or `-max` (matches if `delay <= max`).
+  Negative delay values behave the same as `0`, so use `-0` to match them.
 
 > If `prevent-setTimeout` log looks like `setTimeout(undefined, 1000)`,
 > it means that no callback was passed to setTimeout() and that's not scriptlet issue
@@ -3035,6 +3108,54 @@ example.org#%#//scriptlet('prevent-setTimeout'[, matchCallback[, matchDelay]])
     setTimeout(function () {
         window.test = "value";
     }, 300 + Math.random());
+    ```
+
+1. Prevents `setTimeout` calls if the delay is in the `20-50` range
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-setTimeout', '', '20-50')
+    ```
+
+    For instance, only the second of the following calls will be prevented:
+
+    ```javascript
+    setTimeout(function () {
+        window.test = "10 -- executed";
+    }, 10);
+    setTimeout(function () {
+        window.test = "30 -- prevented";
+    }, 30);
+    ```
+
+1. Prevents `setTimeout` calls if the delay is at least `30`
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-setTimeout', '', '30-')
+    ```
+
+    For instance, only the second of the following calls will be prevented:
+
+    ```javascript
+    setTimeout(function () {
+        window.test = "10 -- executed";
+    }, 10);
+    setTimeout(function () {
+        window.test = "60 -- prevented";
+    }, 60);
+    ```
+
+1. Prevents `setTimeout` calls if the delay is negative
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-setTimeout', '', '-0')
+    ```
+
+    For instance, the following call will be prevented:
+
+    ```javascript
+    setTimeout(function () {
+        window.test = "negative -- prevented";
+    }, -10);
     ```
 
 [Scriptlet source](../src/scriptlets/prevent-setTimeout.js)
