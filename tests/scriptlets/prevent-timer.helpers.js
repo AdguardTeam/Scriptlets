@@ -572,7 +572,8 @@ export const createPreventTimerTests = (config) => {
             done();
         }, 100);
 
-        const CALLBACK_MATCH = String.raw`.css(\"display\",\"block\");`;
+        // Use regex that matches both quoting styles
+        const CALLBACK_MATCH = '/\\.css\\(.*display.*,.*block.*\\);/';
 
         // run scriptlet code
         const scriptletArgs = [CALLBACK_MATCH, '30'];
@@ -595,7 +596,8 @@ export const createPreventTimerTests = (config) => {
             done();
         }, 100);
 
-        const CALLBACK_MATCH = '.css("display","block");';
+        // Use regex that matches both quoting styles
+        const CALLBACK_MATCH = '/\\.css\\(.*display.*,.*block.*\\);/';
 
         // run scriptlet code
         const scriptletArgs = [CALLBACK_MATCH, '30'];

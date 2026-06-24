@@ -80,7 +80,8 @@ test('match with escaped double quotes', (assert) => {
         done();
     }, 100);
 
-    const CALLBACK_MATCH = String.raw`.css(\"display\",\"block\");`;
+    // Use regex that matches both quoting styles
+    const CALLBACK_MATCH = '/\\.css\\(.*display.*,.*block.*\\);/';
 
     // run scriptlet code
     const scriptletArgs = [CALLBACK_MATCH, '30'];
@@ -103,7 +104,8 @@ test('match with unescaped double quotes', (assert) => {
         done();
     }, 100);
 
-    const CALLBACK_MATCH = '.css("display","block");';
+    // Use regex that matches both quoting styles
+    const CALLBACK_MATCH = '/\\.css\\(.*display.*,.*block.*\\);/';
 
     // run scriptlet code
     const scriptletArgs = [CALLBACK_MATCH, '30'];

@@ -40,6 +40,9 @@ const getTestConfig = (fileName, subDir) => {
             // Prefix with subDir to avoid collisions (e.g. "scriptlets--abort.test.js")
             entryFileNames: `${subDir}--${fileName}`,
             format: 'iife',
+            // Disable minification (including DCE) for test files to preserve
+            // function source code (needed for callback.toString() matching in tests)
+            minify: false,
         },
     };
     return {
@@ -115,6 +118,8 @@ export const buildScriptletsForTests = async () => {
         output: {
             dir: path.join(TESTS_DIST, 'scriptlets'),
             entryFileNames: 'index.js',
+            // Disable minification to preserve original code behavior in tests
+            minify: false,
         },
         plugins: [
             copy({
