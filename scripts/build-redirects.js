@@ -319,6 +319,13 @@ export const buildClick2Load = async () => {
 
     // Read the built JS and inline it into the HTML template
     const scriptPath = path.resolve(__dirname, '../tmp/click2load.js');
+
+    if (!(await fs.pathExists(scriptPath))) {
+        throw new Error(
+            `Click2Load bundle not found at ${scriptPath}. The rolldown build may have failed.`,
+        );
+    }
+
     const scriptContent = await fs.readFile(scriptPath, 'utf8');
     await inlineScriptToHtml({
         templatePath: path.resolve(__dirname, '../src/redirects/blocking-redirects/click2load.html'),

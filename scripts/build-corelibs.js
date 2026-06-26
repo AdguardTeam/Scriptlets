@@ -33,10 +33,22 @@ const buildCorelibsJson = async () => {
             };
         }));
 
-    return JSON.stringify({
+    const json = JSON.stringify({
         version,
         scriptlets,
     }, null, 4);
+
+    // Break C/C++ trigraph sequences so that the C preprocessor does not
+    // interpret `??X` sequences when the scriptlet code is embedded in
+    // the filtering engine source.
+    //
+    // C trigraphs: ??=  ??/  ??'  ??(  ??)  ??!  ??<  ??>  ??-
+    // We replace ??X with ?\u003fX. The JSON parser decodes \u003f back
+    // to '?' at runtime, so JS semantics are preserved, but the C
+    // preprocessor no longer sees a contiguous trigraph in the source file.
+    const safeJson = json.replace(/\?\?([=/()'!<>-])/g, '?\\u003f$1');
+
+    return safeJson;
 };
 
 export const buildScriptletsForCorelibs = async () => {

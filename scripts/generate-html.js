@@ -18,6 +18,13 @@ export const inlineScriptToHtml = async ({
     injectionMarker = '<!-- script injection -->',
 }) => {
     const templateHtml = await fs.readFile(templatePath, 'utf8');
+
+    if (!templateHtml.includes(injectionMarker)) {
+        throw new Error(
+            `Injection marker "${injectionMarker}" not found in template: ${templatePath}`,
+        );
+    }
+
     const scriptTag = `<script>${scriptContent}</script>`;
     // Use a replacement function instead of a string to avoid String.replace()
     // interpreting special $ patterns (e.g. $`, $', $&) in the script content.
