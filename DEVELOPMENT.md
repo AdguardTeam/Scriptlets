@@ -8,11 +8,11 @@ Redirect Resources library.
 
 ### Required Tools
 
-| Tool | Version | Notes |
-| ---- | ------- | ----- |
-| [Node.js](https://nodejs.org/) | 22 | Use [nvm](https://github.com/nvm-sh/nvm) to manage versions |
-| [pnpm](https://pnpm.io/) | 10.33.4 | Package manager |
-| [Git](https://git-scm.com/) | Latest | Version control |
+| Tool                           | Version           | Notes                                                       |
+| ------------------------------ | ----------------- | ----------------------------------------------------------- |
+| [Node.js](https://nodejs.org/) | >=22              | Use [nvm](https://github.com/nvm-sh/nvm) to manage versions |
+| [pnpm](https://pnpm.io/)       | >=10.33.4 and <11 | Package manager                                             |
+| [Git](https://git-scm.com/)    | Latest            | Version control                                             |
 
 > **Note**: Development is tested on macOS and Linux. Windows users should use
 > WSL or a virtual machine.
