@@ -584,7 +584,7 @@ export const createPreventTimerTests = (config) => {
         trackedTimers.push(timerId1);
     });
 
-    test('match with escaped double quotes', (assert) => {
+    test('match with unescaped double quotes', (assert) => {
         const markerProp = 'callbackFired';
         window[markerProp] = false;
         const done = assert.async();
