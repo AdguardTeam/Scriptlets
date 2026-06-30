@@ -34,7 +34,7 @@
     "author": "AdGuard",
     "license": "GPL-3.0",
     "engines": {
-        "node": ">=22",
+        "node": ">=22.18.0",
         "pnpm": ">=10.33.4 <11"
     },
     "repository": {
