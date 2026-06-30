@@ -55,29 +55,38 @@ const click2LoadScriptConfig = {
     },
 };
 
-const scriptletsConfig = {
-    input: entryPoints,
-    output: {
-        dir: BUILD_DIST,
-        format: 'esm',
-        entryFileNames: '[name].js',
-        chunkFileNames: 'common/[name].js',
-        exports: 'named',
+/**
+ * Shared output options for the dist bundles.
+ */
+const distOutput = {
+    dir: BUILD_DIST,
+    format: 'esm',
+    entryFileNames: '[name].js',
+    chunkFileNames: 'common/[name].js',
+    exports: 'named',
+};
+
+/**
+ * Conservative build for entry points that depend on the pre-built
+ * `scriptlets-func` module (`index`, `scriptlets/index`, `redirects/index`).
+ *
+ * `scriptlets-func` holds already-minified, *live* scriptlet code that
+ * mutates passed-in objects — e.g. `jsonSetter` creates intermediate
+ * path objects with `o[n] = {}`. Setting `propertyReadSideEffects` or
+ * `propertyWriteSideEffects` to `false` here would make the bundler
+ * treat such meaningful writes as side-effect-free and
+ * dead-code-eliminate them, which corrupted `trusted-json-set` (and
+ * other scriptlets reusing the same inlined helper code). Those flags
+ * are therefore reserved for `validatorsConfig` below.
+ */
+const coreConfig = {
+    input: {
+        index: entryPoints.index,
+        'scriptlets/index': entryPoints['scriptlets/index'],
+        'redirects/index': entryPoints['redirects/index'],
     },
+    output: distOutput,
     treeshake: {
-        /**
-         * To avoid leftovers in the code when you access a property
-         * without side effects, like `Fingerprintjs3Names[0]`.
-         */
-        propertyReadSideEffects: false,
-
-        /**
-         * Disable property-write side effects so that unused-function
-         * property assignments (`.primaryName`, `.injections`) are
-         * not treated as side effects that keep dead code alive.
-         */
-        propertyWriteSideEffects: false,
-
         /**
          * Assume that all modules do not have side effects.
          * Mirrors `"sideEffects": false` in package.json and the
@@ -91,6 +100,33 @@ const scriptletsConfig = {
             'scriptlets-func': 'tmp/scriptlets-func.js',
         },
     },
+};
+
+/**
+ * Aggressive build for the `validators` and `converters` entry points.
+ *
+ * These depend on `scriptlets-names-list`, which re-exports the
+ * `*Names` arrays from every scriptlet *source* file. Each such file
+ * also defines a function body that is unused in this graph, plus dead
+ * `.primaryName`/`.injections` property writes (e.g. `Fingerprintjs3Names[0]`)
+ * that would otherwise anchor the unused function and bloat the bundle.
+ * The flags below let the bundler strip those writes and function
+ * bodies, keeping `dist/validators/index.js` around ~30 KB. This is safe
+ * here because the stripped code is genuinely unused — only the literal
+ * `*Names` arrays are consumed.
+ */
+const toolsConfig = {
+    input: {
+        'validators/index': entryPoints['validators/index'],
+        'converters/index': entryPoints['converters/index'],
+    },
+    output: distOutput,
+    treeshake: {
+        propertyReadSideEffects: false,
+        propertyWriteSideEffects: false,
+        moduleSideEffects: false,
+    },
+    external: /^(js-yaml|@adguard\/agtree)/,
 };
 
 const typesConfig = {
@@ -114,7 +150,8 @@ const typesConfig = {
 };
 
 export {
-    scriptletsConfig,
+    coreConfig,
+    toolsConfig,
     scriptletsListConfig,
     redirectsListConfig,
     click2LoadScriptConfig,
