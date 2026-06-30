@@ -64,6 +64,27 @@ const scriptletsConfig = {
         chunkFileNames: 'common/[name].js',
         exports: 'named',
     },
+    treeshake: {
+        /**
+         * To avoid leftovers in the code when you access a property
+         * without side effects, like `Fingerprintjs3Names[0]`.
+         */
+        propertyReadSideEffects: false,
+
+        /**
+         * Disable property-write side effects so that unused-function
+         * property assignments (`.primaryName`, `.injections`) are
+         * not treated as side effects that keep dead code alive.
+         */
+        propertyWriteSideEffects: false,
+
+        /**
+         * Assume that all modules do not have side effects.
+         * Mirrors `"sideEffects": false` in package.json and the
+         * old Rollup config.
+         */
+        moduleSideEffects: false,
+    },
     external: /^(js-yaml|@adguard\/agtree)/,
     resolve: {
         alias: {
