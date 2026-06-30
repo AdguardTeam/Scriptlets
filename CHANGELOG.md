@@ -10,14 +10,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## Unreleased
-
-### Changed
-
-- Build system fully migrated from Rollup to [Rolldown].
-
-[Rolldown]: https://github.com/rolldown/rolldown
-
 ## [2.4.3] - 2026-06-24
 
 ### Added
