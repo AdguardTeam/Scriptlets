@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 import * as redirectsNamesLists from '../src/redirects/redirects-names-list';
 import { version } from '../package.json';
-import { rolldownStandard } from './rollup-runners';
+import { rolldownStandard } from './bundle-runners';
 import { writeFile, getDataFromFiles, convertTsFileNameToJs } from './helpers';
 import {
     redirectsFilenames,
@@ -17,7 +17,7 @@ import {
     DIST_DIR_NAME,
     CORELIBS_REDIRECTS_FILE_NAME,
 } from './constants';
-import { redirectsListConfig, click2LoadScriptConfig, redirectsPrebuildConfig } from '../rollup.config';
+import { redirectsListConfig, click2LoadScriptConfig, redirectsPrebuildConfig } from '../rolldown.config';
 import {
     addCall,
     attachDependencies,

@@ -63,7 +63,7 @@ scriptlets/
 ├── wiki/                     # Auto-generated documentation (scriptlet/redirect docs, compatibility table)
 ├── .eslintrc.cjs             # ESLint configuration
 ├── .markdownlint.json        # Markdownlint configuration
-├── rollup.config.js          # Rollup bundle configuration
+├── rolldown.config.js        # Rolldown bundle configuration
 ├── tsconfig.json             # TypeScript configuration
 ├── vitest.config.ts          # Vitest configuration
 ├── DEVELOPMENT.md            # Development guide and SDD lifecycle

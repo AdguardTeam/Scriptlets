@@ -1,5 +1,5 @@
-import { rolldownStandard } from './rollup-runners';
-import { scriptletsListConfig, scriptletsConfig, typesConfig } from '../rollup.config';
+import { rolldownStandard } from './bundle-runners';
+import { scriptletsListConfig, scriptletsConfig, typesConfig } from '../rolldown.config';
 
 export const buildScriptletsList = async () => rolldownStandard(scriptletsListConfig);
 
