@@ -189,7 +189,7 @@ export function preventConstructor(
         } else {
             // if argumentsMatch is set and is not an array, it should be a plain string,
             // so only the first argument should be matched
-            const firstArg = args[0];
+            const [firstArg] = args;
             let firstArgStr: string;
 
             if (typeof firstArg === 'function') {

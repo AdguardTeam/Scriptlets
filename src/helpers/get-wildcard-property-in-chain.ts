@@ -33,7 +33,7 @@ export function isKeyInObject(baseObj: ChainBase, path: string, valueToCheck: an
             return true;
         }
 
-        const current = pathSegments[0];
+        const [current] = pathSegments;
         const rest = pathSegments.slice(1);
 
         if (current === '*' || current === '[]') {

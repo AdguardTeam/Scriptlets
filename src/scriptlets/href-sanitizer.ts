@@ -430,7 +430,7 @@ export function hrefSanitizer(
         const urlObj = new URL(url, window.location.origin);
 
         // get the parameter values to remove
-        const paramNamesToRemoveStr = transformValue.split(MARKER_SEPARATOR)[1];
+        const [, paramNamesToRemoveStr] = transformValue.split(MARKER_SEPARATOR);
 
         if (!paramNamesToRemoveStr) {
             urlObj.search = '';

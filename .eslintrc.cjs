@@ -128,20 +128,15 @@ module.exports = {
                 'prefer-object-spread': 0,
             },
         },
-        // Array destructuring is not allowed according to the
-        // ReferenceError: _slicedToArray is not defined
         {
             files: ['src/**/*.{js,ts}'],
             rules: {
                 'prefer-destructuring': [
                     'error',
                     {
-                        array: false,
+                        array: true,
+                        object: true,
                     },
-                ],
-                'no-restricted-syntax': [
-                    'error',
-                    'ArrayPattern',
                 ],
             },
         },

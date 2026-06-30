@@ -472,8 +472,7 @@ export function trustedClickElement(
     if (reload) {
         // split reload option by colon
         const reloadSplit = reload.split(COLON);
-        const reloadMarker = reloadSplit[0];
-        const reloadValue = reloadSplit[1];
+        const [reloadMarker, reloadValue] = reloadSplit;
 
         if (reloadMarker !== RELOAD_ON_FINAL_CLICK_MARKER) {
             logMessage(source, `Passed reload option '${reload}' is invalid`);

@@ -228,7 +228,7 @@ export function trustedPruneInboundObject(source, functionName, propsToRemove, r
     const requiredPaths = getPrunePath(requiredInitialProps);
 
     const objectWrapper = (target, thisArg, args) => {
-        let data = args[0];
+        let [data] = args;
         if (typeof data === 'object') {
             data = jsonPruner(source, data, prunePaths, requiredPaths, stack, nativeObjects);
             args[0] = data;

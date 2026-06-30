@@ -209,8 +209,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
     const shouldLog = ((typeof matchCallback === 'undefined') && (typeof matchDelay === 'undefined'));
 
     const handlerWrapper = (target, thisArg, args) => {
-        const callback = args[0];
-        const delay = args[1];
+        const [callback, delay] = args;
         let shouldPrevent = false;
         if (shouldLog) {
             hit(source);

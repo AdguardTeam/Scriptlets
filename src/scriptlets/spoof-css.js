@@ -73,8 +73,7 @@ export function spoofCSS(source, selectors, cssPropertyName, cssPropertyValue) {
             return cssProperty;
         }
         const splittedProperty = cssProperty.split('-');
-        const firstPart = splittedProperty[0];
-        const secondPart = splittedProperty[1];
+        const [firstPart, secondPart] = splittedProperty;
         return `${firstPart}${secondPart[0].toUpperCase()}${secondPart.slice(1)}`;
     }
 

@@ -33,8 +33,7 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
 - **Target platform**: Browser extension and Corelibs
 - **Project type**: single
 - **Performance goals**: N/A
-- **Constraints**: Array destructuring is forbidden in `src/` — Babel's
-  `_slicedToArray` helper is not available in the bundled runtime
+- **Constraints**: N/A
 - **Scale/scope**: Used by AdGuard products (CoreLibs, Browser Extension,
   Safari, iOS) and filter list maintainers
 
@@ -247,32 +246,26 @@ General code style guidelines are available via link:
 
 Project-specific rules:
 
-1. You MUST NOT use array destructuring in `src/` files. Use indexed access
-   instead (e.g., `const first = arr[0];` not `const [first] = arr;`).
+1. TypeScript is preferred for new files. Existing `.js` files MAY remain as-is.
 
-   **Rationale**: Babel's `_slicedToArray` helper is unavailable in the bundled
-   scriptlet runtime, causing `ReferenceError`.
-
-2. TypeScript is preferred for new files. Existing `.js` files MAY remain as-is.
-
-3. All scriptlet and redirect source files MUST include JSDoc with `@scriptlet`
+2. All scriptlet and redirect source files MUST include JSDoc with `@scriptlet`
    (or `@trustedScriptlet` / `@redirect`) and `@description` tags.
 
    **Rationale**: The `wiki:build-docs` script generates documentation from
    these tags.
 
-4. Imports MUST use `type` qualifier for type-only imports
+3. Imports MUST use `type` qualifier for type-only imports
    (`import { type Foo }`).
 
    **Rationale**: Enforced by `@typescript-eslint/consistent-type-imports`.
 
-5. Max line length is 120 characters (code and markdown).
+4. Max line length is 120 characters (code and markdown).
 
-6. Indentation is 4 spaces (no tabs).
+5. Indentation is 4 spaces (no tabs).
 
-7. External and internal imports MUST be separated by an empty line.
+6. External and internal imports MUST be separated by an empty line.
 
-8. TypeScript tuple type annotations with 3 or more elements MUST be formatted
+7. TypeScript tuple type annotations with 3 or more elements MUST be formatted
    as multiline, with each element on its own line.
 
     **Good**:

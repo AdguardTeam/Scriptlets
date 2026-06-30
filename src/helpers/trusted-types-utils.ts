@@ -62,7 +62,7 @@ export const getTrustedTypesApi = (source?: Source): PolicyApi => {
      * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/trusted-types#library-usage}
      */
     const trustedTypesWindow = window as unknown as TrustedTypesWindow;
-    const trustedTypes = trustedTypesWindow.trustedTypes;
+    const { trustedTypes } = trustedTypesWindow;
     const isSupported = !!trustedTypes;
 
     /**

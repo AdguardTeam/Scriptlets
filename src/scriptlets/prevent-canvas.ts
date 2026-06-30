@@ -57,7 +57,7 @@ export function preventCanvas(source: Source, contextType?: string) {
         thisArg: HTMLCanvasElement,
         argumentsList: string[],
     ) => {
-        const type = argumentsList[0];
+        const [type] = argumentsList;
         let shouldPrevent = false;
         if (!contextType) {
             shouldPrevent = true;

@@ -265,8 +265,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         // setRequestHeader can only be called on open request objects
         const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
         collectedHeaders.forEach((header) => {
-            const name = header[0];
-            const value = header[1];
+            const [name, value] = header;
             forgedRequest.setRequestHeader(name, value);
         });
         // Note: We do NOT delete from xhrRequestHeaders here because
@@ -322,13 +321,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         }
         const allHeadersStr = collectedHeaders
             .map((header) => {
-                /**
-                 * TODO: array destructuring may be used here
-                 * after the typescript implementation and bundling refactoring
-                 * as now there is an error: slicedToArray is not defined
-                 */
-                const headerName = header[0];
-                const headerValue = header[1];
+                const [headerName, headerValue] = header;
                 // In modern browsers, the header names are returned in all lower case, as per the latest spec.
                 // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getAllResponseHeaders
                 return `${headerName.toLowerCase()}: ${headerValue}`;

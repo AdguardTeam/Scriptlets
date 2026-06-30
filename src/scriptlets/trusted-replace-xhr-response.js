@@ -287,8 +287,7 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
         // setRequestHeader can only be called on open request objects
         const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
         collectedHeaders.forEach((header) => {
-            const name = header[0];
-            const value = header[1];
+            const [name, value] = header;
 
             forgedRequest.setRequestHeader(name, value);
         });

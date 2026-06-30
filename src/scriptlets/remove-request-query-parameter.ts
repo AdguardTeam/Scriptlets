@@ -130,7 +130,7 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
         thisArg: XMLHttpRequest,
         argumentsList: unknown[],
     ) => {
-        const urlArg = argumentsList[1];
+        const [, urlArg] = argumentsList;
         if (!urlArg) {
             return Reflect.apply(target, thisArg, argumentsList);
         }
@@ -164,7 +164,7 @@ export function removeRequestQueryParameter(source: Source, parametersToRemove: 
             type: '',
         };
 
-        const urlArg = argumentsList[0];
+        const [urlArg] = argumentsList;
         if (!urlArg) {
             return Reflect.apply(target, thisArg, argumentsList);
         }

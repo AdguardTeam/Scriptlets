@@ -378,8 +378,7 @@ export function objectToString(obj: ArbitraryObject): string {
 
     return Object.entries(obj)
         .map((pair) => {
-            const key = pair[0];
-            const value = pair[1];
+            const [key, value] = pair;
             let recordValueStr = value;
             if (value instanceof Object) {
                 recordValueStr = `{ ${objectToString(value as ArbitraryObject)} }`;

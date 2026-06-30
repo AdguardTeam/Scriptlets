@@ -30,8 +30,7 @@ const arrowToFunction = (name: string, arrowStr: string): string => {
         return `const ${name} = ${arrowStr}`;
     }
 
-    const params = match[1];
-    const body = match[2];
+    const [, params, body] = match;
 
     if (body.startsWith('{')) {
         // Block body: (params) => { ... }

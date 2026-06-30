@@ -199,7 +199,7 @@ export function trustedJsonSetFetchResponse(
     }
 
     const parsedSetPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsPath) : [];
-    const setPathObj = parsedSetPaths[0];
+    const [setPathObj] = parsedSetPaths;
     const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(requiredInitialProps) : [];
 
     const getValueToSet = (currentValue: any): any => {

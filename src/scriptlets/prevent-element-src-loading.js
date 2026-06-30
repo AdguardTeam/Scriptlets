@@ -86,8 +86,8 @@ export function preventElementSrcLoading(source, tagName, match) {
             return Reflect.apply(target, thisArg, args);
         }
         const nodeName = thisArg.nodeName.toLowerCase();
-        const attrName = args[0].toLowerCase();
-        const attrValue = args[1];
+        const [attrNameRaw, attrValue] = args;
+        const attrName = attrNameRaw.toLowerCase();
         const isMatched = attrName === SOURCE_PROPERTY_NAME
             && tagName.toLowerCase() === nodeName
             && srcMockData[nodeName]
@@ -183,7 +183,7 @@ export function preventElementSrcLoading(source, tagName, match) {
             return Reflect.apply(target, thisArg, args);
         }
 
-        const eventName = args[0];
+        const [eventName] = args;
         const isMatched = typeof thisArg.getAttribute === 'function'
             && thisArg.getAttribute(source.name) === 'matched'
             && eventName === 'error';

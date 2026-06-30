@@ -390,7 +390,7 @@ export const getPrunePath = (props: unknown) => {
         const rawParts = splitProps(props);
         const parts = rawParts.map((part) => {
             const splitPart = part.split(VALUE_MARKER);
-            const path = splitPart[0];
+            const [path] = splitPart;
             let value = splitPart[1] as any;
             if (value !== undefined) {
                 if (value === 'true') {

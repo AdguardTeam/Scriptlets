@@ -270,8 +270,7 @@ export function GoogleTagServicesGpt(source) {
                     const entries = Object.entries(obj);
                     for (let i = 0; i < entries.length; i += 1) {
                         const entry = entries[i];
-                        const key = entry[0];
-                        const value = entry[1];
+                        const [key, value] = entry;
                         if (key === 'clickUrl') {
                             clickUrl = value;
                         } else if (key === 'targeting') {
@@ -380,7 +379,7 @@ export function GoogleTagServicesGpt(source) {
         if (arg?.getSlotElementId) {
             id = arg.getSlotElementId();
         } else if (arg?.nodeType) {
-            id = arg.id;
+            ({ id } = arg);
         } else {
             id = String(arg);
         }
@@ -411,8 +410,7 @@ export function GoogleTagServicesGpt(source) {
             const entries = Object.entries(obj);
             for (let i = 0; i < entries.length; i += 1) {
                 const entry = entries[i];
-                const key = entry[0];
-                const value = entry[1];
+                const [key, value] = entry;
                 if (key === 'disableInitialLoad') {
                     initialLoadDisabled = !!value;
                 } else if (key === 'targeting') {

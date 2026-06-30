@@ -237,7 +237,7 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
      * @returns Proxied event object with the fields needed for the target handler type.
      */
     const createEventProxy = (nativeEvent: Event, eventType: string, isReactEvent = false): Event => {
-        let defaultPrevented = nativeEvent.defaultPrevented;
+        let { defaultPrevented } = nativeEvent;
         let propagationStopped = false;
 
         return new Proxy(nativeEvent, {

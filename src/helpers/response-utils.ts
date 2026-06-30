@@ -284,17 +284,17 @@ export const modifyResponse = (
     const type = typeof replacement.type === 'undefined' ? origResponse.type : replacement.type;
     const filteredDefaults = getFilteredResponseDefaults(type);
     const finalBody = typeof filteredDefaults.body === 'undefined' ? body : filteredDefaults.body;
-    let status = replacement.status;
+    let { status } = replacement;
     if (typeof status === 'undefined') {
         status = typeof filteredDefaults.status === 'undefined' ? origResponse.status : filteredDefaults.status;
     }
-    let statusText = replacement.statusText;
+    let { statusText } = replacement;
     if (typeof statusText === 'undefined') {
         statusText = typeof filteredDefaults.statusText === 'undefined'
             ? origResponse.statusText
             : filteredDefaults.statusText;
     }
-    let ok = replacement.ok;
+    let { ok } = replacement;
     if (typeof ok === 'undefined') {
         ok = typeof replacement.status === 'undefined' && typeof filteredDefaults.ok === 'undefined'
             ? origResponse.ok
@@ -303,10 +303,7 @@ export const modifyResponse = (
     const redirected = typeof replacement.redirected === 'undefined'
         ? origResponse.redirected
         : replacement.redirected;
-    let url = filteredDefaults.url;
-    if (typeof url === 'undefined') {
-        url = origResponse.url;
-    }
+    const url = typeof filteredDefaults.url === 'undefined' ? origResponse.url : filteredDefaults.url;
     const isFilteredResponse = typeof filteredDefaults.body !== 'undefined';
     const headers = isFilteredResponse ? {} : copyResponseHeaders(origResponse?.headers);
     const safeStatus = getSafeResponseStatus(status);
@@ -347,15 +344,15 @@ export const createResponse = (
     const body = typeof responseData.body === 'undefined' ? '{}' : responseData.body;
     const filteredDefaults = getFilteredResponseDefaults(responseData.type);
     const finalBody = typeof filteredDefaults.body === 'undefined' ? body : filteredDefaults.body;
-    let status = responseData.status;
+    let { status } = responseData;
     if (typeof status === 'undefined') {
         status = typeof filteredDefaults.status === 'undefined' ? 200 : filteredDefaults.status;
     }
-    let statusText = responseData.statusText;
+    let { statusText } = responseData;
     if (typeof statusText === 'undefined') {
         statusText = typeof filteredDefaults.statusText === 'undefined' ? 'OK' : filteredDefaults.statusText;
     }
-    let ok = responseData.ok;
+    let { ok } = responseData;
     if (typeof ok === 'undefined') {
         ok = typeof responseData.status === 'undefined' && typeof filteredDefaults.ok === 'undefined'
             ? true
@@ -363,12 +360,12 @@ export const createResponse = (
     }
     const redirected = typeof responseData.redirected === 'undefined' ? false : responseData.redirected;
     const type = typeof responseData.type === 'undefined' ? 'basic' : responseData.type;
-    let url = filteredDefaults.url;
+    let { url } = filteredDefaults;
     if (typeof url === 'undefined') {
         url = typeof responseData.requestUrl === 'undefined' ? '' : responseData.requestUrl;
     }
     const isFilteredResponse = typeof filteredDefaults.body !== 'undefined';
-    let headers = responseData.headers;
+    let { headers } = responseData;
     if (isFilteredResponse) {
         // Filtered responses such as `Response.error()` and
         // `fetch(..., { mode: 'no-cors' })` expose an empty header list,

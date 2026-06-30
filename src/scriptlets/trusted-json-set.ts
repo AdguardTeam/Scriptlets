@@ -705,7 +705,7 @@ export function trustedJsonSet(
     };
 
     const parsedSetPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsPath) : [];
-    const setPathObj = parsedSetPaths[0];
+    const [setPathObj] = parsedSetPaths;
     const requiredPaths = !isLogOnlyMode && syntaxModeDetails.mode === 'legacy'
         ? getPrunePath(requiredInitialProps)
         : [];

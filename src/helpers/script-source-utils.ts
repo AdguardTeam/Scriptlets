@@ -39,9 +39,9 @@ export const shouldAbortInlineOrInjectedScript = (stackMatch: string, stackTrace
         // third group contains line number, fourth group contains column number
         const getStackTraceValues = /(.*?@)?(\S+)(:\d+)(:\d+)\)?$/.exec(line);
         if (getStackTraceValues) {
-            let stackURL = getStackTraceValues[2];
-            const stackLine = getStackTraceValues[3];
-            const stackCol = getStackTraceValues[4];
+            let [, , stackURL] = getStackTraceValues;
+            const [, , , stackLine] = getStackTraceValues;
+            const [, , , , stackCol] = getStackTraceValues;
             if (stackURL?.startsWith('(')) {
                 stackURL = stackURL.slice(1);
             }

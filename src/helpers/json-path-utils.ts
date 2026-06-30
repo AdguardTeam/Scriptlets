@@ -402,7 +402,7 @@ export const jsonPath = (
             return normalizedValue;
         }
 
-        const firstChar = normalizedValue[0];
+        const [firstChar] = normalizedValue;
         const lastChar = normalizedValue[normalizedValue.length - 1];
         if (isQuoteCharacter(firstChar) && firstChar === lastChar) {
             const unwrappedValue = normalizedValue.slice(1, -1);
@@ -1589,7 +1589,7 @@ export const jsonPath = (
                 return matchedCandidates.length > 0;
             }
 
-            let comparisonValue = filter.comparisonValue;
+            let { comparisonValue } = filter;
             if (filter.comparisonSelectorPath) {
                 const comparisonRoot = filter.resolveComparisonAgainstRoot ? root : value;
                 const comparisonMatches = evaluateSelector(

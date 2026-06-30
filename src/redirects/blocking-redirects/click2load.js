@@ -133,7 +133,7 @@ function clickToLoad() {
             const currentLocale = navigator.language.toLowerCase();
             let localeData = translationsData[currentLocale];
             if (!localeData) {
-                const lang = currentLocale.split('-')[0];
+                const [lang] = currentLocale.split('-');
                 localeData = translationsData[lang];
             }
             if (!localeData) {

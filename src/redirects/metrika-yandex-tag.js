@@ -130,7 +130,7 @@ export function metrikaYandexTag(source) {
         window.ym = ym;
 
         window.ym.a.forEach((params) => {
-            const id = params[0];
+            const [id] = params;
             init(id);
         });
     }

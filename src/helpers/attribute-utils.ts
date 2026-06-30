@@ -176,7 +176,7 @@ export const getElementAttributesWithValues = (element: any): string => {
     ) {
         return '';
     }
-    const attributes = element.attributes;
+    const { attributes } = element;
     const nodeName = element.nodeName.toLowerCase();
     let result = nodeName;
 

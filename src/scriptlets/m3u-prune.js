@@ -152,8 +152,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '', verbose = false
                 array[index] = undefined;
                 index += 1;
                 const prunedExtinf = pruneExtinfFromVmapBlock(array, index);
-                array = prunedExtinf.array;
-                index = prunedExtinf.index;
+                ({ array, index } = prunedExtinf);
             }
         }
         return { array, index };
@@ -176,7 +175,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '', verbose = false
                 if (array[i + 1].includes(AD_MARKER.EXTINF)) {
                     i += 1;
                     const prunedExtinf = pruneExtinfFromVmapBlock(array, i);
-                    array = prunedExtinf.array;
+                    ({ array } = prunedExtinf);
                     // It's necessary to subtract 1 from "i",
                     // otherwise one line will be skipped
                     i = prunedExtinf.index - 1;
@@ -464,8 +463,7 @@ export function m3uPrune(source, propsToRemove, urlToMatch = '', verbose = false
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
         thisArg.collectedHeaders.forEach((header) => {
-            const name = header[0];
-            const value = header[1];
+            const [name, value] = header;
 
             forgedRequest.setRequestHeader(name, value);
         });

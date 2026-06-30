@@ -80,7 +80,7 @@ export function trustedDispatchEvent(
         thisArg: Element,
         args: string[],
     ) => {
-        const eventName = args[0];
+        const [eventName] = args;
         if (thisArg && eventName) {
             events.add(eventName);
             setTimeout(() => {

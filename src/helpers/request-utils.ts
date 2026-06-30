@@ -84,7 +84,7 @@ export const getRequestData = (request: Request): Partial<Request> => {
 export const getFetchData = (args: [FetchResource, RequestInit], nativeRequestClone: Function) => {
     const fetchPropsObj: Record<string, unknown> = {};
 
-    const resource = args[0];
+    const [resource] = args;
     let fetchUrl: FetchResource;
     let fetchInit: RequestInit;
     if (resource instanceof Request) {
