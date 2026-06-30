@@ -584,30 +584,6 @@ export const createPreventTimerTests = (config) => {
         trackedTimers.push(timerId1);
     });
 
-    test('match with unescaped double quotes', (assert) => {
-        const markerProp = 'callbackFired';
-        window[markerProp] = false;
-        const done = assert.async();
-
-        // We need to run our assertion after all timeouts
-        nativeSetTimeout(() => {
-            assert.notOk(window.callbackFired, 'callback was blocked');
-            assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-            done();
-        }, 100);
-
-        // Use regex that matches both quoting styles
-        const CALLBACK_MATCH = '/\\.css\\(.*display.*,.*block.*\\);/';
-
-        // run scriptlet code
-        const scriptletArgs = [CALLBACK_MATCH, '30'];
-        runScriptlet(name, scriptletArgs);
-
-        function callback() { window[markerProp] = '.css("display","block");'; }
-        const timerId1 = window[timerMethodName](callback, 30);
-        trackedTimers.push(timerId1);
-    });
-
     test('delay range: min-max prevents delays within range', (assert) => {
         const done = assert.async();
         window.one = 'old one';

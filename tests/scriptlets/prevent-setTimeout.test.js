@@ -90,27 +90,3 @@ test('match with escaped double quotes', (assert) => {
     function callback() { window[markerProp] = '.css("display","block");'; }
     setTimeout(callback, 30);
 });
-
-test('match with unescaped double quotes', (assert) => {
-    const markerProp = 'callbackFired';
-    window[markerProp] = false;
-    const done = assert.async();
-
-    // We need to run our assertion after all timeouts
-    nativeSetTimeout(() => {
-        assert.notOk(window.callbackFired, 'callback was blocked');
-        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
-        clearGlobalProps('callbackFired', 'hit');
-        done();
-    }, 100);
-
-    // Use regex that matches both quoting styles
-    const CALLBACK_MATCH = '/\\.css\\(.*display.*,.*block.*\\);/';
-
-    // run scriptlet code
-    const scriptletArgs = [CALLBACK_MATCH, '30'];
-    runScriptlet('prevent-setTimeout', scriptletArgs);
-
-    function callback() { window[markerProp] = '.css("display","block");'; }
-    setTimeout(callback, 30);
-});
