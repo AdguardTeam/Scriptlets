@@ -22,4 +22,4 @@ dist/
 *.tgz
 
 # SDD specs
-specs/.current/
+.sdd/
