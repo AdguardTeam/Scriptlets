@@ -43,6 +43,7 @@ import './close-window.test';
 import './prevent-refresh.test';
 import './prevent-element-src-loading.test';
 import './no-topics.test';
+import './trusted-prevent-xhr.test';
 import './trusted-replace-xhr-response.test';
 import './xml-prune.test';
 import './m3u-prune.test';

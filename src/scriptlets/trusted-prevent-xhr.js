@@ -23,10 +23,14 @@ import {
 
 /* eslint-disable max-len */
 /**
- * @scriptlet prevent-xhr
+ * @trustedScriptlet trusted-prevent-xhr
  *
  * @description
  * Prevents `xhr` calls if **all** given parameters match.
+ *
+ * Trusted version of [prevent-xhr](./about-scriptlets.md#prevent-xhr).
+ * In addition to everything `prevent-xhr` supports, `trusted-prevent-xhr`
+ * can return **arbitrary literal text** as the response body.
  *
  * Related UBO scriptlet:
  * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
@@ -34,7 +38,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
+ * example.org#%#//scriptlet('trusted-prevent-xhr'[, propsToMatch[, directive]])
  * ```
  *
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -44,8 +48,8 @@ import {
  *             - `name` is XMLHttpRequest object property name
  *             - `value` is string or regular expression for matching the value of the option
  *     passed to `XMLHttpRequest.open()` call
- * - `randomize` — defaults to `false` for empty responseText,
- *   optional argument to randomize responseText and response of matched XMLHttpRequest's response; possible values:
+ * - `directive` — defaults to `false` for empty responseText,
+ *   optional argument to set responseText and response of matched XMLHttpRequest's response; possible values:
  *     - `true` to randomize responseText and response, random alphanumeric string of 10 symbols
  *     - `emptyObj` to set responseText and response to `{}`
  *     - `emptyArr` to set responseText and response to `[]`
@@ -53,9 +57,7 @@ import {
  *     - colon-separated pair `name:value` string value to customize responseText and response data where
  *         - `name` — only `length` supported for now
  *         - `value` — single number (e.g. `50`) or range on numbers (e.g. `100-300`), limited to 500000 characters
- *
- * > Non-keyword values (e.g. literal text) are NOT passed through in the untrusted `prevent-xhr`
- * > scriptlet — they yield an empty string. Use `trusted-prevent-xhr` for literal-text passthrough.
+ *     - any other string is treated as **literal text** and returned as the response body as-is
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -65,75 +67,59 @@ import {
  * 1. Log all XMLHttpRequests
  *
  *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr')
- *     ```
- *
- * 1. Prevent all XMLHttpRequests
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', '*')
- *     example.org#%#//scriptlet('prevent-xhr', '')
+ *     example.org#%#//scriptlet('trusted-prevent-xhr')
  *     ```
  *
  * 1. Prevent XMLHttpRequests for specific url
  *
  *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org')
+ *     example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org')
  *     ```
  *
- * 1. Prevent XMLHttpRequests for specific request method
+ * 1. Prevent XMLHttpRequests for specific url and set literal response text
  *
  *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'method:HEAD')
+ *     example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', '{"blocked":true}')
  *     ```
  *
- * 1. Prevent XMLHttpRequests for specific url and specified request methods
+ * 1. Prevent XMLHttpRequests for specific url and randomize response text
  *
  *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
+ *     example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', 'true')
  *     ```
  *
- * 1. Prevent XMLHttpRequests for specific url and randomize it's response text
+ * 1. Prevent XMLHttpRequests for specific url and set response to empty array
  *
  *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
+ *     example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', 'emptyArr')
  *     ```
  *
- * 1. Prevent XMLHttpRequests for specific url and randomize it's response text with range
+ * 1. Prevent XMLHttpRequests and set response with fixed length
  *
  *     ```adblock
- *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
+ *     example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', 'length:100')
  *     ```
  *
- * 1. Prevent XMLHttpRequests for specific url and set response to empty object
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'emptyObj')
- *     ```
- *
- * @added v1.5.0.
+ * @added unknown.
  */
 /* eslint-enable max-len */
-export function preventXHR(source, propsToMatch, customResponseText) {
-    createPreventXhrCore(source, propsToMatch, false, customResponseText);
+export function trustedPreventXhr(source, propsToMatch, directive) {
+    createPreventXhrCore(source, propsToMatch, true, directive);
 }
 
-export const preventXHRNames = [
-    'prevent-xhr',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'no-xhr-if.js',
-    'ubo-no-xhr-if.js',
-    'ubo-no-xhr-if',
+export const trustedPreventXhrNames = [
+    'trusted-prevent-xhr',
+    // trusted scriptlets support no aliases
 ];
 
 // eslint-disable-next-line prefer-destructuring
-preventXHR.primaryName = preventXHRNames[0];
+trustedPreventXhr.primaryName = trustedPreventXhrNames[0];
 
-preventXHR.injections = [
-    hit,
-    objectToString,
+trustedPreventXhr.injections = [
     createPreventXhrCore,
     generateResponseContent,
+    hit,
+    objectToString,
     matchRequestProps,
     getXhrData,
     logMessage,
