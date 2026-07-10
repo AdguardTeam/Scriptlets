@@ -226,10 +226,12 @@ export function createPreventXhrCore(
             exposeResponseText = false;
         } else if (responseType === 'json') {
             // For json responseType, response is the parsed JSON object (or
-            // null if the text is not valid JSON), and responseText is the
-            // raw JSON text. Trusted directives can pass a literal JSON
-            // string (e.g. '{"blocked":true}') that gets parsed and exposed
-            // as a parsed object via response.
+            // null if the text is not valid JSON). Accessing responseText with
+            // responseType 'json' throws InvalidStateError in native XHR
+            // (Chromium included), so we do NOT expose it for the JSON branch.
+            // Trusted directives can pass a literal JSON string (e.g.
+            // '{"blocked":true}') that gets parsed and exposed as a parsed
+            // object via response.
             let jsonText = '{}';
             if (directive) {
                 const content = generateResponseContent(directive, trusted);
@@ -239,7 +241,7 @@ export function createPreventXhrCore(
                     logMessage(source, `Invalid randomize parameter: '${directive}'`);
                 }
             }
-            modifiedResponseText = jsonText;
+            exposeResponseText = false;
             try {
                 modifiedResponse = JSON.parse(jsonText);
             } catch {

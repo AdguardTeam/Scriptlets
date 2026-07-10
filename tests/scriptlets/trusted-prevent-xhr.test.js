@@ -351,6 +351,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(xhr.response instanceof Blob, true, 'Response data mocked');
             assert.ok(createImg.src.startsWith('blob:'), 'Image with source blob');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for blob responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             createImg.remove();
             done();
@@ -378,6 +383,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(xhr.response instanceof ArrayBuffer, true, 'Response data mocked');
             assert.ok(createImg.src.startsWith('data:image/'), 'Image with source base64');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for arraybuffer responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             createImg.remove();
             done();
@@ -401,6 +411,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.ok(xhr.response instanceof Document, 'Response is a Document');
             assert.ok(xhr.responseXML instanceof Document, 'ResponseXML is a Document');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for document responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -422,7 +437,11 @@ if (isSupported) {
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.propEqual(xhr.response, {}, 'Response is empty object');
-            assert.strictEqual(xhr.responseText, '{}', 'Response text is empty object');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for json responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -444,7 +463,11 @@ if (isSupported) {
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.propEqual(xhr.response, { blocked: true }, 'Response is parsed JSON object');
-            assert.strictEqual(xhr.responseText, '{"blocked":true}', 'Response text is raw JSON');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for json responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };

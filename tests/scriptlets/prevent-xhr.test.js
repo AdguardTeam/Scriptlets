@@ -1306,7 +1306,11 @@ if (isSupported) {
         xhr.onload = () => {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.propEqual(xhr.response, {}, 'Response is empty object');
-            assert.strictEqual(xhr.responseText, '{}', 'Response text is empty object');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for json responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
