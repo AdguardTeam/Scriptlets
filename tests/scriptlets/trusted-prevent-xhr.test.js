@@ -429,6 +429,28 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('Prevent matched - json responseType with literal JSON (trusted)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['test01.json', '{"blocked":true}'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.responseType = 'json';
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.propEqual(xhr.response, { blocked: true }, 'Response is parsed JSON object');
+            assert.strictEqual(xhr.responseText, '{"blocked":true}', 'Response text is raw JSON');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('Args, pass unmatched', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;

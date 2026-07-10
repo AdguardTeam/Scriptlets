@@ -787,6 +787,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(xhr.response instanceof Blob, true, 'Response data mocked');
             assert.ok(createImg.src.startsWith('blob:'), 'Image with source blob');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for blob responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             createImg.remove();
             done();
@@ -814,6 +819,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(xhr.response instanceof ArrayBuffer, true, 'Response data mocked');
             assert.ok(createImg.src.startsWith('data:image/'), 'Image with source base64');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for arraybuffer responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             createImg.remove();
             done();
@@ -1270,6 +1280,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.ok(xhr.response instanceof Document, 'Response is a Document');
             assert.ok(xhr.responseXML instanceof Document, 'ResponseXML is a Document');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for document responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -1279,7 +1294,7 @@ if (isSupported) {
     test('Args, prevent matched - json responseType', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
-        const MATCH_DATA = [`test01.json method:${METHOD}`, 'true'];
+        const MATCH_DATA = [`test01.json method:${METHOD}`];
 
         runScriptlet(name, MATCH_DATA);
 

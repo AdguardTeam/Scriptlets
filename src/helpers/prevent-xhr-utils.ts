@@ -207,16 +207,45 @@ export function createPreventXhrCore(
         let modifiedResponseText = '';
         let modifiedResponseXML: any;
 
+        // Whether responseText is accessible for this responseType.
+        // Native XHR throws InvalidStateError when responseText is accessed
+        // with responseType 'blob', 'arraybuffer', or 'document'. For the
+        // default (''), 'text', and 'json' responseTypes it is accessible.
+        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseText
+        let exposeResponseText = true;
+
         if (responseType === 'blob') {
             modifiedResponse = new Blob();
+            exposeResponseText = false;
         } else if (responseType === 'arraybuffer') {
             modifiedResponse = new ArrayBuffer(0);
+            exposeResponseText = false;
         } else if (responseType === 'document') {
             modifiedResponse = new DOMParser().parseFromString('', 'text/html');
             modifiedResponseXML = modifiedResponse;
+            exposeResponseText = false;
         } else if (responseType === 'json') {
-            modifiedResponse = {};
-            modifiedResponseText = '{}';
+            // For json responseType, response is the parsed JSON object (or
+            // null if the text is not valid JSON), and responseText is the
+            // raw JSON text. Trusted directives can pass a literal JSON
+            // string (e.g. '{"blocked":true}') that gets parsed and exposed
+            // as a parsed object via response.
+            let jsonText = '{}';
+            if (directive) {
+                const content = generateResponseContent(directive, trusted);
+                if (content !== null) {
+                    jsonText = content;
+                } else {
+                    logMessage(source, `Invalid randomize parameter: '${directive}'`);
+                }
+            }
+            modifiedResponseText = jsonText;
+            try {
+                modifiedResponse = JSON.parse(jsonText);
+            } catch {
+                // Invalid JSON → response is null, matching native XHR behavior
+                modifiedResponse = null;
+            }
         } else if (directive) {
             const content = generateResponseContent(directive, trusted);
             if (content !== null) {
@@ -261,15 +290,21 @@ export function createPreventXhrCore(
                     ? modifiedResponseXML
                     : responseXML;
 
-                // Mock response object
-                Object.defineProperties(thisArg, {
+                // Mock response object. Only expose responseText for
+                // responseTypes where it is accessible in native XHR.
+                // For 'blob', 'arraybuffer', and 'document' the native getter
+                // throws InvalidStateError, so we leave it untouched.
+                const mockProps: PropertyDescriptorMap = {
                     readyState: { value: 4, writable: false },
                     statusText: { value: 'OK', writable: false },
                     responseXML: { value: finalResponseXML, writable: false },
                     status: { value: 200, writable: false },
                     response: { value: modifiedResponse, writable: false },
-                    responseText: { value: modifiedResponseText, writable: false },
-                });
+                };
+                if (exposeResponseText) {
+                    mockProps.responseText = { value: modifiedResponseText, writable: false };
+                }
+                Object.defineProperties(thisArg, mockProps);
                 hit(source);
             } else {
                 Object.defineProperty(thisArg, 'readyState', {
