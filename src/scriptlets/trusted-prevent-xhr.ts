@@ -20,6 +20,7 @@ import {
     getRandomIntInclusive,
     getRandomStrByLength,
 } from '../helpers';
+import { type Source } from './scriptlets';
 
 /* eslint-disable max-len */
 /**
@@ -103,7 +104,7 @@ import {
  * @added unknown.
  */
 /* eslint-enable max-len */
-export function trustedPreventXhr(source, propsToMatch, directive) {
+export function trustedPreventXhr(source: Source, propsToMatch?: string, directive?: string): void {
     createPreventXhrCore(source, propsToMatch, true, directive);
 }
 

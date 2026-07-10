@@ -20,6 +20,7 @@ import {
     getRandomIntInclusive,
     getRandomStrByLength,
 } from '../helpers';
+import { type Source } from './scriptlets';
 
 /* eslint-disable max-len */
 /**
@@ -114,7 +115,7 @@ import {
  * @added v1.5.0.
  */
 /* eslint-enable max-len */
-export function preventXHR(source, propsToMatch, customResponseText) {
+export function preventXHR(source: Source, propsToMatch?: string, customResponseText?: string): void {
     createPreventXhrCore(source, propsToMatch, false, customResponseText);
 }
 
