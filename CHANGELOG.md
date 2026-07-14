@@ -21,6 +21,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `prevent-xhr` and `trusted-prevent-xhr` now handle `document` and `json` XHR
   `responseType` values when intercepting matched requests.
 
+### Removed
+
+- UBO aliases for `prevent-bab` scriptlet and redirect.
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
 

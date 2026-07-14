@@ -24,11 +24,6 @@ const preventBab = preventBabScriptlet;
 
 export const preventBabNames = [
     'prevent-bab',
-    // list of prevent-bab redirect aliases
-    'bab-defuser.js',
-    'ubo-bab-defuser.js',
-    'ubo-nobab',
-    'ubo-bab-defuser',
 ];
 
 export { preventBab };
