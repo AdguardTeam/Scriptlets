@@ -413,65 +413,175 @@ export const convertTypeToString = (value: unknown): string => {
 };
 
 /**
- * Generate a random string, a length of the string is provided as an argument
+ * Generate a random string, a length of the string is provided as an argument.
+ *
+ * Uses an array and `join` for O(n) complexity instead of string concatenation.
  *
  * @param length output's length
  * @returns random string
  */
 export function getRandomStrByLength(length: number): string {
-    let result = '';
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=~';
     const charactersLength = characters.length;
+    const result: string[] = [];
     for (let i = 0; i < length; i += 1) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        result.push(characters.charAt(Math.floor(Math.random() * charactersLength)));
     }
-    return result;
+    return result.join('');
 }
 
 /**
- * Generate a random string
+ * Evaluates a response-content directive and returns the generated string.
+ *
+ * Mirrors uBO's `generateContentFn`. The `trusted` flag gates literal-text
+ * passthrough: untrusted callers always get an empty string for non-keyword
+ * directives.
+ *
+ * Supported directives:
+ * - `true` — 10-char random alphanumeric
+ * - `emptyObj` — `{}`; `emptyArr` — `[]`; `emptyStr` — `''`
+ * - `length:N` / `length:N-M` — random alphanumeric (invalid above 500 000 chars)
+ * - `length:` can be combined with literal text (trusted only) to repeat the
+ *   text to the specified length, e.g. `'length:8000-10000 body ins.adsbygoogle'`
+ * - `war:…` — not supported (AdGuard has no WAR infra), yields empty string
+ * - `join:…` — not supported (uBO-specific), yields empty string
+ * - literal text — returned as-is for trusted, `''` for untrusted
+ *
+ * Returns `null` for malformed directives (e.g. invalid `length:` range) so
+ * the caller can log them instead of silently producing empty output.
+ *
+ * @param directive Directive string (empty/undefined treated as `''`).
+ * @param trusted When `true`, non-keyword directives are returned literally.
+ */
+export function generateResponseContent(
+    directive: string | undefined,
+    trusted: boolean,
+): string | null {
+    // Empty/undefined directive → empty string (no error)
+    if (!directive) {
+        return '';
+    }
+
+    // 'true' → 10-char random alphanumeric.
+    // Use slice(2) to skip "0." prefix, padEnd to guarantee 10 chars
+    // (Math.random() can produce very few significant digits),
+    // then slice(0, 10) to truncate any excess.
+    if (directive === 'true') {
+        const random = Math.random().toString(36).slice(2);
+        return random.padEnd(10, '0').slice(0, 10);
+    }
+
+    // Safe constant directives
+    if (directive === 'emptyObj') {
+        return '{}';
+    }
+    if (directive === 'emptyArr') {
+        return '[]';
+    }
+    if (directive === 'emptyStr') {
+        return '';
+    }
+
+    // 'war:' and 'join:' UBO's directives are not supported by AdGuard;
+    if (directive.startsWith('war:') || directive.startsWith('join:')) {
+        return '';
+    }
+
+    // Check for length: token anywhere in the directive (compound mode).
+    // Allows mixing length: with literal text, e.g.:
+    //   'length:8000-10000 body ins.adsbygoogle'
+    //   'body ins.adsbygoogle length:8000-10000'
+    // Multiple length: tokens: the last one wins.
+    const lengthTokenRegex = /length:(\d+)(?:-(\d+))?/g;
+    let lengthMatch: RegExpExecArray | null;
+    let lastLengthMatch: RegExpExecArray | null = null;
+    // eslint-disable-next-line no-cond-assign
+    while ((lengthMatch = lengthTokenRegex.exec(directive)) !== null) {
+        lastLengthMatch = lengthMatch;
+    }
+
+    if (lastLengthMatch) {
+        const rangeMin = getNumberFromString(lastLengthMatch[1]);
+        // Use second group if present, otherwise it is a single value
+        const rangeMax = lastLengthMatch[2]
+            ? getNumberFromString(lastLengthMatch[2])
+            : rangeMin;
+
+        if (
+            rangeMin === null
+            || rangeMax === null
+            || !nativeIsFinite(rangeMin)
+            || !nativeIsFinite(rangeMax)
+        ) {
+            return null;
+        }
+
+        // Swap if min > max
+        let min = rangeMin;
+        let max = rangeMax;
+        if (min > max) {
+            const temp = min;
+            min = max;
+            max = temp;
+        }
+
+        // Invalid above 500 000 characters
+        const LENGTH_RANGE_LIMIT = 500 * 1000;
+        if (max > LENGTH_RANGE_LIMIT) {
+            return null;
+        }
+
+        const length = getRandomIntInclusive(min, max);
+
+        // Extract literal text by removing all length: tokens
+        const literalText = directive.replace(/length:\d+(?:-\d+)?/g, '').trim();
+
+        if (literalText) {
+            // Compound mode: repeat literal text to fill the target length.
+            // Only trusted callers can use literal text.
+            // NOTE: The repeat logic is inlined here (not extracted to a
+            // separate helper) because the injection mechanism is NOT
+            // transitive — a private helper would not be bundled into the
+            // scriptlet output and would cause ReferenceError at runtime.
+            if (!trusted) {
+                return '';
+            }
+            const result: string[] = [];
+            let remaining = length;
+            while (remaining > 0) {
+                const chunk = literalText.slice(0, Math.min(literalText.length, remaining));
+                result.push(chunk);
+                remaining -= chunk.length;
+            }
+            return result.join('');
+        }
+
+        // Just length: → random alphanumeric string
+        return getRandomStrByLength(length);
+    }
+
+    // Literal text passthrough — trusted only.
+    // Deliberately placed AFTER the keyword checks: a trusted directive that
+    // equals a keyword (e.g. 'true', 'emptyObj', 'length:5') must still be
+    // evaluated, not returned verbatim, so this guard cannot move to the top.
+    if (trusted) {
+        return directive;
+    }
+
+    // Untrusted non-keyword → empty string (safety boundary)
+    return '';
+}
+
+/**
+ * Generate a random string.
+ *
+ * Delegates to `generateResponseContent` with `trusted = false`.
  *
  * @param customResponseText response text to include in output
  * @returns random string or null if passed argument is invalid
  */
 export function generateRandomResponse(customResponseText: string): string | null {
-    let customResponse = customResponseText;
-
-    if (customResponse === 'true') {
-        // Generate random alphanumeric string of 10 symbols
-        customResponse = Math.random().toString(36).slice(-10);
-        return customResponse;
-    }
-
-    customResponse = customResponse.replace('length:', '');
-    const rangeRegex = /^\d+-\d+$/;
-    // Return empty string if range is invalid
-    if (!rangeRegex.test(customResponse)) {
-        return null;
-    }
-
-    let rangeMin = getNumberFromString(customResponse.split('-')[0]);
-    let rangeMax = getNumberFromString(customResponse.split('-')[1]);
-
-    if (!nativeIsFinite(rangeMin) || !nativeIsFinite(rangeMax)) {
-        return null;
-    }
-
-    // If rangeMin > rangeMax, swap variables
-    if ((rangeMin) > (rangeMax)) {
-        const temp = rangeMin;
-        rangeMin = rangeMax;
-        rangeMax = temp;
-    }
-
-    const LENGTH_RANGE_LIMIT = 500 * 1000;
-    if ((rangeMax) > LENGTH_RANGE_LIMIT) {
-        return null;
-    }
-
-    const length = getRandomIntInclusive((rangeMin), (rangeMax));
-    customResponse = getRandomStrByLength(length);
-    return customResponse;
+    return generateResponseContent(customResponseText, false);
 }
 
 /**

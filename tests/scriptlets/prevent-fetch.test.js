@@ -327,6 +327,22 @@ if (!isSupported) {
         done();
     });
 
+    test('simple fetch - returns random string with single length', async (assert) => {
+        const BLOCKED_REQUEST = `${FETCH_OBJECTS_PATH}/blocked_request.json`;
+
+        runScriptlet(name, ['blocked_request', 'length:75']);
+        const done = assert.async();
+
+        const response = await fetch(BLOCKED_REQUEST);
+        const parsedData = await response.text();
+        const headerLength = Number(response.headers.get('Content-Length'));
+
+        assert.strictEqual(parsedData.length, 75, 'Response length is exactly 75');
+        assert.strictEqual(headerLength, parsedData.length, 'Header length matches response length');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('simple fetch - valid response type', async (assert) => {
         const OPAQUE_RESPONSE_TYPE = 'opaque';
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;

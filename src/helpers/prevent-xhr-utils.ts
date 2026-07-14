@@ -1,116 +1,9 @@
 import { hit } from './hit';
 import { logMessage } from './log-message';
 import { matchRequestProps } from './match-request-props';
-import { getRandomIntInclusive, getNumberFromString, nativeIsFinite } from './number-utils';
 import { getXhrData } from './request-utils';
-import { objectToString, getRandomStrByLength } from './string-utils';
+import { objectToString, generateResponseContent } from './string-utils';
 import { type Source } from '../scriptlets';
-
-/**
- * Evaluates a response-content directive and returns the generated string.
- *
- * Mirrors uBO's `generateContentFn`. The `trusted` flag gates literal-text
- * passthrough: untrusted callers always get an empty string for non-keyword
- * directives.
- *
- * Supported directives:
- * - `true` — 10-char random alphanumeric
- * - `emptyObj` — `{}`; `emptyArr` — `[]`; `emptyStr` — `''`
- * - `length:N` / `length:N-M` — random alphanumeric (capped at 500 000 chars)
- * - `war:…` — not supported (AdGuard has no WAR infra), yields empty string
- * - literal text — returned as-is for trusted, `''` for untrusted
- *
- * Returns `null` for malformed directives (e.g. invalid `length:` range) so
- * the caller can log them instead of silently producing empty output.
- *
- * @param directive Directive string (empty/undefined treated as `''`).
- * @param trusted When `true`, non-keyword directives are returned literally.
- */
-export function generateResponseContent(
-    directive: string | undefined,
-    trusted: boolean,
-): string | null {
-    // Empty/undefined directive → empty string (no error)
-    if (!directive) {
-        return '';
-    }
-
-    // 'true' → 10-char random alphanumeric (matches generateRandomResponse's 'true')
-    if (directive === 'true') {
-        return Math.random().toString(36).slice(-10);
-    }
-
-    // Safe constant directives
-    if (directive === 'emptyObj') {
-        return '{}';
-    }
-    if (directive === 'emptyArr') {
-        return '[]';
-    }
-    if (directive === 'emptyStr') {
-        return '';
-    }
-
-    // length:N[-M] — random alphanumeric string
-    if (directive.startsWith('length:')) {
-        const lengthArg = directive.slice('length:'.length);
-
-        // Match a single number or a min-max range
-        const rangeMatch = /^(\d+)(?:-(\d+))?$/.exec(lengthArg);
-        if (!rangeMatch) {
-            return null;
-        }
-
-        const rangeMin = getNumberFromString(rangeMatch[1]);
-        // Use second group if present, otherwise it is a single value
-        const rangeMax = rangeMatch[2]
-            ? getNumberFromString(rangeMatch[2])
-            : rangeMin;
-
-        if (
-            rangeMin === null
-            || rangeMax === null
-            || !nativeIsFinite(rangeMin)
-            || !nativeIsFinite(rangeMax)
-        ) {
-            return null;
-        }
-
-        // Swap if min > max
-        let min = rangeMin;
-        let max = rangeMax;
-        if (min > max) {
-            const temp = min;
-            min = max;
-            max = temp;
-        }
-
-        // Cap at 500 000 characters
-        const LENGTH_RANGE_LIMIT = 500 * 1000;
-        if (max > LENGTH_RANGE_LIMIT) {
-            return null;
-        }
-
-        const length = getRandomIntInclusive(min, max);
-        return getRandomStrByLength(length);
-    }
-
-    // 'war:' and 'join:' UBO's directives are not supported by AdGuard;
-    if (directive.startsWith('war:') || directive.startsWith('join:')) {
-        return '';
-    }
-
-    // Literal text passthrough — trusted only.
-    // Deliberately placed AFTER the keyword checks: a trusted directive that
-    // equals a keyword (e.g. 'true', 'emptyObj', 'length:5') must still be
-    // evaluated, not returned verbatim, so this guard cannot move to the top.
-    if (trusted) {
-        return directive;
-    }
-
-    // Untrusted non-keyword → empty string (safety boundary)
-    return '';
-}
 
 /**
  * Sets up XMLHttpRequest interception to prevent matched requests from
@@ -209,8 +102,8 @@ export function createPreventXhrCore(
 
         // Whether responseText is accessible for this responseType.
         // Native XHR throws InvalidStateError when responseText is accessed
-        // with responseType 'blob', 'arraybuffer', or 'document'. For the
-        // default (''), 'text', and 'json' responseTypes it is accessible.
+        // with any responseType other than '' or 'text' (including 'json',
+        // 'blob', 'arraybuffer', and 'document').
         // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseText
         let exposeResponseText = true;
 

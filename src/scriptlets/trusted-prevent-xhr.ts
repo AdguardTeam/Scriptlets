@@ -57,8 +57,12 @@ import { type Source } from './scriptlets';
  *     - `emptyStr` to set responseText and response to an empty string
  *     - colon-separated pair `name:value` string value to customize responseText and response data where
  *         - `name` — only `length` supported for now
- *         - `value` — single number (e.g. `50`) or range on numbers (e.g. `100-300`), limited to 500000 characters
+ *         - `value` — single number (e.g. `50`) or range of numbers (e.g. `100-300`), values above 500000 are rejected
  *     - any other string is treated as **literal text** and returned as the response body as-is
+ *     - `length:` can be combined with literal text in a single directive to
+ *       repeat the text to the specified length, e.g.
+ *       `'length:8000-10000 body ins.adsbygoogle'` or
+ *       `'body ins.adsbygoogle length:8000-10000'`
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.

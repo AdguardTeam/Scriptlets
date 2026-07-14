@@ -211,6 +211,115 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('Randomize response text - large length (length:100000)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'length:100000'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseText.length, 100000, 'Response text is 100000 chars');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Randomize response text (true) - always 10 chars', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'true'];
+
+        // Run multiple times to catch edge cases where Math.random() produces
+        // very small values
+        const lengths = [];
+        for (let i = 0; i < 20; i += 1) {
+            runScriptlet(name, MATCH_DATA);
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((resolve) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open(METHOD, URL);
+                xhr.onload = () => {
+                    lengths.push(xhr.responseText.length);
+                    resolve();
+                };
+                xhr.send();
+            });
+        }
+        assert.ok(
+            lengths.every((len) => len === 10),
+            'Response text is always exactly 10 chars across 20 runs',
+        );
+    });
+
+    test('Compound directive - length:50 with literal text', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'length:50 hello'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseText.length, 50, 'Response text is 50 chars');
+            assert.ok(xhr.responseText.startsWith('hello'), 'Response starts with literal text');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Compound directive - literal text before length:', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'body ins.adsbygoogle length:100'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseText.length, 100, 'Response text is 100 chars');
+            assert.ok(xhr.responseText.startsWith('body ins.adsbygoogle'), 'Response starts with literal text');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Compound directive - length: range with literal text', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'length:80-120 test'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.ok(
+                xhr.responseText.length >= 80 && xhr.responseText.length <= 120,
+                `Response text length in range [80,120]: ${xhr.responseText.length}`,
+            );
+            assert.ok(xhr.responseText.startsWith('test'), 'Response starts with literal text');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('No args, logging', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;

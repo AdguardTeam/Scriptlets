@@ -35,7 +35,7 @@ import { type Source } from './scriptlets';
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
+ * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, directive]])
  * ```
  *
  * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -45,15 +45,15 @@ import { type Source } from './scriptlets';
  *             - `name` is XMLHttpRequest object property name
  *             - `value` is string or regular expression for matching the value of the option
  *     passed to `XMLHttpRequest.open()` call
- * - `randomize` — defaults to `false` for empty responseText,
- *   optional argument to randomize responseText and response of matched XMLHttpRequest's response; possible values:
+ * - `directive` — defaults to `false` for empty responseText,
+ *   optional argument to set responseText and response of matched XMLHttpRequest's response; possible values:
  *     - `true` to randomize responseText and response, random alphanumeric string of 10 symbols
  *     - `emptyObj` to set responseText and response to `{}`
  *     - `emptyArr` to set responseText and response to `[]`
  *     - `emptyStr` to set responseText and response to an empty string
  *     - colon-separated pair `name:value` string value to customize responseText and response data where
  *         - `name` — only `length` supported for now
- *         - `value` — single number (e.g. `50`) or range on numbers (e.g. `100-300`), limited to 500000 characters
+ *         - `value` — single number (e.g. `50`) or range of numbers (e.g. `100-300`), values above 500000 are rejected
  *
  * > Non-keyword values (e.g. literal text) are NOT passed through in the untrusted `prevent-xhr`
  * > scriptlet — they yield an empty string. Use `trusted-prevent-xhr` for literal-text passthrough.
@@ -115,8 +115,8 @@ import { type Source } from './scriptlets';
  * @added v1.5.0.
  */
 /* eslint-enable max-len */
-export function preventXHR(source: Source, propsToMatch?: string, customResponseText?: string): void {
-    createPreventXhrCore(source, propsToMatch, false, customResponseText);
+export function preventXHR(source: Source, propsToMatch?: string, directive?: string): void {
+    createPreventXhrCore(source, propsToMatch, false, directive);
 }
 
 export const preventXHRNames = [
