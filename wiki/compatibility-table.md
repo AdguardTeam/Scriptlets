@@ -52,7 +52,7 @@
 | [prebid](../wiki/about-scriptlets.md#prebid) |  |  |
 | [prevent-addEventListener](../wiki/about-scriptlets.md#prevent-addEventListener) | addEventListener-defuser.js (addEventListener-defuser, aeld, aeld.js, prevent-addEventListener, prevent-addEventListener.js) | prevent-listener |
 | [prevent-adfly](../wiki/about-scriptlets.md#prevent-adfly) |  |  |
-| [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) | nobab.js (nobab) |  |
+| [prevent-bab](../wiki/about-scriptlets.md#prevent-bab) |  |  |
 | [prevent-canvas](../wiki/about-scriptlets.md#prevent-canvas) | prevent-canvas.js (prevent-canvas) |  |
 | [prevent-constructor](../wiki/about-scriptlets.md#prevent-constructor) |  |  |
 | [prevent-element-src-loading](../wiki/about-scriptlets.md#prevent-element-src-loading) |  |  |
@@ -175,7 +175,7 @@
 | [pardot-1.0](../wiki/about-redirects.md#pardot-1.0) |  |  |
 | [prebid](../wiki/about-redirects.md#prebid) |  |  |
 | [prebid-ads](../wiki/about-redirects.md#prebid-ads) | prebid-ads.js |  |
-| [prevent-bab](../wiki/about-redirects.md#prevent-bab) | nobab.js |  |
+| [prevent-bab](../wiki/about-redirects.md#prevent-bab) |  |  |
 | [prevent-bab2](../wiki/about-redirects.md#prevent-bab2) | nobab2.js |  |
 | [prevent-fab-3.2.0](../wiki/about-redirects.md#prevent-fab-3.2.0) | nofab.js |  |
 | [prevent-popads-net](../wiki/about-redirects.md#prevent-popads-net) | popads.js |  |

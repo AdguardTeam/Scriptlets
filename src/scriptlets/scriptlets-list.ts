@@ -49,6 +49,7 @@ export { preventRefresh } from './prevent-refresh';
 export { preventElementSrcLoading } from './prevent-element-src-loading';
 export { noTopics } from './no-topics';
 export { trustedReplaceXhrResponse } from './trusted-replace-xhr-response';
+export { trustedPreventXhr } from './trusted-prevent-xhr';
 export { xmlPrune } from './xml-prune';
 export { m3uPrune } from './m3u-prune';
 export { trustedSetCookie } from './trusted-set-cookie';

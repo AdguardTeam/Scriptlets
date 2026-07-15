@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+- `trusted-prevent-xhr` scriptlet, a trusted variant of `prevent-xhr` that
+  supports passing arbitrary literal text as the XHR response body [#417].
+- Expanded `prevent-xhr` `randomize` directive: added `emptyObj`, `emptyArr`,
+  `emptyStr`, single-value `length:N` (e.g. `length:50`).
+- `prevent-xhr` and `trusted-prevent-xhr` now handle `document` and `json` XHR
+  `responseType` values when intercepting matched requests.
+
+### Removed
+
+- UBO aliases for `prevent-bab` scriptlet and redirect.
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
+[#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
+
 ## [2.4.3] - 2026-06-24
 
 ### Added

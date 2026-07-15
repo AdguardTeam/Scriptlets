@@ -160,8 +160,7 @@
             "adg": "prevent-adfly"
         },
         {
-            "adg": "prevent-bab",
-            "ubo": "nobab.js (nobab)"
+            "adg": "prevent-bab"
         },
         {
             "adg": "prevent-canvas",
@@ -579,8 +578,7 @@
             "ubo": "prebid-ads.js"
         },
         {
-            "adg": "prevent-bab",
-            "ubo": "nobab.js"
+            "adg": "prevent-bab"
         },
         {
             "adg": "prevent-bab2",
