@@ -14,6 +14,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `json-edit`, `json-edit-xhr-response`, and `json-edit-fetch-response`
+  scriptlet aliases as uBO-compatible names for `json-prune`,
+  `json-prune-xhr-response`, and `json-prune-fetch-response` respectively [#566].
+- Dot-prefixed JSONPath auto-detection in `resolveJsonSyntaxMode` — expressions
+  starting with `.` are now treated as JSONPath mode without explicitly
+  passing `mode=jsonpath` [#566].
 - `trusted-prevent-xhr` scriptlet, a trusted variant of `prevent-xhr` that
   supports passing arbitrary literal text as the XHR response body [#417].
 - Expanded `prevent-xhr` `randomize` directive: added `emptyObj`, `emptyArr`,
@@ -35,6 +41,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
+[#566]: https://github.com/AdguardTeam/Scriptlets/issues/566
 
 ## [2.4.3] - 2026-06-24
 

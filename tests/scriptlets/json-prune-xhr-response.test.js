@@ -45,6 +45,125 @@ if (isSupported) {
         assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
     });
 
+    test('Checking if json-edit-xhr-response alias name works', (assert) => {
+        const adgParams = {
+            name,
+            engine: 'test',
+            verbose: true,
+        };
+        const jsonEditParams = {
+            name: 'json-edit-xhr-response',
+            engine: 'test',
+            verbose: true,
+        };
+
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByJsonEditParams = window.scriptlets.invoke(jsonEditParams);
+
+        assert.strictEqual(codeByAdgParams, codeByJsonEditParams, 'json-edit-xhr-response name - ok');
+    });
+
+    test('Checking if json-edit-xhr-response.js alias name works', (assert) => {
+        const adgParams = {
+            name: 'json-edit-xhr-response',
+            engine: 'test',
+            verbose: true,
+        };
+        const jsonEditJsParams = {
+            name: 'json-edit-xhr-response.js',
+            engine: 'test',
+            verbose: true,
+        };
+
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByJsonEditJsParams = window.scriptlets.invoke(jsonEditJsParams);
+
+        assert.strictEqual(codeByAdgParams, codeByJsonEditJsParams, 'json-edit-xhr-response.js name - ok');
+    });
+
+    test('Checking if ubo-json-edit-xhr-response alias name works', (assert) => {
+        const adgParams = {
+            name,
+            engine: 'test',
+            verbose: true,
+        };
+        const uboJsonEditParams = {
+            name: 'ubo-json-edit-xhr-response.js',
+            engine: 'test',
+            verbose: true,
+        };
+
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByUboJsonEditParams = window.scriptlets.invoke(uboJsonEditParams);
+
+        assert.strictEqual(codeByAdgParams, codeByUboJsonEditParams, 'ubo-json-edit-xhr-response name - ok');
+    });
+
+    test('json-edit-xhr-response alias prunes object properties via $-prefixed JSONPath', async (assert) => {
+        const done = assert.async();
+        runScriptlet(
+            'json-edit-xhr-response',
+            ['$.cc[?(@.src=="example.org")].src', '', `${FETCH_OBJECTS_PATH}/test03.json`, '', 'jsonpath'],
+        );
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.response.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('json-edit-xhr-response alias prunes object properties via dot-prefixed JSONPath', async (assert) => {
+        const done = assert.async();
+        runScriptlet(
+            'json-edit-xhr-response',
+            ['.cc.src', '', `${FETCH_OBJECTS_PATH}/test03.json`],
+        );
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.response.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('json-edit-xhr-response alias does not support setting values', async (assert) => {
+        assert.expect(3);
+        const done = assert.async();
+        runScriptlet(
+            'json-edit-xhr-response',
+            ['$.cc[?(@.src=="example.org")].src=test.com', '', `${FETCH_OBJECTS_PATH}/test03.json`, '', 'jsonpath'],
+        );
+
+        const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';
+
+        // mock console.log function for log checking
+        console.log = function log(input) {
+            if (input.includes('trace')) {
+                return;
+            }
+            console.debug(input);
+            assert.ok(input.includes(message), 'should log message in console');
+        };
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.response.cc.src, 'example.org', 'Content correctly fetched and not modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
     test('No args, logging', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;

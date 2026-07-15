@@ -49,6 +49,116 @@ if (!isSupported) {
         assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
     });
 
+    test('Checking if json-edit-fetch-response alias name works', (assert) => {
+        const adgParams = {
+            name,
+            engine: 'test',
+            verbose: true,
+        };
+        const jsonEditParams = {
+            name: 'json-edit-fetch-response',
+            engine: 'test',
+            verbose: true,
+        };
+
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByJsonEditParams = window.scriptlets.invoke(jsonEditParams);
+
+        assert.strictEqual(codeByAdgParams, codeByJsonEditParams, 'json-edit-fetch-response name - ok');
+    });
+
+    test('Checking if json-edit-fetch-response.js alias name works', (assert) => {
+        const adgParams = {
+            name: 'json-edit-fetch-response',
+            engine: 'test',
+            verbose: true,
+        };
+        const jsonEditJsParams = {
+            name: 'json-edit-fetch-response.js',
+            engine: 'test',
+            verbose: true,
+        };
+
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByJsonEditJsParams = window.scriptlets.invoke(jsonEditJsParams);
+
+        assert.strictEqual(codeByAdgParams, codeByJsonEditJsParams, 'json-edit-fetch-response.js name - ok');
+    });
+
+    test('Checking if ubo-json-edit-fetch-response alias name works', (assert) => {
+        const adgParams = {
+            name,
+            engine: 'test',
+            verbose: true,
+        };
+        const uboJsonEditParams = {
+            name: 'ubo-json-edit-fetch-response.js',
+            engine: 'test',
+            verbose: true,
+        };
+
+        const codeByAdgParams = window.scriptlets.invoke(adgParams);
+        const codeByUboJsonEditParams = window.scriptlets.invoke(uboJsonEditParams);
+
+        assert.strictEqual(codeByAdgParams, codeByUboJsonEditParams, 'ubo-json-edit-fetch-response name - ok');
+    });
+
+    test('json-edit-fetch-response alias prunes object properties via $-prefixed JSONPath', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const done = assert.async();
+
+        runScriptlet('json-edit-fetch-response', ['$.cc[?(@.src=="example.org")].src', '', 'test03', '', 'jsonpath']);
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualJson = await response.json();
+
+        assert.strictEqual(actualJson.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('json-edit-fetch-response alias prunes object properties via dot-prefixed JSONPath', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const done = assert.async();
+
+        runScriptlet('json-edit-fetch-response', ['.cc.src', '', 'test03']);
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualJson = await response.json();
+
+        assert.strictEqual(actualJson.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('json-edit-fetch-response alias does not support setting values', async (assert) => {
+        assert.expect(2);
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const done = assert.async();
+
+        runScriptlet(
+            'json-edit-fetch-response',
+            ['$.cc[?(@.src=="example.org")].src=test.com', '', 'test03', '', 'jsonpath'],
+        );
+
+        const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';
+
+        // mock console.log function for log checking
+        console.log = function log(input) {
+            if (input.includes('trace')) {
+                return;
+            }
+            console.debug(input);
+            assert.ok(input.includes(message), 'should log message in console');
+        };
+
+        const response = await fetch(INPUT_JSON_PATH);
+        const actualJson = await response.json();
+
+        assert.strictEqual(actualJson.cc.src, 'example.org', 'Content correctly fetched and not modified');
+        done();
+    });
+
     test('No arguments, no replacement, logging', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
         const TEST_METHOD = 'GET';
