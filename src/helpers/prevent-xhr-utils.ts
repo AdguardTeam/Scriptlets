@@ -1,116 +1,39 @@
-import {
-    hit,
-    objectToString,
-    generateRandomResponse,
-    matchRequestProps,
-    getXhrData,
-    logMessage,
-    toRegExp,
-    isValidStrPattern,
-    escapeRegExp,
-    isEmptyObject,
-    getNumberFromString,
-    nativeIsFinite,
-    nativeIsNaN,
-    parseMatchProps,
-    isValidParsedData,
-    getMatchPropsData,
-    getRequestProps,
-    getRandomIntInclusive,
-    getRandomStrByLength,
-} from '../helpers';
+import { hit } from './hit';
+import { logMessage } from './log-message';
+import { matchRequestProps } from './match-request-props';
+import { getXhrData } from './request-utils';
+import { objectToString, generateResponseContent } from './string-utils';
+import { type Source } from '../scriptlets';
 
-/* eslint-disable max-len */
 /**
- * @scriptlet prevent-xhr
+ * Sets up XMLHttpRequest interception to prevent matched requests from
+ * reaching the network, substituting a generated response.
  *
- * @description
- * Prevents `xhr` calls if **all** given parameters match.
+ * Shared core used by both `prevent-xhr` (untrusted) and `trusted-prevent-xhr`
+ * scriptlets. The `trusted` flag controls whether literal text is passed
+ * through as the response body.
  *
- * Related UBO scriptlet:
- * https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
- *
- * ### Syntax
- *
- * ```text
- * example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
- * ```
- *
- * - `propsToMatch` — optional, string of space-separated properties to match; possible props:
- *     - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
- *       empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
- *         - colon-separated pairs `name:value` where
- *             - `name` is XMLHttpRequest object property name
- *             - `value` is string or regular expression for matching the value of the option
- *     passed to `XMLHttpRequest.open()` call
- * - `randomize` — defaults to `false` for empty responseText,
- *   optional argument to randomize responseText and response of matched XMLHttpRequest's response; possible values:
- *     - `true` to randomize responseText and response, random alphanumeric string of 10 symbols
- *     - colon-separated pair `name:value` string value to customize responseText and response data where
- *         - `name` — only `length` supported for now
- *         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
- *
- * > Usage with no arguments will log XMLHttpRequest objects to browser console;
- * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
- *
- * ### Examples
- *
- * 1. Log all XMLHttpRequests
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr')
- *     ```
- *
- * 1. Prevent all XMLHttpRequests
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', '*')
- *     example.org#%#//scriptlet('prevent-xhr', '')
- *     ```
- *
- * 1. Prevent XMLHttpRequests for specific url
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org')
- *     ```
- *
- * 1. Prevent XMLHttpRequests for specific request method
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'method:HEAD')
- *     ```
- *
- * 1. Prevent XMLHttpRequests for specific url and specified request methods
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org method:/HEAD|GET/')
- *     ```
- *
- * 1. Prevent XMLHttpRequests for specific url and randomize it's response text
- *
- *     ```adblock
- *     example.org#%#//scriptlet('prevent-xhr', 'example.org', 'true')
- *     ```
- *
- * 1. Prevent XMLHttpRequests for specific url and randomize it's response text with range
- *
- *     ```adblock
- *    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
- *     ```
- *
- * @added v1.5.0.
+ * @param source Scriptlet source object for hit/logging.
+ * @param propsToMatch Optional space-separated props to match;
+ * `undefined` → log only (do not block).
+ * @param trusted When `true`, non-keyword directives are returned as literal text.
+ * @param directive Response-content directive (may be `undefined`).
  */
-/* eslint-enable max-len */
-export function preventXHR(source, propsToMatch, customResponseText) {
+export function createPreventXhrCore(
+    source: Source,
+    propsToMatch: string | undefined,
+    trusted: boolean,
+    directive: string | undefined,
+): void {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
         return;
     }
 
-    const nativeOpen = window.XMLHttpRequest.prototype.open;
-    const nativeGetResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
-    const nativeGetAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
+    const nativeOpen: any = window.XMLHttpRequest.prototype.open;
+    const nativeGetResponseHeader: any = window.XMLHttpRequest.prototype.getResponseHeader;
+    const nativeGetAllResponseHeaders: any = window.XMLHttpRequest.prototype.getAllResponseHeaders;
 
     // Store matched XHR requests and their data in private structures
     // to prevent bypass via thisArg property manipulation
@@ -118,14 +41,14 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     const matchedXhrRequests = new Map();
     const xhrRequestHeaders = new Map();
 
-    let xhrData;
-    let modifiedResponse = '';
-    let modifiedResponseText = '';
-
-    const openWrapper = (target, thisArg, args) => {
+    const openWrapper = (
+        target: any,
+        thisArg: any,
+        args: any[],
+    ): any => {
         // Get original request properties
         // eslint-disable-next-line prefer-spread
-        xhrData = getXhrData.apply(null, args);
+        const xhrData: any = getXhrData.apply(null, args as any);
 
         if (typeof propsToMatch === 'undefined') {
             // Log if no propsToMatch given
@@ -146,13 +69,13 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         // needed for getResponseHeader() and getAllResponseHeaders() methods
         if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
             xhrRequestHeaders.set(thisArg, []);
-            const setRequestHeaderWrapper = (target, thisArg, args) => {
+            const setRequestHeaderWrapper = (t: any, thisArg2: any, a: any[]): any => {
                 // Collect headers
-                const headers = xhrRequestHeaders.get(thisArg);
+                const headers = xhrRequestHeaders.get(thisArg2);
                 if (headers) {
-                    headers.push(args);
+                    headers.push(a);
                 }
-                return Reflect.apply(target, thisArg, args);
+                return Reflect.apply(t, thisArg2, a);
             };
             const setRequestHeaderHandler = {
                 apply: setRequestHeaderWrapper,
@@ -164,27 +87,67 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         return Reflect.apply(target, thisArg, args);
     };
 
-    const sendWrapper = (target, thisArg, args) => {
+    const sendWrapper = (target: any, thisArg: any, args: any[]): any => {
         if (!matchedXhrRequests.has(thisArg)) {
             return Reflect.apply(target, thisArg, args);
         }
 
         const storedXhrData = matchedXhrRequests.get(thisArg);
 
-        if (thisArg.responseType === 'blob') {
-            modifiedResponse = new Blob();
-        }
-        if (thisArg.responseType === 'arraybuffer') {
-            modifiedResponse = new ArrayBuffer();
-        }
+        const responseType = thisArg.responseType;
 
-        if (customResponseText) {
-            const randomText = generateRandomResponse(customResponseText);
-            if (randomText) {
-                modifiedResponse = randomText;
-                modifiedResponseText = randomText;
+        let modifiedResponse: any = '';
+        let modifiedResponseText = '';
+        let modifiedResponseXML: any;
+
+        // Whether responseText is accessible for this responseType.
+        // Native XHR throws InvalidStateError when responseText is accessed
+        // with any responseType other than '' or 'text' (including 'json',
+        // 'blob', 'arraybuffer', and 'document').
+        // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseText
+        let exposeResponseText = true;
+
+        if (responseType === 'blob') {
+            modifiedResponse = new Blob();
+            exposeResponseText = false;
+        } else if (responseType === 'arraybuffer') {
+            modifiedResponse = new ArrayBuffer(0);
+            exposeResponseText = false;
+        } else if (responseType === 'document') {
+            modifiedResponse = new DOMParser().parseFromString('', 'text/html');
+            modifiedResponseXML = modifiedResponse;
+            exposeResponseText = false;
+        } else if (responseType === 'json') {
+            // For json responseType, response is the parsed JSON object (or
+            // null if the text is not valid JSON). Accessing responseText with
+            // responseType 'json' throws InvalidStateError in native XHR
+            // (Chromium included), so we do NOT expose it for the JSON branch.
+            // Trusted directives can pass a literal JSON string (e.g.
+            // '{"blocked":true}') that gets parsed and exposed as a parsed
+            // object via response.
+            let jsonText = '{}';
+            if (directive) {
+                const content = generateResponseContent(directive, trusted);
+                if (content !== null) {
+                    jsonText = content;
+                } else {
+                    logMessage(source, `Invalid randomize parameter: '${directive}'`);
+                }
+            }
+            exposeResponseText = false;
+            try {
+                modifiedResponse = JSON.parse(jsonText);
+            } catch {
+                // Invalid JSON → response is null, matching native XHR behavior
+                modifiedResponse = null;
+            }
+        } else if (directive) {
+            const content = generateResponseContent(directive, trusted);
+            if (content !== null) {
+                modifiedResponse = content;
+                modifiedResponseText = content;
             } else {
-                logMessage(source, `Invalid randomize parameter: '${customResponseText}'`);
+                logMessage(source, `Invalid randomize parameter: '${directive}'`);
             }
         }
 
@@ -200,9 +163,10 @@ export function preventXHR(source, propsToMatch, customResponseText) {
          * By using Object.defineProperty, the function ensures
          * that the readyState can be modified and configured appropriately,
          * while allowing the property to be writable.
-         * @param {number} state - request status number.
+         *
+         * @param state request status number.
          */
-        const transitionReadyState = (state) => {
+        const transitionReadyState = (state: number): void => {
             // For readyState 2, we need to set responseURL
             // https://github.com/AdguardTeam/Scriptlets/issues/485
             if (state === 2) {
@@ -215,15 +179,27 @@ export function preventXHR(source, propsToMatch, customResponseText) {
             if (state === 4) {
                 const { responseXML } = forgedRequest;
 
-                // Mock response object
-                Object.defineProperties(thisArg, {
+                // Use the generated responseXML for 'document' responseType,
+                // otherwise fall back to the forged request's value (null)
+                const finalResponseXML = typeof modifiedResponseXML !== 'undefined'
+                    ? modifiedResponseXML
+                    : responseXML;
+
+                // Mock response object. Only expose responseText for
+                // responseTypes where it is accessible in native XHR.
+                // For 'blob', 'arraybuffer', and 'document' the native getter
+                // throws InvalidStateError, so we leave it untouched.
+                const mockProps: PropertyDescriptorMap = {
                     readyState: { value: 4, writable: false },
                     statusText: { value: 'OK', writable: false },
-                    responseXML: { value: responseXML, writable: false },
+                    responseXML: { value: finalResponseXML, writable: false },
                     status: { value: 200, writable: false },
                     response: { value: modifiedResponse, writable: false },
-                    responseText: { value: modifiedResponseText, writable: false },
-                });
+                };
+                if (exposeResponseText) {
+                    mockProps.responseText = { value: modifiedResponseText, writable: false };
+                }
+                Object.defineProperties(thisArg, mockProps);
                 hit(source);
             } else {
                 Object.defineProperty(thisArg, 'readyState', {
@@ -264,7 +240,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         // Mimic request headers before sending
         // setRequestHeader can only be called on open request objects
         const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
-        collectedHeaders.forEach((header) => {
+        collectedHeaders.forEach((header: any) => {
             const name = header[0];
             const value = header[1];
             forgedRequest.setRequestHeader(name, value);
@@ -276,15 +252,15 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     };
 
     /**
-     * Mock XMLHttpRequest.prototype.getHeaderHandler() to avoid adblocker detection.
+     * Mock XMLHttpRequest.prototype.getResponseHeader() to avoid adblocker detection.
      *
-     * @param {Function} target XMLHttpRequest.prototype.getHeaderHandler().
-     * @param {XMLHttpRequest} thisArg The request.
-     * @param {string[]} args Header name is passed as first argument.
+     * @param target Native `getResponseHeader` method.
+     * @param thisArg The request.
+     * @param args Header name is passed as first argument.
      *
-     * @returns {string|null} Header value or null if header is not set.
+     * @returns Header value or null if header is not set.
      */
-    const getHeaderWrapper = (target, thisArg, args) => {
+    const getHeaderWrapper = (target: any, thisArg: any, args: any[]): any => {
         const collectedHeaders = xhrRequestHeaders.get(thisArg);
         if (!collectedHeaders) {
             return nativeGetResponseHeader.apply(thisArg, args);
@@ -295,7 +271,7 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         // The search for the header name is case-insensitive
         // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getResponseHeader
         const searchHeaderName = args[0].toLowerCase();
-        const matchedHeader = collectedHeaders.find((header) => {
+        const matchedHeader = collectedHeaders.find((header: any) => {
             const headerName = header[0].toLowerCase();
             return headerName === searchHeaderName;
         });
@@ -307,21 +283,24 @@ export function preventXHR(source, propsToMatch, customResponseText) {
     /**
      * Mock XMLHttpRequest.prototype.getAllResponseHeaders() to avoid adblocker detection.
      *
-     * @param {Function} target XMLHttpRequest.prototype.getAllResponseHeaders().
-     * @param {XMLHttpRequest} thisArg The request.
+     * @param target Native `getAllResponseHeaders` method.
+     * @param thisArg The request.
      *
-     * @returns {string} All headers as a string. For no headers an empty string is returned.
+     * @returns All headers as a string. For no headers an empty string is returned.
      */
-    const getAllHeadersWrapper = (target, thisArg) => {
+    const getAllHeadersWrapper = (target: any, thisArg: any): any => {
         const collectedHeaders = xhrRequestHeaders.get(thisArg);
+
         if (!collectedHeaders) {
             return nativeGetAllResponseHeaders.call(thisArg);
         }
+
         if (!collectedHeaders.length) {
             return '';
         }
+
         const allHeadersStr = collectedHeaders
-            .map((header) => {
+            .map((header: any) => {
                 /**
                  * TODO: array destructuring may be used here
                  * after the typescript implementation and bundling refactoring
@@ -361,36 +340,3 @@ export function preventXHR(source, propsToMatch, customResponseText) {
         getAllHeadersHandler,
     );
 }
-
-export const preventXHRNames = [
-    'prevent-xhr',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'no-xhr-if.js',
-    'ubo-no-xhr-if.js',
-    'ubo-no-xhr-if',
-];
-
-// eslint-disable-next-line prefer-destructuring
-preventXHR.primaryName = preventXHRNames[0];
-
-preventXHR.injections = [
-    hit,
-    objectToString,
-    generateRandomResponse,
-    matchRequestProps,
-    getXhrData,
-    logMessage,
-    toRegExp,
-    isValidStrPattern,
-    escapeRegExp,
-    isEmptyObject,
-    getNumberFromString,
-    nativeIsFinite,
-    nativeIsNaN,
-    parseMatchProps,
-    isValidParsedData,
-    getMatchPropsData,
-    getRequestProps,
-    getRandomIntInclusive,
-    getRandomStrByLength,
-];

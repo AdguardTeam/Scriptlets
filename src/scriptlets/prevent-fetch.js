@@ -24,6 +24,7 @@ import {
     isValidParsedData,
     getMatchPropsData,
     generateRandomResponse,
+    generateResponseContent,
     nativeIsFinite,
     nativeIsNaN,
     getNumberFromString,
@@ -63,7 +64,7 @@ import {
  *     - `true` — random alphanumeric string of 10 symbols
  *     - colon-separated pair `name:value` string value to customize `responseBody` where
  *         - `name` — only `length` supported for now
- *         - `value` — range on numbers, for example `100-300`, limited to 500000 characters
+ *         - `value` — single number (e.g. `50`) or range of numbers (e.g. `100-300`), values above 500000 are rejected
  * - `responseConfig` — optional, string for defining response properties.
  *   Original response values are used if not specified. Possible values:
  *     - response type shorthand (for backwards compatibility):
@@ -174,7 +175,7 @@ export function preventFetch(source, propsToMatch, responseBody = 'emptyObj', re
         strResponseBody = '[]';
     } else if (responseBody === 'emptyStr') {
         strResponseBody = '';
-    } else if (responseBody === 'true' || responseBody.match(/^length:\d+-\d+$/)) {
+    } else if (responseBody === 'true' || responseBody.match(/^length:\d+(?:-\d+)?$/)) {
         strResponseBody = generateRandomResponse(responseBody);
     } else {
         logMessage(source, `Invalid responseBody parameter: '${responseBody}'`);
@@ -333,6 +334,7 @@ preventFetch.injections = [
     isValidParsedData,
     getMatchPropsData,
     generateRandomResponse,
+    generateResponseContent,
     nativeIsFinite,
     nativeIsNaN,
     getNumberFromString,

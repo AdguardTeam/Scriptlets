@@ -169,7 +169,7 @@ You MUST follow the following rules for EVERY task that you perform:
 Non-trivial changes MUST be preceded by a spec created with the SDD slash
 commands, which should be available globally (preferred).
 
-Specs are local-only and never committed — `.sdd/.current/` contents are
+Specs are local-only and never committed — `.sdd/` contents are
 gitignored (see `.gitignore`).
 
 ## Code guidelines
