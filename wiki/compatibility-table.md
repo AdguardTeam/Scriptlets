@@ -34,6 +34,7 @@
 | [google-ima3-dai](../wiki/about-scriptlets.md#google-ima3-dai) |  |  |
 | [googlesyndication-adsbygoogle](../wiki/about-scriptlets.md#googlesyndication-adsbygoogle) |  |  |
 | [googletagservices-gpt](../wiki/about-scriptlets.md#googletagservices-gpt) | googletagservices_gpt.js (ubo-googletagservices_gpt.js, ubo-googletagservices_gpt) |  |
+| [json-edit](../wiki/about-scriptlets.md#json-edit) | json-edit.js (json-edit) |  |
 | [json-prune](../wiki/about-scriptlets.md#json-prune) | json-prune.js (json-prune) | json-prune |
 | [log](../wiki/about-scriptlets.md#log) |  | log |
 | [log-addEventListener](../wiki/about-scriptlets.md#log-addEventListener) |  |  |
@@ -115,7 +116,9 @@
 |  | trusted-set-cookie.js (trusted-set-cookie) |  |
 |  | trusted-set-local-storage-item.js (trusted-set-local-storage-item) |  |
 |  | trusted-replace-fetch-response.js (trusted-replace-fetch-response) |  |
+| [json-edit-fetch-response](../wiki/about-scriptlets.md#json-edit-fetch-response) | json-edit-fetch-response.js (json-edit-fetch-response) |  |
 | [json-prune-fetch-response](../wiki/about-scriptlets.md#json-prune-fetch-response) | json-prune-fetch-response.js (json-prune-fetch-response) |  |
+| [json-edit-xhr-response](../wiki/about-scriptlets.md#json-edit-xhr-response) | json-edit-xhr-response.js (json-edit-xhr-response) |  |
 | [json-prune-xhr-response](../wiki/about-scriptlets.md#json-prune-xhr-response) | json-prune-xhr-response.js (json-prune-xhr-response) |  |
 |  | trusted-replace-xhr-response.js (trusted-replace-xhr-response) |  |
 |  | multiup.js |  |

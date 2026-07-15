@@ -415,6 +415,11 @@ export const jsonPruneXhrResponseNames = [
     'json-prune-xhr-response.js',
     'ubo-json-prune-xhr-response.js',
     'ubo-json-prune-xhr-response',
+    // uBO-compatible alias
+    'json-edit-xhr-response',
+    'json-edit-xhr-response.js',
+    'ubo-json-edit-xhr-response.js',
+    'ubo-json-edit-xhr-response',
 ];
 
 // eslint-disable-next-line prefer-destructuring

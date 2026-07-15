@@ -268,6 +268,11 @@ export const jsonPruneFetchResponseNames = [
     'json-prune-fetch-response.js',
     'ubo-json-prune-fetch-response.js',
     'ubo-json-prune-fetch-response',
+    // uBO-compatible alias
+    'json-edit-fetch-response',
+    'json-edit-fetch-response.js',
+    'ubo-json-edit-fetch-response.js',
+    'ubo-json-edit-fetch-response',
 ];
 
 // eslint-disable-next-line prefer-destructuring
