@@ -198,3 +198,4 @@
 |  | sensors-analytics.js |  |
 |  | nitropay_ads.js |  |
 |  | adthrive_abd.js |  |
+|  | piano-analytics.js |  |

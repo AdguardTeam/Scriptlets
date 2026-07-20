@@ -31,9 +31,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - UBO aliases for `prevent-bab` scriptlet and redirect.
 
+### Fixed
+
+- `trusted-replace-argument` — when `replace:` is used and the argument is not a string,
+  the argument is no longer blindly overwritten with the replacement value; the replacement
+  is applied to its string form and the original value and type are kept when the pattern
+  does not match [#570].
+
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
 [#566]: https://github.com/AdguardTeam/Scriptlets/issues/566
+[#570]: https://github.com/AdguardTeam/Scriptlets/issues/570
 
 ## [2.4.3] - 2026-06-24
 

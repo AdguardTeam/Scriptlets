@@ -13,6 +13,8 @@ const nativeDocumentQuerySelectorAll = window.document.querySelectorAll;
 const nativeMutationObserver = window.MutationObserver;
 const nativeObjectDefineProperty = window.Object.defineProperty;
 const nativeStringReplace = String.prototype.replace;
+const nativeSetAttribute = window.Element.prototype.setAttribute;
+const nativeJSONStringify = window.JSON.stringify;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -31,6 +33,8 @@ const afterEach = () => {
     window.MutationObserver = nativeMutationObserver;
     window.Object.defineProperty = nativeObjectDefineProperty;
     window.String.prototype.replace = nativeStringReplace;
+    window.Element.prototype.setAttribute = nativeSetAttribute;
+    window.JSON.stringify = nativeJSONStringify;
 };
 
 module(name, { beforeEach, afterEach });
@@ -288,5 +292,51 @@ test('Replace argument in String.prototype.replace to "test" if pattern matches'
         nativeStringReplace.toString(),
         'String.prototype.replace.toString() returns the original value',
     );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Non-string argument stays intact when "replace:" pattern does not match', (assert) => {
+    runScriptlet(name, ['Element.prototype.setAttribute', '1', 'replace:/whatever/test/g']);
+
+    const div = document.createElement('div');
+    div.setAttribute('data-attr', 1234);
+
+    assert.strictEqual(div.getAttribute('data-attr'), '1234', 'Numeric attribute value should stay intact');
+    assert.strictEqual(
+        Element.prototype.setAttribute.toString(),
+        nativeSetAttribute.toString(),
+        'setAttribute.toString() returns the original value',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Non-string argument keeps its type when "replace:" pattern does not match', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '0', 'replace:/whatever/test/g']);
+
+    const result = JSON.stringify(1234);
+
+    // Would be '"test"' if the number was blindly replaced with the replacement string,
+    // and '"1234"' if the number was coerced to a string despite the non-matching regex
+    assert.strictEqual(result, '1234', 'Number argument should keep its value and type');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Non-string argument is replaced when "replace:" pattern matches its string form', (assert) => {
+    runScriptlet(name, ['Element.prototype.setAttribute', '1', 'replace:/23/98/']);
+
+    const div = document.createElement('div');
+    div.setAttribute('data-attr', 1234);
+
+    assert.strictEqual(div.getAttribute('data-attr'), '1984', 'Matching part of the numeric value is replaced');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Non-string constructor argument stays intact when "replace:" pattern does not match', (assert) => {
+    runScriptlet(name, ['Array', '1', 'replace:/whatever/test/g']);
+
+    // eslint-disable-next-line no-array-constructor
+    const result = new Array(1, 2, 3);
+
+    assert.deepEqual(result, [1, 2, 3], 'Constructor arguments should stay intact');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
