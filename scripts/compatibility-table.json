@@ -654,6 +654,9 @@
         },
         {
             "ubo": "adthrive_abd.js"
+        },
+        {
+            "ubo": "piano-analytics.js"
         }
     ]
 }
