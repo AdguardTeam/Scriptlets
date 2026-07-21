@@ -312,3 +312,33 @@ test('no match -- invalid callback - undefined', (assert) => {
     );
     clearTimeout(testTimeout);
 });
+
+test('callbacks with modified prototype are matched and adjusted', (assert) => {
+    // both callback sources contain 'value'; boosted delay = 400 * 0.1 = 40 ms
+    const scriptletArgs = ['value', '400', '0.1'];
+    runScriptlet(name, scriptletArgs);
+
+    const done = assert.async();
+
+    const protoCallback = () => {
+        window.someKey = 'value';
+    };
+    Object.setPrototypeOf(protoCallback, { foo: 1 });
+
+    const nullProtoCallback = () => {
+        window.intervalValue = 'value';
+    };
+    Object.setPrototypeOf(nullProtoCallback, null);
+
+    const timeout1 = setTimeout(protoCallback, 400);
+    const timeout2 = setTimeout(nullProtoCallback, 400);
+
+    nativeSetTimeout(() => {
+        assert.strictEqual(window.someKey, 'value', 'replaced-prototype callback was adjusted');
+        assert.strictEqual(window.intervalValue, 'value', 'null-prototype callback was adjusted');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        done();
+    }, 200);
+});

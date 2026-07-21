@@ -168,3 +168,24 @@ test('prevent-requestAnimationFrame: does not work - invalid regexp pattern', (a
         done();
     }, 200);
 });
+
+test('callback with modified prototype is matched and prevented', (assert) => {
+    const done = assert.async();
+
+    window.rafMarker = 'initial';
+    runScriptlet(name, ['rafMarker']);
+
+    const callback = () => {
+        window.rafMarker = 'changed';
+    };
+    Object.setPrototypeOf(callback, { foo: 1 });
+
+    window.requestAnimationFrame(callback);
+
+    setTimeout(() => {
+        assert.strictEqual(window.rafMarker, 'initial', 'replaced-prototype callback was prevented');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        clearGlobalProps('rafMarker');
+        done();
+    }, 100);
+});

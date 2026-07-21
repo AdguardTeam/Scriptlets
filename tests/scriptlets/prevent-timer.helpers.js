@@ -958,4 +958,65 @@ export const createPreventTimerTests = (config) => {
         const timerId2 = window[timerMethodName](other, 30);
         trackedTimers.push(timerId2);
     });
+
+    test('callbacks with modified prototype are matched and prevented', (assert) => {
+        const done = assert.async();
+
+        window.one = 'value';
+        window.two = 'value';
+        // matchCallback matches both callback sources; matchDelay matches 100
+        runScriptlet(name, ['changed', '100']);
+
+        const protoCallback = () => {
+            window.one = 'changed';
+        };
+        Object.setPrototypeOf(protoCallback, { foo: 1 });
+
+        const nullProtoCallback = () => {
+            window.two = 'changed';
+        };
+        Object.setPrototypeOf(nullProtoCallback, null);
+
+        trackedTimers.push(window[timerMethodName](protoCallback, 100));
+        trackedTimers.push(window[timerMethodName](nullProtoCallback, 100));
+
+        nativeSetTimeout(() => {
+            assert.strictEqual(window.one, 'value', 'replaced-prototype callback was prevented');
+            assert.strictEqual(window.two, 'value', 'null-prototype callback was prevented');
+            assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+            done();
+        }, 200);
+    });
+
+    test('null-prototype callback is logged without errors', (assert) => {
+        const done = assert.async();
+
+        let loggedMessage;
+        // eslint-disable-next-line no-console
+        console.log = function log(input) {
+            if (typeof input === 'string' && input.includes('trace')) {
+                return;
+            }
+            loggedMessage = input;
+        };
+
+        // no args -> logging mode
+        runScriptlet(name);
+
+        const callback = () => {
+            window.three = 'changed';
+        };
+        Object.setPrototypeOf(callback, null);
+
+        trackedTimers.push(window[timerMethodName](callback, 10));
+
+        nativeSetTimeout(() => {
+            assert.ok(
+                loggedMessage.includes(`${timerMethodName}(`),
+                'null-prototype callback was logged without throwing',
+            );
+            assert.strictEqual(window.three, 'changed', 'callback still executed');
+            done();
+        }, 100);
+    });
 };
