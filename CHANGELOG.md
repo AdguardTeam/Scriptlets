@@ -41,11 +41,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the argument is no longer blindly overwritten with the replacement value; the replacement
   is applied to its string form and the original value and type are kept when the pattern
   does not match [#570].
+- `adjust-setTimeout`, `adjust-setInterval`, `prevent-setTimeout`,
+  `prevent-setInterval`, and `prevent-requestAnimationFrame` now handle
+  callbacks with a modified prototype chain: `isValidCallback` uses a `typeof`
+  check instead of `instanceof Function`, and callback stringification uses
+  the native `Function.prototype.toString` so that `matchCallback` matching
+  and logging work for such callbacks and never throw [#561].
 
 ### Security
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
+[#561]: https://github.com/AdguardTeam/Scriptlets/issues/561
 [#566]: https://github.com/AdguardTeam/Scriptlets/issues/566
 [#570]: https://github.com/AdguardTeam/Scriptlets/issues/570
 

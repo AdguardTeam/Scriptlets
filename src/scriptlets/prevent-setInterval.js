@@ -9,6 +9,7 @@ import {
     parseMatchArg,
     parseDelayArg,
     isValidCallback,
+    callbackToString,
     isValidMatchStr,
     isValidStrPattern,
     escapeRegExp,
@@ -215,7 +216,7 @@ export function preventSetInterval(source, matchCallback, matchDelay) {
         if (shouldLog) {
             hit(source);
             // https://github.com/AdguardTeam/Scriptlets/issues/105
-            logMessage(source, `setInterval(${String(callback)}, ${delay})`, true);
+            logMessage(source, `setInterval(${callbackToString(callback)}, ${delay})`, true);
         } else {
             shouldPrevent = isPreventionNeeded({
                 callback,
@@ -270,6 +271,7 @@ preventSetInterval.injections = [
     parseDelayArg,
     isPreventDelayMatched,
     isValidCallback,
+    callbackToString,
     isValidMatchStr,
     isValidStrPattern,
     escapeRegExp,

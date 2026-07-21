@@ -1,6 +1,126 @@
 import { describe, test, expect } from 'vitest';
 
-import { parseRawDelay, isPreventionNeeded } from '../../src/helpers';
+import {
+    parseRawDelay,
+    isPreventionNeeded,
+    isValidCallback,
+    callbackToString,
+} from '../../src/helpers';
+
+describe('isValidCallback', () => {
+    test('ordinary function is valid', () => {
+        const arrowFn = () => 'test';
+        function namedFn() {
+            return 'test';
+        }
+        expect(isValidCallback(arrowFn)).toBe(true);
+        expect(isValidCallback(namedFn)).toBe(true);
+    });
+
+    test('async, generator and bound functions are valid', () => {
+        const asyncFn = async () => 'test';
+        function* genFn() {
+            yield 'test';
+        }
+        function plainFn() {
+            return 'test';
+        }
+        const boundFn = plainFn.bind(null);
+        expect(isValidCallback(asyncFn)).toBe(true);
+        expect(isValidCallback(genFn)).toBe(true);
+        expect(isValidCallback(boundFn)).toBe(true);
+    });
+
+    test('function with replaced prototype is valid', () => {
+        const fn = () => {};
+        Object.setPrototypeOf(fn, { foo: 1 });
+        expect(isValidCallback(fn)).toBe(true);
+    });
+
+    test('function with null prototype is valid', () => {
+        const fn = () => {};
+        Object.setPrototypeOf(fn, null);
+        expect(isValidCallback(fn)).toBe(true);
+    });
+
+    test('string is valid', () => {
+        expect(isValidCallback('window.test = 1;')).toBe(true);
+    });
+
+    test('non-function non-string values are invalid', () => {
+        expect(isValidCallback(null)).toBe(false);
+        expect(isValidCallback(undefined)).toBe(false);
+        expect(isValidCallback(42)).toBe(false);
+        expect(isValidCallback({})).toBe(false);
+        expect(isValidCallback([])).toBe(false);
+    });
+});
+
+describe('callbackToString', () => {
+    test('returns source text of an ordinary function', () => {
+        const fn = () => 'test';
+        expect(callbackToString(fn)).toBe("() => 'test'");
+    });
+
+    test('returns source text of a function with replaced prototype', () => {
+        // eslint-disable-next-line no-console
+        const fn = () => console.log('Test');
+        Object.setPrototypeOf(fn, { foo: 1 });
+        expect(callbackToString(fn)).toBe("() => console.log('Test')");
+    });
+
+    test('does not throw for a function with null prototype', () => {
+        const fn = () => 'test';
+        Object.setPrototypeOf(fn, null);
+        expect(callbackToString(fn)).toBe("() => 'test'");
+    });
+
+    test('ignores an overridden own toString and returns genuine source', () => {
+        const fn = () => 'test';
+        fn.toString = () => 'decoy';
+        expect(callbackToString(fn)).toBe("() => 'test'");
+    });
+
+    test('returns a string callback as is', () => {
+        expect(callbackToString('window.test = 1;')).toBe('window.test = 1;');
+    });
+
+    test('stringifies primitives', () => {
+        expect(callbackToString(42)).toBe('42');
+        expect(callbackToString(null)).toBe('null');
+        expect(callbackToString(undefined)).toBe('undefined');
+    });
+
+    test('does not throw for a null-prototype object', () => {
+        expect(callbackToString(Object.create(null))).toBe('[object Object]');
+    });
+});
+
+describe('isPreventionNeeded with exotic callbacks', () => {
+    test('callback with replaced prototype is matched by source text', () => {
+        const fn = () => { window.test = 'value'; };
+        Object.setPrototypeOf(fn, { foo: 1 });
+        expect(isPreventionNeeded({
+            callback: fn, delay: 30, matchCallback: 'test', matchDelay: '30',
+        })).toBe(true);
+    });
+
+    test('callback with null prototype is matched without throwing', () => {
+        const fn = () => { window.test = 'value'; };
+        Object.setPrototypeOf(fn, null);
+        expect(isPreventionNeeded({
+            callback: fn, delay: 30, matchCallback: 'test', matchDelay: '30',
+        })).toBe(true);
+    });
+
+    test('callback with replaced prototype not matching pattern is not prevented', () => {
+        const fn = () => { window.other = 'value'; };
+        Object.setPrototypeOf(fn, { foo: 1 });
+        expect(isPreventionNeeded({
+            callback: fn, delay: 30, matchCallback: 'test', matchDelay: '30',
+        })).toBe(false);
+    });
+});
 
 describe('Test parseRawDelay', () => {
     const testCases = [

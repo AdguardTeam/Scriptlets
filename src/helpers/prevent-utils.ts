@@ -13,11 +13,40 @@ import { nativeIsNaN } from './number-utils';
  * @returns if callback is valid
  */
 export const isValidCallback = (callback: unknown): boolean => {
-    return callback instanceof Function
+    // 'typeof' check is used instead of 'instanceof Function' because
+    // 'instanceof' returns false for functions with a modified prototype
+    // chain and for functions from another realm
+    // https://github.com/AdguardTeam/Scriptlets/issues/561
+    return typeof callback === 'function'
         // passing string as 'code' arg is not recommended
         // but it is possible and not restricted
         // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#parameters
         || typeof callback === 'string';
+};
+
+/**
+ * Converts a timer/rAF callback into its string representation for
+ * pattern matching and logging.
+ *
+ * Native `Function.prototype.toString` is applied to function callbacks
+ * to get the genuine source text even if the callback's prototype chain
+ * was modified or its own `toString` was overridden.
+ * https://github.com/AdguardTeam/Scriptlets/issues/561
+ *
+ * @param callback arbitrary callback
+ * @returns string representation of the callback; never throws
+ */
+export const callbackToString = (callback: unknown): string => {
+    if (typeof callback === 'function') {
+        return Function.prototype.toString.call(callback);
+    }
+    try {
+        return String(callback);
+    } catch (e) {
+        // String() throws for objects with no primitive conversion,
+        // e.g. Object.create(null)
+        return Object.prototype.toString.call(callback);
+    }
 };
 
 /**
@@ -123,7 +152,7 @@ export const isPreventionNeeded = ({
 
     let shouldPrevent = false;
     // https://github.com/AdguardTeam/Scriptlets/issues/105
-    const callbackStr = String(callback);
+    const callbackStr = callbackToString(callback);
     if (!isDelayRange && delayMatch === null) {
         shouldPrevent = matchRegexp.test(callbackStr) !== isInvertedMatch;
     } else if (!matchCallback) {
