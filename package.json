@@ -5,6 +5,7 @@
     "scripts": {
         "build": "rimraf dist && tsx scripts/build.js",
         "postbuild": "tsx scripts/check-corelibs-dist.js",
+        "tgz": "pnpm pack && mv adguard-scriptlets-*.tgz scriptlets.tgz",
         "test": "pnpm test:vitest && pnpm test:smoke && pnpm test:qunit",
         "browserstack": "pnpm test --build && node browserstack.js",
         "test:qunit": "tsx scripts/test.js",
