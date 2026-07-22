@@ -127,10 +127,12 @@ You MUST follow the following rules for EVERY task that you perform:
   `dist/redirects.yml`, and `dist/scriptlets.corelibs.json`.
 
 - All CI `docker build` invocations land on a single shared remote BuildKit
-  instance, so CI jobs MUST run strictly one after another via `needs`
+  instance, so Docker build steps MUST run strictly one after another
   (`lint` → `vitest` → `qunit` → `smoke-tests` → `build`). Concurrent builds
-  crash the builder (`error reading from server: EOF`) and fail every job at
-  once. The Dockerfile also caps the Node heap
+  crash the builder (`error reading from server: EOF`) and fail the entire
+  job at once. They are sequential steps within a single `ci` job (not
+  separate jobs with `needs`), so GitHub Actions executes them in order by
+  default. The Dockerfile also caps the Node heap
   (`NODE_OPTIONS=--max-old-space-size=1536`, most of the 1800m buildx memory
   cap, with headroom for non-heap RSS) and skips the Chromium download in the
   smoke-test stage to keep per-build memory low.

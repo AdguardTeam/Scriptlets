@@ -17,62 +17,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Jobs run strictly one after another so only one docker build hits the shared
-  # remote BuildKit instance ("remote-extensions") at a time. Concurrent builds
-  # have crashed that builder in the past (`rpc error ... error reading from
-  # server: EOF`).
-
-  lint:
-    name: Lint
+  ci:
+    name: CI
     runs-on: team-extensions
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Lint via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
-
-  vitest:
-    name: Vitest
-    runs-on: team-extensions
-    needs:
-      - lint
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Vitest via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
-
-  qunit:
-    name: QUnit
-    runs-on: team-extensions
-    needs:
-      - vitest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: QUnit via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
-
-  smoke-tests:
-    name: Smoke tests
-    runs-on: team-extensions
-    needs:
-      - qunit
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Smoke tests via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
-
-  build:
-    name: Build
-    runs-on: team-extensions
-    needs:
-      - smoke-tests
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -81,7 +28,19 @@ jobs:
         uses: >-
           AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
-      - name: Build release artifacts via Docker
+      - name: Lint
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
+
+      - name: Vitest
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
+
+      - name: QUnit
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
+
+      - name: Smoke tests
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
+
+      - name: Build release artifacts
         run: >-
           DOCKER_BUILDKIT=1 docker build --progress plain
           --target build-output --output ./artifacts .
