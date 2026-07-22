@@ -1,0 +1,50 @@
+name: CI
+
+description: Lints, tests, and builds on pull requests and pushes to master.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+# Cancel superseded runs on the same ref: a newer push (or PR update) makes the
+# in-progress CI obsolete, so stop it to free runners and give faster feedback.
+# The group is repo-scoped (ci-ext-scriptlets-*) to avoid collisions with other
+# repositories sharing the same self-hosted runner pool.
+concurrency:
+  group: ci-ext-scriptlets-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint, test, build
+    runs-on: team-extensions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set dev version
+        uses: >-
+          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
+
+      - name: Lint via Docker
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
+
+      - name: Vitest via Docker
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
+
+      - name: Smoke tests via Docker
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
+
+      - name: QUnit via Docker
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
+
+      - name: Build release artifacts via Docker
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target build-output --output ./artifacts .
+
+      - name: Upload npm package
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-package
+          path: artifacts/scriptlets.tgz

@@ -8,9 +8,14 @@ import { minify } from 'terser';
 import { fileURLToPath } from 'node:url';
 
 import * as redirectsNamesLists from '../src/redirects/redirects-names-list';
-import { version } from '../package.json';
+import packageJson from '../package.json';
 import { rollupStandard } from './rollup-runners';
-import { writeFile, getDataFromFiles, convertTsFileNameToJs } from './helpers';
+import {
+    writeFile,
+    getDataFromFiles,
+    convertTsFileNameToJs,
+    getBuildVersion,
+} from './helpers';
 import {
     redirectsFilenames,
     REDIRECTS_SRC_RELATIVE_DIR_PATH,
@@ -24,6 +29,10 @@ import {
     passSourceAndProps,
     wrapInNonameFunc,
 } from '../src/helpers/injector';
+
+// Version is workflow-stamped (release) or derived from the latest released
+// CHANGELOG.md heading as next-patch `-dev` (local) without mutating package.json.
+const version = getBuildVersion(packageJson.version);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

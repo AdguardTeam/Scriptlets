@@ -6,17 +6,35 @@ curr_path="tests/smoke/exports"
 scriptlets="scriptlets.tgz"
 nm_path="node_modules"
 
+# Repo root (three levels up from this script's directory).
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+
+# package.json ships version-less by convention; stamp a dev version (derived
+# from the latest released CHANGELOG.md heading) so `pnpm pack` can produce a
+# tarball. The committed (versionless) manifest is restored on exit.
+PACKAGE_BACKUP="$(mktemp)"
+cp "${ROOT_DIR}/package.json" "${PACKAGE_BACKUP}"
+
 # Define cleanup function
 cleanup() {
     echo "Performing cleanup..."
     rm -f $scriptlets && rm -rf $nm_path
+    if [ -f "${PACKAGE_BACKUP}" ]; then
+        cp "${PACKAGE_BACKUP}" "${ROOT_DIR}/package.json"
+        rm -f "${PACKAGE_BACKUP}"
+    fi
     echo "Cleanup complete"
 }
 
 # Set trap to execute the cleanup function on script exit
 trap cleanup EXIT
 
-(cd ../../.. && pnpm build && pnpm pack && mv adguard-scriptlets-*.tgz "$curr_path/$scriptlets")
+(cd ../../.. \
+    && DEV_VERSION="$(node --input-type=module -e "import('./scripts/helpers.js').then(m=>console.log(m.getBuildVersion(undefined)))")" \
+    && npm pkg set version="${DEV_VERSION}" \
+    && pnpm build \
+    && pnpm pack \
+    && mv adguard-scriptlets-*.tgz "$curr_path/$scriptlets")
 
 # unzip to @adguard/tsurlfilter to node_modules
 scriptlets_node_modules=$nm_path"/@adguard/scriptlets"

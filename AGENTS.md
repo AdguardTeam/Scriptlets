@@ -44,6 +44,8 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
 
 ```text
 scriptlets/
+├── .github/
+│   └── workflows/            # GitHub Actions: ci, mirror, prepare/publish release
 ├── scripts/                  # Build and utility scripts (build, test, wiki)
 ├── src/
 │   ├── converters/           # Rule syntax converters (ADG ↔ UBO ↔ ABP)
@@ -111,48 +113,18 @@ You MUST follow the following rules for EVERY task that you perform:
 - When the task is finished update `CHANGELOG.md` file and explain changes in
   the `Unreleased` section. Add entries to the appropriate subsection (`Added`,
   `Changed`, or `Fixed`) if it already exists; do not create duplicate
-  subsections. Changes limited to `bamboo-specs/` or CI configuration,
-  e.g. `Dockerfile`, may skip CHANGELOG updates.
+  subsections. Changes limited to CI configuration (e.g. `.github/workflows/`
+  or `Dockerfile`) may skip CHANGELOG updates.
 
-- When modifying Bamboo specs (`bamboo-specs/*.yaml`), **EVERY job that invokes
-  `docker build` or `docker run` MUST include** `requirements:` with
-  `extension: 'true'`. This pins jobs to Docker-capable extension agents.
-
-  **Critical**: Not pinning the agent type will cause the plan to land on a
-  non-Docker-capable agent and fail unpredictably.
-
-  **Required YAML structure** (at the job level, after `artifacts:` or `final-tasks:`):
-
-  ```yaml
-  JobName:
-    key: JOBKEY
-    tasks:
-      - script:
-          scripts:
-            - docker build ...
-    requirements:
-      - extension: 'true'
-  ```
-
-  **Verification checklist** after modifying any `bamboo-specs/*.yaml`:
-  1. Search for all occurrences of `docker build` or `docker run`
-  2. For each job containing Docker commands, verify `requirements:` block exists
-  3. Confirm each `requirements:` contains exactly `- extension: 'true'`
-  4. Do NOT add any other requirements
-
-  **Applies to**: Every job in `bamboo-specs/build.yaml`, `bamboo-specs/test.yaml`,
-  `bamboo-specs/deploy.yaml`, and any other specs that use Docker.
-
-  **Note**: This is an implicit contract with the infrastructure.
-  If an extension agent is misconfigured or lacks Docker, CI will fail —
-  and this is acceptable and preferred over silently using a non-Docker environment.
-
-  **Note**: As of the latest revision, **every** job in `bamboo-specs/build.yaml`,
-  `bamboo-specs/test.yaml`, and `bamboo-specs/deploy.yaml` already contains a
-  correct `requirements:` block. All existing `requirements:` blocks MUST NOT be
-  removed or modified. Before reporting a missing `requirements:` block in a
-  review, **always read the actual file contents** — do not rely on diff context
-  alone, as the block may exist outside the diff hunk.
+- CI/CD runs on GitHub Actions (`.github/workflows/`): `ci.yml` uses the shared
+  `set-dev-version` action before Docker builds, while `mirror.yml`,
+  `prepare-release.yml`, and `publish-release.yml` delegate to shared reusable
+  workflows. `package.json` MUST NOT contain a committed `version` field.
+  Clean local builds derive the next patch `-dev` version from the latest
+  released `CHANGELOG.md` heading. CI stamps that same development version,
+  and release builds stamp the manually selected release version. The build
+  MUST propagate the resolved value unchanged into `SCRIPTLETS_VERSION`,
+  `dist/redirects.yml`, and `dist/scriptlets.corelibs.json`.
 
 - If the prompt essentially asks you to refactor or improve existing code, check
   if you can phrase it as a code guideline. If it's possible, add it to
@@ -295,6 +267,13 @@ Project-specific rules:
 
     **Rationale**: Improves readability and makes diffs cleaner when parameters
     are added or modified.
+
+9. `package.json` MUST remain versionless in source control. Build code MUST use
+   `getBuildVersion()`; workflows that package npm artifacts MUST stamp a
+   version before packaging.
+
+   **Rationale**: The Prepare release tag and `CHANGELOG.md` are the version
+   sources of truth.
 
 ### III. Testing discipline
 

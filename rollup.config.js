@@ -7,6 +7,12 @@ import generateHtml from 'rollup-plugin-generate-html';
 import alias from '@rollup/plugin-alias';
 import { dts } from 'rollup-plugin-dts';
 import terser from '@rollup/plugin-terser';
+import replace from '@rollup/plugin-replace';
+
+import packageJson from './package.json';
+import { getBuildVersion } from './scripts/helpers';
+
+const scriptletsVersion = getBuildVersion(packageJson.version);
 
 const BUILD_DIST = 'dist';
 const DIST_REDIRECT_FILES = 'dist/redirect-files';
@@ -144,6 +150,12 @@ const scriptletsConfig = {
     },
     plugins: [
         ...commonPlugins,
+        replace({
+            preventAssignment: true,
+            values: {
+                __SCRIPTLETS_VERSION__: scriptletsVersion,
+            },
+        }),
         terser(
             {
                 compress: false,

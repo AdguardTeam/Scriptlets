@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## [2.4.3] - 2026-06-24
 
 ### Added
@@ -37,6 +51,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
 - Redirect resources with a `.ts` extension are now converted to `.js`.
 
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
 [2.4.3]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...v2.4.3
 [#292]: https://github.com/AdguardTeam/Scriptlets/issues/292
 [#419]: https://github.com/AdguardTeam/Scriptlets/issues/419

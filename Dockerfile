@@ -72,6 +72,25 @@ FROM deps-puppeteer AS source-puppeteer
 COPY . /scriptlets
 
 # ============================================================================
+# Stage: test
+# Aggregate lint + full test suite on the puppeteer base.
+# Consumed by the shared publish-release.yml (`--target test-output`).
+# ============================================================================
+FROM source-puppeteer AS test
+
+ARG BUILD_RUN_ID
+
+RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
+    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
+    pnpm lint && \
+    pnpm test && \
+    mkdir -p /out && \
+    touch /out/test.txt
+
+FROM scratch AS test-output
+COPY --from=test /out/ /
+
+# ============================================================================
 # Stage: build
 # Creates library build
 # ============================================================================
@@ -82,11 +101,13 @@ ARG BUILD_RUN_ID
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm build && \
-    mkdir -p /out/artifacts && \
-    cp dist/scriptlets.corelibs.json /out/artifacts/ && \
-    cp dist/redirects.json /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/ 2>/dev/null || true
+    pnpm tgz && \
+    mkdir -p /out && \
+    mv scriptlets.tgz /out/
 
+# build-output exports scriptlets.tgz at the root, so
+# `docker build --target build-output --output ./artifacts` yields
+# `artifacts/scriptlets.tgz` (no artifacts/artifacts/ double-nesting).
 FROM scratch AS build-output
 COPY --from=build /out/ /
 
@@ -178,21 +199,3 @@ RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
 FROM scratch AS test-smoke-output
 COPY --from=test-smoke /out/ /
 
-# ============================================================================
-# Stage: full-build
-# Creates complete build with tarball for npm publish
-# ============================================================================
-FROM source AS full-build
-
-ARG BUILD_RUN_ID
-
-RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm build && \
-    pnpm pack --out scriptlets.tgz && \
-    mkdir -p /out/artifacts && \
-    cp scriptlets.tgz /out/artifacts/ && \
-    cp dist/build.txt /out/artifacts/ 2>/dev/null || true
-
-FROM scratch AS full-build-output
-COPY --from=full-build /out/ /

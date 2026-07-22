@@ -4,9 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { minify } from 'terser';
 
 import * as scriptletNamesList from '../src/scriptlets/scriptlets-names-list';
-import { version } from '../package.json';
-import { writeFile } from './helpers';
+import packageJson from '../package.json';
+import { getBuildVersion, writeFile } from './helpers';
 import { DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME } from './constants';
+
+// Version is workflow-stamped (release) or derived from the latest released
+// CHANGELOG.md heading as next-patch `-dev` (local) without mutating package.json.
+const version = getBuildVersion(packageJson.version);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

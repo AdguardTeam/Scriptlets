@@ -1,6 +1,5 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "2.4.3",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "type": "module",
     "scripts": {
@@ -20,8 +19,7 @@
         "wiki": "pnpm wiki:build-table && pnpm wiki:build-docs",
         "wiki:build-table": "tsx ./scripts/check-sources-updates.js && tsx ./scripts/build-compatibility-table.js",
         "wiki:build-docs": "tsx scripts/build-docs.js",
-        "prepublishOnly": "pnpm build",
-        "increment": "pnpm version patch --no-git-tag-version"
+        "prepublishOnly": "pnpm build"
     },
     "lint-staged": {
         "{src,tests,scripts}/**/*.js": [

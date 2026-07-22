@@ -8,23 +8,32 @@ Redirect Resources library.
 
 ### Required Tools
 
-| Tool | Version | Notes |
-| ---- | ------- | ----- |
-| [Node.js](https://nodejs.org/) | 22 | Use [nvm](https://github.com/nvm-sh/nvm) to manage versions |
-| [pnpm](https://pnpm.io/) | 10.33.4 | Package manager |
-| [Git](https://git-scm.com/) | Latest | Version control |
+| Tool      | Version           | Notes                        |
+| --------- | ----------------- | ---------------------------- |
+| [Node.js] | 22                | Use [nvm] to manage versions |
+| [pnpm]    | >=10.33.4 and <11 | Package manager              |
+| [Git]     | Latest            | Version control              |
 
 > **Note**: Development is tested on macOS and Linux. Windows users should use
 > WSL or a virtual machine.
+
+[Node.js]: https://nodejs.org/
+[nvm]: https://github.com/nvm-sh/nvm
+[pnpm]: https://pnpm.io/
+[Git]: https://git-scm.com/
 
 ## Getting Started
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/AdguardTeam/Scriptlets.git
-cd Scriptlets
+git clone git@github.com:AdGuardSoftwareLimited/ext-scriptlets.git
+cd ext-scriptlets
 ```
+
+> The canonical source lives in the private repo
+> `AdGuardSoftwareLimited/ext-scriptlets`; it is mirrored to the public
+> `AdguardTeam/Scriptlets` on every push to `master`.
 
 ### 2. Install Dependencies
 
@@ -73,23 +82,22 @@ pnpm lint:md     # markdownlint
 
 ## Available Commands
 
-| Command | Description |
-| ------- | ----------- |
-| `pnpm install` | Install dependencies |
-| `pnpm build` | Clean `dist/` and build all bundles |
-| `pnpm test` | Run all tests (Vitest + smoke + QUnit) |
-| `pnpm test:vitest` | Run Vitest tests only (API, validators, converters) |
-| `pnpm test:qunit scriptlets` | Run QUnit tests for all scriptlets |
-| `pnpm test:qunit redirects` | Run QUnit tests for all redirects |
-| `pnpm test:qunit helpers` | Run QUnit tests for helpers |
-| `pnpm test:qunit scriptlets --name <name> --build` | Run a single scriptlet test with rebuild |
-| `pnpm lint` | Run all linters |
-| `pnpm lint:code` | Run ESLint |
-| `pnpm lint:types` | Run TypeScript type checking (`tsc --noEmit`) |
-| `pnpm lint:md` | Run markdownlint |
-| `pnpm wiki:build-table` | Regenerate compatibility table |
-| `pnpm wiki:build-docs` | Regenerate scriptlet/redirect wiki docs from JSDoc |
-| `pnpm increment` | Bump patch version in `package.json` |
+| Command                                            | Description                                         |
+| -------------------------------------------------- | --------------------------------------------------- |
+| `pnpm install`                                     | Install dependencies                                |
+| `pnpm build`                                       | Clean `dist/` and build all bundles                 |
+| `pnpm test`                                        | Run all tests (Vitest + smoke + QUnit)              |
+| `pnpm test:vitest`                                 | Run Vitest tests only (API, validators, converters) |
+| `pnpm test:qunit scriptlets`                       | Run QUnit tests for all scriptlets                  |
+| `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                   |
+| `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                         |
+| `pnpm test:qunit scriptlets --name <name> --build` | Run a single scriptlet test with rebuild            |
+| `pnpm lint`                                        | Run all linters                                     |
+| `pnpm lint:code`                                   | Run ESLint                                          |
+| `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)       |
+| `pnpm lint:md`                                     | Run markdownlint                                    |
+| `pnpm wiki:build-table`                            | Regenerate compatibility table                      |
+| `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc  |
 
 ## Development Workflow
 
@@ -114,36 +122,6 @@ pnpm test:vitest                                  # for API/converter/validator 
 ```
 
 Both must pass with no errors.
-
-## Spec-Driven Development (SDD)
-
-All non-trivial changes must be guided by a spec authored **before**
-implementation begins. SDD slash commands should be available globally (preferred).
-
-### When to Use Each Flow
-
-| Change type | Flow |
-| ----------- | ---- |
-| New scriptlet or redirect resource | Full SDD |
-| API surface change | Full SDD |
-| Multi-component refactor | Full SDD |
-| Bug fix | Quick flow |
-| Small config or single-file change | Quick flow |
-
-### Specs Directory Layout
-
-All specs are stored in `specs/.current/` (local-only, contents are gitignored)
-and are never committed.
-
-```text
-specs/
-├── .current/               # local only, gitignored contents
-    ├── ADG-1234-new-scriptlet/
-    │   ├── spec.md
-    │   └── plan.md
-    └── ADG-5678-bugfix/
-        └── quick.md
-```
 
 ## Common Tasks
 
@@ -178,14 +156,27 @@ pnpm wiki:build-docs
 
 > **Note**: Files in `wiki/` are auto-generated. Do **not** edit them manually.
 
-### Bumping the Version
+### Releasing
 
-```bash
-pnpm increment
-```
+Releases are driven by `CHANGELOG.md` and GitHub Actions; `package.json` has no
+`version` field (it is injected at build time).
 
-This bumps the patch version in `package.json` without creating a git tag.
-Update `CHANGELOG.md` accordingly before publishing.
+Clean local builds do not modify `package.json`. They derive a development
+version by incrementing the patch component of the latest released
+`CHANGELOG.md` heading and appending `-dev`. CI uses the shared
+`set-dev-version` action to stamp that same development version before Docker
+packaging. Release publication stamps the exact version selected by the
+Prepare release workflow.
+
+1. Ensure the changes are listed under `## [Unreleased]` in `CHANGELOG.md`.
+2. Run the **Prepare release** workflow (`workflow_dispatch`) with the target
+   tag (e.g. `v2.5.0`). It opens a release PR that moves `[Unreleased]` into a
+   dated `## [x.y.z]` section.
+3. Merge the release PR. **Publish release** then tags the commit, builds and
+   tests in Docker, publishes `@adguard/scriptlets` to npm, mirrors to
+   `AdguardTeam/Scriptlets`, drafts a GitHub Release, and notifies Slack.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the release parameters.
 
 ## Additional Resources
 

@@ -1,0 +1,33 @@
+name: Publish release
+
+description: >-
+  Tags the release commit, builds, tests, publishes to npmjs.org, mirrors
+  to the public repo, drafts a GitHub Release, and notifies Slack.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Ref to publish manually
+        required: false
+        type: string
+
+jobs:
+  publish-npm:
+    uses: AdGuardSoftwareLimited/ext-shared-actions/.github/workflows/publish-release.yml@master
+    with:
+      package_file: scriptlets.tgz
+      npm_package_name: "@adguard/scriptlets"
+      target_repo: AdguardTeam/Scriptlets
+      ref: ${{ inputs.ref }}
+    secrets: inherit
+    permissions:
+      # Create tags and draft the GitHub Release on the source repo
+      contents: write
+      # Required for OIDC trusted publishing to npmjs.org
+      id-token: write
+      # Trigger downstream reusable workflows (e.g. mirror, Slack notify)
+      actions: write

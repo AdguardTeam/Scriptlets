@@ -1,6 +1,10 @@
 import { execSync } from 'child_process';
+import path from 'node:path';
+import fs from 'fs-extra';
 
 import { CORELIBS_REDIRECTS_FILE_NAME, CORELIBS_SCRIPTLETS_FILE_NAME, DIST_DIR_NAME } from './constants';
+import { getBuildVersion, verifyBuiltVersions } from './helpers';
+import packageJson from '../package.json';
 
 const { error: logError, log } = console;
 
@@ -74,4 +78,36 @@ const checkScriptletsChanges = (isCorelibsRedirectsUpdated) => {
     }
 };
 
+const REDIRECTS_YML_FILE_NAME = 'redirects.yml';
+
+/**
+ * Verifies that the resolved build version (workflow-stamped or changelog-
+ * derived) is propagated exactly into the built `dist/redirects.yml` and
+ * `dist/scriptlets.corelibs.json`. Delegates the comparison to
+ * `verifyBuiltVersions`.
+ *
+ * @throws {Error} if a version mismatches between the resolved value and the
+ * built artifacts
+ */
+const runVersionGuard = () => {
+    const version = getBuildVersion(packageJson.version);
+
+    // The script runs from the repo root (the existing `git diff …` commands
+    // rely on this), so cwd-relative paths resolve to dist/.
+    const redirectsYmlPath = path.resolve(DIST_DIR_NAME, REDIRECTS_YML_FILE_NAME);
+    const corelibsPath = path.resolve(DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME);
+
+    const redirectsYml = fs.readFileSync(redirectsYmlPath, { encoding: 'utf8' });
+    const corelibsScriptletsJson = fs.readFileSync(corelibsPath, { encoding: 'utf8' });
+
+    const errors = verifyBuiltVersions({ version, redirectsYml, corelibsScriptletsJson });
+
+    if (errors.length > 0) {
+        throw new Error(`Version guard failed:\n  ${errors.join('\n  ')}`);
+    }
+
+    log(`Version guard OK: ${version}`);
+};
+
 checkScriptletsChanges(isRedirectsFileChanged());
+runVersionGuard();
