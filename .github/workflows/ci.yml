@@ -37,7 +37,7 @@ jobs:
     name: QUnit
     runs-on: team-extensions
     concurrency:
-      group: ci-ext-scriptlets-test-${{ github.ref }}
+      group: ci-test
       cancel-in-progress: false
     steps:
       - name: Checkout
@@ -76,7 +76,7 @@ jobs:
     name: Lint
     runs-on: team-extensions
     concurrency:
-      group: ci-ext-scriptlets-test-${{ github.ref }}
+      group: ci-test
       cancel-in-progress: false
     steps:
       - name: Checkout
@@ -112,7 +112,7 @@ jobs:
     name: Vitest
     runs-on: team-extensions
     concurrency:
-      group: ci-ext-scriptlets-test-${{ github.ref }}
+      group: ci-test
       cancel-in-progress: false
     steps:
       - name: Checkout
@@ -148,7 +148,7 @@ jobs:
     name: Smoke tests
     runs-on: team-extensions
     concurrency:
-      group: ci-ext-scriptlets-test-${{ github.ref }}
+      group: ci-test
       cancel-in-progress: false
     steps:
       - name: Checkout
