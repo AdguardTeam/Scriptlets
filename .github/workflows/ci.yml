@@ -29,10 +29,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set dev version
-        uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
-
       - name: Lint via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
 
@@ -44,10 +40,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Set dev version
-        uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
       - name: Vitest via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
@@ -61,10 +53,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set dev version
-        uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
-
       - name: QUnit via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
 
@@ -76,10 +64,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Set dev version
-        uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
       - name: Smoke tests via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
