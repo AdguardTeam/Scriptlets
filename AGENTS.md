@@ -127,13 +127,13 @@ You MUST follow the following rules for EVERY task that you perform:
   `dist/redirects.yml`, and `dist/scriptlets.corelibs.json`.
 
 - All CI `docker build` invocations land on a single shared remote BuildKit
-  instance, so parallel jobs MUST NOT run unbounded concurrent builds — cap
-  them (e.g. matrix `max-parallel`) and retry transient builder disconnects
-  (`error reading from server: EOF`). Running all build targets fully in
-  parallel crashes the builder and fails every job at once. The Dockerfile
-  also caps the Node heap (`NODE_OPTIONS=--max-old-space-size=1024`, half the
-  1800m buildx memory cap) and skips the Chromium download in the smoke-test
-  stage to keep per-build memory low.
+  instance, so CI jobs MUST run strictly one after another via `needs`
+  (`lint` → `vitest` → `qunit` → `smoke-tests` → `build`). Concurrent builds
+  crash the builder (`error reading from server: EOF`) and fail every job at
+  once. The Dockerfile also caps the Node heap
+  (`NODE_OPTIONS=--max-old-space-size=1024`, half the 1800m buildx memory cap)
+  and skips the Chromium download in the smoke-test stage to keep per-build
+  memory low.
 
 - Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
   `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`
