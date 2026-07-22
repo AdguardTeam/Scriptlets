@@ -29,8 +29,9 @@ SHELL ["/bin/bash", "-lc"]
 WORKDIR /scriptlets
 
 ENV PNPM_STORE=/pnpm-store
-# Smaller than above to leave more headroom for Chromium's RSS,
-# which may be significant when running many parallel browser tests.
+# Smaller than above so Chromium has more physical RAM available (its RSS
+# can be significant when running many parallel browser tests)
+# with 1800m buildx memory cap.
 ENV NODE_OPTIONS="--max-old-space-size=1024"
 # Point puppeteer to the cache directory where Chrome is pre-installed in the Docker image
 ENV PUPPETEER_CACHE_DIR=/home/pptruser/.cache/puppeteer
