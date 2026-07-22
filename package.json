@@ -8,6 +8,8 @@
         "test": "pnpm test:vitest && pnpm test:smoke && pnpm test:qunit",
         "browserstack": "pnpm test --build && node browserstack.js",
         "test:qunit": "tsx scripts/test.js",
+        "test:qunit:build": "tsx scripts/test.js --build",
+        "test:qunit:run": "tsx scripts/test.js --tests-only",
         "test:vitest": "vitest run",
         "test:smoke": "(cd tests/smoke/exports && ./test.sh)",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md && pnpm lint:test-lists",

@@ -153,12 +153,20 @@ FROM source-puppeteer AS test-qunit
 
 ARG BUILD_RUN_ID
 
-# Use trap to ensure exit-code.txt is always written, even on unexpected failures
+# Build dist + test bundles in a separate RUN (separate Node process) so the
+# build's memory is released before Chrome is launched, reducing peak RSS
+# under the CI builder's memory cap.
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
+    pnpm test:qunit:build
+
+# Run only the browser tests in a fresh process. The runner closes each test
+# page itself (see tests/index.js), so Chrome RSS stays bounded.
+# Use trap to ensure exit-code.txt is always written, even on unexpected failures
+RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
     mkdir -p /out && \
     trap 'echo $? > /out/exit-code.txt' EXIT && \
-    pnpm test:qunit
+    pnpm test:qunit:run
 
 FROM scratch AS test-qunit-output
 COPY --from=test-qunit /out/ /

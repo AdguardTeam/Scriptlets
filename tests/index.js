@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import path from 'node:path';
 import fs from 'node:fs';
-import { runQunitWithBrowser, printFailedTests, printResultSummary } from 'node-qunit-puppeteer';
+import { runQunitWithPage, printFailedTests, printResultSummary } from 'node-qunit-puppeteer';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer';
 
@@ -36,13 +36,23 @@ const runQunit = async (indexFile, browser) => {
         puppeteerArgs: ['--no-sandbox', '--allow-file-access-from-files'],
     };
 
-    const result = await runQunitWithBrowser(browser, qunitArgs);
-    printResultSummary(result, console);
-    if (result.stats.failed > 0) {
-        printFailedTests(result, console);
-        return false;
+    // Manage the page lifecycle ourselves. node-qunit-puppeteer's
+    // runQunitWithBrowser opens a page per test but never closes it; reusing
+    // one browser for the whole suite leaks pages (each loads the scriptlets
+    // bundle) and grows Chrome's RSS until the CI builder is OOM-killed
+    // (rpc ... EOF) under its 1800m cap.
+    const page = await browser.newPage();
+    try {
+        const result = await runQunitWithPage(page, qunitArgs);
+        printResultSummary(result, console);
+        if (result.stats.failed > 0) {
+            printFailedTests(result, console);
+            return false;
+        }
+        return true;
+    } finally {
+        await page.close();
     }
-    return true;
 };
 
 const runQunitTests = async () => {
@@ -111,5 +121,6 @@ const runQunitTests = async () => {
 };
 
 export {
+    runQunit,
     runQunitTests,
 };

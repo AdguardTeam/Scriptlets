@@ -99,10 +99,18 @@ const runSpecificTests = async (type, options) => {
 
 program
     .description('By default run all tests')
-    .option('--build', 'only build')
+    .option('--build', 'only build sources and test bundles, do not run tests')
+    .option('--tests-only', 'run only tests, skip building sources and test bundles')
     .action(async (options) => {
-        await runTasks(allBuildTestTasks);
-        await buildTests();
+        if (options.build && options.testsOnly) {
+            throw new Error('--build and --tests-only are mutually exclusive');
+        }
+        // Build sources + test bundles unless we are only running tests against
+        // already-built artifacts (used by the split test-qunit Docker stage).
+        if (!options.testsOnly) {
+            await runTasks(allBuildTestTasks);
+            await buildTests();
+        }
         // if build option is set, then do not run tests
         if (!options.build) {
             await runQunitTests();
