@@ -9,6 +9,12 @@ WORKDIR /scriptlets
 
 ENV PNPM_STORE=/pnpm-store
 
+# Cap the V8 old-space heap. Builds run on a shared remote BuildKit instance
+# (the CI workflow throttles them via matrix max-parallel), and Node's default
+# multi-GB heap lets eslint/Rollup grow far beyond what they need. 1024 MB is
+# half the 1800m buildx memory cap, forcing earlier GC and lowering RSS.
+ENV NODE_OPTIONS="--max-old-space-size=1024"
+
 # Configure pnpm store globally so it doesn't need to be set in each stage
 RUN pnpm config set store-dir /pnpm-store
 
@@ -22,6 +28,8 @@ SHELL ["/bin/bash", "-lc"]
 WORKDIR /scriptlets
 
 ENV PNPM_STORE=/pnpm-store
+# Same heap cap as the non-browser base (see above).
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 # Point puppeteer to the cache directory where Chrome is pre-installed in the Docker image
 ENV PUPPETEER_CACHE_DIR=/home/pptruser/.cache/puppeteer
 
@@ -197,13 +205,16 @@ FROM source AS test-smoke
 
 ARG BUILD_RUN_ID
 
+# Smoke tests run in Node (jsdom-level); Chromium is never launched. Setting
+# PUPPETEER_SKIP_CHROMIUM_DOWNLOAD here as well guarantees no Chrome install
+# is triggered while the smoke suite runs `pnpm install`/`pnpm build` in the
+# packed-package sandbox — saving RAM and time on the shared builder.
 # Use trap to ensure exit-code.txt is always written, even on unexpected failures
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
     trap 'echo $? > /out/exit-code.txt' EXIT && \
-    pnpm test:smoke
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true pnpm test:smoke
 
 FROM scratch AS test-smoke-output
 COPY --from=test-smoke /out/ /
-

@@ -1,0 +1,20 @@
+# Docker build context exclusions. Without this file `COPY . /scriptlets` in
+# the Dockerfile ships the entire local workspace to the builder —
+# including node_modules (~375 MB) — on every local build,
+# and risks overwriting the cached `deps` layer with stale local modules.
+node_modules/
+dist/
+tmp/
+tests/dist/
+.eslintcache
+*.tgz
+output.md
+browserstack.err
+local.log
+tsconfig.tsbuildinfo
+.pnpm-store/
+# Not needed inside CI/build containers
+.git/
+.github/
+.idea/
+.vscode/

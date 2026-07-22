@@ -31,7 +31,8 @@ jobs:
     runs-on: team-extensions
     strategy:
       # A failed leg must not cancel the others — every suite's result is
-      # reported separately, and the aggregate gate blocks the merge anyway.
+      # reported separately, and the org-wide check-master workflow blocks
+      # the merge until all of them succeed anyway.
       fail-fast: false
       max-parallel: 2
       matrix:
@@ -119,34 +120,3 @@ jobs:
         with:
           name: npm-package
           path: artifacts/scriptlets.tgz
-
-  # Aggregate gate. `if: always()` ensures it runs even when upstream jobs
-  # fail, so it always reports a final conclusion. It fails unless EVERY job
-  # succeeded — so a job that did not run at all (startup_failure, blocked
-  # action) also blocks the merge. Require ONLY this check in branch protection
-  # (mirrors AdGuardSoftwareLimited/actions/.github/workflows/ci.yml).
-  all-tests-passed:
-    name: All checks passed
-    if: always()
-    needs:
-      - test
-      - build
-    runs-on: team-extensions
-    steps:
-      - name: Verify all jobs succeeded
-        uses: actions/github-script@v8
-        with:
-          script: |
-            // Reject anything that is not a clean "success" — this covers not
-            // only failures and cancellations but also "skipped" or a missing
-            // result, i.e. the case where a job did not run at all
-            // (e.g. startup_failure because an action was blocked).
-            const needs = ${{ toJSON(needs) }};
-            const bad = Object.entries(needs)
-              .filter(([, v]) => v.result !== 'success')
-              .map(([k, v]) => `  - ${k}: ${v.result ?? '(no result)'}`);
-            if (bad.length > 0) {
-              core.setFailed(`Jobs that did not succeed:\n${bad.join('\n')}`);
-            } else {
-              core.info('All required jobs passed.');
-            }

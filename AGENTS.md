@@ -130,7 +130,16 @@ You MUST follow the following rules for EVERY task that you perform:
   instance, so parallel jobs MUST NOT run unbounded concurrent builds — cap
   them (e.g. matrix `max-parallel`) and retry transient builder disconnects
   (`error reading from server: EOF`). Running all build targets fully in
-  parallel crashes the builder and fails every job at once.
+  parallel crashes the builder and fails every job at once. The Dockerfile
+  also caps the Node heap (`NODE_OPTIONS=--max-old-space-size=1024`, half the
+  1800m buildx memory cap) and skips the Chromium download in the smoke-test
+  stage to keep per-build memory low.
+
+- Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
+  `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`
+  ("Branch up-to-date check", required by branch protection) already waits
+  for every check run on the PR head SHA and blocks the merge until all
+  succeed.
 
 - If the prompt essentially asks you to refactor or improve existing code, check
   if you can phrase it as a code guideline. If it's possible, add it to
