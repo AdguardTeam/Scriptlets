@@ -17,8 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
-    name: Lint, test, build
+  lint:
+    name: Lint
     runs-on: team-extensions
     steps:
       - name: Checkout
@@ -31,14 +31,63 @@ jobs:
       - name: Lint via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
 
+  test-vitest:
+    name: Vitest
+    runs-on: team-extensions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set dev version
+        uses: >-
+          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
+
       - name: Vitest via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
+
+  test-smoke:
+    name: Smoke tests
+    runs-on: team-extensions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set dev version
+        uses: >-
+          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
       - name: Smoke tests via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
 
+  test-qunit:
+    name: QUnit
+    runs-on: team-extensions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set dev version
+        uses: >-
+          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
+
       - name: QUnit via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
+
+  build:
+    name: Build
+    runs-on: team-extensions
+    needs:
+      - lint
+      - test-vitest
+      - test-smoke
+      - test-qunit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set dev version
+        uses: >-
+          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
       - name: Build release artifacts via Docker
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target build-output --output ./artifacts .
@@ -48,3 +97,37 @@ jobs:
         with:
           name: npm-package
           path: artifacts/scriptlets.tgz
+
+  # Aggregate gate. `if: always()` ensures it runs even when upstream jobs
+  # fail, so it always reports a final conclusion. It fails unless EVERY job
+  # succeeded — so a job that did not run at all (startup_failure, blocked
+  # action) also blocks the merge. Require ONLY this check in branch protection
+  # (mirrors AdGuardSoftwareLimited/actions/.github/workflows/ci.yml).
+  all-tests-passed:
+    name: All checks passed
+    if: always()
+    needs:
+      - lint
+      - test-vitest
+      - test-smoke
+      - test-qunit
+      - build
+    runs-on: team-extensions
+    steps:
+      - name: Verify all jobs succeeded
+        uses: actions/github-script@v8
+        with:
+          script: |
+            // Reject anything that is not a clean "success" — this covers not
+            // only failures and cancellations but also "skipped" or a missing
+            // result, i.e. the case where a job did not run at all
+            // (e.g. startup_failure because an action was blocked).
+            const needs = ${{ toJSON(needs) }};
+            const bad = Object.entries(needs)
+              .filter(([, v]) => v.result !== 'success')
+              .map(([k, v]) => `  - ${k}: ${v.result ?? '(no result)'}`);
+            if (bad.length > 0) {
+              core.setFailed(`Jobs that did not succeed:\n${bad.join('\n')}`);
+            } else {
+              core.info('All required jobs passed.');
+            }
