@@ -131,9 +131,9 @@ You MUST follow the following rules for EVERY task that you perform:
   (`lint` → `vitest` → `qunit` → `smoke-tests` → `build`). Concurrent builds
   crash the builder (`error reading from server: EOF`) and fail every job at
   once. The Dockerfile also caps the Node heap
-  (`NODE_OPTIONS=--max-old-space-size=1024`, half the 1800m buildx memory cap)
-  and skips the Chromium download in the smoke-test stage to keep per-build
-  memory low.
+  (`NODE_OPTIONS=--max-old-space-size=1536`, most of the 1800m buildx memory
+  cap, with headroom for non-heap RSS) and skips the Chromium download in the
+  smoke-test stage to keep per-build memory low.
 
 - Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
   `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`

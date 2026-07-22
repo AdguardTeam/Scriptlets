@@ -11,9 +11,10 @@ ENV PNPM_STORE=/pnpm-store
 
 # Cap the V8 old-space heap. Builds run on a shared remote BuildKit instance
 # (the CI workflow throttles them via matrix max-parallel), and Node's default
-# multi-GB heap lets eslint/Rollup grow far beyond what they need. 1024 MB is
-# half the 1800m buildx memory cap, forcing earlier GC and lowering RSS.
-ENV NODE_OPTIONS="--max-old-space-size=1024"
+# multi-GB heap lets eslint/Rollup grow far beyond what they need. 1536 MB is
+# most of the 1800m buildx memory cap, leaving headroom for non-heap RSS while
+# still forcing earlier GC than the unlimited default.
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 # Configure pnpm store globally so it doesn't need to be set in each stage
 RUN pnpm config set store-dir /pnpm-store
@@ -29,7 +30,7 @@ WORKDIR /scriptlets
 
 ENV PNPM_STORE=/pnpm-store
 # Same heap cap as the non-browser base (see above).
-ENV NODE_OPTIONS="--max-old-space-size=1024"
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 # Point puppeteer to the cache directory where Chrome is pre-installed in the Docker image
 ENV PUPPETEER_CACHE_DIR=/home/pptruser/.cache/puppeteer
 
