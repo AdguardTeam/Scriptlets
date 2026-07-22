@@ -17,9 +17,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  # Lint and all test suites run as legs of a single matrix job.
+  #
+  # `max-parallel: 2` is deliberate: every `docker build` here lands on the
+  # same shared remote BuildKit instance ("remote-extensions"), and running
+  # all four builds concurrently crashed it (all jobs failed at the same
+  # instant with `rpc error ... error reading from server: EOF`). Capping
+  # concurrency keeps the granular per-suite check results while limiting
+  # peak load on the shared builder; the retry in the run step covers
+  # transient builder disconnects caused by other consumers of the instance.
+  test:
+    name: ${{ matrix.name }}
     runs-on: team-extensions
+    strategy:
+      # A failed leg must not cancel the others — every suite's result is
+      # reported separately, and the aggregate gate blocks the merge anyway.
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - name: Lint
+            target: lint-output
+          - name: Vitest
+            target: test-vitest-output
+          - name: Smoke tests
+            target: test-smoke-output
+          - name: QUnit
+            target: test-qunit-output
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -28,59 +52,36 @@ jobs:
         uses: >-
           AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
-      - name: Lint via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
-
-  test-vitest:
-    name: Vitest
-    runs-on: team-extensions
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set dev version
-        uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
-
-      - name: Vitest via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
-
-  test-smoke:
-    name: Smoke tests
-    runs-on: team-extensions
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set dev version
-        uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
-
-      - name: Smoke tests via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
-
-  test-qunit:
-    name: QUnit
-    runs-on: team-extensions
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set dev version
-        uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
-
-      - name: QUnit via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
+      - name: ${{ matrix.name }} via Docker
+        run: |
+          max_attempts=3
+          for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+            log="$(mktemp)"
+            exit_code=0
+            DOCKER_BUILDKIT=1 docker build --progress plain \
+              --target "${{ matrix.target }}" . >"${log}" 2>&1 || exit_code=$?
+            cat "${log}"
+            if [ "${exit_code}" -eq 0 ]; then
+              exit 0
+            fi
+            # Retry only when the shared remote builder dropped the
+            # connection (transient infra failure). Real lint/test failures
+            # exit immediately so feedback stays fast.
+            if ! grep -qE 'error reading from server: EOF|failed to receive status|transport is closing' "${log}"; then
+              exit "${exit_code}"
+            fi
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              echo "::warning::Attempt ${attempt}/${max_attempts} lost the connection to the shared builder; retrying in 30s"
+              sleep 30
+            fi
+          done
+          exit "${exit_code}"
 
   build:
     name: Build
     runs-on: team-extensions
     needs:
-      - lint
-      - test-vitest
-      - test-smoke
-      - test-qunit
+      - test
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -90,7 +91,27 @@ jobs:
           AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
       - name: Build release artifacts via Docker
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target build-output --output ./artifacts .
+        run: |
+          max_attempts=3
+          for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+            log="$(mktemp)"
+            exit_code=0
+            DOCKER_BUILDKIT=1 docker build --progress plain \
+              --target build-output --output ./artifacts . >"${log}" 2>&1 || exit_code=$?
+            cat "${log}"
+            if [ "${exit_code}" -eq 0 ]; then
+              exit 0
+            fi
+            # Same transient-builder retry as the test matrix above.
+            if ! grep -qE 'error reading from server: EOF|failed to receive status|transport is closing' "${log}"; then
+              exit "${exit_code}"
+            fi
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              echo "::warning::Attempt ${attempt}/${max_attempts} lost the connection to the shared builder; retrying in 30s"
+              sleep 30
+            fi
+          done
+          exit "${exit_code}"
 
       - name: Upload npm package
         uses: actions/upload-artifact@v7
@@ -107,10 +128,7 @@ jobs:
     name: All checks passed
     if: always()
     needs:
-      - lint
-      - test-vitest
-      - test-smoke
-      - test-qunit
+      - test
       - build
     runs-on: team-extensions
     steps:

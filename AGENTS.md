@@ -126,6 +126,12 @@ You MUST follow the following rules for EVERY task that you perform:
   MUST propagate the resolved value unchanged into `SCRIPTLETS_VERSION`,
   `dist/redirects.yml`, and `dist/scriptlets.corelibs.json`.
 
+- All CI `docker build` invocations land on a single shared remote BuildKit
+  instance, so parallel jobs MUST NOT run unbounded concurrent builds — cap
+  them (e.g. matrix `max-parallel`) and retry transient builder disconnects
+  (`error reading from server: EOF`). Running all build targets fully in
+  parallel crashes the builder and fails every job at once.
+
 - If the prompt essentially asks you to refactor or improve existing code, check
   if you can phrase it as a code guideline. If it's possible, add it to
   the relevant Code guidelines section in `AGENTS.md`.
