@@ -36,14 +36,15 @@ jobs:
       max-parallel: 2
       matrix:
         include:
+          # Initiate QUnit tests first because they are the slowest
+          - name: QUnit
+            target: test-qunit-output
           - name: Lint
             target: lint-output
           - name: Vitest
             target: test-vitest-output
           - name: Smoke tests
             target: test-smoke-output
-          - name: QUnit
-            target: test-qunit-output
     steps:
       - name: Checkout
         uses: actions/checkout@v5
