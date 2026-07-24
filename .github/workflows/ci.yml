@@ -29,15 +29,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      # FIXME(AG-54908): pinned to the feature branch until ext-shared-actions#8
-      # (the shared set-dev-version action) merges to master. Repoint to @master
-      # once #8 lands — preferably before this PR merges. The step's only effect
-      # is stamping package.json with a version so `pnpm pack` can produce a
-      # tarball; the in-Docker build re-derives the same next-patch `-dev`
-      # version from CHANGELOG.md via getBuildVersion().
       - name: Set dev version
         uses: >-
-          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
+          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
 
       - name: Lint
         run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
