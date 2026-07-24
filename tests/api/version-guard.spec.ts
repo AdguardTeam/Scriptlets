@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
 import {
     deriveDevVersion,
@@ -7,6 +12,18 @@ import {
     resolveBuildVersion,
     verifyBuiltVersions,
 } from '../../scripts/helpers';
+
+// Mock the changelog read so the getBuildVersion assertion is independent of
+// the repo's mutable CHANGELOG.md (the real file changes on every release).
+// helpers.js reads CHANGELOG.md via `import fs from 'fs-extra'` (a default
+// import) inside getBuildVersion, so the mock must expose a `default` export.
+vi.mock('fs-extra', () => {
+    const fixtureChangelog = '## [Unreleased]\n\n## [1.2.3] - 2026-01-01\n';
+    return {
+        default: { readFileSync: () => fixtureChangelog },
+        readFileSync: () => fixtureChangelog,
+    };
+});
 
 const banner = (version: string): string => `#
 #    AdGuard Scriptlets (Redirects Source)
@@ -71,8 +88,12 @@ describe('version guard', () => {
     });
 
     describe('getBuildVersion', () => {
-        it('derives the current repository dev version without a package stamp', () => {
-            expect(getBuildVersion(undefined)).toBe('2.4.4-dev');
+        it('derives a dev version from a mocked CHANGELOG.md without a package stamp', () => {
+            // The real CHANGELOG.md is mutable (it changes on every release),
+            // so reading it would time-bomb this test against the first release.
+            // fs-extra is mocked at the top of the file to return a fixed fixture.
+            expect(getBuildVersion(undefined)).toBe('1.2.4-dev');
+            expect(getBuildVersion(undefined)).toMatch(/^\d+\.\d+\.\d+-dev$/);
         });
     });
 
