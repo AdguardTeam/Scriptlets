@@ -63,12 +63,14 @@ scriptlets/
 │   └── smoke/                # Smoke tests for ESM exports
 ├── types/                    # Ambient type declarations
 ├── wiki/                     # Auto-generated documentation (scriptlet/redirect docs, compatibility table)
+├── .dockerignore             # Docker build context exclusions
 ├── .eslintrc.cjs             # ESLint configuration
 ├── .markdownlint.json        # Markdownlint configuration
 ├── rollup.config.js          # Rollup bundle configuration
 ├── tsconfig.json             # TypeScript configuration
 ├── vitest.config.ts          # Vitest configuration
-├── DEVELOPMENT.md            # Development guide and SDD lifecycle
+├── DEPLOYMENT.md             # Release and npm publish runbook
+├── DEVELOPMENT.md            # Development guide
 └── package.json              # Package manifest and scripts
 ```
 
@@ -83,6 +85,12 @@ scriptlets/
 - `pnpm test:qunit helpers` — run QUnit tests for helpers
 - `pnpm test:qunit scriptlets --name <name> --build` — run a single
   scriptlet test with a rebuild
+- `pnpm test:qunit:build` — build the QUnit test bundles without running them
+  (CI split-stage equivalent of `test:qunit --build`; paired with `test:qunit:run`)
+- `pnpm test:qunit:run` — run the QUnit tests without rebuilding (CI
+  split-stage; expects `test:qunit:build` to have run first)
+- `pnpm tgz` — pack `@adguard/scriptlets` into `scriptlets.tgz` (requires a
+  version; CI stamps it via `set-dev-version`, local builds must stamp first)
 - `pnpm lint` — run all linters (`lint:code` + `lint:types` + `lint:md`)
 - `pnpm lint:code` — run ESLint
 - `pnpm lint:types` — run TypeScript type checking (`tsc --noEmit`)
@@ -161,8 +169,8 @@ You MUST follow the following rules for EVERY task that you perform:
 Non-trivial changes MUST be preceded by a spec created with the SDD slash
 commands, which should be available globally (preferred).
 
-Specs are local-only and never committed — `specs/.current/` contents are
-gitignored.
+Specs are local-only and never committed — `.sdd/.current/` contents are
+gitignored (see `.gitignore`).
 
 ## Code guidelines
 

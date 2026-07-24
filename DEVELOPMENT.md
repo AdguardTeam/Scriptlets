@@ -92,12 +92,21 @@ pnpm lint:md     # markdownlint
 | `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                   |
 | `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                         |
 | `pnpm test:qunit scriptlets --name <name> --build` | Run a single scriptlet test with rebuild            |
+| `pnpm test:qunit:build`                            | Build QUnit test bundles (CI split-stage)           |
+| `pnpm test:qunit:run`                              | Run QUnit tests without rebuilding (CI split-stage) |
+| `pnpm tgz`                                         | Pack `scriptlets.tgz` (needs a version)             |
 | `pnpm lint`                                        | Run all linters                                     |
 | `pnpm lint:code`                                   | Run ESLint                                          |
 | `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)       |
 | `pnpm lint:md`                                     | Run markdownlint                                    |
 | `pnpm wiki:build-table`                            | Regenerate compatibility table                      |
 | `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc  |
+
+> **Note**: `pnpm tgz` (and `pnpm pack`) need a version in `package.json`,
+> which ships versionless. CI stamps the dev version via the shared
+> `set-dev-version` action before packaging; locally you must stamp it first
+> (mirroring `tests/smoke/exports/test.sh`), otherwise `pnpm tgz` fails with
+> `ERR_PNPM_PACKAGE_VERSION_NOT_FOUND`.
 
 ## Development Workflow
 
@@ -163,20 +172,18 @@ Releases are driven by `CHANGELOG.md` and GitHub Actions; `package.json` has no
 
 Clean local builds do not modify `package.json`. They derive a development
 version by incrementing the patch component of the latest released
-`CHANGELOG.md` heading and appending `-dev`. CI uses the shared
-`set-dev-version` action to stamp that same development version before Docker
-packaging. Release publication stamps the exact version selected by the
-Prepare release workflow.
+`CHANGELOG.md` heading and appending `-dev`. CI stamps that same development
+version via the shared `set-dev-version` action before Docker packaging.
+
+Developer preconditions before requesting a release:
 
 1. Ensure the changes are listed under `## [Unreleased]` in `CHANGELOG.md`.
-2. Run the **Prepare release** workflow (`workflow_dispatch`) with the target
-   tag (e.g. `v2.5.0`). It opens a release PR that moves `[Unreleased]` into a
-   dated `## [x.y.z]` section.
-3. Merge the release PR. **Publish release** then tags the commit, builds and
-   tests in Docker, publishes `@adguard/scriptlets` to npm, mirrors to
-   `AdguardTeam/Scriptlets`, drafts a GitHub Release, and notifies Slack.
+2. If a release adds new scriptlets/redirects, resolve the `@added unknown`
+   wiki-version TODO at the top of `CHANGELOG.md` for the target version (the
+   wiki is regenerated from JSDoc during the release flow).
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the release parameters.
+For the full release flow (Prepare release PR → merge → Publish release), see
+[DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Additional Resources
 
