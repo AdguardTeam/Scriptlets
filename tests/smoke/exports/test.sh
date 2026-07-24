@@ -33,8 +33,8 @@ trap cleanup EXIT
     && DEV_VERSION="$(node --input-type=module -e "import('./scripts/helpers.js').then(m=>console.log(m.getBuildVersion(undefined)))")" \
     && npm pkg set version="${DEV_VERSION}" \
     && pnpm build \
-    && pnpm pack \
-    && mv adguard-scriptlets-*.tgz "$curr_path/$scriptlets")
+    && pnpm tgz \
+    && mv scriptlets.tgz "$curr_path/$scriptlets")
 
 # unzip to @adguard/tsurlfilter to node_modules
 scriptlets_node_modules=$nm_path"/@adguard/scriptlets"

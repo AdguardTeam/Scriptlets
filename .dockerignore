@@ -18,3 +18,6 @@ tsconfig.tsbuildinfo
 .github/
 .idea/
 .vscode/
+# Never bake local secrets / registry auth into image layers
+.npmrc
+.env*
