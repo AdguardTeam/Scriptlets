@@ -15,8 +15,20 @@ on:
         required: false
         type: string
 
+# Serialize releases: never cancel an in-flight publish (cancel-in-progress:
+# false). Defense-in-depth on top of the guard inside the shared workflow.
+concurrency:
+  group: publish-release-ext-scriptlets
+  cancel-in-progress: false
+
 jobs:
   publish-npm:
+    # Only publish when a PR was actually merged (not merely closed) or on a
+    # manual workflow_dispatch. Defense-in-depth: the shared publish-release
+    # workflow also guards on merge status.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.merged == true
     uses: AdGuardSoftwareLimited/ext-shared-actions/.github/workflows/publish-release.yml@master
     with:
       package_file: scriptlets.tgz
@@ -31,3 +43,35 @@ jobs:
       id-token: write
       # Trigger downstream reusable workflows (e.g. mirror, Slack notify)
       actions: write
+
+  # Regenerate the auto-generated wiki/ from JSDoc after a successful publish
+  # and commit it to master (mirror.yml then mirrors it to the public repo).
+  # This replaces the `pnpm wiki` step the deleted bamboo-specs/deploy.yaml ran
+  # after every npm publish.
+  update-wiki:
+    needs: publish-npm
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.merged == true
+    runs-on: team-extensions
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build wiki
+        run: >-
+          DOCKER_BUILDKIT=1 docker build --progress plain
+          --target wiki-output --output ./wiki-out .
+
+      - name: Commit regenerated wiki
+        run: |
+          rm -rf wiki
+          mv wiki-out/wiki wiki
+          rm -rf wiki-out
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add wiki
+          git commit -m "chore(wiki): regenerate for release" || echo "No wiki changes to commit"
+          git push

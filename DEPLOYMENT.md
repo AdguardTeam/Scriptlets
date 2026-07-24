@@ -20,8 +20,9 @@
    changelog, injects the version (`npm pkg set version=…`), lints and tests
    and builds in Docker, publishes to npm, mirrors to the public repo, drafts a
    GitHub Release, and notifies Slack.
-3. **Mirror** (`.github/workflows/mirror.yml`) also mirrors every push to
-   `master` to the public repo.
+3. After publish, the `update-wiki` job regenerates `wiki/` from JSDoc (via the
+   Docker `wiki-output` stage) and commits it to `master`; **mirror.yml** then
+   mirrors that push (and every other push to `master`) to the public repo.
 
 For the full release pipeline documentation, see
 [ext-shared-actions/docs/publish-release.md](https://github.com/AdGuardSoftwareLimited/ext-shared-actions/blob/master/docs/publish-release.md).
