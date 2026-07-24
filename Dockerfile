@@ -99,16 +99,29 @@ COPY --from=test-qunit /out/ /
 COPY --from=test-smoke /out/ /
 
 # ============================================================================
-# Stage: build
-# Creates library build
+# Stage: dist
+# Builds the library dist/ once; shared by the build and test-smoke stages
+# so the library is not built multiple times per CI run (QUnit keeps its own
+# build on the puppeteer base).
 # ============================================================================
-FROM source AS build
+FROM source AS dist
 
 ARG BUILD_RUN_ID
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm build && \
+    pnpm build
+
+# ============================================================================
+# Stage: build
+# Packs the pre-built dist/ into a tarball.
+# ============================================================================
+FROM dist AS build
+
+ARG BUILD_RUN_ID
+
+RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
+    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm tgz && \
     mkdir -p /out && \
     mv scriptlets.tgz /out/
@@ -197,21 +210,27 @@ COPY --from=test-vitest /out/ /
 
 # ============================================================================
 # Stage: test-smoke
-# Runs smoke tests
+# Runs smoke tests against the pre-built tarball from the build stage, avoiding
+# a redundant `pnpm build` inside test.sh.
 # ============================================================================
 FROM source AS test-smoke
 
 ARG BUILD_RUN_ID
 
+COPY --from=build /out/scriptlets.tgz /tmp/scriptlets.tgz
+
 # Smoke tests run in Node (jsdom-level); Chromium is never launched. Setting
 # PUPPETEER_SKIP_CHROMIUM_DOWNLOAD here as well guarantees no Chrome install
-# is triggered while the smoke suite runs `pnpm install`/`pnpm build` in the
-# packed-package sandbox — saving RAM and time on the shared builder.
+# is triggered while the smoke suite runs `pnpm install` in the packed-package
+# sandbox — saving RAM and time on the shared builder.
+# SMOKE_TGZ_PATH tells test.sh to use the pre-built tarball instead of
+# stamping + building + packing locally.
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
     touch /out/smoke.txt && \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true pnpm test:smoke
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    SMOKE_TGZ_PATH=/tmp/scriptlets.tgz pnpm test:smoke
 
 FROM scratch AS test-smoke-output
 COPY --from=test-smoke /out/ /
