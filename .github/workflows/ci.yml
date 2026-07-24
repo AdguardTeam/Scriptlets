@@ -10,8 +10,9 @@ on:
 
 # Cancel superseded runs on the same ref: a newer push (or PR update) makes the
 # in-progress CI obsolete, so stop it to free runners and give faster feedback.
-# The group is repo-scoped (ci-ext-scriptlets-*) to avoid collisions with other
-# repositories sharing the same self-hosted runner pool.
+# GitHub Actions evaluates concurrency groups per-repository, so the
+# ci-ext-scriptlets- prefix is namespacing by convention — runs in other repos
+# can never share or block this group.
 concurrency:
   group: ci-ext-scriptlets-${{ github.ref }}
   cancel-in-progress: true
@@ -20,30 +21,41 @@ jobs:
   ci:
     name: CI
     runs-on: team-extensions
+    permissions:
+      # Least privilege: CI only checks out and builds; it never pushes from
+      # this workflow, so the default token permissions are reduced.
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
+      # FIXME(AG-54908): pinned to the feature branch until ext-shared-actions#8
+      # (the shared set-dev-version action) merges to master. Repoint to @master
+      # once #8 lands — preferably before this PR merges. The step's only effect
+      # is stamping package.json with a version so `pnpm pack` can produce a
+      # tarball; the in-Docker build re-derives the same next-patch `-dev`
+      # version from CHANGELOG.md via getBuildVersion().
       - name: Set dev version
         uses: >-
           AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@fix/AG-54908
 
       - name: Lint
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
 
       - name: Vitest
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
 
       - name: QUnit
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
 
       - name: Smoke tests
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
 
       - name: Build release artifacts
         run: >-
           DOCKER_BUILDKIT=1 docker build --progress plain
-          --target build-output --output ./artifacts .
+          --target build-output --output ./artifacts
+          --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
 
       - name: Upload npm package
         uses: actions/upload-artifact@v7
