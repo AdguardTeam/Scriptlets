@@ -84,23 +84,19 @@ FROM deps-puppeteer AS source-puppeteer
 COPY . /scriptlets
 
 # ============================================================================
-# Stage: test
-# Aggregate lint + full test suite on the puppeteer base.
-# Consumed by the shared publish-release.yml (`--target test-output`).
+# Stage: test-output
+# Aggregate of all granular verification stages. Consumed by the shared
+# publish-release.yml (`--target test-output`). Composing from the granular
+# outputs (the same stages ci.yml builds individually) gives the check set a
+# single definition and avoids re-executing lint + tests from scratch.
+# BuildKit resolves named stages regardless of position, so the COPY
+# directives below can reference stages defined later in this file.
 # ============================================================================
-FROM source-puppeteer AS test
-
-ARG BUILD_RUN_ID
-
-RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
-    pnpm lint && \
-    pnpm test && \
-    mkdir -p /out && \
-    touch /out/test.txt
-
 FROM scratch AS test-output
-COPY --from=test /out/ /
+COPY --from=lint /out/ /
+COPY --from=test-vitest /out/ /
+COPY --from=test-qunit /out/ /
+COPY --from=test-smoke /out/ /
 
 # ============================================================================
 # Stage: build
