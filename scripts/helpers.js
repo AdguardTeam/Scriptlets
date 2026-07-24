@@ -161,8 +161,13 @@ const convertTsFileNameToJs = (fileName) => fileName.replace(/\.ts$/, '.js');
 
 /**
  * Extracts the version from the `#    Version <version>` banner line of the
- * built `dist/redirects.yml`. Only matches the top banner comment line; body
- * comments (e.g. `# To enable…`, `# sha: …`) are not matched.
+ * built `dist/redirects.yml`.
+ *
+ * Matches the FIRST line that starts with `# Version` (the `m` flag makes
+ * `^` match at the start of any line). The build writes the banner near the
+ * top of the file, so it is the first such line in practice; a body comment
+ * that happens to begin with `# Version` would also match, which is why the
+ * version guard relies on the build always emitting the banner first.
  *
  * @param {string} yml redirects.yml content
  * @returns {string|undefined} version string, or `undefined` if not found
@@ -232,6 +237,8 @@ const resolveBuildVersion = (rawVersion, changelog) => {
  *
  * @param {string|undefined} rawVersion version read from `package.json`
  * @returns {string} resolved build version
+ * @throws {Error} if `CHANGELOG.md` cannot be read, or the version cannot be
+ * resolved (delegates to {@link resolveBuildVersion} / {@link deriveDevVersion})
  */
 const getBuildVersion = (rawVersion) => {
     const changelogPath = path.resolve(__dirname, '../CHANGELOG.md');
