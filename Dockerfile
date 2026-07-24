@@ -10,10 +10,11 @@ WORKDIR /scriptlets
 ENV PNPM_STORE=/pnpm-store
 
 # Cap the V8 old-space heap. Builds run on a shared remote BuildKit instance
-# (the CI workflow throttles them via matrix max-parallel), and Node's default
-# multi-GB heap lets eslint/Rollup grow far beyond what they need. 1536 MB is
-# most of the 1800m buildx memory cap, leaving headroom for non-heap RSS while
-# still forcing earlier GC than the unlimited default.
+# (the CI workflow runs lint/vitest/qunit/smoke/build as strictly sequential
+# steps within a single job to avoid crashing the shared builder), and Node's
+# default multi-GB heap lets eslint/Rollup grow far beyond what they need.
+# 1536 MB is most of the 1800m buildx memory cap, leaving headroom for non-heap
+# RSS while still forcing earlier GC than the unlimited default.
 ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 # Configure pnpm store globally so it doesn't need to be set in each stage
@@ -134,7 +135,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm wiki && \
     mkdir -p /out && \
-    touch /out/wiki.txt
+    cp -r wiki /out/wiki
 
 FROM scratch AS wiki-output
 COPY --from=wiki /out/ /
@@ -173,10 +174,9 @@ RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
 
 # Run only the browser tests in a fresh process. The runner closes each test
 # page itself (see tests/index.js), so Chrome RSS stays bounded.
-# Use trap to ensure exit-code.txt is always written, even on unexpected failures
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
     mkdir -p /out && \
-    trap 'echo $? > /out/exit-code.txt' EXIT && \
+    touch /out/qunit.txt && \
     pnpm test:qunit:run
 
 FROM scratch AS test-qunit-output
@@ -190,11 +190,10 @@ FROM source AS test-vitest
 
 ARG BUILD_RUN_ID
 
-# Use trap to ensure exit-code.txt is always written, even on unexpected failures
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
-    trap 'echo $? > /out/exit-code.txt' EXIT && \
+    touch /out/vitest.txt && \
     pnpm test:vitest
 
 FROM scratch AS test-vitest-output
@@ -212,11 +211,10 @@ ARG BUILD_RUN_ID
 # PUPPETEER_SKIP_CHROMIUM_DOWNLOAD here as well guarantees no Chrome install
 # is triggered while the smoke suite runs `pnpm install`/`pnpm build` in the
 # packed-package sandbox — saving RAM and time on the shared builder.
-# Use trap to ensure exit-code.txt is always written, even on unexpected failures
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
-    trap 'echo $? > /out/exit-code.txt' EXIT && \
+    touch /out/smoke.txt && \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true pnpm test:smoke
 
 FROM scratch AS test-smoke-output
