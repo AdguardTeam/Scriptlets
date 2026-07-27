@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 <!-- TODO: change `@added unknown` tag due to the actual version -->
 <!--       during new scriptlets or redirects releasing -->
 
-## [Unreleased]
+## [2.5.0] - 2026-07-27
 
 ### Added
 
@@ -26,6 +26,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `emptyStr`, single-value `length:N` (e.g. `length:50`).
 - `prevent-xhr` and `trusted-prevent-xhr` now handle `document` and `json` XHR
   `responseType` values when intercepting matched requests.
+
+### Changed
+
+- Updated [@adguard/agtree] to 4.2.0.
 
 ### Removed
 
@@ -44,7 +48,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the native `Function.prototype.toString` so that `matchCallback` matching
   and logging work for such callbacks and never throw [#561].
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
+[2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
 [#561]: https://github.com/AdguardTeam/Scriptlets/issues/561
 [#566]: https://github.com/AdguardTeam/Scriptlets/issues/566
