@@ -10,7 +10,6 @@ import {
 } from './build-redirects';
 import { buildScriptletsForCorelibs } from './build-corelibs';
 import { buildScriptlets, buildScriptletsList } from './build-scriptlets';
-import { buildTxt } from './build-txt';
 import { buildRedirectsMap } from './build-redirects-map';
 import { runTasks } from './helpers';
 
@@ -28,7 +27,6 @@ const tasks = [
     buildRedirectsForCorelibs,
     buildScriptlets,
     buildScriptletsForCorelibs,
-    buildTxt,
 ];
 
 program

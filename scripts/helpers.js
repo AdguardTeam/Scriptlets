@@ -159,6 +159,131 @@ const generateHtmlTestFilename = (type, name) => {
  */
 const convertTsFileNameToJs = (fileName) => fileName.replace(/\.ts$/, '.js');
 
+/**
+ * Extracts the version from the `#    Version <version>` banner line of the
+ * built `dist/redirects.yml`.
+ *
+ * Matches the FIRST line that starts with `# Version` (the `m` flag makes
+ * `^` match at the start of any line). The build writes the banner near the
+ * top of the file, so it is the first such line in practice; a body comment
+ * that happens to begin with `# Version` would also match, which is why the
+ * version guard relies on the build always emitting the banner first.
+ *
+ * @param {string} yml redirects.yml content
+ * @returns {string|undefined} version string, or `undefined` if not found
+ */
+const getRedirectsYmlVersion = (yml) => {
+    if (!yml) {
+        return undefined;
+    }
+    const match = yml.match(/^#\s+Version\s+(\S+)/m);
+    return match ? match[1] : undefined;
+};
+
+/**
+ * Numeric package version with an optional supported prerelease tag.
+ */
+const VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)(-(dev|alpha|beta)(\.\d+)?)?$/;
+
+/**
+ * First released changelog heading. The Unreleased heading does not match.
+ */
+const CHANGELOG_VERSION_PATTERN = /^## \[(\d+\.\d+\.\d+(?:-[^\]]+)?)\](?:\s|$)/m;
+
+/**
+ * Derives the next patch development version from changelog content.
+ *
+ * @param {string} changelog changelog content
+ * @returns {string} next patch version with the `-dev` suffix
+ * @throws {Error} if no released numeric heading exists
+ */
+const deriveDevVersion = (changelog) => {
+    const match = String(changelog || '').match(CHANGELOG_VERSION_PATTERN);
+    if (!match) {
+        throw new Error('Unable to derive a development version from CHANGELOG.md');
+    }
+
+    const coreMatch = match[1].match(/^(\d+)\.(\d+)\.(\d+)/);
+    const major = coreMatch[1];
+    const minor = coreMatch[2];
+    const patch = Number(coreMatch[3]) + 1;
+    return `${major}.${minor}.${patch}-dev`;
+};
+
+/**
+ * Uses a workflow-stamped package version or derives a local development one.
+ *
+ * @param {string|undefined} rawVersion version read from `package.json`
+ * @param {string} changelog changelog content used when the package is versionless
+ * @returns {string} version to stamp into all build artifacts
+ * @throws {Error} if a stamped version is malformed or changelog derivation fails
+ */
+const resolveBuildVersion = (rawVersion, changelog) => {
+    const value = rawVersion ? String(rawVersion).trim() : '';
+    if (!value) {
+        return deriveDevVersion(changelog);
+    }
+    if (!VERSION_PATTERN.test(value)) {
+        throw new Error(
+            `Invalid version stamped into package.json: '${value}'. `
+            + 'Expected x.y.z[-(dev|alpha|beta)].',
+        );
+    }
+    return value;
+};
+
+/**
+ * Resolves the repository build version without mutating package.json.
+ *
+ * @param {string|undefined} rawVersion version read from `package.json`
+ * @returns {string} resolved build version
+ * @throws {Error} if `CHANGELOG.md` cannot be read, or the version cannot be
+ * resolved (delegates to {@link resolveBuildVersion} / {@link deriveDevVersion})
+ */
+const getBuildVersion = (rawVersion) => {
+    const changelogPath = path.resolve(__dirname, '../CHANGELOG.md');
+    const changelog = fs.readFileSync(changelogPath, { encoding: 'utf8' });
+    return resolveBuildVersion(rawVersion, changelog);
+};
+
+/**
+ * Verifies that the version stamped into `package.json` (resolved via
+ * {@link resolveBuildVersion}) is propagated exactly into both built artifacts
+ * — `dist/redirects.yml` and `dist/scriptlets.corelibs.json`.
+ *
+ * `version` must be the RESOLVED version (the same value the build scripts
+ * stamped), so the old `'local'`/`'0.0.0'` sentinels are gone and a mismatch
+ * is always reported.
+ *
+ * @param {object} params
+ * @param {string} params.version resolved version expected in artifacts
+ * @param {string} params.redirectsYml built `dist/redirects.yml` content
+ * @param {string} params.corelibsScriptletsJson built `dist/scriptlets.corelibs.json` content
+ * @returns {string[]} error messages (empty = OK)
+ */
+const verifyBuiltVersions = ({ version, redirectsYml, corelibsScriptletsJson }) => {
+    const errors = [];
+
+    const ymlVersion = getRedirectsYmlVersion(redirectsYml);
+
+    let corelibsVersion;
+    try {
+        const parsed = JSON.parse(corelibsScriptletsJson);
+        corelibsVersion = parsed?.version;
+    } catch (e) {
+        corelibsVersion = undefined;
+    }
+
+    if (ymlVersion !== version) {
+        errors.push(`dist/redirects.yml banner version is '${ymlVersion}', expected '${version}'`);
+    }
+    if (corelibsVersion !== version) {
+        errors.push(`dist/scriptlets.corelibs.json version is '${corelibsVersion}', expected '${version}'`);
+    }
+
+    return errors;
+};
+
 export {
     writeFile,
     getFilesList,
@@ -166,6 +291,12 @@ export {
     runTasks,
     generateHtmlTestFilename,
     convertTsFileNameToJs,
+    getRedirectsYmlVersion,
+    resolveBuildVersion,
+    deriveDevVersion,
+    getBuildVersion,
+    verifyBuiltVersions,
+    VERSION_PATTERN,
     SCRIPTLET_TYPE,
     TRUSTED_SCRIPTLET_TYPE,
     REDIRECT_TYPE,

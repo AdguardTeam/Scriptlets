@@ -1,14 +1,16 @@
 {
     "name": "@adguard/scriptlets",
-    "version": "2.4.3",
     "description": "AdGuard's JavaScript library of Scriptlets and Redirect resources",
     "type": "module",
     "scripts": {
         "build": "rimraf dist && tsx scripts/build.js",
         "postbuild": "tsx scripts/check-corelibs-dist.js",
+        "tgz": "pnpm pack && mv adguard-scriptlets-*.tgz scriptlets.tgz",
         "test": "pnpm test:vitest && pnpm test:smoke && pnpm test:qunit",
         "browserstack": "pnpm test --build && node browserstack.js",
         "test:qunit": "tsx scripts/test.js",
+        "test:qunit:build": "tsx scripts/test.js --build",
+        "test:qunit:run": "tsx scripts/test.js --tests-only",
         "test:vitest": "vitest run",
         "test:smoke": "(cd tests/smoke/exports && ./test.sh)",
         "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md && pnpm lint:test-lists",
@@ -20,8 +22,7 @@
         "wiki": "pnpm wiki:build-table && pnpm wiki:build-docs",
         "wiki:build-table": "tsx ./scripts/check-sources-updates.js && tsx ./scripts/build-compatibility-table.js",
         "wiki:build-docs": "tsx scripts/build-docs.js",
-        "prepublishOnly": "pnpm build",
-        "increment": "pnpm version patch --no-git-tag-version"
+        "prepublishOnly": "pnpm build"
     },
     "lint-staged": {
         "{src,tests,scripts}/**/*.js": [
@@ -117,8 +118,8 @@
         "jsdom": "25.0.1",
         "kleur": "4.1.5",
         "lint-staged": "12.5.0",
-        "markdownlint": "0.28.2",
-        "markdownlint-cli": "0.34.0",
+        "markdownlint": "0.41.1",
+        "markdownlint-cli": "0.49.1",
         "node-qunit-puppeteer": "2.2.1",
         "openurl": "1.1.1",
         "puppeteer": "24.35.0",

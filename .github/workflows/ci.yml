@@ -1,0 +1,58 @@
+name: CI
+
+description: Lints, tests, and builds on pull requests and pushes to master.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+# Cancel superseded runs on the same ref: a newer push (or PR update) makes the
+# in-progress CI obsolete, so stop it to free runners and give faster feedback.
+# GitHub Actions evaluates concurrency groups per-repository, so the
+# ci-ext-scriptlets- prefix is namespacing by convention — runs in other repos
+# can never share or block this group.
+concurrency:
+  group: ci-ext-scriptlets-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI
+    runs-on: team-extensions
+    permissions:
+      # Least privilege: CI only checks out and builds; it never pushes from
+      # this workflow, so the default token permissions are reduced.
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set dev version
+        uses: >-
+          AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
+
+      - name: Lint
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+
+      - name: Vitest
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+
+      - name: QUnit
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+
+      - name: Smoke tests
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+
+      - name: Build release artifacts
+        run: >-
+          DOCKER_BUILDKIT=1 docker build --progress plain
+          --target build-output --output ./artifacts
+          --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+
+      - name: Upload npm package
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-package
+          path: artifacts/scriptlets.tgz

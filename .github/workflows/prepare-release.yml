@@ -1,0 +1,77 @@
+name: Prepare release
+
+description: >-
+  Opens a release PR that finalizes CHANGELOG.md for the given tag and
+  regenerates the auto-generated wiki/ so both ship together in the PR.
+  After merge, publish-release.yml takes over.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag WITH "v" prefix (e.g. v2.5.0, v2.5.0-beta.1)'
+        required: true
+        type: string
+
+# `contents: write` — push the release-bump branch (+ the wiki commit)
+# `id-token: write` — Octopass OIDC for PR creation
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  # Opens the release PR: branches off master, finalizes CHANGELOG.md into a
+  # dated [x.y.z] section, commits, and opens a PR on branch
+  # `release-bump/v<x.y.z>` (the shared workflow names it deterministically).
+  create-release-pr:
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/create-release-pr.yml@master
+    with:
+      tag: ${{ inputs.tag }}
+      team: extensions
+
+  # Regenerate the auto-generated wiki/ from JSDoc and append it to the release
+  # PR's branch so the wiki update is reviewed and merged TOGETHER with the
+  # release — instead of being committed directly to master post-publish.
+  #
+  # The shared create-release-pr workflow does not expose its branch name, but
+  # names branches deterministically as `release-bump/v<version>` (version = the
+  # `tag` input, which already carries the `v` prefix), so `release-bump/${{ inputs.tag }}`
+  # matches the branch it just pushed.
+  #
+  # This job is INTENTIONALLY allowed to fail without blocking the release.
+  # prepare-release.yml is a workflow_dispatch-only workflow and is NOT a required
+  # check on the release PR, so a red run here — e.g. the wiki build failing
+  # because scripts/compatibility-table.json drifted from upstream uBO/ABP (see
+  # scripts/check-sources-updates.js, which fetches live upstream lists and
+  # throws on drift), or a transient network error — leaves the release PR fully
+  # mergeable. The wiki simply isn't refreshed for this release and is retried
+  # the next time a release is prepared.
+  update-wiki:
+    needs: create-release-pr
+    runs-on: team-extensions
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release-bump branch
+        uses: actions/checkout@v5
+        with:
+          ref: release-bump/${{ inputs.tag }}
+          fetch-depth: 0
+
+      - name: Build wiki
+        run: >-
+          DOCKER_BUILDKIT=1 docker build --progress plain
+          --target wiki-output --output ./wiki-out
+          --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}
+          .
+
+      - name: Append regenerated wiki to the release PR
+        run: |
+          rm -rf wiki
+          mv wiki-out/wiki wiki
+          rm -rf wiki-out
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add wiki
+          git commit -m "chore: regenerate wiki docs for release" || echo "No wiki changes to commit"
+          git push origin "release-bump/${{ inputs.tag }}"

@@ -44,6 +44,8 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
 
 ```text
 scriptlets/
+├── .github/
+│   └── workflows/            # GitHub Actions: ci, mirror, prepare/publish release
 ├── scripts/                  # Build and utility scripts (build, test, wiki)
 ├── src/
 │   ├── converters/           # Rule syntax converters (ADG ↔ UBO ↔ ABP)
@@ -61,12 +63,14 @@ scriptlets/
 │   └── smoke/                # Smoke tests for ESM exports
 ├── types/                    # Ambient type declarations
 ├── wiki/                     # Auto-generated documentation (scriptlet/redirect docs, compatibility table)
+├── .dockerignore             # Docker build context exclusions
 ├── .eslintrc.cjs             # ESLint configuration
 ├── .markdownlint.json        # Markdownlint configuration
 ├── rollup.config.js          # Rollup bundle configuration
 ├── tsconfig.json             # TypeScript configuration
 ├── vitest.config.ts          # Vitest configuration
-├── DEVELOPMENT.md            # Development guide and SDD lifecycle
+├── DEPLOYMENT.md             # Release and npm publish runbook
+├── DEVELOPMENT.md            # Development guide
 └── package.json              # Package manifest and scripts
 ```
 
@@ -81,6 +85,12 @@ scriptlets/
 - `pnpm test:qunit helpers` — run QUnit tests for helpers
 - `pnpm test:qunit scriptlets --name <name> --build` — run a single
   scriptlet test with a rebuild
+- `pnpm test:qunit:build` — build the QUnit test bundles without running them
+  (CI split-stage equivalent of `test:qunit --build`; paired with `test:qunit:run`)
+- `pnpm test:qunit:run` — run the QUnit tests without rebuilding (CI
+  split-stage; expects `test:qunit:build` to have run first)
+- `pnpm tgz` — pack `@adguard/scriptlets` into `scriptlets.tgz` (requires a
+  version; CI stamps it via `set-dev-version`, local builds must stamp first)
 - `pnpm lint` — run all linters (`lint:code` + `lint:types` + `lint:md`)
 - `pnpm lint:code` — run ESLint
 - `pnpm lint:types` — run TypeScript type checking (`tsc --noEmit`)
@@ -111,48 +121,35 @@ You MUST follow the following rules for EVERY task that you perform:
 - When the task is finished update `CHANGELOG.md` file and explain changes in
   the `Unreleased` section. Add entries to the appropriate subsection (`Added`,
   `Changed`, or `Fixed`) if it already exists; do not create duplicate
-  subsections. Changes limited to `bamboo-specs/` or CI configuration,
-  e.g. `Dockerfile`, may skip CHANGELOG updates.
+  subsections. Changes limited to CI configuration (e.g. `.github/workflows/`
+  or `Dockerfile`) may skip CHANGELOG updates.
 
-- When modifying Bamboo specs (`bamboo-specs/*.yaml`), **EVERY job that invokes
-  `docker build` or `docker run` MUST include** `requirements:` with
-  `extension: 'true'`. This pins jobs to Docker-capable extension agents.
+- CI/CD runs on GitHub Actions (`.github/workflows/`): `ci.yml` uses the shared
+  `set-dev-version` action before Docker builds, while `mirror.yml`,
+  `prepare-release.yml`, and `publish-release.yml` delegate to shared reusable
+  workflows. `package.json` MUST NOT contain a committed `version` field.
+  Clean local builds derive the next patch `-dev` version from the latest
+  released `CHANGELOG.md` heading. CI stamps that same development version,
+  and release builds stamp the manually selected release version. The build
+  MUST propagate the resolved value unchanged into `SCRIPTLETS_VERSION`,
+  `dist/redirects.yml`, and `dist/scriptlets.corelibs.json`.
 
-  **Critical**: Not pinning the agent type will cause the plan to land on a
-  non-Docker-capable agent and fail unpredictably.
+- All CI `docker build` invocations land on a single shared remote BuildKit
+  instance, so Docker build steps MUST run strictly one after another
+  (`lint` → `vitest` → `qunit` → `smoke-tests` → `build`). Concurrent builds
+  crash the builder (`error reading from server: EOF`) and fail the entire
+  job at once. They are sequential steps within a single `ci` job (not
+  separate jobs with `needs`), so GitHub Actions executes them in order by
+  default. The Dockerfile also caps the Node heap
+  (`NODE_OPTIONS=--max-old-space-size=1536`, most of the 1800m buildx memory
+  cap, with headroom for non-heap RSS) and skips the Chromium download in the
+  smoke-test stage to keep per-build memory low.
 
-  **Required YAML structure** (at the job level, after `artifacts:` or `final-tasks:`):
-
-  ```yaml
-  JobName:
-    key: JOBKEY
-    tasks:
-      - script:
-          scripts:
-            - docker build ...
-    requirements:
-      - extension: 'true'
-  ```
-
-  **Verification checklist** after modifying any `bamboo-specs/*.yaml`:
-  1. Search for all occurrences of `docker build` or `docker run`
-  2. For each job containing Docker commands, verify `requirements:` block exists
-  3. Confirm each `requirements:` contains exactly `- extension: 'true'`
-  4. Do NOT add any other requirements
-
-  **Applies to**: Every job in `bamboo-specs/build.yaml`, `bamboo-specs/test.yaml`,
-  `bamboo-specs/deploy.yaml`, and any other specs that use Docker.
-
-  **Note**: This is an implicit contract with the infrastructure.
-  If an extension agent is misconfigured or lacks Docker, CI will fail —
-  and this is acceptable and preferred over silently using a non-Docker environment.
-
-  **Note**: As of the latest revision, **every** job in `bamboo-specs/build.yaml`,
-  `bamboo-specs/test.yaml`, and `bamboo-specs/deploy.yaml` already contains a
-  correct `requirements:` block. All existing `requirements:` blocks MUST NOT be
-  removed or modified. Before reporting a missing `requirements:` block in a
-  review, **always read the actual file contents** — do not rely on diff context
-  alone, as the block may exist outside the diff hunk.
+- Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
+  `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`
+  ("Branch up-to-date check", required by branch protection) already waits
+  for every check run on the PR head SHA and blocks the merge until all
+  succeed.
 
 - If the prompt essentially asks you to refactor or improve existing code, check
   if you can phrase it as a code guideline. If it's possible, add it to
@@ -172,8 +169,8 @@ You MUST follow the following rules for EVERY task that you perform:
 Non-trivial changes MUST be preceded by a spec created with the SDD slash
 commands, which should be available globally (preferred).
 
-Specs are local-only and never committed — `specs/.current/` contents are
-gitignored.
+Specs are local-only and never committed — `.sdd/.current/` contents are
+gitignored (see `.gitignore`).
 
 ## Code guidelines
 
@@ -295,6 +292,13 @@ Project-specific rules:
 
     **Rationale**: Improves readability and makes diffs cleaner when parameters
     are added or modified.
+
+9. `package.json` MUST remain versionless in source control. Build code MUST use
+   `getBuildVersion()`; workflows that package npm artifacts MUST stamp a
+   version before packaging.
+
+   **Rationale**: The Prepare release tag and `CHANGELOG.md` are the version
+   sources of truth.
 
 ### III. Testing discipline
 
