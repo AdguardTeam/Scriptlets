@@ -105,7 +105,7 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', 'length:100')
  *     ```
  *
- * @added unknown.
+ * @added v2.5.0.
  */
 /* eslint-enable max-len */
 export function trustedPreventXhr(source: Source, propsToMatch?: string, directive?: string): void {

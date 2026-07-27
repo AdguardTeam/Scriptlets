@@ -69,7 +69,7 @@
         "neverBuiltDependencies": []
     },
     "dependencies": {
-        "@adguard/agtree": "4.1.1",
+        "@adguard/agtree": "4.2.0",
         "@types/trusted-types": "2.0.7",
         "js-yaml": "3.14.1"
     },

@@ -14,6 +14,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.5.0] - 2026-07-27
+
+### Added
+
 - `json-edit`, `json-edit-xhr-response`, and `json-edit-fetch-response`
   scriptlet aliases as uBO-compatible names for `json-prune`,
   `json-prune-xhr-response`, and `json-prune-fetch-response` respectively [#566].
@@ -28,6 +42,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `responseType` values when intercepting matched requests.
 
 ### Changed
+
+- Updated [@adguard/agtree] to 4.2.0.
 
 ### Deprecated
 
@@ -50,7 +66,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Security
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
 [#561]: https://github.com/AdguardTeam/Scriptlets/issues/561
 [#566]: https://github.com/AdguardTeam/Scriptlets/issues/566
