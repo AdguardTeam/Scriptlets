@@ -2447,7 +2447,7 @@ example.org#%#//scriptlet('prevent-fetch'[, propsToMatch[, responseBody[, respon
     - `true` — random alphanumeric string of 10 symbols
     - colon-separated pair `name:value` string value to customize `responseBody` where
         - `name` — only `length` supported for now
-        - `value` — range on numbers, for example `100-300`, limited to 500000 characters
+        - `value` — single number (e.g. `50`) or range of numbers (e.g. `100-300`), values above 500000 are rejected
 - `responseConfig` — optional, string for defining response properties.
   Original response values are used if not specified. Possible values:
     - response type shorthand (for backwards compatibility):
@@ -3252,7 +3252,7 @@ https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
 ### Syntax
 
 ```text
-example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
+example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, directive]])
 ```
 
 - `propsToMatch` — optional, string of space-separated properties to match; possible props:
@@ -3262,12 +3262,18 @@ example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
             - `name` is XMLHttpRequest object property name
             - `value` is string or regular expression for matching the value of the option
     passed to `XMLHttpRequest.open()` call
-- `randomize` — defaults to `false` for empty responseText,
-  optional argument to randomize responseText and response of matched XMLHttpRequest's response; possible values:
+- `directive` — defaults to `false` for empty responseText,
+  optional argument to set responseText and response of matched XMLHttpRequest's response; possible values:
     - `true` to randomize responseText and response, random alphanumeric string of 10 symbols
+    - `emptyObj` to set responseText and response to `{}`
+    - `emptyArr` to set responseText and response to `[]`
+    - `emptyStr` to set responseText and response to an empty string
     - colon-separated pair `name:value` string value to customize responseText and response data where
         - `name` — only `length` supported for now
-        - `value` — range on numbers, for example `100-300`, limited to 500000 characters
+        - `value` — single number (e.g. `50`) or range of numbers (e.g. `100-300`), values above 500000 are rejected
+
+> Non-keyword values (e.g. literal text) are NOT passed through in the untrusted `prevent-xhr`
+> scriptlet — they yield an empty string. Use `trusted-prevent-xhr` for literal-text passthrough.
 
 > Usage with no arguments will log XMLHttpRequest objects to browser console;
 > it may be useful for debugging but it is not allowed for prod versions of filter lists.
@@ -3317,7 +3323,13 @@ example.org#%#//scriptlet('prevent-xhr'[, propsToMatch[, randomize]])
    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'length:100-300')
     ```
 
-[Scriptlet source](../src/scriptlets/prevent-xhr.js)
+1. Prevent XMLHttpRequests for specific url and set response to empty object
+
+    ```adblock
+    example.org#%#//scriptlet('prevent-xhr', 'example.org', 'emptyObj')
+    ```
+
+[Scriptlet source](../src/scriptlets/prevent-xhr.ts)
 
 * * *
 
