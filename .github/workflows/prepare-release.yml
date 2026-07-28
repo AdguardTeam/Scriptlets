@@ -38,14 +38,25 @@ jobs:
   # `tag` input, which already carries the `v` prefix), so `release-bump/${{ inputs.tag }}`
   # matches the branch it just pushed.
   #
-  # This job is INTENTIONALLY allowed to fail without blocking the release.
-  # prepare-release.yml is a workflow_dispatch-only workflow and is NOT a required
-  # check on the release PR, so a red run here — e.g. the wiki build failing
-  # because scripts/compatibility-table.json drifted from upstream uBO/ABP (see
-  # scripts/check-sources-updates.js, which fetches live upstream lists and
-  # throws on drift), or a transient network error — leaves the release PR fully
-  # mergeable. The wiki simply isn't refreshed for this release and is retried
-  # the next time a release is prepared.
+  # This job appends the regenerated wiki/ to the release PR's branch so the
+  # wiki update is reviewed and merged TOGETHER with the release.
+  #
+  # Only the wiki BUILD is best-effort: the "Build wiki" step runs against the
+  # shared remote BuildKit instance, which can be transiently unreachable
+  # (buildx "[internal] waiting for connection" → "context deadline exceeded")
+  # or can fail because scripts/compatibility-table.json drifted from upstream
+  # uBO/ABP (see scripts/check-sources-updates.js, which fetches live upstream
+  # lists and throws on drift).  That step carries `continue-on-error: true`, so
+  # a transient build failure leaves the release PR fully mergeable without the
+  # wiki — the wiki is simply retried the next time a release is prepared.
+  #
+  # The commit/push step, however, is NOT best-effort: it only runs when the
+  # build actually succeeded (steps.build-wiki.outcome == 'success'), and a
+  # failure there (e.g. unable to push to the release branch) is a real error
+  # that surfaces as a red job rather than being silently swallowed — because
+  # the wiki WAS built but never reached the PR.  prepare-release.yml is a
+  # workflow_dispatch-only workflow and is NOT a required check on the release
+  # PR, so even a red run here never blocks the merge.
   update-wiki:
     needs: create-release-pr
     runs-on: team-extensions
@@ -59,19 +70,32 @@ jobs:
           fetch-depth: 0
 
       - name: Build wiki
+        id: build-wiki
+        continue-on-error: true
         run: >-
           DOCKER_BUILDKIT=1 docker build --progress plain
           --target wiki-output --output ./wiki-out
           --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}
           .
 
+      # Only append when the wiki was actually built; a transient build
+      # failure (steps.build-wiki.outcome != 'success') is skipped so we don't
+      # try to mv a non-existent wiki-out/ directory.
       - name: Append regenerated wiki to the release PR
+        if: steps.build-wiki.outcome == 'success'
         run: |
+          set -euo pipefail
           rm -rf wiki
           mv wiki-out/wiki wiki
           rm -rf wiki-out
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add wiki
-          git commit -m "chore: regenerate wiki docs for release" || echo "No wiki changes to commit"
-          git push origin "release-bump/${{ inputs.tag }}"
+          # Only commit and push when the wiki actually changed; a no-op
+          # rebuild (e.g. re-run of update-wiki) leaves nothing to push.
+          if git diff --cached --quiet; then
+            echo "No wiki changes to commit"
+          else
+            git commit -m "chore: regenerate wiki docs for release"
+            git push origin "release-bump/${{ inputs.tag }}"
+          fi
