@@ -47,6 +47,111 @@ test('Checking if alias name works', (assert) => {
     assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
 });
 
+test('Checking if json-edit alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const jsonEditParams = {
+        name: 'json-edit',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByJsonEditParams = window.scriptlets.invoke(jsonEditParams);
+
+    assert.strictEqual(codeByAdgParams, codeByJsonEditParams, 'json-edit name - ok');
+});
+
+test('Checking if json-edit.js alias name works', (assert) => {
+    const adgParams = {
+        name: 'json-edit',
+        engine: 'test',
+        verbose: true,
+    };
+    const jsonEditJsParams = {
+        name: 'json-edit.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByJsonEditJsParams = window.scriptlets.invoke(jsonEditJsParams);
+
+    assert.strictEqual(codeByAdgParams, codeByJsonEditJsParams, 'json-edit.js name - ok');
+});
+
+test('Checking if ubo-json-edit alias name works', (assert) => {
+    const adgParams = {
+        name,
+        engine: 'test',
+        verbose: true,
+    };
+    const uboJsonEditParams = {
+        name: 'ubo-json-edit.js',
+        engine: 'test',
+        verbose: true,
+    };
+
+    const codeByAdgParams = window.scriptlets.invoke(adgParams);
+    const codeByUboJsonEditParams = window.scriptlets.invoke(uboJsonEditParams);
+
+    assert.strictEqual(codeByAdgParams, codeByUboJsonEditParams, 'ubo-json-edit name - ok');
+});
+
+test('json-edit alias removes properties with $-prefixed JSONPath expression', (assert) => {
+    runScriptlet('json-edit', '$.ads');
+
+    const result = JSON.parse('{"ads":"block","data":"keep"}');
+
+    assert.deepEqual(result, {
+        data: 'keep',
+    }, 'should remove property when json-edit uses $-prefixed expression');
+});
+
+test('json-edit alias removes properties with dot-prefixed JSONPath expression', (assert) => {
+    runScriptlet('json-edit', '.ads');
+
+    const result = JSON.parse('{"ads":"block","data":"keep"}');
+
+    assert.deepEqual(result, {
+        data: 'keep',
+    }, 'should remove property when json-edit uses dot-prefixed expression');
+});
+
+test('json-edit alias works with legacy syntax', (assert) => {
+    runScriptlet('json-edit', 'ads');
+
+    const result = JSON.parse('{"ads":"block","data":"keep"}');
+
+    assert.deepEqual(result, {
+        data: 'keep',
+    }, 'should remove property using legacy mode with json-edit alias');
+});
+
+test('json-edit alias does not support setting values', (assert) => {
+    assert.expect(2);
+
+    runScriptlet('json-edit', '$.ads=false', '', '', 'jsonpath');
+
+    const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';
+
+    console.log = (...args) => {
+        if (args.length === 1) {
+            assert.ok(args[0].includes(message), 'should log message in console');
+        }
+        nativeConsole(...args);
+    };
+
+    const result = JSON.parse('{"ads":true}');
+
+    assert.deepEqual(result, {
+        ads: true,
+    }, 'should do nothing when attempting to set values in json-edit');
+});
+
 test('Response.json() mocking -- remove single propsToRemove', async (assert) => {
     const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
     const inputRequest = new Request(INPUT_JSON_PATH);
@@ -274,6 +379,59 @@ test('auto-detects jsonpath syntax', (assert) => {
         nested: {},
         other: 1,
     }, 'should switch to jsonpath mode when selector clearly uses jsonpath syntax');
+});
+
+test('auto-detects jsonpath syntax with dot-prefixed expression', (assert) => {
+    runScriptlet('json-prune', '.price');
+
+    const result = JSON.parse('{"price":8.99,"other":1}');
+
+    assert.deepEqual(result, {
+        other: 1,
+    }, 'should switch to jsonpath mode when expression starts with a dot');
+});
+
+test('auto-detects jsonpath syntax with dot-prefixed nested expression', (assert) => {
+    runScriptlet('json-prune', '.nested.price');
+
+    const result = JSON.parse('{"nested":{"price":8.99,"a":1},"other":2}');
+
+    assert.deepEqual(result, {
+        nested: { a: 1 },
+        other: 2,
+    }, 'should switch to jsonpath mode for dot-prefixed nested path');
+});
+
+test('legacy syntax is not affected by dot-prefixed detection', (assert) => {
+    runScriptlet('json-prune', 'price');
+
+    const result = JSON.parse('{"price":8.99,"other":1}');
+
+    assert.deepEqual(result, {
+        other: 1,
+    }, 'should remove property using legacy mode (no leading dot)');
+});
+
+test('dot-prefixed expression with explicit legacy mode does not switch to jsonpath', (assert) => {
+    runScriptlet('json-prune', '.price', '', '', 'legacy');
+
+    const result = JSON.parse('{"price":8.99,"other":1}');
+
+    assert.deepEqual(result, {
+        price: 8.99,
+        other: 1,
+    }, 'should not prune when legacy mode is forced explicitly even with dot-prefix');
+});
+
+test('empty or whitespace expression falls back to legacy mode', (assert) => {
+    runScriptlet('json-prune', '   ');
+
+    const result = JSON.parse('{"price":8.99,"other":1}');
+
+    assert.deepEqual(result, {
+        price: 8.99,
+        other: 1,
+    }, 'should not prune and fall back to legacy mode for whitespace-only expression');
 });
 
 test('supports JSONPath guards instead of obligatoryProps', (assert) => {

@@ -24,6 +24,50 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Security
 
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
+
+## [2.5.0] - 2026-07-27
+
+### Added
+
+- `json-edit`, `json-edit-xhr-response`, and `json-edit-fetch-response`
+  scriptlet aliases as uBO-compatible names for `json-prune`,
+  `json-prune-xhr-response`, and `json-prune-fetch-response` respectively [#566].
+- Dot-prefixed JSONPath auto-detection in `resolveJsonSyntaxMode` — expressions
+  starting with `.` are now treated as JSONPath mode without explicitly
+  passing `mode=jsonpath` [#566].
+- `trusted-prevent-xhr` scriptlet, a trusted variant of `prevent-xhr` that
+  supports passing arbitrary literal text as the XHR response body [#417].
+- Expanded `prevent-xhr` `randomize` directive: added `emptyObj`, `emptyArr`,
+  `emptyStr`, single-value `length:N` (e.g. `length:50`).
+- `prevent-xhr` and `trusted-prevent-xhr` now handle `document` and `json` XHR
+  `responseType` values when intercepting matched requests.
+
+### Changed
+
+- Updated [@adguard/agtree] to 4.2.0.
+
+- UBO aliases for `prevent-bab` scriptlet and redirect.
+
+### Fixed
+
+- `trusted-replace-argument` — when `replace:` is used and the argument is not a string,
+  the argument is no longer blindly overwritten with the replacement value; the replacement
+  is applied to its string form and the original value and type are kept when the pattern
+  does not match [#570].
+- `adjust-setTimeout`, `adjust-setInterval`, `prevent-setTimeout`,
+  `prevent-setInterval`, and `prevent-requestAnimationFrame` now handle
+  callbacks with a modified prototype chain: `isValidCallback` uses a `typeof`
+  check instead of `instanceof Function`, and callback stringification uses
+  the native `Function.prototype.toString` so that `matchCallback` matching
+  and logging work for such callbacks and never throw [#561].
+
+[2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
+[#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
+[#561]: https://github.com/AdguardTeam/Scriptlets/issues/561
+[#566]: https://github.com/AdguardTeam/Scriptlets/issues/566
+[#570]: https://github.com/AdguardTeam/Scriptlets/issues/570
+
 ## [2.4.3] - 2026-06-24
 
 ### Added
@@ -51,7 +95,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
 - Redirect resources with a `.ts` extension are now converted to `.js`.
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...HEAD
 [2.4.3]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...v2.4.3
 [#292]: https://github.com/AdguardTeam/Scriptlets/issues/292
 [#419]: https://github.com/AdguardTeam/Scriptlets/issues/419

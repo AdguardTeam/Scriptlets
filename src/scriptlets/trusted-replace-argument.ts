@@ -48,6 +48,9 @@ import { type Source } from './scriptlets';
  * - `argumentValue` – required, string value to set for the argument.
  *   If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`.
  *   To replace all occurrences of a pattern, the replacement string must include the global flag `g`, like this: `replace:/foo/bar/g`, otherwise only the first occurrence will be replaced.
+ *   If the matched argument is not a string, it is converted to a string before applying the replacement,
+ *   and the argument is modified only when the replacement changes the resulting value;
+ *   otherwise the original value and its type are kept.
  *   If it starts with `json:`, it is treated as a JSON string to parse and set for the argument. For example, `json:{"key": "value"}` will set the argument to an object `{ key: 'value' }`.
  *   If it does not start with `replace:` or `json:`, it is treated as a constant value to set for the argument, or as one of the following predefined constants:
  *     - `undefined`
@@ -325,6 +328,29 @@ export function trustedReplaceArgument(
         return true;
     };
 
+    /**
+     * Replaces the argument at the target index in the provided arguments list.
+     *
+     * In `replace:` mode the argument is converted to a string and the regex replacement
+     * is applied; the result is assigned only if it differs from the converted value,
+     * so arguments that do not match the regex keep their original value and type
+     * (e.g. numbers). Otherwise the argument is set to the constant value.
+     *
+     * @param argumentsList - The arguments list to modify in place.
+     */
+    const replaceTargetArgument = (argumentsList: unknown[]) => {
+        const argumentToReplace = argumentsList[Number(argumentIndex)];
+        if (shouldReplaceArgument) {
+            const argumentString = String(argumentToReplace);
+            const replacedArgument = argumentString.replace(replaceRegexValue, constantValue as string);
+            if (replacedArgument !== argumentString) {
+                argumentsList[Number(argumentIndex)] = replacedArgument;
+            }
+        } else {
+            argumentsList[Number(argumentIndex)] = constantValue;
+        }
+    };
+
     let isMatchingSuspended = false;
 
     const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
@@ -355,12 +381,7 @@ export function trustedReplaceArgument(
                 return Reflect.apply(target, thisArg, argumentsList);
             }
 
-            if (typeof argumentToReplace === 'string' && shouldReplaceArgument) {
-                argumentsList[Number(argumentIndex)] = argumentToReplace
-                    .replace(replaceRegexValue, constantValue as string);
-            } else {
-                argumentsList[Number(argumentIndex)] = constantValue;
-            }
+            replaceTargetArgument(argumentsList);
 
             // Log the modified arguments after replacement
             if (verbose === 'true') {
@@ -408,12 +429,7 @@ export function trustedReplaceArgument(
                 return Reflect.construct(target, argumentsList, newTarget);
             }
 
-            if (typeof argumentToReplace === 'string' && shouldReplaceArgument) {
-                argumentsList[Number(argumentIndex)] = argumentToReplace
-                    .replace(replaceRegexValue, constantValue as string);
-            } else {
-                argumentsList[Number(argumentIndex)] = constantValue;
-            }
+            replaceTargetArgument(argumentsList);
 
             // Log the modified arguments after replacement
             if (verbose === 'true') {

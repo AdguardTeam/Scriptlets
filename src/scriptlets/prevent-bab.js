@@ -98,13 +98,6 @@ export function preventBab(source) {
 
 export const preventBabNames = [
     'prevent-bab',
-    // aliases are needed for matching the related scriptlet converted into our syntax
-    'ubo-nobab',
-    'nobab',
-    'bab-defuser',
-    'nobab.js',
-    'ubo-nobab.js',
-    'bab-defuser.js',
 ];
 
 // eslint-disable-next-line prefer-destructuring

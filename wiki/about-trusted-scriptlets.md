@@ -6,6 +6,7 @@
 - [trusted-json-set-fetch-response](#trusted-json-set-fetch-response)
 - [trusted-json-set-xhr-response](#trusted-json-set-xhr-response)
 - [trusted-json-set](#trusted-json-set)
+- [trusted-prevent-xhr](#trusted-prevent-xhr)
 - [trusted-prune-inbound-object](#trusted-prune-inbound-object)
 - [trusted-replace-argument](#trusted-replace-argument)
 - [trusted-replace-fetch-response](#trusted-replace-fetch-response)
@@ -857,6 +858,92 @@ example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentV
 
 * * *
 
+## <a id="trusted-prevent-xhr"></a> ⚡️ trusted-prevent-xhr
+
+> Added in v2.5.0.
+
+Prevents `xhr` calls if **all** given parameters match.
+
+Trusted version of [prevent-xhr](./about-scriptlets.md#prevent-xhr).
+In addition to everything `prevent-xhr` supports, `trusted-prevent-xhr`
+can return **arbitrary literal text** as the response body.
+
+Related UBO scriptlet:
+https://github.com/gorhill/uBlock/wiki/Resources-Library#no-xhr-ifjs-
+
+### Syntax
+
+```text
+example.org#%#//scriptlet('trusted-prevent-xhr'[, propsToMatch[, directive]])
+```
+
+- `propsToMatch` — optional, string of space-separated properties to match; possible props:
+    - string or regular expression for matching the URL passed to `XMLHttpRequest.open()` call;
+      empty string or wildcard `*` for all `XMLHttpRequest.open()` calls match
+        - colon-separated pairs `name:value` where
+            - `name` is XMLHttpRequest object property name
+            - `value` is string or regular expression for matching the value of the option
+    passed to `XMLHttpRequest.open()` call
+- `directive` — defaults to `false` for empty responseText,
+  optional argument to set responseText and response of matched XMLHttpRequest's response; possible values:
+    - `true` to randomize responseText and response, random alphanumeric string of 10 symbols
+    - `emptyObj` to set responseText and response to `{}`
+    - `emptyArr` to set responseText and response to `[]`
+    - `emptyStr` to set responseText and response to an empty string
+    - colon-separated pair `name:value` string value to customize responseText and response data where
+        - `name` — only `length` supported for now
+        - `value` — single number (e.g. `50`) or range of numbers (e.g. `100-300`), values above 500000 are rejected
+    - any other string is treated as **literal text** and returned as the response body as-is
+    - `length:` can be combined with literal text in a single directive to
+      repeat the text to the specified length, e.g.
+      `'length:8000-10000 body ins.adsbygoogle'` or
+      `'body ins.adsbygoogle length:8000-10000'`
+
+> Usage with no arguments will log XMLHttpRequest objects to browser console;
+> it may be useful for debugging but it is not allowed for prod versions of filter lists.
+
+### Examples
+
+1. Log all XMLHttpRequests
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prevent-xhr')
+    ```
+
+1. Prevent XMLHttpRequests for specific url
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org')
+    ```
+
+1. Prevent XMLHttpRequests for specific url and set literal response text
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', '{"blocked":true}')
+    ```
+
+1. Prevent XMLHttpRequests for specific url and randomize response text
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', 'true')
+    ```
+
+1. Prevent XMLHttpRequests for specific url and set response to empty array
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', 'emptyArr')
+    ```
+
+1. Prevent XMLHttpRequests and set response with fixed length
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-prevent-xhr', 'example.org', 'length:100')
+    ```
+
+[Scriptlet source](../src/scriptlets/trusted-prevent-xhr.ts)
+
+* * *
+
 ## <a id="trusted-prune-inbound-object"></a> ⚡️ trusted-prune-inbound-object
 
 > Added in v1.9.91.
@@ -1073,6 +1160,9 @@ example.org#%#//scriptlet('trusted-replace-argument', methodPath, [argumentIndex
 - `argumentValue` – required, string value to set for the argument.
   If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`.
   To replace all occurrences of a pattern, the replacement string must include the global flag `g`, like this: `replace:/foo/bar/g`, otherwise only the first occurrence will be replaced.
+  If the matched argument is not a string, it is converted to a string before applying the replacement,
+  and the argument is modified only when the replacement changes the resulting value;
+  otherwise the original value and its type are kept.
   If it starts with `json:`, it is treated as a JSON string to parse and set for the argument. For example, `json:{"key": "value"}` will set the argument to an object `{ key: 'value' }`.
   If it does not start with `replace:` or `json:`, it is treated as a constant value to set for the argument, or as one of the following predefined constants:
     - `undefined`

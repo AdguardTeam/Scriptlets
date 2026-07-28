@@ -9,6 +9,7 @@ import {
     toRegExp,
     nativeIsNaN,
     isValidCallback,
+    callbackToString,
     isValidMatchStr,
     escapeRegExp,
     isValidStrPattern,
@@ -215,7 +216,7 @@ export function preventSetTimeout(source, matchCallback, matchDelay) {
         if (shouldLog) {
             hit(source);
             // https://github.com/AdguardTeam/Scriptlets/issues/105
-            logMessage(source, `setTimeout(${String(callback)}, ${delay})`, true);
+            logMessage(source, `setTimeout(${callbackToString(callback)}, ${delay})`, true);
         } else {
             shouldPrevent = isPreventionNeeded({
                 callback,
@@ -273,6 +274,7 @@ preventSetTimeout.injections = [
     toRegExp,
     nativeIsNaN,
     isValidCallback,
+    callbackToString,
     isValidMatchStr,
     escapeRegExp,
     isValidStrPattern,

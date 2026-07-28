@@ -110,6 +110,7 @@ export function resolveJsonSyntaxMode(
     const JSONPATH_MODE = 'jsonpath';
     const JSONPATH_GUARD = '[?';
     const JSONPATH_ROOT_GUARD = '$';
+    const JSONPATH_DOT_GUARD = '.';
 
     const normalizedMode = typeof mode === 'string' ? mode.trim().toLowerCase() : '';
     if (normalizedMode === LEGACY_MODE || normalizedMode === JSONPATH_MODE) {
@@ -119,7 +120,11 @@ export function resolveJsonSyntaxMode(
     }
 
     const normalizedExpression = typeof expression === 'string' ? expression.trim() : '';
-    if (normalizedExpression.startsWith(JSONPATH_ROOT_GUARD) || normalizedExpression.startsWith(JSONPATH_GUARD)) {
+    if (
+        normalizedExpression.startsWith(JSONPATH_ROOT_GUARD)
+        || normalizedExpression.startsWith(JSONPATH_GUARD)
+        || normalizedExpression.startsWith(JSONPATH_DOT_GUARD)
+    ) {
         return {
             mode: JSONPATH_MODE,
         };

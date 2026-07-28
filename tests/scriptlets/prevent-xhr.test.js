@@ -512,7 +512,7 @@ if (isSupported) {
         xhr.send();
     });
 
-    test('Empty arg, prevent all, do not randomize response text - invalid argument (length:12345)', async (assert) => {
+    test('Empty arg, prevent all, randomize response text - single length value (length:12345)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
         const MATCH_DATA = ['', 'length:12345'];
@@ -525,7 +525,7 @@ if (isSupported) {
         xhr.open(METHOD, URL);
         xhr.onload = () => {
             assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
-            assert.ok(xhr.responseText.length === 0, 'Response text is not randomized');
+            assert.strictEqual(xhr.responseText.length, 12345, 'Response text is 12345 chars long');
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
@@ -787,6 +787,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(xhr.response instanceof Blob, true, 'Response data mocked');
             assert.ok(createImg.src.startsWith('blob:'), 'Image with source blob');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for blob responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             createImg.remove();
             done();
@@ -814,6 +819,11 @@ if (isSupported) {
             assert.strictEqual(xhr.readyState, 4, 'Response done');
             assert.strictEqual(xhr.response instanceof ArrayBuffer, true, 'Response data mocked');
             assert.ok(createImg.src.startsWith('data:image/'), 'Image with source base64');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for arraybuffer responseType',
+            );
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             createImg.remove();
             done();
@@ -1152,6 +1162,159 @@ if (isSupported) {
             checkDetection2(true);
             done();
         }
+    });
+
+    test('Empty arg, prevent all, randomize response text (emptyObj)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'emptyObj'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseText, '{}', 'Response text is empty object');
+            assert.strictEqual(xhr.response, '{}', 'Response is empty object');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Empty arg, prevent all, randomize response text (emptyArr)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'emptyArr'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseText, '[]', 'Response text is empty array');
+            assert.strictEqual(xhr.response, '[]', 'Response is empty array');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Empty arg, prevent all, randomize response text (emptyStr)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'emptyStr'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseText, '', 'Response text is empty string');
+            assert.strictEqual(xhr.response, '', 'Response is empty string');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Empty arg, prevent all, randomize response text - single length value (length:50)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'length:50'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(typeof xhr.responseText, 'string', 'Response text mocked');
+            assert.strictEqual(xhr.responseText.length, 50, 'Response text is 50 chars long');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Empty arg, prevent all, untrusted literal text returns empty string (safety boundary)', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = ['', 'hello world'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.onload = () => {
+            assert.strictEqual(xhr.responseText, '', 'Literal text is not passed through (untrusted)');
+            assert.strictEqual(xhr.response, '', 'Literal response is not passed through (untrusted)');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Args, prevent matched - document responseType', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [`test01.json method:${METHOD}`, 'true'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.responseType = 'document';
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.ok(xhr.response instanceof Document, 'Response is a Document');
+            assert.ok(xhr.responseXML instanceof Document, 'ResponseXML is a Document');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for document responseType',
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
+    test('Args, prevent matched - json responseType', async (assert) => {
+        const METHOD = 'GET';
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const MATCH_DATA = [`test01.json method:${METHOD}`];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open(METHOD, URL);
+        xhr.responseType = 'json';
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'Response done');
+            assert.propEqual(xhr.response, {}, 'Response is empty object');
+            assert.throws(
+                () => xhr.responseText,
+                /InvalidStateError/,
+                'responseText throws for json responseType',
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
     });
 } else {
     test('unsupported', (assert) => {

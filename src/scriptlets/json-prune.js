@@ -440,6 +440,11 @@ export const jsonPruneNames = [
     'ubo-json-prune.js',
     'ubo-json-prune',
     'abp-json-prune',
+    // uBO-compatible alias
+    'json-edit',
+    'json-edit.js',
+    'ubo-json-edit.js',
+    'ubo-json-edit',
 ];
 
 // eslint-disable-next-line prefer-destructuring

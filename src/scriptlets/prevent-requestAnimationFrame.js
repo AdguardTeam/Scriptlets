@@ -4,6 +4,7 @@ import {
     parseMatchArg,
     isValidStrPattern,
     isValidCallback,
+    callbackToString,
     logMessage,
     escapeRegExp,
     toRegExp,
@@ -100,9 +101,9 @@ export function preventRequestAnimationFrame(source, match) {
         let shouldPrevent = false;
         if (shouldLog) {
             hit(source);
-            logMessage(source, `requestAnimationFrame(${String(callback)})`, true);
+            logMessage(source, `requestAnimationFrame(${callbackToString(callback)})`, true);
         } else if (isValidCallback(callback) && isValidStrPattern(match)) {
-            shouldPrevent = matchRegexp.test(callback.toString()) !== isInvertedMatch;
+            shouldPrevent = matchRegexp.test(callbackToString(callback)) !== isInvertedMatch;
         }
 
         if (shouldPrevent) {
@@ -136,6 +137,7 @@ preventRequestAnimationFrame.injections = [
     parseMatchArg,
     isValidStrPattern,
     isValidCallback,
+    callbackToString,
     logMessage,
     // following helpers should be injected as helpers above use them
     escapeRegExp,

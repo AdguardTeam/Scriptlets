@@ -1,6 +1,7 @@
 import {
     hit,
     isValidCallback,
+    callbackToString,
     toRegExp,
     getBoostMultiplier,
     isDelayMatched,
@@ -89,9 +90,9 @@ export function adjustSetInterval(source, matchCallback, matchDelay, boost) {
         // https://github.com/AdguardTeam/Scriptlets/issues/221
         if (!isValidCallback(callback)) {
             // eslint-disable-next-line max-len
-            const message = `Scriptlet can't be applied because of invalid callback: '${String(callback)}'`;
+            const message = `Scriptlet can't be applied because of invalid callback: '${callbackToString(callback)}'`;
             logMessage(source, message);
-        } else if (matchRegexp.test(callback.toString()) && isDelayMatched(matchDelay, delay)) {
+        } else if (matchRegexp.test(callbackToString(callback)) && isDelayMatched(matchDelay, delay)) {
             delay *= getBoostMultiplier(boost);
             hit(source);
         }
@@ -120,6 +121,7 @@ adjustSetInterval.primaryName = adjustSetIntervalNames[0];
 adjustSetInterval.injections = [
     hit,
     isValidCallback,
+    callbackToString,
     toRegExp,
     getBoostMultiplier,
     isDelayMatched,

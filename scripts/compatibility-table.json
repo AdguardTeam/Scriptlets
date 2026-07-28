@@ -98,6 +98,10 @@
             "ubo": "googletagservices_gpt.js (ubo-googletagservices_gpt.js, ubo-googletagservices_gpt)"
         },
         {
+            "adg": "json-edit",
+            "ubo": "json-edit.js (json-edit)"
+        },
+        {
             "adg": "json-prune",
             "ubo": "json-prune.js (json-prune)",
             "abp": "json-prune"
@@ -160,8 +164,7 @@
             "adg": "prevent-adfly"
         },
         {
-            "adg": "prevent-bab",
-            "ubo": "nobab.js (nobab)"
+            "adg": "prevent-bab"
         },
         {
             "adg": "prevent-canvas",
@@ -377,8 +380,16 @@
             "ubo": "trusted-replace-fetch-response.js (trusted-replace-fetch-response)"
         },
         {
+            "adg": "json-edit-fetch-response",
+            "ubo": "json-edit-fetch-response.js (json-edit-fetch-response)"
+        },
+        {
             "adg": "json-prune-fetch-response",
             "ubo": "json-prune-fetch-response.js (json-prune-fetch-response)"
+        },
+        {
+            "adg": "json-edit-xhr-response",
+            "ubo": "json-edit-xhr-response.js (json-edit-xhr-response)"
         },
         {
             "adg": "json-prune-xhr-response",
@@ -579,8 +590,7 @@
             "ubo": "prebid-ads.js"
         },
         {
-            "adg": "prevent-bab",
-            "ubo": "nobab.js"
+            "adg": "prevent-bab"
         },
         {
             "adg": "prevent-bab2",
@@ -644,6 +654,9 @@
         },
         {
             "ubo": "adthrive_abd.js"
+        },
+        {
+            "ubo": "piano-analytics.js"
         }
     ]
 }
