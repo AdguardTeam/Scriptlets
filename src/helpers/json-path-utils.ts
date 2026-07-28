@@ -1142,7 +1142,7 @@ export const jsonPath = (
         let appendValue: any;
 
         if (trimmedValue.startsWith(CURLY_BRACKET_OPEN) || trimmedValue.startsWith(SQUARE_BRACKET_OPEN)) {
-            // Json payload is parsed here directly, so time keywords in it
+            // JSON payload is parsed here directly, so time keywords in it
             // are resolved before parsing, e.g. '+=[{"time":$now$}]'
             // https://github.com/AdguardTeam/Scriptlets/issues/573
             appendValue = nativeParse(parseKeywordValue(trimmedValue));

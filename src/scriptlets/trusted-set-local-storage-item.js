@@ -30,7 +30,7 @@ import {
  *       corresponds to `(new Date).toISOString()` call, e.g '2022-11-08T13:53:19.650Z'
  *
  * > Keywords listed above can be used as a part of the value as well,
- * > and more than one keyword can be used in it, e.g. `'{"count":1,"firstTime":$now$}'`.
+ * > and more than one keyword can be used in it, e.g `'{"count":1,"firstTime":$now$}'`.
  *
  * ### Examples
  *

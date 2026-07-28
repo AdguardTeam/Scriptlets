@@ -119,7 +119,7 @@ export const parseJsonSetArgumentValue = (
     } else if (argumentValue.startsWith(MARKERS.JSON)) {
         try {
             // Time keywords are resolved before the value is parsed
-            // because 'json:{"firstTime":$now$}' is not a valid json until they are resolved.
+            // because 'json:{"firstTime":$now$}' is not a valid JSON until they are resolved.
             // Raw 'argumentValue' is still used for logging to show what has been passed in the rule
             // https://github.com/AdguardTeam/Scriptlets/issues/573
             const rawJsonValue = argumentValue.slice(MARKERS.JSON.length);
