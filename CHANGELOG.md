@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `prepare-release.yml`: made the `update-wiki` wiki build best-effort
+  (step-level `continue-on-error`; the commit/push only runs when the build
+  succeeded) so a transient remote BuildKit outage no longer fails the whole
+  release run.
+
 ### Deprecated
 
 ### Removed
