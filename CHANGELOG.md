@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Security
 
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
+
 ## [2.5.0] - 2026-07-27
 
 ### Added
@@ -45,10 +47,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Updated [@adguard/agtree] to 4.2.0.
 
-### Deprecated
-
-### Removed
-
 - UBO aliases for `prevent-bab` scriptlet and redirect.
 
 ### Fixed
@@ -64,9 +62,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the native `Function.prototype.toString` so that `matchCallback` matching
   and logging work for such callbacks and never throw [#561].
 
-### Security
-
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
 [2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
 [#561]: https://github.com/AdguardTeam/Scriptlets/issues/561
