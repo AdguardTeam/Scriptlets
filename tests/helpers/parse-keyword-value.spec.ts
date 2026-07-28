@@ -1,4 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import {
+    afterEach,
+    describe,
+    test,
+    expect,
+} from 'vitest';
 
 import { parseKeywordValue } from '../../src/helpers/parse-keyword-value';
 
@@ -12,6 +17,37 @@ import { parseKeywordValue } from '../../src/helpers/parse-keyword-value';
 const TOLERANCE_MS = 2000;
 
 describe('parseKeywordValue', () => {
+    describe('values without keywords do not depend on "Date"', () => {
+        const NativeDate = Date;
+
+        afterEach(() => {
+            window.Date = NativeDate;
+        });
+
+        test.each([
+            'true',
+            '42',
+            'json:{"a":1}',
+            'replace:/foo/bar/',
+            '{"preferences":3,"flag":false}',
+        ])('%s is returned as is even if "Date" is broken', (rawValue) => {
+            // Website may override "Date" with a throwing implementation
+            window.Date = (() => {
+                throw new Error('Date is not available');
+            }) as unknown as DateConstructor;
+
+            expect(parseKeywordValue(rawValue)).toBe(rawValue);
+        });
+
+        test('value with a keyword still uses "Date"', () => {
+            window.Date = (() => {
+                throw new Error('Date is not available');
+            }) as unknown as DateConstructor;
+
+            expect(() => parseKeywordValue('$now$')).toThrow();
+        });
+    });
+
     describe('values without keywords are not modified', () => {
         test.each([
             { actual: '' },

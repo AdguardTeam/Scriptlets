@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   more than one keyword may be used in the value.
   Applies to `trusted-set-cookie`, `trusted-set-cookie-reload`,
   `trusted-set-local-storage-item`, and `trusted-set-session-storage-item` scriptlets [#573].
+- Support of `$now$`, `$currentDate$`, and `$currentISODate$` keywords in `argumentValue`
+  of `trusted-json-set`, `trusted-json-set-fetch-response`, and `trusted-json-set-xhr-response`
+  scriptlets — as a whole value, as a part of it, and inside `json:` and `replace:` values,
+  e.g. `'json:{"count":1,"firstTime":$now$}'` [#573].
 
 ### Changed
 

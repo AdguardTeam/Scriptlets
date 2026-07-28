@@ -37,6 +37,14 @@ export const parseKeywordValue = (rawValue: string): string => {
         return rawValue;
     }
 
+    // Values with no keywords are returned before "Date" is used,
+    // so such values are not affected by the website
+    // which may override "Date" with a throwing or non-constructable implementation.
+    // "search()" is used because it does not depend on "lastIndex" of the global regexp
+    if (rawValue.search(KEYWORDS_REGEXP) === -1) {
+        return rawValue;
+    }
+
     // Same date is used for all the keywords in the value
     // so multiple keywords are replaced with the very same time
     const date = new Date();

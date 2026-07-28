@@ -8,6 +8,7 @@ const FETCH_OBJECTS_PATH = './test-files';
 const nativeXhrOpen = XMLHttpRequest.prototype.open;
 const nativeXhrSend = XMLHttpRequest.prototype.send;
 const nativeConsole = console.log;
+const nativeJsonParse = JSON.parse;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -20,6 +21,7 @@ const afterEach = () => {
     XMLHttpRequest.prototype.open = nativeXhrOpen;
     XMLHttpRequest.prototype.send = nativeXhrSend;
     console.log = nativeConsole;
+    JSON.parse = nativeJsonParse;
 };
 
 module(name, { beforeEach, afterEach });
@@ -279,6 +281,70 @@ if (isSupported) {
             assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
             done();
         };
+        xhr.send();
+    });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/573
+    test('legacy mode resolves $now$ for every response, not once', async (assert) => {
+        runScriptlet(name, ['b2', '$now$', '', 'test01']);
+
+        const done = assert.async();
+        const scriptletRunTime = Date.now();
+
+        /**
+         * Sends a request and resolves with the modified 'b2' value.
+         *
+         * @returns {Promise<number>} value set instead of the '$now$' keyword
+         */
+        const requestTimeValue = () => {
+            return new Promise((resolve) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+                xhr.onload = () => resolve(xhr.response.b2);
+                xhr.responseType = 'json';
+                xhr.send();
+            });
+        };
+
+        const firstTimeValue = await requestTimeValue();
+        // Delay guarantees that the time of the second response differs from the first one
+        await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+        });
+        const secondTimeValue = await requestTimeValue();
+
+        assert.strictEqual(typeof firstTimeValue, 'number', 'keyword has been replaced with time in ms');
+        // Time of the response is set, not the time of the scriptlet run,
+        // so the value is different for every response
+        assert.ok(firstTimeValue >= scriptletRunTime, 'first response time is not earlier than the scriptlet run');
+        assert.ok(secondTimeValue > firstTimeValue, 'second response time is later than the first one');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('legacy mode uses captured JSON.parse to resolve time keywords', async (assert) => {
+        runScriptlet(name, ['cc', 'json:{"firstTime":$now$}', '', 'test03']);
+
+        JSON.parse = () => ({ tampered: true });
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+        xhr.onload = () => {
+            assert.strictEqual(
+                typeof xhr.response.cc.firstTime,
+                'number',
+                'keyword has been resolved with the captured parser',
+            );
+            assert.strictEqual(
+                xhr.response.cc.tampered,
+                undefined,
+                'page override has not affected the parsed value',
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
         xhr.send();
     });
 } else {
