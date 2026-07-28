@@ -14,6 +14,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- Support of `$now$`, `$currentDate$`, and `$currentISODate$` keywords used as a part of the value,
+  not as a standalone value only, e.g. `'{"count":1,"firstTime":$now$}'`;
+  more than one keyword may be used in the value.
+  Applies to `trusted-set-cookie`, `trusted-set-cookie-reload`,
+  `trusted-set-local-storage-item`, and `trusted-set-session-storage-item` scriptlets [#573].
+
 ### Changed
 
 ### Deprecated
@@ -25,6 +31,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Security
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
+[#573]: https://github.com/AdguardTeam/Scriptlets/issues/573
 
 ## [2.5.0] - 2026-07-27
 
