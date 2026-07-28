@@ -1,6 +1,13 @@
-import { describe, expect, test } from 'vitest';
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
 
-import { getJsonSetValue, parseJsonSetArgumentValue } from '../../src/helpers';
+import { getJsonSetValue, parseJsonSetArgumentValue, resolveJsonSetTimeKeywords } from '../../src/helpers';
 
 const source = {
     name: 'trusted-json-set',
@@ -193,5 +200,81 @@ describe('getJsonSetValue tests', () => {
         const parsedArgumentValue = parseJsonSetArgumentValue(source, 'true', JSON.parse);
 
         expect(getJsonSetValue('old', parsedArgumentValue)).toBe(true);
+    });
+});
+
+// https://github.com/AdguardTeam/Scriptlets/issues/573
+describe('resolveJsonSetTimeKeywords tests', () => {
+    // Time of the scriptlet run, i.e. when the value is parsed for the first time
+    const PARSE_TIME = '2026-07-28T12:00:00.000Z';
+    // Time of the interception, 10 minutes after the scriptlet run
+    const RESOLVE_TIME = '2026-07-28T12:10:00.000Z';
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(PARSE_TIME));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    test('returns the same descriptor for value with no time keywords', () => {
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, 'json:{"a":1}', JSON.parse);
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        const resolved = resolveJsonSetTimeKeywords(source, 'json:{"a":1}', JSON.parse, parsedArgumentValue);
+
+        // Not parsed again — the very same object is returned
+        expect(resolved).toBe(parsedArgumentValue);
+    });
+
+    test('returns null or undefined descriptor as is', () => {
+        expect(resolveJsonSetTimeKeywords(source, '$now$', JSON.parse, null)).toBeNull();
+        expect(resolveJsonSetTimeKeywords(source, '$now$', JSON.parse, undefined)).toBeUndefined();
+    });
+
+    test('parses value with time keywords again', () => {
+        const argumentValue = '$now$';
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, argumentValue, JSON.parse);
+        expect(parsedArgumentValue.constantValue).toBe(Date.parse(PARSE_TIME));
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        const resolved = resolveJsonSetTimeKeywords(source, argumentValue, JSON.parse, parsedArgumentValue);
+
+        expect(resolved).not.toBe(parsedArgumentValue);
+        // Time of the resolving is set, not the time of the parsing
+        expect(resolved.constantValue).toBe(Date.parse(RESOLVE_TIME));
+        expect(resolved.hasTimeKeywords).toBe(true);
+    });
+
+    test('parses json marker value with time keywords again', () => {
+        const argumentValue = 'json:{"count":1,"firstTime":$now$}';
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, argumentValue, JSON.parse);
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        const resolved = resolveJsonSetTimeKeywords(source, argumentValue, JSON.parse, parsedArgumentValue);
+
+        expect(resolved.constantValue).toStrictEqual({
+            count: 1,
+            firstTime: Date.parse(RESOLVE_TIME),
+        });
+        expect(resolved.shouldMergeJsonValue).toBe(true);
+    });
+
+    test('falls back to the passed descriptor if the value cannot be parsed again', () => {
+        const argumentValue = 'json:{"firstTime":$now$}';
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, argumentValue, JSON.parse);
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        // Website may break 'JSON.parse' after the scriptlet run,
+        // so the value parsed on the scriptlet run should be used
+        const throwingParse = () => {
+            throw new Error('JSON.parse is broken');
+        };
+        const resolved = resolveJsonSetTimeKeywords(source, argumentValue, throwingParse, parsedArgumentValue);
+
+        expect(resolved).toBe(parsedArgumentValue);
+        expect(resolved.constantValue).toStrictEqual({ firstTime: Date.parse(PARSE_TIME) });
     });
 });
