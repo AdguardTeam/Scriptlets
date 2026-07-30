@@ -44,7 +44,7 @@ const PUPPETEER_LAUNCH_ARGS = [
  *
  * @returns {Promise<boolean>} Promise that resolves to true if test passed, false otherwise.
  */
-const runQunit = async (indexFile, browser) => {
+const runQunit = async (indexFile, browser, port) => {
     const qunitArgs = {
         targetUrl: `http://localhost:${port}/${indexFile}?test`,
         timeout: TESTS_RUN_TIMEOUT,
@@ -75,7 +75,10 @@ const runQunit = async (indexFile, browser) => {
 const runQunitTests = async () => {
     const testServer = server.init();
 
-    await start(testServer, port);
+    // `start` resolves with the port the server actually bound to, which may
+    // differ from the preferred `port` (e.g. an ephemeral fallback on CI when
+    // the fixed port is taken) — use it for the test page URLs.
+    const actualPort = await start(testServer, port);
 
     const dirPath = path.resolve(__dirname, TESTS_DIST);
     const testFiles = fs.readdirSync(dirPath, { encoding: 'utf8' })
@@ -116,7 +119,7 @@ const runQunitTests = async () => {
 
             console.log(`\nStarted test: ${fileName}`);
             try {
-                const testPassed = await runQunit(fileName, browser);
+                const testPassed = await runQunit(fileName, browser, actualPort);
                 console.log(`Completed test: ${fileName}`);
                 testResults.push({ fileName, passed: testPassed, error: null });
             } catch (error) {

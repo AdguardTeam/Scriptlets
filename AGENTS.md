@@ -326,6 +326,13 @@ Project-specific rules:
   before the test page finishes loading. If you change the runner, keep both
   mitigations in place.
 
+- The test server (`tests/server.js`) MUST NOT assume its fixed port (54136)
+  is free. `start()` falls back to an ephemeral port on `EADDRINUSE`, because
+  the shared CI BuildKit builder can hold that port via a concurrent or
+  leftover process — without the fallback the entire QUnit stage crashes with
+  an unhandled `'error'` event. Callers MUST use the port `start()` resolves
+  with (not the module-level `port` constant) when building test page URLs.
+
 ### IV. Other
 
 - The `wiki/` directory contains auto-generated Markdown files. Do NOT edit
