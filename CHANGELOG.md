@@ -22,10 +22,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- Fixed CI: the concurrency group is now repo-wide instead of per-ref, preventing
-  two runs on different refs (e.g. a master push and a PR update) from both
-  hitting the shared BuildKit builder at the same time and crashing it with
-  `error reading from server: EOF` [AG-57174].
+- Fixed CI: the QUnit test server (`tests/server.js`) no longer assumes its
+  fixed port (54136) is free; `start()` now resolves with the port it actually
+  bound to and falls back to an ephemeral port on `EADDRINUSE`. Previously the
+  shared CI BuildKit builder could hold that port via a concurrent or leftover
+  process, causing an unhandled `'error'` event that crashed the whole QUnit
+  stage. The per-ref concurrency group (`ci-ext-scriptlets-${{ github.ref }}`)
+  is intentionally retained so master and feature branches can run CI
+  concurrently [AG-57174].
 
 ### Security
 

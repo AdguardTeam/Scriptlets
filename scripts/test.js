@@ -31,8 +31,8 @@ const buildScriptletsAndRedirectsLists = async () => {
 const runGuiTest = async (type, name) => {
     const filename = generateHtmlTestFilename(type, name);
     const testServer = server.init();
-    await start(testServer, port);
-    await open(`http://localhost:${port}/${filename}`);
+    const actualPort = await start(testServer, port);
+    await open(`http://localhost:${actualPort}/${filename}`);
 };
 
 const allBuildTestTasks = [

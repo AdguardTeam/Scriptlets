@@ -21,8 +21,15 @@ import { runQunit } from '../index';
  * `import` statement appears first textually.
  */
 
-vi.mock('node-qunit-puppeteer', () => {
-    const passing = {
+// `node-qunit-puppeteer` ships no type declarations, so it is not imported
+// directly. `vi.hoisted` exposes the same `runQunitWithPage` mock instance to
+// both the `vi.mock` factory (registered before `../index` is evaluated) and
+// the assertion below, without tripping TS7016.
+const {
+    passing,
+    runQunitWithPage,
+} = vi.hoisted(() => {
+    const result = {
         totalTests: 1,
         stats: {
             failed: 0,
@@ -33,12 +40,17 @@ vi.mock('node-qunit-puppeteer', () => {
         modules: {},
     };
     return {
-        runQunitWithBrowser: vi.fn(async () => passing),
-        runQunitWithPage: vi.fn(async () => passing),
-        printResultSummary: vi.fn(),
-        printFailedTests: vi.fn(),
+        passing: result,
+        runQunitWithPage: vi.fn(async () => result),
     };
 });
+
+vi.mock('node-qunit-puppeteer', () => ({
+    runQunitWithBrowser: vi.fn(async () => passing),
+    runQunitWithPage,
+    printResultSummary: vi.fn(),
+    printFailedTests: vi.fn(),
+}));
 
 vi.mock('../server', () => ({
     server: { init: () => ({}) },
@@ -57,10 +69,14 @@ describe('runQunit page lifecycle', () => {
         const newPage = vi.fn(async () => ({ close }));
         const browser = { newPage };
 
-        const passed = await runQunit('some-test.html', browser);
+        const passed = await runQunit('some-test.html', browser, 1);
 
         expect(newPage).toHaveBeenCalledTimes(1);
         expect(close).toHaveBeenCalledTimes(1);
+        expect(runQunitWithPage).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ targetUrl: 'http://localhost:1/some-test.html?test' }),
+        );
         expect(passed).toBe(true);
     });
 });
