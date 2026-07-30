@@ -22,6 +22,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Fixed CI: the concurrency group is now repo-wide instead of per-ref, preventing
+  two runs on different refs (e.g. a master push and a PR update) from both
+  hitting the shared BuildKit builder at the same time and crashing it with
+  `error reading from server: EOF` [AG-57174].
+
 ### Security
 
 [Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD

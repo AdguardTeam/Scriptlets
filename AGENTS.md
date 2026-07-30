@@ -144,6 +144,12 @@ You MUST follow the following rules for EVERY task that you perform:
   (`NODE_OPTIONS=--max-old-space-size=1536`, most of the 1800m buildx memory
   cap, with headroom for non-heap RSS) and skips the Chromium download in the
   smoke-test stage to keep per-build memory low.
+  The `ci.yml` concurrency group MUST be repo-wide (not per-ref) so that CI
+  runs triggered on different refs — e.g. a push to `master` and a
+  "Update branch" on a PR — never execute Docker builds concurrently against
+  the shared BuildKit instance. `cancel-in-progress: true` ensures the
+  latest-triggered run wins and any in-progress run is cancelled (a cancelled
+  run is harmless because the newer run already incorporates the latest code).
 
 - Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
   `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`
