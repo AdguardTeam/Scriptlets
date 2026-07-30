@@ -170,7 +170,7 @@ const runTestsForFile = async (context, filename) => {
 
     const { driver } = context;
 
-    await driver.get(`http://localhost:${port}/${filename}`);
+    await driver.get(`http://localhost:${context.port}/${filename}`);
 
     // wait for testsFinished
     await driver.wait(() => {
@@ -278,9 +278,9 @@ const runTests = async (context) => {
 
 const main = async () => {
     const localServer = server.init();
-    await start(localServer, port);
+    const actualPort = await start(localServer, port);
     await startBsLocal();
-    const context = {};
+    const context = { port: actualPort };
 
     // correctly stop bsLocal and server on sigint
     process.on('SIGINT', async () => {

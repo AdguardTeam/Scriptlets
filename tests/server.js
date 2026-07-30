@@ -100,13 +100,43 @@ const server = {
     },
 };
 
-const start = (server, port) => {
-    return new Promise((resolve) => {
-        server.listen(port, () => {
-            console.log(`Server running at port: ${port}`);
-            resolve();
+/**
+ * Starts the server on the given port and resolves with the port it actually
+ * bound to. When `port` is 0 the OS assigns a free ephemeral port, and the
+ * resolved value is that assigned port.
+ *
+ * The shared CI BuildKit builder can run several builds at once, and a fixed
+ * port may already be held by a concurrent or leftover process. Without an
+ * 'error' listener, EADDRINUSE is an unhandled 'error' event that terminates
+ * the process — so on EADDRINUSE we fall back to an ephemeral port instead of
+ * crashing the whole QUnit stage.
+ *
+ * @param {http.Server} server Server instance to start.
+ * @param {number} port Preferred port; 0 picks an ephemeral one.
+ * @returns {Promise<number>} The port the server is listening on.
+ */
+const start = async (server, port) => {
+    const listen = (listenPort) => new Promise((resolve, reject) => {
+        // Without an 'error' listener, EADDRINUSE crashes the process.
+        server.once('error', reject);
+        server.listen(listenPort, () => {
+            server.off('error', reject);
+            const boundPort = server.address().port;
+            console.log(`Server running at port: ${boundPort}`);
+            resolve(boundPort);
         });
     });
+
+    try {
+        return await listen(port);
+    } catch (err) {
+        if (err.code === 'EADDRINUSE' && port !== 0) {
+            console.log(`Port ${port} is already in use, switching to an ephemeral port`);
+            // Try again with an ephemeral port (0) to let the OS pick a free one.
+            return listen(0);
+        }
+        throw err;
+    }
 };
 
 const stop = (server) => {

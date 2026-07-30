@@ -24,8 +24,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Security
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
-
 ## [2.5.0] - 2026-07-27
 
 ### Added
@@ -62,7 +60,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the native `Function.prototype.toString` so that `matchCallback` matching
   and logging work for such callbacks and never throw [#561].
 
-[2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
 [#417]: https://github.com/AdguardTeam/Scriptlets/issues/417
 [#561]: https://github.com/AdguardTeam/Scriptlets/issues/561
 [#566]: https://github.com/AdguardTeam/Scriptlets/issues/566
@@ -95,7 +92,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Missing `google.ima.dai.api.StreamRequest.StreamFormat` object to the `google-ima3-dai` redirect.
 - Redirect resources with a `.ts` extension are now converted to `.js`.
 
-[2.4.3]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...v2.4.3
 [#292]: https://github.com/AdguardTeam/Scriptlets/issues/292
 [#419]: https://github.com/AdguardTeam/Scriptlets/issues/419
 [#467]: https://github.com/AdguardTeam/Scriptlets/issues/467
@@ -110,7 +106,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Scriptlets release version for `google-ima3-dai`.
 
-[2.4.2]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.1...v2.4.2
 
 ## [2.4.1] - 2026-04-23
 
@@ -122,7 +117,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Updated [@adguard/agtree] to 4.1.1
 
-[2.4.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.0-beta...v2.4.1
 [#239]: https://github.com/AdguardTeam/Scriptlets/issues/239
 
 ## [2.4.0-beta] - 2026-04-21
@@ -151,7 +145,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `trusted-click-element` no longer throws when event handlers set `cancelBubble`
   on spoofed events [#555].
 
-[2.4.0-beta]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...v2.4.0-beta
 [#522]: https://github.com/AdguardTeam/Scriptlets/issues/522
 [#551]: https://github.com/AdguardTeam/Scriptlets/issues/551
 [#555]: https://github.com/AdguardTeam/Scriptlets/issues/555
@@ -167,7 +160,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `disable-newtab-links` not preventing clicks when the element has its own `click` handler
   added via `addEventListener` [#483].
 
-[v2.3.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...v2.3.1
 [#483]: https://github.com/AdguardTeam/Scriptlets/issues/483
 
 ## [v2.3.0] - 2026-03-18
@@ -201,7 +193,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `abort-current-inline-script`, `debug-on-property-write`, `debug-on-property-read`,
   `debug-current-inline-script` and `log-on-stack-trace` scriptlets [#513].
 
-[v2.3.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...v2.3.0
 [#308]: https://github.com/AdguardTeam/Scriptlets/issues/308
 [#401]: https://github.com/AdguardTeam/Scriptlets/issues/401
 [#501]: https://github.com/AdguardTeam/Scriptlets/issues/501
@@ -253,7 +244,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Cloudflare captcha broken when `>>>` combinator
   is used in `trusted-click-element` scriptlet [#491].
 
-[v2.2.16]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...v2.2.16
 [#329]: https://github.com/AdguardTeam/Scriptlets/issues/329
 [#386]: https://github.com/AdguardTeam/Scriptlets/issues/386
 [#422]: https://github.com/AdguardTeam/Scriptlets/issues/422
@@ -283,7 +273,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Do not throw error on `null` event type in `prevent-addEventListener` scriptlet [#539].
 
-[v2.2.15]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.14...v2.2.15
 [#539]: https://github.com/AdguardTeam/Scriptlets/issues/539
 [#542]: https://github.com/AdguardTeam/Scriptlets/issues/542
 
@@ -301,7 +290,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Updated [@adguard/agtree] to `3.4.3`.
 
-[v2.2.14]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.13...v2.2.14
 [#400]: https://github.com/AdguardTeam/Scriptlets/issues/400
 [#488]: https://github.com/AdguardTeam/Scriptlets/issues/488
 [#541]: https://github.com/AdguardTeam/Scriptlets/issues/541
@@ -322,7 +310,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   for `trusted-set-constant` scriptlet [#499].
 - Support for negative priority suffix in UBO redirects rules.
 
-[v2.2.13]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.12...v2.2.13
 [#499]: https://github.com/AdguardTeam/Scriptlets/issues/499
 [#512]: https://github.com/AdguardTeam/Scriptlets/issues/512
 
@@ -332,7 +319,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Updated [@adguard/agtree] to `3.2.5`.
 
-[v2.2.12]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.11...v2.2.12
 
 ## [v2.2.11] - 2025-10-17
 
@@ -340,7 +326,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Updated [@adguard/agtree] to `3.2.4`.
 
-[v2.2.11]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.10...v2.2.11
 
 ## [v2.2.10] - 2025-09-11
 
@@ -352,7 +337,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Updated [@adguard/agtree] to `3.2.3`.
 
-[v2.2.10]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.9...v2.2.10
 [#493]: https://github.com/AdguardTeam/Scriptlets/issues/493
 
 ## [v2.2.9] - 2025-08-14
@@ -367,7 +351,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `TrustedScriptURL` in `prevent-element-src-loading` scriptlet [#514].
 - Fix scriptlets compilation error in Safari 15 due to unsupported regex lookbehind [#519].
 
-[v2.2.9]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...v2.2.9
 [#405]: https://github.com/AdguardTeam/Scriptlets/issues/405
 [#514]: https://github.com/AdguardTeam/Scriptlets/issues/514
 [#517]: https://github.com/AdguardTeam/Scriptlets/issues/517
@@ -387,7 +370,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `trusted-set-cookie-reload` scriptlet infinite page reloading when cookie with time keyword is used [#489].
 
-[v2.2.8]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.7...v2.2.8
 [#489]: https://github.com/AdguardTeam/Scriptlets/issues/489
 
 <!-- v2.2.6 is the same as v2.2.7 -->
@@ -402,7 +384,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `json-prune` scriptlet to properly handle `null` values
   while checking specified key in object [#504].
 
-[v2.2.7]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.4...v2.2.7
 [#504]: https://github.com/AdguardTeam/Scriptlets/issues/504
 
 <!-- v2.2.5 is the same as v2.2.4 -->
@@ -416,7 +397,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `spoof-css` scriptlet — incorrect `DOMRect` setting [#498].
 
-[v2.2.4]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.1...v2.2.4
 [#498]: https://github.com/AdguardTeam/Scriptlets/issues/498
 
 ## [v2.2.1] - 2025-05-21
@@ -425,7 +405,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Trusted types bundle.
 
-[v2.2.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.0...v2.2.1
 
 ## [v2.2.0] - 2025-05-21
 
@@ -448,7 +427,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `trusted-suppress-native-method` scriptlet, `isMatchingSuspended` was not reset when the stack does not match,
   so in some cases given method was not prevented [#496].
 
-[v2.2.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...v2.2.0
 [#392]: https://github.com/AdguardTeam/Scriptlets/issues/392
 [#416]: https://github.com/AdguardTeam/Scriptlets/issues/416
 [#440]: https://github.com/AdguardTeam/Scriptlets/issues/440
@@ -467,7 +445,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Ability in `prevent-addEventListener` scriptlet to match specific element
   and updated `log-addEventListener` scriptlet to log target element [#480].
 
-[v2.1.7]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.6...v2.1.7
 [#480]: https://github.com/AdguardTeam/Scriptlets/issues/480
 
 ## [v2.1.6] - 2025-03-06
@@ -476,7 +453,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Incorrectly removing content from parsed array when using the `json-prune` scriptlet [#482].
 
-[v2.1.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.5...v2.1.6
 [#482]: https://github.com/AdguardTeam/Scriptlets/issues/482
 
 ## [v2.1.5] - 2025-02-28
@@ -494,7 +470,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `prevent-eval-if` and `prevent-bab` scriptlets, now `eval.toString()` call returns original value [#481].
 
-[v2.1.5]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.4...v2.1.5
 [#183]: https://github.com/AdguardTeam/Scriptlets/issues/183
 [#481]: https://github.com/AdguardTeam/Scriptlets/issues/481
 
@@ -512,7 +487,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Issue with `trusted-click-element` scriptlet when `delay` was used and the element was removed
   and added again before it was clicked [#391].
 
-[v2.1.4]: https://github.com/AdguardTeam/Scriptlets/compare/v2.0.1...v2.1.4
 [#391]: https://github.com/AdguardTeam/Scriptlets/issues/391
 [#468]: https://github.com/AdguardTeam/Scriptlets/issues/468
 [#472]: https://github.com/AdguardTeam/Scriptlets/issues/472
@@ -546,7 +520,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `isUboRedirectCompatibleWithAdg`, `isAbpRedirectCompatibleWithAdg`, `convertUboRedirectToAdg`,
   `convertAbpRedirectToAdg`, `convertRedirectToAdg`, and `convertRedirectNameToAdg` functions.
 
-[v2.0.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...v2.0.1
 [#451]: https://github.com/AdguardTeam/Scriptlets/issues/451
 [#415]: https://github.com/AdguardTeam/Scriptlets/issues/415
 [#455]: https://github.com/AdguardTeam/Scriptlets/issues/455
@@ -570,7 +543,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Setting cookie which name has special prefix `__Host-` or `__Secure-`
   by `trusted-set-cookie` and `trusted-set-cookie-reload` scriptlets [#448].
 
-[v1.12.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.27...v1.12.1
 [#450]: https://github.com/AdguardTeam/Scriptlets/issues/450
 [#448]: https://github.com/AdguardTeam/Scriptlets/issues/448
 
@@ -596,7 +568,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Modifying `RegExp.$1, …, RegExp.$9` values
   in `log-on-stack-trace` and `abort-on-stack-trace` scriptlets [#384].
 
-[v1.11.27]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...v1.11.27
 [#301]: https://github.com/AdguardTeam/Scriptlets/issues/301
 [#384]: https://github.com/AdguardTeam/Scriptlets/issues/384
 [#439]: https://github.com/AdguardTeam/Scriptlets/issues/439
@@ -617,7 +588,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Re-adding element after removing it in `trusted-create-element` scriptlet [#434].
 - `trusted-click-element` scriptlet does not click on an element that is already in the DOM [#437].
 
-[v1.11.16]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...v1.11.16
 [#426]: https://github.com/AdguardTeam/Scriptlets/issues/426
 [#434]: https://github.com/AdguardTeam/Scriptlets/issues/434
 [#435]: https://github.com/AdguardTeam/Scriptlets/issues/435
@@ -638,7 +608,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Log message format [CoreLibs#180].
 
-[v1.11.6]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...v1.11.6
 [#433]: https://github.com/AdguardTeam/Scriptlets/issues/433
 [#429]: https://github.com/AdguardTeam/Scriptlets/issues/429
 [#411]: https://github.com/AdguardTeam/Scriptlets/issues/411
@@ -663,7 +632,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `set-attr` value cannot be set to minimum `0` and maximum `32767` possible value [#425].
 
-[v1.11.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...v1.11.1
 [#425]: https://github.com/AdguardTeam/Scriptlets/issues/425
 [#423]: https://github.com/AdguardTeam/Scriptlets/issues/423
 [#420]: https://github.com/AdguardTeam/Scriptlets/issues/420
@@ -713,7 +681,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - UBO→ADG conversion of `$remove$` scriptlet param [#404].
 - `set-constant` scriptlet not setting a constant over falsy values [#403].
 
-[v1.10.25]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...v1.10.25
 [#408]: https://github.com/AdguardTeam/Scriptlets/issues/408
 [#404]: https://github.com/AdguardTeam/Scriptlets/issues/404
 [#403]: https://github.com/AdguardTeam/Scriptlets/issues/403
@@ -741,7 +708,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - UBO alias for `set-cookie-reload` scriptlet [#332].
 - New values `t`, `f`, `necessary`, `required` for `set-cookie` and `set-cookie-reload` [#379].
 
-[v1.10.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.105...v1.10.1
 [#278]: https://github.com/AdguardTeam/Scriptlets/issues/278
 [#281]: https://github.com/AdguardTeam/Scriptlets/issues/281
 [#317]: https://github.com/AdguardTeam/Scriptlets/issues/317
@@ -762,7 +728,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `AdDisplayContainer` constructor in `google-ima3` redirect, now it adds div element to container [#353].
 - `getInnerError` method in `google-ima3` redirect, now it returns `null` [#353].
 
-[v1.9.105]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.101...v1.9.105
 [#353]: https://github.com/AdguardTeam/Scriptlets/issues/353
 [#355]: https://github.com/AdguardTeam/Scriptlets/issues/355
 
@@ -780,7 +745,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `prevent-fetch` scriptlet, if `responseType` is set to `opaque` then now response `body` is set to `null`,
   `status` is set to `0` and `statusText` is set to `''` [#364].
 
-[v1.9.101]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.96...v1.9.101
 [#344]: https://github.com/AdguardTeam/Scriptlets/issues/344
 [#364]: https://github.com/AdguardTeam/Scriptlets/issues/364
 [AdguardBrowserExtension#2237]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237
@@ -793,7 +757,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and `set-session-storage-item` scriptlets [#256].
 - Ability to set proxy trap in `set-constant` scriptlet [#330].
 
-[v1.9.96]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.91...v1.9.96
 [#256]: https://github.com/AdguardTeam/Scriptlets/issues/256
 
 ## [v1.9.91] - 2023-11-13
@@ -811,7 +774,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Issue with `stack` in `evaldata-prune` scriptlet [#378].
 - Setting values to wrong properties in `set-constant` scriptlet [#373].
 
-[v1.9.91]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.83...v1.9.91
 [#366]: https://github.com/AdguardTeam/Scriptlets/issues/366
 [#372]: https://github.com/AdguardTeam/Scriptlets/issues/372
 [#373]: https://github.com/AdguardTeam/Scriptlets/issues/373
@@ -834,7 +796,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Not pruning in `m3u-prune` scriptlet if file contains carriage return [#354].
 - Not overriding value in `set-constant` (only partially, for cases where single scriptlet is used) [#330].
 
-[v1.9.83]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.72...v1.9.83
 [#330]: https://github.com/AdguardTeam/Scriptlets/issues/330
 [#354]: https://github.com/AdguardTeam/Scriptlets/issues/354
 [#359]: https://github.com/AdguardTeam/Scriptlets/issues/359
@@ -850,7 +811,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
     - `set-local-storage-item`;
     - `set-session-storage-item`.
 
-[v1.9.72]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.70...v1.9.72
 
 ## [v1.9.70] - 2023-08-21
 
@@ -864,7 +824,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Issue with `stack` in `json-prune` scriptlet [#348].
 - Issue with `obligatoryProps` in `json-prune` scriptlet [#345].
 
-[v1.9.70]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.62...v1.9.70
 [#325]: https://github.com/AdguardTeam/Scriptlets/issues/325
 [#345]: https://github.com/AdguardTeam/Scriptlets/issues/345
 [#348]: https://github.com/AdguardTeam/Scriptlets/issues/348
@@ -876,7 +835,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `prevent-xhr` closure bug on multiple requests [#347].
 
-[v1.9.62]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.61...v1.9.62
 [#347]: https://github.com/AdguardTeam/Scriptlets/issues/347
 
 ## [v1.9.61] - 2023-08-01
@@ -885,7 +843,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `convertRedirectNameToAdg()` method to convert redirect names to ADG [#346].
 
-[v1.9.61]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.58...v1.9.61
 [#346]: https://github.com/AdguardTeam/Scriptlets/issues/346
 
 ## [v1.9.58] - 2023-07-27
@@ -894,7 +851,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Escape commas in the params during conversion to ubo rules [#343].
 
-[v1.9.58]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.57...v1.9.58
 [#343]: https://github.com/AdguardTeam/Scriptlets/issues/343
 
 ## [v1.9.57] - 2023-07-21
@@ -916,7 +872,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Printing unnecessary logs to the console in `log-addEventListener` scriptlet [#335].
 - Error throwing in `prevent-fetch` and `prevent-xhr` scriptlets when a request is blocked [#334].
 
-[v1.9.57]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.37...v1.9.57
 [#303]: https://github.com/AdguardTeam/Scriptlets/issues/303
 [#331]: https://github.com/AdguardTeam/Scriptlets/issues/331
 [#334]: https://github.com/AdguardTeam/Scriptlets/issues/334
@@ -953,7 +908,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `getResponseHeader()` and `getAllResponseHeaders()` methods mock
   in `prevent-xhr` scriptlet [#295].
 
-[v1.9.37]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.7...v1.9.37
 [#276]: https://github.com/AdguardTeam/Scriptlets/issues/276
 [#291]: https://github.com/AdguardTeam/Scriptlets/issues/291
 [#293]: https://github.com/AdguardTeam/Scriptlets/issues/293
@@ -982,7 +936,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Issue with `MutationObserver.disconnect()` in `trusted-click-element` [#284].
 
-[v1.9.7]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.1...v1.9.7
 [#284]: https://github.com/AdguardTeam/Scriptlets/issues/284
 [#298]: https://github.com/AdguardTeam/Scriptlets/issues/298
 
@@ -1007,7 +960,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   throwing an error while logging some requests [#289].
 - Improve performance of the `isValidScriptletName()` method.
 
-[v1.9.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.8.2...v1.9.1
 [#262]: https://github.com/AdguardTeam/Scriptlets/issues/262
 [#270]: https://github.com/AdguardTeam/Scriptlets/issues/270
 [#277]: https://github.com/AdguardTeam/Scriptlets/issues/277
@@ -1035,7 +987,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `prevent-xhr` and `trusted-replace-xhr-response` closure bug on multiple requests [#261].
 - Missing `googletagmanager-gtm` in compatibility table.
 
-[v1.8.2]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.20...v1.8.2
 [#137]: https://github.com/AdguardTeam/Scriptlets/issues/137
 [#247]: https://github.com/AdguardTeam/Scriptlets/issues/247
 [#259]: https://github.com/AdguardTeam/Scriptlets/issues/259
@@ -1053,7 +1004,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Redirects types.
 
-[v1.7.20]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.19...v1.7.20
 
 ## <a name="v1.7.19"></a> [v1.7.19] - 2022-12-22
 
@@ -1063,7 +1013,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   when encountering already bound `.addEventListener`.
 - `google-ima3` conversion.
 
-[v1.7.19]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.14...v1.7.19
 
 ## <a name="v1.7.14"></a> [v1.7.14] - 2022-12-16
 
@@ -1071,7 +1020,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `set-constant` ADG→UBO conversion for `emptyArr` and `emptyObj` [uBlock-issues#2411].
 
-[v1.7.14]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.13...v1.7.14
 [uBlock-issues#2411]: https://github.com/uBlockOrigin/uBlock-issues/issues/2411
 
 ## <a name="v1.7.13"></a> [v1.7.13] - 2022-12-13
@@ -1080,7 +1028,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `isEmptyObject` helper not counting `prototype` as an object property.
 
-[v1.7.13]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.10...v1.7.13
 
 ## <a name="v1.7.10"></a> [v1.7.10] - 2022-12-07
 
@@ -1095,7 +1042,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Spread of args bug at `getXhrData` call for `trusted-replace-xhr-response`.
 - Request properties array not being served to `getRequestData` and `parseMatchProps` helpers.
 
-[v1.7.10]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.3...v1.7.10
 [#264]: https://github.com/AdguardTeam/Scriptlets/issues/264
 [#265]: https://github.com/AdguardTeam/Scriptlets/issues/265
 
@@ -1126,7 +1072,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
     - `metrika-yandex-tag` [#254];
     - `googlesyndication-adsbygoogle` [#252].
 
-[v1.7.3]: https://github.com/AdguardTeam/Scriptlets/compare/v1.6.55...v1.7.3
 [#23]: https://github.com/AdguardTeam/Scriptlets/issues/23
 [#201]: https://github.com/AdguardTeam/Scriptlets/issues/201
 [#202]: https://github.com/AdguardTeam/Scriptlets/issues/202
@@ -1141,3 +1086,58 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [@adguard/agtree]: https://www.npmjs.com/package/@adguard/agtree
 
 [Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API
+
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
+[2.4.3]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...v2.4.3
+[2.4.2]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.1...v2.4.2
+[2.4.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.0-beta...v2.4.1
+[2.4.0-beta]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.1...v2.4.0-beta
+[v2.3.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.3.0...v2.3.1
+[v2.3.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.16...v2.3.0
+[v2.2.16]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.15...v2.2.16
+[v2.2.15]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.14...v2.2.15
+[v2.2.14]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.13...v2.2.14
+[v2.2.13]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.12...v2.2.13
+[v2.2.12]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.11...v2.2.12
+[v2.2.11]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.10...v2.2.11
+[v2.2.10]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.9...v2.2.10
+[v2.2.9]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.8...v2.2.9
+[v2.2.8]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.7...v2.2.8
+[v2.2.7]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.4...v2.2.7
+[v2.2.4]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.1...v2.2.4
+[v2.2.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.2.0...v2.2.1
+[v2.2.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.7...v2.2.0
+[v2.1.7]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.6...v2.1.7
+[v2.1.6]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.5...v2.1.6
+[v2.1.5]: https://github.com/AdguardTeam/Scriptlets/compare/v2.1.4...v2.1.5
+[v2.1.4]: https://github.com/AdguardTeam/Scriptlets/compare/v2.0.1...v2.1.4
+[v2.0.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.12.1...v2.0.1
+[v1.12.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.27...v1.12.1
+[v1.11.27]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.16...v1.11.27
+[v1.11.16]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.6...v1.11.16
+[v1.11.6]: https://github.com/AdguardTeam/Scriptlets/compare/v1.11.1...v1.11.6
+[v1.11.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.25...v1.11.1
+[v1.10.25]: https://github.com/AdguardTeam/Scriptlets/compare/v1.10.1...v1.10.25
+[v1.10.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.105...v1.10.1
+[v1.9.105]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.101...v1.9.105
+[v1.9.101]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.96...v1.9.101
+[v1.9.96]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.91...v1.9.96
+[v1.9.91]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.83...v1.9.91
+[v1.9.83]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.72...v1.9.83
+[v1.9.72]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.70...v1.9.72
+[v1.9.70]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.62...v1.9.70
+[v1.9.62]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.61...v1.9.62
+[v1.9.61]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.58...v1.9.61
+[v1.9.58]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.57...v1.9.58
+[v1.9.57]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.37...v1.9.57
+[v1.9.37]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.7...v1.9.37
+[v1.9.7]: https://github.com/AdguardTeam/Scriptlets/compare/v1.9.1...v1.9.7
+[v1.9.1]: https://github.com/AdguardTeam/Scriptlets/compare/v1.8.2...v1.9.1
+[v1.8.2]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.20...v1.8.2
+[v1.7.20]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.19...v1.7.20
+[v1.7.19]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.14...v1.7.19
+[v1.7.14]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.13...v1.7.14
+[v1.7.13]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.10...v1.7.13
+[v1.7.10]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.3...v1.7.10
+[v1.7.3]: https://github.com/AdguardTeam/Scriptlets/compare/v1.6.55...v1.7.3
