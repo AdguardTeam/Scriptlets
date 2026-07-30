@@ -318,6 +318,14 @@ Project-specific rules:
   for Vitest. This separation ensures QUnit tests are not picked up by Vitest
   and vice versa.
 
+- The QUnit test runner (`tests/index.js`) MUST launch Chrome with
+  `--disable-dev-shm-usage` and MUST restart the browser periodically
+  (`BROWSER_RESTART_INTERVAL`). Chrome's `/dev/shm` is tiny inside the CI
+  Docker container (exhausting it makes page creation extremely slow), and a
+  single long-lived browser accumulates V8 heap until the QUnit timeout fires
+  before the test page finishes loading. If you change the runner, keep both
+  mitigations in place.
+
 ### IV. Other
 
 - The `wiki/` directory contains auto-generated Markdown files. Do NOT edit

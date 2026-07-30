@@ -15,9 +15,26 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TESTS_RUN_TIMEOUT = 30000;
+const TESTS_RUN_TIMEOUT = 60000;
 const TESTS_DIST = './dist';
 const TEST_FILE_NAME_MARKER = '.html';
+
+// Restart the browser every N tests to release Chrome's accumulated V8 heap
+// and CDP overhead.  Under the CI Docker builder's 1800 m memory cap, a single
+// long-lived browser grows RSS until page creation slows to a crawl and the
+// QUnit timeout fires before the test page even finishes loading.
+const BROWSER_RESTART_INTERVAL = 25;
+
+// Standard Chrome-in-Docker flags needed for the CI builder.
+const PUPPETEER_LAUNCH_ARGS = [
+    '--no-sandbox',
+    '--allow-file-access-from-files',
+    // Chrome uses /dev/shm for shared memory, which is tiny (64 MB) inside the
+    // CI Docker container.  Without this flag Chrome exhausts /dev/shm and
+    // becomes extremely slow — page creation alone can take tens of seconds,
+    // pushing individual QUnit pages past their timeout.
+    '--disable-dev-shm-usage',
+];
 
 /**
  * Returns false if test failed and true if test passed
@@ -33,7 +50,7 @@ const runQunit = async (indexFile, browser) => {
         timeout: TESTS_RUN_TIMEOUT,
         // needed for logging to console while testing run via `pnpm test`
         // redirectConsole: true,
-        puppeteerArgs: ['--no-sandbox', '--allow-file-access-from-files'],
+        puppeteerArgs: PUPPETEER_LAUNCH_ARGS,
     };
 
     // Manage the page lifecycle ourselves. node-qunit-puppeteer's
@@ -70,16 +87,33 @@ const runQunitTests = async () => {
     try {
         console.log('Running tests sequentially with shared browser instance..');
 
-        // Create a single browser instance to be shared across all tests
-        const browser = await puppeteer.launch({
-            args: ['--no-sandbox', '--allow-file-access-from-files'],
+        // Create a single browser instance to be shared across runs of tests,
+        // restarting it periodically to release Chrome's accumulated memory.
+        const launchBrowser = () => puppeteer.launch({
+            args: PUPPETEER_LAUNCH_ARGS,
             // Using headless mode for better performance
             headless: 'new',
         });
 
+        let browser = await launchBrowser();
+
         // Run tests one after another
         const testResults = [];
-        for (const fileName of testFiles) {
+        for (let i = 0; i < testFiles.length; i += 1) {
+            const fileName = testFiles[i];
+
+            // Restart the browser periodically to keep Chrome's RSS bounded
+            // under the CI Docker builder's memory cap.  Creating + closing
+            // pages releases per-page memory, but V8 heap and CDP overhead
+            // still accumulate inside a single long-lived browser process
+            // until page creation slows to a crawl and the QUnit timeout fires
+            // before the test page even finishes loading.
+            if (i > 0 && i % BROWSER_RESTART_INTERVAL === 0) {
+                console.log(`\nRestarting browser to release accumulated memory (test ${i + 1}/${testFiles.length})`);
+                await browser.close();
+                browser = await launchBrowser();
+            }
+
             console.log(`\nStarted test: ${fileName}`);
             try {
                 const testPassed = await runQunit(fileName, browser);
