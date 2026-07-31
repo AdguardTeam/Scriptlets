@@ -22,11 +22,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- CI: use a repo-wide concurrency group that queues (rather than cancels)
-  overlapping runs, so a `master` push and a PR push both run to completion
-  instead of crashing the shared remote BuildKit builder with
-  "error reading from server: EOF".
-
 ### Security
 
 ## [2.5.0] - 2026-07-27
