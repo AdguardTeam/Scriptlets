@@ -1157,3 +1157,54 @@ test('modifies thisArg when jsonSource is this and uses property used inside scr
     }, 'should modify the thisArg object by removing the specified property');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
+
+// https://github.com/AdguardTeam/Scriptlets/issues/573
+test('sets $now$ keyword value — JSON.stringify', (assert) => {
+    runScriptlet(name, ['JSON.stringify', 'foo.firstTime', '$now$']);
+    const result = nativeParse(JSON.stringify({ foo: { bar: 1 } }));
+
+    // Some time will pass between calling scriptlet
+    // and qunit running assertion
+    const tolerance = 125;
+    assert.strictEqual(result.foo.bar, 1, 'other properties have not been modified');
+    assert.strictEqual(typeof result.foo.firstTime, 'number', 'keyword has been set as a number');
+    assert.ok(Date.now() - result.foo.firstTime < tolerance, 'keyword has been replaced with current time');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('sets keyword as a part of the string value — JSON.stringify', (assert) => {
+    runScriptlet(name, ['JSON.stringify', 'foo.consent', 'accepted at $now$']);
+    const result = nativeParse(JSON.stringify({ foo: { bar: 1 } }));
+
+    assert.ok(/^accepted at \d+$/.test(result.foo.consent), 'keyword has been replaced inside the value');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('sets multiple keywords inside json: value — JSON.stringify', (assert) => {
+    runScriptlet(name, [
+        'JSON.stringify',
+        'foo',
+        'json:{"count":1,"firstTime":$now$,"lastTime":$now$,"date":"$currentISODate$"}',
+    ]);
+    const result = nativeParse(JSON.stringify({ foo: { bar: 1 } }));
+
+    const tolerance = 125;
+    assert.strictEqual(result.foo.bar, 1, 'json value has been merged into the current one');
+    assert.strictEqual(result.foo.count, 1, 'other properties of the json value have not been modified');
+    assert.strictEqual(result.foo.firstTime, result.foo.lastTime, 'same keywords have got the same time');
+    assert.strictEqual(
+        new Date(result.foo.date).getTime(),
+        result.foo.firstTime,
+        'different keywords have got the same time',
+    );
+    assert.ok(Date.now() - result.foo.firstTime < tolerance, 'keywords have been replaced with current time');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('does not modify keyword-like value — JSON.stringify', (assert) => {
+    runScriptlet(name, ['JSON.stringify', 'foo.bar', '$now']);
+    const result = nativeParse(JSON.stringify({ foo: { bar: 1 } }));
+
+    assert.strictEqual(result.foo.bar, '$now', 'value has not been modified');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});

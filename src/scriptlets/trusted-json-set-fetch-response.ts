@@ -42,6 +42,8 @@ import {
     jsonLineEdit,
     hit,
     parseJsonSetArgumentValue,
+    parseKeywordValue,
+    resolveJsonSetTimeKeywords,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -68,7 +70,8 @@ import { type Source } from './scriptlets';
  *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `argumentValue` — required, value to write at the target path.
  *   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax
- *   as `trusted-json-set`.
+ *   as `trusted-json-set`, including `$now$`, `$currentDate$`, and `$currentISODate$` time keywords
+ *   which may be used in any part of the value, e.g. `json:{"count":1,"firstTime":$now$}`.
  *   In `jsonpath` mode this argument may be omitted when `propsPath` already includes
  *   an inline mutation suffix such as `=` or `+=`.
  * - `requiredInitialProps` — optional, space-separated list of property paths
@@ -202,18 +205,30 @@ export function trustedJsonSetFetchResponse(
     const setPathObj = parsedSetPaths[0];
     const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(requiredInitialProps) : [];
 
+    // Value which is used for all the nodes matched in the intercepted payload.
+    // Time keywords in it are resolved before every payload is mutated
+    // https://github.com/AdguardTeam/Scriptlets/issues/573
+    let resolvedArgumentValue = parsedArgumentValue;
+
     const getValueToSet = (currentValue: any): any => {
-        if (!parsedArgumentValue) {
+        if (!resolvedArgumentValue) {
             return currentValue;
         }
 
-        return getJsonSetValue(currentValue, parsedArgumentValue);
+        return getJsonSetValue(currentValue, resolvedArgumentValue);
     };
 
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
             return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), stack);
         }
+
+        resolvedArgumentValue = resolveJsonSetTimeKeywords(
+            source,
+            argumentValue,
+            nativeObjects.nativeParse,
+            parsedArgumentValue,
+        );
 
         return jsonSetter(
             source,
@@ -377,4 +392,6 @@ trustedJsonSetFetchResponse.injections = [
     jsonLineEdit,
     hit,
     parseJsonSetArgumentValue,
+    parseKeywordValue,
+    resolveJsonSetTimeKeywords,
 ];

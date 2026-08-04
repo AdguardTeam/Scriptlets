@@ -1,6 +1,13 @@
-import { describe, expect, test } from 'vitest';
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
 
-import { getJsonSetValue, parseJsonSetArgumentValue } from '../../src/helpers';
+import { getJsonSetValue, parseJsonSetArgumentValue, resolveJsonSetTimeKeywords } from '../../src/helpers';
 
 const source = {
     name: 'trusted-json-set',
@@ -54,6 +61,106 @@ describe('parseJsonSetArgumentValue tests', () => {
 
         expect(result).toBeNull();
     });
+
+    // https://github.com/AdguardTeam/Scriptlets/issues/573
+    describe('time keywords', () => {
+        // Tolerance in ms, should be greater than one second
+        // because '$currentDate$' value has no milliseconds in it
+        const TOLERANCE_MS = 2000;
+
+        test('standalone $now$ is set as a number', () => {
+            const result = parseJsonSetArgumentValue(source, '$now$', JSON.parse);
+
+            expect(typeof result.constantValue).toBe('number');
+            expect(Date.now() - result.constantValue).toBeLessThan(TOLERANCE_MS);
+        });
+
+        test('standalone $currentDate$ is set as a string', () => {
+            const result = parseJsonSetArgumentValue(source, '$currentDate$', JSON.parse);
+
+            expect(typeof result.constantValue).toBe('string');
+            expect(Date.now() - new Date(result.constantValue).getTime()).toBeLessThan(TOLERANCE_MS);
+        });
+
+        test('standalone $currentISODate$ is set as a string', () => {
+            const result = parseJsonSetArgumentValue(source, '$currentISODate$', JSON.parse);
+
+            expect(result.constantValue).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        });
+
+        test('keyword as a part of the string value', () => {
+            const result = parseJsonSetArgumentValue(source, 'set at $now$!', JSON.parse);
+
+            expect(result.constantValue).toMatch(/^set at \d+!$/);
+        });
+
+        test('keyword inside json marker value', () => {
+            const result = parseJsonSetArgumentValue(source, 'json:{"count":1,"firstTime":$now$}', JSON.parse);
+
+            expect(result.shouldMergeJsonValue).toBe(true);
+            expect(result.constantValue.count).toBe(1);
+            expect(typeof result.constantValue.firstTime).toBe('number');
+            expect(Date.now() - result.constantValue.firstTime).toBeLessThan(TOLERANCE_MS);
+        });
+
+        test('multiple keywords inside json marker value', () => {
+            const result = parseJsonSetArgumentValue(
+                source,
+                'json:{"firstTime":$now$,"lastTime":$now$,"date":"$currentISODate$"}',
+                JSON.parse,
+            );
+
+            const { firstTime, lastTime, date } = result.constantValue;
+            // all the keywords are replaced with the very same time
+            expect(firstTime).toBe(lastTime);
+            expect(new Date(date).getTime()).toBe(firstTime);
+            expect(Date.now() - firstTime).toBeLessThan(TOLERANCE_MS);
+        });
+
+        test('keyword inside replace marker regexp is used as is', () => {
+            const result = parseJsonSetArgumentValue(source, 'replace:/$now$/hidden/', JSON.parse);
+
+            // Regexp is a match pattern, so the keyword in it is not resolved
+            expect(result.replaceRegexValue.source).toBe('$now$');
+            expect(result.constantValue).toBe('hidden');
+        });
+
+        test('keyword inside replace marker replacement', () => {
+            const result = parseJsonSetArgumentValue(source, 'replace:/foo/bar $now$/', JSON.parse);
+
+            expect(result.shouldReplaceArgument).toBe(true);
+            expect(result.constantValue).toMatch(/^bar \d+$/);
+            expect(getJsonSetValue('foo test', result)).toMatch(/^bar \d+ test$/);
+        });
+
+        test.each([
+            { value: '$now$', expected: true },
+            { value: '{"count":1,"firstTime":$now$}', expected: true },
+            { value: 'json:{"firstTime":$now$}', expected: true },
+            { value: 'replace:/foo/$now$/', expected: true },
+            // keyword in the regexp part is not resolved, so it is not reported
+            { value: 'replace:/$now$/hidden/', expected: false },
+            { value: 'true', expected: false },
+            { value: 'json:{"a":1}', expected: false },
+            { value: 'replace:/foo/bar/', expected: false },
+        ])('hasTimeKeywords is $expected for $value', ({ value, expected }) => {
+            expect(parseJsonSetArgumentValue(source, value, JSON.parse).hasTimeKeywords).toBe(expected);
+        });
+
+        test('keyword-like values are not modified', () => {
+            const notKeywords = [
+                '$now',
+                'now$',
+                '$NOW$',
+                '$now2$',
+                '$$',
+            ];
+
+            notKeywords.forEach((value) => {
+                expect(parseJsonSetArgumentValue(source, value, JSON.parse).constantValue).toBe(value);
+            });
+        });
+    });
 });
 
 describe('getJsonSetValue tests', () => {
@@ -93,5 +200,81 @@ describe('getJsonSetValue tests', () => {
         const parsedArgumentValue = parseJsonSetArgumentValue(source, 'true', JSON.parse);
 
         expect(getJsonSetValue('old', parsedArgumentValue)).toBe(true);
+    });
+});
+
+// https://github.com/AdguardTeam/Scriptlets/issues/573
+describe('resolveJsonSetTimeKeywords tests', () => {
+    // Time of the scriptlet run, i.e. when the value is parsed for the first time
+    const PARSE_TIME = '2026-07-28T12:00:00.000Z';
+    // Time of the interception, 10 minutes after the scriptlet run
+    const RESOLVE_TIME = '2026-07-28T12:10:00.000Z';
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(PARSE_TIME));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    test('returns the same descriptor for value with no time keywords', () => {
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, 'json:{"a":1}', JSON.parse);
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        const resolved = resolveJsonSetTimeKeywords(source, 'json:{"a":1}', JSON.parse, parsedArgumentValue);
+
+        // Not parsed again — the very same object is returned
+        expect(resolved).toBe(parsedArgumentValue);
+    });
+
+    test('returns null or undefined descriptor as is', () => {
+        expect(resolveJsonSetTimeKeywords(source, '$now$', JSON.parse, null)).toBeNull();
+        expect(resolveJsonSetTimeKeywords(source, '$now$', JSON.parse, undefined)).toBeUndefined();
+    });
+
+    test('parses value with time keywords again', () => {
+        const argumentValue = '$now$';
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, argumentValue, JSON.parse);
+        expect(parsedArgumentValue.constantValue).toBe(Date.parse(PARSE_TIME));
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        const resolved = resolveJsonSetTimeKeywords(source, argumentValue, JSON.parse, parsedArgumentValue);
+
+        expect(resolved).not.toBe(parsedArgumentValue);
+        // Time of the resolving is set, not the time of the parsing
+        expect(resolved.constantValue).toBe(Date.parse(RESOLVE_TIME));
+        expect(resolved.hasTimeKeywords).toBe(true);
+    });
+
+    test('parses json marker value with time keywords again', () => {
+        const argumentValue = 'json:{"count":1,"firstTime":$now$}';
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, argumentValue, JSON.parse);
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        const resolved = resolveJsonSetTimeKeywords(source, argumentValue, JSON.parse, parsedArgumentValue);
+
+        expect(resolved.constantValue).toStrictEqual({
+            count: 1,
+            firstTime: Date.parse(RESOLVE_TIME),
+        });
+        expect(resolved.shouldMergeJsonValue).toBe(true);
+    });
+
+    test('falls back to the passed descriptor if the value cannot be parsed again', () => {
+        const argumentValue = 'json:{"firstTime":$now$}';
+        const parsedArgumentValue = parseJsonSetArgumentValue(source, argumentValue, JSON.parse);
+
+        vi.setSystemTime(new Date(RESOLVE_TIME));
+        // Website may break 'JSON.parse' after the scriptlet run,
+        // so the value parsed on the scriptlet run should be used
+        const throwingParse = () => {
+            throw new Error('JSON.parse is broken');
+        };
+        const resolved = resolveJsonSetTimeKeywords(source, argumentValue, throwingParse, parsedArgumentValue);
+
+        expect(resolved).toBe(parsedArgumentValue);
+        expect(resolved.constantValue).toStrictEqual({ firstTime: Date.parse(PARSE_TIME) });
     });
 });

@@ -37,6 +37,8 @@ import {
     hit,
     isPruningNeeded,
     parseJsonSetArgumentValue,
+    parseKeywordValue,
+    resolveJsonSetTimeKeywords,
     toRegExp,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
@@ -65,7 +67,9 @@ import { type Source } from './scriptlets';
  *   Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
  *   In `jsonpath` mode only single JSONPath prune expression is supported.
  * - `argumentValue` — required, value to write at the target path.
- *   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax as `trusted-json-set`.
+ *   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax as `trusted-json-set`,
+ *   including `$now$`, `$currentDate$`, and `$currentISODate$` time keywords
+ *   which may be used in any part of the value, e.g. `json:{"count":1,"firstTime":$now$}`.
  *   In `jsonpath` mode this argument may be omitted when `propsPath` already includes
  *   an inline mutation suffix such as `=` or `+=`.
  * - `requiredInitialProps` — optional, space-separated list of property paths
@@ -183,18 +187,30 @@ export function trustedJsonSetXhrResponse(
     const matchedXhrRequests = new Map<XMLHttpRequest, XMLHttpRequestSharedRequestData<any>>();
     const xhrRequestHeaders = new Map<XMLHttpRequest, any[]>();
 
+    // Value which is used for all the nodes matched in the intercepted payload.
+    // Time keywords in it are resolved before every payload is mutated
+    // https://github.com/AdguardTeam/Scriptlets/issues/573
+    let resolvedArgumentValue = parsedArgumentValue;
+
     const getValueToSet = (currentValue: any): any => {
-        if (!parsedArgumentValue) {
+        if (!resolvedArgumentValue) {
             return currentValue;
         }
 
-        return getJsonSetValue(currentValue, parsedArgumentValue);
+        return getJsonSetValue(currentValue, resolvedArgumentValue);
     };
 
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
             return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), '');
         }
+
+        resolvedArgumentValue = resolveJsonSetTimeKeywords(
+            source,
+            argumentValue,
+            nativeObjects.nativeParse,
+            parsedArgumentValue,
+        );
 
         return jsonSetter(
             source,
@@ -491,5 +507,7 @@ trustedJsonSetXhrResponse.injections = [
     hit,
     isPruningNeeded,
     parseJsonSetArgumentValue,
+    parseKeywordValue,
+    resolveJsonSetTimeKeywords,
     toRegExp,
 ];

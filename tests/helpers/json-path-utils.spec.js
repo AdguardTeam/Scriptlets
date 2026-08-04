@@ -2734,3 +2734,108 @@ describe('jsonPath tests', () => {
         expect(findValue(result)).toBe(false);
     });
 });
+
+describe('jsonPath time keywords', () => {
+    // https://github.com/AdguardTeam/Scriptlets/issues/573
+    // Tolerance in ms, should be greater than one second
+    // because '$currentDate$' value has no milliseconds in it
+    const TOLERANCE_MS = 2000;
+
+    test('Sets current time as a value of the existing key for $now$ value', () => {
+        const root = { data: { now: 1 } };
+
+        const result = jsonPath(source, root, '$.data.now=$now$', nativeObjects);
+
+        expect(typeof result.data.now).toBe('number');
+        expect(Date.now() - result.data.now).toBeLessThan(TOLERANCE_MS);
+    });
+
+    test('Sets a value with $now$ keyword used as a part of it', () => {
+        const root = { config: { consent: 'none' } };
+
+        const result = jsonPath(source, root, '$.config.consent=accepted at $now$', nativeObjects);
+
+        expect(result.config.consent).toMatch(/^accepted at \d+$/);
+    });
+
+    test('Sets a json value with multiple keywords used as a part of it', () => {
+        const root = { config: {} };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.config=json:{"count":1,"firstTime":$now$,"date":"$currentISODate$"}',
+            nativeObjects,
+        );
+
+        expect(result.config.count).toBe(1);
+        expect(typeof result.config.firstTime).toBe('number');
+        // all the keywords are replaced with the very same time
+        expect(new Date(result.config.date).getTime()).toBe(result.config.firstTime);
+        expect(Date.now() - result.config.firstTime).toBeLessThan(TOLERANCE_MS);
+    });
+
+    test('Appends a json payload with $now$ keyword used as a part of it', () => {
+        const root = { config: { ads: true } };
+
+        const result = jsonPath(source, root, '$.config+={"firstTime":$now$}', nativeObjects);
+
+        expect(result.config.ads).toBe(true);
+        expect(typeof result.config.firstTime).toBe('number');
+        expect(Date.now() - result.config.firstTime).toBeLessThan(TOLERANCE_MS);
+    });
+
+    test('Appends an array payload with $now$ keyword used as a part of it', () => {
+        const root = { times: [1] };
+
+        const result = jsonPath(source, root, '$.times+=[$now$]', nativeObjects);
+
+        expect(result.times).toHaveLength(2);
+        expect(Date.now() - result.times[1]).toBeLessThan(TOLERANCE_MS);
+    });
+
+    test('Uses $now$ keyword in the replace() replacement', () => {
+        const root = { referer: 'time:none' };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.referer=replace({"regex":"none","replacement":"$now$"})',
+            nativeObjects,
+        );
+
+        expect(result.referer).toMatch(/^time:\d+$/);
+    });
+
+    test('Keyword in the replace() regexp is used as is', () => {
+        const FIXED_TIME = '2026-07-28T12:00:00.000Z';
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(FIXED_TIME));
+
+        // Content is the very time which the keyword would be resolved to,
+        // so the replacement is applied if the keyword in the regexp is resolved
+        const currentTime = `${Date.parse(FIXED_TIME)}`;
+        const root = { referer: currentTime };
+
+        const result = jsonPath(
+            source,
+            root,
+            '$.referer=replace({"regex":"$now$","replacement":"replaced"})',
+            nativeObjects,
+        );
+
+        // Regexp is a match pattern, so the keyword in it is not resolved
+        // and such a regexp matches nothing
+        expect(result.referer).toBe(currentTime);
+
+        vi.useRealTimers();
+    });
+
+    test('Keyword-like value is not modified', () => {
+        const root = { config: { consent: 'none' } };
+
+        const result = jsonPath(source, root, '$.config.consent=$now', nativeObjects);
+
+        expect(result.config.consent).toBe('$now');
+    });
+});

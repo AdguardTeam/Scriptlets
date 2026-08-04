@@ -30,6 +30,9 @@ import { type Source } from './scriptlets';
  *     - `$currentISODate$` keyword for setting current date in the date time string format,
  *       corresponds to `(new Date).toISOString()` call, e.g '2022-11-08T13:53:19.650Z'
  *
+ * > Keywords listed above can be used as a part of the value as well,
+ * > and more than one keyword can be used in it, e.g `'{"count":1,"firstTime":$now$}'`.
+ *
  * ### Examples
  *
  * 1. Set session storage item
@@ -58,6 +61,12 @@ import { type Source } from './scriptlets';
  *
  *     ```adblock
  *     example.org#%#//scriptlet('trusted-set-session-storage-item', 'player.live.current.play', '$currentDate$')
+ *     ```
+ *
+ * 1. Set item with keywords used as a part of the value
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-session-storage-item', 'storage_item', '{"count":1,"firstTime":$now$}')
  *     ```
  *
  * 1. Set item without value

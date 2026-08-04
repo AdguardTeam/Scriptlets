@@ -1,6 +1,7 @@
 import { getJsonSetValue, parseJsonSetArgumentValue } from './json-set-utils';
 import { logMessage } from './log-message';
 import { matchStackTrace } from './match-stack';
+import { parseKeywordValue } from './parse-keyword-value';
 import { toRegExp } from './string-utils';
 import { type Source } from '../scriptlets';
 
@@ -1141,7 +1142,10 @@ export const jsonPath = (
         let appendValue: any;
 
         if (trimmedValue.startsWith(CURLY_BRACKET_OPEN) || trimmedValue.startsWith(SQUARE_BRACKET_OPEN)) {
-            appendValue = nativeParse(trimmedValue);
+            // JSON payload is parsed here directly, so time keywords in it
+            // are resolved before parsing, e.g. '+=[{"time":$now$}]'
+            // https://github.com/AdguardTeam/Scriptlets/issues/573
+            appendValue = nativeParse(parseKeywordValue(trimmedValue));
         } else {
             const parsedValue = parseArgumentValue(trimmedValue);
             if (!parsedValue || parsedValue.shouldReplaceArgument) {
@@ -1195,12 +1199,18 @@ export const jsonPath = (
             ? toRegExp(replaceConfig.regex)
             : new RegExp(replaceConfig.regex, replaceConfig.flags || EMPTY_STRING);
 
+        // Time keywords are resolved in the replacement only —
+        // the regexp is a match pattern, so it is used as is,
+        // e.g. 'replace({"regex":"\\d+","replacement":"$now$"})'
+        // https://github.com/AdguardTeam/Scriptlets/issues/573
+        const replacement = parseKeywordValue(replaceConfig.replacement);
+
         return (currentValue: any) => {
             if (typeof currentValue !== 'string') {
                 return currentValue;
             }
 
-            return currentValue.replace(regex, replaceConfig.replacement);
+            return currentValue.replace(regex, replacement);
         };
     }
 
