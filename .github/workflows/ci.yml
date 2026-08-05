@@ -39,46 +39,38 @@ jobs:
       actions: read
     steps:
       - name: Wait for previous CI runs to finish
-        uses: actions/github-script@v7
-        timeout-minutes: 15
-        with:
-          script: |
-            // Docker builds share a single remote BuildKit instance, so only
-            // one CI run can build at a time.  The per-ref concurrency group
-            // prevents cross-PR cancellation but allows runs on different refs
-            // to be in progress simultaneously — this step serializes the
-            // actual Docker builds by waiting for earlier in-progress CI runs.
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const thisRunId = context.runId;
-            const POLL_INTERVAL_MS = 30_000;
-            const MAX_WAIT_MS = 15 * 60_000;
-
-            let waited = 0;
-            while (waited < MAX_WAIT_MS) {
-              const { data } = await github.request(
-                'GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs',
-                {
-                  owner,
-                  repo,
-                  workflow_id: 'ci.yml',
-                  status: 'in_progress',
-                  per_page: 100,
-                },
-              );
-              const earlier = data.workflow_runs.filter(
-                (r) => r.id < thisRunId,
-              );
-              if (earlier.length === 0) {
-                core.info('No earlier in-progress CI runs. Proceeding.');
-                return;
-              }
-              const names = earlier.map((r) => r.head_branch).join(', ');
-              core.info(`Waiting for ${earlier.length} earlier CI run(s) to finish (${names})...`);
-              await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-              waited += POLL_INTERVAL_MS;
-            }
-            core.warning('Timed out waiting for earlier CI runs. Proceeding anyway.');
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Docker builds share a single remote BuildKit instance, so only
+          # one CI run can build at a time.  The per-ref concurrency group
+          # prevents cross-PR cancellation but allows runs on different refs
+          # to be in progress simultaneously — this step serializes the
+          # actual Docker builds by waiting for earlier in-progress CI runs.
+          #
+          # Uses the GitHub REST API via curl (no third-party action needed).
+          API_URL="https://api.github.com/repos/${{ github.repository }}/actions/workflows/ci.yml/runs?status=in_progress&per_page=100"
+          MAX_WAIT=900   # 15 minutes
+          POLL_INTERVAL=30
+          waited=0
+          while [ "$waited" -lt "$MAX_WAIT" ]; do
+            # Count in-progress CI runs with a lower run ID (started before us)
+            COUNT=$(curl -sS \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "$API_URL" \
+              | jq '[.workflow_runs[] | select(.id < ${{ github.run_id }})] | length')
+            if [ "$COUNT" = "0" ] || [ -z "$COUNT" ]; then
+              echo "No earlier in-progress CI runs. Proceeding."
+              break
+            fi
+            echo "Waiting for $COUNT earlier CI run(s) to finish..."
+            sleep "$POLL_INTERVAL"
+            waited=$((waited + POLL_INTERVAL))
+          done
+          if [ "$waited" -ge "$MAX_WAIT" ]; then
+            echo "::warning::Timed out waiting for earlier CI runs. Proceeding anyway."
+          fi
 
       - name: Checkout
         uses: actions/checkout@v5
