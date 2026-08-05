@@ -14,6 +14,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.5.1-beta.0] - 2026-08-05
+
+### Added
+
 - Support of `$now$`, `$currentDate$`, and `$currentISODate$` keywords used as a part of the value,
   not as a standalone value only, e.g. `'{"count":1,"firstTime":$now$}'`;
   more than one keyword may be used in the value.
@@ -23,14 +37,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   of `trusted-json-set`, `trusted-json-set-fetch-response`, and `trusted-json-set-xhr-response`
   scriptlets — as a whole value, as a part of it, and inside `json:` and `replace:` values,
   e.g. `'json:{"count":1,"firstTime":$now$}'` [#573].
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
 
 ### Security
 
@@ -1099,7 +1105,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1-beta.0...HEAD
+[2.5.1-beta.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...v2.5.1-beta.0
 [2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
 [2.4.3]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.2...v2.4.3
 [2.4.2]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.1...v2.4.2
