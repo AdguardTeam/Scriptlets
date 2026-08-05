@@ -2,8 +2,8 @@ name: Prepare release
 
 description: >-
   Opens a release PR that finalizes CHANGELOG.md for the given tag and
-  regenerates the auto-generated wiki/ so both ship together in the PR.
-  After merge, publish-release.yml takes over.
+  regenerates the auto-generated wiki/ so both ship together in the SAME
+  commit — CI runs once. After merge, publish-release.yml takes over.
 
 on:
   workflow_dispatch:
@@ -13,62 +13,72 @@ on:
         required: true
         type: string
 
-# `contents: write` — push the release-bump branch (+ the wiki commit)
-# `id-token: write` — Octopass OIDC for PR creation
+# `contents: write` — push the release-bump branch (GITHUB_TOKEN)
+# `id-token: write` — Octopass OIDC for PR creation (create-pr action)
 permissions:
   contents: write
   id-token: write
 
 jobs:
-  # Opens the release PR: branches off master, finalizes CHANGELOG.md into a
-  # dated [x.y.z] section, commits, and opens a PR on branch
-  # `release-bump/v<x.y.z>` (the shared workflow names it deterministically).
-  create-release-pr:
-    uses: AdGuardSoftwareLimited/actions/.github/workflows/create-release-pr.yml@master
+  # Validate the tag and resolve canonical version metadata (same reusable
+  # workflow the shared create-release-pr.yml used internally).
+  metadata:
+    uses: AdGuardSoftwareLimited/actions/.github/workflows/version-metadata.yml@master
     with:
-      tag: ${{ inputs.tag }}
       team: extensions
+      tag: ${{ inputs.tag }}
 
-  # Regenerate the auto-generated wiki/ from JSDoc and append it to the release
-  # PR's branch so the wiki update is reviewed and merged TOGETHER with the
-  # release — instead of being committed directly to master post-publish.
+  # Inlines the shared create-release-pr.yml flow, but wedges the wiki
+  # regeneration BETWEEN "update-changelog" and "commit" so the wiki lands in
+  # the SAME initial commit as the CHANGELOG bump. This way the PR opens with
+  # both changes already present, and CI runs exactly once (on the
+  # pull_request:opened event fired by the Octopass-authenticated create-pr
+  # action) instead of twice (opened → CI → wiki push → CI again).
   #
-  # The shared create-release-pr workflow does not expose its branch name, but
-  # names branches deterministically as `release-bump/v<version>` (version = the
-  # `tag` input, which already carries the `v` prefix), so `release-bump/${{ inputs.tag }}`
-  # matches the branch it just pushed.
-  #
-  # This job appends the regenerated wiki/ to the release PR's branch so the
-  # wiki update is reviewed and merged TOGETHER with the release.
-  #
-  # Only the wiki BUILD is best-effort: the "Build wiki" step runs against the
-  # shared remote BuildKit instance, which can be transiently unreachable
-  # (buildx "[internal] waiting for connection" → "context deadline exceeded")
-  # or can fail because scripts/compatibility-table.json drifted from upstream
-  # uBO/ABP (see scripts/check-sources-updates.js, which fetches live upstream
-  # lists and throws on drift).  That step carries `continue-on-error: true`, so
-  # a transient build failure leaves the release PR fully mergeable without the
-  # wiki — the wiki is simply retried the next time a release is prepared.
-  #
-  # The commit/push step, however, is NOT best-effort: it only runs when the
-  # build actually succeeded (steps.build-wiki.outcome == 'success'), and a
-  # failure there (e.g. unable to push to the release branch) is a real error
-  # that surfaces as a red job rather than being silently swallowed — because
-  # the wiki WAS built but never reached the PR.  prepare-release.yml is a
-  # workflow_dispatch-only workflow and is NOT a required check on the release
-  # PR, so even a red run here never blocks the merge.
-  update-wiki:
-    needs: create-release-pr
+  # Why inline instead of the shared reusable workflow?
+  #   The shared create-release-pr.yml does checkout → update-changelog →
+  #   create branch + commit + push → open PR all in one job, with no hook to
+  #   inject a step between changelog and commit. Reusable workflows can't have
+  #   steps injected, so we replicate its logic here, calling the same composite
+  #   actions (update-changelog, create-pr) so the behavior is identical — only
+  #   the wiki build is newly inserted.
+  create-release-pr:
+    needs: [metadata]
     runs-on: team-extensions
     permissions:
+      # `contents: write` — push the release branch (GITHUB_TOKEN).
+      #   This push does NOT trigger CI: GitHub suppresses events from
+      #   GITHUB_TOKEN. CI is triggered by the PR opening (next step).
+      # `id-token: write` — Octopass OIDC (the create-pr action exchanges
+      #   the id-token for a short-lived App installation token to open the PR).
       contents: write
+      id-token: write
     steps:
-      - name: Checkout release-bump branch
+      - name: Checkout
         uses: actions/checkout@v5
         with:
-          ref: release-bump/${{ inputs.tag }}
           fetch-depth: 0
 
+      - name: Update changelog
+        # Rolls [Unreleased] → dated [x.y.z] section and extracts release notes.
+        # Same composite action the shared create-release-pr.yml uses.
+        id: changelog
+        uses: AdGuardSoftwareLimited/actions/actions/update-changelog@master
+        with:
+          changelog-path: CHANGELOG.md
+          new-version: ${{ needs.metadata.outputs.raw-version }}
+
+      # Build the auto-generated wiki/ from JSDoc so it ships in the same
+      # commit as the CHANGELOG bump.
+      #
+      # Best-effort: the wiki build runs against the shared remote BuildKit
+      # instance, which can be transiently unreachable (buildx "[internal]
+      # waiting for connection" → "context deadline exceeded") or can fail
+      # because scripts/compatibility-table.json drifted from upstream uBO/ABP
+      # (see scripts/check-sources-updates.js).  `continue-on-error: true` means
+      # a transient build failure leaves the release PR fully mergeable without
+      # the wiki — the wiki is simply retried the next time a release is
+      # prepared.
       - name: Build wiki
         id: build-wiki
         continue-on-error: true
@@ -78,24 +88,55 @@ jobs:
           --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}
           .
 
-      # Only append when the wiki was actually built; a transient build
-      # failure (steps.build-wiki.outcome != 'success') is skipped so we don't
-      # try to mv a non-existent wiki-out/ directory.
-      - name: Append regenerated wiki to the release PR
+      # Only append when the wiki was actually built; a transient build failure
+      # (steps.build-wiki.outcome != 'success') is skipped so we don't try to
+      # mv a non-existent wiki-out/ directory. The PR still opens with just the
+      # CHANGELOG bump.
+      - name: Append regenerated wiki
         if: steps.build-wiki.outcome == 'success'
         run: |
-          set -euo pipefail
           rm -rf wiki
           mv wiki-out/wiki wiki
           rm -rf wiki-out
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add wiki
-          # Only commit and push when the wiki actually changed; a no-op
-          # rebuild (e.g. re-run of update-wiki) leaves nothing to push.
-          if git diff --cached --quiet; then
-            echo "No wiki changes to commit"
-          else
-            git commit -m "chore: regenerate wiki docs for release"
-            git push origin "release-bump/${{ inputs.tag }}"
-          fi
+
+      - name: Create branch and commit
+        id: branch
+        shell: bash
+        env:
+          NEW_VERSION: ${{ needs.metadata.outputs.raw-version }}
+        run: |
+          set -euo pipefail
+
+          BRANCH_NAME="release-bump/v${NEW_VERSION}"
+
+          git config user.name "adguard-octopass[bot]"
+          git config user.email "285975488+adguard-octopass[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH_NAME"
+          # CHANGELOG.md was modified by the update-changelog action above.
+          git add CHANGELOG.md
+          # wiki/ was replaced by the build step above (if it succeeded).
+          # If the build failed/skipped, wiki/ is unchanged and this is a no-op.
+          git add wiki || true
+          git commit -m "Release v${NEW_VERSION}"
+          # Delete stale remote branch if a previous run left one behind, then
+          # push the fresh branch. This push uses GITHUB_TOKEN (which does NOT
+          # trigger CI — that's intentional; CI is triggered by the PR opening
+          # in the next step).
+          git push origin ":$BRANCH_NAME" || true
+          git push origin "$BRANCH_NAME"
+
+          echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      # Opens the PR with an Octopass App installation token (NOT GITHUB_TOKEN).
+      # Pushes/PR-creates made with GITHUB_TOKEN never trigger workflow runs, so
+      # the PR must be opened with a real App token to fire pull_request:opened
+      # → CI runs once on a branch that already has both CHANGELOG and wiki.
+      # Same composite action the shared create-release-pr.yml uses.
+      - name: Create pull request
+        uses: AdGuardSoftwareLimited/actions/actions/create-pr@master
+        with:
+          title: 'Release v${{ needs.metadata.outputs.raw-version }}'
+          body: ${{ steps.changelog.outputs.release_notes }}
+          head: ${{ steps.branch.outputs.branch }}
+          base: ${{ github.ref_name }}
