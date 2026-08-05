@@ -84,9 +84,7 @@ jobs:
         continue-on-error: true
         run: >-
           DOCKER_BUILDKIT=1 docker build --progress plain
-          --target wiki-output --output ./wiki-out
-          --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}
-          .
+          --target wiki-output --output ./wiki-out .
 
       # Only append when the wiki was actually built; a transient build failure
       # (steps.build-wiki.outcome != 'success') is skipped so we don't try to

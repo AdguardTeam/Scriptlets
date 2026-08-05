@@ -91,10 +91,7 @@ COPY . /scriptlets
 # ============================================================================
 FROM source AS dist
 
-ARG BUILD_RUN_ID
-
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm build
 
 # ============================================================================
@@ -103,10 +100,7 @@ RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
 # ============================================================================
 FROM dist AS build
 
-ARG BUILD_RUN_ID
-
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm tgz && \
     mkdir -p /out && \
     mv scriptlets.tgz /out/
@@ -123,10 +117,7 @@ COPY --from=build /out/ /
 # ============================================================================
 FROM source AS wiki
 
-ARG BUILD_RUN_ID
-
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm wiki && \
     mkdir -p /out && \
     cp -r wiki /out/wiki
@@ -140,10 +131,7 @@ COPY --from=wiki /out/ /
 # ============================================================================
 FROM source AS lint
 
-ARG BUILD_RUN_ID
-
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm lint && \
     mkdir -p /out && \
     touch /out/lint.txt
@@ -157,13 +145,10 @@ COPY --from=lint /out/ /
 # ============================================================================
 FROM source-puppeteer AS test-qunit
 
-ARG BUILD_RUN_ID
-
 # Build dist + test bundles in a separate RUN (separate Node process) so the
 # build's memory is released before Chrome is launched, reducing peak RSS
 # under the CI builder's memory cap.
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     pnpm test:qunit:build
 
 # Run only the browser tests in a fresh process. The runner closes each test
@@ -182,10 +167,7 @@ COPY --from=test-qunit /out/ /
 # ============================================================================
 FROM source AS test-vitest
 
-ARG BUILD_RUN_ID
-
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
     touch /out/vitest.txt && \
     pnpm test:vitest
@@ -200,8 +182,6 @@ COPY --from=test-vitest /out/ /
 # ============================================================================
 FROM source AS test-smoke
 
-ARG BUILD_RUN_ID
-
 COPY --from=build /out/scriptlets.tgz /tmp/scriptlets.tgz
 
 # Smoke tests run in Node (jsdom-level); Chromium is never launched. Setting
@@ -211,7 +191,6 @@ COPY --from=build /out/scriptlets.tgz /tmp/scriptlets.tgz
 # SMOKE_TGZ_PATH tells test.sh to use the pre-built tarball instead of
 # stamping + building + packing locally.
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    echo "${BUILD_RUN_ID}" > /tmp/.build-run-id && \
     mkdir -p /out && \
     touch /out/smoke.txt && \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \

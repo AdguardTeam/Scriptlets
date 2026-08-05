@@ -9,7 +9,7 @@ on:
       - master
 
 # Concurrency is PER-REF so that different PRs' CI runs never cancel each
-# other.  `cancel-in-progress: true` ensures only the latest push to a given
+# other. `cancel-in-progress: true` ensures only the latest push to a given
 # ref runs — redundant pushes (e.g. two quick pushes to the same PR) cancel
 # the previous run instead of queuing behind it, saving CI time.
 #
@@ -33,48 +33,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Prune stale BuildKit cache
-        # The remote BuildKit instance (buildkit-extensions-0) accumulates
-        # layer snapshots over time and has no automatic GC.  When the disk
-        # fills up, Docker builds fail with "no space left on device".  This
-        # step prunes the remote builder's cache before starting any build.
-        #
-        # The runner has no local Docker daemon, so we create a temporary
-        # buildx builder pointing to the remote BuildKit instance, prune it,
-        # then remove it.  This is best-effort: if it fails, CI continues
-        # (the build itself may still fail if the disk is full, but we don't
-        # add a new failure mode from the prune step itself).
-        continue-on-error: true
-        run: |
-          BUILDKIT_HOST="buildkit-extensions-0.buildkit-extensions-hl.github-runners.svc.cluster.local:1234"
-          /usr/bin/docker-real buildx create \
-            --name pruner \
-            --driver remote \
-            "tcp://${BUILDKIT_HOST}"
-          /usr/bin/docker-real buildx prune --builder pruner --all --force
-          /usr/bin/docker-real buildx rm pruner
-
       - name: Set dev version
         uses: >-
           AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
 
       - name: Lint
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
 
       - name: Vitest
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
 
       - name: QUnit
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
 
       - name: Smoke tests
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
 
       - name: Build release artifacts
         run: >-
           DOCKER_BUILDKIT=1 docker build --progress plain
-          --target build-output --output ./artifacts
-          --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+          --target build-output --output ./artifacts .
 
       - name: Upload npm package
         uses: actions/upload-artifact@v7

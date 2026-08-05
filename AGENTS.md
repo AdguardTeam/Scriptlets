@@ -152,6 +152,23 @@ You MUST follow the following rules for EVERY task that you perform:
   cap, with headroom for non-heap RSS) and skips the Chromium download in the
   smoke-test stage to keep per-build memory low.
 
+- Docker builds MUST NOT pass cache-busting `--build-arg` values (e.g.
+  `BUILD_RUN_ID`) whose only effect is to invalidate cached layers.  The
+  previous `BUILD_RUN_ID` ARG wrote `/tmp/.build-run-id` (a file no script
+  ever read) inside every build stage, busting the cache on every CI run and
+  ballooning the shared BuildKit cache to >12 GB.  Sibling repos
+  (`ext-disable-amp`, `ext-userscripts-wrapper`) do without it.  If you need to
+  embed build metadata into artifacts, do it via build-args consumed by a
+  dedicated final stage, or stamp it into `package.json`/dist files directly.
+
+- CI workflows MUST NOT hardcode the remote BuildKit host address (e.g.
+  `buildkit-extensions-0.buildkit-extensions-hl.github-runners.svc.cluster.local`).
+  That cluster hostname can change over time, and embedding it couples CI to a
+  specific Kubernetes deployment.  BuildKit garbage collection MUST be
+  configured on the daemon (`buildkitd.toml` with `gc = true` and a
+  `keep-storage`/`gckeepstorage` budget), not hacked into a per-run workflow
+  step.
+
 - Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
   `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`
   ("Branch up-to-date check", required by branch protection) already waits
