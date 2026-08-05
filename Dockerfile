@@ -84,21 +84,6 @@ FROM deps-puppeteer AS source-puppeteer
 COPY . /scriptlets
 
 # ============================================================================
-# Stage: test-output
-# Aggregate of all granular verification stages. Consumed by the shared
-# publish-release.yml (`--target test-output`). Composing from the granular
-# outputs (the same stages ci.yml builds individually) gives the check set a
-# single definition and avoids re-executing lint + tests from scratch.
-# BuildKit resolves named stages regardless of position, so the COPY
-# directives below can reference stages defined later in this file.
-# ============================================================================
-FROM scratch AS test-output
-COPY --from=lint /out/ /
-COPY --from=test-vitest /out/ /
-COPY --from=test-qunit /out/ /
-COPY --from=test-smoke /out/ /
-
-# ============================================================================
 # Stage: dist
 # Builds the library dist/ once; shared by the build and test-smoke stages
 # so the library is not built multiple times per CI run (QUnit keeps its own
@@ -233,4 +218,20 @@ RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
     SMOKE_TGZ_PATH=/tmp/scriptlets.tgz pnpm test:smoke
 
 FROM scratch AS test-smoke-output
+COPY --from=test-smoke /out/ /
+
+# ============================================================================
+# Stage: test-output
+# Aggregate of all granular verification stages. Consumed by the shared
+# publish-release.yml (`--target test-output`). Composing from the granular
+# outputs (the same stages ci.yml builds individually) gives the check set a
+# single definition and avoids re-executing lint + tests from scratch.
+# Must be defined AFTER all stages it copies from (lint, test-vitest,
+# test-qunit, test-smoke): the remote BuildKit instance does not support
+# forward stage references.
+# ============================================================================
+FROM scratch AS test-output
+COPY --from=lint /out/ /
+COPY --from=test-vitest /out/ /
+COPY --from=test-qunit /out/ /
 COPY --from=test-smoke /out/ /
