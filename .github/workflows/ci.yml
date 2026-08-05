@@ -33,6 +33,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Prune stale BuildKit cache
+        # The remote BuildKit instance (buildkit-extensions-0) accumulates
+        # layer snapshots over time and has no automatic GC.  When the disk
+        # fills up, Docker builds fail with "no space left on device".  This
+        # step prunes cache entries older than 24 h before starting any build,
+        # keeping recent layers for speed while reclaiming space from old runs.
+        run: docker buildx prune --builder remote-buildkit-extensions-0 --filter until=24h --force
+
       - name: Set dev version
         uses: >-
           AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
