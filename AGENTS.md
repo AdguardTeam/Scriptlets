@@ -140,7 +140,12 @@ You MUST follow the following rules for EVERY task that you perform:
   crash the builder (`error reading from server: EOF`) and fail the entire
   job at once. They are sequential steps within a single `ci` job (not
   separate jobs with `needs`), so GitHub Actions executes them in order by
-  default. The Dockerfile also caps the Node heap
+  default. The same builder is shared across ALL refs, so different CI runs
+  (e.g. a `master` push and a PR push) MUST NOT run concurrently either — the
+  `ci.yml` concurrency group is repo-wide (`ci-ext-scriptlets`, not per-ref)
+  with `cancel-in-progress: false`, so overlapping runs QUEUE (not cancel):
+  both a `master` push and a PR push run to completion, just strictly one after
+  another. The Dockerfile also caps the Node heap
   (`NODE_OPTIONS=--max-old-space-size=1536`, most of the 1800m buildx memory
   cap, with headroom for non-heap RSS) and skips the Chromium download in the
   smoke-test stage to keep per-build memory low.

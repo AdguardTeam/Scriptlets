@@ -8,14 +8,19 @@ on:
     branches:
       - master
 
-# Cancel superseded runs on the same ref: a newer push (or PR update) makes the
-# in-progress CI obsolete, so stop it to free runners and give faster feedback.
+# All CI runs share a single remote BuildKit instance, so Docker builds across
+# different refs MUST NOT run concurrently — two `docker buildx build` calls at
+# once crash the shared builder ("error reading from server: EOF"). Use a
+# repo-wide (not per-ref) concurrency group so only one run builds at a time.
+# `cancel-in-progress: false` makes overlapping triggers QUEUE instead of
+# cancelling, so every triggered run (a `master` push AND a PR push) completes
+# — no run is killed, so no manual re-trigger is ever needed.
 # GitHub Actions evaluates concurrency groups per-repository, so the
-# ci-ext-scriptlets- prefix is namespacing by convention — runs in other repos
+# ci-ext-scriptlets prefix is namespacing by convention — runs in other repos
 # can never share or block this group.
 concurrency:
-  group: ci-ext-scriptlets-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-ext-scriptlets
+  cancel-in-progress: false
 
 jobs:
   ci:
