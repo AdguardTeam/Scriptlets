@@ -164,10 +164,8 @@ You MUST follow the following rules for EVERY task that you perform:
 - CI workflows MUST NOT hardcode the remote BuildKit host address (e.g.
   `buildkit-extensions-0.buildkit-extensions-hl.github-runners.svc.cluster.local`).
   That cluster hostname can change over time, and embedding it couples CI to a
-  specific Kubernetes deployment.  BuildKit garbage collection MUST be
-  configured on the daemon (`buildkitd.toml` with `gc = true` and a
-  `keep-storage`/`gckeepstorage` budget), not hacked into a per-run workflow
-  step.
+  specific Kubernetes deployment. Hacking `docker buildx prune` into a per-run
+  workflow step is not recommended.
 
 - Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
   `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`
