@@ -37,10 +37,22 @@ jobs:
         # The remote BuildKit instance (buildkit-extensions-0) accumulates
         # layer snapshots over time and has no automatic GC.  When the disk
         # fills up, Docker builds fail with "no space left on device".  This
-        # step prunes all BuildKit cache before starting any build.  The first
-        # build after a prune is slower (no cache), but this is better than CI
-        # failing with "no space left on device" after the disk fills up.
-        run: docker buildx prune --all --force
+        # step prunes the remote builder's cache before starting any build.
+        #
+        # The runner has no local Docker daemon, so we create a temporary
+        # buildx builder pointing to the remote BuildKit instance, prune it,
+        # then remove it.  This is best-effort: if it fails, CI continues
+        # (the build itself may still fail if the disk is full, but we don't
+        # add a new failure mode from the prune step itself).
+        continue-on-error: true
+        run: |
+          BUILDKIT_HOST="buildkit-extensions-0.buildkit-extensions-hl.github-runners.svc.cluster.local:1234"
+          /usr/bin/docker-real buildx create \
+            --name pruner \
+            --driver remote \
+            "tcp://${BUILDKIT_HOST}"
+          /usr/bin/docker-real buildx prune --builder pruner --all --force
+          /usr/bin/docker-real buildx rm pruner
 
       - name: Set dev version
         uses: >-
