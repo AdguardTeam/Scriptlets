@@ -38,8 +38,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   scriptlets — as a whole value, as a part of it, and inside `json:` and `replace:` values,
   e.g. `'json:{"count":1,"firstTime":$now$}'` [#573].
 
-### Security
-
 [#573]: https://github.com/AdguardTeam/Scriptlets/issues/573
 
 ## [2.5.0] - 2026-07-27
