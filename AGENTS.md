@@ -121,8 +121,9 @@ You MUST follow the following rules for EVERY task that you perform:
 - When the task is finished update `CHANGELOG.md` file and explain changes in
   the `Unreleased` section. Add entries to the appropriate subsection (`Added`,
   `Changed`, or `Fixed`) if it already exists; do not create duplicate
-  subsections. Changes limited to CI configuration (e.g. `.github/workflows/`
-  or `Dockerfile`) may skip CHANGELOG updates.
+  subsections. Changes limited to tests (e.g. `tests/`) or CI configuration
+  (e.g. `.github/workflows/` or `Dockerfile`) MUST NOT add CHANGELOG entries —
+  they are internal infrastructure and do not affect the published library.
 
 - CI/CD runs on GitHub Actions (`.github/workflows/`): `ci.yml` uses the shared
   `set-dev-version` action before Docker builds, while `mirror.yml`,
