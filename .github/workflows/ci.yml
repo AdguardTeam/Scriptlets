@@ -37,9 +37,10 @@ jobs:
         # The remote BuildKit instance (buildkit-extensions-0) accumulates
         # layer snapshots over time and has no automatic GC.  When the disk
         # fills up, Docker builds fail with "no space left on device".  This
-        # step prunes cache entries older than 24 h before starting any build,
-        # keeping recent layers for speed while reclaiming space from old runs.
-        run: docker buildx prune --builder remote-buildkit-extensions-0 --filter until=24h --force
+        # step prunes all BuildKit cache before starting any build.  The first
+        # build after a prune is slower (no cache), but this is better than CI
+        # failing with "no space left on device" after the disk fills up.
+        run: docker buildx prune --all --force
 
       - name: Set dev version
         uses: >-
