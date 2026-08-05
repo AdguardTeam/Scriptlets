@@ -22,6 +22,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Fixed the `test-output` Docker stage failing to build in the publish-release
+  workflow: the stage referenced `lint`, `test-vitest`, `test-qunit`, and
+  `test-smoke` stages that were defined after it, which the remote BuildKit
+  instance does not support. The stage is now placed at the end of the
+  Dockerfile, after all stages it copies from.
+
 ### Security
 
 ## [2.5.1-beta.0] - 2026-08-05
