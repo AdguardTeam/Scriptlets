@@ -27,6 +27,8 @@ import {
     extractRegexAndReplacement,
     getJsonSetValue,
     parseJsonSetArgumentValue,
+    parseKeywordValue,
+    resolveJsonSetTimeKeywords,
     jsonLineEdit,
     jsonPath,
     matchesJsonPath,
@@ -92,6 +94,16 @@ import { type Source } from './scriptlets';
  *     - `noopPromiseReject` — function returning `Promise.reject()`
  *     - `$remove$` — in `jsonpath` mode, removes each property or array item matched by `propsPath`
  *     - any other string is set as a string literal
+ *
+ *   Can contain time keywords which are resolved before the value is set:
+ *     - `$now$` — current time in ms, e.g. `1667915146503`
+ *     - `$currentDate$` — current date as string, e.g. `Tue Nov 08 2022 13:53:19 GMT+0300`
+ *     - `$currentISODate$` — current date in the date time string format, e.g. `2022-11-08T13:53:19.650Z`
+ *
+ *   Keywords listed above can be used as a whole value or as a part of it,
+ *   and more than one keyword can be used in it, e.g. `json:{"count":1,"firstTime":$now$}`.
+ *   In `replace:/regex/replacement/` and `replace({...})` values
+ *   keywords are resolved in the replacement only, the regexp is used as is.
  *
  *   Can also be a replacement applied to the current string value at the target path,
  *   in the format `replace:/regex/replacement/`:
@@ -654,6 +666,11 @@ export function trustedJsonSet(
         parsedArgumentValue = parsedLegacyArgumentValue;
     }
 
+    // Value which is used for all the nodes matched in the intercepted payload.
+    // Time keywords in it are resolved before every payload is mutated
+    // https://github.com/AdguardTeam/Scriptlets/issues/573
+    let resolvedArgumentValue = parsedArgumentValue;
+
     const getPathParts = getPropertyInChain as unknown as (base: Window, chain: string) => {
         base: Record<string, unknown>;
         prop: string;
@@ -766,21 +783,21 @@ export function trustedJsonSet(
      * this helper should never be used, so it defensively returns the current
      * value unchanged when no parsed argument is available.
      *
+     * Value with time keywords is resolved by `resolveJsonSetTimeKeywords()` before the mutation,
+     * so the time is not frozen at the moment of the scriptlet run.
+     *
      * @param currentValue current value at the matched path
      * @returns value that should be written back to the matched path
      */
     const getValueToSet = (currentValue: any): any => {
-        if (parsedArgumentValue === undefined) {
+        if (resolvedArgumentValue === undefined) {
             // In non-legacy modes this function should not be called; defensively return the original value.
             return currentValue;
         }
 
-        // eslint-disable-next-line max-len
-        const nonNullParsedArgumentValue: NonNullable<ReturnType<typeof parseJsonSetArgumentValue>> = parsedArgumentValue;
-
         return getJsonSetValue(
             currentValue,
-            nonNullParsedArgumentValue,
+            resolvedArgumentValue,
         );
     };
 
@@ -807,6 +824,13 @@ export function trustedJsonSet(
                 value,
             };
         }
+
+        resolvedArgumentValue = resolveJsonSetTimeKeywords(
+            source,
+            argumentValue,
+            nativeObjects.nativeParse,
+            parsedArgumentValue,
+        );
 
         const value = jsonSetter(
             source,
@@ -1102,6 +1126,8 @@ trustedJsonSet.injections = [
     extractRegexAndReplacement,
     getJsonSetValue,
     parseJsonSetArgumentValue,
+    parseKeywordValue,
+    resolveJsonSetTimeKeywords,
     jsonLineEdit,
     jsonPath,
     matchesJsonPath,

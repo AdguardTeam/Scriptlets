@@ -154,4 +154,99 @@ if (isSafariBrowser()) {
 
         clearStorageItem(iName);
     });
+
+    test('Set sessionStorage item with $now$ keyword as a part of the value', (assert) => {
+        // https://github.com/AdguardTeam/Scriptlets/issues/573
+        const iName = '__test-item_now_in_value';
+        const iValue = '{"count":1,"firstTime":$now$}';
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+
+        // Some time will pass between calling scriptlet
+        // and qunit running assertion
+        const tolerance = 100;
+        const itemValue = JSON.parse(window.sessionStorage.getItem(iName));
+
+        assert.strictEqual(itemValue.count, 1, 'Other parts of the value have not been modified');
+        assert.ok(
+            Date.now() - itemValue.firstTime < tolerance,
+            'Keyword has been replaced with current time',
+        );
+
+        clearStorageItem(iName);
+    });
+
+    test('Set sessionStorage item with $now$ keyword as a part of the simple value', (assert) => {
+        // https://github.com/AdguardTeam/Scriptlets/issues/573
+        const iName = '__test-item_now_in_simple_value';
+        const prefix = 'time_now:';
+        const iValue = `${prefix}$now$`;
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+
+        // Some time will pass between calling scriptlet
+        // and qunit running assertion
+        const tolerance = 100;
+        const itemValue = window.sessionStorage.getItem(iName);
+
+        assert.ok(itemValue.startsWith(prefix), 'Other parts of the value have not been modified');
+
+        const timeValue = itemValue.slice(prefix.length);
+        assert.ok(/^\d+$/.test(timeValue), 'Keyword has been replaced with time in ms');
+        assert.ok(Date.now() - timeValue < tolerance, 'Keyword has been replaced with current time');
+
+        clearStorageItem(iName);
+    });
+
+    test('Set sessionStorage item with keyword-like values which are not modified', (assert) => {
+        // https://github.com/AdguardTeam/Scriptlets/issues/573
+        const notKeywords = [
+            '$now',
+            'now$',
+            '$NOW$',
+            '$now2$',
+            '$current-date$',
+            '$$',
+        ];
+
+        notKeywords.forEach((iValue, index) => {
+            const iName = `__test-item_not_keyword_${index}`;
+
+            runScriptlet(name, [iName, iValue]);
+            assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+            assert.strictEqual(
+                window.sessionStorage.getItem(iName),
+                iValue,
+                `Value '${iValue}' has not been modified`,
+            );
+
+            clearStorageItem(iName);
+        });
+    });
+
+    test('Set sessionStorage item with multiple keywords as a part of the value', (assert) => {
+        // https://github.com/AdguardTeam/Scriptlets/issues/573
+        const iName = '__test-item_multiple_keywords_in_value';
+        const iValue = '{"count":1,"firstTime":$now$,"date":"$currentISODate$"}';
+
+        runScriptlet(name, [iName, iValue]);
+        assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+
+        const tolerance = 100;
+        const itemValue = JSON.parse(window.sessionStorage.getItem(iName));
+
+        assert.strictEqual(itemValue.count, 1, 'Other parts of the value have not been modified');
+        assert.ok(
+            Date.now() - itemValue.firstTime < tolerance,
+            '$now$ keyword has been replaced with current time',
+        );
+        assert.ok(
+            Date.now() - new Date(itemValue.date).getTime() < tolerance,
+            '$currentISODate$ keyword has been replaced with current ISO date',
+        );
+
+        clearStorageItem(iName);
+    });
 }
