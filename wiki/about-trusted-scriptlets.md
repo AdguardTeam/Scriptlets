@@ -292,7 +292,8 @@ example.org#%#//scriptlet('trusted-json-set-fetch-response', propsPath, argument
   In `jsonpath` mode only single JSONPath prune expression is supported.
 - `argumentValue` — required, value to write at the target path.
   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax
-  as `trusted-json-set`.
+  as `trusted-json-set`, including `$now$`, `$currentDate$`, and `$currentISODate$` time keywords
+  which may be used in any part of the value, e.g. `json:{"count":1,"firstTime":$now$}`.
   In `jsonpath` mode this argument may be omitted when `propsPath` already includes
   an inline mutation suffix such as `=` or `+=`.
 - `requiredInitialProps` — optional, space-separated list of property paths
@@ -391,7 +392,9 @@ example.org#%#//scriptlet('trusted-json-set-xhr-response', propsPath, argumentVa
   Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
   In `jsonpath` mode only single JSONPath prune expression is supported.
 - `argumentValue` — required, value to write at the target path.
-  Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax as `trusted-json-set`.
+  Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax as `trusted-json-set`,
+  including `$now$`, `$currentDate$`, and `$currentISODate$` time keywords
+  which may be used in any part of the value, e.g. `json:{"count":1,"firstTime":$now$}`.
   In `jsonpath` mode this argument may be omitted when `propsPath` already includes
   an inline mutation suffix such as `=` or `+=`.
 - `requiredInitialProps` — optional, space-separated list of property paths
@@ -510,6 +513,16 @@ example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentV
     - `noopPromiseReject` — function returning `Promise.reject()`
     - `$remove$` — in `jsonpath` mode, removes each property or array item matched by `propsPath`
     - any other string is set as a string literal
+
+  Can contain time keywords which are resolved before the value is set:
+    - `$now$` — current time in ms, e.g. `1667915146503`
+    - `$currentDate$` — current date as string, e.g. `Tue Nov 08 2022 13:53:19 GMT+0300`
+    - `$currentISODate$` — current date in the date time string format, e.g. `2022-11-08T13:53:19.650Z`
+
+  Keywords listed above can be used as a whole value or as a part of it,
+  and more than one keyword can be used in it, e.g. `json:{"count":1,"firstTime":$now$}`.
+  In `replace:/regex/replacement/` and `replace({...})` values
+  keywords are resolved in the replacement only, the regexp is used as is.
 
   Can also be a replacement applied to the current string value at the target path,
   in the format `replace:/regex/replacement/`:
@@ -1824,6 +1837,8 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpir
     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
     - `$currentISODate$` keyword for setting current date in the date time string format,
       e.g '2022-11-08T13:53:19.650Z'
+    - value with keywords listed above used as a part of it,
+      e.g `{"count":1,"firstTime":$now$}`; more than one keyword can be used
 - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
   defaults to no offset. Possible values:
     - positive integer in seconds
@@ -1851,6 +1866,12 @@ example.org#%#//scriptlet('trusted-set-cookie-reload', name, value[, offsetExpir
 
     ```adblock
     example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '$now$')
+    ```
+
+1. Set cookie with keywords used as a part of the value and reload the page after it
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-cookie-reload', 'cmpconsent', '{"count":1,"firstTime":$now$}')
     ```
 
 1. Set cookie which will expire in 3 days and reload the page after it
@@ -1903,6 +1924,8 @@ example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[,
     - `$currentDate$` keyword for setting current time as string, e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
     - `$currentISODate$` keyword for setting current date in the date time string format,
       e.g '2022-11-08T13:53:19.650Z'
+    - value with keywords listed above used as a part of it,
+      e.g `{"count":1,"firstTime":$now$}`; more than one keyword can be used
 - `offsetExpiresSec` — optional, offset from current time in seconds, after which cookie should expire;
   defaults to no offset. Possible values:
     - positive integer in seconds
@@ -1931,6 +1954,12 @@ example.org#%#//scriptlet('trusted-set-cookie', name, value[, offsetExpiresSec[,
 
     ```adblock
     example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '$now$')
+    ```
+
+1. Set cookie with keywords used as a part of the value
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-cookie', 'cmpconsent', '{"count":1,"firstTime":$now$}')
     ```
 
 1. Set cookie which will expire in 3 days
@@ -1982,6 +2011,9 @@ example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
     - `$currentISODate$` keyword for setting current date in the date time string format,
       corresponds to `(new Date).toISOString()` call, e.g '2022-11-08T13:53:19.650Z'
 
+> Keywords listed above can be used as a part of the value as well,
+> and more than one keyword can be used in it, e.g `'{"count":1,"firstTime":$now$}'`.
+
 ### Examples
 
 1. Set local storage item
@@ -2006,6 +2038,12 @@ example.com#%#//scriptlet('trusted-set-local-storage-item', 'key', 'value')
 
     ```adblock
     example.org#%#//scriptlet('trusted-set-local-storage-item', 'player.live.current.play', '$currentDate$')
+    ```
+
+1. Set item with keywords used as a part of the value
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-local-storage-item', 'storage_item', '{"count":1,"firstTime":$now$}')
     ```
 
 1. Set item without value
@@ -2040,6 +2078,9 @@ example.com#%#//scriptlet('trusted-set-session-storage-item', 'key', 'value')
     - `$currentISODate$` keyword for setting current date in the date time string format,
       corresponds to `(new Date).toISOString()` call, e.g '2022-11-08T13:53:19.650Z'
 
+> Keywords listed above can be used as a part of the value as well,
+> and more than one keyword can be used in it, e.g `'{"count":1,"firstTime":$now$}'`.
+
 ### Examples
 
 1. Set session storage item
@@ -2068,6 +2109,12 @@ example.com#%#//scriptlet('trusted-set-session-storage-item', 'key', 'value')
 
     ```adblock
     example.org#%#//scriptlet('trusted-set-session-storage-item', 'player.live.current.play', '$currentDate$')
+    ```
+
+1. Set item with keywords used as a part of the value
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-set-session-storage-item', 'storage_item', '{"count":1,"firstTime":$now$}')
     ```
 
 1. Set item without value
