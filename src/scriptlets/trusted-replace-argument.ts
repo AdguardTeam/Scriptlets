@@ -28,7 +28,7 @@ import { type Source } from './scriptlets';
  * @trustedScriptlet trusted-replace-argument
  *
  * @description
- * Replaces a specific argument of a native method with a constant value, JSON parsed value
+ * Replaces a specific argument of a native method with a constant value, JSON parsed value,
  * or a value derived from a regular expression replacement.
  *
  * Related UBO scriptlet:
