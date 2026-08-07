@@ -19,18 +19,77 @@ const TESTS_RUN_TIMEOUT = 60000;
 const TESTS_DIST = './dist';
 const TEST_FILE_NAME_MARKER = '.html';
 
-// Restart the browser every N tests to release Chrome's accumulated V8 heap
-// and CDP overhead.  Under the CI Docker builder's 1800 m memory cap, a single
-// long-lived browser grows RSS until page creation slows to a crawl and the
-// QUnit timeout fires before the test page even finishes loading.
+/**
+ * Restart the browser every N tests to release Chrome's accumulated V8 heap
+ * and CDP overhead. Under the CI Docker builder's 1800 m memory cap, a single
+ * long-lived browser grows RSS until page creation slows to a crawl and the
+ * QUnit timeout fires before the test page even finishes loading.
+ */
 const BROWSER_RESTART_INTERVAL = 25;
+
+/**
+ * Sentinel set while a browser restart is in progress so the top-level
+ * `uncaughtException` handler knows which errors are safe to suppress.
+ */
+let restartingBrowser = false;
+
+/**
+ * How long (ms) to keep `restartingBrowser` active after a close so late
+ * WebSocket ECONNRESET events are still suppressed. Observed in CI to fire
+ * up to ~1.5 s after `browser.close()` resolves.
+ */
+const RESTART_GRACE_MS = 3000;
+
+/**
+ * Marks the start of a browser restart window — suppresses the expected
+ * ECONNRESET from the old browser's CDP WebSocket teardown. The window is
+ * cleared automatically after `RESTART_GRACE_MS` via `clearRestartWindow()`.
+ */
+const markRestartWindow = () => {
+    restartingBrowser = true;
+};
+
+// Clears the restart window after a grace period so genuine errors outside
+// of restarts are never hidden.
+const clearRestartWindow = () => {
+    setTimeout(() => {
+        restartingBrowser = false;
+    }, RESTART_GRACE_MS);
+};
+
+// Puppeteer's DevTools Protocol WebSocket sometimes emits an `error` event
+// ("socket hang up" / `ECONNRESET`) **after** `browser.close()` has already
+// resolved. This is a race in Puppeteer's CDP transport: the WebSocket is
+// being torn down while the server-side half closes the socket first. The
+// unhandled event crashes the Node.js process and fails the entire QUnit
+// stage — even though the restart itself succeeded and every test page that
+// ran before (and the ones that run after) passed.
+//
+// We cannot attach a listener directly to the WebSocket because Puppeteer
+// does not expose it. Instead, we install a top-level handler that
+// **only** swallows this specific, expected error while a restart window is
+// active. Any other uncaught exception is re-thrown so genuine failures
+// are still surfaced.
+process.on('uncaughtException', (err) => {
+    const isSocketHangUp = err instanceof Error
+        && (err.code === 'ECONNRESET' || err.message === 'socket hang up');
+
+    if (restartingBrowser && isSocketHangUp) {
+        console.log('Suppressed expected ECONNRESET during browser restart');
+        return;
+    }
+
+    // Any other uncaught exception is a genuine error — re-throw so the
+    // process exits with a non-zero code and CI surfaces the real cause.
+    throw err;
+});
 
 // Standard Chrome-in-Docker flags needed for the CI builder.
 const PUPPETEER_LAUNCH_ARGS = [
     '--no-sandbox',
     '--allow-file-access-from-files',
     // Chrome uses /dev/shm for shared memory, which is tiny (64 MB) inside the
-    // CI Docker container.  Without this flag Chrome exhausts /dev/shm and
+    // CI Docker container. Without this flag Chrome exhausts /dev/shm and
     // becomes extremely slow — page creation alone can take tens of seconds,
     // pushing individual QUnit pages past their timeout.
     '--disable-dev-shm-usage',
@@ -106,15 +165,31 @@ const runQunitTests = async () => {
             const fileName = testFiles[i];
 
             // Restart the browser periodically to keep Chrome's RSS bounded
-            // under the CI Docker builder's memory cap.  Creating + closing
+            // under the CI Docker builder's memory cap. Creating + closing
             // pages releases per-page memory, but V8 heap and CDP overhead
             // still accumulate inside a single long-lived browser process
             // until page creation slows to a crawl and the QUnit timeout fires
             // before the test page even finishes loading.
             if (i > 0 && i % BROWSER_RESTART_INTERVAL === 0) {
                 console.log(`\nRestarting browser to release accumulated memory (test ${i + 1}/${testFiles.length})`);
-                await browser.close();
+                // Open a restart window so the top-level `uncaughtException`
+                // handler suppresses the expected ECONNRESET from the old
+                // browser's CDP WebSocket teardown. The WebSocket can emit
+                // the error on a **late** tick — up to ~1.5 s after
+                // `browser.close()` resolves (observed in CI) — so the
+                // window is cleared via `clearRestartWindow()` after a grace
+                // period rather than inline.
+                markRestartWindow();
+                try {
+                    await browser.close();
+                } catch (e) {
+                    // browser.close() may reject if the WebSocket was
+                    // already torn down — that is fine, the new browser
+                    // starts from a clean slate below.
+                    console.log('browser.close() threw during restart:', e.message);
+                }
                 browser = await launchBrowser();
+                clearRestartWindow();
             }
 
             console.log(`\nStarted test: ${fileName}`);
@@ -128,8 +203,16 @@ const runQunitTests = async () => {
             }
         }
 
-        // Close the shared browser instance
-        await browser.close();
+        // Close the shared browser instance. The same ECONNRESET race that
+        // affects periodic restarts (see above) can fire here too, so wrap
+        // the final close in the same restart window + error handling.
+        markRestartWindow();
+        try {
+            await browser.close();
+        } catch (e) {
+            console.log('browser.close() threw on final cleanup:', e.message);
+        }
+        clearRestartWindow();
 
         // Process results after all tests complete
         testResults.forEach(({ fileName, passed, error }) => {

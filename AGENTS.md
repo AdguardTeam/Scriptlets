@@ -121,8 +121,9 @@ You MUST follow the following rules for EVERY task that you perform:
 - When the task is finished update `CHANGELOG.md` file and explain changes in
   the `Unreleased` section. Add entries to the appropriate subsection (`Added`,
   `Changed`, or `Fixed`) if it already exists; do not create duplicate
-  subsections. Changes limited to CI configuration (e.g. `.github/workflows/`
-  or `Dockerfile`) may skip CHANGELOG updates.
+  subsections. Changes limited to tests (e.g. `tests/`) or CI configuration
+  (e.g. `.github/workflows/` or `Dockerfile`) MUST NOT add CHANGELOG entries —
+  they are internal infrastructure and do not affect the published library.
 
 - CI/CD runs on GitHub Actions (`.github/workflows/`): `ci.yml` uses the shared
   `set-dev-version` action before Docker builds, while `mirror.yml`,
@@ -134,21 +135,37 @@ You MUST follow the following rules for EVERY task that you perform:
   MUST propagate the resolved value unchanged into `SCRIPTLETS_VERSION`,
   `dist/redirects.yml`, and `dist/scriptlets.corelibs.json`.
 
-- All CI `docker build` invocations land on a single shared remote BuildKit
-  instance, so Docker build steps MUST run strictly one after another
+- All CI `docker build` invocations land on a single shared BuildKit instance,
+  so Docker build steps MUST run strictly one after another
   (`lint` → `vitest` → `qunit` → `smoke-tests` → `build`). Concurrent builds
-  crash the builder (`error reading from server: EOF`) and fail the entire
+  can crash the builder (`error reading from server: EOF`) and fail the entire
   job at once. They are sequential steps within a single `ci` job (not
   separate jobs with `needs`), so GitHub Actions executes them in order by
-  default. The same builder is shared across ALL refs, so different CI runs
-  (e.g. a `master` push and a PR push) MUST NOT run concurrently either — the
-  `ci.yml` concurrency group is repo-wide (`ci-ext-scriptlets`, not per-ref)
-  with `cancel-in-progress: false`, so overlapping runs QUEUE (not cancel):
-  both a `master` push and a PR push run to completion, just strictly one after
-  another. The Dockerfile also caps the Node heap
+  default. Cross-run serialization is provided by the self-hosted runner
+  (`team-extensions`): if only one runner exists, GitHub assigns jobs one at a
+  time so Docker builds never overlap. The `ci.yml` concurrency group is
+  **per-ref** (`ci-ext-scriptlets-${{ github.head_ref || github.ref }}`) with
+  `cancel-in-progress: true`, which cancels redundant same-ref pushes (only
+  the latest run per ref survives) while allowing different PRs to run
+  independently. The Dockerfile also caps the Node heap
   (`NODE_OPTIONS=--max-old-space-size=1536`, most of the 1800m buildx memory
   cap, with headroom for non-heap RSS) and skips the Chromium download in the
   smoke-test stage to keep per-build memory low.
+
+- Docker builds MUST NOT pass cache-busting `--build-arg` values (e.g.
+  `BUILD_RUN_ID`) whose only effect is to invalidate cached layers.  The
+  previous `BUILD_RUN_ID` ARG wrote `/tmp/.build-run-id` (a file no script
+  ever read) inside every build stage, busting the cache on every CI run and
+  ballooning the shared BuildKit cache to >12 GB.  Sibling repos
+  (`ext-disable-amp`, `ext-userscripts-wrapper`) do without it.  If you need to
+  embed build metadata into artifacts, do it via build-args consumed by a
+  dedicated final stage, or stamp it into `package.json`/dist files directly.
+
+- CI workflows MUST NOT hardcode the remote BuildKit host address (e.g.
+  `buildkit-extensions-0.buildkit-extensions-hl.github-runners.svc.cluster.local`).
+  That cluster hostname can change over time, and embedding it couples CI to a
+  specific Kubernetes deployment. Hacking `docker buildx prune` into a per-run
+  workflow step is not recommended.
 
 - Do NOT add an aggregate "all checks passed" job to `ci.yml`: the org-wide
   `AdGuardSoftwareLimited/actions/.github/workflows/check-master.yml`
