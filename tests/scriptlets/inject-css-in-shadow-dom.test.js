@@ -54,7 +54,7 @@ const afterEach = () => {
 module(name, { beforeEach, afterEach });
 
 // some browsers do not support ShadowRoot
-// for example, Firefox 52 which is used for browserstack tests
+// for example, Firefox 52
 // https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot
 const isSupported = typeof Element.prototype.attachShadow !== 'undefined';
 

@@ -38,7 +38,6 @@ test('works: no args', (assert) => {
     assert.strictEqual(window[TEST_PROP], true, 'mocked window.close() has been called');
 });
 
-// TODO fix test running in browserstack
 // test('works: string path', (assert) => {
 //     assert.equal(window.hit, undefined, 'Hit function not executed yet');
 //

@@ -286,15 +286,6 @@ pnpm test
     pnpm test:vitest -t isValidScriptletRule
     ```
 
-To run browserstack tests create `.env` file or copy and rename `.env-example`.
-
-Fill in `<username>` and `<key>` with data from your Browserstack profile.
-Run next command:
-
-```bash
-pnpm browserstack
-```
-
 Tests run by `jest` should be named `.spec.js`, so they will be not included in the `QUnit` tests.
 
 #### Debugging

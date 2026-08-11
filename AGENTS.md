@@ -340,6 +340,13 @@ Project-specific rules:
   for Vitest. This separation ensures QUnit tests are not picked up by Vitest
   and vice versa.
 
+- `tests/` is a pnpm workspace package (`@adguard/scriptlets-tests`) that owns
+  the QUnit/Puppeteer runtime dependencies (`qunit`, `sinon`, `js-reporters`,
+  `node-qunit-puppeteer`, `puppeteer`); browser-asset copy paths in
+  `scripts/build-tests.js` therefore point at `tests/node_modules/…`. CI's
+  non-browser Docker stages install only the root package
+  (`pnpm install --filter @adguard/scriptlets`).
+
 - The QUnit test runner (`tests/index.js`) MUST launch Chrome with
   `--disable-dev-shm-usage` and MUST restart the browser periodically
   (`BROWSER_RESTART_INTERVAL`). Chrome's `/dev/shm` is tiny inside the CI

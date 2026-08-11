@@ -2,14 +2,17 @@
 # the Dockerfile ships the entire local workspace to the builder —
 # including node_modules (~375 MB) — on every local build,
 # and risks overwriting the cached `deps` layer with stale local modules.
-node_modules/
+# `**/node_modules/` (not just `node_modules/`) is required because Docker
+# patterns are rooted at the context: tests/ is a workspace package, so a
+# local `pnpm install` creates tests/node_modules/ which would otherwise
+# be shipped into the context.
+**/node_modules/
 dist/
 tmp/
 tests/dist/
 .eslintcache
 *.tgz
 output.md
-browserstack.err
 local.log
 tsconfig.tsbuildinfo
 .pnpm-store/

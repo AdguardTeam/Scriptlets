@@ -350,7 +350,7 @@ test('logs events to console - listener is not a function', (assert) => {
 
     // Firefox 52 can not call handleEvent of empty object listener
     // and fails with error "TypeError: Property 'handleEvent' is not callable."
-    // so we have to mock addEventListener to avoid browserstack tests run fail
+    // so we have to mock addEventListener to prevent that failure
     window.EventTarget.prototype.addEventListener = () => {
         isCalled = true;
     };

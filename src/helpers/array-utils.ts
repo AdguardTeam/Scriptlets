@@ -1,6 +1,6 @@
 /**
  * Some browsers do not support Array.prototype.flat()
- * for example, Opera 42 which is used for browserstack tests
+ * for example, Opera 42
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flat
  *
  * @param input arbitrary array
