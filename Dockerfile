@@ -1,5 +1,6 @@
 # Multi-stage Dockerfile for scriptlets CI optimization
-# Dependencies are cached until package.json/pnpm-lock.yaml change
+# Dependencies are cached until package.json / pnpm-lock.yaml /
+# pnpm-workspace.yaml / tests/package.json change
 # Each stage can be built independently via --target
 
 FROM adguard/node-ssh:22.22--0 AS base
@@ -42,7 +43,8 @@ RUN pnpm config set store-dir /pnpm-store
 
 # ============================================================================
 # Stage: deps
-# Cached until package.json/pnpm-lock.yaml changes
+# Cached until package.json / pnpm-lock.yaml / pnpm-workspace.yaml /
+# tests/package.json change
 # ============================================================================
 FROM base AS deps
 
