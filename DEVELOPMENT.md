@@ -41,6 +41,13 @@ cd ext-scriptlets
 pnpm install
 ```
 
+> **Note on the `basic-ftp` override**: `package.json` pins the transitive
+> `basic-ftp` dependency to the security-fixed `5.2.1` via `pnpm.overrides`.
+> It is not declared in any manifest directly — it comes in through Puppeteer's
+> proxy chain (`get-uri` → `pac-proxy-agent`), which QUnit tests use. When this
+> override can be dropped: once the upstream chain resolves `basic-ftp@>=5.2.1`
+> on its own (check `pnpm why basic-ftp`), remove the entry from `overrides`.
+
 ### 3. Build the Library
 
 ```bash
