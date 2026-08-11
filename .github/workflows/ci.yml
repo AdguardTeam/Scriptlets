@@ -8,19 +8,18 @@ on:
     branches:
       - master
 
-# All CI runs share a single remote BuildKit instance, so Docker builds across
-# different refs MUST NOT run concurrently — two `docker buildx build` calls at
-# once crash the shared builder ("error reading from server: EOF"). Use a
-# repo-wide (not per-ref) concurrency group so only one run builds at a time.
-# `cancel-in-progress: false` makes overlapping triggers QUEUE instead of
-# cancelling, so every triggered run (a `master` push AND a PR push) completes
-# — no run is killed, so no manual re-trigger is ever needed.
-# GitHub Actions evaluates concurrency groups per-repository, so the
-# ci-ext-scriptlets prefix is namespacing by convention — runs in other repos
-# can never share or block this group.
+# Concurrency is PER-REF so that different PRs' CI runs never cancel each
+# other. `cancel-in-progress: true` ensures only the latest push to a given
+# ref runs — redundant pushes (e.g. two quick pushes to the same PR) cancel
+# the previous run instead of queuing behind it, saving CI time.
+#
+# Docker-build serialization is handled by the self-hosted runner: if only
+# one runner exists in the "team-extensions" group, GitHub assigns jobs
+# one at a time, so Docker builds never overlap and the shared BuildKit
+# instance is never stressed by concurrent builds.
 concurrency:
-  group: ci-ext-scriptlets
-  cancel-in-progress: false
+  group: ci-ext-scriptlets-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci:
@@ -39,22 +38,21 @@ jobs:
           AdGuardSoftwareLimited/ext-shared-actions/.github/actions/set-dev-version@master
 
       - name: Lint
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target lint-output .
 
       - name: Vitest
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-vitest-output .
 
       - name: QUnit
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-qunit-output .
 
       - name: Smoke tests
-        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+        run: DOCKER_BUILDKIT=1 docker build --progress plain --target test-smoke-output .
 
       - name: Build release artifacts
         run: >-
           DOCKER_BUILDKIT=1 docker build --progress plain
-          --target build-output --output ./artifacts
-          --build-arg BUILD_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }} .
+          --target build-output --output ./artifacts .
 
       - name: Upload npm package
         uses: actions/upload-artifact@v7
