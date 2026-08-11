@@ -46,20 +46,30 @@ RUN pnpm config set store-dir /pnpm-store
 # ============================================================================
 FROM base AS deps
 
-COPY package.json pnpm-lock.yaml ./
+# pnpm needs every workspace manifest present to validate the frozen lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tests/package.json ./tests/
 
+# QUnit/Puppeteer runtime deps live in the tests workspace package and are
+# not needed by the lint/vitest/smoke/build/wiki stages, so install only the
+# root package. No PUPPETEER_SKIP_CHROMIUM_DOWNLOAD is needed anymore —
+# puppeteer is not installed in this stage at all.
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true pnpm install \
+    pnpm install \
         --frozen-lockfile \
-        --prefer-offline
+        --prefer-offline \
+        --filter @adguard/scriptlets
 
 # ============================================================================
 # Stage: deps-puppeteer
-# Dependencies installed on the puppeteer base (Chromium download not skipped)
+# Dependencies installed on the puppeteer base (Chromium download not skipped).
+# Full workspace install: the QUnit stage needs the root build chain AND the
+# tests workspace package (puppeteer, qunit, sinon, js-reporters).
 # ============================================================================
 FROM base-puppeteer AS deps-puppeteer
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tests/package.json ./tests/
 
 RUN --mount=type=cache,target=/pnpm-store,id=scriptlets-pnpm-puppeteer \
     pnpm install \

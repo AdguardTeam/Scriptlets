@@ -9,7 +9,6 @@ tests/dist/
 .eslintcache
 *.tgz
 output.md
-browserstack.err
 local.log
 tsconfig.tsbuildinfo
 .pnpm-store/

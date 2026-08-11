@@ -1,0 +1,12 @@
+{
+    "name": "@adguard/scriptlets-tests",
+    "private": true,
+    "type": "module",
+    "devDependencies": {
+        "js-reporters": "2.1.0",
+        "node-qunit-puppeteer": "2.2.1",
+        "puppeteer": "24.35.0",
+        "qunit": "2.24.1",
+        "sinon": "19.0.5"
+    }
+}

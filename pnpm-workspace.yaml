@@ -3,3 +3,11 @@
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@adguard/*'
+
+# Workspace packages. Only tests/ is a member: it owns the QUnit/Puppeteer
+# runtime dependencies so non-browser CI stages (lint, vitest, smoke, build)
+# can install just the root package via `--filter @adguard/scriptlets`.
+# 'tests' matches the directory itself only — tests/smoke/exports (which has
+# its own package.json) is NOT a workspace member.
+packages:
+  - 'tests'

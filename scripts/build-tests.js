@@ -74,9 +74,12 @@ const getTestConfig = (fileName, subDir) => {
                     src: [
                         'tests/styles.css',
                         'tests/scriptlets/test-files',
-                        'node_modules/qunit/qunit/qunit.js',
-                        'node_modules/sinon/pkg/sinon.js',
-                        'node_modules/js-reporters/dist/js-reporters.js',
+                        // qunit, sinon, and js-reporters are devDependencies of
+                        // the tests workspace package, so pnpm installs them
+                        // into tests/node_modules (no root-level hoisting).
+                        'tests/node_modules/qunit/qunit/qunit.js',
+                        'tests/node_modules/sinon/pkg/sinon.js',
+                        'tests/node_modules/js-reporters/dist/js-reporters.js',
                     ],
                     dest: TESTS_DIST,
                 }],

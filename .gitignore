@@ -8,7 +8,6 @@ private
 tmp/
 output.md
 tests/dist/
-browserstack.err
 local.log
 
 # linters cache
