@@ -23,7 +23,7 @@ const clearStorageItem = (iName) => {
 if (isSafariBrowser()) {
     // TODO: fix for safari 10
     test('unsupported', (assert) => {
-        assert.ok(true, 'does not work in Safari 10 while browserstack auto tests run');
+        assert.ok(true, 'does not work in Safari 10');
     });
 } else {
     test('Checking if alias name works', (assert) => {

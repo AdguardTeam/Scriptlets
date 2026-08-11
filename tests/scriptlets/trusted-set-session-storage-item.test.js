@@ -22,7 +22,7 @@ const clearStorageItem = (iName) => {
 
 if (isSafariBrowser()) {
     test('unsupported', (assert) => {
-        assert.ok(true, 'does not work in Safari 10 while browserstack auto tests run');
+        assert.ok(true, 'does not work in Safari 10');
     });
 } else {
     test('Set sessionStorage item', (assert) => {
