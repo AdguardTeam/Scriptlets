@@ -145,5 +145,15 @@ module.exports = {
                 ],
             },
         },
+        // tests/ is a pnpm workspace package only to own the QUnit/Puppeteer
+        // runtime deps — it is not a real package boundary. scripts/test.js
+        // loads the tests runner across that boundary, so allow relative
+        // imports from scripts/ into tests/.
+        {
+            files: ['scripts/**/*.{js,ts}'],
+            rules: {
+                'import/no-relative-packages': 0,
+            },
+        },
     ],
 };
