@@ -26,8 +26,8 @@ jobs:
   create-release-pr:
     uses: AdGuardSoftwareLimited/actions/.github/workflows/create-release-pr.yml@master
     with:
-      tag: ${{ inputs.tag }}
       team: extensions
+      tag: ${{ inputs.tag }}
 
   # Regenerate the auto-generated wiki/ from JSDoc and append it to the release
   # PR's branch after the PR is open, so the wiki update is reviewed and merged
@@ -71,5 +71,5 @@ jobs:
         uses: AdGuardSoftwareLimited/actions/actions/protected-push@master
         with:
           branch: release-bump/${{ inputs.tag }}
-          commit-message: 'chore: regenerate wiki docs for release'
+          commit-message: 'docs: regenerate wiki docs for release'
           files: wiki
