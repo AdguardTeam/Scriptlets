@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- Updated [@adguard/agtree] to v4.2.1.
+
 ### Deprecated
 
 ### Removed
@@ -59,8 +61,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to 4.2.0.
-
+- Updated [@adguard/agtree] to v4.2.0.
 - UBO aliases for `prevent-bab` scriptlet and redirect.
 
 ### Fixed
@@ -131,7 +132,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to 4.1.1
+- Updated [@adguard/agtree] to v4.1.1
 
 [#239]: https://github.com/AdguardTeam/Scriptlets/issues/239
 
@@ -152,7 +153,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   JSONPath-based log-only filters, and verbose logs only when a write actually happens [#308].
 - `log-addEventListener` scriptlet: added new optional `noProtect` parameter,
   improving compatibility with other scriptlets that need to override `addEventListener` [#551].
-- Updated [@adguard/agtree] to `4.1.0-beta`.
+- Updated [@adguard/agtree] to v4.1.0-beta.
 
 ### Fixed
 
@@ -169,7 +170,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `4.0.3`.
+- Updated [@adguard/agtree] to v4.0.3.
 
 ### Fixed
 
@@ -199,7 +200,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `abort-current-inline-script`, `debug-on-property-write`, `debug-on-property-read`,
   `debug-current-inline-script` and `log-on-stack-trace` scriptlets [#513].
 - `prevent-window-open` now checks all parameters [#549].
-- Updated [@adguard/agtree] to `4.0.2`.
+- Updated [@adguard/agtree] to v4.0.2.
 
 ### Fixed
 
@@ -236,7 +237,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `prevent-addEventListener` scriptlet: added new optional `noProtect` parameter,
   improving compatibility with other scriptlets that need to override `addEventListener` [#550].
-- Updated [@adguard/agtree] to `4.0.1`.
+- Updated [@adguard/agtree] to v4.0.1.
 
 ### Fixed
 
@@ -283,7 +284,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `4.0.0`.
+- Updated [@adguard/agtree] to v4.0.0.
 
 ### Fixed
 
@@ -304,7 +305,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.4.3`.
+- Updated [@adguard/agtree] to v3.4.3.
 
 [#400]: https://github.com/AdguardTeam/Scriptlets/issues/400
 [#488]: https://github.com/AdguardTeam/Scriptlets/issues/488
@@ -318,7 +319,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.3.1`.
+- Updated [@adguard/agtree] to v3.3.1.
 
 ### Fixed
 
@@ -333,14 +334,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.2.5`.
+- Updated [@adguard/agtree] to v3.2.5.
 
 
 ## [v2.2.11] - 2025-10-17
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.2.4`.
+- Updated [@adguard/agtree] to v3.2.4.
 
 
 ## [v2.2.10] - 2025-09-11
@@ -351,7 +352,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.2.3`.
+- Updated [@adguard/agtree] to v3.2.3.
 
 [#493]: https://github.com/AdguardTeam/Scriptlets/issues/493
 
@@ -380,7 +381,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.2.2`.
+- Updated [@adguard/agtree] to v3.2.2.
 
 ### Fixed
 
@@ -393,7 +394,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.2.1`.
+- Updated [@adguard/agtree] to v3.2.1.
 
 ### Fixed
 
@@ -407,7 +408,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.2.0`.
+- Updated [@adguard/agtree] to v3.2.0.
 
 ### Fixed
 
@@ -435,7 +436,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Changed
 
 - Improved docs for `json-prune`, `xml-prune` and `trusted-prune-inbound-object` scriptlets [#392].
-- Updated [@adguard/agtree] to `3.1.5`.
+- Updated [@adguard/agtree] to v3.1.5.
 
 ### Fixed
 
@@ -454,7 +455,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.1.0`.
+- Updated [@adguard/agtree] to v3.1.0.
 
 ### Added
 
@@ -475,7 +476,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Updated [@adguard/agtree] to `3.0.1`.
+- Updated [@adguard/agtree] to v3.0.1.
 
 ### Added
 
@@ -526,7 +527,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `Source` type instead of `IConfiguration`.
 - API structure. Validators, Converters, Scriptlets and redirects are now separate modules.
 - The minimum supported Safari version is now 13.
-- Updated [@adguard/agtree] to `3.0.0-alpha.1`.
+- Updated [@adguard/agtree] to v3.0.0-alpha.1.
 
 ### Removed
 
