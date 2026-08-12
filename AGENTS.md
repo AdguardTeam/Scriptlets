@@ -186,6 +186,13 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - Use `pnpm` as the package manager. Do not use `npm` or `yarn`.
 
+- Commit messages MUST follow the [Conventional Commits] spec. Use the most
+  specific type that applies (`feat:`, `fix:`, `docs:`, `chore:`, `ci:`, ...).
+  For example, regenerating auto-generated docs is a `docs:` change, not a
+  `chore:` one.
+
+[Conventional Commits]: https://www.conventionalcommits.org/en/v1.0.0/
+
 ### Spec-Driven Development (SDD)
 
 Non-trivial changes MUST be preceded by a spec created with the SDD slash

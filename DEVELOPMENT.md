@@ -21,6 +21,7 @@ Redirect Resources library.
 [nvm]: https://github.com/nvm-sh/nvm
 [pnpm]: https://pnpm.io/
 [Git]: https://git-scm.com/
+[Conventional Commits]: https://www.conventionalcommits.org/en/v1.0.0/
 
 ## Getting Started
 
@@ -138,6 +139,19 @@ pnpm test:vitest                                  # for API/converter/validator 
 ```
 
 Both must pass with no errors.
+
+### Commit Message Convention
+
+Commit messages MUST follow the [Conventional Commits] specification. Use the most specific type that applies:
+
+- `feat:` — new functionality
+- `fix:` — bug fix
+- `docs:` — documentation-only changes, including regenerated auto-generated docs such as `wiki/`
+- `refactor:` — code changes that neither fix a bug nor add a feature
+- `chore:` — changes that do not modify source or tests (e.g. tooling)
+- `ci:` — CI configuration and scripts
+
+Keep the subject short and imperative, e.g. `docs: regenerate wiki docs for release`.
 
 ## Common Tasks
 
