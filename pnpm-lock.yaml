@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@adguard/agtree':
-        specifier: 4.2.0
-        version: 4.2.0
+        specifier: 4.2.1
+        version: 4.2.1
       '@types/trusted-types':
         specifier: 2.0.7
         version: 2.0.7
@@ -192,8 +192,8 @@ importers:
 
 packages:
 
-  '@adguard/agtree@4.2.0':
-    resolution: {integrity: sha512-rpdSH2oRESO2d0OhhLrvUPAh4nsX3uSCEz+1bNevUkGKtysGG404ZevSlSZEFEDNAuOPmyaCKA5dbQ5T2G20BA==}
+  '@adguard/agtree@4.2.1':
+    resolution: {integrity: sha512-SYS+88MBs7FxUovsjcWxxWS366toEjkvb3QzURJFlzHtGXNn4Sbx444RfHrBD2ZqojrJ7fFyWnlXPHxGE9/cZA==}
     engines: {node: '>=22'}
 
   '@adguard/css-tokenizer@1.2.0':
@@ -4300,7 +4300,7 @@ packages:
 
 snapshots:
 
-  '@adguard/agtree@4.2.0':
+  '@adguard/agtree@4.2.1':
     dependencies:
       '@adguard/css-tokenizer': 1.2.0
       camelcase-keys: 7.0.2
