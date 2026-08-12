@@ -142,16 +142,24 @@ Both must pass with no errors.
 
 ### Commit Message Convention
 
-Commit messages MUST follow the [Conventional Commits] specification. Use the most specific type that applies:
+Every commit message MUST start with the ticket number (`AG-XXX`) so it
+auto-links with the task tracker, followed by a short description in the
+present tense:
 
-- `feat:` — new functionality
-- `fix:` — bug fix
-- `docs:` — documentation-only changes, including regenerated auto-generated docs such as `wiki/`
-- `refactor:` — code changes that neither fix a bug nor add a feature
-- `chore:` — changes that do not modify source or tests (e.g. tooling)
-- `ci:` — CI configuration and scripts
+```text
+AG-XXX <short description in present tense>
+```
 
-Keep the subject short and imperative, e.g. `docs: regenerate wiki docs for release`.
+Examples:
+
+- `AG-55716 Add reusable publish-release workflow`
+- `AG-4321 Fix redirect after login`
+- `AG-99 Update dependencies`
+
+Automated commits that CI creates on its own (for example, the wiki
+regeneration during the release flow, which has no ticket number) use a
+[Conventional Commits] prefix such as `docs:` — e.g.
+`docs: regenerate wiki docs for release`.
 
 ## Common Tasks
 

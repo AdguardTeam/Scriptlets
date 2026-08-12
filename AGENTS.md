@@ -186,10 +186,11 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - Use `pnpm` as the package manager. Do not use `npm` or `yarn`.
 
-- Commit messages MUST follow the [Conventional Commits] spec. Use the most
-  specific type that applies (`feat:`, `fix:`, `docs:`, `chore:`, `ci:`, ...).
-  For example, regenerating auto-generated docs is a `docs:` change, not a
-  `chore:` one.
+- Commit messages MUST start with the ticket number (`AG-XXX`) so they
+  auto-link with the task tracker, followed by a short description in the
+  present tense (e.g. `AG-1234 Fix login redirect`). Automated commits made by
+  CI (e.g. the wiki regeneration during the release flow) use a
+  [Conventional Commits] prefix such as `docs:` instead.
 
 [Conventional Commits]: https://www.conventionalcommits.org/en/v1.0.0/
 
