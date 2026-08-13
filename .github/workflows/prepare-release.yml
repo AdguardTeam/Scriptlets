@@ -70,6 +70,11 @@ jobs:
         if: steps.build-wiki.outcome == 'success'
         uses: AdGuardSoftwareLimited/actions/actions/protected-push@master
         with:
+          # Required: protected-push forwards this to Octopass as the target
+          # repository for the minted token. Without it, Octopass gets an
+          # empty repository and rejects the request ("invalid token scope
+          # request").
+          repository: ${{ github.repository }}
           branch: release-bump/${{ inputs.tag }}
           commit-message: 'docs: regenerate wiki docs for release'
           files: wiki
