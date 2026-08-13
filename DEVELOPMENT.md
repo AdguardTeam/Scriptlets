@@ -21,6 +21,7 @@ Redirect Resources library.
 [nvm]: https://github.com/nvm-sh/nvm
 [pnpm]: https://pnpm.io/
 [Git]: https://git-scm.com/
+[Conventional Commits]: https://www.conventionalcommits.org/en/v1.0.0/
 
 ## Getting Started
 
@@ -138,6 +139,27 @@ pnpm test:vitest                                  # for API/converter/validator 
 ```
 
 Both must pass with no errors.
+
+### Commit Message Convention
+
+Every commit message MUST start with the ticket number (`AG-XXX`) so it
+auto-links with the task tracker, followed by a short description in the
+present tense:
+
+```text
+AG-XXX <short description in present tense>
+```
+
+Examples:
+
+- `AG-55716 Add reusable publish-release workflow`
+- `AG-4321 Fix redirect after login`
+- `AG-99 Update dependencies`
+
+Automated commits that CI creates on its own (for example, the wiki
+regeneration during the release flow, which has no ticket number) use a
+[Conventional Commits] prefix such as `docs:` — e.g.
+`docs: regenerate wiki docs for release`.
 
 ## Common Tasks
 
