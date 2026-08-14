@@ -100,6 +100,5 @@ jobs:
           # Plain fast-forward push. We always append a commit to the branch
           # we just checked out, so if the remote moved forward the push
           # fast-forwards onto it, and if the branch was reset the push is
-          # rejected as non-fast-forward — either way we never clobber, which
-          # is all the old ls-remote + --force-with-lease block guaranteed.
+          # rejected as non-fast-forward — either way we never clobber.
           git push origin "HEAD:${BRANCH}"
