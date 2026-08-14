@@ -14,10 +14,14 @@ on:
         required: true
         type: string
 
-# `contents: write` — update-wiki commits/pushes the wiki to the release branch
-# `id-token: write` — Octopass OIDC (the create-pr action inside the shared
-#   workflow and protected-push in the update-wiki job both exchange the
-#   id-token for a short-lived App installation token)
+# `contents: write` — update-wiki commits/pushes the wiki to the release
+#   branch with the job's GITHUB_TOKEN (same-repo push, so no Octopass
+#   token/grant is needed).
+# `id-token: write` — Octopass OIDC for PR creation: the shared
+#   create-release-pr workflow exchanges the id-token for an App token, and a
+#   reusable workflow's permissions can never exceed the caller's, so the
+#   caller MUST grant id-token here (every other caller of that workflow
+#   keeps both permissions for this reason).
 permissions:
   contents: write
   id-token: write
@@ -36,6 +40,8 @@ jobs:
   update-wiki:
     needs: create-release-pr
     runs-on: team-extensions
+    permissions:
+      contents: write
     steps:
       - name: Checkout release branch
         uses: actions/checkout@v5
@@ -61,20 +67,39 @@ jobs:
           mv wiki-out/wiki wiki
           rm -rf wiki-out
 
-      # Commit and push the wiki to the release branch. protected-push:
-      #   - no-ops (has_changes=false, exit 0) when the rebuild is a no-op;
-      #   - resolves the remote branch head and pushes with --force-with-lease
-      #     (refuses to clobber a concurrent push);
-      #   - authenticates with an Octopass token instead of GITHUB_TOKEN.
+      # Commit and push the wiki to the release branch. This is a same-repo
+      # push, so the job's GITHUB_TOKEN (contents: write on this repo) is
+      # sufficient — an Octopass token/grant is only needed for cross-repo
+      # pushes (e.g. mirrors). checkout@v5 already persisted the GITHUB_TOKEN
+      # as an Authorization extraheader, so 'git push origin' authenticates
+      # with it; embedding the token in the URL again would send two
+      # Authorization headers and be rejected ("Duplicate header").
       - name: Commit and push wiki
         if: steps.build-wiki.outcome == 'success'
-        uses: AdGuardSoftwareLimited/actions/actions/protected-push@master
-        with:
-          # Required: protected-push forwards this to Octopass as the target
-          # repository for the minted token. Without it, Octopass gets an
-          # empty repository and rejects the request ("invalid token scope
-          # request").
-          repository: ${{ github.repository }}
-          branch: release-bump/${{ inputs.tag }}
-          commit-message: 'docs: regenerate wiki docs for release'
-          files: wiki
+        shell: bash
+        env:
+          BRANCH: release-bump/${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # `--porcelain` covers both tracked and untracked changes in one
+          # check (the old guard split this across `git diff` and `git
+          # ls-files`). Nothing to commit on a no-op rebuild (no empty commits).
+          if [ -z "$(git status --porcelain -- wiki)" ]
+          then
+            echo "Wiki is unchanged; nothing to commit"
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+          git add wiki
+          git commit -m 'docs: regenerate wiki docs for release'
+
+          # Plain fast-forward push. We always append a commit to the branch
+          # we just checked out, so if the remote moved forward the push
+          # fast-forwards onto it, and if the branch was reset the push is
+          # rejected as non-fast-forward — either way we never clobber, which
+          # is all the old ls-remote + --force-with-lease block guaranteed.
+          git push origin "HEAD:${BRANCH}"
