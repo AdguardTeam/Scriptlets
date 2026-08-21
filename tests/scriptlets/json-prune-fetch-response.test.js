@@ -252,6 +252,23 @@ if (!isSupported) {
         done();
     });
 
+    test('JSONPath mode ignores obligatory props and matches a URL object', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const PROPS_TO_REMOVE = '$.cc.src';
+        const PROPS_TO_MATCH = '/test03\\.json/';
+        const done = assert.async();
+
+        runScriptlet(name, [PROPS_TO_REMOVE, 'propsToMatch', PROPS_TO_MATCH]);
+
+        const response = await fetch(new URL(INPUT_JSON_PATH, window.location.href));
+        const actualJson = await response.json();
+
+        assert.strictEqual(actualJson.cc.id, 0, '"cc.id" not changed');
+        assert.strictEqual(actualJson.cc.src, undefined, '"cc.src" has been removed in jsonpath mode');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('Request is not modified because json-prune-fetch does not support setting values', async (assert) => {
         assert.expect(2);
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;

@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
+
+[#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
+
 ### Security
 
 ## [2.5.1-beta.0] - 2026-08-05

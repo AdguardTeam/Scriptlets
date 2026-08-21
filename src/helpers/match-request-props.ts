@@ -35,9 +35,14 @@ export const matchRequestProps = (
         isMatched = matchKeys.every((matchKey) => {
             const matchValue = matchData[matchKey];
             const dataValue = requestData[matchKey];
-            return Object.prototype.hasOwnProperty.call(requestData, matchKey)
-                    && typeof dataValue === 'string'
-                    && matchValue?.test(dataValue);
+
+            if (!Object.prototype.hasOwnProperty.call(requestData, matchKey)) {
+                return false;
+            }
+
+            const valueToMatch = dataValue instanceof URL ? dataValue.toString() : dataValue;
+
+            return typeof valueToMatch === 'string' && matchValue?.test(valueToMatch);
         });
     }
 
