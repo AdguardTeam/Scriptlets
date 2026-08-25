@@ -500,7 +500,8 @@
             "ubo": "google-ima.js"
         },
         {
-            "adg": "google-ima3-dai"
+            "adg": "google-ima3-dai",
+            "ubo": "google-ima-dai.js"
         },
         {
             "adg": "googlesyndication-adsbygoogle",
