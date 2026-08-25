@@ -2,6 +2,12 @@
 
 AdGuard's Scriptlets and Redirect resources library which provides extended capabilities for content blocking.
 
+> **Note:** This package is developed in [AdGuardSoftwareLimited/ext-scriptlets].
+> The [AdguardTeam/Scriptlets] repository is a public mirror.
+
+[AdGuardSoftwareLimited/ext-scriptlets]: https://github.com/AdGuardSoftwareLimited/ext-scriptlets
+[AdguardTeam/Scriptlets]: https://github.com/AdguardTeam/Scriptlets
+
 - [Scriptlets](#scriptlets)
     - [Syntax](#scriptlet-syntax)
         - [Blocking rules](#scriptlet-syntax--blocking)
