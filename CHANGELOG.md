@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Security
 
+## [2.5.1] - 2026-08-25
+
 ## [2.5.1-beta.1] - 2026-08-25
 
 ### Changed
@@ -1108,7 +1110,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1-beta.1...HEAD
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1...HEAD
+[2.5.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1-beta.1...v2.5.1
 [2.5.1-beta.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1-beta.0...v2.5.1-beta.1
 [2.5.1-beta.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...v2.5.1-beta.0
 [2.5.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.4.3...v2.5.0
