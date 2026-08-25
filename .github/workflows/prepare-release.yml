@@ -36,6 +36,12 @@ jobs:
   update-wiki:
     needs: create-release-pr
     runs-on: team-extensions
+    # `pull-requests: write` — post a comment on the release PR when the wiki
+    #   build fails (update-wiki stays green; the comment is the notification)
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
     steps:
       - name: Checkout release branch
         uses: actions/checkout@v5
@@ -43,12 +49,24 @@ jobs:
           ref: release-bump/${{ inputs.tag }}
           fetch-depth: 0
 
+      # Build the wiki but do NOT block the release on failure: the job stays
+      # green (continue-on-error). We still capture the exit code and a log
+      # excerpt so the step below can notify the release PR with the error.
       - name: Build wiki
         id: build-wiki
         continue-on-error: true
-        run: >-
-          DOCKER_BUILDKIT=1 docker build --progress plain
-          --target wiki-output --output ./wiki-out .
+        shell: bash
+        run: |
+          set +e
+          DOCKER_BUILDKIT=1 docker build --progress plain \
+            --target wiki-output --output ./wiki-out . | tee /tmp/wiki-build.log
+          exit_code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+          if [ "${exit_code}" -ne 0 ]; then
+            tail -n 80 /tmp/wiki-build.log > /tmp/wiki-build-error.txt
+          fi
+          exit "${exit_code}"
 
       # Only append when the wiki was actually built; a transient build failure
       # (steps.build-wiki.outcome != 'success') is skipped so we don't try to
@@ -78,3 +96,78 @@ jobs:
           branch: release-bump/${{ inputs.tag }}
           commit-message: 'docs: regenerate wiki docs for release'
           files: wiki
+
+      # The update-wiki job intentionally stays green when the wiki build fails
+      # (see build-wiki's continue-on-error), so a silent failure would leave
+      # the release PR without regenerated docs and nobody would notice. Post a
+      # comment on the release PR with the captured error so a maintainer can
+      # fix it (e.g. commit the needed wiki changes manually).
+      - name: Comment on release PR about wiki build failure
+        if: steps.build-wiki.outcome == 'failure'
+        # Best-effort notification: update-wiki must stay green even if the
+        # comment cannot be posted (e.g. transient API error).
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          RELEASE_BRANCH: release-bump/${{ inputs.tag }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            const releaseBranch = process.env.RELEASE_BRANCH;
+
+            // The release PR is opened by the shared create-release-pr workflow
+            // on the release-bump/<tag> branch; resolve its number by head ref.
+            const { data: pulls } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${releaseBranch}`,
+            });
+
+            if (pulls.length === 0) {
+              core.warning(
+                `No open release PR found for branch ${releaseBranch}; ` +
+                  'cannot notify about the wiki build failure.',
+              );
+              return;
+            }
+
+            let errorText = '(no error output captured)';
+            try {
+              const captured = fs.readFileSync('/tmp/wiki-build-error.txt', 'utf8').trim();
+              if (captured) {
+                errorText = captured;
+              }
+            } catch (err) {
+              core.warning(`Could not read wiki build error log: ${err.message}`);
+            }
+
+            const runUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const { number } = pulls[0];
+
+            const body = [
+              `⚠️ **Wiki regeneration failed** for the release of \`${releaseBranch}\`.`,
+              '',
+              'The `update-wiki` job stays green (it is not a blocking stage), so this comment is the only notification. The regenerated `wiki/` was **not** committed to this PR. Please fix the underlying issue (e.g. commit the needed wiki changes manually) so the docs stay in sync with the released code.',
+              '',
+              `Full log: ${runUrl}`,
+              '',
+              '<details><summary>Build error (last lines)</summary>',
+              '',
+              '```text',
+              errorText,
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body,
+            });
+
+            core.info(`Commented about the wiki build failure on release PR #${number}`);
