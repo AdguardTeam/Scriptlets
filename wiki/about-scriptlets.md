@@ -104,7 +104,7 @@ https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-current-inl
 example.org#%#//scriptlet('abort-current-inline-script', property[, search])
 ```
 
-- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
+- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
 - `search` — optional, string or regular expression that must match the inline script content.
   Defaults to abort all scripts which are trying to access the specified property.
   Invalid regular expression will cause exit and rule will not work.
