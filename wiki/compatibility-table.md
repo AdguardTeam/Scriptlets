@@ -155,7 +155,7 @@
 | [google-analytics](../wiki/about-redirects.md#google-analytics) | google-analytics_analytics.js |  |
 | [google-analytics-ga](../wiki/about-redirects.md#google-analytics-ga) | google-analytics_ga.js |  |
 | [google-ima3](../wiki/about-redirects.md#google-ima3) | google-ima.js |  |
-| [google-ima3-dai](../wiki/about-redirects.md#google-ima3-dai) |  |  |
+| [google-ima3-dai](../wiki/about-redirects.md#google-ima3-dai) | google-ima-dai.js |  |
 | [googlesyndication-adsbygoogle](../wiki/about-redirects.md#googlesyndication-adsbygoogle) | googlesyndication_adsbygoogle.js |  |
 | [googletagservices-gpt](../wiki/about-redirects.md#googletagservices-gpt) | googletagservices_gpt.js |  |
 | [gemius](../wiki/about-redirects.md#gemius) |  |  |
