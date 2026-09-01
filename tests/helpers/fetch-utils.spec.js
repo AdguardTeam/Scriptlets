@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { matchRequestProps, parseMatchProps } from '../../src/helpers';
+import { getFetchData, matchRequestProps, parseMatchProps } from '../../src/helpers';
 
 const GET_METHOD = 'GET';
 const METHOD_PROP = 'method';
@@ -185,11 +185,25 @@ describe('matchRequestProps', () => {
     });
 
     test('Matches request data with a URL object', () => {
-        const data = {
-            url: new URL(requestData.url),
-        };
+        const data = getFetchData([new URL(requestData.url), undefined], Request.prototype.clone);
 
+        expect(data.url).toBe(requestData.url);
         expect(matchRequestProps(source, 'example.org/api', data)).toBeTruthy();
+    });
+
+    test('URL object input is matched against its serialized form', () => {
+        // Host-only URLs gain a trailing slash when serialized,
+        // so a URL object behaves like a Request, not like the raw string
+        const hostOnlyUrl = 'https://example.org';
+        const stringData = getFetchData([hostOnlyUrl, undefined], Request.prototype.clone);
+        const urlObjectData = getFetchData([new URL(hostOnlyUrl), undefined], Request.prototype.clone);
+
+        expect(stringData.url).toBe(hostOnlyUrl);
+        expect(urlObjectData.url).toBe(`${hostOnlyUrl}/`);
+
+        const trailingSlashSensitivePattern = 'url:/example\\.org$/';
+        expect(matchRequestProps(source, trailingSlashSensitivePattern, stringData)).toBeTruthy();
+        expect(matchRequestProps(source, trailingSlashSensitivePattern, urlObjectData)).toBeFalsy();
     });
 
     test.each([
