@@ -43,6 +43,19 @@ if (!isSupported) {
         done();
     });
 
+    test('sets an existing property when fetch receives a URL object', async (assert) => {
+        const done = assert.async();
+        runScriptlet(name, ['b2', 'changed', '', 'test01']);
+
+        const requestUrl = new URL(`${FETCH_OBJECTS_PATH}/test01.json`, window.location.href);
+        const response = await fetch(requestUrl);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 1, b2: 'changed', c3: 3 }, 'response should be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('sets an existing property in the fetch JSON response to empty string', async (assert) => {
         const done = assert.async();
         runScriptlet(name, ['b2', '', '', 'test01']);

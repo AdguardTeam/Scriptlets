@@ -179,6 +179,25 @@ if (!isSupported) {
         done();
     });
 
+    test('Match request passed as URL object, remove all text content', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+
+        const done = assert.async();
+
+        const PATTERN = '*';
+        const REPLACEMENT = '';
+        const PROPS_TO_MATCH = 'test01';
+        runScriptlet(name, [PATTERN, REPLACEMENT, PROPS_TO_MATCH]);
+
+        const requestUrl = new URL(INPUT_JSON_PATH, window.location.href);
+        const response = await fetch(requestUrl);
+        const actualTextContent = await response.text();
+
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.strictEqual(actualTextContent, '', 'Content is removed');
+        done();
+    });
+
     test('Match request by url and method, replace text content and log', async (assert) => {
         assert.expect(4);
 

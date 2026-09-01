@@ -140,7 +140,7 @@ describe('Fetch utils test', () => {
                     url: URL4,
                     [METHOD_PROP]: GET_METHOD,
                 },
-                description: 'Has url match prop, has protocol, regexp, extra colon in url',
+                description: 'has url match prop, has protocol, regexp, extra colon in url',
             },
         ];
         test.each(testCases)('$description', ({ actual, expected }) => {
@@ -155,11 +155,11 @@ describe('matchRequestProps', () => {
         url: 'https://example.org/api/users',
     };
 
-    test.each(['', '*'])('Matches all requests for "%s"', (propsToMatch) => {
+    test.each(['', '*'])('matches all requests for "%s"', (propsToMatch) => {
         expect(matchRequestProps(source, propsToMatch, requestData)).toBeTruthy();
     });
 
-    test.each([
+    const matchingTestCases = [
         {
             propsToMatch: 'example.org/api',
             description: 'URL shorthand',
@@ -180,18 +180,20 @@ describe('matchRequestProps', () => {
             propsToMatch: `url:example.org ${METHOD_PROP}:${GET_METHOD}`,
             description: 'multiple matching properties',
         },
-    ])('Matches request data using $description', ({ propsToMatch }) => {
+    ];
+
+    test.each(matchingTestCases)('matches request data using $description', ({ propsToMatch }) => {
         expect(matchRequestProps(source, propsToMatch, requestData)).toBeTruthy();
     });
 
-    test('Matches request data with a URL object', () => {
+    test('matches request data with a URL object', () => {
         const data = getFetchData([new URL(requestData.url), undefined], Request.prototype.clone);
 
         expect(data.url).toBe(requestData.url);
         expect(matchRequestProps(source, 'example.org/api', data)).toBeTruthy();
     });
 
-    test('URL object input is matched against its serialized form', () => {
+    test('matches URL object input against its serialized form', () => {
         // Host-only URLs gain a trailing slash when serialized,
         // so a URL object behaves like a Request, not like the raw string
         const hostOnlyUrl = 'https://example.org';
@@ -206,7 +208,7 @@ describe('matchRequestProps', () => {
         expect(matchRequestProps(source, trailingSlashSensitivePattern, urlObjectData)).toBeFalsy();
     });
 
-    test.each([
+    const nonMatchingTestCases = [
         {
             propsToMatch: 'url:example.com',
             data: requestData,
@@ -239,7 +241,9 @@ describe('matchRequestProps', () => {
             data: requestData,
             description: 'invalid regular expression',
         },
-    ])('Does not match request data with $description', ({ propsToMatch, data }) => {
+    ];
+
+    test.each(nonMatchingTestCases)('does not match request data with $description', ({ propsToMatch, data }) => {
         expect(matchRequestProps(source, propsToMatch, data)).toBeFalsy();
     });
 });

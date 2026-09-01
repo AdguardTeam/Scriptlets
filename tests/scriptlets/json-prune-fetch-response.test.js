@@ -258,6 +258,10 @@ if (!isSupported) {
         const PROPS_TO_MATCH = '/test03\\.json/';
         const done = assert.async();
 
+        // The literal 'propsToMatch' string in the obligatoryProps slot is intentional:
+        // it reproduces the rule from https://github.com/AdguardTeam/Scriptlets/issues/577 —
+        // "('json-prune-fetch-response', '$.r[?@.m==89]', 'propsToMatch', '/sugg/gossip/gossip-us-fastbreak')"
+        // where JSONPath mode must ignore that argument and still match the request
         runScriptlet(name, [PROPS_TO_REMOVE, 'propsToMatch', PROPS_TO_MATCH]);
 
         const response = await fetch(new URL(INPUT_JSON_PATH, window.location.href));
