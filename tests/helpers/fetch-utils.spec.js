@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { parseMatchProps } from '../../src/helpers';
+import { getFetchData, matchRequestProps, parseMatchProps } from '../../src/helpers';
 
 const GET_METHOD = 'GET';
 const METHOD_PROP = 'method';
@@ -10,6 +10,11 @@ const URL1 = 'example.com';
 const URL2 = 'http://example.com';
 const URL3 = '/^https?://example.org/';
 const URL4 = '/^https?://example.org/section#user:45/comments/';
+
+const source = {
+    name: 'match-request-props',
+    verbose: false,
+};
 
 describe('Fetch utils test', () => {
     describe('test parseMatchProps with different url props', () => {
@@ -135,11 +140,110 @@ describe('Fetch utils test', () => {
                     url: URL4,
                     [METHOD_PROP]: GET_METHOD,
                 },
-                description: 'Has url match prop, has protocol, regexp, extra colon in url',
+                description: 'has url match prop, has protocol, regexp, extra colon in url',
             },
         ];
         test.each(testCases)('$description', ({ actual, expected }) => {
             expect(parseMatchProps(actual)).toStrictEqual(expected);
         });
+    });
+});
+
+describe('matchRequestProps', () => {
+    const requestData = {
+        method: GET_METHOD,
+        url: 'https://example.org/api/users',
+    };
+
+    test.each(['', '*'])('matches all requests for "%s"', (propsToMatch) => {
+        expect(matchRequestProps(source, propsToMatch, requestData)).toBeTruthy();
+    });
+
+    const matchingTestCases = [
+        {
+            propsToMatch: 'example.org/api',
+            description: 'URL shorthand',
+        },
+        {
+            propsToMatch: 'url:example.org/api',
+            description: 'explicit URL literal',
+        },
+        {
+            propsToMatch: 'url:/^https:\\/\\/example\\.org\\/api\\//',
+            description: 'explicit URL regular expression',
+        },
+        {
+            propsToMatch: 'url:/EXAMPLE\\.ORG/i',
+            description: 'regular expression with flags',
+        },
+        {
+            propsToMatch: `url:example.org ${METHOD_PROP}:${GET_METHOD}`,
+            description: 'multiple matching properties',
+        },
+    ];
+
+    test.each(matchingTestCases)('matches request data using $description', ({ propsToMatch }) => {
+        expect(matchRequestProps(source, propsToMatch, requestData)).toBeTruthy();
+    });
+
+    test('matches request data with a URL object', () => {
+        const data = getFetchData([new URL(requestData.url), undefined], Request.prototype.clone);
+
+        expect(data.url).toBe(requestData.url);
+        expect(matchRequestProps(source, 'example.org/api', data)).toBeTruthy();
+    });
+
+    test('matches URL object input against its serialized form', () => {
+        // Host-only URLs gain a trailing slash when serialized,
+        // so a URL object behaves like a Request, not like the raw string
+        const hostOnlyUrl = 'https://example.org';
+        const stringData = getFetchData([hostOnlyUrl, undefined], Request.prototype.clone);
+        const urlObjectData = getFetchData([new URL(hostOnlyUrl), undefined], Request.prototype.clone);
+
+        expect(stringData.url).toBe(hostOnlyUrl);
+        expect(urlObjectData.url).toBe(`${hostOnlyUrl}/`);
+
+        const trailingSlashSensitivePattern = 'url:/example\\.org$/';
+        expect(matchRequestProps(source, trailingSlashSensitivePattern, stringData)).toBeTruthy();
+        expect(matchRequestProps(source, trailingSlashSensitivePattern, urlObjectData)).toBeFalsy();
+    });
+
+    const nonMatchingTestCases = [
+        {
+            propsToMatch: 'url:example.com',
+            data: requestData,
+            description: 'different property value',
+        },
+        {
+            propsToMatch: `url:example.org ${METHOD_PROP}:POST`,
+            data: requestData,
+            description: 'one mismatching property',
+        },
+        {
+            propsToMatch: 'body:payload',
+            data: requestData,
+            description: 'missing property',
+        },
+        {
+            propsToMatch: 'headers:test',
+            data: {
+                headers: new Headers({ test: 'value' }),
+            },
+            description: 'non-string property',
+        },
+        {
+            propsToMatch: `url:${requestData.url}`,
+            data: Object.create({ url: requestData.url }),
+            description: 'inherited property',
+        },
+        {
+            propsToMatch: 'url:/[/',
+            data: requestData,
+            description: 'invalid regular expression',
+        },
+    ];
+
+    test.each(nonMatchingTestCases)('does not match request data with $description', ({ propsToMatch, data }) => {
+        expect(matchRequestProps(source, propsToMatch, data)).toBeFalsy();
     });
 });
