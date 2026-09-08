@@ -1,22 +1,23 @@
 import { getMatchPropsData, isValidParsedData, parseMatchProps } from './request-utils';
-import type { LegalRequestProp, MatchPropsData } from './request-utils';
+import type { LegalRequestProp, RequestData } from './request-utils';
 import { logMessage } from './log-message';
 import { type Source } from '../scriptlets';
 
 /**
  * Checks if given propsToMatch string matches with given request data
- * This is used by prevent-xhr, prevent-fetch, trusted-replace-xhr-response
- * and  trusted-replace-fetch-response scriptlets
+ * This is used by fetch- and xhr-intercepting scriptlets,
+ * e.g. prevent-fetch, prevent-xhr, json-prune-fetch-response
  *
  * @param source scriptlet properties
  * @param propsToMatch string of space-separated request properties to match
- * @param requestData object with standard properties of fetch/xhr like url, method etc
+ * @param requestData object with standard properties of fetch/xhr like url, method etc;
+ * only string values can match
  * @returns if request properties match
  */
 export const matchRequestProps = (
     source: Source,
     propsToMatch: string,
-    requestData: MatchPropsData,
+    requestData: RequestData,
 ): boolean => {
     if (propsToMatch === '' || propsToMatch === '*') {
         return true;
@@ -35,6 +36,7 @@ export const matchRequestProps = (
         isMatched = matchKeys.every((matchKey) => {
             const matchValue = matchData[matchKey];
             const dataValue = requestData[matchKey];
+
             return Object.prototype.hasOwnProperty.call(requestData, matchKey)
                     && typeof dataValue === 'string'
                     && matchValue?.test(dataValue);

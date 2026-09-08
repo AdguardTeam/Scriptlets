@@ -195,6 +195,22 @@ if (!isSupported) {
         done();
     });
 
+    test('simple fetch - match URL object', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test01.json`;
+
+        runScriptlet(name, ['test01']);
+        const done = assert.async();
+
+        const requestUrl = new URL(INPUT_JSON_PATH, window.location.href);
+        const response = await fetch(requestUrl);
+        const parsedData = await response.json();
+
+        assert.ok(isEmptyObject(parsedData), 'Response is mocked');
+        assert.strictEqual(response.url, requestUrl.href, 'Mocked response url is a string');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
     test('fetch request - match few props', async (assert) => {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test02.json`;
         const init = {

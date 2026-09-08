@@ -26,6 +26,12 @@ type ParsedMatchProps = SharedRequestData<string>;
 export type MatchPropsData = SharedRequestData<RegExp>;
 
 /**
+ * Request data collected at runtime to be checked against MatchPropsData;
+ * values are whatever fetch/xhr received — only string values can match
+ */
+export type RequestData = SharedRequestData<unknown>;
+
+/**
  * Fetch and xhr.open options that are valid props
  * to match for (trusted-)prevent-(fetch|xhr) scriptlets
  *
@@ -101,7 +107,9 @@ export const getFetchData = (args: [FetchResource, RequestInit], nativeRequestCl
         fetchInit = args[1]; // eslint-disable-line prefer-destructuring
     }
 
-    fetchPropsObj.url = fetchUrl;
+    // Normalize URL objects to strings so that matching and
+    // synthetic Response.url downstream always receive a string
+    fetchPropsObj.url = fetchUrl instanceof URL ? fetchUrl.href : fetchUrl;
     if (fetchInit instanceof Object) {
         const props = Object.keys(fetchInit) as Array<keyof RequestInit>;
         props.forEach((prop) => {
