@@ -153,6 +153,7 @@ Allowed sources of scriptlets are:
 1. Filters created by AdGuard Team;
 2. Custom filters which were installed as `Trusted`;
 3. User rules.
+4. Pre-approved third party filters in Filters tab.
 
 - **[Scriptlets list](./wiki/about-scriptlets.md#scriptlets)**
 - **[Scriptlets compatibility table](./wiki/compatibility-table.md#scriptlets)**
