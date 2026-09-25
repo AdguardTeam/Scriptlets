@@ -355,10 +355,11 @@ test('copying missing attribute value settles and logs it only once', async (ass
         nativeConsole(...args);
     };
 
-    const { mutations, hits } = await runAttrRulesAndCountIdleChanges(name, [
+    const { initialMutations, mutations, hits } = await runAttrRulesAndCountIdleChanges(name, [
         { elem: targetElem, attr: TARGET_ATTR_NAME, value: '[data-missing]' },
     ]);
 
+    assert.ok(initialMutations > 0, 'initial attribute change is counted');
     assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
     assert.strictEqual(hits, 0, 'hit is not called while page is idle');
     assert.strictEqual(missingAttrLogCount, 1, 'missing attribute is logged only on the initial change');

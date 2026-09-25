@@ -170,7 +170,11 @@ const sleep = (ms) => new Promise((resolve) => {
 /**
  * Counts attribute mutations on given elements.
  *
- * @param {Element[]} elems elements to observe
+ * Each element is observed directly, so mutations are counted even if the element is detached
+ * or inside a shadow root. Elements are deduplicated, because calling `observe()` again for
+ * an already observed node replaces its options instead of merging them.
+ *
+ * @param {Element[]} elems elements to observe, duplicates are allowed
  * @param {string[]} attrs attribute names to observe
  * @returns {object} counter with `count`, `reset()` and `disconnect()`
  */
@@ -179,12 +183,18 @@ export const createAttrMutationCounter = (elems, attrs) => {
     const observer = new MutationObserver((mutations) => {
         count += mutations.length;
     });
-    elems.forEach((elem) => observer.observe(elem, { attributes: true, attributeFilter: attrs }));
+    new Set(elems).forEach((elem) => observer.observe(elem, { attributes: true, attributeFilter: attrs }));
+    // records which are queued but not yet delivered to the callback
+    const flush = () => {
+        count += observer.takeRecords().length;
+    };
     return {
         get count() {
+            flush();
             return count;
         },
         reset() {
+            flush();
             count = 0;
         },
         disconnect() {
@@ -202,7 +212,9 @@ export const createAttrMutationCounter = (elems, attrs) => {
  * @param {Array<{elem: Element, attr: string, value: string}>} rules rules to run,
  * each rule matches its element by id
  * @param {boolean} [verbose=true] whether logging (hit) is enabled
- * @returns {Promise<{mutations: number, hits: number}>} counts collected during the idle window
+ * @returns {Promise<{initialMutations: number, mutations: number, hits: number}>} `initialMutations` is
+ * the number of mutations made while the rules were applied, non-zero value proves that the counter observes
+ * the right elements and attributes; `mutations` and `hits` are counts collected during the idle window
  */
 export const runAttrRulesAndCountIdleChanges = async (name, rules, verbose = true) => {
     let hits = 0;
@@ -221,6 +233,7 @@ export const runAttrRulesAndCountIdleChanges = async (name, rules, verbose = tru
     });
 
     await sleep(ATTR_SETTLE_DELAY_MS);
+    const initialMutations = counter.count;
     counter.reset();
     hits = 0;
 
@@ -232,7 +245,7 @@ export const runAttrRulesAndCountIdleChanges = async (name, rules, verbose = tru
     const mutations = counter.count;
     counter.disconnect();
 
-    return { mutations, hits };
+    return { initialMutations, mutations, hits };
 };
 
 /**
@@ -259,10 +272,15 @@ export const checkTwoAttrRulesSettle = async (assert, name, {
     const first = { elem: firstElem, attr: 'data-ag-test-a', value: '1' };
     const second = { elem: secondElem, attr: 'data-ag-test-b', value: secondValue };
 
-    const { mutations, hits } = await runAttrRulesAndCountIdleChanges(name, [first, second], verbose);
+    const { initialMutations, mutations, hits } = await runAttrRulesAndCountIdleChanges(
+        name,
+        [first, second],
+        verbose,
+    );
 
     assert.strictEqual(firstElem.getAttribute(first.attr), first.value, `${first.attr} is set`);
     assert.strictEqual(secondElem.getAttribute(second.attr), secondExpected, `${second.attr} is set`);
+    assert.ok(initialMutations > 0, 'initial attribute changes are counted');
     assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
     if (verbose) {
         assert.strictEqual(hits, 0, 'hit is not called while page is idle');
