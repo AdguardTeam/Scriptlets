@@ -1,6 +1,19 @@
-import { describe, test, expect } from 'vitest';
+/* eslint-disable no-underscore-dangle */
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 
-import { parseAttributePairs, getElementAttributesWithValues } from '../../src/helpers';
+import {
+    parseAttributePairs,
+    getElementAttributesWithValues,
+    defaultAttributeSetter,
+    setAttributeBySelector,
+} from '../../src/helpers';
 
 describe('parseAttributePairs', () => {
     describe('valid input', () => {
@@ -184,5 +197,86 @@ describe('getElementAttributesWithValues', () => {
         const expected = '';
         const result = getElementAttributesWithValues('test');
         expect(result).toStrictEqual(expected);
+    });
+});
+
+describe('defaultAttributeSetter', () => {
+    const ATTR_NAME = 'data-test';
+
+    test('sets attribute and returns true if it is missing', () => {
+        const elem = document.createElement('div');
+        expect(defaultAttributeSetter(elem, ATTR_NAME, '')).toBe(true);
+        expect(elem.getAttribute(ATTR_NAME)).toBe('');
+    });
+
+    test('sets attribute and returns true if its value differs', () => {
+        const elem = document.createElement('div');
+        elem.setAttribute(ATTR_NAME, '1');
+        expect(defaultAttributeSetter(elem, ATTR_NAME, '2')).toBe(true);
+        expect(elem.getAttribute(ATTR_NAME)).toBe('2');
+    });
+
+    test('does not set attribute and returns false if its value matches', () => {
+        const elem = document.createElement('div');
+        elem.setAttribute(ATTR_NAME, '1');
+        const setAttributeSpy = vi.spyOn(elem, 'setAttribute');
+        expect(defaultAttributeSetter(elem, ATTR_NAME, '1')).toBe(false);
+        expect(setAttributeSpy).not.toHaveBeenCalled();
+        expect(elem.getAttribute(ATTR_NAME)).toBe('1');
+    });
+});
+
+describe('setAttributeBySelector', () => {
+    const CLASS_NAME = 'ag-test-attr-utils';
+    const SELECTOR = `.${CLASS_NAME}`;
+    const ATTR_NAME = 'data-test';
+    const source = {
+        name: 'set-attr',
+        args: [],
+        verbose: true,
+    };
+
+    let elems;
+
+    beforeEach(() => {
+        elems = [document.createElement('div'), document.createElement('div')];
+        elems.forEach((elem) => {
+            elem.classList.add(CLASS_NAME);
+            document.body.appendChild(elem);
+        });
+        window.__debug = vi.fn();
+        // hit() logs a trace on each call
+        vi.spyOn(console, 'trace').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        elems.forEach((elem) => elem.remove());
+        delete window.__debug;
+        vi.restoreAllMocks();
+    });
+
+    test('sets attribute and calls hit if some of matched elements are changed', () => {
+        elems[0].setAttribute(ATTR_NAME, '1');
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1');
+        elems.forEach((elem) => expect(elem.getAttribute(ATTR_NAME)).toBe('1'));
+        expect(window.__debug).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not call hit if all matched elements already have the value', () => {
+        elems.forEach((elem) => elem.setAttribute(ATTR_NAME, '1'));
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1');
+        expect(window.__debug).not.toHaveBeenCalled();
+    });
+
+    test('calls hit only if custom attribute setter reports a change', () => {
+        const noChangeSetter = vi.fn(() => false);
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', noChangeSetter);
+        expect(noChangeSetter).toHaveBeenCalledTimes(elems.length);
+        expect(window.__debug).not.toHaveBeenCalled();
+
+        const changeSetter = vi.fn(() => true);
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', changeSetter);
+        expect(changeSetter).toHaveBeenCalledTimes(elems.length);
+        expect(window.__debug).toHaveBeenCalledTimes(1);
     });
 });

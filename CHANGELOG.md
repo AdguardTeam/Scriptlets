@@ -23,6 +23,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Fixed
 
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
+- Infinite mutation loop and repeated logging when several `set-attr` or `trusted-set-attr` rules
+  are applied on the same page: the attribute is no longer re-set, and `hit` is not called,
+  if it already has the required value.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

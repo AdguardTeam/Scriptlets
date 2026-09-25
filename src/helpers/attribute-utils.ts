@@ -4,16 +4,26 @@ import { type Source } from '../scriptlets';
 
 /**
  * Sets attribute with given value to given element.
+ * Does nothing if the element already has the attribute with the same value,
+ * so that no redundant mutations are produced.
  *
  * @param elem Element to set attribute to.
  * @param attribute Attribute name to set.
  * @param value Attribute value to set.
+ *
+ * @returns True if the attribute has been changed, false otherwise.
  */
 export const defaultAttributeSetter = (
     elem: Element,
     attribute: string,
     value: string,
-): void => elem.setAttribute(attribute, value);
+): boolean => {
+    if (elem.getAttribute(attribute) === value) {
+        return false;
+    }
+    elem.setAttribute(attribute, value);
+    return true;
+};
 
 /**
  * Sets attribute with given value to all elements matching given selector
@@ -23,7 +33,7 @@ export const defaultAttributeSetter = (
  * @param attribute attribute name to set
  * @param value attribute value to set
  * @param attributeSetter function to apply to each element,
- * defaults to native .setAttribute
+ * should return true if the attribute has been changed, defaults to {@link defaultAttributeSetter}
  */
 export const setAttributeBySelector = (
     source: Source,
@@ -45,8 +55,16 @@ export const setAttributeBySelector = (
     }
 
     try {
-        elements.forEach((elem) => attributeSetter(elem, attribute, value));
-        hit(source);
+        let isChanged = false;
+        elements.forEach((elem) => {
+            if (attributeSetter(elem, attribute, value)) {
+                isChanged = true;
+            }
+        });
+        // Call hit only on actual change, otherwise idle observers would log on each unrelated mutation
+        if (isChanged) {
+            hit(source);
+        }
     } catch {
         logMessage(source, `Failed to set [${attribute}="${value}"] to each of selected elements.`);
     }

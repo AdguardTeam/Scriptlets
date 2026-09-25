@@ -144,10 +144,14 @@ export function setAttr(source, selector, attr, value = '') {
     if (shouldCopyValue) {
         attributeHandler = (elem, attr, value) => {
             const valueToCopy = elem.getAttribute(value.slice(1, -1));
-            if (valueToCopy === null) {
+            // setAttribute() stringifies the value, e.g. null -> 'null',
+            // so it should be compared as a string to avoid re-setting it on each mutation
+            const isChanged = defaultAttributeSetter(elem, attr, String(valueToCopy));
+            // Log only on actual change, otherwise idle observers would log on each unrelated mutation
+            if (isChanged && valueToCopy === null) {
                 logMessage(source, `No element attribute found to copy value from: ${value}`);
             }
-            elem.setAttribute(attr, valueToCopy);
+            return isChanged;
         };
     }
 

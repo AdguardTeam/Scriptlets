@@ -146,3 +146,125 @@ export const createPanel = () => {
  * Removes the panel element from the document.
  */
 export const removePanel = () => document.getElementById('panel').remove();
+
+/**
+ * Time to let attribute scriptlets apply initial values and let their throttled DOM observers settle.
+ */
+export const ATTR_SETTLE_DELAY_MS = 100;
+
+/**
+ * Idle window during which no attribute mutations are expected once attribute scriptlets have settled.
+ */
+export const ATTR_IDLE_WINDOW_MS = 300;
+
+/**
+ * Returns a promise which resolves after given delay.
+ *
+ * @param {number} ms delay in milliseconds
+ * @returns {Promise<void>}
+ */
+const sleep = (ms) => new Promise((resolve) => {
+    setTimeout(resolve, ms);
+});
+
+/**
+ * Counts attribute mutations on given elements.
+ *
+ * @param {Element[]} elems elements to observe
+ * @param {string[]} attrs attribute names to observe
+ * @returns {object} counter with `count`, `reset()` and `disconnect()`
+ */
+export const createAttrMutationCounter = (elems, attrs) => {
+    let count = 0;
+    const observer = new MutationObserver((mutations) => {
+        count += mutations.length;
+    });
+    elems.forEach((elem) => observer.observe(elem, { attributes: true, attributeFilter: attrs }));
+    return {
+        get count() {
+            return count;
+        },
+        reset() {
+            count = 0;
+        },
+        disconnect() {
+            observer.disconnect();
+        },
+    };
+};
+
+/**
+ * Runs attribute scriptlet rules, lets them settle and then counts attribute mutations and hits
+ * while the page is idle, except for one unrelated DOM mutation which wakes up the rules' observers.
+ * Non-zero counts mean that the rules keep re-applying themselves, e.g. due to a mutation loop.
+ *
+ * @param {string} name scriptlet name
+ * @param {Array<{elem: Element, attr: string, value: string}>} rules rules to run,
+ * each rule matches its element by id
+ * @param {boolean} [verbose=true] whether logging (hit) is enabled
+ * @returns {Promise<{mutations: number, hits: number}>} counts collected during the idle window
+ */
+export const runAttrRulesAndCountIdleChanges = async (name, rules, verbose = true) => {
+    let hits = 0;
+    // eslint-disable-next-line no-underscore-dangle
+    window.__debug = () => {
+        hits += 1;
+    };
+
+    const counter = createAttrMutationCounter(
+        rules.map((rule) => rule.elem),
+        rules.map((rule) => rule.attr),
+    );
+
+    rules.forEach(({ elem, attr, value }) => {
+        runScriptlet(name, [`#${elem.id}`, attr, value], verbose);
+    });
+
+    await sleep(ATTR_SETTLE_DELAY_MS);
+    counter.reset();
+    hits = 0;
+
+    const unrelatedElem = document.createElement('div');
+    document.body.appendChild(unrelatedElem);
+    unrelatedElem.remove();
+
+    await sleep(ATTR_IDLE_WINDOW_MS);
+    const mutations = counter.count;
+    counter.disconnect();
+
+    return { mutations, hits };
+};
+
+/**
+ * Runs two non-conflicting attribute scriptlet rules and checks that after they are applied
+ * the page stays idle, i.e. there is no mutation loop and no repeated hits.
+ *
+ * @param {object} assert QUnit assert
+ * @param {string} name scriptlet name
+ * @param {object} options options
+ * @param {Element} options.firstElem element matched by the first rule
+ * @param {Element} options.secondElem element matched by the second rule, may be the same as `firstElem`
+ * @param {string} [options.secondValue='1'] value argument of the second rule
+ * @param {string} [options.secondExpected] expected attribute value set by the second rule,
+ * defaults to `secondValue`
+ * @param {boolean} [options.verbose=true] whether logging (hit) is enabled
+ */
+export const checkTwoAttrRulesSettle = async (assert, name, {
+    firstElem,
+    secondElem,
+    secondValue = '1',
+    secondExpected = secondValue,
+    verbose = true,
+}) => {
+    const first = { elem: firstElem, attr: 'data-ag-test-a', value: '1' };
+    const second = { elem: secondElem, attr: 'data-ag-test-b', value: secondValue };
+
+    const { mutations, hits } = await runAttrRulesAndCountIdleChanges(name, [first, second], verbose);
+
+    assert.strictEqual(firstElem.getAttribute(first.attr), first.value, `${first.attr} is set`);
+    assert.strictEqual(secondElem.getAttribute(second.attr), secondExpected, `${second.attr} is set`);
+    assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
+    if (verbose) {
+        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    }
+};
