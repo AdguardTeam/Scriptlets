@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    ATTR_SETTLE_DELAY_MS,
+    createAttrMutationCounter,
+    runRulesAndCountIdleChanges,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'hide-in-shadow-dom';
@@ -21,6 +27,54 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
+
+let uniqueClassCount = 0;
+
+/**
+ * Creates a shadow host with a target element which has a unique class name,
+ * so rules from previous tests, whose observers are still active, do not match it.
+ *
+ * @param {boolean} [inLightDom=false] whether the target should be a light DOM child of the host
+ * instead of being inside its shadow root
+ * @returns {{target: HTMLElement, selector: string}} target element and selector which matches it
+ */
+const createUniqueTarget = (inLightDom = false) => {
+    uniqueClassCount += 1;
+    const className = `ag-test-hide-in-shadow-dom-${uniqueClassCount}`;
+    const host = document.createElement('div');
+    const shadowRoot = host.attachShadow({ mode: 'open' });
+    const target = document.createElement('p');
+    target.classList.add(className);
+    (inLightDom ? host : shadowRoot).appendChild(target);
+    document.body.appendChild(host);
+    elemsToClean.push(host);
+    return { target, selector: `.${className}` };
+};
+
+/**
+ * Runs a rule for each target and checks that after they are applied the page stays idle,
+ * i.e. targets are not re-hidden and hit is not called on unrelated DOM mutations.
+ *
+ * @param {object} assert QUnit assert
+ * @param {Array<{target: HTMLElement, selector: string}>} targets targets, each one is hidden by its own rule
+ * @param {boolean} [verbose=true] whether logging (hit) is enabled
+ */
+const checkRulesSettle = async (assert, targets, verbose = true) => {
+    const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(
+        name,
+        targets.map(({ target, selector }) => ({ elem: target, attr: 'style', args: [selector] })),
+        verbose,
+    );
+
+    targets.forEach(({ target, selector }) => {
+        assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden`);
+    });
+    assert.ok(initialMutations > 0, 'initial hiding is counted');
+    assert.strictEqual(mutations, 0, 'elements are not re-hidden while page is idle');
+    if (verbose) {
+        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    }
+};
 
 // some browsers do not support ShadowRoot
 // for example, Firefox 52
@@ -251,5 +305,69 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         // clean up test elements
         elemsToClean.push(shadowInner, shadowChild, simpleInner, simpleChild, testHost);
+    });
+
+    test('single rule does not re-hide element on unrelated DOM mutation', async (assert) => {
+        await checkRulesSettle(assert, [createUniqueTarget()]);
+    });
+
+    test('two rules, targets in shadow roots settle', async (assert) => {
+        await checkRulesSettle(assert, [createUniqueTarget(), createUniqueTarget()]);
+    });
+
+    test('two rules, targets in light DOM of shadow hosts settle, logging enabled', async (assert) => {
+        await checkRulesSettle(assert, [createUniqueTarget(true), createUniqueTarget(true)]);
+    });
+
+    test('two rules, targets in light DOM of shadow hosts settle, logging disabled', async (assert) => {
+        await checkRulesSettle(assert, [createUniqueTarget(true), createUniqueTarget(true)], false);
+    });
+
+    test('already hidden element is not re-hidden and hit is not called', (assert) => {
+        const { target, selector } = createUniqueTarget();
+        target.style.setProperty('display', 'none', 'important');
+
+        const counter = createAttrMutationCounter([target], ['style']);
+
+        runScriptlet(name, [selector]);
+
+        const done = assert.async();
+        // mutation observer callbacks are async, so wait for them
+        setTimeout(() => {
+            const mutations = counter.count;
+            counter.disconnect();
+            assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden`);
+            assert.strictEqual(mutations, 0, 'style is not re-set for already hidden element');
+            assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+            done();
+        }, ATTR_SETTLE_DELAY_MS);
+    });
+
+    test('element is hidden again after page shows it', (assert) => {
+        const { target, selector } = createUniqueTarget();
+
+        runScriptlet(name, [selector]);
+        assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden`);
+
+        const done = assert.async();
+        setTimeout(() => {
+            clearGlobalProps('hit');
+            // page shows the element inside shadow root, which is not observed by the rule
+            target.style.cssText = 'display: block;';
+            // so an unrelated DOM mutation is needed to wake up the rule observer
+            const unrelatedElem = document.createElement('div');
+            document.body.appendChild(unrelatedElem);
+            unrelatedElem.remove();
+
+            setTimeout(() => {
+                assert.strictEqual(
+                    window.getComputedStyle(target).display,
+                    'none',
+                    `Element ${selector} hidden again`,
+                );
+                assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
+                done();
+            }, ATTR_SETTLE_DELAY_MS);
+        }, ATTR_SETTLE_DELAY_MS);
     });
 }

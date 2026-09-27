@@ -32,6 +32,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   by `removeHash` or `removeParam`, and logs invalid selector or transform only once.
 - Repeated logging on each DOM change by `remove-attr` if its selector matches elements without the attribute:
   `hit` is called only if some attribute has actually been removed.
+- Infinite mutation loop between several `hide-in-shadow-dom` rules whose targets are light DOM children
+  of shadow hosts, and `hit` called on each DOM change: already hidden elements are no longer re-hidden,
+  and `hit` is called only if some element has actually been hidden.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

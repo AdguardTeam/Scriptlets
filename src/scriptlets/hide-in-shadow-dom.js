@@ -50,6 +50,12 @@ export function hideInShadowDom(source, selector, baseSelector) {
         targetElement.style.cssText = DISPLAY_NONE_CSS;
     };
 
+    const isElementHidden = (targetElement) => {
+        const { style } = targetElement;
+        return style.getPropertyValue('display') === 'none'
+            && style.getPropertyPriority('display') === 'important';
+    };
+
     /**
      * Handles shadow-dom piercing and hiding of found elements
      */
@@ -64,6 +70,12 @@ export function hideInShadowDom(source, selector, baseSelector) {
             const { targets, innerHosts } = pierceShadowDom(selector, hostElements);
 
             targets.forEach((targetEl) => {
+                // Do not re-hide already hidden element, because even such mutation wakes up observers
+                // of other rules, and they may re-trigger each other infinitely,
+                // and hit should be called only on actual change
+                if (isElementHidden(targetEl)) {
+                    return;
+                }
                 hideElement(targetEl);
                 isHidden = true;
             });
