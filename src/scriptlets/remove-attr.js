@@ -84,13 +84,17 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
         selector = `[${attrs.join('],[')}]`;
     }
 
+    // Selector is validated once, otherwise the error would be logged on each DOM change
+    try {
+        document.querySelectorAll(selector);
+    } catch (e) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+
     const rmattr = () => {
-        let nodes = [];
-        try {
-            nodes = [].slice.call(document.querySelectorAll(selector));
-        } catch (e) {
-            logMessage(source, `Invalid selector arg: '${selector}'`);
-        }
+        // selector is validated before
+        const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
         nodes.forEach((node) => {
             attrs.forEach((attr) => {

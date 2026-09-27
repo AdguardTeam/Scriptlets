@@ -1,15 +1,22 @@
-/* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, runRulesAndCountIdleChanges } from '../helpers';
+/* eslint-disable no-underscore-dangle */
+import {
+    runScriptlet,
+    clearGlobalProps,
+    ATTR_SETTLE_DELAY_MS,
+    runRulesAndCountIdleChanges,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-attr';
 
+// eslint-disable-next-line no-console
 const nativeConsole = console.log;
 
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     // observers of rules from previous tests are still active and may log,
     // so console.log overridden by a test should not outlive it
+    // eslint-disable-next-line no-console
     console.log = nativeConsole;
 };
 
@@ -365,4 +372,28 @@ test('hit is not called if matched elements do not have the attribute', (assert)
     assert.notOk(elem.hasAttribute(attr), `Attr ${attr} is still missing`);
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
     elem.remove();
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    const selector = '..ag-test-invalid-selector';
+    const message = `${name}: Invalid selector arg: '${selector}'`;
+    let count = 0;
+    // eslint-disable-next-line no-console
+    console.log = (input) => {
+        if (input === message) {
+            count += 1;
+        }
+    };
+
+    runScriptlet(name, ['data-ag-test', selector]);
+
+    // unrelated DOM mutation which wakes up the rule observer, if any
+    const unrelatedElem = document.createElement('div');
+    document.body.appendChild(unrelatedElem);
+    unrelatedElem.remove();
+
+    await new Promise((resolve) => {
+        setTimeout(resolve, ATTR_SETTLE_DELAY_MS);
+    });
+    assert.strictEqual(count, 1, 'invalid selector is logged once');
 });
