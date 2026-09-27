@@ -77,6 +77,22 @@ const getSyncLogs = (fn) => {
 };
 
 /**
+ * Makes an unrelated DOM mutation which wakes up observers of the rules
+ * and waits until they handle it.
+ *
+ * @returns {Promise<void>}
+ */
+const makeUnrelatedDomChange = async () => {
+    const unrelatedElem = document.createElement('div');
+    document.body.appendChild(unrelatedElem);
+    unrelatedElem.remove();
+
+    await new Promise((resolve) => {
+        setTimeout(resolve, ATTR_SETTLE_DELAY_MS);
+    });
+};
+
+/**
  * Runs the rule, makes an unrelated DOM mutation which wakes up the rule observer, if any,
  * and counts how many times given message has been logged.
  *
@@ -92,16 +108,12 @@ const countLogsAfterDomChange = async (args, message) => {
         }
     };
 
-    runScriptlet(name, args);
-
-    const unrelatedElem = document.createElement('div');
-    document.body.appendChild(unrelatedElem);
-    unrelatedElem.remove();
-
-    await new Promise((resolve) => {
-        setTimeout(resolve, ATTR_SETTLE_DELAY_MS);
-    });
-    console.log = nativeConsole;
+    try {
+        runScriptlet(name, args);
+        await makeUnrelatedDomChange();
+    } finally {
+        console.log = nativeConsole;
+    }
     return count;
 };
 
@@ -600,5 +612,152 @@ test('invalid transform is logged only once and href is not changed', async (ass
 
     assert.strictEqual(count, 1, 'invalid transform is logged once');
     assert.strictEqual(elem.getAttribute('href'), initialHref, 'href is not changed');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('invalid attribute is logged only once and href is not changed', async (assert) => {
+    const { elem, selector } = createUniqueLink();
+    const initialHref = elem.getAttribute('href');
+    const attribute = 'ag-test-invalid-attribute';
+
+    const count = await countLogsAfterDomChange(
+        [selector, attribute],
+        `${name}: Invalid attribute option: "${attribute}"`,
+    );
+
+    assert.strictEqual(count, 1, 'invalid attribute is logged once');
+    assert.strictEqual(elem.getAttribute('href'), initialHref, 'href is not changed');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('remove transforms resolve path-relative link against document base URL', (assert) => {
+    // test page is in the root directory, where origin and base URL are the same,
+    // so base element is needed to check that relative link is not resolved against the origin
+    const baseDirUrl = `${window.location.origin}/ag-test-base-dir/`;
+    const base = document.createElement('base');
+    base.setAttribute('href', baseDirUrl);
+    document.head.appendChild(base);
+
+    try {
+        [
+            {
+                href: 'ag-test-relative/remove-all-params?utm_source=test',
+                transform: 'removeParam',
+                expectedPath: 'ag-test-relative/remove-all-params',
+            },
+            {
+                href: 'ag-test-relative/remove-param?utm_source=test&v=1',
+                transform: 'removeParam:utm_source',
+                expectedPath: 'ag-test-relative/remove-param?v=1',
+            },
+            {
+                href: 'ag-test-relative/remove-hash#utm_source=test',
+                transform: 'removeHash',
+                expectedPath: 'ag-test-relative/remove-hash',
+            },
+        ].forEach(({ href, transform, expectedPath }) => {
+            const elem = createElem(href);
+
+            runScriptlet(name, [`a[href="${href}"]`, '[href]', transform]);
+
+            assert.strictEqual(
+                elem.getAttribute('href'),
+                `${baseDirUrl}${expectedPath}`,
+                `${transform}: link target is kept`,
+            );
+        });
+    } finally {
+        base.remove();
+    }
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('empty value is logged for remove transform, only once', async (assert) => {
+    const { elem, selector } = createUniqueLink();
+    const initialHref = elem.getAttribute('href');
+    // e.g. typo in attribute name
+    const attribute = '[data-ag-test-missing]';
+
+    const count = await countLogsAfterDomChange(
+        [selector, attribute, 'removeHash'],
+        `${name}: Failed to get value by "${attribute}" from ${elem.href}`,
+    );
+
+    assert.strictEqual(count, 1, 'empty value is logged once');
+    assert.strictEqual(elem.getAttribute('href'), initialHref, 'href is not changed');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('failure to sanitize the same link is logged only once', async (assert) => {
+    const base64NotUrl = window.btoa('ag-test-not-url');
+    const cases = [
+        {
+            description: 'missing parameter',
+            createTarget: () => createElem('https://tracker.example/ag-test-no-param'),
+            args: ['a[href="https://tracker.example/ag-test-no-param"]', '?url'],
+            message: `${name}: Failed to get value by "?url" from https://tracker.example/ag-test-no-param`,
+        },
+        {
+            description: 'not allowed protocol',
+            createTarget: () => createElem('https://tracker.example/', '', 'data-href', 'ftp://ag-test-protocol.example/'),
+            args: ['a[data-href="ftp://ag-test-protocol.example/"]', '[data-href]'],
+            message: `${name}: Invalid URL: ftp://ag-test-protocol.example/`,
+        },
+        {
+            description: 'no URL in base64',
+            createTarget: () => createElem('https://tracker.example/', '', 'data-href', base64NotUrl),
+            args: [`a[data-href="${base64NotUrl}"]`, '[data-href]', 'base64decode'],
+            message: `${name}: Failed to decode base64 string: ${base64NotUrl}`,
+        },
+        {
+            description: 'not an anchor',
+            createTarget: () => {
+                const span = document.createElement('span');
+                // id is used for removal after the test
+                span.id = 'testHref';
+                span.className = 'ag-test-not-anchor';
+                document.body.appendChild(span);
+            },
+            args: ['span.ag-test-not-anchor'],
+            message: `${name}: [object HTMLSpanElement] is not a valid element to sanitize`,
+        },
+    ];
+
+    for (let i = 0; i < cases.length; i += 1) {
+        const {
+            description,
+            createTarget,
+            args,
+            message,
+        } = cases[i];
+        createTarget();
+        // eslint-disable-next-line no-await-in-loop
+        const count = await countLogsAfterDomChange(args, message);
+        assert.strictEqual(count, 1, `${description}: failure is logged once`);
+    }
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('failure is logged again after the page changes the link', async (assert) => {
+    const firstValue = 'ftp://ag-test-first.example/';
+    const secondValue = 'ftp://ag-test-second.example/';
+    const elem = createElem('https://tracker.example/', '', 'data-href', firstValue);
+
+    const logs = [];
+    console.log = (...args) => {
+        logs.push(args.join(' '));
+    };
+    try {
+        runScriptlet(name, ['a[data-href^="ftp://ag-test-"]', '[data-href]']);
+        await makeUnrelatedDomChange();
+        elem.setAttribute('data-href', secondValue);
+        await makeUnrelatedDomChange();
+    } finally {
+        console.log = nativeConsole;
+    }
+
+    const countInvalidUrlLogs = (value) => logs.filter((msg) => msg === `${name}: Invalid URL: ${value}`).length;
+    assert.strictEqual(countInvalidUrlLogs(firstValue), 1, 'first value is logged once');
+    assert.strictEqual(countInvalidUrlLogs(secondValue), 1, 'changed value is logged once');
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });

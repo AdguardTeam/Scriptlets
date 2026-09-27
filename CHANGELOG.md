@@ -29,7 +29,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Infinite mutation loop between several non-conflicting `href-sanitizer` rules, and `hit` called
   on each DOM change: `href` is no longer re-set, and `hit` is not called, if the link already points
   to the sanitized URL. Also, `href-sanitizer` no longer logs `Invalid URL` if there is nothing to remove
-  by `removeHash` or `removeParam`, and logs invalid selector or transform only once.
+  by `removeHash` or `removeParam`, logs invalid arguments only once, and logs a failure to sanitize a link
+  only once until the link is changed.
+- `removeHash` and `removeParam` transforms of `href-sanitizer` rewriting a path-relative link to a wrong URL.
 - Repeated logging on each DOM change by `remove-attr` if its selector matches elements without the attribute:
   `hit` is called only if some attribute has actually been removed. Also, invalid selector is logged only once.
 - Infinite mutation loop between several `hide-in-shadow-dom` rules whose targets are light DOM children

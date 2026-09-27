@@ -199,6 +199,13 @@ export function hrefSanitizer(
     const isRemoveParamTransform = transform.startsWith(REMOVE_PARAM_TRANSFORM_MARKER);
 
     // Arguments are validated once, otherwise errors would be logged on each DOM change
+    const isValidAttribute = attribute === 'text'
+        || (attribute.length > 1 && attribute.startsWith('?'))
+        || (attribute.length > 2 && attribute.startsWith('[') && attribute.endsWith(']'));
+    if (!isValidAttribute) {
+        logMessage(source, `Invalid attribute option: "${attribute}"`);
+        return;
+    }
     if (transform && !isBase64DecodeTransform && !isRemoveHashTransform && !isRemoveParamTransform) {
         logMessage(source, `Invalid transform option: "${transform}"`);
         return;
@@ -240,10 +247,7 @@ export function hrefSanitizer(
                 const url = new URL(anchor.href, document.location.href);
                 return url.searchParams.get(attr.slice(1)) || '';
             } catch (ex) {
-                logMessage(
-                    source,
-                    `Cannot retrieve the parameter '${attr.slice(1)}' from the URL '${anchor.href}`,
-                );
+                // empty value is logged by the caller only once, not on each DOM change
                 return '';
             }
         }
@@ -426,7 +430,9 @@ export function hrefSanitizer(
      * @returns URL without the hash or empty string if no hash is found
      */
     const removeHash = (url: string) => {
-        const urlObj = new URL(url, window.location.origin);
+        // Relative URL is resolved in the same way as the link does,
+        // otherwise e.g. 'page' on '/dir/' would be sanitized to '/page'
+        const urlObj = new URL(url, document.baseURI);
 
         if (!urlObj.hash) {
             return '';
@@ -443,7 +449,8 @@ export function hrefSanitizer(
      * @returns URL without the parameter(s) or empty string if no parameter is found
      */
     const removeParam = (url: string, transformValue: string) => {
-        const urlObj = new URL(url, window.location.origin);
+        // Relative URL is resolved in the same way as the link does, see removeHash
+        const urlObj = new URL(url, document.baseURI);
 
         // get the parameter values to remove
         const paramNamesToRemoveStr = transformValue.split(MARKER_SEPARATOR)[1];
@@ -507,6 +514,57 @@ export function hrefSanitizer(
     };
 
     /**
+     * Gets the new href from the value extracted from the anchor element.
+     *
+     * @param anchor The anchor element, used for logging.
+     * @param value The value extracted from the anchor element.
+     * @returns The new valid URL; empty string if there is nothing to remove by the transform;
+     * `null` if the value cannot be sanitized, which has been logged.
+     */
+    const getNewHref = (anchor: HTMLAnchorElement, value: string): string | null => {
+        // Checked before the transform, because for remove transforms empty result means
+        // that there is nothing to remove, so e.g. a typo in attribute name would not be logged at all
+        if (!value) {
+            logMessage(source, `Failed to get value by "${attribute}" from ${anchor}`);
+            return null;
+        }
+
+        let newHref = value;
+        // apply transform if specified, it is validated before
+        if (isBase64DecodeTransform) {
+            newHref = base64Decode(newHref);
+        } else if (isRemoveHashTransform) {
+            newHref = removeHash(newHref);
+        } else if (isRemoveParamTransform) {
+            newHref = removeParam(newHref, transform);
+        }
+        // For remove transforms empty string means that there is nothing to remove,
+        // e.g. the link has already been sanitized, so it is not an invalid URL
+        if (!newHref && (isRemoveHashTransform || isRemoveParamTransform)) {
+            return '';
+        }
+
+        const newValidHref = getValidURL(newHref);
+        if (!newValidHref) {
+            logMessage(source, `Invalid URL: ${newHref}`);
+            return null;
+        }
+        return newValidHref;
+    };
+
+    /**
+     * Values which have failed to be sanitized, by their elements.
+     * Such value is not processed again until it is changed,
+     * otherwise the same failure would be logged on each DOM change.
+     */
+    const failedValues = new WeakMap<Element, string>();
+
+    /**
+     * Elements which have already been logged as not sanitizable.
+     */
+    const loggedInvalidElements = new WeakSet<Element>();
+
+    /**
      * Sanitizes the href attribute of elements matching the given selector.
      *
      * @param elementSelector The CSS selector to match the elements.
@@ -517,39 +575,36 @@ export function hrefSanitizer(
 
         let isChanged = false;
         elements.forEach((elem) => {
-            try {
-                if (!isSanitizableAnchor(elem)) {
+            if (!isSanitizableAnchor(elem)) {
+                // Element is checked on each DOM change, since it may become sanitizable, e.g. if href is added,
+                // but it is logged only once
+                if (!loggedInvalidElements.has(elem)) {
+                    loggedInvalidElements.add(elem);
                     logMessage(source, `${elem} is not a valid element to sanitize`);
-                    return;
                 }
-                let newHref = extractNewHref(elem, attribute);
-                // apply transform if specified, it is validated before
-                if (isBase64DecodeTransform) {
-                    newHref = base64Decode(newHref);
-                } else if (isRemoveHashTransform) {
-                    newHref = removeHash(newHref);
-                } else if (isRemoveParamTransform) {
-                    newHref = removeParam(newHref, transform);
-                }
-                // For remove transforms empty string means that there is nothing to remove,
-                // e.g. the link has already been sanitized, so it is not an invalid URL
-                // and should not be logged on each DOM change
-                if (!newHref && (isRemoveHashTransform || isRemoveParamTransform)) {
-                    return;
-                }
+                return;
+            }
 
-                const newValidHref = getValidURL(newHref);
-                if (!newValidHref) {
-                    logMessage(source, `Invalid URL: ${newHref}`);
+            const value = extractNewHref(elem, attribute);
+            if (failedValues.get(elem) === value) {
+                return;
+            }
+
+            try {
+                const newValidHref = getNewHref(elem, value);
+                if (newValidHref === null) {
+                    failedValues.set(elem, value);
                     return;
                 }
+                failedValues.delete(elem);
 
                 const oldHref = elem.href; // Required to log the original URL.
 
+                // Empty new href means that there is nothing to remove by the transform.
                 // Compare with the resolved URL, so that relative href pointing to the same URL is not rewritten.
                 // Do not re-set the same URL, because even such mutation wakes up observers of other rules,
                 // and they may re-trigger each other infinitely
-                if (oldHref === newValidHref) {
+                if (!newValidHref || oldHref === newValidHref) {
                     return;
                 }
 
@@ -558,6 +613,7 @@ export function hrefSanitizer(
 
                 logMessage(source, `Sanitized "${oldHref}" to "${newValidHref}".`);
             } catch (ex) {
+                failedValues.set(elem, value);
                 logMessage(source, `Failed to sanitize ${elem}.`);
             }
         });
