@@ -194,6 +194,22 @@ export function hrefSanitizer(
     const MARKER_SEPARATOR = ':';
     const COMMA = ',';
 
+    const isBase64DecodeTransform = BASE64_DECODE_TRANSFORM_MARKER.has(transform);
+    const isRemoveHashTransform = transform === REMOVE_HASH_TRANSFORM_MARKER;
+    const isRemoveParamTransform = transform.startsWith(REMOVE_PARAM_TRANSFORM_MARKER);
+
+    // Arguments are validated once, otherwise errors would be logged on each DOM change
+    if (transform && !isBase64DecodeTransform && !isRemoveHashTransform && !isRemoveParamTransform) {
+        logMessage(source, `Invalid transform option: "${transform}"`);
+        return;
+    }
+    try {
+        document.querySelectorAll(selector);
+    } catch (e) {
+        logMessage(source, `Invalid selector "${selector}"`);
+        return;
+    }
+
     // Regular expression to find not valid characters at the beginning and at the end of the string,
     // \x21-\x7e is a range that includes the ASCII characters from ! (hex 21) to ~ (hex 7E).
     // This range covers numbers, English letters, and common symbols.
@@ -496,13 +512,8 @@ export function hrefSanitizer(
      * @param elementSelector The CSS selector to match the elements.
      */
     const sanitize = (elementSelector: string): void => {
-        let elements;
-        try {
-            elements = document.querySelectorAll(elementSelector);
-        } catch (e) {
-            logMessage(source, `Invalid selector "${elementSelector}"`);
-            return;
-        }
+        // selector is validated before
+        const elements = document.querySelectorAll(elementSelector);
 
         let isChanged = false;
         elements.forEach((elem) => {
@@ -512,23 +523,19 @@ export function hrefSanitizer(
                     return;
                 }
                 let newHref = extractNewHref(elem, attribute);
-                // apply transform if specified
-                if (transform) {
-                    switch (true) {
-                        case BASE64_DECODE_TRANSFORM_MARKER.has(transform):
-                            newHref = base64Decode(newHref);
-                            break;
-                        case transform === REMOVE_HASH_TRANSFORM_MARKER:
-                            newHref = removeHash(newHref);
-                            break;
-                        case transform.startsWith(REMOVE_PARAM_TRANSFORM_MARKER): {
-                            newHref = removeParam(newHref, transform);
-                            break;
-                        }
-                        default:
-                            logMessage(source, `Invalid transform option: "${transform}"`);
-                            return;
-                    }
+                // apply transform if specified, it is validated before
+                if (isBase64DecodeTransform) {
+                    newHref = base64Decode(newHref);
+                } else if (isRemoveHashTransform) {
+                    newHref = removeHash(newHref);
+                } else if (isRemoveParamTransform) {
+                    newHref = removeParam(newHref, transform);
+                }
+                // For remove transforms empty string means that there is nothing to remove,
+                // e.g. the link has already been sanitized, so it is not an invalid URL
+                // and should not be logged on each DOM change
+                if (!newHref && (isRemoveHashTransform || isRemoveParamTransform)) {
+                    return;
                 }
 
                 const newValidHref = getValidURL(newHref);
@@ -536,20 +543,20 @@ export function hrefSanitizer(
                     logMessage(source, `Invalid URL: ${newHref}`);
                     return;
                 }
-                // Do not re-set the same value, because even such mutation wakes up observers of other rules,
-                // and they may re-trigger each other infinitely
-                if (elem.getAttribute('href') === newValidHref) {
-                    return;
-                }
 
                 const oldHref = elem.href; // Required to log the original URL.
+
+                // Compare with the resolved URL, so that relative href pointing to the same URL is not rewritten.
+                // Do not re-set the same URL, because even such mutation wakes up observers of other rules,
+                // and they may re-trigger each other infinitely
+                if (oldHref === newValidHref) {
+                    return;
+                }
 
                 elem.setAttribute('href', newValidHref);
                 isChanged = true;
 
-                if (newValidHref !== oldHref) {
-                    logMessage(source, `Sanitized "${oldHref}" to "${newValidHref}".`);
-                }
+                logMessage(source, `Sanitized "${oldHref}" to "${newValidHref}".`);
             } catch (ex) {
                 logMessage(source, `Failed to sanitize ${elem}.`);
             }

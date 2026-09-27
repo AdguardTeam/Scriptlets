@@ -26,9 +26,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Infinite mutation loop and repeated logging when several non-conflicting `set-attr` or `trusted-set-attr`
   rules are applied on the same page: the attribute is no longer re-set, and `hit` is not called,
   if it already has the required value.
-- Repeated logging on each DOM change and infinite mutation loop between several non-conflicting
-  `href-sanitizer` rules: `href` is no longer re-set, and `hit` is not called,
-  if it already has the sanitized value.
+- Infinite mutation loop between several non-conflicting `href-sanitizer` rules, and `hit` called
+  on each DOM change: `href` is no longer re-set, and `hit` is not called, if the link already points
+  to the sanitized URL. Also, `href-sanitizer` no longer logs `Invalid URL` if there is nothing to remove
+  by `removeHash` or `removeParam`, and logs invalid selector or transform only once.
 - Repeated logging on each DOM change by `remove-attr` if its selector matches elements without the attribute:
   `hit` is called only if some attribute has actually been removed.
 

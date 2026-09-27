@@ -47,9 +47,62 @@ const beforeEach = () => {
     };
 };
 
+const nativeConsole = console.log;
+
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     removeElem();
+    console.log = nativeConsole;
+};
+
+/**
+ * Runs given function and returns messages logged by it synchronously.
+ * Observers of rules from previous tests are still active, but they log asynchronously,
+ * so their messages are not captured.
+ *
+ * @param {Function} fn function to run
+ * @returns {string[]} logged messages
+ */
+const getSyncLogs = (fn) => {
+    const logs = [];
+    console.log = (...args) => {
+        logs.push(args.join(' '));
+    };
+    try {
+        fn();
+    } finally {
+        console.log = nativeConsole;
+    }
+    return logs;
+};
+
+/**
+ * Runs the rule, makes an unrelated DOM mutation which wakes up the rule observer, if any,
+ * and counts how many times given message has been logged.
+ *
+ * @param {string[]} args scriptlet args
+ * @param {string} message message to count, should be unique for the rule
+ * @returns {Promise<number>} number of logged messages
+ */
+const countLogsAfterDomChange = async (args, message) => {
+    let count = 0;
+    console.log = (...logArgs) => {
+        if (logArgs.join(' ') === message) {
+            count += 1;
+        }
+    };
+
+    runScriptlet(name, args);
+
+    const unrelatedElem = document.createElement('div');
+    document.body.appendChild(unrelatedElem);
+    unrelatedElem.remove();
+
+    await new Promise((resolve) => {
+        setTimeout(resolve, ATTR_SETTLE_DELAY_MS);
+    });
+    console.log = nativeConsole;
+    return count;
 };
 
 /**
@@ -469,7 +522,11 @@ test('two rules: new links and page changes are still sanitized', (assert) => {
     const done = assert.async();
     let newElem;
     setTimeout(() => {
-        clearGlobalProps('hit');
+        // hits are collected per rule, so that a rule which stops calling hit is noticed
+        const hitRulesArgs = new Set();
+        window.__debug = (source) => {
+            hitRulesArgs.add(JSON.stringify(source.args));
+        };
         // page inserts a new link matched by the first rule
         newElem = createElem('https://tracker.example/new', '', 'data-href', first.expectedHref);
         // page changes href of the link matched by the second rule
@@ -482,8 +539,66 @@ test('two rules: new links and page changes are still sanitized', (assert) => {
                 second.expectedHref,
                 'href is sanitized again after page change',
             );
-            assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
+            rules.forEach(({ args }) => {
+                assert.ok(hitRulesArgs.has(JSON.stringify(args)), `hit function has been called again for ${args[0]}`);
+            });
             done();
         }, ATTR_SETTLE_DELAY_MS);
     }, ATTR_SETTLE_DELAY_MS);
+});
+
+test('relative href is not re-set if it already points to the sanitized URL', (assert) => {
+    const relativeHref = '/ag-test-relative-href';
+    const elem = createElem(relativeHref);
+
+    const counter = createAttrMutationCounter([elem], ['href']);
+
+    // removeParam without parameter names returns absolute URL, which is the same as the resolved link
+    runScriptlet(name, [`a[href="${relativeHref}"]`, '[href]', 'removeParam']);
+
+    const done = assert.async();
+    // mutation observer callbacks are async, so wait for them
+    setTimeout(() => {
+        const mutations = counter.count;
+        counter.disconnect();
+        assert.strictEqual(elem.getAttribute('href'), relativeHref, 'relative href is unchanged');
+        assert.strictEqual(mutations, 0, 'setAttribute is not called for the same resolved URL');
+        assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+        done();
+    }, ATTR_SETTLE_DELAY_MS);
+});
+
+test('nothing to remove by removeHash or removeParam is not logged as invalid URL', (assert) => {
+    ['removeHash', 'removeParam:utm_source'].forEach((transform) => {
+        // link without hash and parameters, e.g. the one which has already been sanitized
+        const { elem, selector, expectedHref } = createUniqueLink();
+        elem.setAttribute('href', expectedHref);
+
+        const logs = getSyncLogs(() => runScriptlet(name, [selector, '[href]', transform]));
+
+        assert.strictEqual(elem.getAttribute('href'), expectedHref, `${transform}: href is unchanged`);
+        assert.notOk(logs.some((msg) => msg.includes('Invalid URL')), `${transform}: invalid URL is not logged`);
+    });
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    const selector = '..ag-test-invalid-selector';
+    const count = await countLogsAfterDomChange([selector], `${name}: Invalid selector "${selector}"`);
+    assert.strictEqual(count, 1, 'invalid selector is logged once');
+});
+
+test('invalid transform is logged only once and href is not changed', async (assert) => {
+    const { elem, selector } = createUniqueLink();
+    const initialHref = elem.getAttribute('href');
+    const transform = 'ag-test-invalid-transform';
+
+    const count = await countLogsAfterDomChange(
+        [selector, '[data-href]', transform],
+        `${name}: Invalid transform option: "${transform}"`,
+    );
+
+    assert.strictEqual(count, 1, 'invalid transform is logged once');
+    assert.strictEqual(elem.getAttribute('href'), initialHref, 'href is not changed');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
