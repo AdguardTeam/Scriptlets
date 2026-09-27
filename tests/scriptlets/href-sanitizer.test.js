@@ -593,15 +593,28 @@ test('invalid attribute is logged only once and href is not changed', async (ass
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
 
-test('remove transforms resolve path-relative link against document base URL', (assert) => {
-    // test page is in the root directory, where origin and base URL are the same,
-    // so base element is needed to check that relative link is not resolved against the origin
+/**
+ * Runs given function while the document base URL points to a subdirectory.
+ * Test page is in the root directory, where origin and base URL are the same,
+ * so base element is needed to check that relative URL is not resolved against the origin or the page URL.
+ * Base element is removed synchronously, so observers of the rules do not see it.
+ *
+ * @param {Function} fn function to run, the base URL is passed to it
+ */
+const runWithBaseUrl = (fn) => {
     const baseDirUrl = `${window.location.origin}/ag-test-base-dir/`;
     const base = document.createElement('base');
     base.setAttribute('href', baseDirUrl);
     document.head.appendChild(base);
-
     try {
+        fn(baseDirUrl);
+    } finally {
+        base.remove();
+    }
+};
+
+test('remove transforms resolve path-relative link against document base URL', (assert) => {
+    runWithBaseUrl((baseDirUrl) => {
         [
             {
                 href: 'ag-test-relative/remove-all-params?utm_source=test',
@@ -629,9 +642,7 @@ test('remove transforms resolve path-relative link against document base URL', (
                 `${transform}: link target is kept`,
             );
         });
-    } finally {
-        base.remove();
-    }
+    });
     assert.strictEqual(window.hit, 'FIRED');
 });
 
@@ -663,7 +674,12 @@ test('failure to sanitize the same link is logged only once', async (assert) => 
         },
         {
             description: 'not allowed protocol',
-            createTarget: () => createElem('https://tracker.example/', '', 'data-href', 'ftp://ag-test-protocol.example/'),
+            createTarget: () => createElem(
+                'https://tracker.example/',
+                '',
+                'data-href',
+                'ftp://ag-test-protocol.example/',
+            ),
             args: ['a[data-href="ftp://ag-test-protocol.example/"]', '[data-href]'],
             message: `${name}: Invalid URL: ftp://ag-test-protocol.example/`,
         },
@@ -723,4 +739,80 @@ test('failure is logged again after the page changes the link', async (assert) =
     assert.strictEqual(countInvalidUrlLogs(firstValue), 1, 'first value is logged once');
     assert.strictEqual(countInvalidUrlLogs(secondValue), 1, 'changed value is logged once');
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('remove transform uses extracted URL as is if there is nothing to remove', (assert) => {
+    const paramTarget = 'https://target.example/remove-nothing-param';
+    const textTarget = 'https://target.example/remove-nothing-text';
+    [
+        {
+            // URL in parameter has no tracking parameter to remove
+            href: `https://tracker.example/remove-nothing?ag-test-url=${encodeURIComponent(paramTarget)}`,
+            args: ['a[href^="https://tracker.example/remove-nothing?"]', '?ag-test-url', 'removeParam:utm_source'],
+            expectedHref: paramTarget,
+        },
+        {
+            // URL in text has no hash to remove
+            href: 'https://tracker.example/remove-nothing-text',
+            text: textTarget,
+            args: ['a[href="https://tracker.example/remove-nothing-text"]', 'text', 'removeHash'],
+            expectedHref: textTarget,
+        },
+    ].forEach(({
+        href,
+        text,
+        args,
+        expectedHref,
+    }) => {
+        const elem = createElem(href, text);
+
+        runScriptlet(name, args);
+
+        assert.strictEqual(elem.getAttribute('href'), expectedHref, `${args[2]}: href has been sanitized`);
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('relative URL from attribute is resolved against document base URL', (assert) => {
+    const relativeHref = 'ag-test-relative/data-href';
+    runWithBaseUrl((baseDirUrl) => {
+        const elem = createElem('https://tracker.example/relative-data-href', '', 'data-href', relativeHref);
+
+        runScriptlet(name, [`a[data-href="${relativeHref}"]`, '[data-href]']);
+
+        assert.strictEqual(elem.getAttribute('href'), `${baseDirUrl}${relativeHref}`, 'href is resolved against base');
+    });
+    assert.strictEqual(window.hit, 'FIRED');
+});
+
+test('SVG link is sanitized and not re-sanitized on unrelated DOM mutation', async (assert) => {
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const expectedHref = 'https://target.example/svg-link';
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    // id is used for removal after the test
+    svg.id = 'testHref';
+    // href property of SVG link is not a string but SVGAnimatedString
+    const elem = document.createElementNS(SVG_NS, 'a');
+    elem.setAttribute('href', 'https://tracker.example/svg-link');
+    elem.setAttribute('data-href', expectedHref);
+    svg.appendChild(elem);
+    document.body.appendChild(svg);
+
+    await checkRulesSettle(assert, [{ elem, args: [`a[data-href="${expectedHref}"]`, '[data-href]'], expectedHref }]);
+});
+
+test('link sanitized by parameter is not logged as failure after DOM change', async (assert) => {
+    const expectedHref = 'https://target.example/by-param';
+    const elem = createElem(`https://tracker.example/by-param?ag-test-url=${encodeURIComponent(expectedHref)}`);
+    // selector still matches the link after it is sanitized, while the parameter is gone
+    elem.classList.add('ag-test-by-param');
+
+    const count = await countLogsAfterDomChange(
+        name,
+        ['a.ag-test-by-param', '?ag-test-url'],
+        `${name}: Failed to get value by "?ag-test-url" from ${expectedHref}`,
+    );
+
+    assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+    assert.strictEqual(count, 0, 'sanitized link is not logged as failure');
 });
