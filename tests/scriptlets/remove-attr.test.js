@@ -1,11 +1,16 @@
-/* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle, no-console */
+import { runScriptlet, clearGlobalProps, runRulesAndCountIdleChanges } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-attr';
 
+const nativeConsole = console.log;
+
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
+    // observers of rules from previous tests are still active and may log,
+    // so console.log overridden by a test should not outlive it
+    console.log = nativeConsole;
 };
 
 module(name, { afterEach });
@@ -28,6 +33,19 @@ const createElem = (className, attrs) => {
 function addAttr(elem, attr) {
     elem.setAttribute(attr, true);
 }
+
+let uniqueClassCount = 0;
+
+/**
+ * Returns a unique class name, so rules from previous tests, whose observers are still active,
+ * do not match elements of the current test.
+ *
+ * @returns {string} class name
+ */
+const getUniqueClassName = () => {
+    uniqueClassCount += 1;
+    return `ag-test-remove-attr-${uniqueClassCount}`;
+};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -317,4 +335,34 @@ test('invalid selector — no match', (assert) => {
 
     assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
     clearGlobalProps('hit');
+});
+
+test('hit is not called on unrelated DOM mutation if attribute is already removed', async (assert) => {
+    const attr = 'data-ag-test';
+    const className = getUniqueClassName();
+    // selector matches the element even after the attribute is removed
+    const elem = createElem(className, [attr]);
+
+    const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(name, [
+        { elem, attr, args: [attr, `.${className}`] },
+    ]);
+
+    assert.notOk(elem.hasAttribute(attr), `Attr ${attr} removed`);
+    assert.ok(initialMutations > 0, 'initial attribute removal is counted');
+    assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
+    assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    elem.remove();
+});
+
+test('hit is not called if matched elements do not have the attribute', (assert) => {
+    createHit();
+    const attr = 'data-ag-test';
+    const className = getUniqueClassName();
+    const elem = createElem(className, []);
+
+    runScriptlet(name, [attr, `.${className}`]);
+
+    assert.notOk(elem.hasAttribute(attr), `Attr ${attr} is still missing`);
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+    elem.remove();
 });

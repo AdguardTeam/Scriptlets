@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Repeated logging on each DOM change and infinite mutation loop between several non-conflicting
   `href-sanitizer` rules: `href` is no longer re-set, and `hit` is not called,
   if it already has the sanitized value.
+- Repeated logging on each DOM change by `remove-attr` if its selector matches elements without the attribute:
+  `hit` is called only if some attribute has actually been removed.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

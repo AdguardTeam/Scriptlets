@@ -94,6 +94,11 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
         let removed = false;
         nodes.forEach((node) => {
             attrs.forEach((attr) => {
+                // Selector may match nodes without the attribute, and hit should be called only on actual removal,
+                // otherwise idle observer would log on each unrelated mutation
+                if (!node.hasAttribute(attr)) {
+                    return;
+                }
                 node.removeAttribute(attr);
                 removed = true;
             });
