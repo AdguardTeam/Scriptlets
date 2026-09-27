@@ -86,13 +86,14 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         return;
     }
     classNames = classNames.split(/\s*\|\s*/);
-    // if selector is not specified, elements are searched by class names
+    // if selector is not specified, elements are searched by class names,
+    // which are escaped, because class name may be not a valid CSS identifier, e.g. 'md:hidden'
     const selectors = selector
         ? [selector]
-        : classNames.map((className) => `.${className}`);
+        : classNames.map((className) => `.${CSS.escape(className)}`);
 
     // Selectors are validated once, otherwise the error would be logged
-    // or, for selectors made of class names, thrown on each DOM change
+    // or, for selectors made of class names, e.g. empty one, thrown on each DOM change
     const invalidSelector = selectors.find((s) => !isValidSelector(s));
     if (invalidSelector !== undefined) {
         logMessage(source, `Invalid selector arg: '${invalidSelector}'`);

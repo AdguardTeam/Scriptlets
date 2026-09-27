@@ -2,6 +2,7 @@ import {
     hit,
     observeDOMChanges,
     findHostElements,
+    findBaseHostElements,
     pierceShadowDom,
     flatten,
     throttle,
@@ -54,8 +55,7 @@ export function removeInShadowDom(source, selector, baseSelector) {
      */
     const removeHandler = () => {
         // start value of shadow-dom hosts for the page dom
-        let hostElements = !baseSelector ? findHostElements(document.documentElement)
-            : document.querySelectorAll(baseSelector);
+        let hostElements = findBaseHostElements(baseSelector);
 
         // if there is shadow-dom host, they should be explored
         while (hostElements.length !== 0) {
@@ -93,6 +93,7 @@ removeInShadowDom.injections = [
     hit,
     observeDOMChanges,
     findHostElements,
+    findBaseHostElements,
     pierceShadowDom,
     // following helpers should be imported and injected
     // because they are used by helpers above

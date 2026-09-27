@@ -6,6 +6,7 @@ import {
     defaultAttributeSetter,
     logMessage,
     isValidSelector,
+    isValidAttributeName,
     throttle,
     hit,
 } from '../helpers';
@@ -121,9 +122,13 @@ export function setAttr(source, selector, attr, value = '') {
         return;
     }
 
-    // Selector is validated once, otherwise the error would be logged on each DOM change
+    // Selector and attribute name are validated once, otherwise the error would be logged on each DOM change
     if (!isValidSelector(selector)) {
         logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+    if (!isValidAttributeName(attr)) {
+        logMessage(source, `Invalid attribute name: '${attr}'`);
         return;
     }
 
@@ -183,6 +188,7 @@ setAttr.injections = [
     nativeIsNaN,
     convertTypeToString,
     isValidSelector,
+    isValidAttributeName,
     // following helpers should be imported and injected
     // because they are used by helpers above
     defaultAttributeSetter,

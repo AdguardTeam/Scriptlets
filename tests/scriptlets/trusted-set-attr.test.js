@@ -235,3 +235,16 @@ test('invalid selector is logged only once', async (assert) => {
     assert.strictEqual(count, 1, 'invalid selector is logged once');
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
+
+test('invalid attribute name is logged only once', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const attr = 'ag-test invalid';
+    const count = await countLogsAfterDomChange(
+        name,
+        [targetSelector, attr, '1'],
+        `${name}: Invalid attribute name: '${attr}'`,
+    );
+    assert.strictEqual(count, 1, 'invalid attribute name is logged once');
+    assert.strictEqual(targetElem.attributes.length, 1, 'no attribute has been set');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});

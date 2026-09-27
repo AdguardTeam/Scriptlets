@@ -42,9 +42,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `selector` or `baseSelector` once instead of failing on DOM changes.
 - `hide-in-shadow-dom` and `remove-in-shadow-dom` not working if `baseSelector` matches an element
   which is not a shadow host itself, e.g. a container of shadow hosts.
-- Invalid selector logged on each DOM change by `remove-class`, `set-attr` and `trusted-set-attr`:
-  it is now validated and logged only once. Also, `remove-class` logs a class name which is not
-  a valid CSS identifier once, instead of throwing an error on each DOM change.
+- Invalid selector logged on each DOM change by `remove-class`, `set-attr` and `trusted-set-attr`,
+  as well as invalid attribute name by `set-attr` and `trusted-set-attr`: they are now validated
+  and logged only once.
+- `remove-class` not removing classes whose names are not valid CSS identifiers, e.g. `md:hidden`.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

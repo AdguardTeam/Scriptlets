@@ -287,16 +287,15 @@ test('invalid selector — no match', (assert) => {
 test('invalid selector is logged only once', async (assert) => {
     createHit();
     const invalidSelector = '..ag-test-invalid-selector';
-    // selector made of class name which is not a valid CSS identifier
-    const invalidClassName = '1ag-test-invalid-class';
     const cases = [
         {
             args: ['ag-test-class', invalidSelector],
             message: `${name}: Invalid selector arg: '${invalidSelector}'`,
         },
         {
-            args: [invalidClassName],
-            message: `${name}: Invalid selector arg: '.${invalidClassName}'`,
+            // empty class name makes invalid selector
+            args: ['ag-test-class|'],
+            message: `${name}: Invalid selector arg: '.'`,
         },
     ];
 
@@ -306,4 +305,20 @@ test('invalid selector is logged only once', async (assert) => {
         assert.strictEqual(count, 1, `${message} is logged once`);
     }
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('class names which are not valid CSS identifiers are removed', (assert) => {
+    createHit();
+    // e.g. Tailwind class names
+    const classNames = ['md:hidden', '1ag-test-digit', 'ag-test[x]'];
+    const elem = createElem('ag-test-kept', classNames);
+
+    runScriptlet(name, [classNames.join('|')]);
+
+    classNames.forEach((className) => {
+        assert.notOk(elem.classList.contains(className), `class '${className}' has been removed`);
+    });
+    assert.ok(elem.classList.contains('ag-test-kept'), 'other class is kept');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    elem.remove();
 });

@@ -13,6 +13,7 @@ import {
     getElementAttributesWithValues,
     defaultAttributeSetter,
     setAttributeBySelector,
+    isValidAttributeName,
 } from '../../src/helpers';
 
 describe('parseAttributePairs', () => {
@@ -278,5 +279,30 @@ describe('setAttributeBySelector', () => {
         setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', changeSetter);
         expect(changeSetter).toHaveBeenCalledTimes(elems.length);
         expect(window.__debug).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('isValidAttributeName', () => {
+    test.each([
+        'data-test',
+        'id',
+        'xlink:href',
+    ])('valid attribute name: %s', (name) => {
+        expect(isValidAttributeName(name)).toBe(true);
+    });
+
+    test.each([
+        '',
+        'a b',
+        'a>b',
+        'a=b',
+    ])('invalid attribute name: "%s"', (name) => {
+        expect(isValidAttributeName(name)).toBe(false);
+    });
+
+    test('does not change the page DOM', () => {
+        const attributesCount = document.documentElement.attributes.length;
+        isValidAttributeName('data-test');
+        expect(document.documentElement.attributes.length).toBe(attributesCount);
     });
 });

@@ -3,6 +3,24 @@ import { hit } from './hit';
 import { type Source } from '../scriptlets';
 
 /**
+ * Checks whether the given string can be used as an attribute name.
+ * Attribute node is created without adding it to any element, so the check does not change the page DOM.
+ * It uses the same validation as `setAttribute()`, which throws for invalid names.
+ *
+ * @param name Attribute name to check.
+ *
+ * @returns True if the attribute name is valid, false otherwise.
+ */
+export const isValidAttributeName = (name: string): boolean => {
+    try {
+        document.createAttribute(name);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+/**
  * Sets attribute with given value to given element.
  * Does nothing if the element already has the attribute with the same value,
  * so that no redundant mutations are produced.
@@ -29,7 +47,7 @@ export const defaultAttributeSetter = (
  * Sets attribute with given value to all elements matching given selector
  *
  * @param source source
- * @param selector CSS selector
+ * @param selector CSS selector, should be validated before, e.g. by `isValidSelector()`
  * @param attribute attribute name to set
  * @param value attribute value to set
  * @param attributeSetter function to apply to each element,
@@ -42,15 +60,9 @@ export const setAttributeBySelector = (
     value: string,
     attributeSetter = defaultAttributeSetter,
 ): void => {
-    let elements;
-    try {
-        elements = document.querySelectorAll(selector);
-    } catch {
-        logMessage(source, `Failed to find elements matching selector "${selector}"`);
-        return;
-    }
+    const elements = document.querySelectorAll(selector);
 
-    if (!elements || elements.length === 0) {
+    if (elements.length === 0) {
         return;
     }
 
