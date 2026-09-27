@@ -5,6 +5,7 @@ import {
     ATTR_SETTLE_DELAY_MS,
     createAttrMutationCounter,
     runRulesAndCountIdleChanges,
+    makeUnrelatedDomChange,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -74,22 +75,6 @@ const getSyncLogs = (fn) => {
         console.log = nativeConsole;
     }
     return logs;
-};
-
-/**
- * Makes an unrelated DOM mutation which wakes up observers of the rules
- * and waits until they handle it.
- *
- * @returns {Promise<void>}
- */
-const makeUnrelatedDomChange = async () => {
-    const unrelatedElem = document.createElement('div');
-    document.body.appendChild(unrelatedElem);
-    unrelatedElem.remove();
-
-    await new Promise((resolve) => {
-        setTimeout(resolve, ATTR_SETTLE_DELAY_MS);
-    });
 };
 
 /**
@@ -731,7 +716,6 @@ test('failure to sanitize the same link is logged only once', async (assert) => 
             message,
         } = cases[i];
         createTarget();
-        // eslint-disable-next-line no-await-in-loop
         const count = await countLogsAfterDomChange(args, message);
         assert.strictEqual(count, 1, `${description}: failure is logged once`);
     }

@@ -163,9 +163,24 @@ export const ATTR_IDLE_WINDOW_MS = 300;
  * @param {number} ms delay in milliseconds
  * @returns {Promise<void>}
  */
-const sleep = (ms) => new Promise((resolve) => {
+export const sleep = (ms) => new Promise((resolve) => {
     setTimeout(resolve, ms);
 });
+
+/**
+ * Makes an unrelated DOM mutation which wakes up DOM observers of scriptlet rules
+ * and waits until they handle it.
+ *
+ * @param {number} [delay=ATTR_SETTLE_DELAY_MS] time to wait for observers in milliseconds
+ * @returns {Promise<void>}
+ */
+export const makeUnrelatedDomChange = async (delay = ATTR_SETTLE_DELAY_MS) => {
+    const unrelatedElem = document.createElement('div');
+    document.body.appendChild(unrelatedElem);
+    unrelatedElem.remove();
+
+    await sleep(delay);
+};
 
 /**
  * Counts attribute mutations on given elements.
@@ -242,11 +257,7 @@ export const runRulesAndCountIdleChanges = async (name, rules, verbose = true) =
     counter.reset();
     hits = 0;
 
-    const unrelatedElem = document.createElement('div');
-    document.body.appendChild(unrelatedElem);
-    unrelatedElem.remove();
-
-    await sleep(ATTR_IDLE_WINDOW_MS);
+    await makeUnrelatedDomChange(ATTR_IDLE_WINDOW_MS);
     const mutations = counter.count;
     counter.disconnect();
 

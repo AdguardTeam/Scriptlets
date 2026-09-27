@@ -58,6 +58,12 @@ export const pierceShadowDom = (
         targets = targets.concat([].slice.call(simpleElems));
 
         const shadowRootElem = host.shadowRoot;
+        // base element may be not a shadow-dom host itself but a container of hosts,
+        // so hosts inside it should be pierced on the next iteration
+        if (!shadowRootElem) {
+            innerHostsAcc.push(findHostElements(host));
+            return;
+        }
         const shadowChildren = shadowRootElem.querySelectorAll(selector);
         targets = targets.concat([].slice.call(shadowChildren));
 

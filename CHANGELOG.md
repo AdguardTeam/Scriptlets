@@ -36,7 +36,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   `hit` is called only if some attribute has actually been removed. Also, invalid selector is logged only once.
 - Infinite mutation loop between several `hide-in-shadow-dom` rules whose targets are light DOM children
   of shadow hosts, and `hit` called on each DOM change: already hidden elements are no longer re-hidden,
-  and `hit` is called only if some element has actually been hidden.
+  and `hit` is called only if some element has actually been hidden. Also, `hide-in-shadow-dom` logs invalid
+  `selector` or `baseSelector` once instead of failing on DOM changes.
+- `hide-in-shadow-dom` and `remove-in-shadow-dom` not working if `baseSelector` matches an element
+  which is not a shadow host itself, e.g. a container of shadow hosts.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

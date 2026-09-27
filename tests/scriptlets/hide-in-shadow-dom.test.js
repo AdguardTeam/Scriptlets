@@ -5,6 +5,8 @@ import {
     ATTR_SETTLE_DELAY_MS,
     createAttrMutationCounter,
     runRulesAndCountIdleChanges,
+    sleep,
+    makeUnrelatedDomChange,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -74,6 +76,38 @@ const checkRulesSettle = async (assert, targets, verbose = true) => {
     if (verbose) {
         assert.strictEqual(hits, 0, 'hit is not called while page is idle');
     }
+};
+
+/**
+ * Runs a rule which hides the target, lets the page show the target
+ * and checks that the rule hides it again on the next DOM change.
+ *
+ * @param {object} assert QUnit assert
+ * @param {Function} showElement function which shows the target element passed to it
+ */
+const checkHiddenAgainAfterPageShows = async (assert, showElement) => {
+    const { target, selector } = createUniqueTarget();
+
+    runScriptlet(name, [selector]);
+    assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden`);
+    await sleep(ATTR_SETTLE_DELAY_MS);
+
+    // hits are counted only for this rule, since observers of rules from previous tests are still active
+    let ruleHits = 0;
+    window.__debug = (source) => {
+        if (source.args[0] === selector) {
+            ruleHits += 1;
+        }
+    };
+
+    // page shows the element inside shadow root, which is not observed by the rule
+    showElement(target);
+    assert.notStrictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} shown by page`);
+    // so an unrelated DOM mutation is needed to wake up the rule observer
+    await makeUnrelatedDomChange();
+
+    assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden again`);
+    assert.strictEqual(ruleHits, 1, 'hit function has been called again for the rule');
 };
 
 // some browsers do not support ShadowRoot
@@ -343,31 +377,99 @@ if (!isSupported) {
         }, ATTR_SETTLE_DELAY_MS);
     });
 
-    test('element is hidden again after page shows it', (assert) => {
-        const { target, selector } = createUniqueTarget();
-
-        runScriptlet(name, [selector]);
-        assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden`);
-
-        const done = assert.async();
-        setTimeout(() => {
-            clearGlobalProps('hit');
-            // page shows the element inside shadow root, which is not observed by the rule
+    test('element is hidden again after page shows it', async (assert) => {
+        await checkHiddenAgainAfterPageShows(assert, (target) => {
             target.style.cssText = 'display: block;';
-            // so an unrelated DOM mutation is needed to wake up the rule observer
-            const unrelatedElem = document.createElement('div');
-            document.body.appendChild(unrelatedElem);
-            unrelatedElem.remove();
+        });
+    });
 
-            setTimeout(() => {
-                assert.strictEqual(
-                    window.getComputedStyle(target).display,
-                    'none',
-                    `Element ${selector} hidden again`,
-                );
-                assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
-                done();
-            }, ATTR_SETTLE_DELAY_MS);
-        }, ATTR_SETTLE_DELAY_MS);
+    test('element is hidden again after page overrides inline display by "all" property', async (assert) => {
+        await checkHiddenAgainAfterPageShows(assert, (target) => {
+            // inline style still reports 'display: none !important', but it is overridden by 'all'
+            target.style.setProperty('all', 'initial', 'important');
+        });
+    });
+
+    test('baseSelector matches container of shadow hosts', async (assert) => {
+        const className = 'ag-test-hide-in-container';
+        const container = document.createElement('div');
+        container.id = 'ag-test-hosts-container';
+        document.body.appendChild(container);
+        elemsToClean.push(container);
+
+        const createHostWithTarget = () => {
+            const host = document.createElement('div');
+            const target = document.createElement('p');
+            target.classList.add(className);
+            host.attachShadow({ mode: 'open' }).appendChild(target);
+            // host is not a direct child of the container, so hosts should be searched in the whole container
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(host);
+            container.appendChild(wrapper);
+            return target;
+        };
+
+        // <body>
+        //   <div#ag-test-hosts-container>
+        //     <div>
+        //       <div>
+        //         #shadow-root (open)
+        //           <p.ag-test-hide-in-container></p>
+        //       </div>
+        //     </div>
+        //   </div>
+        // </body>
+
+        const firstTarget = createHostWithTarget();
+        runScriptlet(name, [`.${className}`, `#${container.id}`]);
+
+        assert.strictEqual(window.getComputedStyle(firstTarget).display, 'none', 'target inside container hidden');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+
+        // observer keeps working, so a target in a host added later is hidden as well
+        const secondTarget = createHostWithTarget();
+        await sleep(ATTR_SETTLE_DELAY_MS);
+
+        assert.strictEqual(window.getComputedStyle(secondTarget).display, 'none', 'target added later hidden');
+    });
+
+    test('invalid selectors are logged only once', async (assert) => {
+        // shadow host is present, so the selectors are used on the first run and on the DOM change
+        const { target, selector } = createUniqueTarget();
+        const invalidSelector = '..ag-test-invalid-selector';
+        const cases = [
+            {
+                args: [invalidSelector],
+                message: `${name}: Invalid selector arg: '${invalidSelector}'`,
+            },
+            {
+                args: [selector, invalidSelector],
+                message: `${name}: Invalid baseSelector arg: '${invalidSelector}'`,
+            },
+        ];
+
+        // eslint-disable-next-line no-console
+        const nativeConsole = console.log;
+        for (let i = 0; i < cases.length; i += 1) {
+            const { args, message } = cases[i];
+            let count = 0;
+            // eslint-disable-next-line no-console
+            console.log = (...logArgs) => {
+                if (logArgs.join(' ') === message) {
+                    count += 1;
+                }
+            };
+            try {
+                runScriptlet(name, args);
+                await makeUnrelatedDomChange();
+            } finally {
+                // eslint-disable-next-line no-console
+                console.log = nativeConsole;
+            }
+            assert.strictEqual(count, 1, `${message} is logged once`);
+        }
+
+        assert.notStrictEqual(window.getComputedStyle(target).display, 'none', 'target is not hidden');
+        assert.strictEqual(window.hit, undefined, 'hit function has not been called');
     });
 }

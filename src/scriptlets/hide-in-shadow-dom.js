@@ -1,5 +1,6 @@
 import {
     hit,
+    logMessage,
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,
@@ -45,6 +46,22 @@ export function hideInShadowDom(source, selector, baseSelector) {
         return;
     }
 
+    // Selectors are validated once, otherwise the error would be thrown on each DOM change
+    try {
+        document.querySelectorAll(selector);
+    } catch (e) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+    if (baseSelector) {
+        try {
+            document.querySelectorAll(baseSelector);
+        } catch (e) {
+            logMessage(source, `Invalid baseSelector arg: '${baseSelector}'`);
+            return;
+        }
+    }
+
     const hideElement = (targetElement) => {
         const DISPLAY_NONE_CSS = 'display:none!important;';
         targetElement.style.cssText = DISPLAY_NONE_CSS;
@@ -52,8 +69,11 @@ export function hideInShadowDom(source, selector, baseSelector) {
 
     const isElementHidden = (targetElement) => {
         const { style } = targetElement;
+        // Computed style is checked as well, because inline display may be overridden by the page,
+        // e.g. by 'all: initial !important', while it is still reported by the inline style
         return style.getPropertyValue('display') === 'none'
-            && style.getPropertyPriority('display') === 'important';
+            && style.getPropertyPriority('display') === 'important'
+            && window.getComputedStyle(targetElement).display === 'none';
     };
 
     /**
@@ -104,6 +124,7 @@ hideInShadowDom.primaryName = hideInShadowDomNames[0];
 
 hideInShadowDom.injections = [
     hit,
+    logMessage,
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,

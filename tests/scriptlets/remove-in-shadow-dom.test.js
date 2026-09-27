@@ -290,4 +290,33 @@ if (!isSupported) {
         // clean up test elements
         elemsToClean.push(shadowChild, simpleChild, testHost);
     });
+
+    test('baseSelector matches container of shadow hosts', (assert) => {
+        const container = document.createElement('div');
+        container.id = 'ag-test-hosts-container';
+        const testHost = document.createElement('div');
+        container.appendChild(testHost);
+        const testChild = document.createElement('p');
+        // unique class, so rules from previous tests, whose observers are still active, do not match it
+        testChild.classList.add('ag-test-remove-in-container');
+        testHost.attachShadow({ mode: 'open' }).appendChild(testChild);
+        document.body.appendChild(container);
+
+        // <body>
+        //   <div#ag-test-hosts-container>
+        //     <div>
+        //       #shadow-root (open)
+        //         <p.ag-test-remove-in-container></p>
+        //     </div>
+        //   </div>
+        // </body>
+
+        const SELECTOR = '.ag-test-remove-in-container';
+        runScriptlet(name, [SELECTOR, `#${container.id}`]);
+
+        assert.strictEqual(testHost.shadowRoot.querySelector(SELECTOR), null, `Element ${SELECTOR} is removed`);
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        // clean up test elements
+        elemsToClean.push(container);
+    });
 }
