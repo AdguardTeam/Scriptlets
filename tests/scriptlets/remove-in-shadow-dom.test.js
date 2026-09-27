@@ -300,6 +300,9 @@ if (!isSupported) {
         // unique class, so rules from previous tests, whose observers are still active, do not match it
         testChild.classList.add('ag-test-remove-in-container');
         testHost.attachShadow({ mode: 'open' }).appendChild(testChild);
+        const lightElem = document.createElement('p');
+        lightElem.classList.add('ag-test-remove-in-container');
+        container.appendChild(lightElem);
         document.body.appendChild(container);
 
         // <body>
@@ -308,6 +311,7 @@ if (!isSupported) {
         //       #shadow-root (open)
         //         <p.ag-test-remove-in-container></p>
         //     </div>
+        //     <p.ag-test-remove-in-container></p>   // not inside any shadow host, so it is not removed
         //   </div>
         // </body>
 
@@ -315,6 +319,7 @@ if (!isSupported) {
         runScriptlet(name, [SELECTOR, `#${container.id}`]);
 
         assert.strictEqual(testHost.shadowRoot.querySelector(SELECTOR), null, `Element ${SELECTOR} is removed`);
+        assert.ok(lightElem.isConnected, 'element outside shadow hosts is not removed');
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         // clean up test elements
         elemsToClean.push(container);

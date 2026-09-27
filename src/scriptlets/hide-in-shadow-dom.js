@@ -64,11 +64,14 @@ export function hideInShadowDom(source, selector, baseSelector) {
 
     const isElementHidden = (targetElement) => {
         const { style } = targetElement;
-        // Computed style is checked as well, because inline display may be overridden by the page,
-        // e.g. by 'all: initial !important', while it is still reported by the inline style
-        return style.getPropertyValue('display') === 'none'
-            && style.getPropertyPriority('display') === 'important'
-            && window.getComputedStyle(targetElement).display === 'none';
+        // Hiding style should be the only inline declaration, because another one may override it,
+        // e.g. 'all: initial !important', while inline display is still reported as hidden.
+        // Computed style is not checked, because page style of higher priority may keep the element visible,
+        // e.g. '::slotted(*) { display: block !important; }', so it would be re-hidden on each DOM change
+        // and several rules would re-trigger each other infinitely
+        return style.length === 1
+            && style.getPropertyValue('display') === 'none'
+            && style.getPropertyPriority('display') === 'important';
     };
 
     /**

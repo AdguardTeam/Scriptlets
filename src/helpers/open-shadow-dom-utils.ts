@@ -53,17 +53,19 @@ export const pierceShadowDom = (
 
     // it's possible to get a few hostElements found by baseSelector on the page
     hostElements.forEach((host) => {
-        // check presence of selector element inside base element if it's not in shadow-dom
-        const simpleElems = host.querySelectorAll(selector);
-        targets = targets.concat([].slice.call(simpleElems));
-
         const shadowRootElem = host.shadowRoot;
         // base element may be not a shadow-dom host itself but a container of hosts,
-        // so hosts inside it should be pierced on the next iteration
+        // so only hosts inside it should be pierced on the next iteration,
+        // and its own light DOM is not checked, same as the page DOM when there is no base element
         if (!shadowRootElem) {
             innerHostsAcc.push(findHostElements(host));
             return;
         }
+
+        // check presence of selector element inside the host if it's not in shadow-dom
+        const simpleElems = host.querySelectorAll(selector);
+        targets = targets.concat([].slice.call(simpleElems));
+
         const shadowChildren = shadowRootElem.querySelectorAll(selector);
         targets = targets.concat([].slice.call(shadowChildren));
 

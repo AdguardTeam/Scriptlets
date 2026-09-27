@@ -358,6 +358,27 @@ if (!isSupported) {
         await checkRulesSettle(assert, [createUniqueTarget(true), createUniqueTarget(true)], false);
     });
 
+    test('two rules settle if page style of higher priority keeps targets visible', async (assert) => {
+        const targets = [createUniqueTarget(true), createUniqueTarget(true)];
+        targets.forEach(({ target }) => {
+            // important style of shadow tree overrides important inline style of light DOM children
+            target.parentElement.shadowRoot.innerHTML = '<style>::slotted(*) { display: block !important; }</style>'
+                + '<slot></slot>';
+        });
+
+        const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(
+            name,
+            targets.map(({ target, selector }) => ({ elem: target, attr: 'style', args: [selector] })),
+        );
+
+        targets.forEach(({ target, selector }) => {
+            assert.strictEqual(window.getComputedStyle(target).display, 'block', `Element ${selector} kept visible`);
+        });
+        assert.ok(initialMutations > 0, 'initial hiding is counted');
+        assert.strictEqual(mutations, 0, 'elements are not re-hidden while page is idle');
+        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    });
+
     test('already hidden element is not re-hidden and hit is not called', (assert) => {
         const { target, selector } = createUniqueTarget();
         target.style.setProperty('display', 'none', 'important');
@@ -418,13 +439,19 @@ if (!isSupported) {
         //           <p.ag-test-hide-in-container></p>
         //       </div>
         //     </div>
+        //     <p.ag-test-hide-in-container></p>   // not inside any shadow host, so it is not hidden
         //   </div>
         // </body>
 
         const firstTarget = createHostWithTarget();
+        const lightElem = document.createElement('p');
+        lightElem.classList.add(className);
+        container.appendChild(lightElem);
+
         runScriptlet(name, [`.${className}`, `#${container.id}`]);
 
         assert.strictEqual(window.getComputedStyle(firstTarget).display, 'none', 'target inside container hidden');
+        assert.strictEqual(window.getComputedStyle(lightElem).display, 'block', 'element outside hosts not hidden');
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 
         // observer keeps working, so a target in a host added later is hidden as well
