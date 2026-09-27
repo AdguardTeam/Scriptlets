@@ -204,23 +204,28 @@ export const createAttrMutationCounter = (elems, attrs) => {
 };
 
 /**
- * Runs attribute scriptlet rules, lets them settle and then counts attribute mutations and hits
+ * Runs scriptlet rules which change attributes, lets them settle and then counts attribute mutations and hits
  * while the page is idle, except for one unrelated DOM mutation which wakes up the rules' observers.
  * Non-zero counts mean that the rules keep re-applying themselves, e.g. due to a mutation loop.
  *
  * @param {string} name scriptlet name
- * @param {Array<{elem: Element, attr: string, value: string}>} rules rules to run,
- * each rule matches its element by id
+ * @param {Array<{elem: Element, attr: string, args: string[]}>} rules rules to run,
+ * `elem` and `attr` are the element and the attribute changed by the rule, `args` are the scriptlet args
  * @param {boolean} [verbose=true] whether logging (hit) is enabled
  * @returns {Promise<{initialMutations: number, mutations: number, hits: number}>} `initialMutations` is
  * the number of mutations made while the rules were applied, non-zero value proves that the counter observes
- * the right elements and attributes; `mutations` and `hits` are counts collected during the idle window
+ * the right elements and attributes; `mutations` and `hits` are counts collected during the idle window,
+ * `hits` includes only hits of given rules
  */
-export const runAttrRulesAndCountIdleChanges = async (name, rules, verbose = true) => {
+export const runRulesAndCountIdleChanges = async (name, rules, verbose = true) => {
+    const rulesArgs = new Set(rules.map(({ args }) => JSON.stringify(args)));
     let hits = 0;
     // eslint-disable-next-line no-underscore-dangle
-    window.__debug = () => {
-        hits += 1;
+    window.__debug = (source) => {
+        // observers of rules from previous tests are still active, so their hits are not counted
+        if (rulesArgs.has(JSON.stringify(source.args))) {
+            hits += 1;
+        }
     };
 
     const counter = createAttrMutationCounter(
@@ -228,8 +233,8 @@ export const runAttrRulesAndCountIdleChanges = async (name, rules, verbose = tru
         rules.map((rule) => rule.attr),
     );
 
-    rules.forEach(({ elem, attr, value }) => {
-        runScriptlet(name, [`#${elem.id}`, attr, value], verbose);
+    rules.forEach(({ args }) => {
+        runScriptlet(name, args, verbose);
     });
 
     await sleep(ATTR_SETTLE_DELAY_MS);
@@ -247,6 +252,23 @@ export const runAttrRulesAndCountIdleChanges = async (name, rules, verbose = tru
 
     return { initialMutations, mutations, hits };
 };
+
+/**
+ * Runs attribute scriptlet rules and counts attribute mutations and hits while the page is idle,
+ * see `runRulesAndCountIdleChanges` for details.
+ *
+ * @param {string} name scriptlet name
+ * @param {Array<{elem: Element, attr: string, value: string}>} rules rules to run,
+ * each rule matches its element by id
+ * @param {boolean} [verbose=true] whether logging (hit) is enabled
+ * @returns {Promise<{initialMutations: number, mutations: number, hits: number}>} counts,
+ * see `runRulesAndCountIdleChanges`
+ */
+export const runAttrRulesAndCountIdleChanges = (name, rules, verbose = true) => runRulesAndCountIdleChanges(
+    name,
+    rules.map(({ elem, attr, value }) => ({ elem, attr, args: [`#${elem.id}`, attr, value] })),
+    verbose,
+);
 
 /**
  * Runs two non-conflicting attribute scriptlet rules and checks that after they are applied

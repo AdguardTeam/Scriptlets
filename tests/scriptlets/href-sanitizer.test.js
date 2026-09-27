@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    ATTR_SETTLE_DELAY_MS,
+    createAttrMutationCounter,
+    runRulesAndCountIdleChanges,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'href-sanitizer';
@@ -45,6 +51,59 @@ const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     removeElem();
 };
+
+/**
+ * Runs href-sanitizer rules and checks that after they are applied the page stays idle,
+ * i.e. href is not re-set and hit is not called on unrelated DOM mutations.
+ *
+ * @param {object} assert QUnit assert
+ * @param {Array<{elem: HTMLAnchorElement, args: string[], expectedHref: string}>} rules rules to run,
+ * `elem` is the link sanitized by the rule
+ * @param {boolean} [verbose=true] whether logging (hit) is enabled
+ */
+const checkRulesSettle = async (assert, rules, verbose = true) => {
+    const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(
+        name,
+        rules.map(({ elem, args }) => ({ elem, attr: 'href', args })),
+        verbose,
+    );
+
+    rules.forEach(({ elem, expectedHref }) => {
+        assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+    });
+    assert.ok(initialMutations > 0, 'initial href changes are counted');
+    assert.strictEqual(mutations, 0, 'href is not re-set while page is idle');
+    if (verbose) {
+        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    }
+};
+
+let uniqueLinkCount = 0;
+
+/**
+ * Creates a link with a unique URL in `data-href` attribute, so rules from previous tests,
+ * whose observers are still active, do not match it.
+ *
+ * @param {boolean} [withText=false] whether the link text should also contain the URL
+ * @returns {{elem: HTMLAnchorElement, selector: string, expectedHref: string}} link, selector which
+ * still matches the link after sanitization, and the URL expected in `href` after sanitization
+ */
+const createUniqueLink = (withText = false) => {
+    uniqueLinkCount += 1;
+    // domains should not be matched by selectors of other tests
+    const expectedHref = `https://target.example/${uniqueLinkCount}`;
+    const text = withText ? expectedHref : '';
+    const elem = createElem(`https://tracker.example/${uniqueLinkCount}`, text, 'data-href', expectedHref);
+    return { elem, selector: `a[data-href="${expectedHref}"]`, expectedHref };
+};
+
+/**
+ * Creates two links, each one is sanitized by its own rule which still matches the link after sanitization.
+ *
+ * @returns {Array<{elem: HTMLAnchorElement, args: string[], expectedHref: string}>} rules
+ */
+const createRulesForDifferentElems = () => [createUniqueLink(), createUniqueLink()]
+    .map(({ elem, selector, expectedHref }) => ({ elem, args: [selector, '[data-href]'], expectedHref }));
 
 module(name, { beforeEach, afterEach });
 
@@ -124,7 +183,7 @@ test('Sanitize href - no URL was found in base64', (assert) => {
     runScriptlet(name, scriptletArgs);
 
     assert.strictEqual(elem.getAttribute('href'), hrefWithBase64, 'href has not been changed');
-    assert.strictEqual(window.hit, 'FIRED');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
 
 test('Sanitize href - no URL was found in base64 string in query parameter', (assert) => {
@@ -136,7 +195,7 @@ test('Sanitize href - no URL was found in base64 string in query parameter', (as
     runScriptlet(name, scriptletArgs);
 
     assert.strictEqual(elem.getAttribute('href'), hrefWithBase64, 'href has not been changed');
-    assert.strictEqual(window.hit, 'FIRED');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
 
 test('Sanitize href - decode base64 string in query parameter', (assert) => {
@@ -326,7 +385,7 @@ test('Sanitize href - invalid URL', (assert) => {
     runScriptlet(name, scriptletArgs);
 
     assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has not been changed');
-    assert.strictEqual(window.hit, 'FIRED');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
 
 test('Sanitize href - parameter, invalid URL', (assert) => {
@@ -339,7 +398,7 @@ test('Sanitize href - parameter, invalid URL', (assert) => {
     runScriptlet(name, scriptletArgs);
 
     assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has not been changed');
-    assert.strictEqual(window.hit, 'FIRED');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
 
 test('Sanitize href - not allowed protocol', (assert) => {
@@ -352,5 +411,79 @@ test('Sanitize href - not allowed protocol', (assert) => {
     runScriptlet(name, scriptletArgs);
 
     assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has not been changed');
-    assert.strictEqual(window.hit, 'FIRED');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('single rule does not re-sanitize href on unrelated DOM mutation', async (assert) => {
+    const { elem, selector, expectedHref } = createUniqueLink();
+    await checkRulesSettle(assert, [{ elem, args: [selector, '[data-href]'], expectedHref }]);
+});
+
+test('two rules on different elements settle, logging enabled', async (assert) => {
+    await checkRulesSettle(assert, createRulesForDifferentElems());
+});
+
+test('two rules on different elements settle, logging disabled', async (assert) => {
+    await checkRulesSettle(assert, createRulesForDifferentElems(), false);
+});
+
+test('two rules on same element settle', async (assert) => {
+    const { elem, selector, expectedHref } = createUniqueLink(true);
+    // both rules extract the same URL, one from the attribute and another one from the text
+    await checkRulesSettle(assert, [
+        { elem, args: [selector, '[data-href]'], expectedHref },
+        { elem, args: [selector], expectedHref },
+    ]);
+});
+
+test('href is not re-set and hit is not called if it is already sanitized', (assert) => {
+    const { elem, selector, expectedHref } = createUniqueLink();
+    elem.setAttribute('href', expectedHref);
+
+    const counter = createAttrMutationCounter([elem], ['href']);
+
+    runScriptlet(name, [selector, '[data-href]']);
+
+    const done = assert.async();
+    // mutation observer callbacks are async, so wait for them
+    setTimeout(() => {
+        const mutations = counter.count;
+        counter.disconnect();
+        assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href is unchanged');
+        assert.strictEqual(mutations, 0, 'setAttribute is not called for already sanitized href');
+        assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+        done();
+    }, ATTR_SETTLE_DELAY_MS);
+});
+
+test('two rules: new links and page changes are still sanitized', (assert) => {
+    const rules = createRulesForDifferentElems();
+    rules.forEach(({ args }) => runScriptlet(name, args));
+    rules.forEach(({ elem, expectedHref }) => {
+        assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+    });
+
+    const first = rules[0];
+    const second = rules[1];
+
+    const done = assert.async();
+    let newElem;
+    setTimeout(() => {
+        clearGlobalProps('hit');
+        // page inserts a new link matched by the first rule
+        newElem = createElem('https://tracker.example/new', '', 'data-href', first.expectedHref);
+        // page changes href of the link matched by the second rule
+        second.elem.setAttribute('href', 'https://tracker.example/changed-by-page');
+
+        setTimeout(() => {
+            assert.strictEqual(newElem.getAttribute('href'), first.expectedHref, 'new link is sanitized');
+            assert.strictEqual(
+                second.elem.getAttribute('href'),
+                second.expectedHref,
+                'href is sanitized again after page change',
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
+            done();
+        }, ATTR_SETTLE_DELAY_MS);
+    }, ATTR_SETTLE_DELAY_MS);
 });

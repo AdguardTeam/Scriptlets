@@ -504,6 +504,7 @@ export function hrefSanitizer(
             return;
         }
 
+        let isChanged = false;
         elements.forEach((elem) => {
             try {
                 if (!isSanitizableAnchor(elem)) {
@@ -535,9 +536,16 @@ export function hrefSanitizer(
                     logMessage(source, `Invalid URL: ${newHref}`);
                     return;
                 }
+                // Do not re-set the same value, because even such mutation wakes up observers of other rules,
+                // and they may re-trigger each other infinitely
+                if (elem.getAttribute('href') === newValidHref) {
+                    return;
+                }
+
                 const oldHref = elem.href; // Required to log the original URL.
 
                 elem.setAttribute('href', newValidHref);
+                isChanged = true;
 
                 if (newValidHref !== oldHref) {
                     logMessage(source, `Sanitized "${oldHref}" to "${newValidHref}".`);
@@ -546,7 +554,10 @@ export function hrefSanitizer(
                 logMessage(source, `Failed to sanitize ${elem}.`);
             }
         });
-        hit(source);
+        // Call hit only on actual change, otherwise idle observer would log on each unrelated mutation
+        if (isChanged) {
+            hit(source);
+        }
     };
 
     const run = () => {

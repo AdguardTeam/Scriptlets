@@ -26,6 +26,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Infinite mutation loop and repeated logging when several `set-attr` or `trusted-set-attr` rules
   are applied on the same page: the attribute is no longer re-set, and `hit` is not called,
   if it already has the required value.
+- Repeated logging on each DOM change and infinite mutation loop between several non-conflicting
+  `href-sanitizer` rules: `href` is no longer re-set, and `hit` is not called,
+  if it already has the sanitized value.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

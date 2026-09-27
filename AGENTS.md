@@ -330,6 +330,17 @@ Project-specific rules:
    **Rationale**: The Prepare release tag and `CHANGELOG.md` are the version
    sources of truth.
 
+10. Scriptlets which re-apply themselves on DOM changes (e.g. via
+    `observeDOMChanges`) MUST NOT write a value the target already has
+    (compare before `setAttribute()` etc.) and MUST call `hit()` only if
+    something has actually changed.
+
+    **Rationale**: `observeDOMChanges` only ignores the scriptlet's own
+    mutations. A write of the same value still produces a mutation record
+    which wakes up observers of other rules, so two such rules re-trigger
+    each other infinitely, and a `hit()` on each callback logs the rule on
+    every unrelated DOM change.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,
