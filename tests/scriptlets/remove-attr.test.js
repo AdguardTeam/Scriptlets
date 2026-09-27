@@ -2,8 +2,8 @@
 import {
     runScriptlet,
     clearGlobalProps,
-    ATTR_SETTLE_DELAY_MS,
     runRulesAndCountIdleChanges,
+    countLogsAfterDomChange,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -376,24 +376,10 @@ test('hit is not called if matched elements do not have the attribute', (assert)
 
 test('invalid selector is logged only once', async (assert) => {
     const selector = '..ag-test-invalid-selector';
-    const message = `${name}: Invalid selector arg: '${selector}'`;
-    let count = 0;
-    // eslint-disable-next-line no-console
-    console.log = (input) => {
-        if (input === message) {
-            count += 1;
-        }
-    };
-
-    runScriptlet(name, ['data-ag-test', selector]);
-
-    // unrelated DOM mutation which wakes up the rule observer, if any
-    const unrelatedElem = document.createElement('div');
-    document.body.appendChild(unrelatedElem);
-    unrelatedElem.remove();
-
-    await new Promise((resolve) => {
-        setTimeout(resolve, ATTR_SETTLE_DELAY_MS);
-    });
+    const count = await countLogsAfterDomChange(
+        name,
+        ['data-ag-test', selector],
+        `${name}: Invalid selector arg: '${selector}'`,
+    );
     assert.strictEqual(count, 1, 'invalid selector is logged once');
 });

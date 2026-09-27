@@ -183,6 +183,36 @@ export const makeUnrelatedDomChange = async (delay = ATTR_SETTLE_DELAY_MS) => {
 };
 
 /**
+ * Runs scriptlet rule, makes an unrelated DOM mutation which wakes up the rule observer, if any,
+ * and counts how many times given message has been logged.
+ *
+ * @param {string} name scriptlet name
+ * @param {string[]} args scriptlet args
+ * @param {string} message message to count, should be unique for the rule
+ * @returns {Promise<number>} number of logged messages
+ */
+export const countLogsAfterDomChange = async (name, args, message) => {
+    let count = 0;
+    // eslint-disable-next-line no-console
+    const nativeConsoleLog = console.log;
+    // eslint-disable-next-line no-console
+    console.log = (...logArgs) => {
+        if (logArgs.join(' ') === message) {
+            count += 1;
+        }
+    };
+
+    try {
+        runScriptlet(name, args);
+        await makeUnrelatedDomChange();
+    } finally {
+        // eslint-disable-next-line no-console
+        console.log = nativeConsoleLog;
+    }
+    return count;
+};
+
+/**
  * Counts attribute mutations on given elements.
  *
  * Each element is observed directly, so mutations are counted even if the element is detached

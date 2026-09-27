@@ -334,9 +334,10 @@ Project-specific rules:
     `observeDOMChanges`) MUST NOT write a value the target already has
     (compare before `setAttribute()` etc.) and MUST call `hit()` only if
     something has actually changed. Invalid arguments (e.g. selector) SHOULD
-    be validated and logged once, before the observer is started. A failure
-    to process an element SHOULD be logged once and not again until the
-    processed value of the element changes.
+    be validated and logged once, before the observer is started; use the
+    `isValidSelector()` helper for selectors, as it does not query the page
+    DOM. A failure to process an element SHOULD be logged once and not again
+    until the processed value of the element changes.
 
     **Rationale**: `observeDOMChanges` only ignores the scriptlet's own
     mutations. A write of the same value still produces a mutation record

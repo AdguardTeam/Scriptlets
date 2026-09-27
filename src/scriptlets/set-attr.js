@@ -5,6 +5,7 @@ import {
     convertTypeToString,
     defaultAttributeSetter,
     logMessage,
+    isValidSelector,
     throttle,
     hit,
 } from '../helpers';
@@ -120,6 +121,12 @@ export function setAttr(source, selector, attr, value = '') {
         return;
     }
 
+    // Selector is validated once, otherwise the error would be logged on each DOM change
+    if (!isValidSelector(selector)) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+
     const allowedValues = ['true', 'false'];
 
     const shouldCopyValue = value.startsWith('[') && value.endsWith(']');
@@ -175,6 +182,7 @@ setAttr.injections = [
     observeDOMChanges,
     nativeIsNaN,
     convertTypeToString,
+    isValidSelector,
     // following helpers should be imported and injected
     // because they are used by helpers above
     defaultAttributeSetter,

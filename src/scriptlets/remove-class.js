@@ -1,6 +1,7 @@
 import {
     hit,
     logMessage,
+    isValidSelector,
     observeDOMChanges,
     parseFlags,
     throttle,
@@ -85,32 +86,29 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         return;
     }
     classNames = classNames.split(/\s*\|\s*/);
-    let selectors = [];
-    if (!selector) {
-        selectors = classNames.map((className) => {
-            return `.${className}`;
-        });
+    // if selector is not specified, elements are searched by class names
+    const selectors = selector
+        ? [selector]
+        : classNames.map((className) => `.${className}`);
+
+    // Selectors are validated once, otherwise the error would be logged
+    // or, for selectors made of class names, thrown on each DOM change
+    const invalidSelector = selectors.find((s) => !isValidSelector(s));
+    if (invalidSelector !== undefined) {
+        logMessage(source, `Invalid selector arg: '${invalidSelector}'`);
+        return;
     }
 
     const removeClassHandler = () => {
         const nodes = new Set();
-        if (selector) {
-            let foundNodes = [];
-            try {
-                foundNodes = [].slice.call(document.querySelectorAll(selector));
-            } catch (e) {
-                logMessage(source, `Invalid selector arg: '${selector}'`);
+        // selectors are validated before
+        selectors.forEach((s) => {
+            const elements = document.querySelectorAll(s);
+            for (let i = 0; i < elements.length; i += 1) {
+                const element = elements[i];
+                nodes.add(element);
             }
-            foundNodes.forEach((n) => nodes.add(n));
-        } else if (selectors.length > 0) {
-            selectors.forEach((s) => {
-                const elements = document.querySelectorAll(s);
-                for (let i = 0; i < elements.length; i += 1) {
-                    const element = elements[i];
-                    nodes.add(element);
-                }
-            });
-        }
+        });
 
         let removed = false;
 
@@ -180,6 +178,7 @@ removeClass.primaryName = removeClassNames[0];
 removeClass.injections = [
     hit,
     logMessage,
+    isValidSelector,
     observeDOMChanges,
     parseFlags,
     // following helpers should be imported and injected

@@ -3,6 +3,7 @@ import {
     observeDOMChanges,
     parseFlags,
     logMessage,
+    isValidSelector,
     throttle,
 } from '../helpers';
 
@@ -85,9 +86,7 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
     }
 
     // Selector is validated once, otherwise the error would be logged on each DOM change
-    try {
-        document.querySelectorAll(selector);
-    } catch (e) {
+    if (!isValidSelector(selector)) {
         logMessage(source, `Invalid selector arg: '${selector}'`);
         return;
     }
@@ -165,6 +164,7 @@ removeAttr.injections = [
     observeDOMChanges,
     parseFlags,
     logMessage,
+    isValidSelector,
     // following helpers should be imported and injected
     // because they are used by helpers above
     throttle,

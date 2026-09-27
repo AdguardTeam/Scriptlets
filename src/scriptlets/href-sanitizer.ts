@@ -2,6 +2,7 @@ import {
     observeDOMChanges,
     hit,
     logMessage,
+    isValidSelector,
     throttle,
 } from '../helpers';
 import { type Source } from './scriptlets';
@@ -210,9 +211,7 @@ export function hrefSanitizer(
         logMessage(source, `Invalid transform option: "${transform}"`);
         return;
     }
-    try {
-        document.querySelectorAll(selector);
-    } catch (e) {
+    if (!isValidSelector(selector)) {
         logMessage(source, `Invalid selector "${selector}"`);
         return;
     }
@@ -650,6 +649,7 @@ hrefSanitizer.injections = [
     observeDOMChanges,
     hit,
     logMessage,
+    isValidSelector,
     // following helpers should be imported and injected
     // because they are used by helpers above
     throttle,

@@ -1,6 +1,7 @@
 import {
     hit,
     logMessage,
+    isValidSelector,
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,
@@ -47,19 +48,13 @@ export function hideInShadowDom(source, selector, baseSelector) {
     }
 
     // Selectors are validated once, otherwise the error would be thrown on each DOM change
-    try {
-        document.querySelectorAll(selector);
-    } catch (e) {
+    if (!isValidSelector(selector)) {
         logMessage(source, `Invalid selector arg: '${selector}'`);
         return;
     }
-    if (baseSelector) {
-        try {
-            document.querySelectorAll(baseSelector);
-        } catch (e) {
-            logMessage(source, `Invalid baseSelector arg: '${baseSelector}'`);
-            return;
-        }
+    if (baseSelector && !isValidSelector(baseSelector)) {
+        logMessage(source, `Invalid baseSelector arg: '${baseSelector}'`);
+        return;
     }
 
     const hideElement = (targetElement) => {
@@ -125,6 +120,7 @@ hideInShadowDom.primaryName = hideInShadowDomNames[0];
 hideInShadowDom.injections = [
     hit,
     logMessage,
+    isValidSelector,
     observeDOMChanges,
     findHostElements,
     pierceShadowDom,

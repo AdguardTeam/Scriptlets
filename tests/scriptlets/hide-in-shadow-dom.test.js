@@ -7,6 +7,7 @@ import {
     runRulesAndCountIdleChanges,
     sleep,
     makeUnrelatedDomChange,
+    countLogsAfterDomChange,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -448,24 +449,9 @@ if (!isSupported) {
             },
         ];
 
-        // eslint-disable-next-line no-console
-        const nativeConsole = console.log;
         for (let i = 0; i < cases.length; i += 1) {
             const { args, message } = cases[i];
-            let count = 0;
-            // eslint-disable-next-line no-console
-            console.log = (...logArgs) => {
-                if (logArgs.join(' ') === message) {
-                    count += 1;
-                }
-            };
-            try {
-                runScriptlet(name, args);
-                await makeUnrelatedDomChange();
-            } finally {
-                // eslint-disable-next-line no-console
-                console.log = nativeConsole;
-            }
+            const count = await countLogsAfterDomChange(name, args, message);
             assert.strictEqual(count, 1, `${message} is logged once`);
         }
 

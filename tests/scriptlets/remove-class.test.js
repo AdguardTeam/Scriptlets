@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, max-len */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, countLogsAfterDomChange } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-class';
@@ -282,4 +282,28 @@ test('invalid selector — no match', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
 
     clearGlobalProps('hit');
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    createHit();
+    const invalidSelector = '..ag-test-invalid-selector';
+    // selector made of class name which is not a valid CSS identifier
+    const invalidClassName = '1ag-test-invalid-class';
+    const cases = [
+        {
+            args: ['ag-test-class', invalidSelector],
+            message: `${name}: Invalid selector arg: '${invalidSelector}'`,
+        },
+        {
+            args: [invalidClassName],
+            message: `${name}: Invalid selector arg: '.${invalidClassName}'`,
+        },
+    ];
+
+    for (let i = 0; i < cases.length; i += 1) {
+        const { args, message } = cases[i];
+        const count = await countLogsAfterDomChange(name, args, message);
+        assert.strictEqual(count, 1, `${message} is logged once`);
+    }
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });

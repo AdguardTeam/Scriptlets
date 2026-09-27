@@ -5,6 +5,7 @@ import {
     ATTR_SETTLE_DELAY_MS,
     createAttrMutationCounter,
     checkTwoAttrRulesSettle,
+    countLogsAfterDomChange,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -222,4 +223,15 @@ test('two rules: newly inserted elements and page changes are still handled', (a
             done();
         }, ATTR_SETTLE_DELAY_MS);
     }, ATTR_SETTLE_DELAY_MS);
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    const selector = '..ag-test-invalid-selector';
+    const count = await countLogsAfterDomChange(
+        name,
+        [selector, TARGET_ATTR_NAME, '1'],
+        `${name}: Invalid selector arg: '${selector}'`,
+    );
+    assert.strictEqual(count, 1, 'invalid selector is logged once');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });

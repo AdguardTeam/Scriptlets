@@ -6,6 +6,7 @@ import {
     createAttrMutationCounter,
     runRulesAndCountIdleChanges,
     makeUnrelatedDomChange,
+    countLogsAfterDomChange,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -75,31 +76,6 @@ const getSyncLogs = (fn) => {
         console.log = nativeConsole;
     }
     return logs;
-};
-
-/**
- * Runs the rule, makes an unrelated DOM mutation which wakes up the rule observer, if any,
- * and counts how many times given message has been logged.
- *
- * @param {string[]} args scriptlet args
- * @param {string} message message to count, should be unique for the rule
- * @returns {Promise<number>} number of logged messages
- */
-const countLogsAfterDomChange = async (args, message) => {
-    let count = 0;
-    console.log = (...logArgs) => {
-        if (logArgs.join(' ') === message) {
-            count += 1;
-        }
-    };
-
-    try {
-        runScriptlet(name, args);
-        await makeUnrelatedDomChange();
-    } finally {
-        console.log = nativeConsole;
-    }
-    return count;
 };
 
 /**
@@ -581,7 +557,7 @@ test('nothing to remove by removeHash or removeParam is not logged as invalid UR
 
 test('invalid selector is logged only once', async (assert) => {
     const selector = '..ag-test-invalid-selector';
-    const count = await countLogsAfterDomChange([selector], `${name}: Invalid selector "${selector}"`);
+    const count = await countLogsAfterDomChange(name, [selector], `${name}: Invalid selector "${selector}"`);
     assert.strictEqual(count, 1, 'invalid selector is logged once');
 });
 
@@ -591,6 +567,7 @@ test('invalid transform is logged only once and href is not changed', async (ass
     const transform = 'ag-test-invalid-transform';
 
     const count = await countLogsAfterDomChange(
+        name,
         [selector, '[data-href]', transform],
         `${name}: Invalid transform option: "${transform}"`,
     );
@@ -606,6 +583,7 @@ test('invalid attribute is logged only once and href is not changed', async (ass
     const attribute = 'ag-test-invalid-attribute';
 
     const count = await countLogsAfterDomChange(
+        name,
         [selector, attribute],
         `${name}: Invalid attribute option: "${attribute}"`,
     );
@@ -664,6 +642,7 @@ test('empty value is logged for remove transform, only once', async (assert) => 
     const attribute = '[data-ag-test-missing]';
 
     const count = await countLogsAfterDomChange(
+        name,
         [selector, attribute, 'removeHash'],
         `${name}: Failed to get value by "${attribute}" from ${elem.href}`,
     );
@@ -716,7 +695,7 @@ test('failure to sanitize the same link is logged only once', async (assert) => 
             message,
         } = cases[i];
         createTarget();
-        const count = await countLogsAfterDomChange(args, message);
+        const count = await countLogsAfterDomChange(name, args, message);
         assert.strictEqual(count, 1, `${description}: failure is logged once`);
     }
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');

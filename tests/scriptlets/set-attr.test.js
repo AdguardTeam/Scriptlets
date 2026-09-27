@@ -6,6 +6,7 @@ import {
     createAttrMutationCounter,
     runAttrRulesAndCountIdleChanges,
     checkTwoAttrRulesSettle,
+    countLogsAfterDomChange,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -389,4 +390,15 @@ test('attribute is not re-set and hit is not called if value already matches', (
         assert.strictEqual(window.hit, undefined, 'hit function has not been called');
         done();
     }, ATTR_SETTLE_DELAY_MS);
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    const selector = '..ag-test-invalid-selector';
+    const count = await countLogsAfterDomChange(
+        name,
+        [selector, TARGET_ATTR_NAME, '1'],
+        `${name}: Invalid selector arg: '${selector}'`,
+    );
+    assert.strictEqual(count, 1, 'invalid selector is logged once');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
