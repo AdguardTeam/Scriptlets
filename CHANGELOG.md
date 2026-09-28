@@ -29,7 +29,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Infinite mutation loop between several non-conflicting `href-sanitizer` rules, and `hit` called
   on each DOM change: `href` is no longer re-set, and `hit` is not called, if the link, including SVG `<a>`
   element, already points to the sanitized URL. Also, `href-sanitizer` logs invalid arguments only once,
-  and logs a failure to sanitize a link only once until the value taken from the link is changed.
+  and logs a failure to sanitize a link only once until the value taken from the link or the document base URL
+  is changed.
 - `href-sanitizer` resolving relative URLs against the page URL or its origin instead of the document base URL,
   e.g. `removeHash` and `removeParam` transforms rewrote a path-relative link to a wrong URL.
 - `removeHash` and `removeParam` transforms of `href-sanitizer` not setting the absolute URL found in the text,

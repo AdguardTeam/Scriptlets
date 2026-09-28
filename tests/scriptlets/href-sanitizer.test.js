@@ -1,12 +1,14 @@
-/* eslint-disable no-underscore-dangle, no-console */
+/* eslint-disable no-underscore-dangle */
 import {
     runScriptlet,
     clearGlobalProps,
     ATTR_SETTLE_DELAY_MS,
     createAttrMutationCounter,
-    runRulesAndCountIdleChanges,
+    checkRulesSettle,
     makeUnrelatedDomChange,
     countLogsAfterDomChange,
+    getSyncLogs,
+    getLogs,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -49,33 +51,9 @@ const beforeEach = () => {
     };
 };
 
-const nativeConsole = console.log;
-
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     removeElem();
-    console.log = nativeConsole;
-};
-
-/**
- * Runs given function and returns messages logged by it synchronously.
- * Observers of rules from previous tests are still active, but they log asynchronously,
- * so their messages are not captured.
- *
- * @param {Function} fn function to run
- * @returns {string[]} logged messages
- */
-const getSyncLogs = (fn) => {
-    const logs = [];
-    console.log = (...args) => {
-        logs.push(args.join(' '));
-    };
-    try {
-        fn();
-    } finally {
-        console.log = nativeConsole;
-    }
-    return logs;
 };
 
 /**
@@ -86,23 +64,19 @@ const getSyncLogs = (fn) => {
  * @param {Array<{elem: HTMLAnchorElement, args: string[], expectedHref: string}>} rules rules to run,
  * `elem` is the link sanitized by the rule
  * @param {boolean} [verbose=true] whether logging (hit) is enabled
+ * @returns {Promise<void>}
  */
-const checkRulesSettle = async (assert, rules, verbose = true) => {
-    const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(
-        name,
-        rules.map(({ elem, args }) => ({ elem, attr: 'href', args })),
-        verbose,
-    );
-
-    rules.forEach(({ elem, expectedHref }) => {
-        assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
-    });
-    assert.ok(initialMutations > 0, 'initial href changes are counted');
-    assert.strictEqual(mutations, 0, 'href is not re-set while page is idle');
-    if (verbose) {
-        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
-    }
-};
+const checkLinksSettle = (assert, rules, verbose = true) => checkRulesSettle(
+    assert,
+    name,
+    rules.map(({ elem, args }) => ({ elem, attr: 'href', args })),
+    () => {
+        rules.forEach(({ elem, expectedHref }) => {
+            assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
+        });
+    },
+    verbose,
+);
 
 let uniqueLinkCount = 0;
 
@@ -442,21 +416,21 @@ test('Sanitize href - not allowed protocol', (assert) => {
 
 test('single rule does not re-sanitize href on unrelated DOM mutation', async (assert) => {
     const { elem, selector, expectedHref } = createUniqueLink();
-    await checkRulesSettle(assert, [{ elem, args: [selector, '[data-href]'], expectedHref }]);
+    await checkLinksSettle(assert, [{ elem, args: [selector, '[data-href]'], expectedHref }]);
 });
 
 test('two rules on different elements settle, logging enabled', async (assert) => {
-    await checkRulesSettle(assert, createRulesForDifferentElems());
+    await checkLinksSettle(assert, createRulesForDifferentElems());
 });
 
 test('two rules on different elements settle, logging disabled', async (assert) => {
-    await checkRulesSettle(assert, createRulesForDifferentElems(), false);
+    await checkLinksSettle(assert, createRulesForDifferentElems(), false);
 });
 
 test('two rules on same element settle', async (assert) => {
     const { elem, selector, expectedHref } = createUniqueLink(true);
     // both rules extract the same URL, one from the attribute and another one from the text
-    await checkRulesSettle(assert, [
+    await checkLinksSettle(assert, [
         { elem, args: [selector, '[data-href]'], expectedHref },
         { elem, args: [selector], expectedHref },
     ]);
@@ -722,18 +696,12 @@ test('failure is logged again after the page changes the link', async (assert) =
     const secondValue = 'ftp://ag-test-second.example/';
     const elem = createElem('https://tracker.example/', '', 'data-href', firstValue);
 
-    const logs = [];
-    console.log = (...args) => {
-        logs.push(args.join(' '));
-    };
-    try {
+    const logs = await getLogs(async () => {
         runScriptlet(name, ['a[data-href^="ftp://ag-test-"]', '[data-href]']);
         await makeUnrelatedDomChange();
         elem.setAttribute('data-href', secondValue);
         await makeUnrelatedDomChange();
-    } finally {
-        console.log = nativeConsole;
-    }
+    });
 
     const countInvalidUrlLogs = (value) => logs.filter((msg) => msg === `${name}: Invalid URL: ${value}`).length;
     assert.strictEqual(countInvalidUrlLogs(firstValue), 1, 'first value is logged once');
@@ -798,7 +766,7 @@ test('SVG link is sanitized and not re-sanitized on unrelated DOM mutation', asy
     svg.appendChild(elem);
     document.body.appendChild(svg);
 
-    await checkRulesSettle(assert, [{ elem, args: [`a[data-href="${expectedHref}"]`, '[data-href]'], expectedHref }]);
+    await checkLinksSettle(assert, [{ elem, args: [`a[data-href="${expectedHref}"]`, '[data-href]'], expectedHref }]);
 });
 
 test('link sanitized by parameter is not logged as failure after DOM change', async (assert) => {

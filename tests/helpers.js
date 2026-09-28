@@ -183,6 +183,61 @@ export const makeUnrelatedDomChange = async (delay = ATTR_SETTLE_DELAY_MS) => {
 };
 
 /**
+ * Replaces `console.log` to collect logged messages.
+ *
+ * @returns {{logs: string[], restore: Function}} collected messages and function which restores `console.log`
+ */
+const interceptConsoleLog = () => {
+    const logs = [];
+    // eslint-disable-next-line no-console
+    const nativeConsoleLog = console.log;
+    // eslint-disable-next-line no-console
+    console.log = (...args) => {
+        logs.push(args.join(' '));
+    };
+    const restore = () => {
+        // eslint-disable-next-line no-console
+        console.log = nativeConsoleLog;
+    };
+    return { logs, restore };
+};
+
+/**
+ * Runs given function and returns messages logged by it synchronously.
+ * Observers of rules from previous tests are still active, but they log asynchronously,
+ * so their messages are not collected.
+ *
+ * @param {Function} fn function to run
+ * @returns {string[]} logged messages
+ */
+export const getSyncLogs = (fn) => {
+    const { logs, restore } = interceptConsoleLog();
+    try {
+        fn();
+    } finally {
+        restore();
+    }
+    return logs;
+};
+
+/**
+ * Runs given async function and returns messages logged until it is finished,
+ * including messages of observers of rules from previous tests, which are still active.
+ *
+ * @param {Function} fn async function to run
+ * @returns {Promise<string[]>} logged messages
+ */
+export const getLogs = async (fn) => {
+    const { logs, restore } = interceptConsoleLog();
+    try {
+        await fn();
+    } finally {
+        restore();
+    }
+    return logs;
+};
+
+/**
  * Runs scriptlet rule, makes an unrelated DOM mutation which wakes up the rule observer, if any,
  * and counts how many times given message has been logged.
  *
@@ -192,24 +247,11 @@ export const makeUnrelatedDomChange = async (delay = ATTR_SETTLE_DELAY_MS) => {
  * @returns {Promise<number>} number of logged messages
  */
 export const countLogsAfterDomChange = async (name, args, message) => {
-    let count = 0;
-    // eslint-disable-next-line no-console
-    const nativeConsoleLog = console.log;
-    // eslint-disable-next-line no-console
-    console.log = (...logArgs) => {
-        if (logArgs.join(' ') === message) {
-            count += 1;
-        }
-    };
-
-    try {
+    const logs = await getLogs(async () => {
         runScriptlet(name, args);
         await makeUnrelatedDomChange();
-    } finally {
-        // eslint-disable-next-line no-console
-        console.log = nativeConsoleLog;
-    }
-    return count;
+    });
+    return logs.filter((log) => log === message).length;
 };
 
 /**
@@ -295,6 +337,42 @@ export const runRulesAndCountIdleChanges = async (name, rules, verbose = true) =
 };
 
 /**
+ * Runs scriptlet rules which change attributes and checks that after they are applied the page stays idle,
+ * i.e. attributes are not re-set and hit is not called on unrelated DOM mutations,
+ * see `runRulesAndCountIdleChanges` for details.
+ *
+ * @param {object} assert QUnit assert
+ * @param {string} name scriptlet name
+ * @param {Array<{elem: Element, attr: string, args: string[]}>} rules rules to run,
+ * see `runRulesAndCountIdleChanges`
+ * @param {Function} checkApplied function which checks the result of the rules, called after they are applied
+ * @param {boolean} [verbose=true] whether logging (hit) is enabled
+ */
+export const checkRulesSettle = async (assert, name, rules, checkApplied, verbose = true) => {
+    const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(name, rules, verbose);
+
+    checkApplied();
+    assert.ok(initialMutations > 0, 'initial attribute changes are counted');
+    assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
+    if (verbose) {
+        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    }
+};
+
+/**
+ * Converts attribute scriptlet rules to rules for `runRulesAndCountIdleChanges`,
+ * each rule matches its element by id.
+ *
+ * @param {Array<{elem: Element, attr: string, value: string}>} rules attribute rules
+ * @returns {Array<{elem: Element, attr: string, args: string[]}>} rules with scriptlet args
+ */
+const toAttrScriptletRules = (rules) => rules.map(({ elem, attr, value }) => ({
+    elem,
+    attr,
+    args: [`#${elem.id}`, attr, value],
+}));
+
+/**
  * Runs attribute scriptlet rules and counts attribute mutations and hits while the page is idle,
  * see `runRulesAndCountIdleChanges` for details.
  *
@@ -307,7 +385,7 @@ export const runRulesAndCountIdleChanges = async (name, rules, verbose = true) =
  */
 export const runAttrRulesAndCountIdleChanges = (name, rules, verbose = true) => runRulesAndCountIdleChanges(
     name,
-    rules.map(({ elem, attr, value }) => ({ elem, attr, args: [`#${elem.id}`, attr, value] })),
+    toAttrScriptletRules(rules),
     verbose,
 );
 
@@ -335,17 +413,8 @@ export const checkTwoAttrRulesSettle = async (assert, name, {
     const first = { elem: firstElem, attr: 'data-ag-test-a', value: '1' };
     const second = { elem: secondElem, attr: 'data-ag-test-b', value: secondValue };
 
-    const { initialMutations, mutations, hits } = await runAttrRulesAndCountIdleChanges(
-        name,
-        [first, second],
-        verbose,
-    );
-
-    assert.strictEqual(firstElem.getAttribute(first.attr), first.value, `${first.attr} is set`);
-    assert.strictEqual(secondElem.getAttribute(second.attr), secondExpected, `${second.attr} is set`);
-    assert.ok(initialMutations > 0, 'initial attribute changes are counted');
-    assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
-    if (verbose) {
-        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
-    }
+    await checkRulesSettle(assert, name, toAttrScriptletRules([first, second]), () => {
+        assert.strictEqual(firstElem.getAttribute(first.attr), first.value, `${first.attr} is set`);
+        assert.strictEqual(secondElem.getAttribute(second.attr), secondExpected, `${second.attr} is set`);
+    }, verbose);
 };

@@ -97,4 +97,29 @@ describe('findBaseHostElements', () => {
         const containerSearches = querySelectorAllSpy.mock.calls.filter((args) => args[0] === '*');
         expect(containerSearches).toHaveLength(1);
     });
+
+    test('searches sibling container after a nested one', () => {
+        const outer = createContainer(document.body);
+        const inner = createContainer(outer);
+        const innerHost = createHost(inner);
+        const sibling = createContainer(document.body);
+        const siblingHost = createHost(sibling);
+
+        const querySelectorAllSpy = vi.spyOn(Element.prototype, 'querySelectorAll');
+
+        expect(getIds(findBaseHostElements('.ag-test-base'))).toEqual(getIds([innerHost, siblingHost]));
+        // outer and sibling containers are searched, nested one is skipped
+        const containerSearches = querySelectorAllSpy.mock.calls.filter((args) => args[0] === '*');
+        expect(containerSearches).toHaveLength(2);
+    });
+
+    test('searches container inside the light DOM of a matched host', () => {
+        const host = createHost(document.body);
+        host.classList.add('ag-test-base');
+        // matched host is not a searched container, so the container inside it is not skipped
+        const container = createContainer(host);
+        const innerHost = createHost(container);
+
+        expect(getIds(findBaseHostElements('.ag-test-base'))).toEqual(getIds([host, innerHost]));
+    });
 });

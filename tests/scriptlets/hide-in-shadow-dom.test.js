@@ -4,7 +4,7 @@ import {
     clearGlobalProps,
     ATTR_SETTLE_DELAY_MS,
     createAttrMutationCounter,
-    runRulesAndCountIdleChanges,
+    checkRulesSettle,
     sleep,
     makeUnrelatedDomChange,
     countLogsAfterDomChange,
@@ -60,24 +60,26 @@ const createUniqueTarget = (inLightDom = false) => {
  *
  * @param {object} assert QUnit assert
  * @param {Array<{target: HTMLElement, selector: string}>} targets targets, each one is hidden by its own rule
- * @param {boolean} [verbose=true] whether logging (hit) is enabled
+ * @param {object} [options] options
+ * @param {boolean} [options.verbose=true] whether logging (hit) is enabled
+ * @param {string} [options.expectedDisplay='none'] expected computed display of targets after rules are applied
+ * @returns {Promise<void>}
  */
-const checkRulesSettle = async (assert, targets, verbose = true) => {
-    const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(
-        name,
-        targets.map(({ target, selector }) => ({ elem: target, attr: 'style', args: [selector] })),
-        verbose,
-    );
-
-    targets.forEach(({ target, selector }) => {
-        assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden`);
-    });
-    assert.ok(initialMutations > 0, 'initial hiding is counted');
-    assert.strictEqual(mutations, 0, 'elements are not re-hidden while page is idle');
-    if (verbose) {
-        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
-    }
-};
+const checkTargetsSettle = (assert, targets, { verbose = true, expectedDisplay = 'none' } = {}) => checkRulesSettle(
+    assert,
+    name,
+    targets.map(({ target, selector }) => ({ elem: target, attr: 'style', args: [selector] })),
+    () => {
+        targets.forEach(({ target, selector }) => {
+            assert.strictEqual(
+                window.getComputedStyle(target).display,
+                expectedDisplay,
+                `Element ${selector} has display: ${expectedDisplay}`,
+            );
+        });
+    },
+    verbose,
+);
 
 /**
  * Runs a rule which hides the target, lets the page show the target
@@ -343,19 +345,19 @@ if (!isSupported) {
     });
 
     test('single rule does not re-hide element on unrelated DOM mutation', async (assert) => {
-        await checkRulesSettle(assert, [createUniqueTarget()]);
+        await checkTargetsSettle(assert, [createUniqueTarget()]);
     });
 
     test('two rules, targets in shadow roots settle', async (assert) => {
-        await checkRulesSettle(assert, [createUniqueTarget(), createUniqueTarget()]);
+        await checkTargetsSettle(assert, [createUniqueTarget(), createUniqueTarget()]);
     });
 
     test('two rules, targets in light DOM of shadow hosts settle, logging enabled', async (assert) => {
-        await checkRulesSettle(assert, [createUniqueTarget(true), createUniqueTarget(true)]);
+        await checkTargetsSettle(assert, [createUniqueTarget(true), createUniqueTarget(true)]);
     });
 
     test('two rules, targets in light DOM of shadow hosts settle, logging disabled', async (assert) => {
-        await checkRulesSettle(assert, [createUniqueTarget(true), createUniqueTarget(true)], false);
+        await checkTargetsSettle(assert, [createUniqueTarget(true), createUniqueTarget(true)], { verbose: false });
     });
 
     test('two rules settle if page style of higher priority keeps targets visible', async (assert) => {
@@ -366,17 +368,8 @@ if (!isSupported) {
                 + '<slot></slot>';
         });
 
-        const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(
-            name,
-            targets.map(({ target, selector }) => ({ elem: target, attr: 'style', args: [selector] })),
-        );
-
-        targets.forEach(({ target, selector }) => {
-            assert.strictEqual(window.getComputedStyle(target).display, 'block', `Element ${selector} kept visible`);
-        });
-        assert.ok(initialMutations > 0, 'initial hiding is counted');
-        assert.strictEqual(mutations, 0, 'elements are not re-hidden while page is idle');
-        assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+        // targets cannot be hidden, but they should not be re-hidden on each DOM change
+        await checkTargetsSettle(assert, targets, { expectedDisplay: 'block' });
     });
 
     test('already hidden element is not re-hidden and hit is not called', (assert) => {
