@@ -816,3 +816,101 @@ test('link sanitized by parameter is not logged as failure after DOM change', as
     assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href has been sanitized');
     assert.strictEqual(count, 0, 'sanitized link is not logged as failure');
 });
+
+test('remove transform leaves link as is if the value is not an absolute http(s) URL', (assert) => {
+    [
+        {
+            // text which is not a URL would be resolved as a relative URL
+            href: 'https://tracker.example/not-url-text',
+            text: 'Click here',
+            args: ['a[href="https://tracker.example/not-url-text"]', 'text', 'removeHash'],
+        },
+        {
+            href: 'https://tracker.example/not-url-attr',
+            attributeName: 'data-ag-test-id',
+            attributeValue: '12345',
+            args: ['a[href="https://tracker.example/not-url-attr"]', '[data-ag-test-id]', 'removeParam:utm_source'],
+        },
+        {
+            // link with not allowed protocol matched by a broad selector should not be logged
+            href: 'mailto:ag-test@example.org',
+            args: ['a[href="mailto:ag-test@example.org"]', '[href]', 'removeHash'],
+        },
+    ].forEach(({
+        href,
+        text,
+        attributeName,
+        attributeValue,
+        args,
+    }) => {
+        const elem = createElem(href, text, attributeName, attributeValue);
+
+        const logs = getSyncLogs(() => runScriptlet(name, args));
+
+        assert.strictEqual(elem.getAttribute('href'), href, `${args[1]}: href is not changed`);
+        assert.notOk(
+            logs.some((msg) => msg.includes('Invalid URL') || msg.includes('Protocol not allowed')),
+            `${args[1]}: nothing is logged`,
+        );
+    });
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('nested redirect in parameter is sanitized on the next DOM change', async (assert) => {
+    const finalHref = 'https://target.example/nested-final';
+    const innerHref = `https://tracker.example/nested?ag-test-url=${encodeURIComponent(finalHref)}`;
+    const elem = createElem(`https://tracker.example/nested?ag-test-url=${encodeURIComponent(innerHref)}`);
+    // selector still matches the link after it is sanitized
+    elem.classList.add('ag-test-nested');
+
+    runScriptlet(name, ['a.ag-test-nested', '?ag-test-url']);
+    assert.strictEqual(elem.getAttribute('href'), innerHref, 'outer redirect is sanitized');
+
+    await makeUnrelatedDomChange();
+    assert.strictEqual(elem.getAttribute('href'), finalHref, 'inner redirect is sanitized');
+});
+
+test('link is sanitized again after page changes base URL', async (assert) => {
+    const relativeHref = '/ag-test-base-change';
+    const expectedHref = `${window.location.origin}${relativeHref}`;
+    // relative href already points to the URL from the attribute, so it is kept
+    const elem = createElem(relativeHref, '', 'data-href', expectedHref);
+
+    runScriptlet(name, [`a[data-href="${expectedHref}"]`, '[data-href]']);
+    assert.strictEqual(elem.getAttribute('href'), relativeHref, 'relative href is kept');
+
+    // page changes base URL, so the relative href points elsewhere
+    const base = document.createElement('base');
+    base.setAttribute('href', 'https://other.example/');
+    document.head.appendChild(base);
+    try {
+        await makeUnrelatedDomChange();
+        assert.strictEqual(elem.getAttribute('href'), expectedHref, 'href is sanitized again');
+    } finally {
+        base.remove();
+    }
+});
+
+test('value failed with previous base URL is sanitized after base URL changes', async (assert) => {
+    const relativeHref = 'ag-test-failed-relative';
+    const initialHref = 'https://tracker.example/failed-relative';
+    const elem = createElem(initialHref, '', 'data-href', relativeHref);
+
+    // relative value is resolved to a URL with not allowed protocol
+    const base = document.createElement('base');
+    base.setAttribute('href', 'ftp://ag-test.example/');
+    document.head.appendChild(base);
+    try {
+        runScriptlet(name, [`a[data-href="${relativeHref}"]`, '[data-href]']);
+    } finally {
+        base.remove();
+    }
+    assert.strictEqual(elem.getAttribute('href'), initialHref, 'href is not changed with not allowed protocol');
+
+    await makeUnrelatedDomChange();
+    assert.strictEqual(
+        elem.getAttribute('href'),
+        `${window.location.origin}/${relativeHref}`,
+        'href is sanitized with page base URL',
+    );
+});
