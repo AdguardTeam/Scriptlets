@@ -22,8 +22,11 @@ import {
  *
  * - `selector` — required, CSS selector of element in shadow-dom to remove
  * - `baseSelector` — optional, selector of specific page DOM element,
- * narrows down the part of the page DOM where shadow-dom host supposed to be,
- * defaults to document.documentElement
+ *   narrows down the part of the page DOM where shadow-dom host supposed to be,
+ *   defaults to document.documentElement.
+ *   It may match a shadow-dom host itself or an element containing shadow-dom hosts, e.g. `#app`.
+ *   In both cases elements are searched only in the hosts, i.e. in their shadow DOM and their own subtree,
+ *   so elements of the container outside of the hosts are not removed.
  *
  * > `baseSelector` should match element of the page DOM, but not of shadow DOM.
  *

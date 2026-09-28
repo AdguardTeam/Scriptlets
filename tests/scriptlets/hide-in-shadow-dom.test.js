@@ -412,6 +412,32 @@ if (!isSupported) {
         });
     });
 
+    test('hidden element is not re-hidden after page adds other inline style', async (assert) => {
+        const { target, selector } = createUniqueTarget();
+        runScriptlet(name, [selector]);
+        await sleep(ATTR_SETTLE_DELAY_MS);
+
+        // hits are counted only for this rule, since observers of rules from previous tests are still active
+        let ruleHits = 0;
+        window.__debug = (source) => {
+            if (source.args[0] === selector) {
+                ruleHits += 1;
+            }
+        };
+        // page adds inline style which does not override hiding
+        target.style.setProperty('transform', 'scale(2)');
+        const counter = createAttrMutationCounter([target], ['style']);
+
+        await makeUnrelatedDomChange();
+        const mutations = counter.count;
+        counter.disconnect();
+
+        assert.strictEqual(window.getComputedStyle(target).display, 'none', `Element ${selector} hidden`);
+        assert.strictEqual(target.style.getPropertyValue('transform'), 'scale(2)', 'page inline style is kept');
+        assert.strictEqual(mutations, 0, 'style is not re-set');
+        assert.strictEqual(ruleHits, 0, 'hit is not called');
+    });
+
     test('baseSelector matches container of shadow hosts', async (assert) => {
         const className = 'ag-test-hide-in-container';
         const container = document.createElement('div');

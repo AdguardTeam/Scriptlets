@@ -25,7 +25,10 @@ import {
  * - `selector` — required, CSS selector of element in shadow-dom to hide
  * - `baseSelector` — optional, selector of specific page DOM element,
  *   narrows down the part of the page DOM where shadow-dom host supposed to be,
- *   defaults to document.documentElement
+ *   defaults to document.documentElement.
+ *   It may match a shadow-dom host itself or an element containing shadow-dom hosts, e.g. `#app`.
+ *   In both cases elements are searched only in the hosts, i.e. in their shadow DOM and their own subtree,
+ *   so elements of the container outside of the hosts are not hidden.
  *
  * > `baseSelector` should match element of the page DOM, but not of shadow DOM.
  *
@@ -65,14 +68,15 @@ export function hideInShadowDom(source, selector, baseSelector) {
 
     const isElementHidden = (targetElement) => {
         const { style } = targetElement;
-        // Hiding style should be the only inline declaration, because another one may override it,
-        // e.g. 'all: initial !important', while inline display is still reported as hidden.
+        // Inline 'all' declaration may override the hiding one, e.g. 'all: initial !important',
+        // while inline display is still reported as hidden; other inline declarations do not affect hiding,
+        // so they are not checked, otherwise they would be wiped by re-hiding on each DOM change.
         // Computed style is not checked, because page style of higher priority may keep the element visible,
         // e.g. '::slotted(*) { display: block !important; }', so it would be re-hidden on each DOM change
         // and several rules would re-trigger each other infinitely
-        return style.length === 1
-            && style.getPropertyValue('display') === 'none'
-            && style.getPropertyPriority('display') === 'important';
+        return style.getPropertyValue('display') === 'none'
+            && style.getPropertyPriority('display') === 'important'
+            && style.getPropertyValue('all') === '';
     };
 
     /**
