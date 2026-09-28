@@ -92,8 +92,8 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         ? [selector]
         : classNames.map((className) => `.${CSS.escape(className)}`);
 
-    // Selectors are validated once, otherwise the error would be logged
-    // or, for selectors made of class names, e.g. empty one, thrown on each DOM change
+    // Selectors are validated once, otherwise an invalid selector argument would be logged on each DOM change,
+    // and an invalid selector made of class names, e.g. of an empty one, would throw an error
     const invalidSelector = selectors.find((s) => !isValidSelector(s));
     if (invalidSelector !== undefined) {
         logMessage(source, `Invalid selector arg: '${invalidSelector}'`);

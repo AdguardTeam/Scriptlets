@@ -51,7 +51,8 @@ export function hideInShadowDom(source, selector, baseSelector) {
         return;
     }
 
-    // Selectors are validated once, otherwise the error would be thrown on each DOM change
+    // Selectors are validated once, otherwise an invalid one would throw an error,
+    // e.g. in the observer callback, which would stop the observer
     if (!isValidSelector(selector)) {
         logMessage(source, `Invalid selector arg: '${selector}'`);
         return;

@@ -487,7 +487,7 @@ if (!isSupported) {
         assert.strictEqual(window.getComputedStyle(secondTarget).display, 'none', 'target added later hidden');
     });
 
-    test('invalid selectors are logged only once', async (assert) => {
+    test('invalid selectors are logged', async (assert) => {
         // shadow host is present, so the selectors are used on the first run and on the DOM change
         const { target, selector } = createUniqueTarget();
         const invalidSelector = '..ag-test-invalid-selector';

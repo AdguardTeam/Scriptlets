@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, countLogsAfterDomChange } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-in-shadow-dom';
@@ -323,5 +323,36 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         // clean up test elements
         elemsToClean.push(container);
+    });
+
+    test('invalid selectors are logged', async (assert) => {
+        // shadow host is present, so the selectors are used on the first run and on the DOM change
+        const testHost = document.createElement('div');
+        const testChild = document.createElement('p');
+        testChild.classList.add('ag-test-remove-invalid');
+        testHost.attachShadow({ mode: 'open' }).appendChild(testChild);
+        document.body.appendChild(testHost);
+        elemsToClean.push(testHost);
+
+        const invalidSelector = '..ag-test-invalid-selector';
+        const cases = [
+            {
+                args: [invalidSelector],
+                message: `${name}: Invalid selector arg: '${invalidSelector}'`,
+            },
+            {
+                args: ['.ag-test-remove-invalid', invalidSelector],
+                message: `${name}: Invalid baseSelector arg: '${invalidSelector}'`,
+            },
+        ];
+
+        for (let i = 0; i < cases.length; i += 1) {
+            const { args, message } = cases[i];
+            const count = await countLogsAfterDomChange(name, args, message);
+            assert.strictEqual(count, 1, `${message} is logged once`);
+        }
+
+        assert.ok(testChild.isConnected, 'element is not removed');
+        assert.strictEqual(window.hit, undefined, 'hit function has not been called');
     });
 }

@@ -1,5 +1,7 @@
 import {
     hit,
+    logMessage,
+    isValidSelector,
     observeDOMChanges,
     findHostElements,
     findBaseHostElements,
@@ -49,6 +51,17 @@ export function removeInShadowDom(source, selector, baseSelector) {
         return;
     }
 
+    // Selectors are validated once, otherwise an invalid one would throw an error,
+    // e.g. in the observer callback, which would stop the observer
+    if (!isValidSelector(selector)) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+    if (baseSelector && !isValidSelector(baseSelector)) {
+        logMessage(source, `Invalid baseSelector arg: '${baseSelector}'`);
+        return;
+    }
+
     const removeElement = (targetElement) => {
         targetElement.remove();
     };
@@ -94,6 +107,8 @@ removeInShadowDom.primaryName = removeInShadowDomNames[0];
 
 removeInShadowDom.injections = [
     hit,
+    logMessage,
+    isValidSelector,
     observeDOMChanges,
     findHostElements,
     findBaseHostElements,
