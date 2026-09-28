@@ -45,7 +45,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Invalid selector logged on each DOM change by `remove-class`, `set-attr` and `trusted-set-attr`,
   as well as invalid attribute name by `set-attr` and `trusted-set-attr`: they are now validated
   and logged only once.
-- `remove-class` not removing classes whose names are not valid CSS identifiers, e.g. `md:hidden`.
+- `remove-class` and `remove-attr` not removing classes or attributes whose names are not valid CSS identifiers,
+  e.g. `md:hidden` or `x-on:click`, if no selector is specified.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

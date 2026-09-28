@@ -82,7 +82,8 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
     }
     attrs = attrs.split(/\s*\|\s*/);
     if (!selector) {
-        selector = `[${attrs.join('],[')}]`;
+        // attribute names are escaped, because they may be not valid CSS identifiers, e.g. 'x-on:click' or '@click'
+        selector = attrs.map((attr) => `[${CSS.escape(attr)}]`).join(',');
     }
 
     // Selector is validated once, otherwise the error would be logged on each DOM change

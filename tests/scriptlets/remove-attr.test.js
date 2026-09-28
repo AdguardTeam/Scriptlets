@@ -383,3 +383,23 @@ test('invalid selector is logged only once', async (assert) => {
     );
     assert.strictEqual(count, 1, 'invalid selector is logged once');
 });
+
+test('attribute names which are not valid CSS identifiers are removed', (assert) => {
+    createHit();
+    // e.g. Alpine.js and Vue attribute names
+    const attrs = ['x-on:click', '@click', ':class'];
+    const wrapper = document.createElement('div');
+    // attributes are created by the HTML parser, since setAttribute() may reject such names in some browsers
+    wrapper.innerHTML = '<div x-on:click="a" @click="b" :class="c" data-ag-test-kept="d"></div>';
+    const elem = wrapper.firstElementChild;
+    document.body.appendChild(wrapper);
+
+    runScriptlet(name, [attrs.join('|')]);
+
+    attrs.forEach((attr) => {
+        assert.notOk(elem.hasAttribute(attr), `attribute '${attr}' has been removed`);
+    });
+    assert.ok(elem.hasAttribute('data-ag-test-kept'), 'other attribute is kept');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    wrapper.remove();
+});
