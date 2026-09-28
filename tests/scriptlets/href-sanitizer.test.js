@@ -568,20 +568,20 @@ test('invalid attribute is logged only once and href is not changed', async (ass
 });
 
 /**
- * Runs given function while the document base URL points to a subdirectory.
+ * Runs given function while the document has a different base URL, by default pointing to a subdirectory.
  * Test page is in the root directory, where origin and base URL are the same,
  * so base element is needed to check that relative URL is not resolved against the origin or the page URL.
  * Base element is removed synchronously, so observers of the rules do not see it.
  *
  * @param {Function} fn function to run, the base URL is passed to it
+ * @param {string} [baseUrl] base URL, defaults to a subdirectory of the origin
  */
-const runWithBaseUrl = (fn) => {
-    const baseDirUrl = `${window.location.origin}/ag-test-base-dir/`;
+const runWithBaseUrl = (fn, baseUrl = `${window.location.origin}/ag-test-base-dir/`) => {
     const base = document.createElement('base');
-    base.setAttribute('href', baseDirUrl);
+    base.setAttribute('href', baseUrl);
     document.head.appendChild(base);
     try {
-        fn(baseDirUrl);
+        fn(baseUrl);
     } finally {
         base.remove();
     }
@@ -726,6 +726,16 @@ test('remove transform uses extracted URL as is if there is nothing to remove', 
             args: ['a[href="https://tracker.example/remove-nothing-text"]', 'text', 'removeHash'],
             expectedHref: textTarget,
         },
+        {
+            // relative URL in parameter has no tracking parameter to remove
+            href: `https://tracker.example/remove-nothing-relative?ag-test-url=${encodeURIComponent('/ag-test-path')}`,
+            args: [
+                'a[href^="https://tracker.example/remove-nothing-relative?"]',
+                '?ag-test-url',
+                'removeParam:utm_source',
+            ],
+            expectedHref: `${window.location.origin}/ag-test-path`,
+        },
     ].forEach(({
         href,
         text,
@@ -785,57 +795,72 @@ test('link sanitized by parameter is not logged as failure after DOM change', as
     assert.strictEqual(count, 0, 'sanitized link is not logged as failure');
 });
 
-test('remove transform leaves link as is if the value is not an absolute http(s) URL', (assert) => {
+test('text which is not a URL is not set and is logged as invalid URL', (assert) => {
+    const text = 'Click here';
     [
-        {
-            // text which is not a URL would be resolved as a relative URL
-            href: 'https://tracker.example/not-url-text',
-            text: 'Click here',
-            args: ['a[href="https://tracker.example/not-url-text"]', 'text', 'removeHash'],
-        },
-        {
-            href: 'https://tracker.example/not-url-attr',
-            attributeName: 'data-ag-test-id',
-            attributeValue: '12345',
-            args: ['a[href="https://tracker.example/not-url-attr"]', '[data-ag-test-id]', 'removeParam:utm_source'],
-        },
-        {
-            // link with not allowed protocol matched by a broad selector should not be logged
-            href: 'mailto:ag-test@example.org',
-            args: ['a[href="mailto:ag-test@example.org"]', '[href]', 'removeHash'],
-        },
-    ].forEach(({
-        href,
-        text,
-        attributeName,
-        attributeValue,
-        args,
-    }) => {
-        const elem = createElem(href, text, attributeName, attributeValue);
+        // no transform
+        { href: 'https://tracker.example/not-url-text-1', args: [] },
+        // removeParam without parameter names never finds nothing to remove
+        { href: 'https://tracker.example/not-url-text-2', args: ['text', 'removeParam'] },
+        { href: 'https://tracker.example/not-url-text-3', args: ['text', 'removeHash'] },
+    ].forEach(({ href, args }) => {
+        const elem = createElem(href, text);
 
-        const logs = getSyncLogs(() => runScriptlet(name, args));
+        const logs = getSyncLogs(() => runScriptlet(name, [`a[href="${href}"]`, ...args]));
 
-        assert.strictEqual(elem.getAttribute('href'), href, `${args[1]}: href is not changed`);
-        assert.notOk(
-            logs.some((msg) => msg.includes('Invalid URL') || msg.includes('Protocol not allowed')),
-            `${args[1]}: nothing is logged`,
-        );
+        assert.strictEqual(elem.getAttribute('href'), href, `${href}: href is not changed`);
+        assert.ok(logs.includes(`${name}: Invalid URL: ${text}`), `${href}: invalid URL is logged`);
     });
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
 });
 
-test('nested redirect in parameter is sanitized on the next DOM change', async (assert) => {
+test('remove transform leaves link as is and does not log it if there is nothing to remove', (assert) => {
+    [
+        // links with not allowed protocol matched by a broad selector
+        { href: 'mailto:ag-test-1@example.org', transform: 'removeHash' },
+        { href: 'mailto:ag-test-2@example.org', transform: 'removeParam' },
+        { href: 'tel:+10000000000', transform: 'removeParam:utm_source' },
+        // relative link without anything to remove
+        { href: '/ag-test-nothing-to-remove', transform: 'removeHash' },
+    ].forEach(({ href, transform }) => {
+        const elem = createElem(href);
+
+        const logs = getSyncLogs(() => runScriptlet(name, [`a[href="${href}"]`, '[href]', transform]));
+
+        assert.strictEqual(elem.getAttribute('href'), href, `${href}: href is not changed`);
+        assert.strictEqual(logs.length, 0, `${href}: nothing is logged`);
+    });
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('remove transform does not change link within the page', (assert) => {
+    const anchorHref = '#ag-test-anchor';
+    // page URL has its own tracking parameter and hash, which should not be removed from the anchor link
+    runWithBaseUrl(() => {
+        ['removeParam:utm_source', 'removeHash'].forEach((transform) => {
+            const elem = createElem(anchorHref);
+
+            runScriptlet(name, [`a[href="${anchorHref}"]`, '[href]', transform]);
+
+            assert.strictEqual(elem.getAttribute('href'), anchorHref, `${transform}: href is not changed`);
+            elem.remove();
+        });
+    }, `${window.location.origin}/ag-test-page?utm_source=ag-test#ag-test-page-hash`);
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('nested redirects in parameter are sanitized at once', (assert) => {
     const finalHref = 'https://target.example/nested-final';
-    const innerHref = `https://tracker.example/nested?ag-test-url=${encodeURIComponent(finalHref)}`;
-    const elem = createElem(`https://tracker.example/nested?ag-test-url=${encodeURIComponent(innerHref)}`);
-    // selector still matches the link after it is sanitized
+    const wrap = (url) => `https://tracker.example/nested?ag-test-url=${encodeURIComponent(url)}`;
+    const elem = createElem(wrap(wrap(wrap(finalHref))));
+    // selector still matches the link after each step
     elem.classList.add('ag-test-nested');
 
+    // no DOM change is needed, since mutations made by the rule do not wake up its observer
     runScriptlet(name, ['a.ag-test-nested', '?ag-test-url']);
-    assert.strictEqual(elem.getAttribute('href'), innerHref, 'outer redirect is sanitized');
 
-    await makeUnrelatedDomChange();
-    assert.strictEqual(elem.getAttribute('href'), finalHref, 'inner redirect is sanitized');
+    assert.strictEqual(elem.getAttribute('href'), finalHref, 'all nested redirects are sanitized');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function has been called');
 });
 
 test('link is sanitized again after page changes base URL', async (assert) => {
@@ -881,4 +906,27 @@ test('value failed with previous base URL is sanitized after base URL changes', 
         `${window.location.origin}/${relativeHref}`,
         'href is sanitized with page base URL',
     );
+});
+
+test('failure is not logged again after the page URL hash is changed', async (assert) => {
+    const href = 'https://tracker.example/hash-change';
+    createElem(href);
+    const originalUrl = window.location.href;
+
+    let logs;
+    try {
+        logs = await getLogs(async () => {
+            runScriptlet(name, [`a[href="${href}"]`, '?ag-test-hash-param']);
+            // e.g. page routing changes the hash, which does not affect resolving of relative URLs
+            window.history.replaceState(null, '', '#ag-test-hash-1');
+            await makeUnrelatedDomChange();
+            window.history.replaceState(null, '', '#ag-test-hash-2');
+            await makeUnrelatedDomChange();
+        });
+    } finally {
+        window.history.replaceState(null, '', originalUrl);
+    }
+
+    const message = `${name}: Failed to get value by "?ag-test-hash-param" from ${href}`;
+    assert.strictEqual(logs.filter((log) => log === message).length, 1, 'failure is logged once');
 });

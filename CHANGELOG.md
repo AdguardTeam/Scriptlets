@@ -32,9 +32,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and logs a failure to sanitize a link only once until the value taken from the link or the document base URL
   is changed.
 - `href-sanitizer` resolving relative URLs against the page URL or its origin instead of the document base URL,
-  e.g. `removeHash` and `removeParam` transforms rewrote a path-relative link to a wrong URL.
-- `removeHash` and `removeParam` transforms of `href-sanitizer` not setting the absolute URL found in the text,
+  e.g. `removeHash` and `removeParam` transforms rewrote a path-relative link to a wrong URL,
+  or a link within the page, e.g. `#comments`, to another page.
+- `removeHash` and `removeParam` transforms of `href-sanitizer` not setting the URL found in the text,
   attribute or URL parameter if there is nothing to remove from it.
+- `href-sanitizer` setting a text which is not a URL, e.g. `Click here`, as a relative URL.
+- `href-sanitizer` unwrapping nested redirects in the URL parameter one by one on each DOM change
+  instead of at once.
 - Repeated logging on each DOM change by `remove-attr` if its selector matches elements without the attribute:
   `hit` is called only if some attribute has actually been removed. Also, invalid selector is logged only once.
 - Infinite mutation loop between several `hide-in-shadow-dom` rules whose targets are light DOM children

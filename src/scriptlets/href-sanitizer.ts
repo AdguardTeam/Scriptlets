@@ -225,6 +225,25 @@ export function hrefSanitizer(
     const regexpNotValidAtStart = /^[^\x21-\x7e\p{Letter}]+/u;
     const regexpNotValidAtEnd = /[^\x21-\x7e\p{Letter}]+$/u;
 
+    // Whitespaces and control characters are not allowed in URL, e.g. link text 'Click here' is not a URL,
+    // even though it would be resolved as a relative one
+    // eslint-disable-next-line no-control-regex
+    const regexpNotAllowedInURL = /[\x00-\x20\x7f]/;
+
+    /**
+     * Resolves the URL in the same way as the link does, i.e. against the document base URL.
+     *
+     * @param url The URL to resolve.
+     * @returns The absolute URL, or `null` if the URL is not valid.
+     */
+    const resolveURL = (url: string): string | null => {
+        try {
+            return new URL(url, document.baseURI).href;
+        } catch {
+            return null;
+        }
+    };
+
     /**
      * Gets the URL of the link resolved in the same way as the link does.
      * `href` property is not used, because for SVG `<a>` element it is not a string.
@@ -234,11 +253,7 @@ export function hrefSanitizer(
      */
     const getLinkHref = (anchor: Element): string => {
         const href = anchor.getAttribute('href') || '';
-        try {
-            return new URL(href, document.baseURI).href;
-        } catch {
-            return href;
-        }
+        return resolveURL(href) || href;
     };
 
     /**
@@ -288,21 +303,6 @@ export function hrefSanitizer(
     };
 
     /**
-     * Checks whether the given string is an absolute URL with HTTP or HTTPS protocol.
-     *
-     * @param url The URL string to check.
-     * @returns `true` if the string is an absolute HTTP or HTTPS URL, otherwise `false`.
-     */
-    const isHttpURL = (url: string): boolean => {
-        try {
-            const { protocol } = new URL(url);
-            return protocol === 'http:' || protocol === 'https:';
-        } catch {
-            return false;
-        }
-    };
-
-    /**
      * Validates a URL, if valid return URL,
      * otherwise return null.
      *
@@ -310,7 +310,7 @@ export function hrefSanitizer(
      * @returns URL for valid URL, otherwise null.
      */
     const getValidURL = (text: string): string | null => {
-        if (!text) {
+        if (!text || regexpNotAllowedInURL.test(text)) {
             return null;
         }
         try {
@@ -555,8 +555,15 @@ export function hrefSanitizer(
     const getNewHref = (anchor: Element, value: string): string | null => {
         // Checked before the transform, because for remove transforms empty result means
         // that there is nothing to remove, so e.g. a typo in attribute name would not be logged at all
+        const linkHref = getLinkHref(anchor);
         if (!value) {
-            logMessage(source, `Failed to get value by "${attribute}" from ${getLinkHref(anchor)}`);
+            logMessage(source, `Failed to get value by "${attribute}" from ${linkHref}`);
+            return null;
+        }
+        // Checked before the transform, because remove transforms resolve the value as a relative URL;
+        // base64 string is checked after decoding
+        if (!isBase64DecodeTransform && regexpNotAllowedInURL.test(value)) {
+            logMessage(source, `Invalid URL: ${value}`);
             return null;
         }
 
@@ -565,18 +572,21 @@ export function hrefSanitizer(
         if (isBase64DecodeTransform) {
             newHref = base64Decode(newHref);
         } else if (isRemoveHashTransform || isRemoveParamTransform) {
-            const transformedHref = isRemoveHashTransform
-                ? removeHash(newHref)
-                : removeParam(newHref, transform);
-            if (transformedHref) {
-                newHref = transformedHref;
-            } else if (!isHttpURL(value)) {
-                // Empty result means that there is nothing to remove, so the extracted URL is used as is,
-                // e.g. the URL from the parameter without tracking parameters, but only if it is absolute,
-                // otherwise the link is left as is, since the value may be not a URL at all,
-                // e.g. text 'Click here' would be resolved as a relative URL, or it may be 'mailto:' link
-                return getLinkHref(anchor);
+            // Fragment-only value is a link within the page, so there is nothing to remove,
+            // but it would be resolved with the page URL, e.g. its own query would be removed,
+            // and the link would lead to another page instead of scrolling
+            if (value.startsWith('#')) {
+                return linkHref;
             }
+            // Empty result means that there is nothing to remove, so the value is used as is,
+            // e.g. the URL from the parameter without tracking parameters
+            newHref = (isRemoveHashTransform ? removeHash(value) : removeParam(value, transform)) || value;
+        }
+
+        // Link which already points to the new URL is left as is without validation,
+        // e.g. 'mailto:' link matched by a broad selector, which has nothing to remove
+        if (resolveURL(newHref) === linkHref) {
+            return linkHref;
         }
 
         const newValidHref = getValidURL(newHref);
@@ -588,6 +598,12 @@ export function hrefSanitizer(
     };
 
     /**
+     * Maximum number of nested redirects in the parameter which are unwrapped at once,
+     * it limits the number of steps in case of circular redirects.
+     */
+    const MAX_NESTED_REDIRECTS = 10;
+
+    /**
      * Values which have failed to be sanitized, by their elements, along with the document base URL,
      * since relative value is resolved against it.
      * Such value is not processed again until either of them is changed,
@@ -596,18 +612,70 @@ export function hrefSanitizer(
     const failedValues = new WeakMap<Element, string>();
 
     /**
-     * Hrefs set by the rule, by their elements.
-     * Link sanitized by the rule may have no value to extract anymore, e.g. no parameter for '?param',
-     * which is not a failure to be logged, as long as the link is not changed by the page.
-     * Other values are processed on each DOM change, since they may still need sanitizing,
-     * e.g. nested redirect in the parameter or relative link after the base URL change.
+     * States of processed links, i.e. the document base URL, href attribute and extracted value, by their elements.
+     * Such link is not processed again until its state is changed, since it has been already sanitized
+     * or left as is, e.g. the link sanitized by '?param' has no such parameter anymore
+     * or the link sanitized by 'base64decode' has no base64 string anymore, which is not a failure to be logged.
      */
-    const sanitizedHrefs = new WeakMap<Element, string>();
+    const processedStates = new WeakMap<Element, string>();
 
     /**
      * Elements which have already been logged as not sanitizable.
      */
     const loggedInvalidElements = new WeakSet<Element>();
+
+    /**
+     * Gets the document base URL without hash, since the hash does not affect resolving of a relative URL,
+     * while it is changed often, e.g. by the page routing.
+     *
+     * @returns The document base URL without hash.
+     */
+    const getBaseURLWithoutHash = (): string => document.baseURI.split('#')[0];
+
+    /**
+     * Gets the state of the link to check whether it has been changed since it was processed.
+     *
+     * @param anchor The link element.
+     * @param baseURL The document base URL without hash.
+     * @param value The value extracted from the link.
+     * @returns The state of the link.
+     */
+    const getLinkState = (anchor: Element, baseURL: string, value: string): string => {
+        return JSON.stringify([baseURL, anchor.getAttribute('href'), value]);
+    };
+
+    /**
+     * Sanitizes the href attribute of the link once.
+     *
+     * @param anchor The link element.
+     * @param value The value extracted from the link.
+     * @returns `true` if href has been changed, `false` if the link is left as is,
+     * or `null` if the value cannot be sanitized, which has been logged.
+     */
+    const sanitizeLink = (anchor: Element, value: string): boolean | null => {
+        try {
+            const newValidHref = getNewHref(anchor, value);
+            if (newValidHref === null) {
+                return null;
+            }
+
+            const oldHref = getLinkHref(anchor); // Required to log the original URL.
+
+            // Compare with the resolved URL, so that relative href pointing to the same URL is not rewritten.
+            // Do not re-set the same URL, because even such mutation wakes up observers of other rules,
+            // and they may re-trigger each other infinitely
+            if (oldHref === newValidHref) {
+                return false;
+            }
+
+            anchor.setAttribute('href', newValidHref);
+            logMessage(source, `Sanitized "${oldHref}" to "${newValidHref}".`);
+            return true;
+        } catch (ex) {
+            logMessage(source, `Failed to sanitize ${getLinkHref(anchor)}.`);
+            return null;
+        }
+    };
 
     /**
      * Sanitizes the href attribute of elements matching the given selector.
@@ -617,6 +685,7 @@ export function hrefSanitizer(
     const sanitize = (elementSelector: string): void => {
         // selector is validated before
         const elements = document.querySelectorAll(elementSelector);
+        const baseURL = getBaseURLWithoutHash();
 
         let isChanged = false;
         elements.forEach((elem) => {
@@ -630,42 +699,35 @@ export function hrefSanitizer(
                 return;
             }
 
-            const value = extractNewHref(elem, attribute);
-            if (!value && sanitizedHrefs.get(elem) === elem.getAttribute('href')) {
+            let value = extractNewHref(elem, attribute);
+            if (processedStates.get(elem) === getLinkState(elem, baseURL, value)) {
                 return;
             }
             // base URL does not contain whitespaces, so the key is unambiguous
-            const failureKey = `${document.baseURI} ${value}`;
-            if (failedValues.get(elem) === failureKey) {
+            if (failedValues.get(elem) === `${baseURL} ${value}`) {
                 return;
             }
 
-            try {
-                const newValidHref = getNewHref(elem, value);
-                if (newValidHref === null) {
-                    failedValues.set(elem, failureKey);
+            // Nested redirects in the parameter, e.g. 'tracker?url=tracker?url=target', are unwrapped at once,
+            // since mutations made by the rule do not wake up its observer
+            for (let i = 0; i < MAX_NESTED_REDIRECTS; i += 1) {
+                const result = sanitizeLink(elem, value);
+                if (result === null) {
+                    failedValues.set(elem, `${baseURL} ${value}`);
                     return;
                 }
-                failedValues.delete(elem);
-
-                const oldHref = getLinkHref(elem); // Required to log the original URL.
-
-                // Compare with the resolved URL, so that relative href pointing to the same URL is not rewritten.
-                // Do not re-set the same URL, because even such mutation wakes up observers of other rules,
-                // and they may re-trigger each other infinitely
-                if (oldHref === newValidHref) {
-                    return;
+                if (!result) {
+                    break;
                 }
-
-                elem.setAttribute('href', newValidHref);
-                sanitizedHrefs.set(elem, newValidHref);
                 isChanged = true;
-
-                logMessage(source, `Sanitized "${oldHref}" to "${newValidHref}".`);
-            } catch (ex) {
-                failedValues.set(elem, failureKey);
-                logMessage(source, `Failed to sanitize ${getLinkHref(elem)}.`);
+                value = extractNewHref(elem, attribute);
+                if (!attribute.startsWith('?') || !value) {
+                    break;
+                }
             }
+
+            failedValues.delete(elem);
+            processedStates.set(elem, getLinkState(elem, baseURL, value));
         });
         // Call hit only on actual change, otherwise idle observer would log on each unrelated mutation
         if (isChanged) {
