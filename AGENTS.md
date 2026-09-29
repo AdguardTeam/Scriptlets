@@ -338,13 +338,17 @@ Project-specific rules:
     `isValidSelector()` and `isValidAttributeName()` helpers, as they do not
     query or change the page DOM. A failure to process an element SHOULD be
     logged once and not again until the processed value of the element changes.
+    Such a failure SHOULD be detected from the processed value and remembered
+    per element, not inferred from whether the write has changed the target.
 
     **Rationale**: `observeDOMChanges` only ignores the scriptlet's own
     mutations. A write of the same value still produces a mutation record
     which wakes up observers of other rules, so two such rules re-trigger
     each other infinitely, and a `hit()`, an argument error or an element
     failure logged on each callback floods the console on every unrelated
-    DOM change.
+    DOM change. The target may already hold the result of the failed
+    processing, e.g. in a copy of a processed element, so a failure logged
+    only on change may be never logged for it.
 
 11. To check whether an element is still matched by the scriptlet selector,
     e.g. after the scriptlet has changed it, use `element.matches()` with

@@ -7,6 +7,9 @@ import {
     runAttrRulesAndCountIdleChanges,
     checkTwoAttrRulesSettle,
     countLogsAfterDomChange,
+    getLogs,
+    makeUnrelatedDomChange,
+    sleep,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -364,6 +367,81 @@ test('copying missing attribute value settles and logs it only once', async (ass
     assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
     assert.strictEqual(hits, 0, 'hit is not called while page is idle');
     assert.strictEqual(missingAttrLogCount, 1, 'missing attribute is logged only on the initial change');
+});
+
+/**
+ * Returns the message logged by the rule copying the value from missing attribute.
+ *
+ * @param {string} sourceAttr attribute to copy the value from, should be unique for the test,
+ * since observers of rules from previous tests are still active
+ * @returns {string} logged message
+ */
+const getMissingSourceMessage = (sourceAttr) => {
+    return `${name}: No element attribute found to copy value from: [${sourceAttr}]`;
+};
+
+test('missing source attribute is logged once if target already holds copied missing value', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const sourceAttr = 'data-ag-missing-null';
+    // e.g. set in page markup or by the same rule applied twice
+    targetElem.setAttribute(TARGET_ATTR_NAME, 'null');
+    const counter = createAttrMutationCounter([targetElem], [TARGET_ATTR_NAME]);
+
+    const count = await countLogsAfterDomChange(
+        name,
+        [targetSelector, TARGET_ATTR_NAME, `[${sourceAttr}]`],
+        getMissingSourceMessage(sourceAttr),
+    );
+    const mutations = counter.count;
+    counter.disconnect();
+
+    assert.strictEqual(count, 1, 'missing source attribute is logged once');
+    assert.strictEqual(mutations, 0, 'attribute is not re-set');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('missing source attribute is logged for a copy of processed element', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const sourceAttr = 'data-ag-missing-clone';
+    let clone;
+
+    const logs = await getLogs(async () => {
+        runScriptlet(name, [targetSelector, TARGET_ATTR_NAME, `[${sourceAttr}]`]);
+        // page copies the processed element, so the copy already holds the copied missing value
+        clone = targetElem.cloneNode(true);
+        document.body.appendChild(clone);
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        await makeUnrelatedDomChange();
+    });
+    const count = logs.filter((log) => log === getMissingSourceMessage(sourceAttr)).length;
+    clone.remove();
+
+    assert.strictEqual(clone.getAttribute(TARGET_ATTR_NAME), 'null', 'copy holds the copied missing value');
+    assert.strictEqual(count, 2, 'missing source attribute is logged once for each element');
+});
+
+test('missing source attribute is logged again only after it has been found', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const sourceAttr = 'data-ag-missing-again';
+
+    const logs = await getLogs(async () => {
+        runScriptlet(name, [targetSelector, TARGET_ATTR_NAME, `[${sourceAttr}]`]);
+        // page changes the target, while the source attribute is still missing
+        targetElem.setAttribute(TARGET_ATTR_NAME, 'page-value');
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), 'null', 'page change is overwritten');
+
+        targetElem.setAttribute(sourceAttr, 'copied');
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), 'copied', 'found value is copied');
+
+        targetElem.removeAttribute(sourceAttr);
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        await makeUnrelatedDomChange();
+    });
+    const count = logs.filter((log) => log === getMissingSourceMessage(sourceAttr)).length;
+
+    assert.strictEqual(count, 2, 'missing source attribute is logged once before and once after it is found');
 });
 
 test('attribute is not re-set and hit is not called if value already matches', (assert) => {

@@ -25,7 +25,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
 - Infinite mutation loop and repeated logging when several non-conflicting `set-attr` or `trusted-set-attr`
   rules are applied on the same page: the attribute is no longer re-set, and `hit` is not called,
-  if it already has the required value.
+  if it already has the required value. Also, `set-attr` logs a missing attribute to copy the value from
+  once for each element until the attribute is found, even if the element already holds the copied value.
 - Infinite mutation loop between several non-conflicting `href-sanitizer` rules, and `hit` called
   on each DOM change: `href` is no longer re-set, and `hit` is not called, if the link, including SVG `<a>`
   element, already points to the sanitized URL. Also, `href-sanitizer` logs invalid arguments only once,
