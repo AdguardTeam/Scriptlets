@@ -29,16 +29,38 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Infinite mutation loop between several non-conflicting `href-sanitizer` rules, and `hit` called
   on each DOM change: `href` is no longer re-set, and `hit` is not called, if the link, including SVG `<a>`
   element, already points to the sanitized URL. Also, `href-sanitizer` logs invalid arguments only once,
-  and logs a failure to sanitize a link only once until the value taken from the link or the document base URL
-  is changed.
+  logs a failure to sanitize a link only once until its `href` or the value taken from the link is changed,
+  or the URL resolved from it if the failure depends on the document base URL, and does not log a link
+  sanitized by the rule as a failure, e.g. one without the URL parameter, or a base64 string which is not a URL
+  if another one in the same value is decoded. An error thrown for a link, e.g. by the page, is logged once
+  and does not stop sanitizing of other links.
 - `href-sanitizer` resolving relative URLs against the page URL or its origin instead of the document base URL,
   e.g. `removeHash` and `removeParam` transforms rewrote a path-relative link to a wrong URL,
   or a link within the page, e.g. `#comments`, to another page.
-- `removeHash` and `removeParam` transforms of `href-sanitizer` not setting the URL found in the text,
-  attribute or URL parameter if there is nothing to remove from it.
-- `href-sanitizer` setting a text which is not a URL, e.g. `Click here`, as a relative URL.
-- `href-sanitizer` unwrapping nested redirects in the URL parameter one by one on each DOM change
-  instead of at once.
+- Infinite mutation loop between an `href-sanitizer` rule and another one which changes the URL set by it,
+  e.g. a rule with link text and a rule with `removeParam:utm_source` on the same link, or a rule
+  with an attribute and a rule with `?url` which unwraps the redirect set by the first one. Rules share their
+  last actual write on the affected link, without a `window` registry or HTML attributes, so page edits
+  of the link are still corrected, including ones which another rule has changed.
+- `href-sanitizer` not sanitizing SVG `<a>` element by a URL parameter, e.g. `?url`.
+- `removeHash` and `removeParam` transforms of `href-sanitizer` not setting the URL found in the link text,
+  attribute or URL parameter if there is nothing to remove from it, as it is done without a transform.
+- `href-sanitizer` setting link text which is not a URL as a relative URL or as a broken URL: link text is set
+  only if it is an absolute URL or a path without whitespaces, e.g. not `Click here`, `Download`, `?`
+  or `https://example.org/ (external)`, and not if a tab or newline is between its words, e.g. between
+  the URL and the title of a card, rather than next to a URL delimiter, e.g. `/`. Also, a value of only
+  whitespaces is not set, and neither is a placeholder hash, i.e. `#` or `#!`, unless it is `href` of the link.
+- `href-sanitizer` decoding `+` in the URL parameter as a whitespace if the parameter is a URL which is not
+  encoded, e.g. `?url=https://example.org/c++/docs` or `?url=https%3A//example.org/c++/docs`.
+- `href-sanitizer` not decoding base64 string in a relative `href`, in `href` within the page, e.g. `#<base64>`,
+  or in the hash if the query has no base64 encoded URL, e.g. `https://example.org/?ref=1#<base64>`.
+- `href-sanitizer` accepting any transform starting with `removeParam`, e.g. `removeParams`, which removed
+  all parameters.
+- `href-sanitizer` unwrapping nested redirects in the URL parameter or base64 encoded ones only one by one
+  on each DOM change; now up to 10 of them are unwrapped at once, and the rest right after that, as long as
+  the link is still matched by the selector. Relative URL in the nested redirect, e.g. a parameter of the target
+  with the same name, is not followed and not logged, since it is relative to the redirect, except for
+  a scheme-relative one, e.g. `//example.org/`.
 - Repeated logging on each DOM change by `remove-attr` if its selector matches elements without the attribute:
   `hit` is called only if some attribute has actually been removed. Also, invalid selector is logged only once.
 - Infinite mutation loop between several `hide-in-shadow-dom` rules whose targets are light DOM children
