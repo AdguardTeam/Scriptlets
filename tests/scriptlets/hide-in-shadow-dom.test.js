@@ -48,6 +48,12 @@ const createUniqueTarget = (inLightDom = false) => {
     const shadowRoot = host.attachShadow({ mode: 'open' });
     const target = document.createElement('p');
     target.classList.add(className);
+    if (inLightDom) {
+        // light DOM child of a shadow host is rendered only if it is assigned to a slot,
+        // otherwise its computed style is empty in newer browsers, e.g. Chrome 154,
+        // so the check of computed display would fail even if the element is hidden
+        shadowRoot.appendChild(document.createElement('slot'));
+    }
     (inLightDom ? host : shadowRoot).appendChild(target);
     document.body.appendChild(host);
     elemsToClean.push(host);
@@ -251,6 +257,10 @@ if (!isSupported) {
         const firstChildShadowRoot = shadowInner.attachShadow({ mode: 'open' });
         firstChildShadowRoot.appendChild(innerOfFirst);
 
+        // light DOM child of a shadow host is rendered only if it is assigned to a slot,
+        // otherwise computed style of elements inside it is empty in newer browsers, e.g. Chrome 154,
+        // so the check of computed display would fail even if the element is hidden
+        shadowRoot.appendChild(document.createElement('slot'));
         const simpleChild = document.createElement('div');
         simpleChild.id = 'simpleChild';
         testHost.appendChild(simpleChild);
@@ -266,6 +276,7 @@ if (!isSupported) {
         //   |  |  |  #shadow-root (open)
         //   |  |  |  |  <p#inner></p>
         //   |  |  </div>
+        //   |  |  <slot></slot>      // renders div#simpleChild
         //   |  <div#simpleChild>
         //   |  |  #shadow-root (open)
         //   |  |    <span#inner></span>
