@@ -294,6 +294,7 @@ export const createAttrMutationCounter = (elems, attrs) => {
  * Runs scriptlet rules which change attributes, lets them settle and then counts attribute mutations and hits
  * while the page is idle, except for one unrelated DOM mutation which wakes up the rules' observers.
  * Non-zero counts mean that the rules keep re-applying themselves, e.g. due to a mutation loop.
+ * `window.__debug` set by the test is still called and restored when the function is finished.
  *
  * @param {string} name scriptlet name
  * @param {Array<{elem: Element, attr: string, args: string[]}>} rules rules to run,
@@ -308,10 +309,16 @@ export const runRulesAndCountIdleChanges = async (name, rules, verbose = true) =
     const rulesArgs = new Set(rules.map(({ args }) => JSON.stringify(args)));
     let hits = 0;
     // eslint-disable-next-line no-underscore-dangle
+    const testDebug = window.__debug;
+    // eslint-disable-next-line no-underscore-dangle
     window.__debug = (source) => {
         // observers of rules from previous tests are still active, so their hits are not counted
         if (rulesArgs.has(JSON.stringify(source.args))) {
             hits += 1;
+        }
+        // so that e.g. `window.hit` set by the test's handler is still updated
+        if (typeof testDebug === 'function') {
+            testDebug(source);
         }
     };
 
@@ -320,20 +327,25 @@ export const runRulesAndCountIdleChanges = async (name, rules, verbose = true) =
         rules.map((rule) => rule.attr),
     );
 
-    rules.forEach(({ args }) => {
-        runScriptlet(name, args, verbose);
-    });
+    try {
+        rules.forEach(({ args }) => {
+            runScriptlet(name, args, verbose);
+        });
 
-    await sleep(ATTR_SETTLE_DELAY_MS);
-    const initialMutations = counter.count;
-    counter.reset();
-    hits = 0;
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        const initialMutations = counter.count;
+        counter.reset();
+        hits = 0;
 
-    await makeUnrelatedDomChange(ATTR_IDLE_WINDOW_MS);
-    const mutations = counter.count;
-    counter.disconnect();
+        await makeUnrelatedDomChange(ATTR_IDLE_WINDOW_MS);
+        const mutations = counter.count;
 
-    return { initialMutations, mutations, hits };
+        return { initialMutations, mutations, hits };
+    } finally {
+        counter.disconnect();
+        // eslint-disable-next-line no-underscore-dangle
+        window.__debug = testDebug;
+    }
 };
 
 /**

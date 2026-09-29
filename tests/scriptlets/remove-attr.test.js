@@ -349,6 +349,8 @@ test('hit is not called on unrelated DOM mutation if attribute is already remove
     const className = getUniqueClassName();
     // selector matches the element even after the attribute is removed
     const elem = createElem(className, [attr]);
+    createHit();
+    const testDebug = window.__debug;
 
     const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(name, [
         { elem, attr, args: [attr, `.${className}`] },
@@ -358,6 +360,8 @@ test('hit is not called on unrelated DOM mutation if attribute is already remove
     assert.ok(initialMutations > 0, 'initial attribute removal is counted');
     assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
     assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    assert.strictEqual(window.hit, 'FIRED', 'hit is still reported to the test');
+    assert.strictEqual(window.__debug, testDebug, '__debug of the test is restored');
     elem.remove();
 });
 
