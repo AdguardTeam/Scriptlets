@@ -100,6 +100,11 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         return;
     }
 
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+
     const removeClassHandler = () => {
         const nodes = new Set();
         // selectors are validated before
@@ -114,12 +119,21 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         let removed = false;
 
         nodes.forEach((node) => {
-            classNames.forEach((className) => {
-                if (node.classList.contains(className)) {
-                    node.classList.remove(className);
-                    removed = true;
+            // Error for one element, e.g. caused by the page, should not stop processing of other elements
+            try {
+                classNames.forEach((className) => {
+                    if (node.classList.contains(className)) {
+                        node.classList.remove(className);
+                        removed = true;
+                    }
+                });
+            } catch {
+                if (!loggedFailedElems.has(node)) {
+                    loggedFailedElems.add(node);
+                    // Element is logged as is, since its string representation does not identify it
+                    logMessage(source, ['Failed to remove classes from element:', node], false, false);
                 }
-            });
+            }
         });
 
         if (removed) {

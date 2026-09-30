@@ -67,6 +67,11 @@ export function removeInShadowDom(source, selector, baseSelector) {
     };
 
     /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+
+    /**
      * Handles shadow-dom piercing and removing of found elements
      */
     const removeHandler = () => {
@@ -79,8 +84,17 @@ export function removeInShadowDom(source, selector, baseSelector) {
             const { targets, innerHosts } = pierceShadowDom(selector, hostElements);
 
             targets.forEach((targetEl) => {
-                removeElement(targetEl);
-                isRemoved = true;
+                // Error for one element, e.g. caused by the page, should not stop processing of other elements
+                try {
+                    removeElement(targetEl);
+                    isRemoved = true;
+                } catch {
+                    if (!loggedFailedElems.has(targetEl)) {
+                        loggedFailedElems.add(targetEl);
+                        // Element is logged as is, since its string representation does not identify it
+                        logMessage(source, ['Failed to remove element:', targetEl], false, false);
+                    }
+                }
             });
 
             if (isRemoved) {

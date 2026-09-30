@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps, countLogsAfterDomChange } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    countLogsAfterDomChange,
+    checkErrorForOneElement,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-in-shadow-dom';
@@ -354,5 +359,28 @@ if (!isSupported) {
 
         assert.ok(testChild.isConnected, 'element is not removed');
         assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+    });
+
+    test('error for one element does not stop removing other elements and is logged once', async (assert) => {
+        const className = 'ag-test-remove-in-shadow-dom-error';
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const shadowRoot = host.attachShadow({ mode: 'open' });
+        elemsToClean.push(host);
+
+        await checkErrorForOneElement(assert, name, {
+            args: [`.${className}`],
+            createElem: () => {
+                const elem = document.createElement('p');
+                elem.classList.add(className);
+                shadowRoot.appendChild(elem);
+                return elem;
+            },
+            // e.g. the page overrides the method for the element
+            makeFailing: (elem, throwPageError) => {
+                Object.defineProperty(elem, 'remove', { value: throwPageError, configurable: true });
+            },
+            isProcessed: (elem) => !elem.isConnected,
+        });
     });
 }

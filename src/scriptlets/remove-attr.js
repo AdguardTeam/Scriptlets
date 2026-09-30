@@ -92,20 +92,34 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
         return;
     }
 
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+
     const rmattr = () => {
         // selector is validated before
         const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
         nodes.forEach((node) => {
-            attrs.forEach((attr) => {
-                // Selector may match nodes without the attribute, and hit should be called only on actual removal,
-                // otherwise idle observer would log on each unrelated mutation
-                if (!node.hasAttribute(attr)) {
-                    return;
+            // Error for one element, e.g. caused by the page, should not stop processing of other elements
+            try {
+                attrs.forEach((attr) => {
+                    // Selector may match nodes without the attribute, and hit should be called only on actual
+                    // removal, otherwise idle observer would log on each unrelated mutation
+                    if (!node.hasAttribute(attr)) {
+                        return;
+                    }
+                    node.removeAttribute(attr);
+                    removed = true;
+                });
+            } catch {
+                if (!loggedFailedElems.has(node)) {
+                    loggedFailedElems.add(node);
+                    // Element is logged as is, since its string representation does not identify it
+                    logMessage(source, ['Failed to remove attributes from element:', node], false, false);
                 }
-                node.removeAttribute(attr);
-                removed = true;
-            });
+            }
         });
         if (removed) {
             hit(source);

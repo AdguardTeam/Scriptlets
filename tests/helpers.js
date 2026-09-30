@@ -432,39 +432,52 @@ export const checkTwoAttrRulesSettle = async (assert, name, {
 };
 
 /**
- * Checks that an error for one element matched by an attribute scriptlet rule, e.g. caused by the page,
- * does not stop setting the attribute on other elements, including ones added later,
- * does not prevent hit for changed elements and is logged only once.
+ * Message of the error thrown by the page for an element in {@link checkErrorForOneElement}.
+ */
+const PAGE_ERROR_MESSAGE = 'ag-test-page-error';
+
+/**
+ * Checks that an error for one element matched by a scriptlet rule, e.g. caused by the page,
+ * does not stop processing of other elements, including ones added later, does not prevent hit
+ * for processed elements, is logged only once and is not thrown to the page.
+ * The failing element is on the page when the rule is applied, so it is also checked that the error
+ * on the initial run does not prevent the rule observer from being started.
  * Should be called once per scriptlet test page, since the rule observer is still active after the check.
  *
  * @param {object} assert QUnit assert
  * @param {string} name scriptlet name
+ * @param {object} options options
+ * @param {string[]} options.args scriptlet args
+ * @param {Function} options.createElem creates an element matched by the rule, adds it to the page and returns it
+ * @param {Function} options.makeFailing makes processing of the given element throw, e.g. by overriding
+ * its method or property with the function passed as the second argument, which throws the page error
+ * @param {Function} options.isProcessed checks whether the given element has been processed by the rule,
+ * should not throw for the failing element
+ * @param {string} [options.errorLogPrefix] start of the message which logs the error,
+ * defaults to `<name>: Failed to`
  */
-export const checkAttrErrorForOneElement = async (assert, name) => {
-    const className = `ag-test-attr-error-${name}`;
-    const attr = 'data-ag-test-error';
-    const value = '1';
-    const args = [`.${className}`, attr, value];
-
+export const checkErrorForOneElement = async (assert, name, {
+    args,
+    createElem,
+    makeFailing,
+    isProcessed,
+    errorLogPrefix = `${name}: Failed to`,
+}) => {
     const elems = [];
-    const createElem = () => {
-        const elem = document.createElement('div');
-        elem.classList.add(className);
-        document.body.appendChild(elem);
+    const addElem = () => {
+        const elem = createElem();
         elems.push(elem);
         return elem;
     };
-    // failing element is in the middle, so the attribute is set to one element before the error and one after it
-    const before = createElem();
-    const failing = createElem();
-    const after = createElem();
-    // e.g. the page overrides the method for the element
-    Object.defineProperty(failing, 'setAttribute', {
-        value() {
-            throw new Error('page error');
-        },
-        configurable: true,
-    });
+    const throwPageError = () => {
+        throw new Error(PAGE_ERROR_MESSAGE);
+    };
+
+    // failing element is in the middle, so the rule should process one element before the error and one after it
+    const before = addElem();
+    const failing = addElem();
+    const after = addElem();
+    makeFailing(failing, throwPageError);
 
     let hits = 0;
     // eslint-disable-next-line no-underscore-dangle
@@ -480,29 +493,71 @@ export const checkAttrErrorForOneElement = async (assert, name) => {
         }
     };
 
-    let initialHits;
-    let added;
-    let logs;
+    // uncaught error would be taken by QUnit as a global failure, so it is counted instead
+    let uncaughtErrors = 0;
+    const qunitOnError = window.onerror;
+    window.onerror = (message, ...rest) => {
+        if (String(message).includes(PAGE_ERROR_MESSAGE)) {
+            uncaughtErrors += 1;
+            return true;
+        }
+        return qunitOnError.call(window, message, ...rest);
+    };
+
     try {
-        logs = await getLogs(async () => {
+        let initialHits;
+        let added;
+        const logs = await getLogs(async () => {
             runScriptlet(name, args);
             await makeUnrelatedDomChange();
             initialHits = hits;
-            added = createElem();
+            added = addElem();
             await makeUnrelatedDomChange();
         });
+
+        // elements are checked before they are removed, since the rule may remove them
+        assert.ok(isProcessed(before), 'element before the failing one is processed');
+        assert.ok(isProcessed(after), 'element after the failing one is processed');
+        assert.ok(isProcessed(added), 'element added later is processed by the DOM observer');
+        assert.notOk(isProcessed(failing), 'failing element is not processed');
+        assert.strictEqual(initialHits, 1, 'hit is called once for elements processed on the initial run');
+        assert.strictEqual(hits, 2, 'hit is called for element added later');
+        const errorLogs = logs.filter((log) => log.startsWith(errorLogPrefix));
+        assert.strictEqual(errorLogs.length, 1, 'error is logged only once');
+        assert.strictEqual(uncaughtErrors, 0, 'error is not thrown to the page');
     } finally {
         // eslint-disable-next-line no-underscore-dangle
         window.__debug = testDebug;
-        elems.forEach((elem) => elem.remove());
+        window.onerror = qunitOnError;
+        // native method is used, since the page may override it for the failing element
+        elems.forEach((elem) => Element.prototype.remove.call(elem));
     }
+};
 
-    assert.strictEqual(before.getAttribute(attr), value, 'element before the failing one is changed');
-    assert.strictEqual(after.getAttribute(attr), value, 'element after the failing one is changed');
-    assert.strictEqual(added.getAttribute(attr), value, 'element added later is changed by the DOM observer');
-    assert.strictEqual(failing.hasAttribute(attr), false, 'failing element is not changed');
-    assert.strictEqual(initialHits, 1, 'hit is called once for elements changed on the initial run');
-    assert.strictEqual(hits, 2, 'hit is called for element added later');
-    const errorLogs = logs.filter((log) => log.startsWith(`${name}: Failed to set [${attr}="${value}"]`));
-    assert.strictEqual(errorLogs.length, 1, 'error is logged only once');
+/**
+ * Checks {@link checkErrorForOneElement} for an attribute scriptlet rule, which sets the attribute.
+ *
+ * @param {object} assert QUnit assert
+ * @param {string} name scriptlet name
+ */
+export const checkAttrErrorForOneElement = (assert, name) => {
+    const className = `ag-test-attr-error-${name}`;
+    const attr = 'data-ag-test-error';
+    const value = '1';
+
+    return checkErrorForOneElement(assert, name, {
+        args: [`.${className}`, attr, value],
+        createElem: () => {
+            const elem = document.createElement('div');
+            elem.classList.add(className);
+            document.body.appendChild(elem);
+            return elem;
+        },
+        // e.g. the page overrides the method for the element
+        makeFailing: (elem, throwPageError) => {
+            Object.defineProperty(elem, 'setAttribute', { value: throwPageError, configurable: true });
+        },
+        isProcessed: (elem) => elem.getAttribute(attr) === value,
+        errorLogPrefix: `${name}: Failed to set [${attr}="${value}"]`,
+    });
 };

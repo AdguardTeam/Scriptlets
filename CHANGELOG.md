@@ -24,7 +24,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
 - Scriptlets which re-apply themselves on DOM changes, e.g. `remove-attr` and `remove-class`, no longer stop
-  doing it after an error thrown on a DOM change, e.g. by the page for an element.
+  doing it after an error thrown on a DOM change, e.g. by the page for an element. Also, `remove-attr`,
+  `remove-class`, `remove-in-shadow-dom` and `hide-in-shadow-dom` log an error thrown for an element once,
+  and continue with other elements, including ones added later, even if the error is thrown when the rule
+  is applied.
 - Infinite mutation loop and repeated logging when several non-conflicting `set-attr` or `trusted-set-attr`
   rules are applied on the same page: the attribute is no longer re-set, and `hit` is not called,
   if it already has the required value. Also, `set-attr` logs a missing attribute to copy the value from

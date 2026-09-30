@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, max-len */
-import { runScriptlet, clearGlobalProps, countLogsAfterDomChange } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    countLogsAfterDomChange,
+    checkErrorForOneElement,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-class';
@@ -321,4 +326,18 @@ test('class names which are not valid CSS identifiers are removed', (assert) => 
     assert.ok(elem.classList.contains('ag-test-kept'), 'other class is kept');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     elem.remove();
+});
+
+test('error for one element does not stop removing class from other elements and is logged once', async (assert) => {
+    const className = 'ag-test-remove-class-error';
+    await checkErrorForOneElement(assert, name, {
+        args: [className],
+        createElem: () => createElem(null, [className]),
+        // e.g. the page overrides the property for the element
+        makeFailing: (elem, throwPageError) => {
+            Object.defineProperty(elem, 'classList', { get: throwPageError, configurable: true });
+        },
+        // `classList` is not used, since the page overrides it for the failing element
+        isProcessed: (elem) => !elem.matches(`.${className}`),
+    });
 });

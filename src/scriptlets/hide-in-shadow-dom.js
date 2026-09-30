@@ -81,6 +81,11 @@ export function hideInShadowDom(source, selector, baseSelector) {
     };
 
     /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+
+    /**
      * Handles shadow-dom piercing and hiding of found elements
      */
     const hideHandler = () => {
@@ -93,14 +98,23 @@ export function hideInShadowDom(source, selector, baseSelector) {
             const { targets, innerHosts } = pierceShadowDom(selector, hostElements);
 
             targets.forEach((targetEl) => {
-                // Do not re-hide already hidden element, because even such mutation wakes up observers
-                // of other rules, and they may re-trigger each other infinitely,
-                // and hit should be called only on actual change
-                if (isElementHidden(targetEl)) {
-                    return;
+                // Error for one element, e.g. caused by the page, should not stop processing of other elements
+                try {
+                    // Do not re-hide already hidden element, because even such mutation wakes up observers
+                    // of other rules, and they may re-trigger each other infinitely,
+                    // and hit should be called only on actual change
+                    if (isElementHidden(targetEl)) {
+                        return;
+                    }
+                    hideElement(targetEl);
+                    isHidden = true;
+                } catch {
+                    if (!loggedFailedElems.has(targetEl)) {
+                        loggedFailedElems.add(targetEl);
+                        // Element is logged as is, since its string representation does not identify it
+                        logMessage(source, ['Failed to hide element:', targetEl], false, false);
+                    }
                 }
-                hideElement(targetEl);
-                isHidden = true;
             });
 
             if (isHidden) {

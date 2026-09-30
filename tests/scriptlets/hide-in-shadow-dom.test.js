@@ -8,6 +8,7 @@ import {
     sleep,
     makeUnrelatedDomChange,
     countLogsAfterDomChange,
+    checkErrorForOneElement,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -514,5 +515,30 @@ if (!isSupported) {
 
         assert.notStrictEqual(window.getComputedStyle(target).display, 'none', 'target is not hidden');
         assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+    });
+
+    test('error for one element does not stop hiding other elements and is logged once', async (assert) => {
+        const className = 'ag-test-hide-in-shadow-dom-error';
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const shadowRoot = host.attachShadow({ mode: 'open' });
+        elemsToClean.push(host);
+        // native getter is used, since the page overrides the property for the failing element
+        const getNativeStyle = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').get;
+
+        await checkErrorForOneElement(assert, name, {
+            args: [`.${className}`],
+            createElem: () => {
+                const elem = document.createElement('p');
+                elem.classList.add(className);
+                shadowRoot.appendChild(elem);
+                return elem;
+            },
+            // e.g. the page overrides the property for the element
+            makeFailing: (elem, throwPageError) => {
+                Object.defineProperty(elem, 'style', { get: throwPageError, configurable: true });
+            },
+            isProcessed: (elem) => getNativeStyle.call(elem).getPropertyValue('display') === 'none',
+        });
     });
 }
