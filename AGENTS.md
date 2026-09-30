@@ -380,9 +380,10 @@ Project-specific rules:
     elements.
 
     **Rationale**: An error for one element, e.g. caused by the page, would
-    otherwise stop processing of the other elements and, if thrown in the
-    `observeDOMChanges` callback, prevent the observer from being connected
-    again, so the scriptlet would stop working on the page.
+    otherwise stop processing of the other elements on each DOM change and be
+    reported as uncaught on the page each time. `observeDOMChanges` only
+    connects the observer again after its callback throws, so that the
+    scriptlet does not stop working on the page.
 
 14. Non-trivial parsing logic of a scriptlet which depends only on its arguments
     and has many edge cases, e.g. parsing of a URL parameter, SHOULD be a helper

@@ -4,6 +4,8 @@ import {
     clearGlobalProps,
     runRulesAndCountIdleChanges,
     countLogsAfterDomChange,
+    sleep,
+    ATTR_SETTLE_DELAY_MS,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -406,4 +408,48 @@ test('attribute names which are not valid CSS identifiers are removed', (assert)
     assert.ok(elem.hasAttribute('data-ag-test-kept'), 'other attribute is kept');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     wrapper.remove();
+});
+
+test('DOM observer keeps working after an error for an element', async (assert) => {
+    createHit();
+    const className = getUniqueClassName();
+    const attr = 'data-ag-test-error';
+    const pageErrorMessage = 'ag-test-remove-attr-page-error';
+
+    // error of the observer callback may be uncaught, and QUnit would take it as a failure of the test
+    const qunitOnError = window.onerror;
+    window.onerror = (message, ...args) => {
+        if (String(message).includes(pageErrorMessage)) {
+            return true;
+        }
+        return qunitOnError.call(window, message, ...args);
+    };
+
+    let failing;
+    let added;
+    try {
+        runScriptlet(name, [attr, `.${className}`]);
+
+        failing = createElem(className, [attr]);
+        // e.g. the page overrides the method for the element
+        Object.defineProperty(failing, 'removeAttribute', {
+            value() {
+                throw new Error(pageErrorMessage);
+            },
+            configurable: true,
+        });
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        // failing element is removed, so it does not affect handling of the element added later
+        failing.remove();
+
+        added = createElem(className, [attr]);
+        await sleep(ATTR_SETTLE_DELAY_MS);
+    } finally {
+        window.onerror = qunitOnError;
+        added?.remove();
+    }
+
+    assert.ok(failing.hasAttribute(attr), 'attribute of failing element is kept');
+    assert.notOk(added.hasAttribute(attr), 'attribute of element added later is removed by the DOM observer');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
