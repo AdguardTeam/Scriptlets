@@ -178,8 +178,16 @@ export function setAttr(source, selector, attr, value = '') {
         };
     }
 
-    setAttributeBySelector(source, selector, attr, value, attributeHandler);
-    observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value, attributeHandler), true);
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+    const applyAttr = () => {
+        setAttributeBySelector(source, selector, attr, value, attributeHandler, loggedFailedElems);
+    };
+
+    applyAttr();
+    observeDOMChanges(applyAttr, true);
 }
 
 export const setAttrNames = [

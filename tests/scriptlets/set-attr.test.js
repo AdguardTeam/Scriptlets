@@ -6,6 +6,7 @@ import {
     createAttrMutationCounter,
     runAttrRulesAndCountIdleChanges,
     checkTwoAttrRulesSettle,
+    checkAttrErrorForOneElement,
     countLogsAfterDomChange,
     getLogs,
     makeUnrelatedDomChange,
@@ -492,4 +493,8 @@ test('invalid attribute name is logged only once', async (assert) => {
     assert.strictEqual(count, 1, 'invalid attribute name is logged once');
     assert.strictEqual(targetElem.attributes.length, 1, 'no attribute has been set');
     assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('error for one element does not stop setting attribute on other elements and is logged once', async (assert) => {
+    await checkAttrErrorForOneElement(assert, name);
 });

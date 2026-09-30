@@ -280,6 +280,67 @@ describe('setAttributeBySelector', () => {
         expect(changeSetter).toHaveBeenCalledTimes(elems.length);
         expect(window.__debug).toHaveBeenCalledTimes(1);
     });
+
+    describe('error for one element', () => {
+        const FAILED_MESSAGE_PREFIX = `${source.name}: Failed to set [${ATTR_NAME}="1"]`;
+
+        let logSpy;
+
+        beforeEach(() => {
+            logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        });
+
+        const getErrorLogs = () => logSpy.mock.calls.filter((args) => {
+            return args.join(' ').startsWith(FAILED_MESSAGE_PREFIX);
+        });
+
+        const throwingSetter = () => {
+            throw new Error('page error');
+        };
+
+        /**
+         * Creates attribute setter which throws for given element, e.g. because of the page,
+         * and sets the attribute to other elements.
+         *
+         * @param {Element} failingElem element to throw for
+         * @returns {Function} attribute setter
+         */
+        const createSetterFailingFor = (failingElem) => (elem, attr, value) => {
+            if (elem === failingElem) {
+                throw new Error('page error');
+            }
+            return defaultAttributeSetter(elem, attr, value);
+        };
+
+        test('does not stop setting attribute on the following elements', () => {
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', createSetterFailingFor(elems[0]));
+            expect(elems[1].getAttribute(ATTR_NAME)).toBe('1');
+            expect(window.__debug).toHaveBeenCalledTimes(1);
+        });
+
+        test('does not prevent hit for elements changed before it', () => {
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', createSetterFailingFor(elems[1]));
+            expect(elems[0].getAttribute(ATTR_NAME)).toBe('1');
+            expect(window.__debug).toHaveBeenCalledTimes(1);
+        });
+
+        test('is logged for each failing element', () => {
+            const setter = vi.fn(throwingSetter);
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', setter);
+            expect(setter).toHaveBeenCalledTimes(elems.length);
+            const errorLogs = getErrorLogs();
+            expect(errorLogs).toHaveLength(elems.length);
+            errorLogs.forEach((args, i) => expect(args).toContain(elems[i]));
+            expect(window.__debug).not.toHaveBeenCalled();
+        });
+
+        test('is logged only once per element if logged elements are kept between calls', () => {
+            const loggedFailedElements = new WeakSet();
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', throwingSetter, loggedFailedElements);
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', throwingSetter, loggedFailedElements);
+            expect(getErrorLogs()).toHaveLength(elems.length);
+        });
+    });
 });
 
 describe('isValidAttributeName', () => {

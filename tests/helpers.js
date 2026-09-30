@@ -430,3 +430,79 @@ export const checkTwoAttrRulesSettle = async (assert, name, {
         assert.strictEqual(secondElem.getAttribute(second.attr), secondExpected, `${second.attr} is set`);
     }, verbose);
 };
+
+/**
+ * Checks that an error for one element matched by an attribute scriptlet rule, e.g. caused by the page,
+ * does not stop setting the attribute on other elements, including ones added later,
+ * does not prevent hit for changed elements and is logged only once.
+ * Should be called once per scriptlet test page, since the rule observer is still active after the check.
+ *
+ * @param {object} assert QUnit assert
+ * @param {string} name scriptlet name
+ */
+export const checkAttrErrorForOneElement = async (assert, name) => {
+    const className = `ag-test-attr-error-${name}`;
+    const attr = 'data-ag-test-error';
+    const value = '1';
+    const args = [`.${className}`, attr, value];
+
+    const elems = [];
+    const createElem = () => {
+        const elem = document.createElement('div');
+        elem.classList.add(className);
+        document.body.appendChild(elem);
+        elems.push(elem);
+        return elem;
+    };
+    // failing element is in the middle, so the attribute is set to one element before the error and one after it
+    const before = createElem();
+    const failing = createElem();
+    const after = createElem();
+    // e.g. the page overrides the method for the element
+    Object.defineProperty(failing, 'setAttribute', {
+        value() {
+            throw new Error('page error');
+        },
+        configurable: true,
+    });
+
+    let hits = 0;
+    // eslint-disable-next-line no-underscore-dangle
+    const testDebug = window.__debug;
+    // eslint-disable-next-line no-underscore-dangle
+    window.__debug = (source) => {
+        // observers of rules from previous tests are still active, so their hits are not counted
+        if (JSON.stringify(source.args) === JSON.stringify(args)) {
+            hits += 1;
+        }
+        if (typeof testDebug === 'function') {
+            testDebug(source);
+        }
+    };
+
+    let initialHits;
+    let added;
+    let logs;
+    try {
+        logs = await getLogs(async () => {
+            runScriptlet(name, args);
+            await makeUnrelatedDomChange();
+            initialHits = hits;
+            added = createElem();
+            await makeUnrelatedDomChange();
+        });
+    } finally {
+        // eslint-disable-next-line no-underscore-dangle
+        window.__debug = testDebug;
+        elems.forEach((elem) => elem.remove());
+    }
+
+    assert.strictEqual(before.getAttribute(attr), value, 'element before the failing one is changed');
+    assert.strictEqual(after.getAttribute(attr), value, 'element after the failing one is changed');
+    assert.strictEqual(added.getAttribute(attr), value, 'element added later is changed by the DOM observer');
+    assert.strictEqual(failing.hasAttribute(attr), false, 'failing element is not changed');
+    assert.strictEqual(initialHits, 1, 'hit is called once for elements changed on the initial run');
+    assert.strictEqual(hits, 2, 'hit is called for element added later');
+    const errorLogs = logs.filter((log) => log.startsWith(`${name}: Failed to set [${attr}="${value}"]`));
+    assert.strictEqual(errorLogs.length, 1, 'error is logged only once');
+};

@@ -110,8 +110,16 @@ export function trustedSetAttr(source, selector, attr, value = '') {
         return;
     }
 
-    setAttributeBySelector(source, selector, attr, value);
-    observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value), true);
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+    const applyAttr = () => {
+        setAttributeBySelector(source, selector, attr, value, defaultAttributeSetter, loggedFailedElems);
+    };
+
+    applyAttr();
+    observeDOMChanges(applyAttr, true);
 }
 
 export const trustedSetAttrNames = [

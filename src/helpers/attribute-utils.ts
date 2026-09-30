@@ -52,6 +52,8 @@ export const defaultAttributeSetter = (
  * @param value attribute value to set
  * @param attributeSetter function to apply to each element,
  * should return true if the attribute has been changed, defaults to {@link defaultAttributeSetter}
+ * @param loggedFailedElements elements whose error has already been logged, should be kept by the caller
+ * between calls, so that the error is logged only once per element and not on each DOM change
  */
 export const setAttributeBySelector = (
     source: Source,
@@ -59,6 +61,7 @@ export const setAttributeBySelector = (
     attribute: string,
     value: string,
     attributeSetter = defaultAttributeSetter,
+    loggedFailedElements = new WeakSet<Element>(),
 ): void => {
     const elements = document.querySelectorAll(selector);
 
@@ -66,19 +69,24 @@ export const setAttributeBySelector = (
         return;
     }
 
-    try {
-        let isChanged = false;
-        elements.forEach((elem) => {
+    let isChanged = false;
+    elements.forEach((elem) => {
+        // Error for one element, e.g. caused by the page, should not stop processing of other elements
+        try {
             if (attributeSetter(elem, attribute, value)) {
                 isChanged = true;
             }
-        });
-        // Call hit only on actual change, otherwise idle observers would log on each unrelated mutation
-        if (isChanged) {
-            hit(source);
+        } catch {
+            if (!loggedFailedElements.has(elem)) {
+                loggedFailedElements.add(elem);
+                // Element is logged as is, since its string representation does not identify it
+                logMessage(source, [`Failed to set [${attribute}="${value}"] to element:`, elem], false, false);
+            }
         }
-    } catch {
-        logMessage(source, `Failed to set [${attribute}="${value}"] to each of selected elements.`);
+    });
+    // Call hit only on actual change, otherwise idle observers would log on each unrelated mutation
+    if (isChanged) {
+        hit(source);
     }
 };
 
