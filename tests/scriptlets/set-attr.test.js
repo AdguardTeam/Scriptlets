@@ -498,3 +498,41 @@ test('invalid attribute name is logged only once', async (assert) => {
 test('error for one element does not stop setting attribute on other elements and is logged once', async (assert) => {
     await checkAttrErrorForOneElement(assert, name);
 });
+
+/**
+ * Checks that an invalid name of the attribute to copy the value from is logged once for the rule
+ * and the rule does nothing, instead of treating the attribute as missing on each matched element.
+ *
+ * @param {object} assert QUnit assert
+ * @param {string} value value argument with the invalid attribute name, e.g. '[data a]'
+ */
+const checkInvalidSourceAttrIsLoggedOnce = async (assert, value) => {
+    const { targetElem, mismatchElem } = context;
+    const elems = [targetElem, mismatchElem];
+    // several elements are matched, so the name should be logged once for the rule and not for each element
+    const selector = elems.map((elem) => `#${elem.id}`).join(', ');
+
+    const logs = await getLogs(async () => {
+        runScriptlet(name, [selector, TARGET_ATTR_NAME, value]);
+        await makeUnrelatedDomChange();
+    });
+    const invalidValueCount = logs.filter((log) => {
+        return log === `${name}: Invalid attribute value provided: '${value}'`;
+    }).length;
+    const missingSourceCount = logs.filter((log) => log === getMissingSourceMessage(value.slice(1, -1))).length;
+
+    assert.strictEqual(invalidValueCount, 1, 'invalid attribute name is logged once');
+    assert.strictEqual(missingSourceCount, 0, 'attribute is not logged as missing');
+    elems.forEach((elem) => {
+        assert.strictEqual(elem.hasAttribute(TARGET_ATTR_NAME), false, `attribute has not been set to #${elem.id}`);
+    });
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+};
+
+test('invalid attribute name to copy value from is logged only once', async (assert) => {
+    await checkInvalidSourceAttrIsLoggedOnce(assert, '[data-ag invalid]');
+});
+
+test('empty attribute name to copy value from is logged only once', async (assert) => {
+    await checkInvalidSourceAttrIsLoggedOnce(assert, '[]');
+});

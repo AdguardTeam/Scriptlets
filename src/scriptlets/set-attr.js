@@ -134,7 +134,11 @@ export function setAttr(source, selector, attr, value = '') {
 
     const allowedValues = ['true', 'false'];
 
-    const shouldCopyValue = value.startsWith('[') && value.endsWith(']');
+    // Name of the attribute to copy the value from is validated once as well, since `getAttribute()`
+    // returns null for an invalid name, so it would be taken as missing on each matched element
+    const shouldCopyValue = value.startsWith('[')
+        && value.endsWith(']')
+        && isValidAttributeName(value.slice(1, -1));
 
     const isValidValue = value.length === 0
         || (!nativeIsNaN(parseInt(value, 10))

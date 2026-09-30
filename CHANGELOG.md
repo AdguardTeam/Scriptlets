@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   once for each element until the attribute is found, even if the element already holds the copied value.
   An error thrown for an element, e.g. by the page, is logged once for the element and does not stop setting
   the attribute on other elements, including ones added later, or prevent `hit` for changed elements.
+  An invalid name of the attribute to copy the value from, e.g. `[data a]` or `[]`, is logged once
+  as an invalid value, instead of setting the attribute to `null` on each matched element.
 - Infinite mutation loop between several non-conflicting `href-sanitizer` rules, and `hit` called
   on each DOM change: `href` is no longer re-set, and `hit` is not called, if the link, including SVG `<a>`
   element, already points to the sanitized URL. Also, `href-sanitizer` logs invalid arguments only once,
