@@ -16,7 +16,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- Minimum supported Microsoft Edge version is now Edge Chromium 80.
+
 ### Deprecated
+
+- Edge Legacy support.
 
 ### Removed
 
