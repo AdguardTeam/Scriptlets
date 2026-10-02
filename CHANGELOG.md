@@ -23,8 +23,24 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Fixed
 
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
+- `trusted-click-element` spoofing `isTrusted` for all click-related events on a page,
+  which replaced the page's own events with proxies and broke popup opening-event guards;
+  only clicks dispatched by the scriptlet, and the clicks a label forwards from them to its control,
+  are spoofed now, as one event shared by all listeners [#582].
+- `trusted-click-element` hooking event listeners and `attachShadow` even when it exits early
+  because of invalid timeout, delay or reload values or unmatched `extraMatch` conditions [#582].
+- `trusted-click-element` failing to remove or deduplicate listeners shared across event targets
+  or registered with non-boolean `capture` values, and failing to remove listeners
+  registered before the scriptlet ran [#582].
+- `trusted-click-element` throwing when inline `on*` handlers or React handlers set `cancelBubble`
+  or `returnValue` on a scriptlet click [#582].
+- `trusted-click-element` restoring inline `on*` handlers of the clicked element
+  that the page replaced or cleared during the click [#582].
+- `trusted-click-element` exposing a bound `constructor` on spoofed events
+  and an untrusted `nativeEvent` to React handlers [#582].
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
+[#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
 
 ### Security
 

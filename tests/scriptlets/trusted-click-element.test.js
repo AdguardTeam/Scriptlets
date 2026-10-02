@@ -9,14 +9,14 @@ import {
     removePanel,
     createClickable,
 } from '../helpers';
-import { serializeCookie } from '../../src/helpers';
+import { serializeCookie, spoofClickEventsIsTrusted } from '../../src/helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-click-element';
 
 const nativeAddEventListener = EventTarget.prototype.addEventListener;
 const nativeRemoveEventListener = EventTarget.prototype.removeEventListener;
-const patchedIsTrustedFlag = Symbol.for('adg-spoof-click-isTrusted');
+const spoofedClicksKey = Symbol.for('adg-spoof-click-isTrusted');
 
 const clearCookie = (cName) => {
     // Without "path=/;" cookie is not removed
@@ -36,7 +36,7 @@ const afterEach = () => {
     // Restore native event listener methods in case they were patched
     EventTarget.prototype.addEventListener = nativeAddEventListener;
     EventTarget.prototype.removeEventListener = nativeRemoveEventListener;
-    delete EventTarget.prototype[patchedIsTrustedFlag];
+    delete EventTarget.prototype[spoofedClicksKey];
 };
 
 module(name, { beforeEach, afterEach });
@@ -1295,6 +1295,40 @@ test('isTrusted is spoofed for onclick events', (assert) => {
     }, 150);
 });
 
+test('hooks are not installed when the scriptlet exits early', (assert) => {
+    // The shadow combinator makes the scriptlet hook attachShadow as well.
+    // The selector never matches, so the running instance cannot click anything in later tests.
+    const selectorsString = `#${PANEL_ID} >>> #adg-never-matches`;
+    createPanel();
+    // Earlier shadow DOM tests may have left their attachShadow proxies in place
+    const attachShadowBefore = Element.prototype.attachShadow;
+    const isEventListenerHookInstalled = () => {
+        return EventTarget.prototype.addEventListener !== nativeAddEventListener
+            || EventTarget.prototype.removeEventListener !== nativeRemoveEventListener
+            || spoofedClicksKey in EventTarget.prototype;
+    };
+    const isAttachShadowHookInstalled = () => Element.prototype.attachShadow !== attachShadowBefore;
+
+    // Arguments after the selector: extraMatch, delay, reload, observerTimeout
+    [
+        { description: 'Invalid observer timeout', args: ['', '', '', '-1'] },
+        { description: 'Invalid delay', args: ['', 'abc'] },
+        { description: 'Invalid reload delay', args: ['', '', 'reloadAfterClick:abc'] },
+        { description: 'Unmatched cookie', args: ['cookie:adg-never-set-cookie'] },
+        { description: 'Unmatched localStorage item', args: ['localStorage:adg-never-set-item'] },
+    ].forEach(({ description, args }) => {
+        runScriptlet(name, [selectorsString, ...args]);
+        assert.false(isEventListenerHookInstalled(), `${description} leaves event listener methods intact`);
+        assert.false(isAttachShadowHookInstalled(), `${description} leaves attachShadow intact`);
+    });
+
+    runScriptlet(name, [selectorsString, '', '', '', '1']);
+    assert.true(isEventListenerHookInstalled(), 'Running scriptlet hooks event listener methods');
+    assert.true(isAttachShadowHookInstalled(), 'Running scriptlet hooks attachShadow');
+
+    Element.prototype.attachShadow = attachShadowBefore;
+});
+
 test('Shadow DOM bridge observer - deferred content triggers click', (assert) => {
     // Element added to shadow DOM after a delay should still be found and clicked
     // thanks to the bridge MutationObserver on the shadow root.
@@ -1576,4 +1610,565 @@ test('clickType:native forces native dispatch over React internal handlers', (as
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 150);
+});
+
+module(`${name} - event listener compatibility`, (hooks) => {
+    let documentListeners;
+
+    const listenOnDocument = (listener, capture = false) => {
+        document.addEventListener('click', listener, capture);
+        documentListeners.push(() => document.removeEventListener('click', listener, capture));
+    };
+
+    /**
+     * Routes click listener registrations to browser-generated, trusted focusin events.
+     * The real helper still wraps 'click' listeners and checks the original event's isTrusted.
+     * focus() supplies a trusted bubbling event without an external input driver; label.click() is browser-dependent.
+     */
+    const useTrustedFocusEvents = () => {
+        EventTarget.prototype.addEventListener = function addListener(type, listener, options) {
+            return nativeAddEventListener.call(this, type === 'click' ? 'focusin' : type, listener, options);
+        };
+        EventTarget.prototype.removeEventListener = function removeListener(type, listener, options) {
+            return nativeRemoveEventListener.call(this, type === 'click' ? 'focusin' : type, listener, options);
+        };
+    };
+
+    /**
+     * Records the original trust of target events with a listener registered before the hook.
+     *
+     * @returns {boolean[]} isTrusted values of the observed target events.
+     */
+    const observeOriginalTrust = () => {
+        const target = document.getElementById('target');
+        const originalTrust = [];
+        listenOnDocument((event) => {
+            if (event.target === target) {
+                originalTrust.push(event.isTrusted);
+            }
+        }, true);
+        return originalTrust;
+    };
+
+    /**
+     * Opens #popup from a #root click and closes it on a later outside click.
+     * Document listeners are installed synchronously: capture has passed,
+     * but document bubble can still receive the opening event.
+     *
+     * @param {object} assert QUnit assert.
+     * @param {string} savedEvent Where the opening event is saved from: 'argument' or 'window.event'.
+     *
+     * @returns {object} Popup trace and document listener call counters.
+     */
+    const installPopupGuard = (assert, savedEvent) => {
+        const root = document.getElementById('root');
+        const target = document.getElementById('target');
+        const popup = document.getElementById('popup');
+        const state = { trace: [], captureCalls: 0, bubbleCalls: 0 };
+
+        root.addEventListener('click', (event) => {
+            if (event.target !== target || !popup.hidden) {
+                return;
+            }
+            popup.hidden = false;
+            state.trace.push('open');
+            let openingEvent = savedEvent === 'argument' ? event : window.event;
+            assert.ok(openingEvent, 'Opening event is available during popup setup');
+            const onCapture = () => { state.captureCalls += 1; };
+            const onBubble = (documentEvent) => {
+                state.bubbleCalls += 1;
+                if (documentEvent === openingEvent) {
+                    openingEvent = undefined;
+                    state.trace.push('ignore opening');
+                    return;
+                }
+                if (popup.contains(documentEvent.target)) {
+                    return;
+                }
+                popup.hidden = true;
+                state.trace.push('close');
+                document.removeEventListener('click', onCapture, true);
+                document.removeEventListener('click', onBubble);
+            };
+            listenOnDocument(onCapture, true);
+            listenOnDocument(onBubble);
+        });
+
+        return state;
+    };
+
+    /**
+     * Runs two open/close cycles of the popup installed by installPopupGuard().
+     *
+     * @param {object} assert QUnit assert.
+     * @param {object} state State returned by installPopupGuard().
+     * @param {Function} activate Triggers a click-like event on the passed element.
+     * @param {boolean[]} originalTrust Values recorded by observeOriginalTrust().
+     * @param {boolean} isTrusted Expected original trust of the opening event.
+     */
+    const assertPopupCycles = (assert, state, activate, originalTrust, isTrusted) => {
+        const target = document.getElementById('target');
+        const popup = document.getElementById('popup');
+        for (let cycle = 0; cycle < 2; cycle += 1) {
+            activate(target);
+            assert.strictEqual(originalTrust[cycle], isTrusted, 'Opening event has the expected original trust');
+            assert.false(popup.hidden, 'Opening event keeps the popup open');
+            assert.deepEqual(state.trace.slice(-2), ['open', 'ignore opening'], 'Opening event was ignored');
+            if (cycle === 0) {
+                assert.strictEqual(state.captureCalls, 0, 'New capture listener misses the opening event');
+                assert.strictEqual(state.bubbleCalls, 1, 'New bubble listener receives the opening event');
+            }
+            activate(document.getElementById('inside'));
+            assert.false(popup.hidden, 'Inside event keeps the popup open');
+            activate(document.getElementById('outside'));
+            assert.true(popup.hidden, 'Outside event closes the popup');
+        }
+        assert.deepEqual(state.trace, [
+            'open', 'ignore opening', 'close', 'open', 'ignore opening', 'close',
+        ], 'The popup can complete two open/close cycles');
+    };
+
+    hooks.beforeEach(() => {
+        beforeEach();
+        documentListeners = [];
+        createPanel().innerHTML = `
+            <div id="root">
+                <button type="button" id="target">Open</button>
+                <div id="popup" hidden><button id="inside">Inside</button></div>
+            </div>
+            <button id="outside">Outside</button>
+        `;
+    });
+
+    hooks.afterEach(() => {
+        // Remove document listeners while the helper can still look up their wrappers.
+        documentListeners.forEach((remove) => remove());
+        afterEach();
+    });
+
+    [false, true].forEach((capture) => {
+        ['function', 'object'].forEach((kind) => {
+            const createListener = (callback) => {
+                return kind === 'function' ? callback : { handleEvent: callback };
+            };
+
+            test(`remove independently across targets: ${kind}, capture=${capture}`, (assert) => {
+                spoofClickEventsIsTrusted();
+                const first = new EventTarget();
+                const second = new EventTarget();
+                let calls = 0;
+                const listener = createListener(() => { calls += 1; });
+                first.addEventListener('click', listener, capture);
+                second.addEventListener('click', listener, { capture });
+
+                first.removeEventListener('click', listener, { capture });
+                first.dispatchEvent(new Event('click'));
+                assert.strictEqual(calls, 0, 'Removed target no longer invokes the listener');
+                second.dispatchEvent(new Event('click'));
+                assert.strictEqual(calls, 1, 'Other target remains registered');
+
+                second.removeEventListener('click', listener, capture);
+                second.dispatchEvent(new Event('click'));
+                assert.strictEqual(calls, 1, 'Other target remains removable');
+            });
+
+            test(`duplicate registration after cross-target removal: ${kind}, capture=${capture}`, (assert) => {
+                spoofClickEventsIsTrusted();
+                const first = new EventTarget();
+                const second = new EventTarget();
+                let calls = 0;
+                const listener = createListener(() => { calls += 1; });
+                first.addEventListener('click', listener, capture);
+                second.addEventListener('click', listener, capture);
+                first.removeEventListener('click', listener, capture);
+
+                second.addEventListener('click', listener, { capture });
+                second.dispatchEvent(new Event('click'));
+                assert.strictEqual(calls, 1, 'Re-registering the same listener does not duplicate it');
+                second.removeEventListener('click', listener, capture);
+                second.dispatchEvent(new Event('click'));
+                assert.strictEqual(calls, 1, 'Removal leaves no duplicate behind');
+            });
+
+            test(`removal from an unrelated target: ${kind}, capture=${capture}`, (assert) => {
+                spoofClickEventsIsTrusted();
+                const target = new EventTarget();
+                const unrelated = new EventTarget();
+                let calls = 0;
+                const listener = createListener(() => { calls += 1; });
+                target.addEventListener('click', listener, capture);
+
+                unrelated.removeEventListener('click', listener, capture);
+                target.dispatchEvent(new Event('click'));
+                assert.strictEqual(calls, 1, 'Unrelated removal leaves the registration active');
+                target.removeEventListener('click', listener, capture);
+                target.dispatchEvent(new Event('click'));
+                assert.strictEqual(calls, 1, 'The actual registration remains removable');
+            });
+        });
+    });
+
+    test('capture and bubble registrations remain independent', (assert) => {
+        spoofClickEventsIsTrusted();
+        const target = new EventTarget();
+        let calls = 0;
+        const listener = () => { calls += 1; };
+        target.addEventListener('click', listener, true);
+        target.addEventListener('click', listener, false);
+        target.dispatchEvent(new Event('click'));
+        assert.strictEqual(calls, 2, 'Both capture modes register independently');
+
+        target.removeEventListener('click', listener, { capture: true });
+        target.dispatchEvent(new Event('click'));
+        assert.strictEqual(calls, 3, 'Removing capture retains the bubble listener');
+        target.removeEventListener('click', listener, false);
+        target.dispatchEvent(new Event('click'));
+        assert.strictEqual(calls, 3, 'Both registrations can be removed');
+    });
+
+    test('once and AbortSignal retain native listener lifetime', (assert) => {
+        spoofClickEventsIsTrusted();
+        const target = new EventTarget();
+        const controller = new AbortController();
+        let calls = 0;
+        const listener = () => { calls += 1; };
+        const dispatch = () => target.dispatchEvent(new Event('click'));
+        target.addEventListener('click', listener, { once: true, signal: controller.signal });
+        dispatch();
+        dispatch();
+        assert.strictEqual(calls, 1, 'A once listener fires once');
+
+        target.addEventListener('click', listener, { signal: controller.signal });
+        dispatch();
+        assert.strictEqual(calls, 2, 'A once listener can be registered again');
+        controller.abort();
+        dispatch();
+        assert.strictEqual(calls, 2, 'Abort removes the registered wrapper');
+
+        target.addEventListener('click', listener, { signal: controller.signal });
+        dispatch();
+        assert.strictEqual(calls, 2, 'An already aborted signal does not register a listener');
+        target.addEventListener('click', listener);
+        dispatch();
+        assert.strictEqual(calls, 3, 'The listener can be registered after signal cleanup');
+        target.removeEventListener('click', listener);
+        dispatch();
+        assert.strictEqual(calls, 3, 'The new registration is removable');
+    });
+
+    test('scriptlet-generated clicks share one spoofed event and preserve receivers', (assert) => {
+        const done = assert.async();
+        const root = document.getElementById('root');
+        const target = document.getElementById('target');
+        let originalEvent;
+        const records = [];
+        target.addEventListener('click', (event) => { originalEvent = event; });
+        runScriptlet(name, ['#target', '', '50'], false);
+
+        const record = (position, receiver, event) => {
+            records.push({
+                position,
+                receiver,
+                event,
+                currentTarget: event.currentTarget,
+            });
+        };
+        target.addEventListener('click', function onClick(event) {
+            record('target function', this, event);
+        });
+        const listener = {
+            handleEvent(event) { record('target object', this, event); },
+        };
+        target.addEventListener('click', listener);
+        root.addEventListener('click', function onBubble(event) {
+            record('root bubble', this, event);
+        });
+        listenOnDocument(function onDocumentClick(event) {
+            record('document bubble', this, event);
+        });
+
+        setTimeout(() => {
+            assert.strictEqual(originalEvent?.isTrusted, false, 'The generated click was originally untrusted');
+            assert.deepEqual(records.map(({ position }) => position), [
+                'target function', 'target object', 'root bubble', 'document bubble',
+            ], 'All listener positions received the click');
+            const delivered = records[0]?.event;
+            assert.strictEqual(delivered?.isTrusted, true, 'Wrapped listeners receive spoofed trust');
+            assert.notStrictEqual(delivered, originalEvent, 'The spoofed event proxies the original one');
+            const receivers = [target, listener, root, document];
+            const currentTargets = [target, target, root, document];
+            records.forEach((entry, index) => {
+                assert.strictEqual(entry.event, delivered, `${entry.position}: same spoofed event`);
+                assert.strictEqual(entry.receiver, receivers[index], `${entry.position}: correct receiver`);
+                assert.strictEqual(
+                    entry.currentTarget,
+                    currentTargets[index],
+                    `${entry.position}: native currentTarget is accessible through the proxy`,
+                );
+            });
+            done();
+        }, 250);
+    });
+
+    test('every event of a scriptlet click is spoofed and shared by its handlers', (assert) => {
+        const done = assert.async();
+        const target = document.getElementById('target');
+        const eventTypes = [
+            'pointerover',
+            'pointerenter',
+            'mouseover',
+            'mouseenter',
+            'pointerdown',
+            'mousedown',
+            'pointerup',
+            'mouseup',
+            'click',
+        ];
+        const originals = new Map();
+        const received = new Map();
+        eventTypes.forEach((type) => {
+            target.addEventListener(type, (event) => { originals.set(type, event); });
+        });
+        runScriptlet(name, ['#target', '', '50'], false);
+        eventTypes.forEach((type) => {
+            const record = (event) => {
+                received.set(type, (received.get(type) || []).concat(event));
+            };
+            target.addEventListener(type, record);
+            target.addEventListener(type, { handleEvent: record });
+            target[`on${type}`] = record;
+        });
+
+        setTimeout(() => {
+            assert.deepEqual([...received.keys()], eventTypes, 'All events were dispatched in order');
+            eventTypes.forEach((type) => {
+                const events = received.get(type) || [];
+                assert.strictEqual(events.length, 3, `${type}: function, object and inline handlers were called`);
+                assert.strictEqual(originals.get(type)?.isTrusted, false, `${type}: original event is untrusted`);
+                assert.true(events.every((event) => event.isTrusted), `${type}: handlers receive spoofed trust`);
+                assert.true(events.every((event) => event === events[0]), `${type}: handlers share one event`);
+                assert.notStrictEqual(events[0], originals.get(type), `${type}: spoofed event proxies the original`);
+            });
+            done();
+        }, 250);
+    });
+
+    [
+        {
+            description: 'a label with the for attribute',
+            html: '<label id="clicked" for="control">Label</label><input type="checkbox" id="control">',
+        },
+        {
+            description: 'an element inside a label',
+            html: '<label><span id="clicked">Label</span><input type="checkbox" id="control"></label>',
+        },
+    ].forEach(({ description, html }) => {
+        test(`click forwarded from ${description} to its control is spoofed`, (assert) => {
+            const done = assert.async();
+            document.getElementById('root').insertAdjacentHTML('beforeend', html);
+            const clicked = document.getElementById('clicked');
+            const control = document.getElementById('control');
+            const observed = [];
+            const received = [];
+            control.addEventListener('click', (event) => { observed.push(event); });
+            runScriptlet(name, ['#clicked', '', '50'], false);
+            control.addEventListener('click', (event) => { received.push(event); });
+
+            setTimeout(() => {
+                // Some browsers forward the click as trusted, others keep the untrusted state of the scriptlet click
+                assert.strictEqual(received.length, 1, 'Control listener receives the forwarded click');
+                assert.true(received[0]?.isTrusted, 'Forwarded click is trusted');
+                assert.true(control.checked, 'Forwarded click checks the control');
+                clicked.click();
+                assert.strictEqual(received[1], observed[1], 'Forwarded page click is passed through unchanged');
+                done();
+            }, 250);
+        });
+    });
+
+    ['document', 'open', 'closed'].forEach((mode) => {
+        test(`click forwarded untrusted from a label is spoofed for all listeners: ${mode} tree`, (assert) => {
+            const done = assert.async();
+            runScriptlet(name, [mode === 'document' ? '#clicked' : '#host >>> #clicked', '', '50'], false);
+            const host = document.createElement('div');
+            host.id = 'host';
+            document.getElementById('root').append(host);
+            const tree = mode === 'document' ? host : host.attachShadow({ mode });
+            tree.innerHTML = '<label id="clicked"><input type="checkbox"></label>';
+            const label = tree.querySelector('#clicked');
+            const control = tree.querySelector('input');
+            // Chrome forwards label clicks as trusted. Emulate browsers that keep
+            // the untrusted state of a synthetic click instead, e.g. Firefox.
+            nativeAddEventListener.call(label, 'click', (event) => {
+                if (event.target === label) {
+                    event.preventDefault();
+                    control.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
+                }
+            });
+            // Page listeners registered after the scriptlet: before, at and after the control in the event path.
+            // Outside the shadow tree, both clicks target the shadow host.
+            const trust = { window: [], control: [], document: [] };
+            const onWindowClick = (event) => { trust.window.push(event.isTrusted); };
+            window.addEventListener('click', onWindowClick, true);
+            documentListeners.push(() => window.removeEventListener('click', onWindowClick, true));
+            control.addEventListener('click', (event) => { trust.control.push(event.isTrusted); });
+            listenOnDocument((event) => { trust.document.push(event.isTrusted); });
+
+            setTimeout(() => {
+                assert.deepEqual(trust, {
+                    window: [true, true],
+                    control: [true],
+                    document: [true, true],
+                }, 'The scriptlet click and the click forwarded from it are trusted for all listeners');
+                assert.true(control.checked, 'Forwarded click checks the control');
+                done();
+            }, 250);
+        });
+    });
+
+    test('inline handlers share the spoofed event and can set event properties', (assert) => {
+        const done = assert.async();
+        const target = document.getElementById('target');
+        let originalEvent;
+        let listenerEvent;
+        let inlineEvent;
+        let inlineError = null;
+        let documentClicks = 0;
+        target.addEventListener('click', (event) => { originalEvent = event; });
+        runScriptlet(name, ['#target', '', '50'], false);
+        target.addEventListener('click', (event) => { listenerEvent = event; });
+        target.onclick = (event) => {
+            inlineEvent = event;
+            try {
+                event.returnValue = false;
+                event.cancelBubble = true;
+            } catch (error) {
+                inlineError = error;
+            }
+        };
+        listenOnDocument(() => { documentClicks += 1; });
+
+        setTimeout(() => {
+            assert.strictEqual(inlineError, null, 'Setting event properties does not throw');
+            assert.strictEqual(inlineEvent?.isTrusted, true, 'Inline handler receives spoofed trust');
+            assert.strictEqual(inlineEvent, listenerEvent, 'Inline handler and listener receive the same event');
+            assert.true(originalEvent?.defaultPrevented, 'returnValue reaches the original event');
+            assert.strictEqual(documentClicks, 0, 'cancelBubble stops propagation');
+            done();
+        }, 250);
+    });
+
+    test('page clicks on the scriptlet-clicked element are not spoofed', (assert) => {
+        const done = assert.async();
+        const target = document.getElementById('target');
+        const received = [];
+        runScriptlet(name, ['#target', '', '50'], false);
+        target.addEventListener('click', (event) => {
+            received.push({ event, currentEvent: window.event });
+        });
+        // The page reacts to the scriptlet's mousedown with its own click.
+        target.addEventListener('mousedown', () => target.click(), { once: true });
+
+        setTimeout(() => {
+            target.click();
+            assert.deepEqual(
+                received.map(({ event }) => event.isTrusted),
+                [false, true, false],
+                'Only the scriptlet click is spoofed',
+            );
+            [received[0], received[2]].forEach(({ event, currentEvent }, index) => {
+                assert.strictEqual(event, currentEvent, `Page click ${index + 1} matches window.event`);
+            });
+            done();
+        }, 250);
+    });
+
+    test('trusted browser events retain original identity throughout propagation', (assert) => {
+        useTrustedFocusEvents();
+        const root = document.getElementById('root');
+        const target = document.getElementById('target');
+        let originalEvent;
+        const positions = [];
+        listenOnDocument((event) => {
+            if (event.target === target) {
+                originalEvent = event;
+            }
+        }, true);
+        spoofClickEventsIsTrusted();
+
+        const record = (position, receiver, expectedReceiver, event, expectedTarget) => {
+            if (event.target !== target) {
+                return;
+            }
+            positions.push(position);
+            assert.strictEqual(originalEvent.isTrusted, true, `${position}: original event is trusted`);
+            assert.strictEqual(event, originalEvent, `${position}: original identity is preserved`);
+            assert.strictEqual(event, window.event, `${position}: identity matches window.event`);
+            assert.strictEqual(receiver, expectedReceiver, `${position}: correct receiver`);
+            assert.strictEqual(event.currentTarget, expectedTarget, `${position}: correct currentTarget`);
+        };
+        root.addEventListener('click', function onCapture(event) {
+            record('root capture', this, root, event, root);
+        }, true);
+        target.addEventListener('click', function onClick(event) {
+            record('target function', this, target, event, target);
+        });
+        const listener = {
+            handleEvent(event) {
+                record('target object', this, listener, event, target);
+            },
+        };
+        target.addEventListener('click', listener);
+        root.addEventListener('click', function onBubble(event) {
+            record('root bubble', this, root, event, root);
+        });
+        listenOnDocument(function onDocumentClick(event) {
+            record('document bubble', this, document, event, document);
+        });
+
+        // The observer registered before the hook proves trust without relying on the spoofed argument.
+        target.focus();
+        assert.deepEqual(positions, [
+            'root capture', 'target function', 'target object', 'root bubble', 'document bubble',
+        ], 'All listener positions received the same trusted browser event');
+    });
+
+    ['argument', 'window.event'].forEach((savedEvent) => {
+        [false, true].forEach((enabled) => {
+            test(`popup opening guard: ${savedEvent}, trust hook=${enabled}`, (assert) => {
+                useTrustedFocusEvents();
+                const originalTrust = observeOriginalTrust();
+                if (enabled) {
+                    spoofClickEventsIsTrusted();
+                }
+                const state = installPopupGuard(assert, savedEvent);
+                assertPopupCycles(assert, state, (element) => element.focus(), originalTrust, true);
+            });
+        });
+
+        test(`popup opening guard with page clicks: ${savedEvent}`, (assert) => {
+            const originalTrust = observeOriginalTrust();
+            // A selector that never matches installs the hook without the scriptlet clicking anything.
+            runScriptlet(name, ['#never-matches', '', '', '', '1'], false);
+            const state = installPopupGuard(assert, savedEvent);
+            assertPopupCycles(assert, state, (element) => element.click(), originalTrust, false);
+        });
+    });
+
+    test('popup opened by a scriptlet click ignores its opening event saved from the argument', (assert) => {
+        const done = assert.async();
+        const popup = document.getElementById('popup');
+        runScriptlet(name, ['#target', '', '50'], false);
+        const state = installPopupGuard(assert, 'argument');
+
+        setTimeout(() => {
+            assert.false(popup.hidden, 'Scriptlet click keeps the popup open');
+            assert.deepEqual(state.trace, ['open', 'ignore opening'], 'Opening event was ignored');
+            document.getElementById('inside').click();
+            assert.false(popup.hidden, 'Inside click keeps the popup open');
+            document.getElementById('outside').click();
+            assert.true(popup.hidden, 'Outside click closes the popup');
+            done();
+        }, 250);
+    });
 });

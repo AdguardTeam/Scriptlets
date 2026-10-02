@@ -60,7 +60,8 @@ scriptlets/
 │   ├── helpers/              # QUnit tests for helper utilities
 │   ├── redirects/            # QUnit tests for redirect resources
 │   ├── scriptlets/           # QUnit tests for scriptlets
-│   └── smoke/                # Smoke tests for ESM exports
+│   ├── smoke/                # Smoke tests for ESM exports
+│   └── vitest-helpers.ts     # Vitest-only test utilities (e.g. jsdom workarounds)
 ├── types/                    # Ambient type declarations
 ├── wiki/                     # Auto-generated documentation (scriptlet/redirect docs, compatibility table)
 ├── .dockerignore             # Docker build context exclusions
@@ -329,6 +330,18 @@ Project-specific rules:
 
    **Rationale**: The Prepare release tag and `CHANGELOG.md` are the version
    sources of truth.
+
+10. Event listener hooks MUST deliver every event unchanged except the events
+    the scriptlet dispatches itself (and the clicks a label forwards from them
+    to its control), and all listeners of such an event MUST receive the same
+    proxy. Listener wrappers shared across targets MUST remain stable when a
+    listener is removed from one target; native registration handles
+    deduplication, `once`, and `AbortSignal` cleanup, so wrapper lookups MUST
+    convert `capture` the same way as `addEventListener` does.
+
+    **Rationale**: Popup guards compare event references, including `window.event`,
+    so replacing page or browser events breaks them. Removing a shared wrapper
+    mapping breaks removal and deduplication on other targets.
 
 ### III. Testing discipline
 

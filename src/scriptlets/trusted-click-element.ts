@@ -184,6 +184,8 @@ export function trustedClickElement(
     reload = '',
     observerTimeoutSec = NaN,
 ) {
+    // TODO: Verify that the selectors string is valid
+    // Use helpers introduced in https://github.com/AdGuardSoftwareLimited/ext-scriptlets/pull/29 (wait for PR to be merged)
     if (!selectors) {
         return;
     }
@@ -214,11 +216,6 @@ export function trustedClickElement(
         return new Promise((resolve) => { setTimeout(resolve, delayMs); });
     };
 
-    // Spoof isTrusted for click-related events so that programmatic clicks
-    // appear as real user interactions to the page's event handlers.
-    // @see https://github.com/AdguardTeam/Scriptlets/issues/491
-    spoofClickEventsIsTrusted();
-
     /**
      * WeakMap to track closed shadow roots so queryShadowSelector can access them
      * without forcing mode to 'open' (which may break some websites).
@@ -227,51 +224,6 @@ export function trustedClickElement(
      */
     const closedShadowRoots = new WeakMap<Element, ShadowRoot>();
     const bridgeObservers = new Set<MutationObserver>();
-
-    // If shadow combinator is present in selector, intercept attachShadow
-    // to track closed shadow roots and observe each new shadow root for mutations,
-    // bridging them to the document-level MutationObserver which cannot see inside shadow DOMs.
-    if (selectors.includes(SHADOW_COMBINATOR)) {
-        const attachShadowWrapper = (
-            target: typeof Element.prototype.attachShadow,
-            thisArg: Element,
-            argumentsList: any[],
-        ) => {
-            const shadowRoot = Reflect.apply(target, thisArg, argumentsList);
-
-            // Track closed shadow roots so queryShadowSelector can look them up
-            // via the WeakMap instead of requiring elem.shadowRoot to be non-null.
-            const mode = argumentsList[0]?.mode;
-            if (mode === 'closed') {
-                closedShadowRoots.set(thisArg, shadowRoot);
-            }
-
-            /**
-             * Bridge shadow root mutations to the document-level observer.
-             * Without this, content added inside shadow DOMs would never trigger
-             * the main MutationObserver and selectors would never be re-checked.
-             * Also detect iframes added inside shadow roots and bridge their load events.
-             *
-             * @see {@link https://github.com/AdguardTeam/Scriptlets/issues/491}
-             */
-            const bridgeObserver = new MutationObserver((mutations) => {
-                triggerMainObserver();
-                mutations.forEach((mutation) => {
-                    bridgeIframeLoads(mutation.addedNodes);
-                });
-            });
-            bridgeObserver.observe(shadowRoot, { childList: true, subtree: true });
-            bridgeObservers.add(bridgeObserver);
-
-            return shadowRoot;
-        };
-
-        const attachShadowHandler = {
-            apply: attachShadowWrapper,
-        };
-
-        window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
-    }
 
     const disconnectBridgeObservers = () => {
         bridgeObservers.forEach((obs) => obs.disconnect());
@@ -665,6 +617,59 @@ export function trustedClickElement(
             initializeMutationObserver();
         }
     };
+
+    // Spoof isTrusted for clicks dispatched by this scriptlet so that they
+    // appear as real user interactions to the page's event handlers.
+    // Installed only after all early returns, but before looking for elements,
+    // since page listeners can only be wrapped when they are registered.
+    // @see https://github.com/AdguardTeam/Scriptlets/issues/491
+    spoofClickEventsIsTrusted();
+
+    // If shadow combinator is present in selector, intercept attachShadow
+    // to track closed shadow roots and observe each new shadow root for mutations,
+    // bridging them to the document-level MutationObserver which cannot see inside shadow DOMs.
+    // Installed only after all early returns, but before looking for elements.
+    if (selectors.includes(SHADOW_COMBINATOR)) {
+        const attachShadowWrapper = (
+            target: typeof Element.prototype.attachShadow,
+            thisArg: Element,
+            argumentsList: any[],
+        ) => {
+            const shadowRoot = Reflect.apply(target, thisArg, argumentsList);
+
+            // Track closed shadow roots so queryShadowSelector can look them up
+            // via the WeakMap instead of requiring elem.shadowRoot to be non-null.
+            const mode = argumentsList[0]?.mode;
+            if (mode === 'closed') {
+                closedShadowRoots.set(thisArg, shadowRoot);
+            }
+
+            /**
+             * Bridge shadow root mutations to the document-level observer.
+             * Without this, content added inside shadow DOMs would never trigger
+             * the main MutationObserver and selectors would never be re-checked.
+             * Also detect iframes added inside shadow roots and bridge their load events.
+             *
+             * @see {@link https://github.com/AdguardTeam/Scriptlets/issues/491}
+             */
+            const bridgeObserver = new MutationObserver((mutations) => {
+                triggerMainObserver();
+                mutations.forEach((mutation) => {
+                    bridgeIframeLoads(mutation.addedNodes);
+                });
+            });
+            bridgeObserver.observe(shadowRoot, { childList: true, subtree: true });
+            bridgeObservers.add(bridgeObserver);
+
+            return shadowRoot;
+        };
+
+        const attachShadowHandler = {
+            apply: attachShadowWrapper,
+        };
+
+        window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
+    }
 
     // Run the initial check
     checkInitialElements();
