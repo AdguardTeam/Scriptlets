@@ -1,5 +1,11 @@
 import { flatten } from './array-utils';
-import { getXpathElements, getXpathExpression, splitSelectors } from './xpath-utils';
+import { isValidSelector, splitSelectors } from './selector-utils';
+import {
+    getXpathElements,
+    getXpathExpression,
+    hasAbsoluteXpath,
+    isValidXpath,
+} from './xpath-utils';
 
 /**
  * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
@@ -147,6 +153,30 @@ export function findElementWithText(
         }
     }
     return null;
+}
+
+/**
+ * Checks whether the selector is valid for `queryShadowSelector()`.
+ * Each part of the selector split by `>>>` combinator should be a valid CSS selector
+ * or a valid XPath expression wrapped in `xpath(...)`.
+ * XPath expression after the combinator, i.e. inside shadow DOM, should not contain absolute paths,
+ * as Chromium evaluates them against the document, but Firefox against the shadow root.
+ * The check does not query the page DOM.
+ *
+ * @param selector Selector to check, e.g. `#host >>> xpath(descendant-or-self::button)`.
+ *
+ * @returns True if the selector is valid, false otherwise.
+ */
+export function isValidShadowSelector(selector: string): boolean {
+    const SHADOW_COMBINATOR = ' >>> ';
+    return splitSelectors(selector, SHADOW_COMBINATOR).every((part, index) => {
+        const xpath = getXpathExpression(part);
+        if (xpath === null) {
+            return isValidSelector(part);
+        }
+        const isInsideShadowDom = index > 0;
+        return isValidXpath(xpath) && !(isInsideShadowDom && hasAbsoluteXpath(xpath));
+    });
 }
 
 /**

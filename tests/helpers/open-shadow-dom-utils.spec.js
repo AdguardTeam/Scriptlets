@@ -6,7 +6,66 @@ import {
     vi,
 } from 'vitest';
 
-import { doesElementContainText, findBaseHostElements } from '../../src/helpers';
+import { doesElementContainText, findBaseHostElements, isValidShadowSelector } from '../../src/helpers';
+
+describe('isValidShadowSelector', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        document.body.innerHTML = '';
+    });
+
+    test.each([
+        'div > button',
+        'button:not(.reject)',
+        '#host >>> div > button',
+        'xpath(//div[@id="host"])',
+        // absolute path is allowed before shadow combinator
+        'xpath(//div[@id="host"]) >>> xpath(descendant-or-self::button)',
+        '#host >>> xpath(.//button[contains(text(), "Accept, all")]) >>> span',
+        'xpath(//div[starts-with(@id, "host")]) >>> xpath(descendant-or-self::button[normalize-space()="Accept all"])',
+        '#host >>> xpath(descendant-or-self::button[starts-with(@id, "accept") or text()="OK"])',
+    ])('valid: %s', (selector) => {
+        expect(isValidShadowSelector(selector)).toBe(true);
+    });
+
+    test.each([
+        '',
+        '..class',
+        '#host >>> ..class',
+        // empty part between combinators
+        '#host >>>  >>> button',
+        'xpath(//button[)',
+        'xpath(count(//button))',
+        'xpath(//button',
+        // misspelled XPath is an invalid CSS selector
+        'xpath (//button)',
+        'div xpath(//button)',
+        // absolute path inside shadow DOM
+        '#host >>> xpath(//button)',
+        '#host >>> xpath(.//a | //button)',
+        '#host >>> xpath(descendant-or-self::button[contains(., "Accept") and normalize-space(//title)="Consent"])',
+    ])('invalid: "%s"', (selector) => {
+        expect(isValidShadowSelector(selector)).toBe(false);
+    });
+
+    test('does not query the page DOM', () => {
+        document.body.innerHTML = '<div id="host"><button></button></div>';
+        const querySelectorSpy = vi.spyOn(document, 'querySelector');
+        const querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll');
+        // XPath may be evaluated by any document, so the context node should not be a page one
+        const evaluateSpy = vi.spyOn(Document.prototype, 'evaluate');
+
+        isValidShadowSelector('#host >>> xpath(descendant-or-self::button)');
+
+        expect(querySelectorSpy).not.toHaveBeenCalled();
+        expect(querySelectorAllSpy).not.toHaveBeenCalled();
+        expect(evaluateSpy).toHaveBeenCalled();
+        evaluateSpy.mock.calls.forEach((args) => {
+            const contextNode = args[1];
+            expect(contextNode.ownerDocument || contextNode).not.toBe(document);
+        });
+    });
+});
 
 describe('doesElementContainText', () => {
     test.each([

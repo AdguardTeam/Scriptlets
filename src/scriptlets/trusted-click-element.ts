@@ -13,6 +13,9 @@ import {
     doesElementContainText,
     findElementWithText,
     randomId,
+    isValidShadowSelector,
+    isEmptySelector,
+    isValidSelector,
     isValidXpath,
     hasAbsoluteXpath,
     getXpathExpression,
@@ -42,6 +45,10 @@ import { type Source } from './scriptlets';
  * <!-- markdownlint-disable-next-line line-length -->
  * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
  *   Commas inside pseudo-classes, e.g. `:is(.accept, .agree)`, and quoted attribute values are not delimiters.
+ *   Empty selectors, e.g. after a trailing comma, and ones with only a CSS comment are skipped.
+ *   If any selector is invalid, it is logged and no element is clicked. XPath errors which occur only
+ *   on evaluation of page elements, e.g. a type error in a predicate like `//input[count(1)]`,
+ *   may not be detected, and then such expression selects nothing.
  *   XPath expressions are supported as well, if wrapped in `xpath()`, e.g. `xpath(//button[text()="Accept"])`;
  *   commas inside `xpath()` are not delimiters either. XPath can be combined with `>>>` combinator,
  *   but shadow root cannot be an XPath context node, so after `>>>` the expression is evaluated
@@ -61,7 +68,8 @@ import { type Source } from './scriptlets';
  *     - `cookie` — test string or regex against cookies on a page
  *     - `localStorage` — check if localStorage item is present
  *     - `containsText` — check if clicked element contains specified text
- *     - `clickType` — set click behavior; supported value is `native`
+ *     - `clickType` — set click behavior; supported value is `native`,
+ *       other values are logged and the default click behavior is used
  * - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
  *   Must be a number less than `observerTimeout` (default 10 _seconds_)
  *   which can be configured.
@@ -220,25 +228,18 @@ export function trustedClickElement(
     const SELECTORS_DELIMITER = ',';
 
     // Commas inside `xpath(...)`, pseudo-classes or quoted strings are not delimiters,
-    // e.g. in `xpath(//button[contains(text(), "Accept")])` or `button:is(.accept, .agree)`
-    const parsedSelectors = splitSelectors(selectors, SELECTORS_DELIMITER);
+    // e.g. in `xpath(//button[contains(text(), "Accept")])` or `button:is(.accept, .agree)`.
+    // Empty selectors, e.g. after a trailing comma, or commented out ones are skipped
+    const parsedSelectors = splitSelectors(selectors, SELECTORS_DELIMITER)
+        .filter((selector) => !isEmptySelector(selector));
+    if (parsedSelectors.length === 0) {
+        logMessage(source, `Invalid selector: '${selectors}'`);
+        return;
+    }
 
     // Selectors are validated once, to log an invalid one and exit before any hooks are installed,
     // as an invalid XPath expression would select nothing, and an invalid CSS selector would throw an error
-    const invalidSelector = parsedSelectors.find((selector) => {
-        return splitSelectors(selector, SHADOW_COMBINATOR).some((part, index) => {
-            const xpath = getXpathExpression(part);
-            if (xpath === null) {
-                // TODO: Validate CSS selectors as well, by helper introduced in
-                // https://github.com/AdGuardSoftwareLimited/ext-scriptlets/pull/29 (wait for PR to be merged)
-                return false;
-            }
-            // Absolute paths inside shadow DOM are evaluated against the document by Chromium,
-            // but against the shadow root by Firefox, so they are not allowed after shadow combinator
-            const isInsideShadowDom = index > 0;
-            return !isValidXpath(xpath) || (isInsideShadowDom && hasAbsoluteXpath(xpath));
-        });
-    });
+    const invalidSelector = parsedSelectors.find((selector) => !isValidShadowSelector(selector));
     if (invalidSelector !== undefined) {
         logMessage(source, `Invalid selector: '${invalidSelector}'`);
         return;
@@ -344,6 +345,8 @@ export function trustedClickElement(
                 textMatches = textMatch;
             }
             if (matchStr.includes(CLICK_TYPE_MATCH_MARKER)) {
+                // Invalid click type is logged and the default one is used,
+                // so `return` only skips this match pair and the scriptlet should not exit
                 const { isInvertedMatch, matchValue } = parseMatchArg(matchStr);
                 if (isInvertedMatch) {
                     logMessage(source, `Passed click type '${matchStr}' is invalid`);
@@ -763,13 +766,16 @@ trustedClickElement.injections = [
     triggerMainObserver,
     bridgeIframeLoads,
     clickElement,
-    isValidXpath,
-    hasAbsoluteXpath,
-    getXpathExpression,
+    isValidShadowSelector,
+    isEmptySelector,
     splitSelectors,
     // following helpers are needed for helpers above
     doesElementContainText,
     findElementWithText,
+    isValidSelector,
+    isValidXpath,
+    hasAbsoluteXpath,
+    getXpathExpression,
     getXpathElements,
     randomId,
 ];

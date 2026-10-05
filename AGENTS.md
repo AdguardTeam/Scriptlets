@@ -336,9 +336,11 @@ Project-specific rules:
     (compare before `setAttribute()` etc.) and MUST call `hit()` only if
     something has actually changed. Invalid arguments (e.g. selector) SHOULD
     be validated and logged once, before the observer is started; use the
-    `isValidSelector()` and `isValidAttributeName()` helpers, as they do not
-    query or change the page DOM. A failure to process an element SHOULD be
-    logged once and not again until the processed value of the element changes.
+    `isValidSelector()`, `isValidXpath()` and `isValidAttributeName()` helpers,
+    and `isValidShadowSelector()` for selectors of `queryShadowSelector()`,
+    i.e. with `>>>` combinator or `xpath(...)`, as they do not query or change
+    the page DOM. A failure to process an element SHOULD be logged once and not
+    again until the processed value of the element changes.
     Such a failure SHOULD be detected from the processed value and remembered
     per element, not inferred from whether the write has changed the target.
 

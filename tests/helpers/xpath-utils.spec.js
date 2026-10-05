@@ -10,13 +10,13 @@ import {
     isValidXpath,
     hasAbsoluteXpath,
     getXpathExpression,
-    splitSelectors,
     getXpathElements,
 } from '../../src/helpers';
 
 describe('isValidXpath', () => {
     afterEach(() => {
         vi.restoreAllMocks();
+        document.body.innerHTML = '';
     });
 
     test.each([
@@ -26,6 +26,8 @@ describe('isValidXpath', () => {
         '//a | //button',
         '(//button)[1]',
         'self::button',
+        // type error in a predicate of a step which cannot select an element is not detected
+        '//button[count(1)]',
     ])('valid expression: %s', (expression) => {
         expect(isValidXpath(expression)).toBe(true);
     });
@@ -38,18 +40,25 @@ describe('isValidXpath', () => {
         // valid syntax, but does not select nodes
         'count(//button)',
         'string(//button)',
+        // type error in a predicate of a step which may select any element
+        'descendant-or-self::*[count(1)]',
+        'self::*[count(1)]',
+        '//*[count(1)]',
     ])('invalid expression: "%s"', (expression) => {
         expect(isValidXpath(expression)).toBe(false);
     });
 
     test('does not query the page DOM', () => {
-        const evaluateSpy = vi.spyOn(document, 'evaluate');
+        // `id()` may be resolved against the page document of the context node
+        document.body.innerHTML = '<div id="main"><button></button></div>';
+        const evaluateSpy = vi.spyOn(Document.prototype, 'evaluate');
 
-        isValidXpath('//button');
+        expect(isValidXpath('id("main")//button')).toBe(true);
 
         expect(evaluateSpy).toHaveBeenCalledTimes(1);
         const contextNode = evaluateSpy.mock.calls[0][1];
-        expect(contextNode.isConnected).toBe(false);
+        expect(contextNode.ownerDocument || contextNode).not.toBe(document);
+        expect(evaluateSpy.mock.instances[0]).not.toBe(document);
     });
 });
 
@@ -75,6 +84,9 @@ describe('hasAbsoluteXpath', () => {
         './/button[@x mod //a]',
         './/button[@x div /html/@y]',
         './/button[@x + /html/@y]',
+        // absolute path as an argument of a function
+        'descendant-or-self::button[starts-with(@id, "a") and normalize-space(//title)="Consent"]',
+        'descendant-or-self::button[contains(., "Accept") or contains(//html/@lang, "en")]',
     ])('absolute: %s', (expression) => {
         expect(hasAbsoluteXpath(expression)).toBe(true);
     });
@@ -101,6 +113,11 @@ describe('hasAbsoluteXpath', () => {
         // `*` as multiplication and as name test
         './/a[@x * 2 = 4]/b',
         './/div/*/button',
+        // functions and logical operators, including `/` inside string literals
+        'descendant-or-self::button[normalize-space()="Accept all"]',
+        'descendant-or-self::button[starts-with(@id, "accept") and contains(., "/")]',
+        './/button[text()="Close" or text()="Dismiss / Close"]',
+        'descendant-or-self::button[not(contains(normalize-space(.), "Reject"))]',
     ])('relative: %s', (expression) => {
         expect(hasAbsoluteXpath(expression)).toBe(false);
     });
@@ -125,180 +142,6 @@ describe('getXpathExpression', () => {
     });
 });
 
-describe('splitSelectors', () => {
-    test.each([
-        {
-            name: 'CSS selectors',
-            selectors: 'div > button, #id,.class',
-            delimiter: ',',
-            expected: ['div > button', '#id', '.class'],
-        },
-        {
-            name: 'single CSS selector',
-            selectors: ' button ',
-            delimiter: ',',
-            expected: ['button'],
-        },
-        {
-            name: 'commas inside XPath',
-            selectors: 'xpath(//button[contains(text(), "Accept")]), div, xpath(//*[@id=concat("a", "b")])',
-            delimiter: ',',
-            expected: [
-                'xpath(//button[contains(text(), "Accept")])',
-                'div',
-                'xpath(//*[@id=concat("a", "b")])',
-            ],
-        },
-        {
-            name: 'parentheses and commas inside XPath string literals',
-            selectors: 'xpath(//button[text()=")),"]), xpath(//a[@title=\'(,\'])',
-            delimiter: ',',
-            expected: ['xpath(//button[text()=")),"])', 'xpath(//a[@title=\'(,\'])'],
-        },
-        {
-            name: 'commas inside XPath after shadow combinator',
-            selectors: '#host >>> xpath(.//button[contains(text(), "Accept")]), div',
-            delimiter: ',',
-            expected: ['#host >>> xpath(.//button[contains(text(), "Accept")])', 'div'],
-        },
-        {
-            name: 'shadow combinator',
-            selectors: 'xpath(//div[@id="host"]) >>> div > button >>> xpath(.//button)',
-            delimiter: ' >>> ',
-            expected: ['xpath(//div[@id="host"])', 'div > button', 'xpath(.//button)'],
-        },
-        {
-            name: 'shadow combinator inside XPath string literal',
-            selectors: '#host >>> xpath(.//button[text()=" >>> "])',
-            delimiter: ' >>> ',
-            expected: ['#host', 'xpath(.//button[text()=" >>> "])'],
-        },
-        {
-            name: 'xpath( inside CSS pseudo-class',
-            selectors: 'div:not(xpath(a, b)), span',
-            delimiter: ',',
-            expected: ['div:not(xpath(a, b))', 'span'],
-        },
-        {
-            name: 'commas inside CSS pseudo-classes',
-            selectors: 'div:is(.a, .b) > button:not(.c, .d), li:nth-child(2n + 1 of .e, .f), span',
-            delimiter: ',',
-            expected: ['div:is(.a, .b) > button:not(.c, .d)', 'li:nth-child(2n + 1 of .e, .f)', 'span'],
-        },
-        {
-            name: 'commas inside nested CSS pseudo-classes',
-            selectors: 'div:has(> :is(.a, .b), :where(.c, .d)), span',
-            delimiter: ',',
-            expected: ['div:has(> :is(.a, .b), :where(.c, .d))', 'span'],
-        },
-        {
-            name: 'commas and brackets inside CSS attribute values',
-            selectors: 'button[title="Accept, ]agree"], a[title=\'(,\'], span',
-            delimiter: ',',
-            expected: ['button[title="Accept, ]agree"]', 'a[title=\'(,\']', 'span'],
-        },
-        {
-            name: 'escaped quote inside CSS attribute value',
-            selectors: 'button[title="Accept \\", agree"], span',
-            delimiter: ',',
-            expected: ['button[title="Accept \\", agree"]', 'span'],
-        },
-        {
-            name: 'escaped comma in CSS selector',
-            selectors: '#accept\\,agree, span',
-            delimiter: ',',
-            expected: ['#accept\\,agree', 'span'],
-        },
-        {
-            name: 'parentheses, brackets and quotes inside CSS comments',
-            selectors: '#first/*(*/, #second/*[*/, #third/*"*/, #fourth',
-            delimiter: ',',
-            expected: ['#first/*(*/', '#second/*[*/', '#third/*"*/', '#fourth'],
-        },
-        {
-            name: 'comma and backslash inside CSS comments',
-            selectors: '#first/*,*/, #second/*\\*/, #third',
-            delimiter: ',',
-            expected: ['#first/*,*/', '#second/*\\*/', '#third'],
-        },
-        {
-            name: 'unclosed CSS comment',
-            selectors: '#first/*, #second',
-            delimiter: ',',
-            expected: ['#first/*, #second'],
-        },
-        {
-            name: 'shadow combinator after CSS comment with parenthesis',
-            selectors: '#host/*(*/ >>> button',
-            delimiter: ' >>> ',
-            expected: ['#host/*(*/', 'button'],
-        },
-        {
-            name: 'shadow combinator inside CSS comment',
-            selectors: '#host /* >>> */ button',
-            delimiter: ' >>> ',
-            expected: ['#host /* >>> */ button'],
-        },
-        {
-            name: 'XPath path steps are not CSS comments',
-            selectors: 'xpath(//div[@id="a"]/*[1]), #b',
-            delimiter: ',',
-            expected: ['xpath(//div[@id="a"]/*[1])', '#b'],
-        },
-        {
-            name: 'backslash before quote inside XPath string literal',
-            selectors: 'xpath(//a[@title="C:\\"]), span',
-            delimiter: ',',
-            expected: ['xpath(//a[@title="C:\\"])', 'span'],
-        },
-        {
-            name: 'shadow combinator inside CSS attribute value',
-            selectors: '#host >>> button[title=" >>> "]',
-            delimiter: ' >>> ',
-            expected: ['#host', 'button[title=" >>> "]'],
-        },
-        // Invalid CSS selectors are not recovered, so the rest of the string stays a part of them
-        {
-            name: 'unclosed square bracket in CSS selector',
-            selectors: '#first, button[name="agree", #close',
-            delimiter: ',',
-            expected: ['#first', 'button[name="agree", #close'],
-        },
-        {
-            name: 'unclosed parenthesis in CSS selector',
-            selectors: '#first, div:not(.a, #close',
-            delimiter: ',',
-            expected: ['#first', 'div:not(.a, #close'],
-        },
-        {
-            name: 'unclosed quote in CSS selector',
-            selectors: '#first, button[title="Accept], #close',
-            delimiter: ',',
-            expected: ['#first', 'button[title="Accept], #close'],
-        },
-        {
-            name: 'unexpected closing parenthesis in CSS selector',
-            selectors: '#first, div), #close',
-            delimiter: ',',
-            expected: ['#first', 'div), #close'],
-        },
-        {
-            name: 'unclosed square bracket in CSS selector before shadow combinator',
-            selectors: '#host[ >>> button',
-            delimiter: ' >>> ',
-            expected: ['#host[ >>> button'],
-        },
-        {
-            name: 'unclosed XPath',
-            selectors: 'xpath(//button[contains(text(), "Accept"], div',
-            delimiter: ',',
-            expected: ['xpath(//button[contains(text(), "Accept"], div'],
-        },
-    ])('$name', ({ selectors, delimiter, expected }) => {
-        expect(splitSelectors(selectors, delimiter)).toStrictEqual(expected);
-    });
-});
-
 describe('getXpathElements', () => {
     afterEach(() => {
         document.body.innerHTML = '';
@@ -313,6 +156,58 @@ describe('getXpathElements', () => {
         });
 
         expect(getXpathElements('//button[count(1)]', document.documentElement)).toStrictEqual([]);
+    });
+
+    // Buttons of a consent dialog, the first one has extra whitespaces
+    const CONSENT_BUTTONS = `
+        <button id="accept">  Accept
+            all </button>
+        <div>
+            <button id="reject">Reject cookies</button>
+            <button id="save">Save</button>
+            <button id="dismiss">Dismiss</button>
+        </div>
+    `;
+
+    test.each([
+        { expression: '//button[normalize-space()="Accept all"]', expected: ['accept'] },
+        { expression: '//button[normalize-space(text())="Accept all"]', expected: ['accept'] },
+        { expression: '//button[contains(text(), "Reject")]', expected: ['reject'] },
+        { expression: '//button[text()="Save"]', expected: ['save'] },
+        { expression: '//button[.="Dismiss"]', expected: ['dismiss'] },
+        { expression: '//button[starts-with(@id, "re") or starts-with(., "Dis")]', expected: ['reject', 'dismiss'] },
+        { expression: '//button[starts-with(@id, "s") and contains(., "Save")]', expected: ['save'] },
+        { expression: '//button[not(contains(., "e"))]', expected: ['dismiss'] },
+        { expression: '//button[contains(., "Accept") and contains(., "Reject")]', expected: [] },
+    ])('functions and logical operators: $expression', ({ expression, expected }) => {
+        document.body.innerHTML = CONSENT_BUTTONS;
+
+        const elements = getXpathElements(expression, document.documentElement);
+
+        expect(elements.map((el) => el.id)).toStrictEqual(expected);
+    });
+
+    test.each([
+        { expression: 'descendant-or-self::button[normalize-space()="Accept all"]', expected: ['accept'] },
+        {
+            expression: 'descendant-or-self::button[contains(., "Reject") or text()="Save"]',
+            expected: ['reject', 'save'],
+        },
+        {
+            expression: 'descendant-or-self::button[starts-with(@id, "dis") and normalize-space(.)="Dismiss"]',
+            expected: ['dismiss'],
+        },
+        // `.//` skips top-level elements of the shadow root
+        { expression: './/button[starts-with(normalize-space(), "Accept")]', expected: [] },
+    ])('functions and logical operators inside shadow root: $expression', ({ expression, expected }) => {
+        document.body.innerHTML = '<div id="host"></div>';
+        const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
+        // `accept` button is a top-level element of the shadow root, others are nested
+        shadowRoot.innerHTML = CONSENT_BUTTONS;
+
+        const elements = getXpathElements(expression, shadowRoot);
+
+        expect(elements.map((el) => el.id)).toStrictEqual(expected);
     });
 
     test('returns selected elements in document order', () => {

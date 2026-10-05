@@ -102,6 +102,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   as each next text check started from the end of the previous match.
 - `trusted-click-element` clicking next elements of the sequence if a previous element was removed from DOM
   before the click and could not be found again.
+- `trusted-click-element` throwing an error on an invalid CSS selector after hooking event listeners
+  and `attachShadow`, or on each DOM change: invalid selectors are logged once and the scriptlet exits,
+  so no element is clicked, including ones matched by valid selectors before the invalid one,
+  e.g. a selector with a pseudo-class which is not supported by the browser.
+- `trusted-click-element` not clicking elements after an empty selector, e.g. `#accept` in `#settings,, #accept`,
+  and not calling `hit` if there is a trailing comma, e.g. in `#accept,`: empty selectors, and ones with only
+  a CSS comment, are skipped.
 - `trusted-click-element` spoofing `isTrusted` for all click-related events on a page,
   which replaced the page's own events with proxies and broke popup opening-event guards;
   only clicks dispatched by the scriptlet, and the clicks a label forwards from them to its control,

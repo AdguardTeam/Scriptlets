@@ -204,6 +204,42 @@ test('Multiple elements clicked', (assert) => {
     }, 400);
 });
 
+test('Multiple elements clicked - empty and commented out selectors are skipped', (assert) => {
+    const CLICK_ORDER = [7, 8];
+    // Assert elements for being clicked, hit func execution & click order
+    const ASSERTIONS = CLICK_ORDER.length + 2;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    // Numbers not used by other tests, as their scriptlets may still wait for elements
+    // Doubled and trailing commas, and a selector with only a CSS comment
+    const selectorsString = [
+        `#${PANEL_ID} > #${CLICKABLE_NAME}7`,
+        '',
+        `/* #${CLICKABLE_NAME}9 */`,
+        `#${PANEL_ID} > #${CLICKABLE_NAME}8`,
+        '',
+    ].join(', ');
+
+    runScriptlet(name, [selectorsString]);
+    const panel = createPanel();
+    const clickables = [];
+    CLICK_ORDER.forEach((number) => {
+        const clickable = createClickable(number);
+        panel.appendChild(clickable);
+        clickables.push(clickable);
+    });
+
+    setTimeout(() => {
+        clickables.forEach((clickable) => {
+            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        });
+        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 400);
+});
+
 test('Multiple elements clicked - commas inside pseudo-classes and attribute values are not delimiters', (assert) => {
     const CLICK_ORDER = [1, 2];
     // Assert elements for being clicked, hit func execution & click order
@@ -464,6 +500,41 @@ test('extraMatch - single cookie match, matched', (assert) => {
         done();
     }, 150);
     clearCookie(cookieKey1);
+});
+
+test('extraMatch - invalid click type is logged, element clicked by default click', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    // Number not used by other tests, as their scriptlets may still wait for elements
+    const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}4`;
+
+    const loggedMessages = [];
+    const nativeConsoleLog = console.log;
+    console.log = (message) => {
+        loggedMessages.push(message);
+    };
+    try {
+        runScriptlet(name, [selectorsString, 'clickType:synthetic']);
+    } finally {
+        console.log = nativeConsoleLog;
+    }
+
+    const panel = createPanel();
+    const clickable = createClickable(4);
+    panel.appendChild(clickable);
+
+    setTimeout(() => {
+        assert.deepEqual(
+            loggedMessages,
+            [`${name}: Passed click type 'synthetic' is invalid`],
+            'Invalid click type logged',
+        );
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
 });
 
 test('extraMatch - text match, matched', (assert) => {
@@ -1512,9 +1583,35 @@ test('hooks are not installed when the scriptlet exits early', (assert) => {
         `#${PANEL_ID} >>> xpath(//input)`,
         `#${PANEL_ID} >>> xpath(descendant-or-self::div | //input)`,
         `#${PANEL_ID} >>> xpath(descendant-or-self::input[true()and//input[@id="outside"]])`,
+        // invalid CSS selectors, including misspelled XPath ones
+        `#${PANEL_ID} >>> ..input`,
+        `#${PANEL_ID} > input, div:not(`,
+        'xpath (//input)',
+        `#${PANEL_ID} xpath(//input)`,
+        // empty part between shadow combinators
+        `#${PANEL_ID} >>>  >>> input`,
+        // only empty selectors
+        ' , ',
+        ' , /* #panel */',
     ].forEach((invalidSelector) => {
-        runScriptlet(name, [invalidSelector]);
-        const description = `Invalid XPath selector '${invalidSelector}'`;
+        const loggedMessages = [];
+        const nativeConsoleLog = console.log;
+        console.log = (message) => {
+            loggedMessages.push(message);
+        };
+        try {
+            runScriptlet(name, [invalidSelector]);
+        } finally {
+            console.log = nativeConsoleLog;
+        }
+        const description = `Invalid selector '${invalidSelector}'`;
+        // Errors thrown by the scriptlet are logged as well, so only the invalid selector message is expected
+        assert.true(
+            loggedMessages.length === 1
+            && typeof loggedMessages[0] === 'string'
+            && loggedMessages[0].startsWith(`${name}: Invalid selector: '`),
+            `${description} is logged`,
+        );
         assert.false(isEventListenerHookInstalled(), `${description} leaves event listener methods intact`);
         assert.false(isAttachShadowHookInstalled(), `${description} leaves attachShadow intact`);
     });
@@ -1612,6 +1709,81 @@ test('XPath - element clicked', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 150);
+});
+
+test('XPath - functions and logical operators select elements', (assert) => {
+    // Numbers not used by other tests, as their scriptlets may still wait for elements
+    const CLICK_ORDER = [11, 12, 13, 14];
+    const TEXTS = ['  Accept\n    all ', 'Reject cookies', 'Save', 'Dismiss'];
+    // Assert elements for being clicked, hit func execution & click order
+    const ASSERTIONS = CLICK_ORDER.length + 2;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const inPanel = (predicate) => `xpath(//div[@id="${PANEL_ID}"]/input[${predicate}])`;
+    const selectorsString = [
+        inPanel('normalize-space(text())="Accept all"'),
+        inPanel('contains(text(), "Reject")'),
+        inPanel(`starts-with(@id, "${CLICKABLE_NAME}1") and text()="Save"`),
+        inPanel('text()="Close" or text()="Dismiss"'),
+    ].join(', ');
+
+    runScriptlet(name, [selectorsString]);
+    const panel = createPanel();
+    const clickables = CLICK_ORDER.map((number, i) => {
+        const clickable = createClickable(number, TEXTS[i]);
+        panel.appendChild(clickable);
+        return clickable;
+    });
+
+    setTimeout(() => {
+        clickables.forEach((clickable) => {
+            assert.ok(clickable.getAttribute('clicked'), `Element '${clickable.textContent}' should be clicked`);
+        });
+        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 800);
+});
+
+test('XPath - functions and logical operators select elements inside closed shadow DOM', (assert) => {
+    // Numbers not used by other tests, as their scriptlets may still wait for elements
+    const CLICK_ORDER = [21, 22, 23, 24];
+    const TEXTS = ['  Accept\n    all ', 'Reject cookies', 'Save', 'Dismiss'];
+    // Assert elements for being clicked, hit func execution & click order
+    const ASSERTIONS = CLICK_ORDER.length + 2;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    // Shadow host is selected by XPath with functions as well
+    const HOST_XPATH = `xpath(//div[starts-with(@id, "${PANEL_ID}") and not(@class)])`;
+    const inShadow = (predicate) => `${HOST_XPATH} >>> xpath(descendant-or-self::input[${predicate}])`;
+    const selectorsString = [
+        inShadow('normalize-space()="Accept all"'),
+        inShadow('contains(., "Reject")'),
+        inShadow(`starts-with(@id, "${CLICKABLE_NAME}2") and starts-with(., "Save")`),
+        inShadow(`@id="${CLICKABLE_NAME}99" or .="Dismiss"`),
+    ].join(', ');
+
+    runScriptlet(name, [selectorsString]);
+
+    const panel = createPanel();
+    const shadowRoot = panel.attachShadow({ mode: 'closed' });
+    const clickables = CLICK_ORDER.map((number, i) => createClickable(number, TEXTS[i]));
+    // First element is a top-level element of the shadow root, others are nested
+    shadowRoot.appendChild(clickables[0]);
+    const div = document.createElement('div');
+    clickables.slice(1).forEach((clickable) => div.appendChild(clickable));
+    shadowRoot.appendChild(div);
+
+    setTimeout(() => {
+        clickables.forEach((clickable) => {
+            assert.ok(clickable.getAttribute('clicked'), `Element '${clickable.textContent}' should be clicked`);
+        });
+        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 800);
 });
 
 test('XPath - multiple elements clicked, commas inside XPath are not delimiters', (assert) => {
@@ -1788,46 +1960,6 @@ test('XPath - element inside nested closed shadow DOM clicked', (assert) => {
     setTimeout(() => {
         assert.ok(clickable.getAttribute('clicked'), 'Element in nested closed shadow DOM should be clicked');
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
-        done();
-    }, 150);
-});
-
-test('XPath - absolute XPath after shadow combinator is logged, nothing is clicked', (assert) => {
-    const ASSERTIONS = 4;
-    assert.expect(ASSERTIONS);
-    const done = assert.async();
-
-    // Inside shadow DOM, absolute path is evaluated against the document by Chromium,
-    // but against the shadow root by Firefox
-    const selectorsString = `#${PANEL_ID} >>> xpath(//input[@id="${CLICKABLE_NAME}1"])`;
-
-    const loggedMessages = [];
-    const nativeConsoleLog = console.log;
-    console.log = (message) => {
-        loggedMessages.push(message);
-    };
-    try {
-        runScriptlet(name, [selectorsString]);
-    } finally {
-        console.log = nativeConsoleLog;
-    }
-
-    const lightDomClickable = createClickable(1);
-    document.body.appendChild(lightDomClickable);
-
-    const panel = createPanel();
-    const shadowRoot = panel.attachShadow({ mode: 'open' });
-    const div = document.createElement('div');
-    const shadowDomClickable = createClickable(1);
-    div.appendChild(shadowDomClickable);
-    shadowRoot.appendChild(div);
-
-    setTimeout(() => {
-        assert.deepEqual(loggedMessages, [`${name}: Invalid selector: '${selectorsString}'`], 'Absolute XPath logged');
-        assert.notOk(lightDomClickable.getAttribute('clicked'), 'Element outside of shadow DOM should NOT be clicked');
-        assert.notOk(shadowDomClickable.getAttribute('clicked'), 'Element inside shadow DOM should NOT be clicked');
-        assert.strictEqual(window.hit, undefined, 'hit should not fire');
-        lightDomClickable.remove();
         done();
     }, 150);
 });
