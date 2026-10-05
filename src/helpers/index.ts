@@ -45,3 +45,4 @@ export * from './value-matchers';
 export * from './click-utils';
 export * from './set-constant-utils';
 export * from './chain-prop-utils';
+export * from './xpath-utils';

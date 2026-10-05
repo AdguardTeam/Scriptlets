@@ -1,4 +1,5 @@
 import { flatten } from './array-utils';
+import { getXpathElements, getXpathExpression, splitSelectors } from './xpath-utils';
 
 /**
  * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
@@ -71,8 +72,6 @@ export const pierceShadowDom = (
     return { targets, innerHosts };
 };
 
-type QueryFunc = typeof document.querySelector;
-
 /**
  * Checks if an element contains the specified text.
  *
@@ -88,6 +87,9 @@ export function doesElementContainText(
     if (!textContent) {
         return false;
     }
+    // Regexp with `g` or `y` flag starts the search from the end of its previous match,
+    // so each check would depend on the previous one
+    matchRegexp.lastIndex = 0;
     return matchRegexp.test(textContent);
 }
 
@@ -95,13 +97,13 @@ export function doesElementContainText(
  * Finds an element within the given root element that matches the specified element
  * and contains text matching the provided regular expression.
  *
- * @param rootElement - The root element to search within.
+ * @param rootElement - The root element or shadow root to search within.
  * @param selector - The element to find.
  * @param matchRegexp - The regular expression to match the text content of the elements.
  * @returns The first element that matches the criteria, or null if no such element is found.
  */
 export function findElementWithText(
-    rootElement: Element,
+    rootElement: Element | ShadowRoot,
     selector: string,
     matchRegexp: RegExp,
 ): Element | null {
@@ -121,38 +123,55 @@ export function findElementWithText(
  * @param selector A DOMString containing one or more selectors to match.
  * Supports `>>>` combinator to split the selector into shadow host selector,
  * to find the element containing shadow root, and shadow root selector, to find the element inside shadow dom.
- * @param context The Element or Document which is the context for the query.
- * @param context.querySelector The querySelector function to use.
+ * Each part of the selector may be an XPath expression wrapped in `xpath(...)`,
+ * see `getXpathElements()` for the evaluation of XPath inside shadow dom.
+ * @param context The Element or ShadowRoot which is the context for the query.
  * @param textContent The text content to match.
+ * @param shadowRootsMap Closed shadow roots by their host elements.
  * @returns The first Element within the document that matches the specified selector, or null if no matches are found.
  */
 export function queryShadowSelector(
     selector: string,
-    context: { querySelector: QueryFunc } = document.documentElement,
+    context: Element | ShadowRoot = document.documentElement,
     textContent: RegExp | null = null,
     shadowRootsMap?: WeakMap<Element, ShadowRoot>,
-): ReturnType<QueryFunc> {
+): Element | null {
     const SHADOW_COMBINATOR = ' >>> ';
-    const pos = selector.indexOf(SHADOW_COMBINATOR);
-    if (pos === -1) {
-        if (textContent) {
-            return findElementWithText(context as Element, selector, textContent);
+
+    const queryElement = (
+        partSelector: string,
+        root: Element | ShadowRoot,
+        matchRegexp: RegExp | null,
+    ): Element | null => {
+        const xpath = getXpathExpression(partSelector);
+        if (xpath === null) {
+            return matchRegexp
+                ? findElementWithText(root, partSelector, matchRegexp)
+                : root.querySelector(partSelector);
         }
-        return context.querySelector(selector);
+
+        const elements = getXpathElements(xpath, root);
+        const element = matchRegexp
+            ? elements.find((el) => doesElementContainText(el, matchRegexp))
+            : elements[0];
+        return element || null;
+    };
+
+    const parts = splitSelectors(selector, SHADOW_COMBINATOR);
+    let root = context;
+    for (let i = 0; i < parts.length - 1; i += 1) {
+        const host = queryElement(parts[i], root, null);
+        if (!host) {
+            return null;
+        }
+
+        // Use native shadowRoot first; fall back to WeakMap for closed shadow DOMs
+        const shadowRoot = host.shadowRoot || shadowRootsMap?.get(host);
+        if (!shadowRoot) {
+            return null;
+        }
+        root = shadowRoot;
     }
 
-    const shadowHostSelector = selector.slice(0, pos).trim();
-    const elem = context.querySelector(shadowHostSelector);
-    if (!elem) {
-        return null;
-    }
-
-    // Use native shadowRoot first; fall back to WeakMap for closed shadow DOMs
-    const root = elem.shadowRoot || shadowRootsMap?.get(elem);
-    if (!root) {
-        return null;
-    }
-
-    const shadowRootSelector = selector.slice(pos + SHADOW_COMBINATOR.length).trim();
-    return queryShadowSelector(shadowRootSelector, root, textContent, shadowRootsMap);
+    return queryElement(parts[parts.length - 1], root, textContent);
 }

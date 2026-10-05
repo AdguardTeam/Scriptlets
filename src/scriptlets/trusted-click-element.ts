@@ -13,6 +13,11 @@ import {
     doesElementContainText,
     findElementWithText,
     randomId,
+    isValidXpath,
+    hasAbsoluteXpath,
+    getXpathExpression,
+    splitSelectors,
+    getXpathElements,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -36,6 +41,16 @@ import { type Source } from './scriptlets';
  * ```
  * <!-- markdownlint-disable-next-line line-length -->
  * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
+ *   Commas inside pseudo-classes, e.g. `:is(.accept, .agree)`, and quoted attribute values are not delimiters.
+ *   XPath expressions are supported as well, if wrapped in `xpath()`, e.g. `xpath(//button[text()="Accept"])`;
+ *   commas inside `xpath()` are not delimiters either. XPath can be combined with `>>>` combinator,
+ *   but shadow root cannot be an XPath context node, so after `>>>` the expression is evaluated
+ *   against each top-level element of the shadow root. Use `descendant-or-self::` axis to select elements
+ *   at any level of the shadow DOM, e.g. `xpath(descendant-or-self::button)`, as `xpath(.//button)`
+ *   skips top-level elements. Positional predicates are applied to each top-level element separately,
+ *   e.g. `xpath((descendant-or-self::button)[2])` selects the second button of a top-level element,
+ *   not of the whole shadow DOM. Absolute paths, e.g. `xpath(//button)`, are not allowed after `>>>`,
+ *   as browsers evaluate them differently inside shadow DOM.
  * - `extraMatch` — optional, extra condition to check on a page;
  *    allows to match `cookie`, `localStorage` and specified text;
  * can be set as `name:key[=value]` where `value` is optional.
@@ -138,6 +153,19 @@ import { type Source } from './scriptlets';
  *    example.com#%#//scriptlet('trusted-click-element', 'article .container > div#host >>> div > button')
  *    ```
  *
+ * 1. Click element selected by XPath expression, e.g. button containing text `Accept`
+ *
+ *    ```adblock
+ *    example.com#%#//scriptlet('trusted-click-element', 'xpath(//button[contains(text(), "Accept")])')
+ *    ```
+ *
+ * 1. Click element at any level of open shadow DOM, selected by relative XPath expression,
+ *    with shadow host element selected by `div#host`
+ *
+ *    ```adblock
+ *    example.com#%#//scriptlet('trusted-click-element', 'div#host >>> xpath(descendant-or-self::button[text()="Accept"])')
+ *    ```
+ *
  * 1. Click elements after 1000ms delay and reload page after all elements have been clicked with 200ms delay
  *
  *    ```adblock
@@ -171,7 +199,7 @@ interface ElementObject {
     clicked: boolean;
 
     /**
-     * CSS selector text used to find the element
+     * CSS selector or `xpath(...)` text used to find the element
      */
     selectorText: string | null;
 }
@@ -184,13 +212,37 @@ export function trustedClickElement(
     reload = '',
     observerTimeoutSec = NaN,
 ) {
-    // TODO: Verify that the selectors string is valid
-    // Use helpers introduced in https://github.com/AdGuardSoftwareLimited/ext-scriptlets/pull/29 (wait for PR to be merged)
     if (!selectors) {
         return;
     }
 
     const SHADOW_COMBINATOR = ' >>> ';
+    const SELECTORS_DELIMITER = ',';
+
+    // Commas inside `xpath(...)`, pseudo-classes or quoted strings are not delimiters,
+    // e.g. in `xpath(//button[contains(text(), "Accept")])` or `button:is(.accept, .agree)`
+    const parsedSelectors = splitSelectors(selectors, SELECTORS_DELIMITER);
+
+    // Selectors are validated once, to log an invalid one and exit before any hooks are installed,
+    // as an invalid XPath expression would select nothing, and an invalid CSS selector would throw an error
+    const invalidSelector = parsedSelectors.find((selector) => {
+        return splitSelectors(selector, SHADOW_COMBINATOR).some((part, index) => {
+            const xpath = getXpathExpression(part);
+            if (xpath === null) {
+                // TODO: Validate CSS selectors as well, by helper introduced in
+                // https://github.com/AdGuardSoftwareLimited/ext-scriptlets/pull/29 (wait for PR to be merged)
+                return false;
+            }
+            // Absolute paths inside shadow DOM are evaluated against the document by Chromium,
+            // but against the shadow root by Firefox, so they are not allowed after shadow combinator
+            const isInsideShadowDom = index > 0;
+            return !isValidXpath(xpath) || (isInsideShadowDom && hasAbsoluteXpath(xpath));
+        });
+    });
+    if (invalidSelector !== undefined) {
+        logMessage(source, `Invalid selector: '${invalidSelector}'`);
+        return;
+    }
 
     /**
      * Default observer timeout in seconds.
@@ -206,7 +258,6 @@ export function trustedClickElement(
     const CLICK_TYPE_MATCH_MARKER = 'clickType:';
     const CLICK_TYPE_NATIVE = 'native';
     const RELOAD_ON_FINAL_CLICK_MARKER = 'reloadAfterClick';
-    const SELECTORS_DELIMITER = ',';
     const COOKIE_STRING_DELIMITER = ';';
     const COLON = ':';
     // Regex to split match pairs by commas, avoiding the ones included in regexes
@@ -375,9 +426,7 @@ export function trustedClickElement(
      * - always know on what index corresponding element should be put
      * - prevent selectors from being queried multiple times
      */
-    let selectorsSequence: Array<string | null> = selectors
-        .split(SELECTORS_DELIMITER)
-        .map((selector) => selector.trim());
+    let selectorsSequence: Array<string | null> = parsedSelectors;
 
     const createElementObj = (element: any, selector?: string | null): Object => {
         return {
@@ -399,10 +448,11 @@ export function trustedClickElement(
             if (!elementObj.selectorText) {
                 return;
             }
+            // Text should match as well, otherwise another element matching the selector may be clicked
             const element = queryShadowSelector(
                 elementObj.selectorText,
                 document.documentElement,
-                null,
+                textMatchRegexp,
                 closedShadowRoots,
             ) as HTMLElement;
             if (!element) {
@@ -489,6 +539,11 @@ export function trustedClickElement(
                 } else {
                     findAndClickElement(elementObj);
                 }
+            }
+
+            // Stop clicking if the element is not found again, as next elements should be clicked after it
+            if (!elementObj.clicked) {
+                break;
             }
         }
 
@@ -629,7 +684,11 @@ export function trustedClickElement(
     // to track closed shadow roots and observe each new shadow root for mutations,
     // bridging them to the document-level MutationObserver which cannot see inside shadow DOMs.
     // Installed only after all early returns, but before looking for elements.
-    if (selectors.includes(SHADOW_COMBINATOR)) {
+    // Parsed selectors are checked, as ` >>> ` may be a part of a string, e.g. in `[title=" >>> "]`.
+    const hasShadowCombinator = parsedSelectors.some((selector) => {
+        return splitSelectors(selector, SHADOW_COMBINATOR).length > 1;
+    });
+    if (hasShadowCombinator) {
         const attachShadowWrapper = (
             target: typeof Element.prototype.attachShadow,
             thisArg: Element,
@@ -704,8 +763,13 @@ trustedClickElement.injections = [
     triggerMainObserver,
     bridgeIframeLoads,
     clickElement,
+    isValidXpath,
+    hasAbsoluteXpath,
+    getXpathExpression,
+    splitSelectors,
     // following helpers are needed for helpers above
     doesElementContainText,
     findElementWithText,
+    getXpathElements,
     randomId,
 ];

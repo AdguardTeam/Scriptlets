@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
+  e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
+  e.g. `div#host >>> xpath(descendant-or-self::button)`. Invalid XPath expressions, including absolute ones
+  after `>>>`, are logged once and the scriptlet exits.
+
 ### Changed
 
 ### Deprecated
@@ -23,6 +28,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Fixed
 
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
+- `trusted-click-element` splitting selectors by commas inside pseudo-classes, e.g. `:is(.accept, .agree)`,
+  by commas inside quoted attribute values, e.g. `[title="Accept, agree"]`, and by escaped commas,
+  e.g. `#accept\,agree`, which made such selectors invalid.
+- `trusted-click-element` ignoring `containsText` when it finds an element again because the found one
+  was removed from DOM before the click, which could click another element matching the selector.
+- `trusted-click-element` not clicking an element if `containsText` is a regexp with `g` or `y` flag,
+  as each next text check started from the end of the previous match.
+- `trusted-click-element` clicking next elements of the sequence if a previous element was removed from DOM
+  before the click and could not be found again.
 - `trusted-click-element` spoofing `isTrusted` for all click-related events on a page,
   which replaced the page's own events with proxies and broke popup opening-event guards;
   only clicks dispatched by the scriptlet, and the clicks a label forwards from them to its control,
