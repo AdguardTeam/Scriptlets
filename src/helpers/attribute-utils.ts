@@ -3,27 +3,57 @@ import { hit } from './hit';
 import { type Source } from '../scriptlets';
 
 /**
+ * Checks whether the given string can be used as an attribute name.
+ * Attribute node is created without adding it to any element, so the check does not change the page DOM.
+ * It uses the same validation as `setAttribute()`, which throws for invalid names.
+ *
+ * @param name Attribute name to check.
+ *
+ * @returns True if the attribute name is valid, false otherwise.
+ */
+export const isValidAttributeName = (name: string): boolean => {
+    try {
+        document.createAttribute(name);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+/**
  * Sets attribute with given value to given element.
+ * Does nothing if the element already has the attribute with the same value,
+ * so that no redundant mutations are produced.
  *
  * @param elem Element to set attribute to.
  * @param attribute Attribute name to set.
  * @param value Attribute value to set.
+ *
+ * @returns True if the attribute has been changed, false otherwise.
  */
 export const defaultAttributeSetter = (
     elem: Element,
     attribute: string,
     value: string,
-): void => elem.setAttribute(attribute, value);
+): boolean => {
+    if (elem.getAttribute(attribute) === value) {
+        return false;
+    }
+    elem.setAttribute(attribute, value);
+    return true;
+};
 
 /**
  * Sets attribute with given value to all elements matching given selector
  *
  * @param source source
- * @param selector CSS selector
+ * @param selector CSS selector, should be validated before, e.g. by `isValidSelector()`
  * @param attribute attribute name to set
  * @param value attribute value to set
  * @param attributeSetter function to apply to each element,
- * defaults to native .setAttribute
+ * should return true if the attribute has been changed, defaults to {@link defaultAttributeSetter}
+ * @param loggedFailedElements elements whose error has already been logged, should be kept by the caller
+ * between calls, so that the error is logged only once per element and not on each DOM change
  */
 export const setAttributeBySelector = (
     source: Source,
@@ -31,24 +61,32 @@ export const setAttributeBySelector = (
     attribute: string,
     value: string,
     attributeSetter = defaultAttributeSetter,
+    loggedFailedElements = new WeakSet<Element>(),
 ): void => {
-    let elements;
-    try {
-        elements = document.querySelectorAll(selector);
-    } catch {
-        logMessage(source, `Failed to find elements matching selector "${selector}"`);
+    const elements = document.querySelectorAll(selector);
+
+    if (elements.length === 0) {
         return;
     }
 
-    if (!elements || elements.length === 0) {
-        return;
-    }
-
-    try {
-        elements.forEach((elem) => attributeSetter(elem, attribute, value));
+    let isChanged = false;
+    elements.forEach((elem) => {
+        // Error for one element, e.g. caused by the page, should not stop processing of other elements
+        try {
+            if (attributeSetter(elem, attribute, value)) {
+                isChanged = true;
+            }
+        } catch {
+            if (!loggedFailedElements.has(elem)) {
+                loggedFailedElements.add(elem);
+                // Element is logged as is, since its string representation does not identify it
+                logMessage(source, [`Failed to set [${attribute}="${value}"] to element:`, elem], false, false);
+            }
+        }
+    });
+    // Call hit only on actual change, otherwise idle observers would log on each unrelated mutation
+    if (isChanged) {
         hit(source);
-    } catch {
-        logMessage(source, `Failed to set [${attribute}="${value}"] to each of selected elements.`);
     }
 };
 

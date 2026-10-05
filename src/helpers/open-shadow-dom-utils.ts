@@ -25,6 +25,39 @@ export const findHostElements = (rootElement: Element | ShadowRoot | null): HTML
 };
 
 /**
+ * Finds shadow-dom hosts to start piercing from.
+ * Element matched by base selector may be not a shadow-dom host itself but a container of hosts,
+ * so it is replaced by hosts inside it, and its own light DOM is not checked,
+ * same as the page DOM when there is no base selector.
+ *
+ * @param baseSelector selector of base elements, optional
+ * @returns shadow-dom hosts, each one only once
+ */
+export const findBaseHostElements = (baseSelector?: string): HTMLElement[] => {
+    if (!baseSelector) {
+        return findHostElements(document.documentElement);
+    }
+
+    const hosts = new Set<HTMLElement>();
+    let lastContainer: Element | null = null;
+    document.querySelectorAll(baseSelector).forEach((elem) => {
+        if (elem.shadowRoot) {
+            hosts.add(elem as HTMLElement);
+            return;
+        }
+        // Elements are in document order, so a nested container follows its ancestor container,
+        // and it is skipped, since it has been already searched as a part of the ancestor one
+        if (lastContainer && lastContainer.contains(elem)) {
+            return;
+        }
+        lastContainer = elem;
+        findHostElements(elem).forEach((host) => hosts.add(host));
+    });
+
+    return Array.from(hosts);
+};
+
+/**
  * A collection of nodes.
  *
  * @external NodeList

@@ -19,8 +19,10 @@ export * from './prune-utils';
 export * from './regexp-utils';
 export * from './response-utils';
 export * from './request-utils';
+export * from './selector-utils';
 export * from './storage-utils';
 export * from './string-utils';
+export * from './url-utils';
 
 export * from './log-message';
 export * from './create-on-error-handler';

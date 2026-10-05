@@ -1,6 +1,20 @@
-import { describe, test, expect } from 'vitest';
+/* eslint-disable no-underscore-dangle */
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 
-import { parseAttributePairs, getElementAttributesWithValues } from '../../src/helpers';
+import {
+    parseAttributePairs,
+    getElementAttributesWithValues,
+    defaultAttributeSetter,
+    setAttributeBySelector,
+    isValidAttributeName,
+} from '../../src/helpers';
 
 describe('parseAttributePairs', () => {
     describe('valid input', () => {
@@ -184,5 +198,172 @@ describe('getElementAttributesWithValues', () => {
         const expected = '';
         const result = getElementAttributesWithValues('test');
         expect(result).toStrictEqual(expected);
+    });
+});
+
+describe('defaultAttributeSetter', () => {
+    const ATTR_NAME = 'data-test';
+
+    test('sets attribute and returns true if it is missing', () => {
+        const elem = document.createElement('div');
+        expect(defaultAttributeSetter(elem, ATTR_NAME, '')).toBe(true);
+        expect(elem.getAttribute(ATTR_NAME)).toBe('');
+    });
+
+    test('sets attribute and returns true if its value differs', () => {
+        const elem = document.createElement('div');
+        elem.setAttribute(ATTR_NAME, '1');
+        expect(defaultAttributeSetter(elem, ATTR_NAME, '2')).toBe(true);
+        expect(elem.getAttribute(ATTR_NAME)).toBe('2');
+    });
+
+    test('does not set attribute and returns false if its value matches', () => {
+        const elem = document.createElement('div');
+        elem.setAttribute(ATTR_NAME, '1');
+        const setAttributeSpy = vi.spyOn(elem, 'setAttribute');
+        expect(defaultAttributeSetter(elem, ATTR_NAME, '1')).toBe(false);
+        expect(setAttributeSpy).not.toHaveBeenCalled();
+        expect(elem.getAttribute(ATTR_NAME)).toBe('1');
+    });
+});
+
+describe('setAttributeBySelector', () => {
+    const CLASS_NAME = 'ag-test-attr-utils';
+    const SELECTOR = `.${CLASS_NAME}`;
+    const ATTR_NAME = 'data-test';
+    const source = {
+        name: 'set-attr',
+        args: [],
+        verbose: true,
+    };
+
+    let elems;
+
+    beforeEach(() => {
+        elems = [document.createElement('div'), document.createElement('div')];
+        elems.forEach((elem) => {
+            elem.classList.add(CLASS_NAME);
+            document.body.appendChild(elem);
+        });
+        window.__debug = vi.fn();
+        // hit() logs a trace on each call
+        vi.spyOn(console, 'trace').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        elems.forEach((elem) => elem.remove());
+        delete window.__debug;
+        vi.restoreAllMocks();
+    });
+
+    test('sets attribute and calls hit if some of matched elements are changed', () => {
+        elems[0].setAttribute(ATTR_NAME, '1');
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1');
+        elems.forEach((elem) => expect(elem.getAttribute(ATTR_NAME)).toBe('1'));
+        expect(window.__debug).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not call hit if all matched elements already have the value', () => {
+        elems.forEach((elem) => elem.setAttribute(ATTR_NAME, '1'));
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1');
+        expect(window.__debug).not.toHaveBeenCalled();
+    });
+
+    test('calls hit only if custom attribute setter reports a change', () => {
+        const noChangeSetter = vi.fn(() => false);
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', noChangeSetter);
+        expect(noChangeSetter).toHaveBeenCalledTimes(elems.length);
+        expect(window.__debug).not.toHaveBeenCalled();
+
+        const changeSetter = vi.fn(() => true);
+        setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', changeSetter);
+        expect(changeSetter).toHaveBeenCalledTimes(elems.length);
+        expect(window.__debug).toHaveBeenCalledTimes(1);
+    });
+
+    describe('error for one element', () => {
+        const FAILED_MESSAGE_PREFIX = `${source.name}: Failed to set [${ATTR_NAME}="1"]`;
+
+        let logSpy;
+
+        beforeEach(() => {
+            logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        });
+
+        const getErrorLogs = () => logSpy.mock.calls.filter((args) => {
+            return args.join(' ').startsWith(FAILED_MESSAGE_PREFIX);
+        });
+
+        const throwingSetter = () => {
+            throw new Error('page error');
+        };
+
+        /**
+         * Creates attribute setter which throws for given element, e.g. because of the page,
+         * and sets the attribute to other elements.
+         *
+         * @param {Element} failingElem element to throw for
+         * @returns {Function} attribute setter
+         */
+        const createSetterFailingFor = (failingElem) => (elem, attr, value) => {
+            if (elem === failingElem) {
+                throw new Error('page error');
+            }
+            return defaultAttributeSetter(elem, attr, value);
+        };
+
+        test('does not stop setting attribute on the following elements', () => {
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', createSetterFailingFor(elems[0]));
+            expect(elems[1].getAttribute(ATTR_NAME)).toBe('1');
+            expect(window.__debug).toHaveBeenCalledTimes(1);
+        });
+
+        test('does not prevent hit for elements changed before it', () => {
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', createSetterFailingFor(elems[1]));
+            expect(elems[0].getAttribute(ATTR_NAME)).toBe('1');
+            expect(window.__debug).toHaveBeenCalledTimes(1);
+        });
+
+        test('is logged for each failing element', () => {
+            const setter = vi.fn(throwingSetter);
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', setter);
+            expect(setter).toHaveBeenCalledTimes(elems.length);
+            const errorLogs = getErrorLogs();
+            expect(errorLogs).toHaveLength(elems.length);
+            errorLogs.forEach((args, i) => expect(args).toContain(elems[i]));
+            expect(window.__debug).not.toHaveBeenCalled();
+        });
+
+        test('is logged only once per element if logged elements are kept between calls', () => {
+            const loggedFailedElements = new WeakSet();
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', throwingSetter, loggedFailedElements);
+            setAttributeBySelector(source, SELECTOR, ATTR_NAME, '1', throwingSetter, loggedFailedElements);
+            expect(getErrorLogs()).toHaveLength(elems.length);
+        });
+    });
+});
+
+describe('isValidAttributeName', () => {
+    test.each([
+        'data-test',
+        'id',
+        'xlink:href',
+    ])('valid attribute name: %s', (name) => {
+        expect(isValidAttributeName(name)).toBe(true);
+    });
+
+    test.each([
+        '',
+        'a b',
+        'a>b',
+        'a=b',
+    ])('invalid attribute name: "%s"', (name) => {
+        expect(isValidAttributeName(name)).toBe(false);
+    });
+
+    test('does not change the page DOM', () => {
+        const attributesCount = document.documentElement.attributes.length;
+        isValidAttributeName('data-test');
+        expect(document.documentElement.attributes.length).toBe(attributesCount);
     });
 });

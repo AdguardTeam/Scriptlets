@@ -5,6 +5,8 @@ import {
     convertTypeToString,
     defaultAttributeSetter,
     logMessage,
+    isValidSelector,
+    isValidAttributeName,
     throttle,
     hit,
 } from '../helpers';
@@ -120,9 +122,23 @@ export function setAttr(source, selector, attr, value = '') {
         return;
     }
 
+    // Selector and attribute name are validated once, otherwise the error would be logged on each DOM change
+    if (!isValidSelector(selector)) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+    if (!isValidAttributeName(attr)) {
+        logMessage(source, `Invalid attribute name: '${attr}'`);
+        return;
+    }
+
     const allowedValues = ['true', 'false'];
 
-    const shouldCopyValue = value.startsWith('[') && value.endsWith(']');
+    // Name of the attribute to copy the value from is validated once as well, since `getAttribute()`
+    // returns null for an invalid name, so it would be taken as missing on each matched element
+    const shouldCopyValue = value.startsWith('[')
+        && value.endsWith(']')
+        && isValidAttributeName(value.slice(1, -1));
 
     const isValidValue = value.length === 0
         || (!nativeIsNaN(parseInt(value, 10))
@@ -142,17 +158,40 @@ export function setAttr(source, selector, attr, value = '') {
      */
     let attributeHandler;
     if (shouldCopyValue) {
+        /**
+         * Elements whose missing attribute to copy the value from has been logged,
+         * so it is not logged on each DOM change, but again only after the attribute has been found.
+         */
+        const loggedMissingSourceElems = new WeakSet();
         attributeHandler = (elem, attr, value) => {
             const valueToCopy = elem.getAttribute(value.slice(1, -1));
+            // setAttribute() stringifies the value, e.g. null -> 'null',
+            // so it should be compared as a string to avoid re-setting it on each mutation
+            const isChanged = defaultAttributeSetter(elem, attr, String(valueToCopy));
+            // Logged on missing attribute rather than on actual change,
+            // since the target may already hold 'null', e.g. if the element is a copy of a processed one
             if (valueToCopy === null) {
-                logMessage(source, `No element attribute found to copy value from: ${value}`);
+                if (!loggedMissingSourceElems.has(elem)) {
+                    loggedMissingSourceElems.add(elem);
+                    logMessage(source, `No element attribute found to copy value from: ${value}`);
+                }
+            } else {
+                loggedMissingSourceElems.delete(elem);
             }
-            elem.setAttribute(attr, valueToCopy);
+            return isChanged;
         };
     }
 
-    setAttributeBySelector(source, selector, attr, value, attributeHandler);
-    observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value, attributeHandler), true);
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+    const applyAttr = () => {
+        setAttributeBySelector(source, selector, attr, value, attributeHandler, loggedFailedElems);
+    };
+
+    applyAttr();
+    observeDOMChanges(applyAttr, true);
 }
 
 export const setAttrNames = [
@@ -171,6 +210,8 @@ setAttr.injections = [
     observeDOMChanges,
     nativeIsNaN,
     convertTypeToString,
+    isValidSelector,
+    isValidAttributeName,
     // following helpers should be imported and injected
     // because they are used by helpers above
     defaultAttributeSetter,

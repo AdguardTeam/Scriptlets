@@ -883,7 +883,8 @@ declare function convertAdgRedirectToUbo(rule: string): string;
 |-----------------------|:--------|
 | Chrome                | ✅ 55   |
 | Firefox               | ✅ 52   |
-| Edge                  | ✅ 15   |
+| Edge Chromium         | ✅ 80   |
+| Edge Legacy           | ❌      |
 | Opera                 | ✅ 42   |
 | Safari                | ✅ 13   |
 | Internet Explorer     | ❌      |
