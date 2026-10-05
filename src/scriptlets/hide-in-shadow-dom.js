@@ -1,7 +1,10 @@
 import {
     hit,
+    logMessage,
+    isValidSelector,
     observeDOMChanges,
     findHostElements,
+    findBaseHostElements,
     pierceShadowDom,
     flatten,
     throttle,
@@ -22,7 +25,10 @@ import {
  * - `selector` — required, CSS selector of element in shadow-dom to hide
  * - `baseSelector` — optional, selector of specific page DOM element,
  *   narrows down the part of the page DOM where shadow-dom host supposed to be,
- *   defaults to document.documentElement
+ *   defaults to document.documentElement.
+ *   It may match a shadow-dom host itself or an element containing shadow-dom hosts, e.g. `#app`.
+ *   In both cases elements are searched only in the hosts, i.e. in their shadow DOM and their own subtree,
+ *   so elements of the container outside of the hosts are not hidden.
  *
  * > `baseSelector` should match element of the page DOM, but not of shadow DOM.
  *
@@ -45,18 +51,46 @@ export function hideInShadowDom(source, selector, baseSelector) {
         return;
     }
 
+    // Selectors are validated once, otherwise an invalid one would throw an error,
+    // e.g. in the observer callback, which would stop the observer
+    if (!isValidSelector(selector)) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+    if (baseSelector && !isValidSelector(baseSelector)) {
+        logMessage(source, `Invalid baseSelector arg: '${baseSelector}'`);
+        return;
+    }
+
     const hideElement = (targetElement) => {
         const DISPLAY_NONE_CSS = 'display:none!important;';
         targetElement.style.cssText = DISPLAY_NONE_CSS;
     };
+
+    const isElementHidden = (targetElement) => {
+        const { style } = targetElement;
+        // Inline 'all' declaration may override the hiding one, e.g. 'all: initial !important',
+        // while inline display is still reported as hidden; other inline declarations do not affect hiding,
+        // so they are not checked, otherwise they would be wiped by re-hiding on each DOM change.
+        // Computed style is not checked, because page style of higher priority may keep the element visible,
+        // e.g. '::slotted(*) { display: block !important; }', so it would be re-hidden on each DOM change
+        // and several rules would re-trigger each other infinitely
+        return style.getPropertyValue('display') === 'none'
+            && style.getPropertyPriority('display') === 'important'
+            && style.getPropertyValue('all') === '';
+    };
+
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
 
     /**
      * Handles shadow-dom piercing and hiding of found elements
      */
     const hideHandler = () => {
         // start value of shadow-dom hosts for the page dom
-        let hostElements = !baseSelector ? findHostElements(document.documentElement)
-            : document.querySelectorAll(baseSelector);
+        let hostElements = findBaseHostElements(baseSelector);
 
         // if there is shadow-dom host, they should be explored
         while (hostElements.length !== 0) {
@@ -64,8 +98,23 @@ export function hideInShadowDom(source, selector, baseSelector) {
             const { targets, innerHosts } = pierceShadowDom(selector, hostElements);
 
             targets.forEach((targetEl) => {
-                hideElement(targetEl);
-                isHidden = true;
+                // Error for one element, e.g. caused by the page, should not stop processing of other elements
+                try {
+                    // Do not re-hide already hidden element, because even such mutation wakes up observers
+                    // of other rules, and they may re-trigger each other infinitely,
+                    // and hit should be called only on actual change
+                    if (isElementHidden(targetEl)) {
+                        return;
+                    }
+                    hideElement(targetEl);
+                    isHidden = true;
+                } catch {
+                    if (!loggedFailedElems.has(targetEl)) {
+                        loggedFailedElems.add(targetEl);
+                        // Element is logged as is, since its string representation does not identify it
+                        logMessage(source, ['Failed to hide element:', targetEl], false, false);
+                    }
+                }
             });
 
             if (isHidden) {
@@ -92,8 +141,11 @@ hideInShadowDom.primaryName = hideInShadowDomNames[0];
 
 hideInShadowDom.injections = [
     hit,
+    logMessage,
+    isValidSelector,
     observeDOMChanges,
     findHostElements,
+    findBaseHostElements,
     pierceShadowDom,
     // following helpers should be imported and injected
     // because they are used by helpers above

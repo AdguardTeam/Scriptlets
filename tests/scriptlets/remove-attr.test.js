@@ -1,11 +1,24 @@
 /* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    runRulesAndCountIdleChanges,
+    countLogsAfterDomChange,
+    checkErrorForOneElement,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-attr';
 
+// eslint-disable-next-line no-console
+const nativeConsole = console.log;
+
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
+    // observers of rules from previous tests are still active and may log,
+    // so console.log overridden by a test should not outlive it
+    // eslint-disable-next-line no-console
+    console.log = nativeConsole;
 };
 
 module(name, { afterEach });
@@ -28,6 +41,19 @@ const createElem = (className, attrs) => {
 function addAttr(elem, attr) {
     elem.setAttribute(attr, true);
 }
+
+let uniqueClassCount = 0;
+
+/**
+ * Returns a unique class name, so rules from previous tests, whose observers are still active,
+ * do not match elements of the current test.
+ *
+ * @returns {string} class name
+ */
+const getUniqueClassName = () => {
+    uniqueClassCount += 1;
+    return `ag-test-remove-attr-${uniqueClassCount}`;
+};
 
 test('Checking if alias name works', (assert) => {
     const adgParams = {
@@ -317,4 +343,82 @@ test('invalid selector — no match', (assert) => {
 
     assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
     clearGlobalProps('hit');
+});
+
+test('hit is not called on unrelated DOM mutation if attribute is already removed', async (assert) => {
+    const attr = 'data-ag-test';
+    const className = getUniqueClassName();
+    // selector matches the element even after the attribute is removed
+    const elem = createElem(className, [attr]);
+    createHit();
+    const testDebug = window.__debug;
+
+    const { initialMutations, mutations, hits } = await runRulesAndCountIdleChanges(name, [
+        { elem, attr, args: [attr, `.${className}`] },
+    ]);
+
+    assert.notOk(elem.hasAttribute(attr), `Attr ${attr} removed`);
+    assert.ok(initialMutations > 0, 'initial attribute removal is counted');
+    assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
+    assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    assert.strictEqual(window.hit, 'FIRED', 'hit is still reported to the test');
+    assert.strictEqual(window.__debug, testDebug, '__debug of the test is restored');
+    elem.remove();
+});
+
+test('hit is not called if matched elements do not have the attribute', (assert) => {
+    createHit();
+    const attr = 'data-ag-test';
+    const className = getUniqueClassName();
+    const elem = createElem(className, []);
+
+    runScriptlet(name, [attr, `.${className}`]);
+
+    assert.notOk(elem.hasAttribute(attr), `Attr ${attr} is still missing`);
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+    elem.remove();
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    const selector = '..ag-test-invalid-selector';
+    const count = await countLogsAfterDomChange(
+        name,
+        ['data-ag-test', selector],
+        `${name}: Invalid selector arg: '${selector}'`,
+    );
+    assert.strictEqual(count, 1, 'invalid selector is logged once');
+});
+
+test('attribute names which are not valid CSS identifiers are removed', (assert) => {
+    createHit();
+    // e.g. Alpine.js and Vue attribute names
+    const attrs = ['x-on:click', '@click', ':class'];
+    const wrapper = document.createElement('div');
+    // attributes are created by the HTML parser, since setAttribute() may reject such names in some browsers
+    wrapper.innerHTML = '<div x-on:click="a" @click="b" :class="c" data-ag-test-kept="d"></div>';
+    const elem = wrapper.firstElementChild;
+    document.body.appendChild(wrapper);
+
+    runScriptlet(name, [attrs.join('|')]);
+
+    attrs.forEach((attr) => {
+        assert.notOk(elem.hasAttribute(attr), `attribute '${attr}' has been removed`);
+    });
+    assert.ok(elem.hasAttribute('data-ag-test-kept'), 'other attribute is kept');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    wrapper.remove();
+});
+
+test('error for one element does not stop removing attribute from others and is logged once', async (assert) => {
+    const className = getUniqueClassName();
+    const attr = 'data-ag-test-error';
+    await checkErrorForOneElement(assert, name, {
+        args: [attr, `.${className}`],
+        createElem: () => createElem(className, [attr]),
+        // e.g. the page overrides the method for the element
+        makeFailing: (elem, throwPageError) => {
+            Object.defineProperty(elem, 'removeAttribute', { value: throwPageError, configurable: true });
+        },
+        isProcessed: (elem) => !elem.hasAttribute(attr),
+    });
 });

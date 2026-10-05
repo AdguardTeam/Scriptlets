@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, max-len */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    countLogsAfterDomChange,
+    checkErrorForOneElement,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-class';
@@ -282,4 +287,57 @@ test('invalid selector — no match', (assert) => {
     assert.strictEqual(window.hit, undefined, 'hit SHOULD NOT fire');
 
     clearGlobalProps('hit');
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    createHit();
+    const invalidSelector = '..ag-test-invalid-selector';
+    const cases = [
+        {
+            args: ['ag-test-class', invalidSelector],
+            message: `${name}: Invalid selector arg: '${invalidSelector}'`,
+        },
+        {
+            // empty class name makes invalid selector
+            args: ['ag-test-class|'],
+            message: `${name}: Invalid selector arg: '.'`,
+        },
+    ];
+
+    for (let i = 0; i < cases.length; i += 1) {
+        const { args, message } = cases[i];
+        const count = await countLogsAfterDomChange(name, args, message);
+        assert.strictEqual(count, 1, `${message} is logged once`);
+    }
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('class names which are not valid CSS identifiers are removed', (assert) => {
+    createHit();
+    // e.g. Tailwind class names
+    const classNames = ['md:hidden', '1ag-test-digit', 'ag-test[x]'];
+    const elem = createElem('ag-test-kept', classNames);
+
+    runScriptlet(name, [classNames.join('|')]);
+
+    classNames.forEach((className) => {
+        assert.notOk(elem.classList.contains(className), `class '${className}' has been removed`);
+    });
+    assert.ok(elem.classList.contains('ag-test-kept'), 'other class is kept');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    elem.remove();
+});
+
+test('error for one element does not stop removing class from other elements and is logged once', async (assert) => {
+    const className = 'ag-test-remove-class-error';
+    await checkErrorForOneElement(assert, name, {
+        args: [className],
+        createElem: () => createElem(null, [className]),
+        // e.g. the page overrides the property for the element
+        makeFailing: (elem, throwPageError) => {
+            Object.defineProperty(elem, 'classList', { get: throwPageError, configurable: true });
+        },
+        // `classList` is not used, since the page overrides it for the failing element
+        isProcessed: (elem) => !elem.matches(`.${className}`),
+    });
 });

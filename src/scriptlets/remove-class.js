@@ -1,6 +1,7 @@
 import {
     hit,
     logMessage,
+    isValidSelector,
     observeDOMChanges,
     parseFlags,
     throttle,
@@ -85,42 +86,54 @@ export function removeClass(source, classNames, selector, applying = 'asap stay'
         return;
     }
     classNames = classNames.split(/\s*\|\s*/);
-    let selectors = [];
-    if (!selector) {
-        selectors = classNames.map((className) => {
-            return `.${className}`;
-        });
+    // if selector is not specified, elements are searched by class names,
+    // which are escaped, because class name may be not a valid CSS identifier, e.g. 'md:hidden'
+    const selectors = selector
+        ? [selector]
+        : classNames.map((className) => `.${CSS.escape(className)}`);
+
+    // Selectors are validated once, otherwise an invalid selector argument would be logged on each DOM change,
+    // and an invalid selector made of class names, e.g. of an empty one, would throw an error
+    const invalidSelector = selectors.find((s) => !isValidSelector(s));
+    if (invalidSelector !== undefined) {
+        logMessage(source, `Invalid selector arg: '${invalidSelector}'`);
+        return;
     }
+
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
 
     const removeClassHandler = () => {
         const nodes = new Set();
-        if (selector) {
-            let foundNodes = [];
-            try {
-                foundNodes = [].slice.call(document.querySelectorAll(selector));
-            } catch (e) {
-                logMessage(source, `Invalid selector arg: '${selector}'`);
+        // selectors are validated before
+        selectors.forEach((s) => {
+            const elements = document.querySelectorAll(s);
+            for (let i = 0; i < elements.length; i += 1) {
+                const element = elements[i];
+                nodes.add(element);
             }
-            foundNodes.forEach((n) => nodes.add(n));
-        } else if (selectors.length > 0) {
-            selectors.forEach((s) => {
-                const elements = document.querySelectorAll(s);
-                for (let i = 0; i < elements.length; i += 1) {
-                    const element = elements[i];
-                    nodes.add(element);
-                }
-            });
-        }
+        });
 
         let removed = false;
 
         nodes.forEach((node) => {
-            classNames.forEach((className) => {
-                if (node.classList.contains(className)) {
-                    node.classList.remove(className);
-                    removed = true;
+            // Error for one element, e.g. caused by the page, should not stop processing of other elements
+            try {
+                classNames.forEach((className) => {
+                    if (node.classList.contains(className)) {
+                        node.classList.remove(className);
+                        removed = true;
+                    }
+                });
+            } catch {
+                if (!loggedFailedElems.has(node)) {
+                    loggedFailedElems.add(node);
+                    // Element is logged as is, since its string representation does not identify it
+                    logMessage(source, ['Failed to remove classes from element:', node], false, false);
                 }
-            });
+            }
         });
 
         if (removed) {
@@ -180,6 +193,7 @@ removeClass.primaryName = removeClassNames[0];
 removeClass.injections = [
     hit,
     logMessage,
+    isValidSelector,
     observeDOMChanges,
     parseFlags,
     // following helpers should be imported and injected

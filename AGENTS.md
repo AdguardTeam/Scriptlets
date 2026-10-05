@@ -330,6 +330,72 @@ Project-specific rules:
    **Rationale**: The Prepare release tag and `CHANGELOG.md` are the version
    sources of truth.
 
+10. Scriptlets which re-apply themselves on DOM changes (e.g. via
+    `observeDOMChanges`) MUST NOT write a value the target already has
+    (compare before `setAttribute()` etc.) and MUST call `hit()` only if
+    something has actually changed. Invalid arguments (e.g. selector) SHOULD
+    be validated and logged once, before the observer is started; use the
+    `isValidSelector()` and `isValidAttributeName()` helpers, as they do not
+    query or change the page DOM. A failure to process an element SHOULD be
+    logged once and not again until the processed value of the element changes.
+    Such a failure SHOULD be detected from the processed value and remembered
+    per element, not inferred from whether the write has changed the target.
+
+    **Rationale**: `observeDOMChanges` only ignores the scriptlet's own
+    mutations. A write of the same value still produces a mutation record
+    which wakes up observers of other rules, so two such rules re-trigger
+    each other infinitely, and a `hit()`, an argument error or an element
+    failure logged on each callback floods the console on every unrelated
+    DOM change. The target may already hold the result of the failed
+    processing, e.g. in a copy of a processed element, so a failure logged
+    only on change may be never logged for it.
+
+11. To check whether an element is still matched by the scriptlet selector,
+    e.g. after the scriptlet has changed it, use `element.matches()` with
+    `:scope` replaced by `:root` (outside quoted strings), instead of querying
+    the whole document again.
+
+    **Rationale**: `:scope` refers to the root element in
+    `document.querySelectorAll()`, but to the element itself in
+    `element.matches()`, so e.g. `:scope a` never matches the link itself.
+
+12. Use the URL parser for values explicitly selected from URL attributes,
+    parameters or encoded destinations. Limit prose checks to visible link text.
+    When coordinating DOM writes between rules, track actual writes instead of
+    inferring their origin from similarities between values, and accept another
+    rule's write only if it continues the write the rule has seen, i.e. compare
+    write records by identity, not by the written value.
+    Keep shared per-element records on the affected elements rather than in a
+    `window` registry; use non-enumerable symbol properties, not HTML attributes.
+
+    **Rationale**: Valid URLs can contain spaces, parentheses and other URLs.
+    Page edits can resemble a rule's output, so guessing can reject valid values
+    or prevent a rule from correcting a page edit. The written value alone cannot
+    tell whether another rule continued this rule's write or changed a page edit.
+    Element metadata avoids global storage and does not trigger DOM mutation
+    observers.
+
+13. Scriptlets which process matched elements on DOM changes MUST catch errors
+    per element, log such an error once per element, and continue with other
+    elements.
+
+    **Rationale**: An error for one element, e.g. caused by the page, would
+    otherwise stop processing of the other elements on each DOM change and be
+    reported as uncaught on the page each time. `observeDOMChanges` only
+    connects the observer again after its callback throws, so that the
+    scriptlet does not stop working on the page.
+
+14. Non-trivial parsing logic of a scriptlet which depends only on its arguments
+    and has many edge cases, e.g. parsing of a URL parameter, SHOULD be a helper
+    in `src/helpers/` covered by a Vitest spec in `tests/helpers/`, rather than
+    a function inside the scriptlet. Constants of such a helper, e.g. regular
+    expressions, MUST be defined inside the function, see
+    [Helper injection mechanism](#helper-injection-mechanism).
+
+    **Rationale**: Edge cases can be tested directly and quickly, without
+    a browser page, and the helper can be reused by other scriptlets. Helpers are
+    stringified one by one, so module-level constants are not in the built code.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,
