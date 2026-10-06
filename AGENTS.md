@@ -415,7 +415,8 @@ Project-specific rules:
     remain stable when a listener is removed from one target; native
     registration handles deduplication, `once`, and `AbortSignal` cleanup, so
     wrapper lookups MUST convert `capture` the same way as `addEventListener`
-    does. The label of a forwarded click MUST be taken from the click's event
+    does, and a hook which reads the options MUST read them once and pass
+    the values read to the native method. The label of a forwarded click MUST be taken from the click's event
     path, i.e. also through assigned slots and shadow hosts, right before the
     click is dispatched, and its control MUST be resolved when the forwarded
     click starts, e.g. by a temporary capture listener on `window`, so it is
@@ -429,7 +430,10 @@ Project-specific rules:
 
     **Rationale**: Popup guards compare event references, including `window.event`,
     so replacing page or browser events breaks them. Removing a shared wrapper
-    mapping breaks removal and deduplication on other targets. Browsers fix the
+    mapping breaks removal and deduplication on other targets. Options may be
+    getters which return a different value on each read, so a wrapper looked up
+    by one `capture` value and registered with another cannot be removed and is
+    not deduplicated. Browsers fix the
     event path, and so the activated label, when they dispatch the click, e.g.
     a label in a shadow tree which wraps the slot of the clicked element, but
     resolve the label's control only when they forward the click, so page

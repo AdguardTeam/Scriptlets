@@ -235,6 +235,45 @@ describe('spoofClickEventsIsTrusted', () => {
         expect(phases).toEqual([Event.CAPTURING_PHASE]);
     });
 
+    test('reads the capture option once when adding a listener', () => {
+        spoofClickEventsIsTrusted();
+        const parent = document.createElement('div');
+        const child = document.createElement('button');
+        parent.append(child);
+        document.body.append(parent);
+        const phases: number[] = [];
+        const listener = (event: Event) => { phases.push(event.eventPhase); };
+        let reads = 0;
+        // Reports bubble on the first read only
+        const options = {
+            get capture() {
+                reads += 1;
+                return reads > 1;
+            },
+        };
+        parent.addEventListener('click', listener, options);
+        // Like native registration, it is the same registration as the one above
+        parent.addEventListener('click', listener, false);
+        child.dispatchEvent(new Event('click', { bubbles: true }));
+        expect(reads).toBe(1);
+        expect(phases).toEqual([Event.BUBBLING_PHASE]);
+
+        parent.removeEventListener('click', listener, false);
+        child.dispatchEvent(new Event('click', { bubbles: true }));
+        expect(phases).toEqual([Event.BUBBLING_PHASE]);
+    });
+
+    test('retains the passive option', () => {
+        spoofClickEventsIsTrusted();
+        const target = new EventTarget();
+        const listener = vi.fn((event: Event) => { event.preventDefault(); });
+        target.addEventListener('click', listener, { passive: true });
+        const event = new Event('click', { cancelable: true });
+        target.dispatchEvent(event);
+        expect(listener).toHaveBeenCalledTimes(1);
+        expect(event.defaultPrevented).toBe(false);
+    });
+
     test('keeps capture and bubble registrations independent', () => {
         spoofClickEventsIsTrusted();
         const target = new EventTarget();

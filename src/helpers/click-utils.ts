@@ -143,6 +143,18 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
     const wrappedListeners = new WeakMap<object, Map<string, EventListener>>();
 
     /**
+     * Checks whether native registration converts the options parameter to an options dictionary:
+     * objects, including functions, are converted to it, other values to a boolean.
+     *
+     * @param options Options parameter from addEventListener or removeEventListener.
+     *
+     * @returns True if the options are converted to an options dictionary.
+     */
+    const isOptionsDictionary = (options: unknown): options is EventListenerOptions => {
+        return options !== null && (typeof options === 'object' || typeof options === 'function');
+    };
+
+    /**
      * Normalizes the capture option from various addEventListener signatures
      * the same way as native registration does.
      *
@@ -153,26 +165,19 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
     const normalizeCapture = (
         options?: boolean | AddEventListenerOptions | EventListenerOptions,
     ): boolean => {
-        // Objects, including functions, are converted to an options dictionary, other values to a boolean
-        if (options !== null && (typeof options === 'object' || typeof options === 'function')) {
-            return !!(options as EventListenerOptions).capture;
-        }
-        return !!options;
+        return isOptionsDictionary(options) ? !!options.capture : !!options;
     };
 
     /**
      * Generates a composite key for the wrapped listeners map.
      *
      * @param type Event type.
-     * @param options Options parameter from addEventListener.
+     * @param capture Normalized capture option.
      *
      * @returns Composite key.
      */
-    const getMapKey = (
-        type: string,
-        options?: boolean | AddEventListenerOptions | EventListenerOptions,
-    ): string => {
-        return `${type}\0${normalizeCapture(options)}`;
+    const getMapKey = (type: string, capture: boolean): string => {
+        return `${type}\0${capture}`;
     };
 
     const addEventListenerWrapper = function addEventListenerWrapper(
@@ -186,7 +191,20 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
         }
 
         const isFn = typeof listener === 'function';
-        const key = getMapKey(type, options);
+        // Options are read once, in the native order, and native registration gets the values read,
+        // so it agrees with the wrapper lookup even if the options are getters returning different values
+        const capture = normalizeCapture(options);
+        let nativeOptions: boolean | AddEventListenerOptions = capture;
+        if (isOptionsDictionary(options)) {
+            // Absent members are undefined, which native registration treats as not passed
+            nativeOptions = {
+                capture,
+                once: options.once,
+                passive: options.passive,
+                signal: options.signal,
+            };
+        }
+        const key = getMapKey(type, capture);
 
         const listenerRef = listener as object;
         let map = wrappedListeners.get(listenerRef);
@@ -211,7 +229,7 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
             map.set(key, wrapped);
         }
 
-        return nativeAddEventListener.call(this, type, wrapped, options);
+        return nativeAddEventListener.call(this, type, wrapped, nativeOptions);
     };
 
     const removeEventListenerWrapper = function removeEventListenerWrapper(

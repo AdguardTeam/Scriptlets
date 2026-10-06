@@ -131,9 +131,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   a CSS comment, are skipped.
 - `trusted-click-element` hooking event listeners and `attachShadow` even when it exits early
   because of invalid timeout, delay or reload values or unmatched `extraMatch` conditions [#582].
-- `trusted-click-element` failing to remove or deduplicate listeners shared across event targets
-  or registered with non-boolean `capture` values, and failing to remove a listener registered before
-  the scriptlet ran if the same listener was also added after it [#582].
+- `trusted-click-element` failing to remove or deduplicate listeners shared across event targets,
+  registered with non-boolean `capture` values or with options which return a different value on each read,
+  and failing to remove a listener registered before the scriptlet ran if the same listener was also added
+  after it [#582].
+- `trusted-click-element` not finding elements in a closed shadow root attached with options which return
+  a different `mode` on each read.
 - `trusted-click-element` throwing when inline `on*` handlers or React handlers set `cancelBubble`
   or `returnValue` on a scriptlet click [#582].
 - `trusted-click-element` restoring inline `on*` handlers of the clicked element

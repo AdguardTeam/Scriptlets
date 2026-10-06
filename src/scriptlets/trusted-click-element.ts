@@ -757,8 +757,8 @@ export function trustedClickElement(
 
             // Track closed shadow roots so queryShadowSelector can look them up
             // via the WeakMap instead of requiring elem.shadowRoot to be non-null.
-            const mode = argumentsList[0]?.mode;
-            if (mode === 'closed') {
+            // The mode is taken from the root, as the init options may return a different value on each read.
+            if (shadowRoot.mode === 'closed') {
                 closedShadowRoots.set(thisArg, shadowRoot);
             }
 

@@ -1467,6 +1467,37 @@ test('Nested closed shadow DOM element clicked', (assert) => {
     }, 150);
 });
 
+test('Closed shadow DOM with mode read once by native attachShadow element clicked', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const selectorsString = `#${PANEL_ID} >>> div > #${CLICKABLE_NAME}31`;
+
+    runScriptlet(name, [selectorsString]);
+
+    const panel = createPanel();
+    let reads = 0;
+    // Reports closed on the first read only, which is the one of native attachShadow
+    const shadowRoot = panel.attachShadow({
+        get mode() {
+            reads += 1;
+            return reads === 1 ? 'closed' : 'open';
+        },
+    });
+    const div = document.createElement('div');
+    const clickable = createClickable(31);
+    div.appendChild(clickable);
+    shadowRoot.appendChild(div);
+
+    setTimeout(() => {
+        assert.strictEqual(panel.shadowRoot, null, 'Shadow DOM mode should be closed');
+        assert.ok(clickable.getAttribute('clicked'), 'Element inside closed shadow DOM should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
 test('isTrusted is spoofed for click events', (assert) => {
     const ASSERTIONS = 3;
     assert.expect(ASSERTIONS);
