@@ -3419,3 +3419,71 @@ test('page click on the clicked element reaches its inline handler as the same t
         done();
     }, 200);
 });
+
+const TRUSTED_ALL_COOKIE = 'adg-trusted-all-cookie';
+const TRUSTED_ALL_ITEM = 'adg-trusted-all-item';
+
+[
+    { extraMatch: 'containsText:Accept, isTrusted:all', isClicked: true, isPageClickTrusted: true },
+    { extraMatch: 'isTrusted:all, containsText:Accept', isClicked: true, isPageClickTrusted: true },
+    { extraMatch: `cookie:${TRUSTED_ALL_COOKIE}, isTrusted:all`, isClicked: true, isPageClickTrusted: true },
+    { extraMatch: `isTrusted:all, localStorage:${TRUSTED_ALL_ITEM}`, isClicked: true, isPageClickTrusted: true },
+    {
+        extraMatch: `cookie:${TRUSTED_ALL_COOKIE}, localStorage:${TRUSTED_ALL_ITEM}`
+            + ', containsText:Accept, isTrusted:all',
+        isClicked: true,
+        isPageClickTrusted: true,
+    },
+    // Scriptlet exits before installing the hook, so isTrusted:all is not enabled
+    { extraMatch: 'cookie:adg-never-set-cookie, isTrusted:all', isClicked: false, isPageClickTrusted: false },
+    { extraMatch: 'isTrusted:all, localStorage:adg-never-set-item', isClicked: false, isPageClickTrusted: false },
+    // Element is not clicked, as its text does not match, but isTrusted:all is enabled once the scriptlet runs
+    { extraMatch: 'containsText:Reject, isTrusted:all', isClicked: false, isPageClickTrusted: true },
+    // Invalid value is logged and the default is used, while other conditions are still applied
+    {
+        extraMatch: 'containsText:Accept, isTrusted:any',
+        isClicked: true,
+        isPageClickTrusted: false,
+        logged: [`${name}: Passed isTrusted value 'isTrusted:any' is invalid`],
+    },
+].forEach(({
+    extraMatch,
+    isClicked,
+    isPageClickTrusted,
+    logged = [],
+}) => {
+    test(`isTrusted combined with other extraMatch conditions: '${extraMatch}'`, (assert) => {
+        const done = assert.async();
+        document.cookie = `${TRUSTED_ALL_COOKIE}=1; path=/`;
+        window.localStorage.setItem(TRUSTED_ALL_ITEM, '1');
+        const { target, other } = createTrustedAllFixture();
+        target.textContent = 'Accept';
+
+        const loggedMessages = [];
+        const nativeConsoleLog = console.log;
+        console.log = (message) => {
+            loggedMessages.push(message);
+        };
+        try {
+            runScriptlet(name, [TRUSTED_ALL_SELECTOR, extraMatch, '50']);
+        } finally {
+            console.log = nativeConsoleLog;
+        }
+        // Registered after the scriptlet hooks addEventListener, but before its delayed click
+        const targetClicks = [];
+        target.addEventListener('click', (event) => { targetClicks.push(event.isTrusted); });
+        const pageClicks = [];
+        other.addEventListener('click', (event) => { pageClicks.push(event.isTrusted); });
+
+        setTimeout(() => {
+            other.click();
+            clearCookie(TRUSTED_ALL_COOKIE);
+            window.localStorage.removeItem(TRUSTED_ALL_ITEM);
+
+            assert.deepEqual(loggedMessages, logged, 'Only an invalid value is logged');
+            assert.deepEqual(targetClicks, isClicked ? [true] : [], 'Element is clicked only if all conditions match');
+            assert.deepEqual(pageClicks, [isPageClickTrusted], 'Page click is trusted only with isTrusted:all');
+            done();
+        }, 200);
+    });
+});
