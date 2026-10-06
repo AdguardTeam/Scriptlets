@@ -29,7 +29,8 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
   (redirect manifests)
 - **Storage**: None
 - **Testing**: QUnit (scriptlets, redirects, helpers — browser-level via
-  Puppeteer) and Vitest (API, validators, converters — jsdom)
+  Puppeteer) and Vitest (API, validators, converters, helpers, scriptlets —
+  jsdom)
 - **Target platform**: Browser extension and Corelibs
 - **Project type**: single
 - **Performance goals**: N/A
@@ -57,9 +58,9 @@ scriptlets/
 │   └── index.ts              # Main public API entry point
 ├── tests/
 │   ├── api/                  # Vitest tests for converters and validators
-│   ├── helpers/              # QUnit tests for helper utilities
+│   ├── helpers/              # QUnit and Vitest tests for helper utilities
 │   ├── redirects/            # QUnit tests for redirect resources
-│   ├── scriptlets/           # QUnit tests for scriptlets
+│   ├── scriptlets/           # QUnit and Vitest tests for scriptlets
 │   ├── smoke/                # Smoke tests for ESM exports
 │   └── vitest-helpers.ts     # Vitest-only test utilities (e.g. jsdom workarounds)
 ├── types/                    # Ambient type declarations
@@ -80,7 +81,8 @@ scriptlets/
 - `pnpm install` — install dependencies
 - `pnpm build` — clean `dist/` and build all bundles
 - `pnpm test` — run all tests (Vitest + smoke + QUnit)
-- `pnpm test:vitest` — run Vitest tests only (API, validators, converters)
+- `pnpm test:vitest` — run Vitest tests only (API, validators, converters,
+  helpers, scriptlets)
 - `pnpm test:qunit scriptlets` — run QUnit tests for all scriptlets
 - `pnpm test:qunit redirects` — run QUnit tests for all redirects
 - `pnpm test:qunit helpers` — run QUnit tests for helpers
@@ -339,7 +341,10 @@ Project-specific rules:
     `isValidSelector()`, `isValidXpath()` and `isValidAttributeName()` helpers,
     and `isValidShadowSelector()` for selectors of `queryShadowSelector()`,
     i.e. with `>>>` combinator or `xpath(...)`, as they do not query or change
-    the page DOM. A failure to process an element SHOULD be logged once and not
+    the page DOM. Such arguments SHOULD be parsed once as well, and passed
+    to helpers in the parsed form, e.g. selector parts split by `>>>` with
+    `splitSelectors()` to `queryShadowSelector()`, instead of being parsed again
+    on each DOM change. A failure to process an element SHOULD be logged once and not
     again until the processed value of the element changes.
     Such a failure SHOULD be detected from the processed value and remembered
     per element, not inferred from whether the write has changed the target.
@@ -401,15 +406,40 @@ Project-specific rules:
 
 15. Event listener hooks MUST deliver every event unchanged except the events
     the scriptlet dispatches itself (and the clicks a label forwards from them
-    to its control), and all listeners of such an event MUST receive the same
-    proxy. Listener wrappers shared across targets MUST remain stable when a
-    listener is removed from one target; native registration handles
-    deduplication, `once`, and `AbortSignal` cleanup, so wrapper lookups MUST
-    convert `capture` the same way as `addEventListener` does.
+    to its control), unless the rule explicitly opts in to spoofing all events
+    of the page, e.g. `isTrusted:all` of `trusted-click-element`, and all
+    listeners of a spoofed event MUST receive the same proxy, so listener
+    wrappers and inline handler wrappers MUST resolve the delivered event with
+    the same helper, `getDeliveredClickEvent()`. Trusted events
+    MUST be delivered unchanged. Listener wrappers shared across targets MUST
+    remain stable when a listener is removed from one target; native
+    registration handles deduplication, `once`, and `AbortSignal` cleanup, so
+    wrapper lookups MUST convert `capture` the same way as `addEventListener`
+    does. The label of a forwarded click MUST be taken from the click's event
+    path, i.e. also through assigned slots and shadow hosts, right before the
+    click is dispatched, and its control MUST be resolved when the forwarded
+    click starts, e.g. by a temporary capture listener on `window`, so it is
+    recognized once, and its proxy is reused by other listeners. A click on
+    the control, or inside it, is not forwarded.
+    A click which the page dispatches on the control during the scriptlet
+    click is spoofed as well, as it cannot be told apart from the forwarded
+    one in the browsers which forward it as trusted, where it could not be
+    tested, and so is a click on any element of a closed shadow root which
+    contains the control, as listeners outside it see only its host.
 
     **Rationale**: Popup guards compare event references, including `window.event`,
     so replacing page or browser events breaks them. Removing a shared wrapper
-    mapping breaks removal and deduplication on other targets.
+    mapping breaks removal and deduplication on other targets. Browsers fix the
+    event path, and so the activated label, when they dispatch the click, e.g.
+    a label in a shadow tree which wraps the slot of the clicked element, but
+    resolve the label's control only when they forward the click, so page
+    handlers of the click may move the clicked element out of the label, change
+    the label's `for` or replace its control. Handlers of the control may do so
+    as well, before the forwarded click reaches delegated listeners, e.g. of
+    a framework. Spoofing all events of the page
+    breaks such guards, see
+    [#582](https://github.com/AdguardTeam/Scriptlets/issues/582), so it is only
+    an opt-in fallback.
 
 ### III. Testing discipline
 
@@ -418,9 +448,17 @@ Project-specific rules:
   a real browser environment via Puppeteer. Use these for scriptlet and redirect
   behavior testing.
 
-- **Vitest tests** (`tests/api/`, root `*.spec.js`/`*.spec.ts`): test files
-  are named `*.spec.js` or `*.spec.ts`. Use these for API-level, converter,
-  and validator testing. Environment is jsdom.
+- **Vitest tests** (`tests/api/`, `tests/helpers/`, `tests/scriptlets/`,
+  root `*.spec.js`/`*.spec.ts`): test files are named `*.spec.js` or
+  `*.spec.ts`. Use these for API-level, converter, validator and helper
+  testing. Environment is jsdom.
+
+- Tests of clicks which a label forwards to its control MUST make the label
+  forward them as untrusted, e.g. with `forwardUntrustedLabelClicks()` in
+  `tests/scriptlets/trusted-click-element.test.js`. Some browsers forward
+  them as untrusted, e.g. Firefox, but others as trusted, e.g. the Chrome
+  version which Puppeteer runs the tests in, where the spoofing of forwarded
+  clicks would not be tested otherwise.
 
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.

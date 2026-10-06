@@ -151,28 +151,45 @@ describe('Test trusted-click-element scriptlet - hook installation', () => {
     };
     const spoofedClicksKey = Symbol.for('adg-spoof-click-isTrusted');
 
-    test('attachShadow is not hooked when hooking event listeners fails', () => {
-        createPanel();
-        const attachShadowBefore = Element.prototype.attachShadow;
+    test.each([
+        {
+            kind: 'read-only, so its assignment throws in strict mode',
+            lock: (descriptor) => ({ ...descriptor, writable: false }),
+        },
+        {
+            kind: 'locked with its assignment ignored, as in the injected code, which is not strict',
+            lock: (descriptor) => ({ configurable: true, get: () => descriptor.value, set: () => {} }),
+        },
+    ])('clicks without spoofing if addEventListener is $kind', ({ lock }) => {
+        useViewlessMouseEvents();
+        const panel = createPanel();
+        const clickable = createClickable(1);
+        panel.appendChild(clickable);
         const addEventListenerDescriptor = Object.getOwnPropertyDescriptor(EventTarget.prototype, 'addEventListener');
+        const removeEventListenerBefore = EventTarget.prototype.removeEventListener;
         // Earlier tests have installed the hook already; reset its guard so it is installed again
         const spoofedClicksBefore = EventTarget.prototype[spoofedClicksKey];
         delete EventTarget.prototype[spoofedClicksKey];
-        // E.g. another script has locked addEventListener, so installing the click hook throws
-        Object.defineProperty(EventTarget.prototype, 'addEventListener', {
-            ...addEventListenerDescriptor,
-            writable: false,
-        });
+        // E.g. another script has locked addEventListener
+        Object.defineProperty(EventTarget.prototype, 'addEventListener', lock(addEventListenerDescriptor));
 
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         try {
-            expect(() => trustedClickElement(sourceParams, `#${PANEL_ID} >>> #adg-never-matches`)).toThrow(TypeError);
-            expect(Element.prototype.attachShadow).toBe(attachShadowBefore);
+            trustedClickElement(sourceParams, `#${PANEL_ID} > #${CLICKABLE_NAME}1`);
+
+            expect(clickable.getAttribute('clicked')).toBeTruthy();
+            expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Cannot spoof isTrusted of clicks'));
+            // No wrapper is left installed without the other one, and the hook is not marked as installed
+            expect(EventTarget.prototype.removeEventListener).toBe(removeEventListenerBefore);
+            expect(EventTarget.prototype[spoofedClicksKey]).toBeUndefined();
         } finally {
             Object.defineProperty(EventTarget.prototype, 'addEventListener', addEventListenerDescriptor);
-            Element.prototype.attachShadow = attachShadowBefore;
+            EventTarget.prototype.removeEventListener = removeEventListenerBefore;
             if (spoofedClicksBefore) {
                 EventTarget.prototype[spoofedClicksKey] = spoofedClicksBefore;
             }
+            vi.unstubAllGlobals();
+            logSpy.mockRestore();
         }
     });
 });

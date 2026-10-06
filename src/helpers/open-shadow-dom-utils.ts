@@ -163,13 +163,15 @@ export function findElementWithText(
  * as Chromium evaluates them against the document, but Firefox against the shadow root.
  * The check does not query the page DOM.
  *
- * @param selector Selector to check, e.g. `#host >>> xpath(descendant-or-self::button)`.
+ * @param selector Selector to check, e.g. `#host >>> xpath(descendant-or-self::button)`,
+ * or its parts already split by `>>>` combinator, e.g. by `splitSelectors()`.
  *
  * @returns True if the selector is valid, false otherwise.
  */
-export function isValidShadowSelector(selector: string): boolean {
+export function isValidShadowSelector(selector: string | string[]): boolean {
     const SHADOW_COMBINATOR = ' >>> ';
-    return splitSelectors(selector, SHADOW_COMBINATOR).every((part, index) => {
+    const parts = typeof selector === 'string' ? splitSelectors(selector, SHADOW_COMBINATOR) : selector;
+    return parts.every((part, index) => {
         const xpath = getXpathExpression(part);
         if (xpath === null) {
             return isValidSelector(part);
@@ -188,13 +190,15 @@ export function isValidShadowSelector(selector: string): boolean {
  * to find the element containing shadow root, and shadow root selector, to find the element inside shadow dom.
  * Each part of the selector may be an XPath expression wrapped in `xpath(...)`,
  * see `getXpathElements()` for the evaluation of XPath inside shadow dom.
+ * Parts already split by `>>>` combinator, e.g. by `splitSelectors()`, may be passed instead,
+ * so a selector queried on each DOM change is not split each time.
  * @param context The Element or ShadowRoot which is the context for the query.
  * @param textContent The text content to match.
  * @param shadowRootsMap Closed shadow roots by their host elements.
  * @returns The first Element within the document that matches the specified selector, or null if no matches are found.
  */
 export function queryShadowSelector(
-    selector: string,
+    selector: string | string[],
     context: Element | ShadowRoot = document.documentElement,
     textContent: RegExp | null = null,
     shadowRootsMap?: WeakMap<Element, ShadowRoot>,
@@ -220,7 +224,7 @@ export function queryShadowSelector(
         return element || null;
     };
 
-    const parts = splitSelectors(selector, SHADOW_COMBINATOR);
+    const parts = typeof selector === 'string' ? splitSelectors(selector, SHADOW_COMBINATOR) : selector;
     let root = context;
     for (let i = 0; i < parts.length - 1; i += 1) {
         const host = queryElement(parts[i], root, null);

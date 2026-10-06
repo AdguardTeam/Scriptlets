@@ -7,7 +7,12 @@ import {
     vi,
 } from 'vitest';
 
-import { clickElement, spoofClickEventsIsTrusted } from '../../src/helpers/click-utils';
+import {
+    clickElement,
+    getDeliveredClickEvent,
+    spoofClickEventsIsTrusted,
+    type SpoofedClicks,
+} from '../../src/helpers/click-utils';
 import { useViewlessMouseEvents } from '../vitest-helpers';
 
 const nativeAddEventListener = EventTarget.prototype.addEventListener;
@@ -790,5 +795,237 @@ describe('spoofClickEventsIsTrusted', () => {
                 expect(trace).toEqual(['open', 'ignore opening', 'close', 'open', 'ignore opening', 'close']);
             });
         });
+    });
+
+    test('spoofs a click forwarded from a label in an XHTML document', () => {
+        const xhtml = new DOMParser().parseFromString(
+            '<html xmlns="http://www.w3.org/1999/xhtml"><body>'
+                + '<label><span id="clicked">Accept</span><input type="checkbox" id="control"/></label>'
+                + '</body></html>',
+            'application/xhtml+xml',
+        );
+        const label = xhtml.querySelector('label') as HTMLLabelElement;
+        const clicked = xhtml.getElementById('clicked') as HTMLElement;
+        const control = xhtml.getElementById('control') as HTMLInputElement;
+        // Tag names keep their case in XHTML documents
+        expect(label.nodeName).toBe('label');
+        // Label forwards the click as untrusted, as some browsers do
+        nativeAddEventListener.call(label, 'click', (event) => {
+            if (event.target !== control) {
+                event.preventDefault();
+                control.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
+            }
+        });
+        spoofClickEventsIsTrusted();
+        const trust: boolean[] = [];
+        control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+        clickElement(clicked);
+
+        expect(trust).toEqual([true]);
+    });
+
+    test('returns true when it installs the hook, and when the hook is already installed', () => {
+        // Installs the hook
+        expect(spoofClickEventsIsTrusted()).toBe(true);
+        const installedAddEventListener = EventTarget.prototype.addEventListener;
+        // Hook installed by another rule: nothing is replaced, but spoofing works
+        expect(spoofClickEventsIsTrusted()).toBe(true);
+        expect(EventTarget.prototype.addEventListener).toBe(installedAddEventListener);
+    });
+
+    test('returns false and leaves no wrapper if addEventListener is read-only', () => {
+        const descriptor = Object.getOwnPropertyDescriptor(EventTarget.prototype, 'addEventListener')!;
+        Object.defineProperty(EventTarget.prototype, 'addEventListener', { ...descriptor, writable: false });
+        try {
+            expect(spoofClickEventsIsTrusted()).toBe(false);
+            expect(EventTarget.prototype.removeEventListener).toBe(nativeRemoveEventListener);
+            expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toBeUndefined();
+        } finally {
+            Object.defineProperty(EventTarget.prototype, 'addEventListener', descriptor);
+        }
+    });
+
+    test('restores the forwarded click spoofer if a window listener cannot be added', () => {
+        spoofClickEventsIsTrusted();
+        const label = document.createElement('label');
+        const clicked = document.createElement('span');
+        const control = document.createElement('input');
+        control.type = 'checkbox';
+        label.append(clicked, control);
+        document.body.append(label);
+        // E.g. the page has replaced the method of window
+        const windowAddEventListener = vi.spyOn(window, 'addEventListener').mockImplementation(() => {
+            throw new Error('Blocked');
+        });
+        const received: boolean[] = [];
+        clicked.addEventListener('click', (event) => { received.push(event.isTrusted); });
+
+        try {
+            expect(() => clickElement(clicked)).not.toThrow();
+            expect(received).toEqual([true]);
+            expect(Reflect.get(EventTarget.prototype, spoofedClicksKey).spoofForwardedClick).toBeNull();
+        } finally {
+            windowAddEventListener.mockRestore();
+        }
+    });
+
+    describe('all events', () => {
+        test('spoofs a page click with one proxy shared by all listeners', () => {
+            const { root, target } = createFixture();
+            spoofClickEventsIsTrusted(true);
+            let original: Event | undefined;
+            nativeAddEventListener.call(target, 'click', (event) => { original = event; });
+            const received: Event[] = [];
+            target.addEventListener('click', (event) => { received.push(event); });
+            root.addEventListener('click', (event) => { received.push(event); });
+
+            target.click();
+
+            expect(original?.isTrusted).toBe(false);
+            expect(received).toHaveLength(2);
+            expect(received[0].isTrusted).toBe(true);
+            expect(received[0]).not.toBe(original);
+            expect(received[1]).toBe(received[0]);
+        });
+
+        test.each([
+            'pointerover',
+            'pointerenter',
+            'mouseover',
+            'mouseenter',
+            'pointerdown',
+            'mousedown',
+            'pointerup',
+            'mouseup',
+            'click',
+        ])('spoofs a page %s event', (type) => {
+            const { target } = createFixture();
+            spoofClickEventsIsTrusted(true);
+            const received: boolean[] = [];
+            target.addEventListener(type, (event) => { received.push(event.isTrusted); });
+
+            // jsdom may have no PointerEvent, and the type is what is checked
+            target.dispatchEvent(new MouseEvent(type));
+
+            expect(received).toEqual([true]);
+        });
+
+        test.each(['dblclick', 'keydown', 'focus'])('does not spoof a page %s event', (type) => {
+            const { target } = createFixture();
+            spoofClickEventsIsTrusted(true);
+            const received: boolean[] = [];
+            target.addEventListener(type, (event) => { received.push(event.isTrusted); });
+
+            target.dispatchEvent(new Event(type));
+
+            expect(received).toEqual([false]);
+        });
+
+        test.each(['function', 'object'] as const)('spoofs a page click for a %s listener', (kind) => {
+            const { target } = createFixture();
+            spoofClickEventsIsTrusted(true);
+            const received: boolean[] = [];
+            target.addEventListener('click', createListener(kind, (event) => { received.push(event.isTrusted); }), {
+                capture: true,
+            });
+
+            target.dispatchEvent(new MouseEvent('click'));
+
+            expect(received).toEqual([true]);
+        });
+
+        test('spoofs a scriptlet click as by default', () => {
+            const { target } = createFixture();
+            spoofClickEventsIsTrusted(true);
+            const received: boolean[] = [];
+            target.addEventListener('click', (event) => { received.push(event.isTrusted); });
+
+            clickElement(target);
+
+            expect(received).toEqual([true]);
+        });
+
+        test('passes a trusted event unchanged', () => {
+            const { target } = createFixture();
+            // Click listeners receive trusted focus events
+            useTrustedFocusEvents();
+            spoofClickEventsIsTrusted(true);
+            let original: Event | undefined;
+            nativeAddEventListener.call(target, 'focusin', (event) => { original = event; });
+            let received: Event | undefined;
+            target.addEventListener('click', (event) => { received = event; });
+
+            target.focus();
+
+            expect(original?.isTrusted).toBe(true);
+            expect(received).toBe(original);
+        });
+
+        test('is enabled for the whole page if the hook is already installed', () => {
+            const { target } = createFixture();
+            spoofClickEventsIsTrusted();
+            spoofClickEventsIsTrusted(true);
+            // Another rule without it does not disable it
+            spoofClickEventsIsTrusted();
+            const received: boolean[] = [];
+            target.addEventListener('click', (event) => { received.push(event.isTrusted); });
+
+            target.click();
+
+            expect(received).toEqual([true]);
+        });
+
+        test('keeps the state of an older version, which spoofs all events itself', () => {
+            Reflect.set(EventTarget.prototype, spoofedClicksKey, true);
+
+            spoofClickEventsIsTrusted(true);
+
+            expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toBe(true);
+            expect(EventTarget.prototype.addEventListener).toBe(nativeAddEventListener);
+        });
+    });
+});
+
+describe('getDeliveredClickEvent', () => {
+    const createState = (overrides: Partial<SpoofedClicks> = {}): SpoofedClicks => ({
+        proxies: new WeakMap(),
+        spoofForwardedClick: null,
+        isAllSpoofed: false,
+        ...overrides,
+    });
+
+    test('returns the stored proxy of an event', () => {
+        const event = new MouseEvent('click');
+        const proxy = new MouseEvent('click');
+        const state = createState();
+        state.proxies.set(event, proxy);
+
+        expect(getDeliveredClickEvent(state, event)).toBe(proxy);
+    });
+
+    test('returns the proxy of a forwarded click', () => {
+        const event = new MouseEvent('click');
+        const proxy = new MouseEvent('click');
+        const state = createState({ spoofForwardedClick: (received) => (received === event ? proxy : undefined) });
+
+        expect(getDeliveredClickEvent(state, event)).toBe(proxy);
+    });
+
+    test('returns a page event unchanged by default', () => {
+        const event = new MouseEvent('click');
+
+        expect(getDeliveredClickEvent(createState(), event)).toBe(event);
+    });
+
+    test('stores the proxy of a page event if all events are spoofed, so it is reused', () => {
+        const event = new MouseEvent('click');
+        const state = createState({ isAllSpoofed: true });
+
+        const delivered = getDeliveredClickEvent(state, event);
+
+        expect(delivered).not.toBe(event);
+        expect(delivered.isTrusted).toBe(true);
+        expect(getDeliveredClickEvent(state, event)).toBe(delivered);
     });
 });

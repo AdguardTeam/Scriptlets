@@ -105,7 +105,9 @@ export const getXpathExpression = (selector: string): string | null => {
  * Evaluates XPath expression and returns the selected elements.
  * Other selected nodes, e.g. text nodes or attributes, are skipped.
  * If evaluation fails, e.g. on type error in a predicate like `//button[count(1)]`,
- * which is not detected by `isValidXpath()`, the expression selects nothing.
+ * which may not be detected by `isValidXpath()`, nothing is selected by this evaluation,
+ * so a union selects elements of its other parts until an element causing the error appears,
+ * and inside a shadow root, the elements of other top-level elements are still selected.
  *
  * Shadow root cannot be an XPath context node, so the expression is evaluated
  * against each of its top-level elements. It should be relative, e.g. `descendant-or-self::button`,

@@ -537,6 +537,83 @@ test('extraMatch - invalid click type is logged, element clicked by default clic
     }, 150);
 });
 
+[
+    { extraMatchStr: 'isTrusted:all', isTrusted: true, logged: [] },
+    { extraMatchStr: '', isTrusted: false, logged: [] },
+    {
+        extraMatchStr: 'isTrusted:any',
+        isTrusted: false,
+        logged: [`${name}: Passed isTrusted value 'isTrusted:any' is invalid`],
+    },
+].forEach(({ extraMatchStr, isTrusted, logged }) => {
+    test(`extraMatch - '${extraMatchStr}', click dispatched by a page handler is trusted: ${isTrusted}`, (assert) => {
+        const DELAY = 50;
+        const done = assert.async();
+        const panel = createPanel();
+        const toggle = document.createElement('div');
+        toggle.id = 'trusted-toggle';
+        const hidden = document.createElement('input');
+        hidden.type = 'checkbox';
+        panel.append(toggle, hidden);
+
+        const loggedMessages = [];
+        const nativeConsoleLog = console.log;
+        console.log = (message) => {
+            loggedMessages.push(message);
+        };
+        try {
+            runScriptlet(name, [`#${PANEL_ID} > #trusted-toggle`, extraMatchStr, DELAY]);
+        } finally {
+            console.log = nativeConsoleLog;
+        }
+
+        // Custom control forwards the click to a hidden native one, which accepts only trusted clicks
+        toggle.addEventListener('click', () => hidden.click());
+        const received = [];
+        hidden.addEventListener('click', (event) => { received.push(event); });
+        hidden.addEventListener('click', (event) => { received.push(event); });
+
+        setTimeout(() => {
+            assert.deepEqual(loggedMessages, logged, 'Only an invalid value is logged');
+            assert.deepEqual(received.map((event) => event.isTrusted), [isTrusted, isTrusted], 'Page click trust');
+            assert.strictEqual(received[0], received[1], 'All listeners receive the same event');
+            assert.true(hidden.checked, 'Page click checks the hidden control');
+            assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+            done();
+        }, 150);
+    });
+});
+
+test('extraMatch - text match containing isTrusted marker, matched', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    const textToMatch = 'isTrusted: yes';
+    // Number not used by other tests, as their scriptlets may still wait for elements
+    const panel = createPanel();
+    const clickable = createClickable(15, textToMatch);
+    panel.appendChild(clickable);
+
+    const loggedMessages = [];
+    const nativeConsoleLog = console.log;
+    console.log = (message) => {
+        loggedMessages.push(message);
+    };
+    try {
+        runScriptlet(name, [`#${PANEL_ID} > #${CLICKABLE_NAME}15`, `containsText:${textToMatch}`]);
+    } finally {
+        console.log = nativeConsoleLog;
+    }
+
+    setTimeout(() => {
+        assert.deepEqual(loggedMessages, [], 'Text is not taken for an isTrusted value');
+        assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 150);
+});
+
 test('extraMatch - text match, matched', (assert) => {
     const textToMatch = 'Accept cookie';
     const EXTRA_MATCH_STR = `containsText:${textToMatch}`;
@@ -2623,6 +2700,27 @@ module(`${name} - event listener compatibility`, (hooks) => {
         }, 250);
     });
 
+    /**
+     * Makes the label forward clicks to its control as untrusted events, as some browsers do, e.g. Firefox.
+     * Others forward them as trusted, e.g. the Chrome version which Puppeteer runs the tests in,
+     * so the spoofing of forwarded clicks would not be tested there otherwise.
+     * The control is resolved on the click, as browsers do, so it may be changed by page handlers before.
+     * Unlike browsers, which forward the click after its propagation, it is forwarded from the label listener.
+     *
+     * @param {HTMLLabelElement} label Label which forwards clicks.
+     */
+    const forwardUntrustedLabelClicks = (label) => {
+        nativeAddEventListener.call(label, 'click', (event) => {
+            const { control } = label;
+            // Clicks forwarded to the control bubble up to the label as well
+            if (!control || event.target === control) {
+                return;
+            }
+            event.preventDefault();
+            control.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
+        });
+    };
+
     [
         {
             description: 'a label with the for attribute',
@@ -2638,6 +2736,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
             document.getElementById('root').insertAdjacentHTML('beforeend', html);
             const clicked = document.getElementById('clicked');
             const control = document.getElementById('control');
+            forwardUntrustedLabelClicks(document.querySelector('#root label'));
             const observed = [];
             const received = [];
             control.addEventListener('click', (event) => { observed.push(event); });
@@ -2645,7 +2744,6 @@ module(`${name} - event listener compatibility`, (hooks) => {
             control.addEventListener('click', (event) => { received.push(event); });
 
             setTimeout(() => {
-                // Some browsers forward the click as trusted, others keep the untrusted state of the scriptlet click
                 assert.strictEqual(received.length, 1, 'Control listener receives the forwarded click');
                 assert.true(received[0]?.isTrusted, 'Forwarded click is trusted');
                 assert.true(control.checked, 'Forwarded click checks the control');
@@ -2665,16 +2763,8 @@ module(`${name} - event listener compatibility`, (hooks) => {
             document.getElementById('root').append(host);
             const tree = mode === 'document' ? host : host.attachShadow({ mode });
             tree.innerHTML = '<label id="clicked"><input type="checkbox"></label>';
-            const label = tree.querySelector('#clicked');
             const control = tree.querySelector('input');
-            // Chrome forwards label clicks as trusted. Emulate browsers that keep
-            // the untrusted state of a synthetic click instead, e.g. Firefox.
-            nativeAddEventListener.call(label, 'click', (event) => {
-                if (event.target === label) {
-                    event.preventDefault();
-                    control.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
-                }
-            });
+            forwardUntrustedLabelClicks(tree.querySelector('#clicked'));
             // Page listeners registered after the scriptlet: before, at and after the control in the event path.
             // Outside the shadow tree, both clicks target the shadow host.
             const trust = { window: [], control: [], document: [] };
@@ -2691,6 +2781,325 @@ module(`${name} - event listener compatibility`, (hooks) => {
                     document: [true, true],
                 }, 'The scriptlet click and the click forwarded from it are trusted for all listeners');
                 assert.true(control.checked, 'Forwarded click checks the control');
+                done();
+            }, 250);
+        });
+    });
+
+    ['open', 'closed'].forEach((mode) => {
+        test(`click forwarded untrusted from a label containing a shadow host is spoofed: ${mode} tree`, (assert) => {
+            const done = assert.async();
+            document.getElementById('root').insertAdjacentHTML(
+                'beforeend',
+                '<label id="label"><div id="host"></div><input type="checkbox" id="control"></label>',
+            );
+            // Clicked element is inside a shadow tree, so the label is not its ancestor in that tree
+            runScriptlet(name, ['#host >>> #clicked', '', '50'], false);
+            document.getElementById('host').attachShadow({ mode }).innerHTML = '<span id="clicked">Label</span>';
+            const label = document.getElementById('label');
+            const control = document.getElementById('control');
+            forwardUntrustedLabelClicks(label);
+            const trust = [];
+            control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+            setTimeout(() => {
+                assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
+                assert.true(control.checked, 'Forwarded click checks the control');
+                done();
+            }, 250);
+        });
+    });
+
+    test('click forwarded untrusted from a label wrapping the slot of the clicked element is spoofed', (assert) => {
+        const done = assert.async();
+        // Checkbox web component: its light DOM text is slotted into a label inside its shadow tree.
+        // Slots of closed shadow roots are not exposed, so only an open one is supported.
+        document.getElementById('root').insertAdjacentHTML(
+            'beforeend',
+            '<div id="host"><span id="clicked">Accept</span></div>',
+        );
+        const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = '<label id="label"><input type="checkbox" id="control"><slot></slot></label>';
+        const control = shadowRoot.getElementById('control');
+        forwardUntrustedLabelClicks(shadowRoot.getElementById('label'));
+        runScriptlet(name, ['#clicked', '', '50'], false);
+        const trust = [];
+        control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+        setTimeout(() => {
+            assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
+            assert.true(control.checked, 'Forwarded click checks the control');
+            done();
+        }, 250);
+    });
+
+    test('click forwarded untrusted from a label is spoofed if the clicked element is replaced', (assert) => {
+        const done = assert.async();
+        document.getElementById('root').insertAdjacentHTML(
+            'beforeend',
+            '<label id="label"><span id="clicked">Accept</span><input type="checkbox" id="control"></label>',
+        );
+        const clicked = document.getElementById('clicked');
+        const control = document.getElementById('control');
+        // Page re-renders on click, so the clicked element is not in the label when the label forwards the click
+        nativeAddEventListener.call(clicked, 'click', () => {
+            const rendered = document.createElement('span');
+            rendered.textContent = 'Accept';
+            clicked.replaceWith(rendered);
+        });
+        forwardUntrustedLabelClicks(document.getElementById('label'));
+        runScriptlet(name, ['#clicked', '', '50'], false);
+        const trust = [];
+        control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+        setTimeout(() => {
+            assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
+            assert.true(control.checked, 'Forwarded click checks the control');
+            done();
+        }, 250);
+    });
+
+    test('click forwarded untrusted to a control is spoofed for the inline handler of the clicked label', (assert) => {
+        const done = assert.async();
+        document.getElementById('root').insertAdjacentHTML(
+            'beforeend',
+            '<label id="clicked">Accept <input type="checkbox" id="control"></label>',
+        );
+        const label = document.getElementById('clicked');
+        const control = document.getElementById('control');
+        // Click forwarded to the control bubbles up to the clicked label,
+        // before it reaches any listener which would spoof it
+        const inline = [];
+        label.onclick = (event) => { inline.push(event); };
+        forwardUntrustedLabelClicks(label);
+        runScriptlet(name, ['#clicked', '', '50'], false);
+        const received = [];
+        listenOnDocument((event) => { received.push(event); });
+
+        setTimeout(() => {
+            const inlineForwarded = inline.filter((event) => event.target === control);
+            const receivedForwarded = received.filter((event) => event.target === control);
+            assert.strictEqual(inlineForwarded.length, 1, 'Inline handler receives the forwarded click');
+            assert.true(inlineForwarded[0]?.isTrusted, 'Forwarded click is trusted for the inline handler');
+            assert.strictEqual(inlineForwarded[0], receivedForwarded[0], 'Inline handler and listeners share it');
+            done();
+        }, 250);
+    });
+
+    test('page click on the clicked control inside a label is not spoofed', (assert) => {
+        const done = assert.async();
+        document.getElementById('root').insertAdjacentHTML(
+            'beforeend',
+            '<label id="label"><input type="checkbox" id="clicked"> Accept</label>',
+        );
+        const control = document.getElementById('clicked');
+        // The label does not forward a click on its control,
+        // so a click which the page dispatches on the control in response is its own
+        let isPageClickDispatched = false;
+        nativeAddEventListener.call(control, 'click', () => {
+            if (!isPageClickDispatched) {
+                isPageClickDispatched = true;
+                control.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            }
+        });
+        runScriptlet(name, ['#clicked', '', '50'], false);
+        const trust = [];
+        control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+        setTimeout(() => {
+            // Page click is dispatched from an earlier listener, so it arrives before the scriptlet click
+            assert.deepEqual(trust, [false, true], 'Only the scriptlet click is trusted');
+            done();
+        }, 250);
+    });
+
+    [
+        {
+            description: 'changes the label for attribute',
+            changeControl: (label) => {
+                label.htmlFor = 'other-control';
+            },
+        },
+        {
+            description: 'replaces the control',
+            changeControl: (label, control) => {
+                const rendered = document.createElement('input');
+                rendered.type = 'checkbox';
+                control.replaceWith(rendered);
+                rendered.id = 'control';
+            },
+        },
+    ].forEach(({ description, changeControl }) => {
+        ['', 'isTrusted:all'].forEach((extraMatch) => {
+            const mode = extraMatch || 'default';
+            const title = 'forwarded click is spoofed for delegated listener'
+                + ` if control handler ${description}: ${mode}`;
+            test(title, (assert) => {
+                const done = assert.async();
+                document.getElementById('root').insertAdjacentHTML('beforeend', `
+                    <label id="clicked" for="control">Label</label>
+                    <input type="checkbox" id="control">
+                    <input type="checkbox" id="other-control">
+                `);
+                const label = document.getElementById('clicked');
+                const control = document.getElementById('control');
+                // Control re-renders on its own click, before a delegated listener, e.g. of a framework, receives it.
+                // Inline handler of the control is not hooked, so it runs before any hooked listener.
+                control.onclick = () => changeControl(label, control);
+                forwardUntrustedLabelClicks(label);
+                runScriptlet(name, ['#clicked', extraMatch, '50'], false);
+                const forwarded = [];
+                listenOnDocument((event) => {
+                    if (event.target === control) {
+                        forwarded.push(event.isTrusted);
+                    }
+                });
+
+                setTimeout(() => {
+                    assert.deepEqual(forwarded, [true], 'Delegated listener receives the forwarded click as trusted');
+                    done();
+                }, 250);
+            });
+        });
+    });
+
+    test('click forwarded untrusted from a label which the clicked element is moved into is spoofed', (assert) => {
+        const done = assert.async();
+        document.getElementById('root').insertAdjacentHTML('beforeend', `
+            <span id="clicked">Accept</span>
+            <label id="label"><input type="checkbox" id="control"></label>
+        `);
+        const clicked = document.getElementById('clicked');
+        const label = document.getElementById('label');
+        const control = document.getElementById('control');
+        // Page re-renders on mousedown, so the clicked element is in the label when the click is dispatched
+        nativeAddEventListener.call(clicked, 'mousedown', () => { label.prepend(clicked); });
+        forwardUntrustedLabelClicks(label);
+        runScriptlet(name, ['#clicked', '', '50'], false);
+        const trust = [];
+        control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+        setTimeout(() => {
+            assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
+            assert.true(control.checked, 'Forwarded click checks the control');
+            done();
+        }, 250);
+    });
+
+    test('page click on another element in the shadow tree of the control is not spoofed', (assert) => {
+        const done = assert.async();
+        document.getElementById('root').insertAdjacentHTML(
+            'beforeend',
+            '<div id="host"><span id="clicked">Accept</span></div>',
+        );
+        const host = document.getElementById('host');
+        const shadowRoot = host.attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = '<label id="label"><input type="checkbox" id="control"><slot></slot></label>'
+            + '<span id="ripple"></span>';
+        const label = shadowRoot.getElementById('label');
+        const control = shadowRoot.getElementById('control');
+        const ripple = shadowRoot.getElementById('ripple');
+        // Component dispatches its own click on another element of its shadow tree during the scriptlet click.
+        // Outside the shadow tree, it targets the shadow host, as the click forwarded to the control does.
+        nativeAddEventListener.call(label, 'click', (event) => {
+            if (event.target !== control) {
+                ripple.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+            }
+        });
+        forwardUntrustedLabelClicks(label);
+        const rippleClicks = [];
+        nativeAddEventListener.call(ripple, 'click', (event) => { rippleClicks.push(event); });
+        runScriptlet(name, ['#clicked', '', '50'], false);
+        const outside = [];
+        host.addEventListener('click', (event) => { outside.push(event); });
+        const trust = [];
+        control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+        setTimeout(() => {
+            assert.strictEqual(rippleClicks.length, 1, 'Component dispatches its own click');
+            assert.true(outside.includes(rippleClicks[0]), 'Own click is passed unchanged outside the shadow tree');
+            assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
+            done();
+        }, 250);
+    });
+
+    test('click forwarded untrusted from a label is spoofed without composedPath() and getRootNode()', (assert) => {
+        const done = assert.async();
+        // Firefox 52 supports neither of them, nor shadow DOM
+        const removedMethods = [
+            { prototype: Event.prototype, property: 'composedPath' },
+            { prototype: Node.prototype, property: 'getRootNode' },
+        ].map(({ prototype, property }) => {
+            const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
+            delete prototype[property];
+            return { prototype, property, descriptor };
+        });
+        const restoreMethods = () => {
+            removedMethods.forEach(({ prototype, property, descriptor }) => {
+                Object.defineProperty(prototype, property, descriptor);
+            });
+        };
+        // Restored on a setup error as well, as other tests use them
+        let trust;
+        let control;
+        let otherClicks;
+        try {
+            document.getElementById('root').insertAdjacentHTML('beforeend', `
+                <label id="label"><span id="clicked">Accept</span><input type="checkbox" id="control"></label>
+                <span id="other"></span>
+            `);
+            const label = document.getElementById('label');
+            control = document.getElementById('control');
+            const other = document.getElementById('other');
+            // Page dispatches its own click on another element during the scriptlet click,
+            // which is checked for being forwarded to the control as well
+            nativeAddEventListener.call(label, 'click', (event) => {
+                if (event.target !== control) {
+                    other.click();
+                }
+            });
+            forwardUntrustedLabelClicks(label);
+            runScriptlet(name, ['#clicked', '', '50'], false);
+            trust = [];
+            control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+            otherClicks = [];
+            other.addEventListener('click', (event) => { otherClicks.push(event.isTrusted); });
+        } catch (error) {
+            restoreMethods();
+            throw error;
+        }
+
+        setTimeout(() => {
+            restoreMethods();
+            assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
+            assert.true(control.checked, 'Forwarded click checks the control');
+            assert.deepEqual(otherClicks, [false], 'Page click on another element is passed unchanged');
+            done();
+        }, 250);
+    });
+
+    ['mousedown', 'click'].forEach((eventType) => {
+        test(`click forwarded untrusted to a control changed by a page ${eventType} handler is spoofed`, (assert) => {
+            const done = assert.async();
+            document.getElementById('root').insertAdjacentHTML('beforeend', `
+                <label id="clicked" for="old-control">Label</label>
+                <input type="checkbox" id="old-control">
+                <input type="checkbox" id="control">
+            `);
+            const label = document.getElementById('clicked');
+            const oldControl = document.getElementById('old-control');
+            const control = document.getElementById('control');
+            // Page re-renders on the event, so the label forwards the click to another control
+            nativeAddEventListener.call(label, eventType, () => { label.htmlFor = 'control'; });
+            forwardUntrustedLabelClicks(label);
+            runScriptlet(name, ['#clicked', '', '50'], false);
+            const trust = [];
+            control.addEventListener('click', (event) => { trust.push(event.isTrusted); });
+
+            setTimeout(() => {
+                assert.deepEqual(trust, [true], 'Click forwarded to the new control is trusted');
+                assert.true(control.checked, 'Forwarded click checks the new control');
+                assert.false(oldControl.checked, 'Old control is not clicked');
                 done();
             }, 250);
         });
@@ -2841,4 +3250,172 @@ module(`${name} - event listener compatibility`, (hooks) => {
             done();
         }, 250);
     });
+});
+
+module(`${name} - isTrusted:all`, { beforeEach, afterEach });
+
+// Event types which are spoofed, and their constructors
+const SPOOFED_EVENT_TYPES = [
+    { type: 'pointerover', EventConstructor: PointerEvent },
+    { type: 'pointerenter', EventConstructor: PointerEvent },
+    { type: 'mouseover', EventConstructor: MouseEvent },
+    { type: 'mouseenter', EventConstructor: MouseEvent },
+    { type: 'pointerdown', EventConstructor: PointerEvent },
+    { type: 'mousedown', EventConstructor: MouseEvent },
+    { type: 'pointerup', EventConstructor: PointerEvent },
+    { type: 'mouseup', EventConstructor: MouseEvent },
+    { type: 'click', EventConstructor: MouseEvent },
+];
+
+/**
+ * Creates the panel with an element for the scriptlet to click and another element of the page,
+ * with ids not used by other tests, as their scriptlets may still wait for elements.
+ *
+ * @returns {{target: HTMLButtonElement, other: HTMLDivElement}} Element to click and another element.
+ */
+const createTrustedAllFixture = () => {
+    const panel = createPanel();
+    const target = document.createElement('button');
+    target.id = 'trusted-all-target';
+    const other = document.createElement('div');
+    other.id = 'trusted-all-other';
+    panel.append(target, other);
+    return { target, other };
+};
+
+const TRUSTED_ALL_SELECTOR = `#${PANEL_ID} > #trusted-all-target`;
+
+test('page events of all spoofed types are trusted', (assert) => {
+    const { other } = createTrustedAllFixture();
+    runScriptlet(name, [TRUSTED_ALL_SELECTOR, 'isTrusted:all']);
+    const received = {};
+    [...SPOOFED_EVENT_TYPES.map(({ type }) => type), 'dblclick'].forEach((type) => {
+        other.addEventListener(type, (event) => { received[type] = event.isTrusted; });
+    });
+
+    SPOOFED_EVENT_TYPES.forEach(({ type, EventConstructor }) => {
+        other.dispatchEvent(new EventConstructor(type, { bubbles: true }));
+    });
+    // Other types are not spoofed
+    other.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+    const expected = Object.fromEntries(SPOOFED_EVENT_TYPES.map(({ type }) => [type, true]));
+    expected.dblclick = false;
+    assert.deepEqual(received, expected, 'Events of spoofed types are trusted, others are not');
+});
+
+test('page click is trusted for all kinds of listeners, which share one proxy', (assert) => {
+    const { other } = createTrustedAllFixture();
+    runScriptlet(name, [TRUSTED_ALL_SELECTOR, 'isTrusted:all']);
+    const received = [];
+    const onWindowClick = (event) => { received.push(event); };
+    const documentListener = { handleEvent: (event) => { received.push(event); } };
+    window.addEventListener('click', onWindowClick, true);
+    document.addEventListener('click', documentListener);
+    other.addEventListener('click', (event) => { received.push(event); }, { capture: true });
+    other.addEventListener('click', (event) => {
+        received.push(event);
+        event.preventDefault();
+    });
+
+    const original = new MouseEvent('click', { bubbles: true, cancelable: true });
+    other.dispatchEvent(original);
+    window.removeEventListener('click', onWindowClick, true);
+    document.removeEventListener('click', documentListener);
+
+    assert.strictEqual(received.length, 4, 'All listeners receive the click');
+    assert.true(received.every((event) => event.isTrusted), 'All listeners receive a trusted click');
+    assert.true(received.every((event) => event === received[0]), 'All listeners receive the same proxy');
+    assert.true(received[0] instanceof MouseEvent, 'Proxy keeps the event type');
+    assert.strictEqual(received[0].target, other, 'Proxy keeps the target');
+    assert.false(original.isTrusted, 'Original event stays untrusted');
+    assert.true(original.defaultPrevented, 'Proxy cancels the original event');
+});
+
+test('page click dispatched after the scriptlet has clicked is trusted', (assert) => {
+    const done = assert.async();
+    const { target, other } = createTrustedAllFixture();
+    runScriptlet(name, [TRUSTED_ALL_SELECTOR, 'isTrusted:all', '50']);
+    // Registered after the scriptlet hooks addEventListener, but before its delayed click
+    const scriptletClicks = [];
+    target.addEventListener('click', (event) => { scriptletClicks.push(event.isTrusted); });
+    const pageClicks = [];
+    other.addEventListener('click', (event) => { pageClicks.push(event.isTrusted); });
+
+    setTimeout(() => {
+        // The scriptlet has clicked and finished, but spoofing stays enabled for the page
+        other.click();
+        assert.deepEqual(scriptletClicks, [true], 'Scriptlet click is trusted');
+        assert.deepEqual(pageClicks, [true], 'Later page click is trusted');
+        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+        done();
+    }, 200);
+});
+
+test('page click is trusted if another rule has installed the hook without isTrusted:all', (assert) => {
+    const { other } = createTrustedAllFixture();
+    const pageClicks = [];
+    // First rule installs the hook with the default spoofing
+    runScriptlet(name, [`#${PANEL_ID} > #trusted-all-never-matches`]);
+    other.addEventListener('click', (event) => { pageClicks.push(event.isTrusted); });
+    other.click();
+
+    // Second rule enables spoofing of all events for the whole page
+    runScriptlet(name, [TRUSTED_ALL_SELECTOR, 'isTrusted:all']);
+    other.click();
+
+    assert.deepEqual(pageClicks, [false, true], 'Page click is trusted only after isTrusted:all is enabled');
+});
+
+test('page events are not spoofed for earlier listeners and inline handlers', (assert) => {
+    const { target, other } = createTrustedAllFixture();
+    const received = {
+        earlier: [],
+        inline: [],
+        clickedInline: [],
+        later: [],
+    };
+    // Registered before the scriptlet hooks addEventListener
+    other.addEventListener('click', (event) => { received.earlier.push(event.isTrusted); });
+    other.onclick = (event) => { received.inline.push(event.isTrusted); };
+    // Inline handler of the clicked element is wrapped only for the click of the scriptlet
+    target.onclick = (event) => { received.clickedInline.push(event.isTrusted); };
+    runScriptlet(name, [TRUSTED_ALL_SELECTOR, 'isTrusted:all']);
+    other.addEventListener('click', (event) => { received.later.push(event.isTrusted); });
+
+    other.click();
+    target.click();
+
+    assert.deepEqual(received, {
+        earlier: [false],
+        inline: [false],
+        clickedInline: [true, false],
+        later: [true],
+    }, 'Only listeners registered after the scriptlet receive a trusted page click');
+});
+
+test('page click on the clicked element reaches its inline handler as the same trusted proxy', (assert) => {
+    const done = assert.async();
+    const { target } = createTrustedAllFixture();
+    const inline = [];
+    let isPageClickDispatched = false;
+    // Inline handler is registered before the listener, so it receives the page click first
+    target.onclick = (event) => {
+        inline.push(event);
+        if (!isPageClickDispatched) {
+            isPageClickDispatched = true;
+            target.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
+    };
+    runScriptlet(name, [TRUSTED_ALL_SELECTOR, 'isTrusted:all', '50']);
+    const received = [];
+    target.addEventListener('click', (event) => { received.push(event); });
+
+    setTimeout(() => {
+        // Page click is dispatched from the inline handler, so the listener receives it before the scriptlet click
+        assert.strictEqual(inline.length, 2, 'Inline handler receives the scriptlet click and the page click');
+        assert.true(inline.every((event) => event.isTrusted), 'Inline handler receives trusted clicks');
+        assert.strictEqual(inline[1], received[0], 'Inline handler and listener receive the same page click');
+        done();
+    }, 200);
 });

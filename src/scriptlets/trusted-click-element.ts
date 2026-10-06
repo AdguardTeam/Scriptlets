@@ -21,6 +21,8 @@ import {
     getXpathExpression,
     splitSelectors,
     getXpathElements,
+    createTrustedEventProxy,
+    getDeliveredClickEvent,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -46,9 +48,7 @@ import { type Source } from './scriptlets';
  * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
  *   Commas inside pseudo-classes, e.g. `:is(.accept, .agree)`, and quoted attribute values are not delimiters.
  *   Empty selectors, e.g. after a trailing comma, and ones with only a CSS comment are skipped.
- *   If any selector is invalid, it is logged and no element is clicked. XPath errors which occur only
- *   on evaluation of page elements, e.g. a type error in a predicate like `//input[count(1)]`,
- *   may not be detected, and then such expression selects nothing.
+ *   If any selector is invalid, it is logged and no element is clicked.
  *   XPath expressions are supported as well, if wrapped in `xpath()`, e.g. `xpath(//button[text()="Accept"])`;
  *   commas inside `xpath()` are not delimiters either. XPath can be combined with `>>>` combinator,
  *   but shadow root cannot be an XPath context node, so after `>>>` the expression is evaluated
@@ -57,7 +57,10 @@ import { type Source } from './scriptlets';
  *   skips top-level elements. Positional predicates are applied to each top-level element separately,
  *   e.g. `xpath((descendant-or-self::button)[2])` selects the second button of a top-level element,
  *   not of the whole shadow DOM. Absolute paths, e.g. `xpath(//button)`, are not allowed after `>>>`,
- *   as browsers evaluate them differently inside shadow DOM.
+ *   as browsers evaluate them differently inside shadow DOM. XPath errors which occur only on evaluation
+ *   of page elements, e.g. a type error in a predicate like `xpath(//input[count(1)])`, may not be detected
+ *   and are not logged, and such expression selects nothing while the error occurs,
+ *   or after `>>>` only the elements of top-level elements of the shadow root without the error.
  * - `extraMatch` — optional, extra condition to check on a page;
  *    allows to match `cookie`, `localStorage` and specified text;
  * can be set as `name:key[=value]` where `value` is optional.
@@ -70,6 +73,25 @@ import { type Source } from './scriptlets';
  *     - `containsText` — check if clicked element contains specified text
  *     - `clickType` — set click behavior; supported value is `native`,
  *       other values are logged and the default click behavior is used
+ *     - `isTrusted` — set which click-related events have `isTrusted` spoofed to `true`; supported value is `all`,
+ *       other values are logged and the default is used. By default, only the clicks of the scriptlet are spoofed, and
+ *       the clicks which labels forward from them to their controls, including a click which the page dispatches on
+ *       such control during the click of the scriptlet, or on any element of the closed shadow root which contains such
+ *       control, as it cannot be told apart from the forwarded one. Listeners receive a proxy of such click, so it is
+ *       not the same object as `window.event`, and a page guard which compares them may still fail. A label in a closed
+ *       shadow root which wraps the slot of the clicked element is not found, as the slot is not exposed, so the click
+ *       which it forwards is not spoofed by default. With `all`, the page's own events are spoofed as well, e.g. a
+ *       click which a page handler dispatches on another element in response. In both cases, events are spoofed only
+ *       for listeners added by `addEventListener()` after the scriptlet has run; inline `on...` handlers receive
+ *       spoofed events only on the clicked element, and only during an event of the scriptlet of the same type: that
+ *       event, the click which a label forwards from it, and with `all`, the page's own events of that type dispatched
+ *       on the clicked element meanwhile, so other page events may reach inline handlers unspoofed even with `all`;
+ *       spoofed events are `click`, `mousedown`, `mouseup`, `mouseover`, `mouseenter`, `pointerdown`, `pointerup`,
+ *       `pointerover` and `pointerenter`. It is enabled for the whole page until it is reloaded, including the clicks
+ *       of other rules, and may break the page, e.g. its guards which compare events, or its code which passes events
+ *       to native methods, as listeners receive proxies of them, see
+ *       [#582](https://github.com/AdguardTeam/Scriptlets/issues/582). Use it only if the page does not accept the
+ *       clicks of the scriptlet otherwise.
  * - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
  *   Must be a number less than `observerTimeout` (default 10 _seconds_)
  *   which can be configured.
@@ -155,6 +177,13 @@ import { type Source } from './scriptlets';
  *     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'clickType:native')
  *     ```
  *
+ * 1. Spoof `isTrusted` for all click-related events on the page, e.g. if a page handler of the click
+ *    dispatches another click which should be trusted as well. It may break the page, see `isTrusted` above
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'div.toggle', 'isTrusted:all')
+ *     ```
+ *
  * 1. Click element inside open shadow DOM, which could be selected by `div > button`, but is inside shadow host element with host element selected by `article .container`
  *
  *    ```adblock
@@ -237,9 +266,18 @@ export function trustedClickElement(
         return;
     }
 
+    // Each selector is split by the shadow combinator once, as it is queried on each DOM change
+    const selectorParts = new Map<string, string[]>();
+    parsedSelectors.forEach((selector) => {
+        selectorParts.set(selector, splitSelectors(selector, SHADOW_COMBINATOR));
+    });
+    const getSelectorParts = (selector: string): string[] => {
+        return selectorParts.get(selector) || splitSelectors(selector, SHADOW_COMBINATOR);
+    };
+
     // Selectors are validated once, to log an invalid one and exit before any hooks are installed,
     // as an invalid XPath expression would select nothing, and an invalid CSS selector would throw an error
-    const invalidSelector = parsedSelectors.find((selector) => !isValidShadowSelector(selector));
+    const invalidSelector = parsedSelectors.find((selector) => !isValidShadowSelector(getSelectorParts(selector)));
     if (invalidSelector !== undefined) {
         logMessage(source, `Invalid selector: '${invalidSelector}'`);
         return;
@@ -258,11 +296,15 @@ export function trustedClickElement(
     const TEXT_MATCH_MARKER = 'containsText:';
     const CLICK_TYPE_MATCH_MARKER = 'clickType:';
     const CLICK_TYPE_NATIVE = 'native';
+    const IS_TRUSTED_MATCH_MARKER = 'isTrusted:';
+    // Marker should start the pair, so the values of other pairs may contain it, e.g. text to match
+    const IS_TRUSTED_MATCH_REGEXP = /^!?isTrusted:/;
+    const IS_TRUSTED_ALL = 'all';
     const RELOAD_ON_FINAL_CLICK_MARKER = 'reloadAfterClick';
     const COOKIE_STRING_DELIMITER = ';';
     const COLON = ':';
     // Regex to split match pairs by commas, avoiding the ones included in regexes
-    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:|clickType:)/;
+    const EXTRA_MATCH_DELIMITER = /(,\s*){1}(?=!?cookie:|!?localStorage:|containsText:|clickType:|!?isTrusted:)/;
 
     const sleep = (delayMs: number) => {
         return new Promise((resolve) => { setTimeout(resolve, delayMs); });
@@ -316,6 +358,7 @@ export function trustedClickElement(
     const localStorageMatches: string[] = [];
     let textMatches = '';
     let clickType = '';
+    let isAllTrusted = false;
     let isInvertedMatchCookie = false;
     let isInvertedMatchLocalStorage = false;
 
@@ -360,6 +403,17 @@ export function trustedClickElement(
                 }
 
                 clickType = passedClickType;
+            }
+            if (IS_TRUSTED_MATCH_REGEXP.test(matchStr)) {
+                // Invalid value is logged and the default is used, like for the click type
+                const { isInvertedMatch, matchValue } = parseMatchArg(matchStr);
+                const passedIsTrusted = matchValue.replace(IS_TRUSTED_MATCH_MARKER, '');
+                if (isInvertedMatch || passedIsTrusted !== IS_TRUSTED_ALL) {
+                    logMessage(source, `Passed isTrusted value '${matchStr}' is invalid`);
+                    return;
+                }
+
+                isAllTrusted = true;
             }
         });
     }
@@ -453,7 +507,7 @@ export function trustedClickElement(
             }
             // Text should match as well, otherwise another element matching the selector may be clicked
             const element = queryShadowSelector(
-                elementObj.selectorText,
+                getSelectorParts(elementObj.selectorText),
                 document.documentElement,
                 textMatchRegexp,
                 closedShadowRoots,
@@ -586,7 +640,7 @@ export function trustedClickElement(
                 return;
             }
             const element = queryShadowSelector(
-                selector,
+                getSelectorParts(selector),
                 document.documentElement,
                 textMatchRegexp,
                 closedShadowRoots,
@@ -659,7 +713,7 @@ export function trustedClickElement(
                 return false;
             }
             const element = queryShadowSelector(
-                selector,
+                getSelectorParts(selector),
                 document.documentElement,
                 textMatchRegexp,
                 closedShadowRoots,
@@ -677,20 +731,22 @@ export function trustedClickElement(
     };
 
     // Spoof isTrusted for clicks dispatched by this scriptlet so that they
-    // appear as real user interactions to the page's event handlers.
+    // appear as real user interactions to the page's event handlers,
+    // or for all click-related events on the page with `isTrusted:all`.
     // Installed only after all early returns, but before looking for elements,
     // since page listeners can only be wrapped when they are registered.
     // @see https://github.com/AdguardTeam/Scriptlets/issues/491
-    spoofClickEventsIsTrusted();
+    if (!spoofClickEventsIsTrusted(isAllTrusted)) {
+        // E.g. another script has made `addEventListener()` read-only, so the scriptlet clicks without spoofing
+        logMessage(source, 'Cannot spoof isTrusted of clicks for event listeners, as their methods cannot be hooked');
+    }
 
     // If shadow combinator is present in selector, intercept attachShadow
     // to track closed shadow roots and observe each new shadow root for mutations,
     // bridging them to the document-level MutationObserver which cannot see inside shadow DOMs.
     // Installed only after all early returns, but before looking for elements.
     // Parsed selectors are checked, as ` >>> ` may be a part of a string, e.g. in `[title=" >>> "]`.
-    const hasShadowCombinator = parsedSelectors.some((selector) => {
-        return splitSelectors(selector, SHADOW_COMBINATOR).length > 1;
-    });
+    const hasShadowCombinator = parsedSelectors.some((selector) => getSelectorParts(selector).length > 1);
     if (hasShadowCombinator) {
         const attachShadowWrapper = (
             target: typeof Element.prototype.attachShadow,
@@ -770,6 +826,8 @@ trustedClickElement.injections = [
     isEmptySelector,
     splitSelectors,
     // following helpers are needed for helpers above
+    createTrustedEventProxy,
+    getDeliveredClickEvent,
     doesElementContainText,
     findElementWithText,
     isValidSelector,

@@ -6,7 +6,12 @@ import {
     vi,
 } from 'vitest';
 
-import { doesElementContainText, findBaseHostElements, isValidShadowSelector } from '../../src/helpers';
+import {
+    doesElementContainText,
+    findBaseHostElements,
+    isValidShadowSelector,
+    queryShadowSelector,
+} from '../../src/helpers';
 
 describe('isValidShadowSelector', () => {
     afterEach(() => {
@@ -48,6 +53,16 @@ describe('isValidShadowSelector', () => {
         expect(isValidShadowSelector(selector)).toBe(false);
     });
 
+    test.each([
+        { parts: ['#host', 'xpath(descendant-or-self::button)'], expected: true },
+        // absolute path is allowed in the first part only
+        { parts: ['xpath(//div[@id="host"])', 'button'], expected: true },
+        { parts: ['#host', 'xpath(//button)'], expected: false },
+        { parts: ['#host', '..class'], expected: false },
+    ])('checks parts of selector: $parts', ({ parts, expected }) => {
+        expect(isValidShadowSelector(parts)).toBe(expected);
+    });
+
     test('does not query the page DOM', () => {
         document.body.innerHTML = '<div id="host"><button></button></div>';
         const querySelectorSpy = vi.spyOn(document, 'querySelector');
@@ -64,6 +79,24 @@ describe('isValidShadowSelector', () => {
             const contextNode = args[1];
             expect(contextNode.ownerDocument || contextNode).not.toBe(document);
         });
+    });
+});
+
+describe('queryShadowSelector', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test.each([
+        { name: 'selector', selector: '#host >>> div > button' },
+        { name: 'parts of selector', selector: ['#host', 'div > button'] },
+        { name: 'parts of selector with XPath', selector: ['xpath(//div[@id="host"])', 'xpath(.//button)'] },
+    ])('selects element inside shadow DOM by $name', ({ selector }) => {
+        document.body.innerHTML = '<div id="host"></div>';
+        const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = '<div><button id="button"></button></div>';
+
+        expect(queryShadowSelector(selector)).toBe(shadowRoot.getElementById('button'));
     });
 });
 
