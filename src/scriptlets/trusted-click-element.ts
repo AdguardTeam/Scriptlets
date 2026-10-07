@@ -282,8 +282,9 @@ export function trustedClickElement(
     parsedSelectors.forEach((selector) => {
         selectorParts.set(selector, splitSelectors(selector, SHADOW_COMBINATOR));
     });
+    // Only selectors of `parsedSelectors` are passed, so their parts are always in the map
     const getSelectorParts = (selector: string): string[] => {
-        return selectorParts.get(selector) || splitSelectors(selector, SHADOW_COMBINATOR);
+        return selectorParts.get(selector) as string[];
     };
 
     // Selectors are validated once, to log an invalid one and exit before any hooks are installed,
