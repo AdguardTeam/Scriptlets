@@ -10,6 +10,7 @@ import {
 import {
     clickElement,
     getDeliveredClickEvent,
+    getSpoofedClicks,
     spoofClickEventsIsTrusted,
     type SpoofedClicks,
 } from '../../src/helpers/click-utils';
@@ -636,6 +637,18 @@ describe('spoofClickEventsIsTrusted', () => {
         expect(clickEvent?.isTrusted).toBe(true);
     });
 
+    test('spoofs an inline handler with a hook installed without the shared state', () => {
+        const { target } = createFixture();
+        const storedClicks = { isAllSpoofed: false };
+        Reflect.set(EventTarget.prototype, spoofedClicksKey, storedClicks);
+        let clickEvent: Event | undefined;
+        target.onclick = (event) => { clickEvent = event; };
+        clickElement(target);
+
+        expect(clickEvent?.isTrusted).toBe(true);
+        expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toStrictEqual({ isAllSpoofed: false });
+    });
+
     test('keeps spoofing scriptlet clicks after the page replaces WeakMap', () => {
         const { target } = createFixture();
         spoofClickEventsIsTrusted();
@@ -1015,14 +1028,59 @@ describe('spoofClickEventsIsTrusted', () => {
             expect(received).toEqual([true]);
         });
 
-        test('keeps the state of an older version, which spoofs all events itself', () => {
-            Reflect.set(EventTarget.prototype, spoofedClicksKey, true);
+        test.each([
+            // Older versions spoof all events themselves
+            { name: 'an older version', storedClicks: true },
+            { name: 'a hook without the shared state', storedClicks: { isAllSpoofed: false } },
+        ])('keeps the value stored by $name', ({ storedClicks }) => {
+            Reflect.set(EventTarget.prototype, spoofedClicksKey, storedClicks);
 
-            spoofClickEventsIsTrusted(true);
+            expect(spoofClickEventsIsTrusted(true)).toBe(true);
 
-            expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toBe(true);
+            expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toStrictEqual(storedClicks);
             expect(EventTarget.prototype.addEventListener).toBe(nativeAddEventListener);
         });
+    });
+});
+
+describe('getSpoofedClicks', () => {
+    const createState = (): SpoofedClicks => ({
+        proxies: new WeakMap(),
+        spoofForwardedClick: null,
+        isAllSpoofed: false,
+    });
+
+    afterEach(() => {
+        Reflect.deleteProperty(EventTarget.prototype, spoofedClicksKey);
+    });
+
+    test('returns false if the hook is not installed', () => {
+        expect(getSpoofedClicks()).toBe(false);
+    });
+
+    test('stores the state of the installed hook and returns it', () => {
+        const state = createState();
+
+        expect(getSpoofedClicks(state)).toBe(state);
+        expect(getSpoofedClicks()).toBe(state);
+        expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toBe(state);
+    });
+
+    test('returns the state with a map created after the page replaces WeakMap', () => {
+        const state = { ...createState(), proxies: new Map() } as unknown as SpoofedClicks;
+        Reflect.set(EventTarget.prototype, spoofedClicksKey, state);
+
+        expect(getSpoofedClicks()).toBe(state);
+    });
+
+    test.each([
+        { name: 'an older version', storedClicks: true },
+        { name: 'an object without proxies', storedClicks: { isAllSpoofed: false } },
+        { name: 'an object with proxies of another type', storedClicks: { proxies: {} } },
+    ])('returns true for the hook installed without the shared state by $name', ({ storedClicks }) => {
+        Reflect.set(EventTarget.prototype, spoofedClicksKey, storedClicks);
+
+        expect(getSpoofedClicks()).toBe(true);
     });
 });
 

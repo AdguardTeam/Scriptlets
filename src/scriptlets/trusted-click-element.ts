@@ -22,6 +22,7 @@ import {
     getXpathElements,
     createTrustedEventProxy,
     getDeliveredClickEvent,
+    getSpoofedClicks,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -848,6 +849,7 @@ trustedClickElement.injections = [
     // following helpers are needed for helpers above
     createTrustedEventProxy,
     getDeliveredClickEvent,
+    getSpoofedClicks,
     doesElementContainText,
     findElementWithText,
     isValidSelector,

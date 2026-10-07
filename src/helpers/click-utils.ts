@@ -1,7 +1,8 @@
 import { randomId } from './random-id';
 
 /**
- * State shared by spoofClickEventsIsTrusted() and clickElement() of all scriptlet injections.
+ * State shared by spoofClickEventsIsTrusted() and clickElement() of all scriptlet injections,
+ * see getSpoofedClicks().
  */
 export type SpoofedClicks = {
     /**
@@ -22,6 +23,29 @@ export type SpoofedClicks = {
      * spoofs the click that the label forwards to its control and returns its proxy.
      */
     spoofForwardedClick: ((event: Event) => Event | undefined) | null;
+};
+
+/**
+ * Returns the state shared by spoofClickEventsIsTrusted() and clickElement() of all scriptlet injections,
+ * which the hook stores on `EventTarget.prototype` once it is installed, so that it is not installed twice.
+ *
+ * @param installedClicks State of the hook which has just been installed, to store it.
+ *
+ * @returns The state of the installed hook, true if the hook is installed without it, e.g. by an older version,
+ * which stores `true` instead, or false if the hook is not installed.
+ */
+export const getSpoofedClicks = (installedClicks?: SpoofedClicks): SpoofedClicks | boolean => {
+    const SPOOFED_CLICKS_KEY = Symbol.for('adg-spoof-click-isTrusted');
+    if (installedClicks) {
+        (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY] = installedClicks;
+        return installedClicks;
+    }
+    const storedClicks = (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY];
+    if (!storedClicks) {
+        return false;
+    }
+    // Duck-typed, as the page may replace the `WeakMap` global
+    return typeof storedClicks.proxies?.get === 'function' ? storedClicks : true;
 };
 
 /**
@@ -103,13 +127,10 @@ export const getDeliveredClickEvent = (spoofedClicks: SpoofedClicks, event: Even
  * @returns True if the hook is installed, now or by an earlier call, false if it cannot be installed.
  */
 export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
-    // Shared with clickElement() of all scriptlet injections, see SpoofedClicks.
-    // Its presence also guards against double-patching.
-    const SPOOFED_CLICKS_KEY = Symbol.for('adg-spoof-click-isTrusted');
-    const installedClicks = (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY];
+    const installedClicks = getSpoofedClicks();
     if (installedClicks) {
-        // Older versions store `true` here, and they spoof all events anyway
-        if (isAllSpoofed && typeof installedClicks === 'object') {
+        // Older versions do not share their state, and they spoof all events anyway
+        if (isAllSpoofed && installedClicks !== true) {
             installedClicks.isAllSpoofed = true;
         }
         return true;
@@ -278,7 +299,7 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
         return false;
     }
 
-    (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY] = spoofedClicks;
+    getSpoofedClicks(spoofedClicks);
     return true;
 };
 
@@ -336,8 +357,6 @@ export const bridgeIframeLoads = (nodes: NodeList) => {
 export const clickElement = (element: HTMLElement, clickType = ''): void => {
     const REACT_PROPS_KEY_PREFIX = '__reactProps$';
     const NATIVE_CLICK_TYPE = 'native';
-    // State shared with spoofClickEventsIsTrusted(), see SpoofedClicks
-    const SPOOFED_CLICKS_KEY = Symbol.for('adg-spoof-click-isTrusted');
 
     // Simulate a realistic click because it may not be enough to execute element.click()
     // https://github.com/AdguardTeam/Scriptlets/issues/491
@@ -507,9 +526,10 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
      * the click to its control, or with `isTrusted:all`, see `getDeliveredClickEvent()`.
      */
     const dispatchNativeClick = (): void => {
-        const sharedClicks = (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY];
-        // Duck-typed: the page may replace the WeakMap global, and older versions store `true` here
-        const spoofedClicks: SpoofedClicks = typeof sharedClicks?.proxies?.get === 'function'
+        const sharedClicks = getSpoofedClicks();
+        // State shared with spoofClickEventsIsTrusted(), or local to this click without the hook
+        // or with a hook of an older version, which does not share it
+        const spoofedClicks: SpoofedClicks = typeof sharedClicks === 'object'
             ? sharedClicks
             : { proxies: new WeakMap(), spoofForwardedClick: null, isAllSpoofed: false };
         const eventProxies = spoofedClicks.proxies;
