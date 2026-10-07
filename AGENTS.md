@@ -116,7 +116,9 @@ You MUST follow the following rules for EVERY task that you perform:
 - You MUST run the test suite to verify your changes do not break existing
   functionality. For scriptlet/redirect changes use
   `pnpm test:qunit scriptlets --name <name> --build` (or `redirects`).
-  For API/validator/converter changes use `pnpm test:vitest`.
+  For API/validator/converter and helper changes, and for scriptlets which have
+  Vitest specs in `tests/scriptlets/`, use `pnpm test:vitest`, or e.g.
+  `pnpm test:vitest tests/scriptlets/<name>.spec.js` for a single spec.
 
 - When making changes to the project structure, ensure the Project structure
   section in `AGENTS.md` is updated and remains valid.
@@ -445,7 +447,8 @@ Project-specific rules:
 - **Vitest tests** (`tests/api/`, `tests/helpers/`, `tests/scriptlets/`,
   root `*.spec.js`/`*.spec.ts`): test files are named `*.spec.js` or
   `*.spec.ts`. Use these for API-level, converter, validator and helper
-  testing. Environment is jsdom.
+  testing, and for scriptlet behavior which needs no real browser, e.g. by
+  calling the scriptlet function directly. Environment is jsdom.
 
 - Tests of clicks which a label forwards to its control MUST make the label
   forward them as untrusted, e.g. with `forwardUntrustedLabelClicks()` in

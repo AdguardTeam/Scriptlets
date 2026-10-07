@@ -280,7 +280,8 @@ pnpm test
     pnpm test:qunit scriptlets --name set-cookie --build
     ```
 
-1. Run all jest tests:
+1. Vitest is used for testing of the API, converters, validators, helpers, and scriptlets
+    which can be tested without a real browser:
 
     ```bash
     pnpm test:vitest
@@ -293,7 +294,8 @@ pnpm test
     pnpm test:vitest -t isValidScriptletRule
     ```
 
-Tests run by `jest` should be named `.spec.js`, so they will be not included in the `QUnit` tests.
+Tests run by Vitest should be named `.spec.js` or `.spec.ts`, so they will be not included in the QUnit tests,
+which are named `.test.js`.
 
 #### Debugging
 

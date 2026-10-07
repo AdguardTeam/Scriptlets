@@ -63,7 +63,7 @@ Build output goes to `dist/`.
 # All tests (Vitest + smoke + QUnit)
 pnpm test
 
-# Vitest only (API, validators, converters)
+# Vitest only (API, validators, converters, helpers, scriptlets)
 pnpm test:vitest
 
 # QUnit only (scriptlets)
@@ -95,7 +95,7 @@ pnpm lint:md     # markdownlint
 | `pnpm install`                                     | Install dependencies                                |
 | `pnpm build`                                       | Clean `dist/` and build all bundles                 |
 | `pnpm test`                                        | Run all tests (Vitest + smoke + QUnit)              |
-| `pnpm test:vitest`                                 | Run Vitest tests only (API, validators, converters) |
+| `pnpm test:vitest`                                 | Run Vitest tests only (API, helpers, scriptlets)    |
 | `pnpm test:qunit scriptlets`                       | Run QUnit tests for all scriptlets                  |
 | `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                   |
 | `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                         |
@@ -135,7 +135,7 @@ pnpm lint
 
 # Run the relevant test suite
 pnpm test:qunit scriptlets --name <name> --build  # for scriptlet changes
-pnpm test:vitest                                  # for API/converter/validator changes
+pnpm test:vitest                                  # for API/converter/validator/helper changes and scriptlet specs
 ```
 
 Both must pass with no errors.
