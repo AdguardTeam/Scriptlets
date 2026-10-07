@@ -376,7 +376,7 @@ export function trustedClickElement(
     const localStorageMatches: string[] = [];
     let textMatches = '';
     let clickType = '';
-    let isAllTrusted = false;
+    let isAllSpoofed = false;
     let isInvertedMatchCookie = false;
     let isInvertedMatchLocalStorage = false;
 
@@ -431,7 +431,7 @@ export function trustedClickElement(
                     return;
                 }
 
-                isAllTrusted = true;
+                isAllSpoofed = true;
             }
         });
     }
@@ -757,7 +757,7 @@ export function trustedClickElement(
     // Installed only after all early returns, but before looking for elements,
     // since page listeners can only be wrapped when they are registered.
     // @see https://github.com/AdguardTeam/Scriptlets/issues/491
-    if (!spoofClickEventsIsTrusted(isAllTrusted)) {
+    if (!spoofClickEventsIsTrusted(isAllSpoofed)) {
         // E.g. another script has made `addEventListener()` read-only, so the scriptlet clicks without spoofing
         logMessage(source, 'Cannot spoof isTrusted of clicks for event listeners, as their methods cannot be hooked');
     }
