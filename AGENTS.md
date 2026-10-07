@@ -426,7 +426,10 @@ Project-specific rules:
     click is spoofed as well, as it cannot be told apart from the forwarded
     one in the browsers which forward it as trusted, where it could not be
     tested, and so is a click on any element of a closed shadow root which
-    contains the control, as listeners outside it see only its host.
+    contains the control, or on its host, as listeners outside it see only
+    its host in both cases, but not a click on a host of an open shadow root
+    above it, as the listeners which see such host see the closed root's host
+    as well.
 
     **Rationale**: Popup guards compare event references, including `window.event`,
     so replacing page or browser events breaks them. Removing a shared wrapper

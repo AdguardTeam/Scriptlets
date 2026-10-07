@@ -3099,6 +3099,65 @@ module(`${name} - event listener compatibility`, (hooks) => {
         }, 250);
     });
 
+    [
+        // Listeners outside the closed shadow root see its host as the origin of both clicks,
+        // so they cannot be told apart from the click forwarded to the control
+        { description: 'an element of the closed shadow root of the control', targetId: 'inner', isSpoofed: true },
+        { description: 'the host of the closed shadow root of the control', targetId: 'closed-host', isSpoofed: true },
+        // Listeners which see the host of an open shadow root see the host of the closed one inside it as well
+        { description: 'the host of an open shadow root above it', targetId: 'open-host', isSpoofed: false },
+        { description: 'an element of an open shadow root above it', targetId: 'sibling', isSpoofed: false },
+    ].forEach(({ description, targetId, isSpoofed }) => {
+        test(`page click on ${description} during the scriptlet click is spoofed: ${isSpoofed}`, (assert) => {
+            const done = assert.async();
+            runScriptlet(name, ['#open-host >>> #closed-host >>> #clicked', '', '50'], false);
+            const openHost = document.createElement('div');
+            openHost.id = 'open-host';
+            document.getElementById('root').append(openHost);
+            const openRoot = openHost.attachShadow({ mode: 'open' });
+            openRoot.innerHTML = '<div id="closed-host"></div><span id="sibling"></span>';
+            const closedHost = openRoot.getElementById('closed-host');
+            const closedRoot = closedHost.attachShadow({ mode: 'closed' });
+            closedRoot.innerHTML = '<label id="label"><span id="clicked">Accept</span>'
+                + '<input type="checkbox" id="control"></label><span id="inner"></span>';
+            const targets = {
+                inner: closedRoot.getElementById('inner'),
+                'closed-host': closedHost,
+                'open-host': openHost,
+                sibling: openRoot.getElementById('sibling'),
+            };
+            const label = closedRoot.getElementById('label');
+            const clicked = closedRoot.getElementById('clicked');
+            const pageClick = new MouseEvent('click', { bubbles: true, composed: true });
+            let pageClickCount = 0;
+            let isDispatchingPageClick = false;
+            // Page dispatches its own click in response to the scriptlet click
+            nativeAddEventListener.call(label, 'click', (event) => {
+                if (event.target !== clicked || pageClickCount > 0) {
+                    return;
+                }
+                pageClickCount += 1;
+                isDispatchingPageClick = true;
+                targets[targetId].dispatchEvent(pageClick);
+                isDispatchingPageClick = false;
+            });
+            const received = [];
+            listenOnDocument((event) => {
+                if (isDispatchingPageClick) {
+                    received.push(event);
+                }
+            });
+
+            setTimeout(() => {
+                assert.strictEqual(pageClickCount, 1, 'Page dispatches its own click');
+                assert.strictEqual(received.length, 1, 'Page click reaches the document listener');
+                assert.strictEqual(received[0].isTrusted, isSpoofed, 'Page click is spoofed only if indistinguishable');
+                assert.strictEqual(received[0] === pageClick, !isSpoofed, 'Page click is passed unchanged otherwise');
+                done();
+            }, 250);
+        });
+    });
+
     test('click forwarded untrusted from a label is spoofed without composedPath() and getRootNode()', (assert) => {
         const done = assert.async();
         // Firefox 52 supports neither of them, nor shadow DOM

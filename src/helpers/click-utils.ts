@@ -623,7 +623,8 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
          * The origin of the event is the first node of its path, as seen by the current listener.
          * Nodes of a closed shadow tree are hidden from listeners outside it, so for them
          * the path starts at its host, which matches the control only if such a tree contains the control.
-         * So any click inside such a tree matches for them, as its origin cannot be seen from outside.
+         * So any click inside such a tree, or on its host, matches for them, as they see the same origin.
+         * A host of an open shadow tree does not match, as the listeners which see it see the nodes inside as well.
          * Other events inside the control's shadow tree have other origins,
          * even if their target, as seen by listeners outside, is a shadow host of the control.
          *
@@ -643,10 +644,9 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
                     return node === labelControl || isHidden;
                 }
                 const host = getShadowHost(node);
-                // Closed shadow root is not exposed by its host
-                if (host && !host.shadowRoot) {
-                    isHidden = true;
-                }
+                // Closed shadow root is not exposed by its host, so the host is the origin of the events inside,
+                // but not the host of an open shadow root above it, which exposes the closed root's host
+                isHidden = !!host && !host.shadowRoot;
                 node = host;
             }
             return false;
