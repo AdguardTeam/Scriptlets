@@ -12,6 +12,7 @@ import {
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
+    getXpathExpression,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -178,8 +179,9 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
 
     const urlMatchRegexp = toRegExp(urlToMatch);
 
-    const XPATH_MARKER = 'xpath(';
-    const isXpath = propsToRemove && propsToRemove.startsWith(XPATH_MARKER);
+    // Empty if the closing parenthesis is missing, so the expression is logged as invalid
+    const xpathExpression = propsToRemove ? getXpathExpression(propsToRemove) : null;
+    const isXpath = xpathExpression !== null;
 
     /**
      * Checks if the document node from the XML document contains propsToRemove
@@ -191,9 +193,8 @@ export function xmlPrune(source, propsToRemove, optionalProp = '', urlToMatch = 
     const getXPathElements = (contextNode) => {
         const matchedElements = [];
         try {
-            const elementsToRemove = propsToRemove.slice(XPATH_MARKER.length, -1);
             const xpathResult = contextNode.evaluate(
-                elementsToRemove,
+                xpathExpression,
                 contextNode,
                 null,
                 XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
@@ -514,4 +515,5 @@ xmlPrune.injections = [
     isValidStrPattern,
     escapeRegExp,
     isEmptyObject,
+    getXpathExpression,
 ];

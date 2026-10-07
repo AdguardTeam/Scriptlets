@@ -61,6 +61,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `xml-prune` evaluating an XPath expression without the closing parenthesis with its last character dropped,
+  e.g. `xpath(//*[name()="Period"]/@duration` as `//*[name()="Period"]/@duratio`, instead of logging it as invalid.
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
 - Scriptlets which re-apply themselves on DOM changes, e.g. `remove-attr` and `remove-class`, no longer stop
   doing it after an error thrown on a DOM change, e.g. by the page for an element. Also, `remove-attr`,
