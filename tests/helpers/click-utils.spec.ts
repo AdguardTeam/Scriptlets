@@ -1,5 +1,7 @@
 import {
+    afterAll,
     afterEach,
+    beforeAll,
     beforeEach,
     describe,
     expect,
@@ -9,16 +11,27 @@ import {
 
 import {
     clickElement,
-    getDeliveredClickEvent,
+    createSpoofedClicks,
     getSpoofedClicks,
     spoofClickEventsIsTrusted,
     type SpoofedClicks,
 } from '../../src/helpers/click-utils';
+import { allowSpoofedClicksReset } from '../helpers';
 import { useViewlessMouseEvents } from '../vitest-helpers';
 
 const nativeAddEventListener = EventTarget.prototype.addEventListener;
 const nativeRemoveEventListener = EventTarget.prototype.removeEventListener;
 const spoofedClicksKey = Symbol.for('adg-spoof-click-isTrusted');
+
+// Spoofed clicks are deleted after each test, so the hook is installed again,
+// see spoofed-clicks-property.spec.ts for the property which cannot be deleted outside of tests
+let restoreDefineProperty: () => void;
+beforeAll(() => {
+    restoreDefineProperty = allowSpoofedClicksReset();
+});
+afterAll(() => {
+    restoreDefineProperty();
+});
 
 type ReactLikeEvent = Event & {
     nativeEvent: Event;
@@ -621,8 +634,9 @@ describe('spoofClickEventsIsTrusted', () => {
 
         expect(onClick).toHaveBeenCalledTimes(1);
         expect(onClick.mock.calls[0][0].isTrusted).toBe(true);
-        const { proxies } = Reflect.get(EventTarget.prototype, spoofedClicksKey) as { proxies: WeakMap<Event, Event> };
-        expect(proxies.has(mousedown as Event)).toBe(false);
+        // Proxy of the dispatched event is removed
+        const spoofedClicks = getSpoofedClicks() as SpoofedClicks;
+        expect(spoofedClicks.getDeliveredEvent(mousedown as Event)).toBe(mousedown);
     });
 
     test('spoofs an inline handler that the page assigns during a scriptlet click', () => {
@@ -916,7 +930,7 @@ describe('spoofClickEventsIsTrusted', () => {
         try {
             expect(() => clickElement(clicked)).not.toThrow();
             expect(received).toEqual([true]);
-            expect(Reflect.get(EventTarget.prototype, spoofedClicksKey).spoofForwardedClick).toBeNull();
+            expect((getSpoofedClicks() as SpoofedClicks).setForwardedClickSpoofer(null)).toBeNull();
         } finally {
             windowAddEventListener.mockRestore();
         }
@@ -1044,85 +1058,112 @@ describe('spoofClickEventsIsTrusted', () => {
 });
 
 describe('getSpoofedClicks', () => {
-    const createState = (): SpoofedClicks => ({
-        proxies: new WeakMap(),
-        spoofForwardedClick: null,
-        isAllSpoofed: false,
-    });
-
     afterEach(() => {
         Reflect.deleteProperty(EventTarget.prototype, spoofedClicksKey);
+        vi.unstubAllGlobals();
     });
 
     test('returns false if the hook is not installed', () => {
         expect(getSpoofedClicks()).toBe(false);
     });
 
-    test('stores the state of the installed hook and returns it', () => {
-        const state = createState();
+    test('stores spoofed clicks of the installed hook and returns them', () => {
+        const spoofedClicks = createSpoofedClicks();
 
-        expect(getSpoofedClicks(state)).toBe(state);
-        expect(getSpoofedClicks()).toBe(state);
-        expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toBe(state);
+        expect(getSpoofedClicks(spoofedClicks)).toBe(spoofedClicks);
+        expect(getSpoofedClicks()).toBe(spoofedClicks);
+        expect(Reflect.get(EventTarget.prototype, spoofedClicksKey)).toBe(spoofedClicks);
     });
 
-    test('returns the state with a map created after the page replaces WeakMap', () => {
-        const state = { ...createState(), proxies: new Map() } as unknown as SpoofedClicks;
-        Reflect.set(EventTarget.prototype, spoofedClicksKey, state);
+    test('returns spoofed clicks created after the page replaces WeakMap', () => {
+        // E.g. a polyfill bundle loaded after the scriptlet; Map is a working stand-in
+        vi.stubGlobal('WeakMap', Map);
+        const spoofedClicks = createSpoofedClicks();
+        getSpoofedClicks(spoofedClicks);
+        const event = new MouseEvent('click');
+        const proxy = new MouseEvent('click');
+        spoofedClicks.setProxy(event, proxy);
 
-        expect(getSpoofedClicks()).toBe(state);
+        expect(getSpoofedClicks()).toBe(spoofedClicks);
+        expect(spoofedClicks.getDeliveredEvent(event)).toBe(proxy);
     });
 
     test.each([
         { name: 'an older version', storedClicks: true },
-        { name: 'an object without proxies', storedClicks: { isAllSpoofed: false } },
-        { name: 'an object with proxies of another type', storedClicks: { proxies: {} } },
-    ])('returns true for the hook installed without the shared state by $name', ({ storedClicks }) => {
+        { name: 'an object without the functions', storedClicks: { isAllSpoofed: false } },
+        { name: 'an object with the state of an unreleased version', storedClicks: { proxies: new WeakMap() } },
+        { name: 'an object with some of the functions', storedClicks: { getDeliveredEvent: (event: Event) => event } },
+    ])('returns true for the hook installed without spoofed clicks by $name', ({ storedClicks }) => {
         Reflect.set(EventTarget.prototype, spoofedClicksKey, storedClicks);
 
         expect(getSpoofedClicks()).toBe(true);
     });
 });
 
-describe('getDeliveredClickEvent', () => {
-    const createState = (overrides: Partial<SpoofedClicks> = {}): SpoofedClicks => ({
-        proxies: new WeakMap(),
-        spoofForwardedClick: null,
-        isAllSpoofed: false,
-        ...overrides,
+describe('createSpoofedClicks', () => {
+    test('keeps its state private and exposes only frozen functions, which the page can still call', () => {
+        const spoofedClicks = createSpoofedClicks();
+
+        expect(Object.isFrozen(spoofedClicks)).toBe(true);
+        expect(Object.keys(spoofedClicks).sort()).toEqual([
+            'deleteProxy',
+            'getDeliveredEvent',
+            'setForwardedClickSpoofer',
+            'setProxy',
+            'spoofAllEvents',
+        ]);
+        expect(Object.values(spoofedClicks).every((value) => typeof value === 'function')).toBe(true);
+        expect(() => { Reflect.set(spoofedClicks, 'getDeliveredEvent', (event: Event) => event); }).not.toThrow();
+        expect(Reflect.set(spoofedClicks, 'getDeliveredEvent', (event: Event) => event)).toBe(false);
     });
 
-    test('returns the stored proxy of an event', () => {
+    test('returns the stored proxy of an event until it is deleted', () => {
         const event = new MouseEvent('click');
         const proxy = new MouseEvent('click');
-        const state = createState();
-        state.proxies.set(event, proxy);
+        const spoofedClicks = createSpoofedClicks();
+        spoofedClicks.setProxy(event, proxy);
 
-        expect(getDeliveredClickEvent(state, event)).toBe(proxy);
+        expect(spoofedClicks.getDeliveredEvent(event)).toBe(proxy);
+        spoofedClicks.deleteProxy(event);
+        expect(spoofedClicks.getDeliveredEvent(event)).toBe(event);
     });
 
-    test('returns the proxy of a forwarded click', () => {
+    test('returns the proxy of a forwarded click while its spoofer is set', () => {
         const event = new MouseEvent('click');
         const proxy = new MouseEvent('click');
-        const state = createState({ spoofForwardedClick: (received) => (received === event ? proxy : undefined) });
+        const spoofedClicks = createSpoofedClicks();
+        const spoofer = (received: Event) => (received === event ? proxy : undefined);
 
-        expect(getDeliveredClickEvent(state, event)).toBe(proxy);
+        expect(spoofedClicks.setForwardedClickSpoofer(spoofer)).toBeNull();
+        expect(spoofedClicks.getDeliveredEvent(event)).toBe(proxy);
+        expect(spoofedClicks.setForwardedClickSpoofer(null)).toBe(spoofer);
+        expect(spoofedClicks.getDeliveredEvent(event)).toBe(event);
     });
 
     test('returns a page event unchanged by default', () => {
         const event = new MouseEvent('click');
 
-        expect(getDeliveredClickEvent(createState(), event)).toBe(event);
+        expect(createSpoofedClicks().getDeliveredEvent(event)).toBe(event);
     });
 
-    test('stores the proxy of a page event if all events are spoofed, so it is reused', () => {
+    test.each([
+        { name: 'on creation', createAllSpoofed: () => createSpoofedClicks(true) },
+        {
+            name: 'later',
+            createAllSpoofed: () => {
+                const spoofedClicks = createSpoofedClicks();
+                spoofedClicks.spoofAllEvents();
+                return spoofedClicks;
+            },
+        },
+    ])('stores the proxy of a page event if all events are spoofed $name, so it is reused', ({ createAllSpoofed }) => {
         const event = new MouseEvent('click');
-        const state = createState({ isAllSpoofed: true });
+        const spoofedClicks = createAllSpoofed();
 
-        const delivered = getDeliveredClickEvent(state, event);
+        const delivered = spoofedClicks.getDeliveredEvent(event);
 
         expect(delivered).not.toBe(event);
         expect(delivered.isTrusted).toBe(true);
-        expect(getDeliveredClickEvent(state, event)).toBe(delivered);
+        expect(spoofedClicks.getDeliveredEvent(event)).toBe(delivered);
     });
 });

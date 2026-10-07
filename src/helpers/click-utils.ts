@@ -1,52 +1,47 @@
 import { randomId } from './random-id';
 
 /**
- * State shared by spoofClickEventsIsTrusted() and clickElement() of all scriptlet injections,
- * see getSpoofedClicks().
+ * Spoofed clicks shared by spoofClickEventsIsTrusted() and clickElement() of all scriptlet injections,
+ * see createSpoofedClicks() and getSpoofedClicks(). The page can reach the shared object, so its state is private
+ * and its functions cannot be replaced, but the page can still call them, e.g. to detect a spoofed event
+ * or to delete its proxy, as it can detect or block the clicks of the scriptlet without them anyway.
  */
-export type SpoofedClicks = {
+export type SpoofedClicks = Readonly<{
     /**
-     * Spoofed events mapped to their proxies, so all listeners of an event receive the same proxy:
-     * events dispatched by clickElement(), clicks forwarded from them by labels,
-     * and other events if `isAllSpoofed` is set.
+     * Returns the event to deliver to a listener or an inline handler: the proxy of a spoofed event,
+     * i.e. of an event dispatched by clickElement(), of a click forwarded from it by a label,
+     * or after spoofAllEvents(), of an untrusted page event, otherwise the event itself.
+     * It is used by the listener wrappers and by clickElement() for the inline handler,
+     * and a created proxy is stored, so all of them receive the same proxy of an event.
+     * Trusted events are passed unchanged, as they are trusted anyway.
      */
-    proxies: WeakMap<Event, Event>;
+    getDeliveredEvent: (event: Event) => Event;
 
     /**
-     * Whether `isTrusted` is spoofed for all untrusted click-related events on the page,
-     * including the page's own ones. Set by any rule with `isTrusted:all` for the whole page.
+     * Stores the proxy of an event dispatched by clickElement(), to deliver it to all listeners.
      */
-    isAllSpoofed: boolean;
+    setProxy: (event: Event, proxy: Event) => void;
 
     /**
-     * Set by clickElement() while it dispatches a click which activates a label:
-     * spoofs the click that the label forwards to its control and returns its proxy.
+     * Removes the stored proxy of an event, once it has been dispatched.
      */
-    spoofForwardedClick: ((event: Event) => Event | undefined) | null;
-};
+    deleteProxy: (event: Event) => void;
 
-/**
- * Returns the state shared by spoofClickEventsIsTrusted() and clickElement() of all scriptlet injections,
- * which the hook stores on `EventTarget.prototype` once it is installed, so that it is not installed twice.
- *
- * @param installedClicks State of the hook which has just been installed, to store it.
- *
- * @returns The state of the installed hook, true if the hook is installed without it, e.g. by an older version,
- * which stores `true` instead, or false if the hook is not installed.
- */
-export const getSpoofedClicks = (installedClicks?: SpoofedClicks): SpoofedClicks | boolean => {
-    const SPOOFED_CLICKS_KEY = Symbol.for('adg-spoof-click-isTrusted');
-    if (installedClicks) {
-        (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY] = installedClicks;
-        return installedClicks;
-    }
-    const storedClicks = (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY];
-    if (!storedClicks) {
-        return false;
-    }
-    // Duck-typed, as the page may replace the `WeakMap` global
-    return typeof storedClicks.proxies?.get === 'function' ? storedClicks : true;
-};
+    /**
+     * Sets the function which clickElement() uses while it dispatches a click which activates a label,
+     * to spoof the click that the label forwards to its control and return its proxy, or null.
+     * Returns the previous function, so it can be restored.
+     */
+    setForwardedClickSpoofer: (
+        spoofer: ((event: Event) => Event | undefined) | null,
+    ) => ((event: Event) => Event | undefined) | null;
+
+    /**
+     * Spoofs `isTrusted` for all untrusted click-related events on the page, including the page's own ones.
+     * Called by any rule with `isTrusted:all`, for the whole page.
+     */
+    spoofAllEvents: () => void;
+}>;
 
 /**
  * Creates a proxy of a native event with `isTrusted` spoofed to `true`
@@ -79,30 +74,87 @@ export const createTrustedEventProxy = (nativeEvent: Event): Event => {
 };
 
 /**
- * Returns the event to deliver to a listener or an inline handler: the proxy of a spoofed event,
- * i.e. of an event dispatched by `clickElement()`, of a click forwarded from it by a label,
- * or with `isTrusted:all`, of an untrusted page event, otherwise the event itself.
- * It is used by the listener wrappers and by `clickElement()` for the inline handler,
- * and a created proxy is stored, so all of them receive the same proxy of an event.
- * Trusted events are passed unchanged, as they are trusted anyway.
+ * Creates spoofed clicks, shared by the installed hook, or local to a click of clickElement() without it.
+ * Its state is kept in the closure, so the page cannot read or replace it, and the returned object is frozen,
+ * so the page cannot replace its functions, but it can call them.
  *
- * @param spoofedClicks State shared by `spoofClickEventsIsTrusted()` and `clickElement()`.
- * @param event Event received by a listener or an inline handler.
+ * @param isAllSpoofed Whether to spoof `isTrusted` for all untrusted click-related events on the page.
  *
- * @returns Proxy of the event if it is spoofed, otherwise the event itself.
+ * @returns Frozen object with functions over the private state.
  */
-export const getDeliveredClickEvent = (spoofedClicks: SpoofedClicks, event: Event): Event => {
-    // A forwarded click is recognized by the first listener it reaches, unless it is recognized earlier
-    const proxy = spoofedClicks.proxies.get(event) || spoofedClicks.spoofForwardedClick?.(event);
-    if (proxy) {
-        return proxy;
+export const createSpoofedClicks = (isAllSpoofed = false): SpoofedClicks => {
+    // Spoofed events mapped to their proxies, so all listeners of an event receive the same proxy
+    const proxies = new WeakMap<Event, Event>();
+    let isAllEventsSpoofed = isAllSpoofed;
+    let spoofForwardedClick: ((event: Event) => Event | undefined) | null = null;
+
+    return Object.freeze({
+        getDeliveredEvent: (event: Event): Event => {
+            // A forwarded click is recognized by the first listener it reaches, unless it is recognized earlier
+            const proxy = proxies.get(event) || spoofForwardedClick?.(event);
+            if (proxy) {
+                return proxy;
+            }
+            if (!isAllEventsSpoofed || event.isTrusted) {
+                return event;
+            }
+            const pageEventProxy = createTrustedEventProxy(event);
+            proxies.set(event, pageEventProxy);
+            return pageEventProxy;
+        },
+        setProxy: (event: Event, proxy: Event): void => {
+            proxies.set(event, proxy);
+        },
+        deleteProxy: (event: Event): void => {
+            proxies.delete(event);
+        },
+        setForwardedClickSpoofer: (spoofer: ((event: Event) => Event | undefined) | null) => {
+            const previousSpoofer = spoofForwardedClick;
+            spoofForwardedClick = spoofer;
+            return previousSpoofer;
+        },
+        spoofAllEvents: (): void => {
+            isAllEventsSpoofed = true;
+        },
+    });
+};
+
+/**
+ * Returns spoofed clicks shared by spoofClickEventsIsTrusted() and clickElement() of all scriptlet injections,
+ * which the hook stores on `EventTarget.prototype` once it is installed, so that it is not installed twice.
+ * It is stored as a non-writable, non-enumerable and non-configurable property, so the page cannot replace it
+ * once the hook is installed. The page can still define the property before, which prevents the installation,
+ * as `true` of older versions does, but scriptlets usually run before the page scripts.
+ *
+ * @param installedClicks Spoofed clicks of the hook which has just been installed, to store them.
+ *
+ * @returns Spoofed clicks of the installed hook, true if the hook is installed without them,
+ * e.g. by an older version, which stores `true` instead, or false if the hook is not installed.
+ */
+export const getSpoofedClicks = (installedClicks?: SpoofedClicks): SpoofedClicks | boolean => {
+    const SPOOFED_CLICKS_KEY = Symbol.for('adg-spoof-click-isTrusted');
+    const SPOOFED_CLICKS_FUNCTIONS = [
+        'getDeliveredEvent',
+        'setProxy',
+        'deleteProxy',
+        'setForwardedClickSpoofer',
+        'spoofAllEvents',
+    ];
+    if (installedClicks) {
+        Object.defineProperty(EventTarget.prototype, SPOOFED_CLICKS_KEY, {
+            value: installedClicks,
+            writable: false,
+            enumerable: false,
+            configurable: false,
+        });
+        return installedClicks;
     }
-    if (!spoofedClicks.isAllSpoofed || event.isTrusted) {
-        return event;
+    const storedClicks = (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY];
+    if (!storedClicks) {
+        return false;
     }
-    const pageEventProxy = createTrustedEventProxy(event);
-    spoofedClicks.proxies.set(event, pageEventProxy);
-    return pageEventProxy;
+    const isSpoofedClicks = SPOOFED_CLICKS_FUNCTIONS.every((name) => typeof storedClicks[name] === 'function');
+    return isSpoofedClicks ? storedClicks : true;
 };
 
 /**
@@ -136,16 +188,12 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
         // until the page is reloaded, unless a rule sets `isTrusted:all`. Older versions leave no other marker,
         // so this hook cannot tell whether one runs on the page.
         if (isAllSpoofed && installedClicks !== true) {
-            installedClicks.isAllSpoofed = true;
+            installedClicks.spoofAllEvents();
         }
         return true;
     }
 
-    const spoofedClicks: SpoofedClicks = {
-        proxies: new WeakMap(),
-        spoofForwardedClick: null,
-        isAllSpoofed,
-    };
+    const spoofedClicks = createSpoofedClicks(isAllSpoofed);
 
     const SPOOFED_EVENTS = new Set([
         'click',
@@ -246,7 +294,7 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
                 // Only scriptlet clicks are spoofed, with one proxy shared by all listeners.
                 // Other events keep their identity, e.g. for guards comparing them with window.event,
                 // unless spoofing of all events is enabled.
-                const delivered = getDeliveredClickEvent(spoofedClicks, event);
+                const delivered = spoofedClicks.getDeliveredEvent(event);
                 if (isFn) {
                     return (listener as EventListener).call(this, delivered);
                 }
@@ -528,40 +576,31 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
      * Dispatches the synthetic pointer and mouse sequence used by the native click path.
      * Each dispatched event is registered with its proxy, so listeners and the element's
      * inline handler receive the same spoofed event. Other events are spoofed only if a label forwards
-     * the click to its control, or with `isTrusted:all`, see `getDeliveredClickEvent()`.
+     * the click to its control, or with `isTrusted:all`, see `SpoofedClicks.getDeliveredEvent()`.
      */
     const dispatchNativeClick = (): void => {
         const sharedClicks = getSpoofedClicks();
-        // State shared with spoofClickEventsIsTrusted(), or local to this click without the hook
-        // or with a hook of an older version, which does not share it
-        const spoofedClicks: SpoofedClicks = typeof sharedClicks === 'object'
-            ? sharedClicks
-            : { proxies: new WeakMap(), spoofForwardedClick: null, isAllSpoofed: false };
-        const eventProxies = spoofedClicks.proxies;
-
-        /**
-         * Returns the event to deliver to the inline handler, as hooked listeners do.
-         *
-         * @param event Event received by the inline handler.
-         *
-         * @returns Proxy of the event if it is spoofed, otherwise the event itself.
-         */
-        const getDeliveredEvent = (event: Event): Event => getDeliveredClickEvent(spoofedClicks, event);
+        // Shared with spoofClickEventsIsTrusted(), or local to this click without the hook
+        // or with a hook of an older version, which does not share them
+        const spoofedClicks = typeof sharedClicks === 'object' ? sharedClicks : createSpoofedClicks();
 
         const dispatch = (event: Event): void => {
-            eventProxies.set(event, createTrustedEventProxy(event));
-            const restoreInlineHandler = wrapInlineHandler(event.type, getDeliveredEvent);
+            spoofedClicks.setProxy(event, createTrustedEventProxy(event));
+            // Inline handler receives the same event as hooked listeners
+            const restoreInlineHandler = wrapInlineHandler(event.type, spoofedClicks.getDeliveredEvent);
             try {
                 element.dispatchEvent(event);
             } finally {
-                eventProxies.delete(event);
+                spoofedClicks.deleteProxy(event);
                 restoreInlineHandler();
             }
         };
 
         // The browser forwards a click on a label, or inside it, to the label's control as a separate event.
-        // It is a direct result of the scriptlet click, so it is spoofed as well.
+        // It is a direct result of the scriptlet click, so it is spoofed as well, with one proxy for all listeners.
+        // Forwarded clicks are kept here, as they occur only while the scriptlet click is dispatched.
         const forwardedClicks: Event[] = [];
+        const forwardedClickProxies: Event[] = [];
 
         /**
          * Returns the host of the shadow root which contains the node.
@@ -689,15 +728,19 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
          * e.g. the Chrome version which runs the tests, so such distinction could not be tested.
          *
          * @param label Label activated by the click.
+         * @param scriptletClick Click dispatched by the scriptlet, which has its own proxy.
          *
          * @returns Function which returns the proxy of the forwarded click, or undefined for other events.
          */
-        const createForwardedClickSpoofer = (label: HTMLLabelElement) => (event: Event): Event | undefined => {
-            const recognizedProxy = eventProxies.get(event);
-            if (recognizedProxy) {
-                return recognizedProxy;
+        const createForwardedClickSpoofer = (
+            label: HTMLLabelElement,
+            scriptletClick: Event,
+        ) => (event: Event): Event | undefined => {
+            const forwardedIndex = forwardedClicks.indexOf(event);
+            if (forwardedIndex !== -1) {
+                return forwardedClickProxies[forwardedIndex];
             }
-            if (event.type !== 'click' || event.isTrusted) {
+            if (event === scriptletClick || event.type !== 'click' || event.isTrusted) {
                 return undefined;
             }
             const labelControl = label.control;
@@ -710,8 +753,8 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
                 return undefined;
             }
             const proxy = createTrustedEventProxy(event);
-            eventProxies.set(event, proxy);
             forwardedClicks.push(event);
+            forwardedClickProxies.push(proxy);
             return proxy;
         };
 
@@ -735,8 +778,9 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
         // The label is found right before the click, as the browser fixes the event path when it dispatches
         // the click, so page handlers of the click may move the clicked element out of the label
         const label = getActivatedLabel();
-        const spoofForwardedClick = label ? createForwardedClickSpoofer(label) : null;
-        const previousSpoofForwardedClick = spoofedClicks.spoofForwardedClick;
+        const clickEvent = new MouseEvent('click', releaseOpts);
+        const spoofForwardedClick = label ? createForwardedClickSpoofer(label, clickEvent) : null;
+        const previousSpoofForwardedClick = spoofedClicks.setForwardedClickSpoofer(spoofForwardedClick);
         // The forwarded click is recognized when it starts at the window, before handlers of the control
         // may change the label's `for` or replace the control. If the hook is installed, its wrapper of this
         // listener recognizes it already, otherwise the listener does.
@@ -744,7 +788,6 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
             spoofForwardedClick?.(event);
         };
         try {
-            spoofedClicks.spoofForwardedClick = spoofForwardedClick;
             if (spoofForwardedClick) {
                 try {
                     window.addEventListener('click', recognizeForwardedClick, true);
@@ -752,11 +795,10 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
                     // The page may have replaced the method; the forwarded click is recognized by listeners then
                 }
             }
-            dispatch(new MouseEvent('click', releaseOpts));
+            dispatch(clickEvent);
         } finally {
             // Restored first, so the spoofer is not left for other clicks even if the removal throws
-            spoofedClicks.spoofForwardedClick = previousSpoofForwardedClick;
-            forwardedClicks.forEach((event) => eventProxies.delete(event));
+            spoofedClicks.setForwardedClickSpoofer(previousSpoofForwardedClick);
             if (spoofForwardedClick) {
                 try {
                     window.removeEventListener('click', recognizeForwardedClick, true);

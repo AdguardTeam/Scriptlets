@@ -410,7 +410,8 @@ Project-specific rules:
     of the page, e.g. `isTrusted:all` of `trusted-click-element`, and all
     listeners of a spoofed event MUST receive the same proxy, so listener
     wrappers and inline handler wrappers MUST resolve the delivered event with
-    the same helper, `getDeliveredClickEvent()`. Trusted events
+    the same function, `getDeliveredEvent()` of `createSpoofedClicks()`,
+    shared through `getSpoofedClicks()`. Trusted events
     MUST be delivered unchanged. Listener wrappers shared across targets MUST
     remain stable when a listener is removed from one target; native
     registration handles deduplication, `once`, and `AbortSignal` cleanup, so
@@ -466,6 +467,12 @@ Project-specific rules:
   them as untrusted, e.g. Firefox, but others as trusted, e.g. the Chrome
   version which Puppeteer runs the tests in, where the spoofing of forwarded
   clicks would not be tested otherwise.
+
+- Tests which install the click hook of `trusted-click-element` again, e.g.
+  after deleting it between tests, MUST call `allowSpoofedClicksReset()` from
+  `tests/helpers.js`, as the property which stores the shared spoofed clicks
+  is not configurable outside of tests, so the page cannot replace it. It is
+  tested without the wrapper in `tests/helpers/spoofed-clicks-property.spec.ts`.
 
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.

@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import {
+    afterAll,
     beforeAll,
     beforeEach,
     vi,
@@ -18,8 +19,18 @@ import {
     createPanel,
     removePanel,
     createClickable,
+    allowSpoofedClicksReset,
 } from '../helpers';
 import { useViewlessMouseEvents } from '../vitest-helpers';
+
+// Spoofed clicks are deleted by a test, so the hook is installed again
+let restoreDefineProperty;
+beforeAll(() => {
+    restoreDefineProperty = allowSpoofedClicksReset();
+});
+afterAll(() => {
+    restoreDefineProperty();
+});
 
 beforeAll(() => {
     Object.defineProperty(window, 'location', {

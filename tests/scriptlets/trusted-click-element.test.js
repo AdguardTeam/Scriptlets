@@ -8,8 +8,13 @@ import {
     createPanel,
     removePanel,
     createClickable,
+    allowSpoofedClicksReset,
 } from '../helpers';
 import { serializeCookie, spoofClickEventsIsTrusted } from '../../src/helpers';
+
+// Spoofed clicks are deleted after each test, so the hook is installed again.
+// Scriptlets run in the realm of the test page, so they define the property with the wrapper as well.
+allowSpoofedClicksReset();
 
 const { test, module } = QUnit;
 const name = 'trusted-click-element';

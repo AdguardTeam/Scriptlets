@@ -21,7 +21,7 @@ import {
     splitSelectors,
     getXpathElements,
     createTrustedEventProxy,
-    getDeliveredClickEvent,
+    createSpoofedClicks,
     getSpoofedClicks,
 } from '../helpers';
 import { type Source } from './scriptlets';
@@ -848,7 +848,7 @@ trustedClickElement.injections = [
     splitSelectors,
     // following helpers are needed for helpers above
     createTrustedEventProxy,
-    getDeliveredClickEvent,
+    createSpoofedClicks,
     getSpoofedClicks,
     doesElementContainText,
     findElementWithText,
