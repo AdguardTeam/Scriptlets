@@ -91,7 +91,11 @@ import { type Source } from './scriptlets';
  *       of other rules, and may break the page, e.g. its guards which compare events, or its code which passes events
  *       to native methods, as listeners receive proxies of them, see
  *       [#582](https://github.com/AdguardTeam/Scriptlets/issues/582). Use it only if the page does not accept the
- *       clicks of the scriptlet otherwise.
+ *       clicks of the scriptlet otherwise. It can be combined with other conditions in any order, but for
+ *       compatibility with older versions of the scriptlet, which do not support it, it should be the first or the
+ *       only condition, e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after
+ *       another condition as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click
+ *       regardless of the `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
  * - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
  *   Must be a number less than `observerTimeout` (default 10 _seconds_)
  *   which can be configured.
@@ -182,6 +186,13 @@ import { type Source } from './scriptlets';
  *
  *     ```adblock
  *     example.com#%#//scriptlet('trusted-click-element', 'div.toggle', 'isTrusted:all')
+ *     ```
+ *
+ * 1. Spoof `isTrusted` for all click-related events on the page and click element only if cookie with name `consent`
+ *    does not exist; `isTrusted:all` should go first for compatibility with older versions, see `isTrusted` above
+ *
+ *     ```adblock
+ *     example.com#%#//scriptlet('trusted-click-element', 'div.toggle', 'isTrusted:all, !cookie:consent')
  *     ```
  *
  * 1. Click element inside open shadow DOM, which could be selected by `div > button`, but is inside shadow host element with host element selected by `article .container`

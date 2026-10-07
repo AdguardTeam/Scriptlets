@@ -29,7 +29,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   scriptlet of the same type, including the page's own events of that type dispatched on it meanwhile, so other page
   events may reach them unspoofed. It is enabled for the whole page, including the clicks of other rules, and may break
   the page, e.g. its guards which compare events, or its code which passes events to native methods, so use it only if
-  the page does not accept the clicks of the scriptlet otherwise.
+  the page does not accept the clicks of the scriptlet otherwise. It can be combined with other conditions in any
+  order, but for compatibility with older versions of the scriptlet, it should be the first or the only condition,
+  e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after another condition
+  as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click regardless of the
+  `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
 
 ### Changed
 
@@ -39,8 +43,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   on the page, which replaced the page's own events with proxies and broke popup opening-event guards [#582].
   The spoofed event is still not the same object as `window.event`. If a rule needs the page's own events
   to be spoofed as well, e.g. a click which a page handler dispatches in response, `isTrusted:all` should be added
-  to its `extraMatch`. It is needed as well for a click forwarded by a label in a closed shadow root which wraps
-  the slot of the clicked element, as such label is not found by default.
+  to its `extraMatch`, as the first condition for compatibility with older versions. It is needed as well for a click
+  forwarded by a label in a closed shadow root which wraps the slot of the clicked element, as such label is not found
+  by default.
 - `trusted-click-element` validates its selectors once and exits if any of them is invalid, logging it,
   instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
   So no element is clicked then, including the ones matched by valid selectors before the invalid one,
