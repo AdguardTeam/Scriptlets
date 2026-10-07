@@ -30,11 +30,8 @@ export type SpoofedClicks = Readonly<{
     /**
      * Sets the function which clickElement() uses while it dispatches a click which activates a label,
      * to spoof the click that the label forwards to its control and return its proxy, or null.
-     * Returns the previous function, so it can be restored.
      */
-    setForwardedClickSpoofer: (
-        spoofer: ((event: Event) => Event | undefined) | null,
-    ) => ((event: Event) => Event | undefined) | null;
+    setForwardedClickSpoofer: (spoofer: ((event: Event) => Event | undefined) | null) => void;
 
     /**
      * Spoofs `isTrusted` for all untrusted click-related events on the page, including the page's own ones.
@@ -108,10 +105,8 @@ export const createSpoofedClicks = (isAllSpoofed = false): SpoofedClicks => {
         deleteProxy: (event: Event): void => {
             proxies.delete(event);
         },
-        setForwardedClickSpoofer: (spoofer: ((event: Event) => Event | undefined) | null) => {
-            const previousSpoofer = spoofForwardedClick;
+        setForwardedClickSpoofer: (spoofer: ((event: Event) => Event | undefined) | null): void => {
             spoofForwardedClick = spoofer;
-            return previousSpoofer;
         },
         spoofAllEvents: (): void => {
             isAllEventsSpoofed = true;
@@ -795,7 +790,7 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
         const label = getActivatedLabel();
         const clickEvent = new MouseEvent('click', releaseOpts);
         const spoofForwardedClick = label ? createForwardedClickSpoofer(label, clickEvent) : null;
-        const previousSpoofForwardedClick = spoofedClicks.setForwardedClickSpoofer(spoofForwardedClick);
+        spoofedClicks.setForwardedClickSpoofer(spoofForwardedClick);
         // The forwarded click is recognized when it starts at the window, before handlers of the control
         // may change the label's `for` or replace the control. If the hook is installed, its wrapper of this
         // listener recognizes it already, otherwise the listener does.
@@ -812,8 +807,11 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
             }
             dispatch(clickEvent);
         } finally {
-            // Restored first, so the spoofer is not left for other clicks even if the removal throws
-            spoofedClicks.setForwardedClickSpoofer(previousSpoofForwardedClick);
+            // Cleared first, so the spoofer is not left for other clicks even if the removal throws.
+            // There is no spoofer of another click to restore, as clickElement() runs when the scriptlet starts,
+            // which is when the page or the frame loads, or from timers and observer callbacks,
+            // so not during the dispatch of another click.
+            spoofedClicks.setForwardedClickSpoofer(null);
             if (spoofForwardedClick) {
                 try {
                     window.removeEventListener('click', recognizeForwardedClick, true);

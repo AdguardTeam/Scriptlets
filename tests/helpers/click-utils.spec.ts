@@ -912,7 +912,11 @@ describe('spoofClickEventsIsTrusted', () => {
         }
     });
 
-    test('restores the forwarded click spoofer if a window listener cannot be added', () => {
+    test.each([
+        { name: 'the window listener is added', isBlocked: false },
+        // E.g. the page has replaced the method of window
+        { name: 'the window listener cannot be added', isBlocked: true },
+    ])('clears the forwarded click spoofer after the click if $name', ({ isBlocked }) => {
         spoofClickEventsIsTrusted();
         const label = document.createElement('label');
         const clicked = document.createElement('span');
@@ -920,17 +924,23 @@ describe('spoofClickEventsIsTrusted', () => {
         control.type = 'checkbox';
         label.append(clicked, control);
         document.body.append(label);
-        // E.g. the page has replaced the method of window
-        const windowAddEventListener = vi.spyOn(window, 'addEventListener').mockImplementation(() => {
-            throw new Error('Blocked');
-        });
+        const windowAddEventListener = vi.spyOn(window, 'addEventListener');
+        if (isBlocked) {
+            windowAddEventListener.mockImplementation(() => {
+                throw new Error('Blocked');
+            });
+        }
         const received: boolean[] = [];
         clicked.addEventListener('click', (event) => { received.push(event.isTrusted); });
 
         try {
             expect(() => clickElement(clicked)).not.toThrow();
             expect(received).toEqual([true]);
-            expect((getSpoofedClicks() as SpoofedClicks).setForwardedClickSpoofer(null)).toBeNull();
+            // A page click on the control after the scriptlet click is not taken for a forwarded one
+            const controlClicks: boolean[] = [];
+            control.addEventListener('click', (event) => { controlClicks.push(event.isTrusted); });
+            control.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            expect(controlClicks).toEqual([false]);
         } finally {
             windowAddEventListener.mockRestore();
         }
@@ -1134,9 +1144,9 @@ describe('createSpoofedClicks', () => {
         const spoofedClicks = createSpoofedClicks();
         const spoofer = (received: Event) => (received === event ? proxy : undefined);
 
-        expect(spoofedClicks.setForwardedClickSpoofer(spoofer)).toBeNull();
+        spoofedClicks.setForwardedClickSpoofer(spoofer);
         expect(spoofedClicks.getDeliveredEvent(event)).toBe(proxy);
-        expect(spoofedClicks.setForwardedClickSpoofer(null)).toBe(spoofer);
+        spoofedClicks.setForwardedClickSpoofer(null);
         expect(spoofedClicks.getDeliveredEvent(event)).toBe(event);
     });
 
