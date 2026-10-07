@@ -45,7 +45,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   to be spoofed as well, e.g. a click which a page handler dispatches in response, `isTrusted:all` should be added
   to its `extraMatch`, as the first condition for compatibility with older versions. It is needed as well for a click
   forwarded by a label in a closed shadow root which wraps the slot of the clicked element, as such label is not found
-  by default.
+  by default. If an older version of `trusted-click-element` runs on the same page as well, e.g. in another AdGuard
+  product, and this version hooks event listeners first, the clicks of the older version are not spoofed
+  for event listeners until the page is reloaded, unless a rule of this version has `isTrusted:all`.
 - `trusted-click-element` validates its selectors once and exits if any of them is invalid, logging it with
   the reason, instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
   So no element is clicked then, including the ones matched by valid selectors before the invalid one,

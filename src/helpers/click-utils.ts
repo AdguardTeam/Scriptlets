@@ -129,7 +129,12 @@ export const getDeliveredClickEvent = (spoofedClicks: SpoofedClicks, event: Even
 export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
     const installedClicks = getSpoofedClicks();
     if (installedClicks) {
-        // Older versions do not share their state, and they spoof all events anyway
+        // Older versions do not share their state, and they spoof all events anyway.
+        // It works only if an older version installs its hook first: otherwise, e.g. if another AdGuard product
+        // with an older version runs on the page as well, its hook is not installed, as it only checks whether
+        // the key is set, and its clickElement() does not register its events, so they reach listeners unspoofed
+        // until the page is reloaded, unless a rule sets `isTrusted:all`. Older versions leave no other marker,
+        // so this hook cannot tell whether one runs on the page.
         if (isAllSpoofed && installedClicks !== true) {
             installedClicks.isAllSpoofed = true;
         }
