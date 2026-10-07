@@ -49,8 +49,12 @@ import { type Source } from './scriptlets';
  *   Empty selectors, e.g. after a trailing comma, and ones with only a CSS comment are skipped.
  *   If any selector is invalid, it is logged with the reason and no element is clicked.
  *   XPath expressions are supported as well, if wrapped in `xpath()`, e.g. `xpath(//button[text()="Accept"])`;
- *   commas inside `xpath()` are not delimiters either. XPath can be combined with `>>>` combinator,
+ *   commas inside `xpath()` are not delimiters either. Relative paths without `>>>` combinator, or before it,
+ *   are evaluated against the `html` element, so e.g. `xpath(body//button)` selects buttons of the page,
+ *   but `xpath(html/body//button)` selects nothing. XPath can be combined with `>>>` combinator,
  *   then absolute paths after it, e.g. `xpath(//button)`, select elements of the whole shadow tree.
+ *   It applies to absolute paths in predicates as well, e.g. `//title` in
+ *   `xpath(.//button[contains(//title, "Accept")])` after `>>>` does not select the page title.
  *   Shadow root cannot be an XPath context node, so relative paths after `>>>` are evaluated
  *   against each top-level element of the shadow root. Use `descendant-or-self::` axis to select elements
  *   at any level of the shadow DOM, e.g. `xpath(descendant-or-self::button)`, as `xpath(.//button)`

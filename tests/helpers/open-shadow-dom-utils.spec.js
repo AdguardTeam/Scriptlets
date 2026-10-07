@@ -108,6 +108,25 @@ describe('queryShadowSelector', () => {
 
         expect(queryShadowSelector(selector)).toBe(shadowRoot.getElementById('button'));
     });
+
+    test.each([
+        { selector: 'xpath(body//button)', expected: 'button' },
+        { selector: 'xpath(.//button)', expected: 'button' },
+        { selector: 'xpath(//button)', expected: 'button' },
+        { selector: 'xpath(/html/body//button)', expected: 'button' },
+        // `html` element is the context node, so it is not its own child
+        { selector: 'xpath(html/body//button)', expected: null },
+        { selector: 'xpath(body/div[@id="host"]) >>> button', expected: 'inside' },
+        { selector: 'xpath(html/body/div[@id="host"]) >>> button', expected: null },
+    ])('evaluates relative XPath outside of shadow DOM against html element: $selector', ({ selector, expected }) => {
+        document.body.innerHTML = '<div id="host"></div><button id="button"></button>';
+        const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = '<button id="inside"></button>';
+
+        const element = queryShadowSelector(selector);
+
+        expect(element ? element.id : null).toBe(expected);
+    });
 });
 
 describe('doesElementContainText', () => {
