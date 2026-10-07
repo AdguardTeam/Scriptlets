@@ -488,6 +488,24 @@ export function trustedClickElement(
     const textMatchRegexp = textMatches ? toRegExp(textMatches) : null;
 
     /**
+     * Finds the first element matched by the selector, also inside open shadow roots and closed ones
+     * tracked by the scriptlet, which contains the text to match, if specified.
+     * Elements are found and clicked by the same query, so that text is matched for the clicked element as well.
+     *
+     * @param selector One of the parsed selectors.
+     *
+     * @returns Matched element, or null if there is none.
+     */
+    const queryElement = (selector: string): Element | null => {
+        return queryShadowSelector(
+            getSelectorParts(selector),
+            document.documentElement,
+            textMatchRegexp,
+            closedShadowRoots,
+        );
+    };
+
+    /**
      * Create selectors array and swap selectors to null on finding it's element
      *
      * Selectors / nulls should not be (re)moved from array to:
@@ -518,12 +536,7 @@ export function trustedClickElement(
                 return;
             }
             // Text should match as well, otherwise another element matching the selector may be clicked
-            const element = queryShadowSelector(
-                getSelectorParts(elementObj.selectorText),
-                document.documentElement,
-                textMatchRegexp,
-                closedShadowRoots,
-            ) as HTMLElement;
+            const element = queryElement(elementObj.selectorText) as HTMLElement;
             if (!element) {
                 logMessage(source, `Could not find element: '${elementObj.selectorText}'`);
                 return;
@@ -651,12 +664,7 @@ export function trustedClickElement(
             if (!selector) {
                 return;
             }
-            const element = queryShadowSelector(
-                getSelectorParts(selector),
-                document.documentElement,
-                textMatchRegexp,
-                closedShadowRoots,
-            );
+            const element = queryElement(selector);
             if (!element) {
                 return;
             }
@@ -724,12 +732,7 @@ export function trustedClickElement(
             if (!selector) {
                 return false;
             }
-            const element = queryShadowSelector(
-                getSelectorParts(selector),
-                document.documentElement,
-                textMatchRegexp,
-                closedShadowRoots,
-            );
+            const element = queryElement(selector);
             return !!element;
         });
         if (foundElements) {
