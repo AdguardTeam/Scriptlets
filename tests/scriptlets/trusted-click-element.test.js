@@ -567,7 +567,7 @@ test('extraMatch - invalid click type is logged, element clicked by default clic
             assert.deepEqual(loggedMessages, logged, 'Only an invalid value is logged');
             assert.deepEqual(received.map((event) => event.isTrusted), [isTrusted, isTrusted], 'Page click trust');
             assert.strictEqual(received[0], received[1], 'All listeners receive the same event');
-            assert.true(hidden.checked, 'Page click checks the hidden control');
+            assert.ok(hidden.checked, 'Page click checks the hidden control');
             assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
             done();
         }, 150);
@@ -1666,8 +1666,8 @@ test('hooks are not installed when the scriptlet exits early', (assert) => {
         { description: 'Unmatched localStorage item', args: ['localStorage:adg-never-set-item'] },
     ].forEach(({ description, args }) => {
         runScriptlet(name, [selectorsString, ...args]);
-        assert.false(isEventListenerHookInstalled(), `${description} leaves event listener methods intact`);
-        assert.false(isAttachShadowHookInstalled(), `${description} leaves attachShadow intact`);
+        assert.notOk(isEventListenerHookInstalled(), `${description} leaves event listener methods intact`);
+        assert.notOk(isAttachShadowHookInstalled(), `${description} leaves attachShadow intact`);
     });
 
     [
@@ -1688,18 +1688,18 @@ test('hooks are not installed when the scriptlet exits early', (assert) => {
         const loggedMessages = getSyncLogs(() => runScriptlet(name, [invalidSelector]));
         const description = `Invalid selector '${invalidSelector}'`;
         // Errors thrown by the scriptlet are logged as well, so only the invalid selector message is expected
-        assert.true(
+        assert.ok(
             loggedMessages.length === 1
             && loggedMessages[0].startsWith(`${name}: Invalid selector arg: '`),
             `${description} is logged`,
         );
-        assert.false(isEventListenerHookInstalled(), `${description} leaves event listener methods intact`);
-        assert.false(isAttachShadowHookInstalled(), `${description} leaves attachShadow intact`);
+        assert.notOk(isEventListenerHookInstalled(), `${description} leaves event listener methods intact`);
+        assert.notOk(isAttachShadowHookInstalled(), `${description} leaves attachShadow intact`);
     });
 
     runScriptlet(name, [selectorsString, '', '', '', '1']);
-    assert.true(isEventListenerHookInstalled(), 'Running scriptlet hooks event listener methods');
-    assert.true(isAttachShadowHookInstalled(), 'Running scriptlet hooks attachShadow');
+    assert.ok(isEventListenerHookInstalled(), 'Running scriptlet hooks event listener methods');
+    assert.ok(isAttachShadowHookInstalled(), 'Running scriptlet hooks attachShadow');
 
     Element.prototype.attachShadow = attachShadowBefore;
 });
@@ -2497,16 +2497,16 @@ module(`${name} - event listener compatibility`, (hooks) => {
         for (let cycle = 0; cycle < 2; cycle += 1) {
             activate(target);
             assert.strictEqual(originalTrust[cycle], isTrusted, 'Opening event has the expected original trust');
-            assert.false(popup.hidden, 'Opening event keeps the popup open');
+            assert.notOk(popup.hidden, 'Opening event keeps the popup open');
             assert.deepEqual(state.trace.slice(-2), ['open', 'ignore opening'], 'Opening event was ignored');
             if (cycle === 0) {
                 assert.strictEqual(state.captureCalls, 0, 'New capture listener misses the opening event');
                 assert.strictEqual(state.bubbleCalls, 1, 'New bubble listener receives the opening event');
             }
             activate(document.getElementById('inside'));
-            assert.false(popup.hidden, 'Inside event keeps the popup open');
+            assert.notOk(popup.hidden, 'Inside event keeps the popup open');
             activate(document.getElementById('outside'));
-            assert.true(popup.hidden, 'Outside event closes the popup');
+            assert.ok(popup.hidden, 'Outside event closes the popup');
         }
         assert.deepEqual(state.trace, [
             'open', 'ignore opening', 'close', 'open', 'ignore opening', 'close',
@@ -2732,8 +2732,8 @@ module(`${name} - event listener compatibility`, (hooks) => {
                 const events = received.get(type) || [];
                 assert.strictEqual(events.length, 3, `${type}: function, object and inline handlers were called`);
                 assert.strictEqual(originals.get(type)?.isTrusted, false, `${type}: original event is untrusted`);
-                assert.true(events.every((event) => event.isTrusted), `${type}: handlers receive spoofed trust`);
-                assert.true(events.every((event) => event === events[0]), `${type}: handlers share one event`);
+                assert.ok(events.every((event) => event.isTrusted), `${type}: handlers receive spoofed trust`);
+                assert.ok(events.every((event) => event === events[0]), `${type}: handlers share one event`);
                 assert.notStrictEqual(events[0], originals.get(type), `${type}: spoofed event proxies the original`);
             });
             done();
@@ -2785,8 +2785,8 @@ module(`${name} - event listener compatibility`, (hooks) => {
 
             setTimeout(() => {
                 assert.strictEqual(received.length, 1, 'Control listener receives the forwarded click');
-                assert.true(received[0]?.isTrusted, 'Forwarded click is trusted');
-                assert.true(control.checked, 'Forwarded click checks the control');
+                assert.ok(received[0]?.isTrusted, 'Forwarded click is trusted');
+                assert.ok(control.checked, 'Forwarded click checks the control');
                 clicked.click();
                 assert.strictEqual(received[1], observed[1], 'Forwarded page click is passed through unchanged');
                 done();
@@ -2820,7 +2820,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
                     control: [true],
                     document: [true, true],
                 }, 'The scriptlet click and the click forwarded from it are trusted for all listeners');
-                assert.true(control.checked, 'Forwarded click checks the control');
+                assert.ok(control.checked, 'Forwarded click checks the control');
                 done();
             }, 250);
         });
@@ -2844,7 +2844,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
 
             setTimeout(() => {
                 assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
-                assert.true(control.checked, 'Forwarded click checks the control');
+                assert.ok(control.checked, 'Forwarded click checks the control');
                 done();
             }, 250);
         });
@@ -2868,7 +2868,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
 
         setTimeout(() => {
             assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
-            assert.true(control.checked, 'Forwarded click checks the control');
+            assert.ok(control.checked, 'Forwarded click checks the control');
             done();
         }, 250);
     });
@@ -2894,7 +2894,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
 
         setTimeout(() => {
             assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
-            assert.true(control.checked, 'Forwarded click checks the control');
+            assert.ok(control.checked, 'Forwarded click checks the control');
             done();
         }, 250);
     });
@@ -2920,7 +2920,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
             const inlineForwarded = inline.filter((event) => event.target === control);
             const receivedForwarded = received.filter((event) => event.target === control);
             assert.strictEqual(inlineForwarded.length, 1, 'Inline handler receives the forwarded click');
-            assert.true(inlineForwarded[0]?.isTrusted, 'Forwarded click is trusted for the inline handler');
+            assert.ok(inlineForwarded[0]?.isTrusted, 'Forwarded click is trusted for the inline handler');
             assert.strictEqual(inlineForwarded[0], receivedForwarded[0], 'Inline handler and listeners share it');
             done();
         }, 250);
@@ -3021,7 +3021,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
 
         setTimeout(() => {
             assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
-            assert.true(control.checked, 'Forwarded click checks the control');
+            assert.ok(control.checked, 'Forwarded click checks the control');
             done();
         }, 250);
     });
@@ -3057,7 +3057,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
 
         setTimeout(() => {
             assert.strictEqual(rippleClicks.length, 1, 'Component dispatches its own click');
-            assert.true(outside.includes(rippleClicks[0]), 'Own click is passed unchanged outside the shadow tree');
+            assert.ok(outside.includes(rippleClicks[0]), 'Own click is passed unchanged outside the shadow tree');
             assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
             done();
         }, 250);
@@ -3171,7 +3171,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
         setTimeout(() => {
             restoreMethods();
             assert.deepEqual(trust, [true], 'Click forwarded to the control is trusted');
-            assert.true(control.checked, 'Forwarded click checks the control');
+            assert.ok(control.checked, 'Forwarded click checks the control');
             assert.deepEqual(otherClicks, [false], 'Page click on another element is passed unchanged');
             done();
         }, 250);
@@ -3197,8 +3197,8 @@ module(`${name} - event listener compatibility`, (hooks) => {
 
             setTimeout(() => {
                 assert.deepEqual(trust, [true], 'Click forwarded to the new control is trusted');
-                assert.true(control.checked, 'Forwarded click checks the new control');
-                assert.false(oldControl.checked, 'Old control is not clicked');
+                assert.ok(control.checked, 'Forwarded click checks the new control');
+                assert.notOk(oldControl.checked, 'Old control is not clicked');
                 done();
             }, 250);
         });
@@ -3230,7 +3230,7 @@ module(`${name} - event listener compatibility`, (hooks) => {
             assert.strictEqual(inlineError, null, 'Setting event properties does not throw');
             assert.strictEqual(inlineEvent?.isTrusted, true, 'Inline handler receives spoofed trust');
             assert.strictEqual(inlineEvent, listenerEvent, 'Inline handler and listener receive the same event');
-            assert.true(originalEvent?.defaultPrevented, 'returnValue reaches the original event');
+            assert.ok(originalEvent?.defaultPrevented, 'returnValue reaches the original event');
             assert.strictEqual(documentClicks, 0, 'cancelBubble stops propagation');
             done();
         }, 250);
@@ -3340,12 +3340,12 @@ module(`${name} - event listener compatibility`, (hooks) => {
         const state = installPopupGuard(assert, 'argument');
 
         setTimeout(() => {
-            assert.false(popup.hidden, 'Scriptlet click keeps the popup open');
+            assert.notOk(popup.hidden, 'Scriptlet click keeps the popup open');
             assert.deepEqual(state.trace, ['open', 'ignore opening'], 'Opening event was ignored');
             document.getElementById('inside').click();
-            assert.false(popup.hidden, 'Inside click keeps the popup open');
+            assert.notOk(popup.hidden, 'Inside click keeps the popup open');
             document.getElementById('outside').click();
-            assert.true(popup.hidden, 'Outside click closes the popup');
+            assert.ok(popup.hidden, 'Outside click closes the popup');
             done();
         }, 250);
     });
@@ -3423,12 +3423,12 @@ test('page click is trusted for all kinds of listeners, which share one proxy', 
     document.removeEventListener('click', documentListener);
 
     assert.strictEqual(received.length, 4, 'All listeners receive the click');
-    assert.true(received.every((event) => event.isTrusted), 'All listeners receive a trusted click');
-    assert.true(received.every((event) => event === received[0]), 'All listeners receive the same proxy');
-    assert.true(received[0] instanceof MouseEvent, 'Proxy keeps the event type');
+    assert.ok(received.every((event) => event.isTrusted), 'All listeners receive a trusted click');
+    assert.ok(received.every((event) => event === received[0]), 'All listeners receive the same proxy');
+    assert.ok(received[0] instanceof MouseEvent, 'Proxy keeps the event type');
     assert.strictEqual(received[0].target, other, 'Proxy keeps the target');
-    assert.false(original.isTrusted, 'Original event stays untrusted');
-    assert.true(original.defaultPrevented, 'Proxy cancels the original event');
+    assert.notOk(original.isTrusted, 'Original event stays untrusted');
+    assert.ok(original.defaultPrevented, 'Proxy cancels the original event');
 });
 
 test('page click dispatched after the scriptlet has clicked is trusted', (assert) => {
@@ -3513,7 +3513,7 @@ test('page click on the clicked element reaches its inline handler as the same t
     setTimeout(() => {
         // Page click is dispatched from the inline handler, so the listener receives it before the scriptlet click
         assert.strictEqual(inline.length, 2, 'Inline handler receives the scriptlet click and the page click');
-        assert.true(inline.every((event) => event.isTrusted), 'Inline handler receives trusted clicks');
+        assert.ok(inline.every((event) => event.isTrusted), 'Inline handler receives trusted clicks');
         assert.strictEqual(inline[1], received[0], 'Inline handler and listener receive the same page click');
         done();
     }, 200);
