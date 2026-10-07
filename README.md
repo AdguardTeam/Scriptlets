@@ -65,7 +65,7 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 Scriptlet is a JavaScript function which can be used in a declarative manner in AdGuard filtering rules.
 
 AdGuard supports a lot of different scriptlets.
-Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP.
+Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBlock Origin and Adblock Plus.
 
 ### <a name="scriptlet-syntax"></a> Syntax
 
