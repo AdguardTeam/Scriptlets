@@ -791,16 +791,13 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
         const clickEvent = new MouseEvent('click', releaseOpts);
         const spoofForwardedClick = label ? createForwardedClickSpoofer(label, clickEvent) : null;
         spoofedClicks.setForwardedClickSpoofer(spoofForwardedClick);
-        // The forwarded click is recognized when it starts at the window, before handlers of the control
-        // may change the label's `for` or replace the control. If the hook is installed, its wrapper of this
-        // listener recognizes it already, otherwise the listener does.
-        const recognizeForwardedClick = (event: Event): void => {
-            spoofForwardedClick?.(event);
-        };
         try {
             if (spoofForwardedClick) {
+                // The forwarded click is recognized when it starts at the window, before handlers of the control
+                // may change the label's `for` or replace the control. If the hook is installed, its wrapper
+                // of the spoofer recognizes it already, otherwise the spoofer does as a listener.
                 try {
-                    window.addEventListener('click', recognizeForwardedClick, true);
+                    window.addEventListener('click', spoofForwardedClick, true);
                 } catch {
                     // The page may have replaced the method; the forwarded click is recognized by listeners then
                 }
@@ -814,7 +811,7 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
             spoofedClicks.setForwardedClickSpoofer(null);
             if (spoofForwardedClick) {
                 try {
-                    window.removeEventListener('click', recognizeForwardedClick, true);
+                    window.removeEventListener('click', spoofForwardedClick, true);
                 } catch {
                     // Nothing else to clean up
                 }
