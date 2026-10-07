@@ -21,6 +21,8 @@ const { test, module } = QUnit;
 const name = 'trusted-click-element';
 
 const nativeAddEventListener = EventTarget.prototype.addEventListener;
+// Captured before any scriptlet hooks it
+const nativeAttachShadow = Element.prototype.attachShadow;
 const nativeRemoveEventListener = EventTarget.prototype.removeEventListener;
 const spoofedClicksKey = Symbol.for('adg-spoof-click-isTrusted');
 
@@ -1715,6 +1717,60 @@ test('Shadow combinator inside a string does not hook attachShadow', (assert) =>
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 400);
+});
+
+[
+    { description: 'found at once', isAddedLater: false },
+    { description: 'found by the observer', isAddedLater: true },
+].forEach(({ description, isAddedLater }) => {
+    test(`Shadow roots attached after all elements are clicked are not observed: ${description}`, (assert) => {
+        const done = assert.async();
+        // Scriptlets of other tests may still wait for elements and observe shadow roots with their own hooks
+        const attachShadowBefore = Element.prototype.attachShadow;
+        Element.prototype.attachShadow = nativeAttachShadow;
+
+        // Number not used by other tests, as their scriptlets may still wait for elements
+        const ELEMENT_NUM = 33;
+        const panel = createPanel();
+        const host = document.createElement('div');
+        host.id = 'host';
+        const clickable = createClickable(ELEMENT_NUM);
+        const addElement = () => {
+            host.attachShadow({ mode: 'open' }).appendChild(clickable);
+            panel.appendChild(host);
+        };
+        if (!isAddedLater) {
+            addElement();
+        }
+        runScriptlet(name, [`#${PANEL_ID} > #host >>> #${CLICKABLE_NAME}${ELEMENT_NUM}`]);
+        if (isAddedLater) {
+            addElement();
+        }
+
+        setTimeout(() => {
+            // Observer of attributes of the html element, which the scriptlet changes to wake up its observer
+            const scriptletAttributes = [];
+            const htmlObserver = new MutationObserver((records) => {
+                records.forEach(({ attributeName }) => {
+                    if (attributeName.startsWith('adg-')) {
+                        scriptletAttributes.push(attributeName);
+                    }
+                });
+            });
+            htmlObserver.observe(document.documentElement, { attributes: true });
+            const laterHost = document.createElement('div');
+            panel.appendChild(laterHost);
+            laterHost.attachShadow({ mode: 'open' }).appendChild(document.createElement('span'));
+
+            setTimeout(() => {
+                htmlObserver.disconnect();
+                Element.prototype.attachShadow = attachShadowBefore;
+                assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+                assert.deepEqual(scriptletAttributes, [], 'Changes of a later shadow root do not wake up observers');
+                done();
+            }, 100);
+        }, 300);
+    });
 });
 
 test('Shadow DOM bridge observer - deferred content triggers click', (assert) => {

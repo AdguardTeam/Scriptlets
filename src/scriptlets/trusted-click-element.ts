@@ -341,8 +341,12 @@ export function trustedClickElement(
      */
     const closedShadowRoots = new WeakMap<Element, ShadowRoot>();
     const bridgeObservers = new Set<MutationObserver>();
+    // Bridge observers only wake up the main observer, so they are not created once it is disconnected,
+    // e.g. after all elements have been found or on timeout, while the hook of `attachShadow` stays
+    let isBridgingShadowRoots = true;
 
     const disconnectBridgeObservers = () => {
+        isBridgingShadowRoots = false;
         bridgeObservers.forEach((obs) => obs.disconnect());
         bridgeObservers.clear();
     };
@@ -786,6 +790,11 @@ export function trustedClickElement(
             // The mode is taken from the root, as the init options may return a different value on each read.
             if (shadowRoot.mode === 'closed') {
                 closedShadowRoots.set(thisArg, shadowRoot);
+            }
+
+            // Closed shadow roots are still tracked, as a delayed click may look for its element again
+            if (!isBridgingShadowRoots) {
+                return shadowRoot;
             }
 
             /**
