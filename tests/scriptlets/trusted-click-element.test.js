@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle, no-console */
+/* eslint-disable no-underscore-dangle */
 import {
     runScriptlet,
     clearGlobalProps,
@@ -9,6 +9,7 @@ import {
     removePanel,
     createClickable,
     allowSpoofedClicksReset,
+    getSyncLogs,
 } from '../helpers';
 import { serializeCookie, spoofClickEventsIsTrusted } from '../../src/helpers';
 
@@ -515,16 +516,7 @@ test('extraMatch - invalid click type is logged, element clicked by default clic
     // Number not used by other tests, as their scriptlets may still wait for elements
     const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}4`;
 
-    const loggedMessages = [];
-    const nativeConsoleLog = console.log;
-    console.log = (message) => {
-        loggedMessages.push(message);
-    };
-    try {
-        runScriptlet(name, [selectorsString, 'clickType:synthetic']);
-    } finally {
-        console.log = nativeConsoleLog;
-    }
+    const loggedMessages = getSyncLogs(() => runScriptlet(name, [selectorsString, 'clickType:synthetic']));
 
     const panel = createPanel();
     const clickable = createClickable(4);
@@ -561,16 +553,9 @@ test('extraMatch - invalid click type is logged, element clicked by default clic
         hidden.type = 'checkbox';
         panel.append(toggle, hidden);
 
-        const loggedMessages = [];
-        const nativeConsoleLog = console.log;
-        console.log = (message) => {
-            loggedMessages.push(message);
-        };
-        try {
+        const loggedMessages = getSyncLogs(() => {
             runScriptlet(name, [`#${PANEL_ID} > #trusted-toggle`, extraMatchStr, DELAY]);
-        } finally {
-            console.log = nativeConsoleLog;
-        }
+        });
 
         // Custom control forwards the click to a hidden native one, which accepts only trusted clicks
         toggle.addEventListener('click', () => hidden.click());
@@ -600,16 +585,9 @@ test('extraMatch - text match containing isTrusted marker, matched', (assert) =>
     const clickable = createClickable(15, textToMatch);
     panel.appendChild(clickable);
 
-    const loggedMessages = [];
-    const nativeConsoleLog = console.log;
-    console.log = (message) => {
-        loggedMessages.push(message);
-    };
-    try {
+    const loggedMessages = getSyncLogs(() => {
         runScriptlet(name, [`#${PANEL_ID} > #${CLICKABLE_NAME}15`, `containsText:${textToMatch}`]);
-    } finally {
-        console.log = nativeConsoleLog;
-    }
+    });
 
     setTimeout(() => {
         assert.deepEqual(loggedMessages, [], 'Text is not taken for an isTrusted value');
@@ -1618,6 +1596,7 @@ test('cancelBubble can be set without error in spoofed event', (assert) => {
             e.cancelBubble = true;
             cancelBubbleIsSet = e.cancelBubble;
         } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('Error in click event listener:', error);
             cancelBubbleIsSet = false;
         }
@@ -1704,21 +1683,11 @@ test('hooks are not installed when the scriptlet exits early', (assert) => {
         ' , ',
         ' , /* #panel */',
     ].forEach((invalidSelector) => {
-        const loggedMessages = [];
-        const nativeConsoleLog = console.log;
-        console.log = (message) => {
-            loggedMessages.push(message);
-        };
-        try {
-            runScriptlet(name, [invalidSelector]);
-        } finally {
-            console.log = nativeConsoleLog;
-        }
+        const loggedMessages = getSyncLogs(() => runScriptlet(name, [invalidSelector]));
         const description = `Invalid selector '${invalidSelector}'`;
         // Errors thrown by the scriptlet are logged as well, so only the invalid selector message is expected
         assert.true(
             loggedMessages.length === 1
-            && typeof loggedMessages[0] === 'string'
             && loggedMessages[0].startsWith(`${name}: Invalid selector arg: '`),
             `${description} is logged`,
         );
@@ -2087,16 +2056,7 @@ test('XPath - evaluation error does not throw, nothing is clicked', (assert) => 
     const clickable = createClickable(1);
     panel.appendChild(clickable);
 
-    const loggedMessages = [];
-    const nativeConsoleLog = console.log;
-    console.log = (message) => {
-        loggedMessages.push(message);
-    };
-    try {
-        runScriptlet(name, [selectorsString]);
-    } finally {
-        console.log = nativeConsoleLog;
-    }
+    const loggedMessages = getSyncLogs(() => runScriptlet(name, [selectorsString]));
 
     // Trigger the observer, its callback errors are reported by QUnit as global failures
     panel.appendChild(createClickable(2));
@@ -2118,16 +2078,7 @@ test('XPath - invalid expression is logged with the reason, nothing is clicked',
     const invalidSelector = `#${PANEL_ID} >>> ${xpathSelector}`;
     const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1, ${invalidSelector}`;
 
-    const loggedMessages = [];
-    const nativeConsoleLog = console.log;
-    console.log = (message) => {
-        loggedMessages.push(message);
-    };
-    try {
-        runScriptlet(name, [selectorsString]);
-    } finally {
-        console.log = nativeConsoleLog;
-    }
+    const loggedMessages = getSyncLogs(() => runScriptlet(name, [selectorsString]));
 
     const panel = createPanel();
     const clickable = createClickable(1);
@@ -3599,16 +3550,7 @@ const TRUSTED_ALL_ITEM = 'adg-trusted-all-item';
         const { target, other } = createTrustedAllFixture();
         target.textContent = 'Accept';
 
-        const loggedMessages = [];
-        const nativeConsoleLog = console.log;
-        console.log = (message) => {
-            loggedMessages.push(message);
-        };
-        try {
-            runScriptlet(name, [TRUSTED_ALL_SELECTOR, extraMatch, '50']);
-        } finally {
-            console.log = nativeConsoleLog;
-        }
+        const loggedMessages = getSyncLogs(() => runScriptlet(name, [TRUSTED_ALL_SELECTOR, extraMatch, '50']));
         // Registered after the scriptlet hooks addEventListener, but before its delayed click
         const targetClicks = [];
         target.addEventListener('click', (event) => { targetClicks.push(event.isTrusted); });
