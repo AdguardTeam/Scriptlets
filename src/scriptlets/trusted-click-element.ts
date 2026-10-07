@@ -19,7 +19,7 @@ import {
     isValidXpath,
     getXpathExpression,
     splitSelectors,
-    getXpathElements,
+    getFirstXpathElement,
     createTrustedEventProxy,
     createSpoofedClicks,
     getSpoofedClicks,
@@ -855,6 +855,6 @@ trustedClickElement.injections = [
     isValidSelector,
     isValidXpath,
     getXpathExpression,
-    getXpathElements,
+    getFirstXpathElement,
     randomId,
 ];

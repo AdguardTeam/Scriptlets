@@ -1,6 +1,6 @@
 import { flatten } from './array-utils';
 import { isValidSelector, splitSelectors } from './selector-utils';
-import { getXpathElements, getXpathExpression, isValidXpath } from './xpath-utils';
+import { getFirstXpathElement, getXpathExpression, isValidXpath } from './xpath-utils';
 
 /**
  * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
@@ -187,7 +187,7 @@ export function getShadowSelectorError(selector: string | string[]): string | nu
  * Supports `>>>` combinator to split the selector into shadow host selector,
  * to find the element containing shadow root, and shadow root selector, to find the element inside shadow dom.
  * Each part of the selector may be an XPath expression wrapped in `xpath(...)`,
- * see `getXpathElements()` for the evaluation of XPath inside shadow dom.
+ * see `getFirstXpathElement()` for the evaluation of XPath inside shadow dom.
  * Parts already split by `>>>` combinator, e.g. by `splitSelectors()`, may be passed instead,
  * so a selector queried on each DOM change is not split each time.
  * @param context The Element or ShadowRoot which is the context for the query.
@@ -215,11 +215,10 @@ export function queryShadowSelector(
                 : root.querySelector(partSelector);
         }
 
-        const elements = getXpathElements(xpath, root);
-        const element = matchRegexp
-            ? elements.find((el) => doesElementContainText(el, matchRegexp))
-            : elements[0];
-        return element || null;
+        if (!matchRegexp) {
+            return getFirstXpathElement(xpath, root);
+        }
+        return getFirstXpathElement(xpath, root, (element) => doesElementContainText(element, matchRegexp));
     };
 
     const parts = typeof selector === 'string' ? splitSelectors(selector, SHADOW_COMBINATOR) : selector;

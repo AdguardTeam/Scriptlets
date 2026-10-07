@@ -6,7 +6,7 @@ import {
     vi,
 } from 'vitest';
 
-import { isValidXpath, getXpathExpression, getXpathElements } from '../../src/helpers';
+import { isValidXpath, getXpathExpression, getFirstXpathElement } from '../../src/helpers';
 
 describe('isValidXpath', () => {
     afterEach(() => {
@@ -76,11 +76,15 @@ describe('getXpathExpression', () => {
     });
 });
 
-describe('getXpathElements', () => {
+describe('getFirstXpathElement', () => {
     afterEach(() => {
         document.body.innerHTML = '';
         vi.restoreAllMocks();
     });
+
+    const getId = (element) => {
+        return element ? element.id : null;
+    };
 
     test('selects nothing if evaluation fails', () => {
         document.body.innerHTML = '<button id="button"></button>';
@@ -89,7 +93,7 @@ describe('getXpathElements', () => {
             throw new TypeError('Type conversion failed');
         });
 
-        expect(getXpathElements('//button[count(1)]', document.documentElement)).toStrictEqual([]);
+        expect(getFirstXpathElement('//button[count(1)]', document.documentElement)).toBeNull();
     });
 
     // Buttons of a consent dialog, the first one has extra whitespaces
@@ -104,47 +108,40 @@ describe('getXpathElements', () => {
     `;
 
     test.each([
-        { expression: '//button[normalize-space()="Accept all"]', expected: ['accept'] },
-        { expression: '//button[normalize-space(text())="Accept all"]', expected: ['accept'] },
-        { expression: '//button[contains(text(), "Reject")]', expected: ['reject'] },
-        { expression: '//button[text()="Save"]', expected: ['save'] },
-        { expression: '//button[.="Dismiss"]', expected: ['dismiss'] },
-        { expression: '//button[starts-with(@id, "re") or starts-with(., "Dis")]', expected: ['reject', 'dismiss'] },
-        { expression: '//button[starts-with(@id, "s") and contains(., "Save")]', expected: ['save'] },
-        { expression: '//button[not(contains(., "e"))]', expected: ['dismiss'] },
-        { expression: '//button[contains(., "Accept") and contains(., "Reject")]', expected: [] },
+        { expression: '//button[normalize-space()="Accept all"]', expected: 'accept' },
+        { expression: '//button[normalize-space(text())="Accept all"]', expected: 'accept' },
+        { expression: '//button[contains(text(), "Reject")]', expected: 'reject' },
+        { expression: '//button[text()="Save"]', expected: 'save' },
+        { expression: '//button[.="Dismiss"]', expected: 'dismiss' },
+        { expression: '//button[starts-with(@id, "re") or starts-with(., "Dis")]', expected: 'reject' },
+        { expression: '//button[starts-with(@id, "s") and contains(., "Save")]', expected: 'save' },
+        { expression: '//button[not(contains(., "e"))]', expected: 'dismiss' },
+        { expression: '//button[contains(., "Accept") and contains(., "Reject")]', expected: null },
     ])('functions and logical operators: $expression', ({ expression, expected }) => {
         document.body.innerHTML = CONSENT_BUTTONS;
 
-        const elements = getXpathElements(expression, document.documentElement);
-
-        expect(elements.map((el) => el.id)).toStrictEqual(expected);
+        expect(getId(getFirstXpathElement(expression, document.documentElement))).toBe(expected);
     });
 
     test.each([
-        { expression: 'descendant-or-self::button[normalize-space()="Accept all"]', expected: ['accept'] },
-        {
-            expression: 'descendant-or-self::button[contains(., "Reject") or text()="Save"]',
-            expected: ['reject', 'save'],
-        },
+        { expression: 'descendant-or-self::button[normalize-space()="Accept all"]', expected: 'accept' },
+        { expression: 'descendant-or-self::button[contains(., "Reject") or text()="Save"]', expected: 'reject' },
         {
             expression: 'descendant-or-self::button[starts-with(@id, "dis") and normalize-space(.)="Dismiss"]',
-            expected: ['dismiss'],
+            expected: 'dismiss',
         },
         // `.//` skips top-level elements of the shadow root
-        { expression: './/button[starts-with(normalize-space(), "Accept")]', expected: [] },
+        { expression: './/button[starts-with(normalize-space(), "Accept")]', expected: null },
     ])('functions and logical operators inside shadow root: $expression', ({ expression, expected }) => {
         document.body.innerHTML = '<div id="host"></div>';
         const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
         // `accept` button is a top-level element of the shadow root, others are nested
         shadowRoot.innerHTML = CONSENT_BUTTONS;
 
-        const elements = getXpathElements(expression, shadowRoot);
-
-        expect(elements.map((el) => el.id)).toStrictEqual(expected);
+        expect(getId(getFirstXpathElement(expression, shadowRoot))).toBe(expected);
     });
 
-    test('returns selected elements in document order', () => {
+    test('returns the first suitable element in document order', () => {
         document.body.innerHTML = `
             <div id="panel">
                 <button id="first">Accept</button>
@@ -152,10 +149,18 @@ describe('getXpathElements', () => {
                 <button id="third">Reject</button>
             </div>
         `;
+        const expression = '//button[contains(text(), "Accept")]';
+        const checked = [];
+        const hasComma = (element) => {
+            checked.push(element.id);
+            return element.textContent.includes(',');
+        };
 
-        const elements = getXpathElements('//button[contains(text(), "Accept")]', document.documentElement);
-
-        expect(elements.map((el) => el.id)).toStrictEqual(['first', 'second']);
+        expect(getId(getFirstXpathElement(expression, document.documentElement))).toBe('first');
+        expect(getId(getFirstXpathElement(expression, document.documentElement, hasComma))).toBe('second');
+        // Elements after the suitable one are not checked
+        expect(checked).toStrictEqual(['first', 'second']);
+        expect(getFirstXpathElement(expression, document.documentElement, () => false)).toBeNull();
     });
 
     test('evaluates relative expression against the context element', () => {
@@ -165,16 +170,16 @@ describe('getXpathElements', () => {
         `;
         const panel = document.getElementById('panel');
 
-        const elements = getXpathElements('.//button', panel);
-
-        expect(elements.map((el) => el.id)).toStrictEqual(['inside']);
+        expect(getId(getFirstXpathElement('.//button', panel))).toBe('inside');
     });
 
     test('skips nodes which are not elements', () => {
-        document.body.innerHTML = '<button id="button" title="title">text</button>';
+        document.body.innerHTML = '<span>text</span><button id="button" title="title">text</button>';
 
-        expect(getXpathElements('//button/text()', document.documentElement)).toStrictEqual([]);
-        expect(getXpathElements('//button/@title', document.documentElement)).toStrictEqual([]);
+        expect(getFirstXpathElement('//button/text()', document.documentElement)).toBeNull();
+        expect(getFirstXpathElement('//button/@title', document.documentElement)).toBeNull();
+        // Text node of the span is selected first
+        expect(getId(getFirstXpathElement('//span/text() | //button', document.documentElement))).toBe('button');
     });
 
     test('evaluates expression against top-level elements of shadow root', () => {
@@ -185,9 +190,13 @@ describe('getXpathElements', () => {
             <div><button id="nested"></button></div>
         `;
 
-        expect(getXpathElements('.//button', shadowRoot).map((el) => el.id)).toStrictEqual(['nested']);
-        expect(getXpathElements('descendant-or-self::button', shadowRoot).map((el) => el.id))
-            .toStrictEqual(['top-level', 'nested']);
+        expect(getId(getFirstXpathElement('.//button', shadowRoot))).toBe('nested');
+        expect(getId(getFirstXpathElement('descendant-or-self::button', shadowRoot))).toBe('top-level');
+        // Selected from the next top-level element, if the one selected before is not suitable
+        const isNotTopLevel = (element) => {
+            return element.id !== 'top-level';
+        };
+        expect(getId(getFirstXpathElement('descendant-or-self::button', shadowRoot, isNotTopLevel))).toBe('nested');
     });
 
     test('skips elements outside of shadow tree', () => {
@@ -197,19 +206,25 @@ describe('getXpathElements', () => {
 
         // Absolute path is evaluated against the document by Chromium before 146 and jsdom,
         // otherwise against the shadow root
-        const ids = getXpathElements('//button', shadowRoot).map((el) => el.id);
+        const id = getId(getFirstXpathElement('//button', shadowRoot));
 
-        expect(ids).not.toContain('light');
-        expect(ids.every((id) => id === 'nested')).toBe(true);
+        expect(id === null || id === 'nested').toBe(true);
     });
 
-    test('does not return duplicates selected from different top-level elements of shadow root', () => {
+    test('does not evaluate the expression against top-level elements after a suitable element', () => {
         document.body.innerHTML = '<div id="host"></div>';
         const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
         shadowRoot.innerHTML = '<div id="first"></div><div id="second"></div><div id="third"></div>';
+        const evaluateSpy = vi.spyOn(document, 'evaluate');
 
-        const elements = getXpathElements('following-sibling::div', shadowRoot);
+        expect(getId(getFirstXpathElement('self::div', shadowRoot))).toBe('first');
+        expect(evaluateSpy).toHaveBeenCalledTimes(1);
 
-        expect(elements.map((el) => el.id)).toStrictEqual(['second', 'third']);
+        evaluateSpy.mockClear();
+        const isThird = (element) => {
+            return element.id === 'third';
+        };
+        expect(getId(getFirstXpathElement('self::div', shadowRoot, isThird))).toBe('third');
+        expect(evaluateSpy).toHaveBeenCalledTimes(3);
     });
 });
