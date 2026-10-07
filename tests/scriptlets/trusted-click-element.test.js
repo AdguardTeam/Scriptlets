@@ -182,100 +182,76 @@ test('Single element clicked, delay is set', (assert) => {
     }, 400);
 });
 
-test('Multiple elements clicked', (assert) => {
-    const CLICK_ORDER = [1, 2, 3];
-    // Assert elements for being clicked, hit func execution & click order
-    const ASSERTIONS = CLICK_ORDER.length + 2;
-    assert.expect(ASSERTIONS);
-    const done = assert.async();
+[
+    {
+        testName: 'Multiple elements clicked',
+        clickOrder: [1, 2, 3],
+        selectorsString: createSelectorsString([1, 2, 3]),
+    },
+    {
+        testName: 'Multiple elements clicked - empty and commented out selectors are skipped',
+        // Numbers not used by other tests, as their scriptlets may still wait for elements
+        clickOrder: [7, 8],
+        // Doubled and trailing commas, and a selector with only a CSS comment
+        selectorsString: [
+            `#${PANEL_ID} > #${CLICKABLE_NAME}7`,
+            '',
+            `/* #${CLICKABLE_NAME}9 */`,
+            `#${PANEL_ID} > #${CLICKABLE_NAME}8`,
+            '',
+        ].join(', '),
+    },
+    {
+        testName: 'Multiple elements clicked - commas inside pseudo-classes and attribute values are not delimiters',
+        clickOrder: [1, 2],
+        selectorsString: [
+            `#${PANEL_ID} > :is(#${CLICKABLE_NAME}1, #${CLICKABLE_NAME}9)`,
+            `#${PANEL_ID} > input[title="Accept, agree"]`,
+        ].join(', '),
+        titles: { 2: 'Accept, agree' },
+    },
+    {
+        testName: 'XPath - multiple elements clicked, commas inside XPath are not delimiters',
+        clickOrder: [1, 2, 3],
+        selectorsString: [
+            `xpath(//input[contains(@id, "${CLICKABLE_NAME}1")])`,
+            `#${PANEL_ID} > #${CLICKABLE_NAME}2`,
+            `xpath(//*[@id=concat("${CLICKABLE_NAME}", "3")])`,
+        ].join(', '),
+    },
+].forEach(({
+    testName,
+    clickOrder,
+    selectorsString,
+    titles = {},
+}) => {
+    test(testName, (assert) => {
+        // Assert elements for being clicked, hit func execution & click order
+        const ASSERTIONS = clickOrder.length + 2;
+        assert.expect(ASSERTIONS);
+        const done = assert.async();
 
-    const selectorsString = createSelectorsString(CLICK_ORDER);
-
-    runScriptlet(name, [selectorsString]);
-    const panel = createPanel();
-    const clickables = [];
-    CLICK_ORDER.forEach((number) => {
-        const clickable = createClickable(number);
-        panel.appendChild(clickable);
-        clickables.push(clickable);
-    });
-
-    setTimeout(() => {
-        clickables.forEach((clickable) => {
-            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+        runScriptlet(name, [selectorsString]);
+        const panel = createPanel();
+        const clickables = [];
+        clickOrder.forEach((number) => {
+            const clickable = createClickable(number);
+            if (titles[number]) {
+                clickable.title = titles[number];
+            }
+            panel.appendChild(clickable);
+            clickables.push(clickable);
         });
-        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
-        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
-        done();
-    }, 400);
-});
 
-test('Multiple elements clicked - empty and commented out selectors are skipped', (assert) => {
-    const CLICK_ORDER = [7, 8];
-    // Assert elements for being clicked, hit func execution & click order
-    const ASSERTIONS = CLICK_ORDER.length + 2;
-    assert.expect(ASSERTIONS);
-    const done = assert.async();
-
-    // Numbers not used by other tests, as their scriptlets may still wait for elements
-    // Doubled and trailing commas, and a selector with only a CSS comment
-    const selectorsString = [
-        `#${PANEL_ID} > #${CLICKABLE_NAME}7`,
-        '',
-        `/* #${CLICKABLE_NAME}9 */`,
-        `#${PANEL_ID} > #${CLICKABLE_NAME}8`,
-        '',
-    ].join(', ');
-
-    runScriptlet(name, [selectorsString]);
-    const panel = createPanel();
-    const clickables = [];
-    CLICK_ORDER.forEach((number) => {
-        const clickable = createClickable(number);
-        panel.appendChild(clickable);
-        clickables.push(clickable);
+        setTimeout(() => {
+            clickables.forEach((clickable) => {
+                assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+            });
+            assert.strictEqual(clickOrder.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
+            assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+            done();
+        }, 400);
     });
-
-    setTimeout(() => {
-        clickables.forEach((clickable) => {
-            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
-        });
-        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
-        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
-        done();
-    }, 400);
-});
-
-test('Multiple elements clicked - commas inside pseudo-classes and attribute values are not delimiters', (assert) => {
-    const CLICK_ORDER = [1, 2];
-    // Assert elements for being clicked, hit func execution & click order
-    const ASSERTIONS = CLICK_ORDER.length + 2;
-    assert.expect(ASSERTIONS);
-    const done = assert.async();
-
-    const selectorsString = [
-        `#${PANEL_ID} > :is(#${CLICKABLE_NAME}1, #${CLICKABLE_NAME}9)`,
-        `#${PANEL_ID} > input[title="Accept, agree"]`,
-    ].join(', ');
-
-    runScriptlet(name, [selectorsString]);
-    const panel = createPanel();
-    const clickables = [];
-    CLICK_ORDER.forEach((number) => {
-        const clickable = createClickable(number);
-        panel.appendChild(clickable);
-        clickables.push(clickable);
-    });
-    clickables[1].title = 'Accept, agree';
-
-    setTimeout(() => {
-        clickables.forEach((clickable) => {
-            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
-        });
-        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
-        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
-        done();
-    }, 400);
 });
 
 test('Multiple elements clicked - CSS comments do not affect splitting by delimiters', (assert) => {
@@ -1869,38 +1845,6 @@ test('XPath - functions and logical operators select elements inside closed shad
         assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
         done();
     }, 800);
-});
-
-test('XPath - multiple elements clicked, commas inside XPath are not delimiters', (assert) => {
-    const CLICK_ORDER = [1, 2, 3];
-    // Assert elements for being clicked, hit func execution & click order
-    const ASSERTIONS = CLICK_ORDER.length + 2;
-    assert.expect(ASSERTIONS);
-    const done = assert.async();
-
-    const selectorsString = [
-        `xpath(//input[contains(@id, "${CLICKABLE_NAME}1")])`,
-        `#${PANEL_ID} > #${CLICKABLE_NAME}2`,
-        `xpath(//*[@id=concat("${CLICKABLE_NAME}", "3")])`,
-    ].join(', ');
-
-    runScriptlet(name, [selectorsString]);
-    const panel = createPanel();
-    const clickables = [];
-    CLICK_ORDER.forEach((number) => {
-        const clickable = createClickable(number);
-        panel.appendChild(clickable);
-        clickables.push(clickable);
-    });
-
-    setTimeout(() => {
-        clickables.forEach((clickable) => {
-            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
-        });
-        assert.strictEqual(CLICK_ORDER.join(), window.clickOrder.join(), 'Elements were clicked in a given order');
-        assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
-        done();
-    }, 400);
 });
 
 test('XPath - extraMatch text match, matched only first element with text', (assert) => {
