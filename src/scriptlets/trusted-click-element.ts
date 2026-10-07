@@ -821,7 +821,19 @@ export function trustedClickElement(
             apply: attachShadowWrapper,
         };
 
-        window.Element.prototype.attachShadow = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
+        const attachShadowHook = new Proxy(window.Element.prototype.attachShadow, attachShadowHandler);
+        // Another script may have made `attachShadow()` read-only. Assigning it throws in strict mode
+        // and is ignored otherwise, as in the injected scriptlet code, so whether it is replaced is checked.
+        // If not, elements are still found in open shadow roots, but not in closed ones attached later,
+        // and changes inside shadow roots attached later do not make the scriptlet look for elements again.
+        try {
+            window.Element.prototype.attachShadow = attachShadowHook;
+        } catch {
+            // Checked below
+        }
+        if (window.Element.prototype.attachShadow !== attachShadowHook) {
+            logMessage(source, 'Cannot track shadow roots attached later, as attachShadow cannot be hooked');
+        }
     }
 
     // Run the initial check

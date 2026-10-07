@@ -144,6 +144,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   after it [#582].
 - `trusted-click-element` not finding elements in a closed shadow root attached with options which return
   a different `mode` on each read.
+- `trusted-click-element` silently not spoofing `isTrusted`, or not tracking shadow roots attached later,
+  if another script has made `addEventListener()`, `removeEventListener()` or `attachShadow()` read-only:
+  it is logged now, and elements which can still be found are clicked.
 - `trusted-click-element` with `>>>` combinator observing shadow roots attached after it has found all elements
   or its observer has timed out, which changed an attribute of the `html` element on each of their changes
   and so woke up all observers of the page for its whole lifetime.

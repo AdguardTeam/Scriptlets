@@ -203,4 +203,39 @@ describe('Test trusted-click-element scriptlet - hook installation', () => {
             logSpy.mockRestore();
         }
     });
+
+    test.each([
+        {
+            kind: 'read-only, so its assignment throws in strict mode',
+            lock: (descriptor) => ({ ...descriptor, writable: false }),
+        },
+        {
+            kind: 'locked with its assignment ignored, as in the injected code, which is not strict',
+            lock: (descriptor) => ({ configurable: true, get: () => descriptor.value, set: () => {} }),
+        },
+    ])('clicks in an open shadow root and logs it if attachShadow is $kind', ({ lock }) => {
+        useViewlessMouseEvents();
+        const panel = createPanel();
+        const host = document.createElement('div');
+        host.id = 'host';
+        const clickable = createClickable(1);
+        host.attachShadow({ mode: 'open' }).appendChild(clickable);
+        panel.appendChild(host);
+        const attachShadowDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'attachShadow');
+        // E.g. another script has locked attachShadow
+        Object.defineProperty(Element.prototype, 'attachShadow', lock(attachShadowDescriptor));
+
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            trustedClickElement(sourceParams, `#${PANEL_ID} > #host >>> #${CLICKABLE_NAME}1`);
+
+            expect(clickable.getAttribute('clicked')).toBeTruthy();
+            expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Cannot track shadow roots attached later'));
+            expect(Element.prototype.attachShadow).toBe(attachShadowDescriptor.value);
+        } finally {
+            Object.defineProperty(Element.prototype, 'attachShadow', attachShadowDescriptor);
+            vi.unstubAllGlobals();
+            logSpy.mockRestore();
+        }
+    });
 });
