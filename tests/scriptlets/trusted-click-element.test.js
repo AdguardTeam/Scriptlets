@@ -874,6 +874,34 @@ test('extraMatch - single localStorage match, not matched', (assert) => {
     window.localStorage.clear();
 });
 
+['', 'g', 'y'].forEach((flags) => {
+    test(`extraMatch - cookie key regexp with '${flags}' flags matches each cookie from its start`, (assert) => {
+        // The first cookie matches the key, but not the value, so its match should not affect the next one
+        const cookieKeys = ['adg-consent_a', 'adg-consent_b'];
+        document.cookie = serializeCookie(cookieKeys[0], 'no', '/');
+        document.cookie = serializeCookie(cookieKeys[1], 'yes', '/');
+        const EXTRA_MATCH_STR = `cookie:/adg-consent/${flags}=/yes/`;
+
+        const ASSERTIONS = 2;
+        assert.expect(ASSERTIONS);
+        const done = assert.async();
+
+        const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1`;
+
+        runScriptlet(name, [selectorsString, EXTRA_MATCH_STR]);
+        const panel = createPanel();
+        const clickable = createClickable(1);
+        panel.appendChild(clickable);
+
+        setTimeout(() => {
+            assert.ok(clickable.getAttribute('clicked'), 'Element should be clicked');
+            assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+            done();
+        }, 150);
+        cookieKeys.forEach((cookieKey) => clearCookie(cookieKey));
+    });
+});
+
 test('extraMatch - complex string+regex cookie input & whitespaces & comma in regex, matched', (assert) => {
     const cookieKey1 = 'first';
     const cookieVal1 = 'true';

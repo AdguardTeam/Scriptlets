@@ -461,6 +461,9 @@ export function trustedClickElement(
             const keyMatch = toRegExp(key);
 
             return cookieKeys.some((cookieKey) => {
+                // Regexp with `g` or `y` flag starts the search from the end of its previous match,
+                // e.g. of a previous key whose value does not match, so each key is tested from its start
+                keyMatch.lastIndex = 0;
                 const keysMatched = keyMatch.test(cookieKey);
                 if (!keysMatched) {
                     return false;

@@ -129,8 +129,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. in `[title=" >>> "]`, is no longer taken for the shadow combinator.
 - `trusted-click-element` ignoring `containsText` when it finds an element again because the found one
   was removed from DOM before the click, which could click another element matching the selector.
-- `trusted-click-element` not clicking an element if `containsText` is a regexp with `g` or `y` flag,
-  as each next text check started from the end of the previous match.
+- `trusted-click-element` not clicking an element if `containsText`, or the key of a `cookie` condition,
+  is a regexp with `g` or `y` flag, as each next check started from the end of the previous match,
+  e.g. `cookie:/consent/g=/yes/` did not match `consent_a=no; consent_b=yes`.
 - `trusted-click-element` clicking next elements of the sequence if a previous element was removed from DOM
   before the click and could not be found again.
 - `trusted-click-element` not clicking elements after an empty selector, e.g. `#accept` in `#settings,, #accept`,
