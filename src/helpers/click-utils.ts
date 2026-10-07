@@ -459,8 +459,12 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
         // `nativeEvent` or legacy setters, are read from the native event.
         let isPreventDefaultCalled = false;
         let isStopPropagationCalled = false;
-        const isDefaultPrevented = () => isPreventDefaultCalled || nativeEvent.defaultPrevented;
-        const isPropagationStopped = () => isStopPropagationCalled || nativeEvent.cancelBubble;
+        const isDefaultPrevented = () => {
+            return isPreventDefaultCalled || nativeEvent.defaultPrevented;
+        };
+        const isPropagationStopped = () => {
+            return isStopPropagationCalled || nativeEvent.cancelBubble;
+        };
 
         return new Proxy(nativeEvent, {
             get(target, prop) {
@@ -744,27 +748,29 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
         const createForwardedClickSpoofer = (
             label: HTMLLabelElement,
             scriptletClick: Event,
-        ) => (event: Event): Event | undefined => {
-            const forwardedIndex = forwardedClicks.indexOf(event);
-            if (forwardedIndex !== -1) {
-                return forwardedClickProxies[forwardedIndex];
-            }
-            if (event === scriptletClick || event.type !== 'click' || event.isTrusted) {
-                return undefined;
-            }
-            const labelControl = label.control;
-            // A click on the control, or inside it, is not forwarded, so a click on the control is the page's own
-            if (
-                !labelControl
-                || isClickedInsideControl(label, labelControl)
-                || !isDispatchedOnControl(event, labelControl)
-            ) {
-                return undefined;
-            }
-            const proxy = createTrustedEventProxy(event);
-            forwardedClicks.push(event);
-            forwardedClickProxies.push(proxy);
-            return proxy;
+        ): ((event: Event) => Event | undefined) => {
+            return (event: Event): Event | undefined => {
+                const forwardedIndex = forwardedClicks.indexOf(event);
+                if (forwardedIndex !== -1) {
+                    return forwardedClickProxies[forwardedIndex];
+                }
+                if (event === scriptletClick || event.type !== 'click' || event.isTrusted) {
+                    return undefined;
+                }
+                const labelControl = label.control;
+                // A click on the control, or inside it, is not forwarded, so a click on the control is the page's own
+                if (
+                    !labelControl
+                    || isClickedInsideControl(label, labelControl)
+                    || !isDispatchedOnControl(event, labelControl)
+                ) {
+                    return undefined;
+                }
+                const proxy = createTrustedEventProxy(event);
+                forwardedClicks.push(event);
+                forwardedClickProxies.push(proxy);
+                return proxy;
+            };
         };
 
         // Feature-detect PointerEvent for environments that don't support it

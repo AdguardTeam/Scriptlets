@@ -1653,7 +1653,9 @@ test('hooks are not installed when the scriptlet exits early', (assert) => {
             || EventTarget.prototype.removeEventListener !== nativeRemoveEventListener
             || spoofedClicksKey in EventTarget.prototype;
     };
-    const isAttachShadowHookInstalled = () => Element.prototype.attachShadow !== attachShadowBefore;
+    const isAttachShadowHookInstalled = () => {
+        return Element.prototype.attachShadow !== attachShadowBefore;
+    };
 
     // Arguments after the selector: extraMatch, delay, reload, observerTimeout
     [
@@ -1799,7 +1801,9 @@ test('XPath - functions and logical operators select elements', (assert) => {
     assert.expect(ASSERTIONS);
     const done = assert.async();
 
-    const inPanel = (predicate) => `xpath(//div[@id="${PANEL_ID}"]/input[${predicate}])`;
+    const inPanel = (predicate) => {
+        return `xpath(//div[@id="${PANEL_ID}"]/input[${predicate}])`;
+    };
     const selectorsString = [
         inPanel('normalize-space(text())="Accept all"'),
         inPanel('contains(text(), "Reject")'),
@@ -1836,7 +1840,9 @@ test('XPath - functions and logical operators select elements inside closed shad
 
     // Shadow host is selected by XPath with functions as well
     const HOST_XPATH = `xpath(//div[starts-with(@id, "${PANEL_ID}") and not(@class)])`;
-    const inShadow = (predicate) => `${HOST_XPATH} >>> xpath(descendant-or-self::input[${predicate}])`;
+    const inShadow = (predicate) => {
+        return `${HOST_XPATH} >>> xpath(descendant-or-self::input[${predicate}])`;
+    };
     const selectorsString = [
         inShadow('normalize-space()="Accept all"'),
         inShadow('contains(., "Reject")'),
@@ -2611,7 +2617,9 @@ module(`${name} - event listener compatibility`, (hooks) => {
         const controller = new AbortController();
         let calls = 0;
         const listener = () => { calls += 1; };
-        const dispatch = () => target.dispatchEvent(new Event('click'));
+        const dispatch = () => {
+            target.dispatchEvent(new Event('click'));
+        };
         target.addEventListener('click', listener, { once: true, signal: controller.signal });
         dispatch();
         dispatch();

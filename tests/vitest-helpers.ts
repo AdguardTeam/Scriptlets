@@ -6,11 +6,13 @@ import { vi } from 'vitest';
  * Restore the constructors with `vi.unstubAllGlobals()`.
  */
 export const useViewlessMouseEvents = () => {
-    const withoutView = <T extends typeof MouseEvent>(EventClass: T): T => new Proxy(EventClass, {
-        construct(Target, args) {
-            return new Target(args[0], { ...args[1], view: null });
-        },
-    });
+    const withoutView = <T extends typeof MouseEvent>(EventClass: T): T => {
+        return new Proxy(EventClass, {
+            construct(Target, args) {
+                return new Target(args[0], { ...args[1], view: null });
+            },
+        });
+    };
     vi.stubGlobal('MouseEvent', withoutView(MouseEvent));
     if (typeof PointerEvent === 'function') {
         vi.stubGlobal('PointerEvent', withoutView(PointerEvent));
