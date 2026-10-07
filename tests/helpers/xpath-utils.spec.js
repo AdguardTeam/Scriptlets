@@ -6,12 +6,7 @@ import {
     vi,
 } from 'vitest';
 
-import {
-    isValidXpath,
-    hasAbsoluteXpath,
-    getXpathExpression,
-    getXpathElements,
-} from '../../src/helpers';
+import { isValidXpath, getXpathExpression, getXpathElements } from '../../src/helpers';
 
 describe('isValidXpath', () => {
     afterEach(() => {
@@ -59,67 +54,6 @@ describe('isValidXpath', () => {
         const contextNode = evaluateSpy.mock.calls[0][1];
         expect(contextNode.ownerDocument || contextNode).not.toBe(document);
         expect(evaluateSpy.mock.instances[0]).not.toBe(document);
-    });
-});
-
-describe('hasAbsoluteXpath', () => {
-    test.each([
-        '//button',
-        '/html/body//button',
-        '  //button',
-        './/a | //button',
-        '(//button)[1]',
-        './/button[//div[@id="panel"]]',
-        './/button[@id = /html/@id]',
-        './/button[contains(//title, "Accept")]',
-        './/button[@id and //div]',
-        './/button[@id or /html]',
-        // operators without whitespace before them
-        'descendant-or-self::button[text()="OK"and //div[@id="light"]]',
-        './/button[(@x)or //div]',
-        'descendant-or-self::button[true()and//button[@id="outside"]]',
-        // arithmetic operators
-        './/button[1 - /html/@x = 1]',
-        './/button[2 * /html/@x]',
-        './/button[@x mod //a]',
-        './/button[@x div /html/@y]',
-        './/button[@x + /html/@y]',
-        // absolute path as an argument of a function
-        'descendant-or-self::button[starts-with(@id, "a") and normalize-space(//title)="Consent"]',
-        'descendant-or-self::button[contains(., "Accept") or contains(//html/@lang, "en")]',
-    ])('absolute: %s', (expression) => {
-        expect(hasAbsoluteXpath(expression)).toBe(true);
-    });
-
-    test.each([
-        './/button',
-        'descendant-or-self::button',
-        'self::button[text()="(//"]',
-        './/a[@title=\'[/\']',
-        'div/button',
-        './/div//button',
-        '..//button',
-        '*/button',
-        './/div[1]/button',
-        '(.//button)[1]',
-        './/button[contains(., "a, /b")]',
-        // names of operators as name tests
-        'descendant-or-self::div[ or/span]',
-        './/div[ and /span]',
-        '.// and/button',
-        // hyphen inside name is not an operator
-        './/my-button/span',
-        './/div/node()//span',
-        // `*` as multiplication and as name test
-        './/a[@x * 2 = 4]/b',
-        './/div/*/button',
-        // functions and logical operators, including `/` inside string literals
-        'descendant-or-self::button[normalize-space()="Accept all"]',
-        'descendant-or-self::button[starts-with(@id, "accept") and contains(., "/")]',
-        './/button[text()="Close" or text()="Dismiss / Close"]',
-        'descendant-or-self::button[not(contains(normalize-space(.), "Reject"))]',
-    ])('relative: %s', (expression) => {
-        expect(hasAbsoluteXpath(expression)).toBe(false);
     });
 });
 
@@ -254,6 +188,19 @@ describe('getXpathElements', () => {
         expect(getXpathElements('.//button', shadowRoot).map((el) => el.id)).toStrictEqual(['nested']);
         expect(getXpathElements('descendant-or-self::button', shadowRoot).map((el) => el.id))
             .toStrictEqual(['top-level', 'nested']);
+    });
+
+    test('skips elements outside of shadow tree', () => {
+        document.body.innerHTML = '<div id="host"></div><button id="light"></button>';
+        const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = '<div><button id="nested"></button></div>';
+
+        // Absolute path is evaluated against the document by Chromium before 146 and jsdom,
+        // otherwise against the shadow root
+        const ids = getXpathElements('//button', shadowRoot).map((el) => el.id);
+
+        expect(ids).not.toContain('light');
+        expect(ids.every((id) => id === 'nested')).toBe(true);
     });
 
     test('does not return duplicates selected from different top-level elements of shadow root', () => {

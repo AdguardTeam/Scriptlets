@@ -339,7 +339,7 @@ Project-specific rules:
     something has actually changed. Invalid arguments (e.g. selector) SHOULD
     be validated and logged once, before the observer is started; use the
     `isValidSelector()`, `isValidXpath()` and `isValidAttributeName()` helpers,
-    and `isValidShadowSelector()` for selectors of `queryShadowSelector()`,
+    and `getShadowSelectorError()` for selectors of `queryShadowSelector()`,
     i.e. with `>>>` combinator or `xpath(...)`, as they do not query or change
     the page DOM. Such arguments SHOULD be parsed once as well, and passed
     to helpers in the parsed form, e.g. selector parts split by `>>>` with

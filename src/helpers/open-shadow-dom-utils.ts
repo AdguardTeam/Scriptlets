@@ -1,11 +1,6 @@
 import { flatten } from './array-utils';
 import { isValidSelector, splitSelectors } from './selector-utils';
-import {
-    getXpathElements,
-    getXpathExpression,
-    hasAbsoluteXpath,
-    isValidXpath,
-} from './xpath-utils';
+import { getXpathElements, getXpathExpression, isValidXpath } from './xpath-utils';
 
 /**
  * Finds shadow-dom host (elements with shadowRoot property) in DOM of rootElement.
@@ -156,29 +151,32 @@ export function findElementWithText(
 }
 
 /**
- * Checks whether the selector is valid for `queryShadowSelector()`.
+ * Checks whether the selector is valid for `queryShadowSelector()`, and returns the reason if it is not.
  * Each part of the selector split by `>>>` combinator should be a valid CSS selector
  * or a valid XPath expression wrapped in `xpath(...)`.
- * XPath expression after the combinator, i.e. inside shadow DOM, should not contain absolute paths,
- * as Chromium evaluates them against the document, but Firefox against the shadow root.
  * The check does not query the page DOM.
  *
  * @param selector Selector to check, e.g. `#host >>> xpath(descendant-or-self::button)`,
  * or its parts already split by `>>>` combinator, e.g. by `splitSelectors()`.
  *
- * @returns True if the selector is valid, false otherwise.
+ * @returns Reason why the first invalid part of the selector is invalid, or null if the selector is valid.
  */
-export function isValidShadowSelector(selector: string | string[]): boolean {
+export function getShadowSelectorError(selector: string | string[]): string | null {
     const SHADOW_COMBINATOR = ' >>> ';
     const parts = typeof selector === 'string' ? splitSelectors(selector, SHADOW_COMBINATOR) : selector;
-    return parts.every((part, index) => {
+    for (let i = 0; i < parts.length; i += 1) {
+        const part = parts[i];
         const xpath = getXpathExpression(part);
         if (xpath === null) {
-            return isValidSelector(part);
+            // Syntax error cannot be told apart from a pseudo-class which is not supported by the browser
+            if (!isValidSelector(part)) {
+                return `invalid or unsupported CSS selector '${part}'`;
+            }
+        } else if (!isValidXpath(xpath)) {
+            return `invalid XPath expression '${part}'`;
         }
-        const isInsideShadowDom = index > 0;
-        return isValidXpath(xpath) && !(isInsideShadowDom && hasAbsoluteXpath(xpath));
-    });
+    }
+    return null;
 }
 
 /**

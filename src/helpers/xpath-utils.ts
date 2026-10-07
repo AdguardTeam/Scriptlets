@@ -28,62 +28,6 @@ export const isValidXpath = (expression: string): boolean => {
 };
 
 /**
- * Checks whether the XPath expression contains an absolute location path, e.g. `//button`,
- * anywhere in it, e.g. in a union, a predicate or a function argument.
- * Inside shadow DOM, Chromium evaluates absolute paths against the document,
- * but Firefox evaluates them against the shadow root.
- *
- * Expression is split into tokens as defined by XPath 1.0, see https://www.w3.org/TR/xpath-10/#exprlex.
- * `/` or `//` starts an absolute path unless it follows a token which ends an operand,
- * e.g. a name test, a literal or `)`, as then it separates location steps, e.g. in `div/button`.
- * Likewise, a name or `*` which follows such a token is an operator, e.g. `and` or multiplication,
- * otherwise it is a name test, e.g. `and` in `div[and/button]`.
- *
- * @param expression XPath expression to check, should be validated before, e.g. by `isValidXpath()`.
- *
- * @returns True if the expression contains an absolute location path, false otherwise.
- */
-export const hasAbsoluteXpath = (expression: string): boolean => {
-    // Characters which cannot be a part of a name, in a form for a regexp character class
-    const NON_NAME_CHARS = '\\s"\'()[\\]@,|/=<>!+*$:';
-    const TOKEN_PATTERNS = [
-        // 1: name, which cannot start with `-`, `.` or a digit, or `*`
-        `([^${NON_NAME_CHARS}\\-.\\d][^${NON_NAME_CHARS}]*|\\*)`,
-        // 2: `//` or `/`
-        '(\\/\\/?)',
-        // 3: token which ends an operand: literal, number, `..` or `.`, `)` or `]`
-        '("[^"]*"|\'[^\']*\'|\\d+(?:\\.\\d*)?|\\.\\d+|\\.\\.?|[)\\]])',
-        // `::`, `!=`, `<=` or `>=`, or any other single character
-        '::|[!<>]=|\\S',
-    ];
-    const TOKEN_REGEXP = new RegExp(`\\s*(?:${TOKEN_PATTERNS.join('|')})`, 'g');
-
-    // Whether the previous token ends an operand
-    let isAfterOperand = false;
-    let match = TOKEN_REGEXP.exec(expression);
-    while (match) {
-        const nameOrWildcard = match[1];
-        const pathSeparator = match[2];
-        const operandEnd = match[3];
-        if (pathSeparator) {
-            if (!isAfterOperand) {
-                return true;
-            }
-            isAfterOperand = false;
-        } else if (nameOrWildcard) {
-            // Operator after an operand, which is followed by another operand,
-            // otherwise name test, which ends an operand
-            isAfterOperand = !isAfterOperand;
-        } else {
-            isAfterOperand = !!operandEnd;
-        }
-        match = TOKEN_REGEXP.exec(expression);
-    }
-
-    return false;
-};
-
-/**
  * Returns XPath expression of the selector wrapped in `xpath(...)`.
  *
  * @param selector Trimmed selector, e.g. `xpath(//button)` or `div > button`.
@@ -110,10 +54,11 @@ export const getXpathExpression = (selector: string): string | null => {
  * and inside a shadow root, the elements of other top-level elements are still selected.
  *
  * Shadow root cannot be an XPath context node, so the expression is evaluated
- * against each of its top-level elements. It should be relative, e.g. `descendant-or-self::button`,
- * and should not contain absolute paths, which are evaluated differently by browsers,
- * see `hasAbsoluteXpath()`. Nodes outside of the shadow tree are skipped anyway.
- * Positional predicates, e.g. `[last()]` or `(...)[2]`, are applied to each top-level element separately.
+ * against each of its top-level elements, and its absolute paths, e.g. `//button`, against the shadow root.
+ * Nodes outside of the shadow tree are skipped, e.g. selected by an absolute path in Chromium before 146,
+ * which evaluates it against the document.
+ * Positional predicates of relative paths, e.g. `[last()]` or `(descendant-or-self::button)[2]`,
+ * are applied to each top-level element separately.
  *
  * @param expression XPath expression, should be validated before, e.g. by `isValidXpath()`.
  * @param context Element or shadow root to evaluate the expression against.

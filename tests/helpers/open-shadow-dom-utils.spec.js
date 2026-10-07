@@ -9,11 +9,14 @@ import {
 import {
     doesElementContainText,
     findBaseHostElements,
-    isValidShadowSelector,
+    getShadowSelectorError,
     queryShadowSelector,
 } from '../../src/helpers';
 
-describe('isValidShadowSelector', () => {
+describe('getShadowSelectorError', () => {
+    const CSS_ERROR = 'invalid or unsupported CSS selector';
+    const XPATH_ERROR = 'invalid XPath expression';
+
     afterEach(() => {
         vi.restoreAllMocks();
         document.body.innerHTML = '';
@@ -24,43 +27,50 @@ describe('isValidShadowSelector', () => {
         'button:not(.reject)',
         '#host >>> div > button',
         'xpath(//div[@id="host"])',
-        // absolute path is allowed before shadow combinator
         'xpath(//div[@id="host"]) >>> xpath(descendant-or-self::button)',
         '#host >>> xpath(.//button[contains(text(), "Accept, all")]) >>> span',
         'xpath(//div[starts-with(@id, "host")]) >>> xpath(descendant-or-self::button[normalize-space()="Accept all"])',
         '#host >>> xpath(descendant-or-self::button[starts-with(@id, "accept") or text()="OK"])',
-    ])('valid: %s', (selector) => {
-        expect(isValidShadowSelector(selector)).toBe(true);
-    });
-
-    test.each([
-        '',
-        '..class',
-        '#host >>> ..class',
-        // empty part between combinators
-        '#host >>>  >>> button',
-        'xpath(//button[)',
-        'xpath(count(//button))',
-        'xpath(//button',
-        // misspelled XPath is an invalid CSS selector
-        'xpath (//button)',
-        'div xpath(//button)',
-        // absolute path inside shadow DOM
+        // absolute path is allowed after shadow combinator as well
         '#host >>> xpath(//button)',
         '#host >>> xpath(.//a | //button)',
-        '#host >>> xpath(descendant-or-self::button[contains(., "Accept") and normalize-space(//title)="Consent"])',
-    ])('invalid: "%s"', (selector) => {
-        expect(isValidShadowSelector(selector)).toBe(false);
+        '#host >>> xpath(descendant-or-self::button[normalize-space(//title)="Consent"])',
+    ])('valid: %s', (selector) => {
+        expect(getShadowSelectorError(selector)).toBeNull();
     });
 
     test.each([
-        { parts: ['#host', 'xpath(descendant-or-self::button)'], expected: true },
-        // absolute path is allowed in the first part only
-        { parts: ['xpath(//div[@id="host"])', 'button'], expected: true },
-        { parts: ['#host', 'xpath(//button)'], expected: false },
-        { parts: ['#host', '..class'], expected: false },
+        { selector: '', error: `${CSS_ERROR} ''` },
+        { selector: '..class', error: `${CSS_ERROR} '..class'` },
+        // pseudo-class which is not supported by the browser cannot be told apart from a syntax error
+        { selector: 'div:has-text(Accept)', error: `${CSS_ERROR} 'div:has-text(Accept)'` },
+        // only the invalid part is reported
+        { selector: '#host >>> ..class', error: `${CSS_ERROR} '..class'` },
+        // empty part between combinators
+        { selector: '#host >>>  >>> button', error: `${CSS_ERROR} ''` },
+        { selector: 'xpath(//button[)', error: `${XPATH_ERROR} 'xpath(//button[)'` },
+        { selector: 'xpath(count(//button))', error: `${XPATH_ERROR} 'xpath(count(//button))'` },
+        { selector: 'xpath(//button', error: `${XPATH_ERROR} 'xpath(//button'` },
+        { selector: '#host >>> xpath(//button[)', error: `${XPATH_ERROR} 'xpath(//button[)'` },
+        // misspelled XPath is an invalid CSS selector
+        { selector: 'xpath (//button)', error: `${CSS_ERROR} 'xpath (//button)'` },
+        { selector: 'div xpath(//button)', error: `${CSS_ERROR} 'div xpath(//button)'` },
+    ])('invalid: "$selector"', ({ selector, error }) => {
+        expect(getShadowSelectorError(selector)).toBe(error);
+    });
+
+    test('reports the first invalid part', () => {
+        expect(getShadowSelectorError('..class >>> xpath(//button[)')).toBe(`${CSS_ERROR} '..class'`);
+    });
+
+    test.each([
+        { parts: ['#host', 'xpath(descendant-or-self::button)'], expected: null },
+        { parts: ['xpath(//div[@id="host"])', 'button'], expected: null },
+        { parts: ['#host', 'xpath(//button)'], expected: null },
+        { parts: ['#host', 'xpath(//button[)'], expected: `${XPATH_ERROR} 'xpath(//button[)'` },
+        { parts: ['#host', '..class'], expected: `${CSS_ERROR} '..class'` },
     ])('checks parts of selector: $parts', ({ parts, expected }) => {
-        expect(isValidShadowSelector(parts)).toBe(expected);
+        expect(getShadowSelectorError(parts)).toBe(expected);
     });
 
     test('does not query the page DOM', () => {
@@ -70,7 +80,7 @@ describe('isValidShadowSelector', () => {
         // XPath may be evaluated by any document, so the context node should not be a page one
         const evaluateSpy = vi.spyOn(Document.prototype, 'evaluate');
 
-        isValidShadowSelector('#host >>> xpath(descendant-or-self::button)');
+        getShadowSelectorError('#host >>> xpath(descendant-or-self::button)');
 
         expect(querySelectorSpy).not.toHaveBeenCalled();
         expect(querySelectorAllSpy).not.toHaveBeenCalled();

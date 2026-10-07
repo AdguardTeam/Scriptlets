@@ -16,8 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
   e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
-  e.g. `div#host >>> xpath(descendant-or-self::button)`. Invalid XPath expressions, including absolute ones
-  after `>>>`, are logged once and the scriptlet exits. Errors which occur only on evaluation of page elements,
+  e.g. `div#host >>> xpath(descendant-or-self::button)`. Invalid XPath expressions are logged once
+  and the scriptlet exits. Errors which occur only on evaluation of page elements,
   e.g. a type error in a predicate like `//button[count(1)]`, may not be detected and are not logged,
   and such expression selects nothing while the error occurs, e.g. while there is a button on the page,
   or after `>>>` only the elements of top-level elements of the shadow root without the error.
@@ -46,8 +46,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   to its `extraMatch`, as the first condition for compatibility with older versions. It is needed as well for a click
   forwarded by a label in a closed shadow root which wraps the slot of the clicked element, as such label is not found
   by default.
-- `trusted-click-element` validates its selectors once and exits if any of them is invalid, logging it,
-  instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
+- `trusted-click-element` validates its selectors once and exits if any of them is invalid, logging it with
+  the reason, instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
   So no element is clicked then, including the ones matched by valid selectors before the invalid one,
   e.g. a selector with a pseudo-class which is not supported by the browser.
 

@@ -13,11 +13,10 @@ import {
     doesElementContainText,
     findElementWithText,
     randomId,
-    isValidShadowSelector,
+    getShadowSelectorError,
     isEmptySelector,
     isValidSelector,
     isValidXpath,
-    hasAbsoluteXpath,
     getXpathExpression,
     splitSelectors,
     getXpathElements,
@@ -48,18 +47,18 @@ import { type Source } from './scriptlets';
  * - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
  *   Commas inside pseudo-classes, e.g. `:is(.accept, .agree)`, and quoted attribute values are not delimiters.
  *   Empty selectors, e.g. after a trailing comma, and ones with only a CSS comment are skipped.
- *   If any selector is invalid, it is logged and no element is clicked.
+ *   If any selector is invalid, it is logged with the reason and no element is clicked.
  *   XPath expressions are supported as well, if wrapped in `xpath()`, e.g. `xpath(//button[text()="Accept"])`;
  *   commas inside `xpath()` are not delimiters either. XPath can be combined with `>>>` combinator,
- *   but shadow root cannot be an XPath context node, so after `>>>` the expression is evaluated
+ *   then absolute paths after it, e.g. `xpath(//button)`, select elements of the whole shadow tree.
+ *   Shadow root cannot be an XPath context node, so relative paths after `>>>` are evaluated
  *   against each top-level element of the shadow root. Use `descendant-or-self::` axis to select elements
  *   at any level of the shadow DOM, e.g. `xpath(descendant-or-self::button)`, as `xpath(.//button)`
- *   skips top-level elements. Positional predicates are applied to each top-level element separately,
- *   e.g. `xpath((descendant-or-self::button)[2])` selects the second button of a top-level element,
- *   not of the whole shadow DOM. Absolute paths, e.g. `xpath(//button)`, are not allowed after `>>>`,
- *   as browsers evaluate them differently inside shadow DOM. XPath errors which occur only on evaluation
- *   of page elements, e.g. a type error in a predicate like `xpath(//input[count(1)])`, may not be detected
- *   and are not logged, and such expression selects nothing while the error occurs,
+ *   skips top-level elements. Positional predicates of relative paths are applied to each top-level element
+ *   separately, e.g. `xpath((descendant-or-self::button)[2])` selects the second button of a top-level element,
+ *   unlike `xpath((//button)[2])`, which selects the second button of the shadow tree. XPath errors which occur
+ *   only on evaluation of page elements, e.g. a type error in a predicate like `xpath(//input[count(1)])`,
+ *   may not be detected and are not logged, and such expression selects nothing while the error occurs,
  *   or after `>>>` only the elements of top-level elements of the shadow root without the error.
  * - `extraMatch` — optional, extra condition to check on a page;
  *    allows to match `cookie`, `localStorage` and specified text;
@@ -273,7 +272,7 @@ export function trustedClickElement(
     const parsedSelectors = splitSelectors(selectors, SELECTORS_DELIMITER)
         .filter((selector) => !isEmptySelector(selector));
     if (parsedSelectors.length === 0) {
-        logMessage(source, `Invalid selector: '${selectors}'`);
+        logMessage(source, `Invalid selector arg: '${selectors}'`);
         return;
     }
 
@@ -289,10 +288,12 @@ export function trustedClickElement(
 
     // Selectors are validated once, to log an invalid one and exit before any hooks are installed,
     // as an invalid XPath expression would select nothing, and an invalid CSS selector would throw an error
-    const invalidSelector = parsedSelectors.find((selector) => !isValidShadowSelector(getSelectorParts(selector)));
-    if (invalidSelector !== undefined) {
-        logMessage(source, `Invalid selector: '${invalidSelector}'`);
-        return;
+    for (let i = 0; i < parsedSelectors.length; i += 1) {
+        const selectorError = getShadowSelectorError(getSelectorParts(parsedSelectors[i]));
+        if (selectorError !== null) {
+            logMessage(source, `Invalid selector arg: '${parsedSelectors[i]}', ${selectorError}`);
+            return;
+        }
     }
 
     /**
@@ -837,7 +838,7 @@ trustedClickElement.injections = [
     triggerMainObserver,
     bridgeIframeLoads,
     clickElement,
-    isValidShadowSelector,
+    getShadowSelectorError,
     isEmptySelector,
     splitSelectors,
     // following helpers are needed for helpers above
@@ -847,7 +848,6 @@ trustedClickElement.injections = [
     findElementWithText,
     isValidSelector,
     isValidXpath,
-    hasAbsoluteXpath,
     getXpathExpression,
     getXpathElements,
     randomId,

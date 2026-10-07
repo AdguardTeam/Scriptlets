@@ -1688,9 +1688,6 @@ test('hooks are not installed when the scriptlet exits early', (assert) => {
         `#${PANEL_ID} >>> xpath(.//input[)`,
         `#${PANEL_ID} >>> xpath(count(.//input))`,
         `#${PANEL_ID} >>> xpath(.//input`,
-        `#${PANEL_ID} >>> xpath(//input)`,
-        `#${PANEL_ID} >>> xpath(descendant-or-self::div | //input)`,
-        `#${PANEL_ID} >>> xpath(descendant-or-self::input[true()and//input[@id="outside"]])`,
         // invalid CSS selectors, including misspelled XPath ones
         `#${PANEL_ID} >>> ..input`,
         `#${PANEL_ID} > input, div:not(`,
@@ -1717,7 +1714,7 @@ test('hooks are not installed when the scriptlet exits early', (assert) => {
         assert.true(
             loggedMessages.length === 1
             && typeof loggedMessages[0] === 'string'
-            && loggedMessages[0].startsWith(`${name}: Invalid selector: '`),
+            && loggedMessages[0].startsWith(`${name}: Invalid selector arg: '`),
             `${description} is logged`,
         );
         assert.false(isEventListenerHookInstalled(), `${description} leaves event listener methods intact`);
@@ -2107,12 +2104,13 @@ test('XPath - evaluation error does not throw, nothing is clicked', (assert) => 
     }, 150);
 });
 
-test('XPath - invalid expression is logged, nothing is clicked', (assert) => {
+test('XPath - invalid expression is logged with the reason, nothing is clicked', (assert) => {
     const ASSERTIONS = 3;
     assert.expect(ASSERTIONS);
     const done = assert.async();
 
-    const invalidSelector = `#${PANEL_ID} >>> xpath(.//input[contains(@id, "${CLICKABLE_NAME}"])`;
+    const xpathSelector = `xpath(.//input[contains(@id, "${CLICKABLE_NAME}"])`;
+    const invalidSelector = `#${PANEL_ID} >>> ${xpathSelector}`;
     const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}1, ${invalidSelector}`;
 
     const loggedMessages = [];
@@ -2131,9 +2129,56 @@ test('XPath - invalid expression is logged, nothing is clicked', (assert) => {
     panel.appendChild(clickable);
 
     setTimeout(() => {
-        assert.deepEqual(loggedMessages, [`${name}: Invalid selector: '${invalidSelector}'`], 'Invalid XPath logged');
+        assert.deepEqual(
+            loggedMessages,
+            [`${name}: Invalid selector arg: '${invalidSelector}', invalid XPath expression '${xpathSelector}'`],
+            'Selector and reason are logged',
+        );
         assert.notOk(clickable.getAttribute('clicked'), 'Element should not be clicked');
         assert.strictEqual(window.hit, undefined, 'hit should not fire');
+        done();
+    }, 150);
+});
+
+test('XPath - absolute path after shadow combinator selects elements of shadow tree only', (assert) => {
+    const ASSERTIONS = 3;
+    assert.expect(ASSERTIONS);
+    const done = assert.async();
+
+    // Number not used by other tests, as their scriptlets may still wait for elements
+    const ELEMENT_NUM = 32;
+    // Page element with the same id, which is selected instead in browsers
+    // which evaluate absolute path inside shadow DOM against the document, e.g. Chromium before 146
+    const pageClickable = createClickable(ELEMENT_NUM);
+    document.body.appendChild(pageClickable);
+
+    const panel = createPanel();
+    const shadowRoot = panel.attachShadow({ mode: 'open' });
+    const div = document.createElement('div');
+    const clickable = createClickable(ELEMENT_NUM);
+    div.appendChild(clickable);
+    shadowRoot.appendChild(div);
+
+    const xpath = `//input[@id="${CLICKABLE_NAME}${ELEMENT_NUM}"]`;
+    const isEvaluatedInShadowTree = document.evaluate(
+        xpath,
+        div,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null,
+    ).singleNodeValue === clickable;
+
+    runScriptlet(name, [`#${PANEL_ID} >>> xpath(${xpath})`]);
+
+    setTimeout(() => {
+        assert.notOk(pageClickable.getAttribute('clicked'), 'Page element should not be clicked');
+        assert.strictEqual(
+            !!clickable.getAttribute('clicked'),
+            isEvaluatedInShadowTree,
+            `Element inside shadow DOM should be clicked if the browser supports it: ${isEvaluatedInShadowTree}`,
+        );
+        assert.strictEqual(window.hit, isEvaluatedInShadowTree ? 'FIRED' : undefined, 'hit func executed if clicked');
+        pageClickable.remove();
         done();
     }, 150);
 });
