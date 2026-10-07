@@ -404,6 +404,13 @@ export const bridgeIframeLoads = (nodes: NodeList) => {
  * Some React applications don't respond to native click events,
  * so we need to trigger React's synthetic event handlers directly.
  *
+ * Dispatched events are spoofed for the listeners hooked by spoofClickEventsIsTrusted()
+ * and for the inline handler of the element, with one proxy of an event shared by all of them.
+ * If the click activates a label, the click which the label forwards to its control is spoofed as well:
+ * the label is taken from the event path of the click right before it is dispatched,
+ * also through assigned slots and shadow hosts, and its control is resolved when the forwarded click
+ * starts at the window, see getActivatedLabel(), createForwardedClickSpoofer() and isDispatchedOnControl().
+ *
  * @param element HTML element to click.
  * @param clickType Optional click mode. Use 'native' to bypass React internal handlers.
  */
@@ -725,7 +732,9 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
          * before the forwarded click reaches other listeners.
          * A click which the page dispatches on the control during the scriptlet click is spoofed as well,
          * as it cannot be told apart from the forwarded one in the browsers which forward it as trusted,
-         * e.g. the Chrome version which runs the tests, so such distinction could not be tested.
+         * e.g. the Chrome version which runs the tests, so such distinction could not be tested,
+         * and so is a click on any element of a closed shadow root which contains the control, or on its host,
+         * see isDispatchedOnControl().
          *
          * @param label Label activated by the click.
          * @param scriptletClick Click dispatched by the scriptlet, which has its own proxy.

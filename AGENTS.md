@@ -404,50 +404,36 @@ Project-specific rules:
     a browser page, and the helper can be reused by other scriptlets. Helpers are
     stringified one by one, so module-level constants are not in the built code.
 
-15. Event listener hooks MUST deliver every event unchanged except the events
-    the scriptlet dispatches itself (and the clicks a label forwards from them
-    to its control), unless the rule explicitly opts in to spoofing all events
-    of the page, e.g. `isTrusted:all` of `trusted-click-element`, and all
-    listeners of a spoofed event MUST receive the same proxy, so listener
-    wrappers and inline handler wrappers MUST resolve the delivered event with
-    the same function, `getDeliveredEvent()` of `createSpoofedClicks()`,
-    shared through `getSpoofedClicks()`. Trusted events
-    MUST be delivered unchanged. Listener wrappers shared across targets MUST
-    remain stable when a listener is removed from one target; native
-    registration handles deduplication, `once`, and `AbortSignal` cleanup, so
-    wrapper lookups MUST convert `capture` the same way as `addEventListener`
-    does, and a hook which reads the options MUST read them once and pass
-    the values read to the native method. The label of a forwarded click MUST be taken from the click's event
-    path, i.e. also through assigned slots and shadow hosts, right before the
-    click is dispatched, and its control MUST be resolved when the forwarded
-    click starts, e.g. by a temporary capture listener on `window`, so it is
-    recognized once, and its proxy is reused by other listeners. A click on
-    the control, or inside it, is not forwarded.
-    A click which the page dispatches on the control during the scriptlet
-    click is spoofed as well, as it cannot be told apart from the forwarded
-    one in the browsers which forward it as trusted, where it could not be
-    tested, and so is a click on any element of a closed shadow root which
-    contains the control, or on its host, as listeners outside it see only
-    its host in both cases, but not a click on a host of an open shadow root
-    above it, as the listeners which see such host see the closed root's host
-    as well.
+15. Event listener hooks which spoof or proxy events, e.g. the `isTrusted`
+    spoofing of `trusted-click-element`, MUST deliver every other event
+    unchanged: only the events which the scriptlet dispatches itself, and the
+    ones which the browser dispatches directly in response, e.g. the click
+    which a label forwards to its control, are spoofed, unless the rule
+    explicitly opts in to spoofing all events of the page, e.g. `isTrusted:all`.
+    Trusted events MUST be delivered unchanged. All listeners of a spoofed
+    event, including inline `on...` handlers, MUST receive the same proxy, so
+    they MUST resolve the delivered event with one shared function, e.g.
+    `getDeliveredEvent()` of `createSpoofedClicks()`. Listener wrappers shared
+    across targets MUST remain stable when a listener is removed from one
+    target; native registration handles deduplication, `once`, and
+    `AbortSignal` cleanup, so wrapper lookups MUST convert `capture` the same
+    way as `addEventListener` does, and a hook which reads the options MUST
+    read them once and pass the values read to the native method. Hooks which
+    withhold events on purpose, e.g. of `prevent-addEventListener` or
+    `prevent-element-src-loading`, are not covered by this rule. How
+    `trusted-click-element` recognizes the clicks which labels forward, e.g.
+    through slots and closed shadow roots, is described in the JSDoc of
+    `clickElement()` in `src/helpers/click-utils.ts` and of the functions
+    inside it.
 
-    **Rationale**: Popup guards compare event references, including `window.event`,
-    so replacing page or browser events breaks them. Removing a shared wrapper
-    mapping breaks removal and deduplication on other targets. Options may be
-    getters which return a different value on each read, so a wrapper looked up
-    by one `capture` value and registered with another cannot be removed and is
-    not deduplicated. Browsers fix the
-    event path, and so the activated label, when they dispatch the click, e.g.
-    a label in a shadow tree which wraps the slot of the clicked element, but
-    resolve the label's control only when they forward the click, so page
-    handlers of the click may move the clicked element out of the label, change
-    the label's `for` or replace its control. Handlers of the control may do so
-    as well, before the forwarded click reaches delegated listeners, e.g. of
-    a framework. Spoofing all events of the page
-    breaks such guards, see
-    [#582](https://github.com/AdguardTeam/Scriptlets/issues/582), so it is only
-    an opt-in fallback.
+    **Rationale**: Popup guards compare event references, including
+    `window.event`, so replacing page or browser events breaks them, see
+    [#582](https://github.com/AdguardTeam/Scriptlets/issues/582), and so
+    spoofing all events of the page is only an opt-in fallback. Removing
+    a shared wrapper mapping breaks removal and deduplication on other
+    targets. Options may be getters which return a different value on each
+    read, so a wrapper looked up by one `capture` value and registered with
+    another cannot be removed and is not deduplicated.
 
 ### III. Testing discipline
 
