@@ -144,6 +144,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   after it [#582].
 - `trusted-click-element` not finding elements in a closed shadow root attached with options which return
   a different `mode` on each read.
+- `trusted-click-element` not clicking next elements of the sequence if a React click handler of the page throws,
+  and clicking the element again when the sequence is continued, with the error not logged but reported
+  as an unhandled rejection: the error is logged once and the next elements are clicked.
 - `trusted-click-element` silently not spoofing `isTrusted`, or not tracking shadow roots attached later,
   if another script has made `addEventListener()`, `removeEventListener()` or `attachShadow()` read-only:
   it is logged now, and elements which can still be found are clicked.

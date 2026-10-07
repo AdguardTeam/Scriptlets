@@ -239,3 +239,67 @@ describe('Test trusted-click-element scriptlet - hook installation', () => {
         }
     });
 });
+
+describe('Test trusted-click-element scriptlet - click errors', () => {
+    const sourceParams = {
+        sourceParams: 'trusted-click-element',
+        verbose: true,
+    };
+    const REACT_PROPS_KEY = '__reactProps$test';
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        useViewlessMouseEvents();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    /**
+     * Creates a clickable element whose React click handler of the page throws.
+     *
+     * @param {Function} onClick Mock of the handler, which is called before it throws.
+     *
+     * @returns {HTMLElement} Element which is clicked by its React handler.
+     */
+    const createThrowingClickable = (onClick) => {
+        const clickable = createClickable(1);
+        clickable[REACT_PROPS_KEY] = {
+            onClick: () => {
+                onClick();
+                throw new Error('Page error');
+            },
+        };
+        return clickable;
+    };
+
+    test.each([
+        { name: 'is connected', isReplaced: false },
+        // The page re-renders it before the delayed click, so it is found again
+        { name: 'is found again', isReplaced: true },
+    ])('logs a click error once and clicks next elements if the element $name', async ({ isReplaced }) => {
+        const panel = createPanel();
+        const onClick = vi.fn();
+        const first = createThrowingClickable(onClick);
+        const second = createClickable(2);
+        panel.append(first, second);
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        trustedClickElement(sourceParams, createSelectorsString([1, 2]), '', isReplaced ? '100' : '');
+        if (isReplaced) {
+            first.replaceWith(createThrowingClickable(onClick));
+        }
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(onClick).toHaveBeenCalledTimes(1);
+        const clickErrors = logSpy.mock.calls.filter(([message]) => message.includes('Could not click element'));
+        expect(clickErrors).toEqual([
+            [expect.stringContaining(`Could not click element: '#${PANEL_ID} > #${CLICKABLE_NAME}1'`)],
+        ]);
+        expect(second.getAttribute('clicked')).toBeTruthy();
+        expect(window.hit).toBe('FIRED');
+    });
+});

@@ -540,6 +540,24 @@ export function trustedClickElement(
     const elementsSequence = Array(selectorsSequence.length).fill(createElementObj(null));
 
     /**
+     * Clicks an element of the sequence and marks it as clicked.
+     * An error of the click, e.g. thrown by a React handler of the page, is logged, and the element
+     * is still marked as clicked, as the page has handled the click, so the element is not clicked
+     * and the error is not logged again when the sequence is continued, and the next elements are clicked.
+     *
+     * @param elementObj Object of the element in the sequence.
+     * @param element Element to click, which may have been found again.
+     */
+    const clickSequenceElement = (elementObj: ElementObject, element: HTMLElement): void => {
+        try {
+            clickElement(element, clickType);
+        } catch {
+            logMessage(source, `Could not click element: '${elementObj.selectorText}'`);
+        }
+        elementObj.clicked = true;
+    };
+
+    /**
      * Attempts to find and click an element based on the provided selector data.
      *
      * @param elementObj - Object containing element selector information
@@ -556,9 +574,10 @@ export function trustedClickElement(
                 logMessage(source, `Could not find element: '${elementObj.selectorText}'`);
                 return;
             }
-            clickElement(element, clickType);
-            elementObj.clicked = true;
+            clickSequenceElement(elementObj, element);
         } catch (error) {
+            // Errors of the click are handled by clickSequenceElement(), but e.g. the page may break
+            // the DOM methods used to find the element again, and the sequence should not be rejected
             logMessage(source, `Could not click element: '${elementObj.selectorText}'`);
         }
     };
@@ -631,8 +650,7 @@ export function trustedClickElement(
                 // if not, try to find the element again
                 // https://github.com/AdguardTeam/Scriptlets/issues/391
                 if (elementObj.element.isConnected) {
-                    clickElement(elementObj.element, clickType);
-                    elementObj.clicked = true;
+                    clickSequenceElement(elementObj, elementObj.element);
                 } else {
                     findAndClickElement(elementObj);
                 }
