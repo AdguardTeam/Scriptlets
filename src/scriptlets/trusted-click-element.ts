@@ -78,28 +78,33 @@ import { type Source } from './scriptlets';
  *     - `clickType` — set click behavior; supported value is `native`,
  *       other values are logged and the default click behavior is used
  *     - `isTrusted` — set which click-related events have `isTrusted` spoofed to `true`; supported value is `all`,
- *       other values are logged and the default is used. By default, only the clicks of the scriptlet are spoofed, and
- *       the clicks which labels forward from them to their controls, including a click which the page dispatches on
- *       such control during the click of the scriptlet, or on any element of the closed shadow root which contains such
- *       control, or on its host, as it cannot be told apart from the forwarded one. Listeners receive a proxy of such
- *       click, so it is not the same object as `window.event`, and a page guard which compares them may still fail. A
- *       label in a closed shadow root which wraps the slot of the clicked element is not found, as the slot is not
- *       exposed, so the click which it forwards is not spoofed by default. With `all`, the page's own events are
- *       spoofed as well, e.g. a click which a page handler dispatches on another element in response. In both cases,
- *       events are spoofed only for listeners added by `addEventListener()` after the scriptlet has run; inline `on...`
- *       handlers receive spoofed events only on the clicked element, and only during an event of the scriptlet of the
- *       same type: that event, the click which a label forwards from it, and with `all`, the page's own events of that
- *       type dispatched on the clicked element meanwhile, so other page events may reach inline handlers unspoofed even
- *       with `all`; spoofed events are `click`, `mousedown`, `mouseup`, `mouseover`, `mouseenter`, `pointerdown`,
- *       `pointerup`, `pointerover` and `pointerenter`. It is enabled for the whole page until it is reloaded, including
- *       the clicks of other rules, and may break the page, e.g. its guards which compare events, or its code which
- *       passes events to native methods, as listeners receive proxies of them, see
- *       [#582](https://github.com/AdguardTeam/Scriptlets/issues/582). Use it only if the page does not accept the
- *       clicks of the scriptlet otherwise. It can be combined with other conditions in any order, but for
- *       compatibility with older versions of the scriptlet, which do not support it, it should be the first or the
- *       only condition, e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after
- *       another condition as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click
- *       regardless of the `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
+ *       other values are logged and the default is used. By default, only the clicks of the scriptlet are spoofed,
+ *       and the clicks which labels forward from them to their controls. With `all`, the page's own events are spoofed
+ *       as well, e.g. a click which a page handler dispatches on another element in response, but it may break
+ *       the page, so use it only if the page does not accept the clicks of the scriptlet otherwise:
+ *         - spoofed events are `click`, `mousedown`, `mouseup`, `mouseover`, `mouseenter`, `pointerdown`,
+ *           `pointerup`, `pointerover` and `pointerenter`
+ *         - events are spoofed only for listeners added by `addEventListener()` after the scriptlet has run;
+ *           inline `on...` handlers receive spoofed events only on the clicked element, and only during an event
+ *           of the scriptlet of the same type: that event, the click which a label forwards from it, and with `all`,
+ *           the page's own events of that type dispatched on the clicked element meanwhile, so other page events
+ *           may reach inline handlers unspoofed even with `all`
+ *         - listeners receive a proxy of a spoofed event, so it is not the same object as `window.event`,
+ *           and a page guard which compares them may still fail
+ *         - a click which the page dispatches on a label's control during the click of the scriptlet,
+ *           or on any element of the closed shadow root which contains such control, or on its host,
+ *           is spoofed by default as well, as it cannot be told apart from the forwarded one
+ *         - a label in a closed shadow root which wraps the slot of the clicked element is not found,
+ *           as the slot is not exposed, so the click which it forwards is spoofed only with `all`
+ *         - `all` is enabled for the whole page until it is reloaded, including the clicks of other rules,
+ *           and may break the page, e.g. its guards which compare events, or its code which passes events
+ *           to native methods, as listeners receive proxies of them,
+ *           see [#582](https://github.com/AdguardTeam/Scriptlets/issues/582)
+ *         - `isTrusted:all` can be combined with other conditions in any order, but for compatibility with older
+ *           versions of the scriptlet, which do not support it, it should be the first or the only condition,
+ *           e.g. `isTrusted:all, !cookie:consent`: older versions ignore it only there, but take it after another
+ *           condition as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click
+ *           regardless of the `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click
  * - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
  *   Must be a number less than `observerTimeout` (default 10 _seconds_)
  *   which can be configured.
