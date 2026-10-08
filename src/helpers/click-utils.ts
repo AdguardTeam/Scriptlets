@@ -124,7 +124,8 @@ export const createSpoofedClicks = (isAllSpoofed = false): SpoofedClicks => {
  * @param installedClicks Spoofed clicks of the hook which has just been installed, to store them.
  *
  * @returns Spoofed clicks of the installed hook, true if the hook is installed without them,
- * e.g. by an older version, which stores `true` instead, or false if the hook is not installed.
+ * e.g. by an older version, which stores `true` instead, or false if the hook is not installed,
+ * or if the passed spoofed clicks cannot be stored.
  */
 export const getSpoofedClicks = (installedClicks?: SpoofedClicks): SpoofedClicks | boolean => {
     const SPOOFED_CLICKS_KEY = Symbol.for('adg-spoof-click-isTrusted');
@@ -136,12 +137,18 @@ export const getSpoofedClicks = (installedClicks?: SpoofedClicks): SpoofedClicks
         'spoofAllEvents',
     ];
     if (installedClicks) {
-        Object.defineProperty(EventTarget.prototype, SPOOFED_CLICKS_KEY, {
-            value: installedClicks,
-            writable: false,
-            enumerable: false,
-            configurable: false,
-        });
+        // Throws if the page has made the prototype non-extensible, e.g. sealed it,
+        // or has defined the property as non-configurable with a falsy value, which is not taken as installed
+        try {
+            Object.defineProperty(EventTarget.prototype, SPOOFED_CLICKS_KEY, {
+                value: installedClicks,
+                writable: false,
+                enumerable: false,
+                configurable: false,
+            });
+        } catch {
+            return false;
+        }
         return installedClicks;
     }
     const storedClicks = (EventTarget.prototype as any)[SPOOFED_CLICKS_KEY];
@@ -161,7 +168,8 @@ export const getSpoofedClicks = (installedClicks?: SpoofedClicks): SpoofedClicks
  * All other events, including the page's own synthetic ones, are passed through unchanged,
  * unless spoofing of all events is enabled.
  * If `addEventListener()` or `removeEventListener()` cannot be replaced, e.g. another script has made them
- * read-only, the hook is not installed, so events are not spoofed for listeners added by `addEventListener()`,
+ * read-only, or its spoofed clicks cannot be stored, e.g. the page has sealed `EventTarget.prototype`,
+ * the hook is not installed, so events are not spoofed for listeners added by `addEventListener()`,
  * but `clickElement()` still spoofs them for the inline and React handlers of the clicked element.
  *
  * @see {@link https://github.com/AdguardTeam/Scriptlets/issues/491}
@@ -336,19 +344,21 @@ export const spoofClickEventsIsTrusted = (isAllSpoofed = false): boolean => {
     }
     const isAddInstalled = EventTarget.prototype.addEventListener === addEventListenerWrapper;
     const isRemoveInstalled = EventTarget.prototype.removeEventListener === removeEventListenerWrapper;
-    if (!isAddInstalled || !isRemoveInstalled) {
-        // Methods replaced by the wrappers are writable, so they are restored
-        if (isAddInstalled) {
-            EventTarget.prototype.addEventListener = nativeAddEventListener;
-        }
-        if (isRemoveInstalled) {
-            EventTarget.prototype.removeEventListener = nativeRemoveEventListener;
-        }
-        return false;
+    // Spoofed clicks are stored last, as their property cannot be removed. If they cannot be stored,
+    // the wrappers are removed as well, since clickElement() could not register its events with them,
+    // and the hook of each later injection would wrap them again
+    if (isAddInstalled && isRemoveInstalled && getSpoofedClicks(spoofedClicks)) {
+        return true;
     }
 
-    getSpoofedClicks(spoofedClicks);
-    return true;
+    // Methods replaced by the wrappers are writable, so they are restored
+    if (isAddInstalled) {
+        EventTarget.prototype.addEventListener = nativeAddEventListener;
+    }
+    if (isRemoveInstalled) {
+        EventTarget.prototype.removeEventListener = nativeRemoveEventListener;
+    }
+    return false;
 };
 
 /**

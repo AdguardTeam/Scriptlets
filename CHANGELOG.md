@@ -48,6 +48,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   by default. If an older version of `trusted-click-element` runs on the same page as well, e.g. in another AdGuard
   product, and this version hooks event listeners first, the clicks of the older version are not spoofed
   for event listeners until the page is reloaded, unless a rule of this version has `isTrusted:all`.
+  If the page has sealed `EventTarget.prototype` before the scriptlet runs, `isTrusted` is not spoofed for event
+  listeners, which is logged, as the rules cannot share the hook then, but the elements are still clicked.
 - `trusted-click-element` validates its selectors once and exits if any of them is invalid, logging it with
   the reason, instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
   So no element is clicked then, including the ones matched by valid selectors before the invalid one,

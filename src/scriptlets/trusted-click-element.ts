@@ -788,8 +788,9 @@ export function trustedClickElement(
     // since page listeners can only be wrapped when they are registered.
     // @see https://github.com/AdguardTeam/Scriptlets/issues/491
     if (!spoofClickEventsIsTrusted(isAllSpoofed)) {
-        // E.g. another script has made `addEventListener()` read-only, so the scriptlet clicks without spoofing
-        logMessage(source, 'Cannot spoof isTrusted of clicks for event listeners, as their methods cannot be hooked');
+        // E.g. another script has made `addEventListener()` read-only or sealed `EventTarget.prototype`,
+        // so the scriptlet clicks without spoofing
+        logMessage(source, 'Cannot spoof isTrusted of clicks for event listeners, as their hook cannot be installed');
     }
 
     // If shadow combinator is present in selector, intercept attachShadow
