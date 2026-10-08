@@ -16,7 +16,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
   e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
-  e.g. `div#host >>> xpath(descendant-or-self::button)`. Invalid XPath expressions are logged once
+  e.g. `div#host >>> xpath(descendant-or-self::button)`. Absolute paths after `>>>` are evaluated against
+  the document in Chromium-based browsers before version 146, so e.g. `xpath(//button)` selects nothing there,
+  and relative paths with `descendant-or-self::` axis should be used instead. Invalid XPath expressions are logged once
   and the scriptlet exits. Errors which occur only on evaluation of page elements,
   e.g. a type error in a predicate like `//button[count(1)]`, may not be detected and are not logged,
   and such expression selects nothing while the error occurs, e.g. while there is a button on the page,

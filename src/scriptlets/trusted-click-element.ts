@@ -56,6 +56,10 @@ import { type Source } from './scriptlets';
  *   then absolute paths after it, e.g. `xpath(//button)`, select elements of the whole shadow tree.
  *   It applies to absolute paths in predicates as well, e.g. `//title` in
  *   `xpath(.//button[contains(//title, "Accept")])` after `>>>` does not select the page title.
+ *   But Chromium-based browsers before version 146 evaluate absolute paths after `>>>` against the document,
+ *   so there `xpath(//button)` selects nothing, as elements outside of the shadow tree are skipped,
+ *   and `//title` in a predicate selects the page title. For rules which should work in all browsers,
+ *   use relative paths with `descendant-or-self::` axis after `>>>` instead.
  *   Shadow root cannot be an XPath context node, so relative paths after `>>>` are evaluated
  *   against each top-level element of the shadow root. Use `descendant-or-self::` axis to select elements
  *   at any level of the shadow DOM, e.g. `xpath(descendant-or-self::button)`, as `xpath(.//button)`
@@ -217,7 +221,8 @@ import { type Source } from './scriptlets';
  *    ```
  *
  * 1. Click element at any level of open shadow DOM, selected by relative XPath expression,
- *    with shadow host element selected by `div#host`
+ *    with shadow host element selected by `div#host`. Unlike absolute path `xpath(//button[text()="Accept"])`,
+ *    it works in Chromium-based browsers before version 146 as well
  *
  *    ```adblock
  *    example.com#%#//scriptlet('trusted-click-element', 'div#host >>> xpath(descendant-or-self::button[text()="Accept"])')
