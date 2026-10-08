@@ -86,8 +86,10 @@ scriptlets/
 - `pnpm test:qunit scriptlets` — run QUnit tests for all scriptlets
 - `pnpm test:qunit redirects` — run QUnit tests for all redirects
 - `pnpm test:qunit helpers` — run QUnit tests for helpers
-- `pnpm test:qunit scriptlets --name <name> --build` — run a single
-  scriptlet test with a rebuild
+- `pnpm test:qunit scriptlets --name <name>` — rebuild and run a single
+  scriptlet test
+- `pnpm test:qunit scriptlets --name <name> --build` — only rebuild a single
+  scriptlet test, without running it, e.g. while it is open with `--gui`
 - `pnpm test:qunit:build` — build the QUnit test bundles without running them
   (CI split-stage equivalent of `test:qunit --build`; paired with `test:qunit:run`)
 - `pnpm test:qunit:run` — run the QUnit tests without rebuilding (CI
@@ -115,7 +117,7 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - You MUST run the test suite to verify your changes do not break existing
   functionality. For scriptlet/redirect changes use
-  `pnpm test:qunit scriptlets --name <name> --build` (or `redirects`).
+  `pnpm test:qunit scriptlets --name <name>` (or `redirects`).
   For API/validator/converter and helper changes, and for scriptlets which have
   Vitest specs in `tests/scriptlets/`, use `pnpm test:vitest`, or e.g.
   `pnpm test:vitest tests/scriptlets/<name>.spec.js` for a single spec.
