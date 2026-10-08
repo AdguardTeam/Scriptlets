@@ -90,25 +90,25 @@ pnpm lint:md     # markdownlint
 
 ## Available Commands
 
-| Command                                            | Description                                         |
-| -------------------------------------------------- | --------------------------------------------------- |
-| `pnpm install`                                     | Install dependencies                                |
-| `pnpm build`                                       | Clean `dist/` and build all bundles                 |
-| `pnpm test`                                        | Run all tests (Vitest + smoke + QUnit)              |
-| `pnpm test:vitest`                                 | Run Vitest tests only (API, helpers, scriptlets)    |
-| `pnpm test:qunit scriptlets`                       | Run QUnit tests for all scriptlets                  |
-| `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                   |
-| `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                         |
-| `pnpm test:qunit scriptlets --name <name> --build` | Run a single scriptlet test with rebuild            |
-| `pnpm test:qunit:build`                            | Build QUnit test bundles (CI split-stage)           |
-| `pnpm test:qunit:run`                              | Run QUnit tests without rebuilding (CI split-stage) |
-| `pnpm tgz`                                         | Pack `scriptlets.tgz` (needs a version)             |
-| `pnpm lint`                                        | Run all linters                                     |
-| `pnpm lint:code`                                   | Run ESLint                                          |
-| `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)       |
-| `pnpm lint:md`                                     | Run markdownlint                                    |
-| `pnpm wiki:build-table`                            | Regenerate compatibility table                      |
-| `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc  |
+| Command                                            | Description                                                              |
+| -------------------------------------------------- | ------------------------------------------------------------------------ |
+| `pnpm install`                                     | Install dependencies                                                     |
+| `pnpm build`                                       | Clean `dist/` and build all bundles                                      |
+| `pnpm test`                                        | Run all tests (Vitest + smoke + QUnit)                                   |
+| `pnpm test:vitest`                                 | Run Vitest tests only (API, validators, converters, helpers, scriptlets) |
+| `pnpm test:qunit scriptlets`                       | Run QUnit tests for all scriptlets                                       |
+| `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                                        |
+| `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                                              |
+| `pnpm test:qunit scriptlets --name <name> --build` | Run a single scriptlet test with rebuild                                 |
+| `pnpm test:qunit:build`                            | Build QUnit test bundles (CI split-stage)                                |
+| `pnpm test:qunit:run`                              | Run QUnit tests without rebuilding (CI split-stage)                      |
+| `pnpm tgz`                                         | Pack `scriptlets.tgz` (needs a version)                                  |
+| `pnpm lint`                                        | Run all linters                                                          |
+| `pnpm lint:code`                                   | Run ESLint                                                               |
+| `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)                            |
+| `pnpm lint:md`                                     | Run markdownlint                                                         |
+| `pnpm wiki:build-table`                            | Regenerate compatibility table                                           |
+| `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc                       |
 
 > **Note**: `pnpm tgz` (and `pnpm pack`) need a version in `package.json`,
 > which ships versionless. CI stamps the dev version via the shared
