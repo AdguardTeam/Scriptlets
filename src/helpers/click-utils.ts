@@ -614,9 +614,8 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
 
         // The browser forwards a click on a label, or inside it, to the label's control as a separate event.
         // It is a direct result of the scriptlet click, so it is spoofed as well, with one proxy for all listeners.
-        // Forwarded clicks are kept here, as they occur only while the scriptlet click is dispatched.
-        const forwardedClicks: Event[] = [];
-        const forwardedClickProxies: Event[] = [];
+        // Proxies of forwarded clicks are kept here, as the clicks occur only while the scriptlet click is dispatched.
+        const forwardedClickProxies = new WeakMap<Event, Event>();
 
         /**
          * Returns the host of the shadow root which contains the node.
@@ -755,9 +754,9 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
             scriptletClick: Event,
         ): ((event: Event) => Event | undefined) => {
             return (event: Event): Event | undefined => {
-                const forwardedIndex = forwardedClicks.indexOf(event);
-                if (forwardedIndex !== -1) {
-                    return forwardedClickProxies[forwardedIndex];
+                const forwardedClickProxy = forwardedClickProxies.get(event);
+                if (forwardedClickProxy) {
+                    return forwardedClickProxy;
                 }
                 if (event === scriptletClick || event.type !== 'click' || event.isTrusted) {
                     return undefined;
@@ -772,8 +771,7 @@ export const clickElement = (element: HTMLElement, clickType = ''): void => {
                     return undefined;
                 }
                 const proxy = createTrustedEventProxy(event);
-                forwardedClicks.push(event);
-                forwardedClickProxies.push(proxy);
+                forwardedClickProxies.set(event, proxy);
                 return proxy;
             };
         };
