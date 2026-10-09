@@ -14,9 +14,48 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
+  e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
+  e.g. `div#host >>> xpath(descendant-or-self::button)`. Absolute paths after `>>>` are evaluated against
+  the document in Chromium-based browsers before version 146, so e.g. `xpath(//button)` selects nothing there,
+  and relative paths with `descendant-or-self::` axis should be used instead. Invalid XPath expressions are logged once
+  and the scriptlet exits. Errors which occur only on evaluation of page elements,
+  e.g. a type error in a predicate like `//button[count(1)]`, may not be detected and are not logged,
+  and such expression selects nothing while the error occurs, e.g. while there is a button on the page,
+  or after `>>>` only the elements of top-level elements of the shadow root without the error.
+- `isTrusted:all` in `extraMatch` of `trusted-click-element` to spoof `isTrusted` for all click-related events on the
+  page, including the page's own ones, e.g. a click which a page handler dispatches on another element in response,
+  similarly to the behavior before [#582], but trusted events are passed unchanged, and all listeners of an event
+  receive the same proxy. Only listeners added by `addEventListener()` after the scriptlet has run receive spoofed
+  events of the page; inline `on...` handlers receive spoofed events only on the clicked element during an event of the
+  scriptlet of the same type, including the page's own events of that type dispatched on it meanwhile, so other page
+  events may reach them unspoofed. It is enabled for the whole page, including the clicks of other rules, and may break
+  the page, e.g. its guards which compare events, or its code which passes events to native methods, so use it only if
+  the page does not accept the clicks of the scriptlet otherwise. It can be combined with other conditions in any
+  order, but for compatibility with older versions of the scriptlet, it should be the first or the only condition,
+  e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after another condition
+  as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click regardless of the
+  `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
+
 ### Changed
 
 - Minimum supported Microsoft Edge version is now Edge Chromium 80.
+- `trusted-click-element` spoofs `isTrusted` by default only for its own clicks, and for the clicks which labels
+  forward from them to their controls, as one event shared by all listeners, instead of all click-related events
+  on the page, which replaced the page's own events with proxies and broke popup opening-event guards [#582].
+  The spoofed event is still not the same object as `window.event`. If a rule needs the page's own events
+  to be spoofed as well, e.g. a click which a page handler dispatches in response, `isTrusted:all` should be added
+  to its `extraMatch`, as the first condition for compatibility with older versions. It is needed as well for a click
+  forwarded by a label in a closed shadow root which wraps the slot of the clicked element, as such label is not found
+  by default. If an older version of `trusted-click-element` runs on the same page as well, e.g. in another AdGuard
+  product, and this version hooks event listeners first, the clicks of the older version are not spoofed
+  for event listeners until the page is reloaded, unless a rule of this version has `isTrusted:all`.
+  If the page has sealed `EventTarget.prototype` before the scriptlet runs, `isTrusted` is not spoofed for event
+  listeners, which is logged, as the rules cannot share the hook then, but the elements are still clicked.
+- `trusted-click-element` validates its selectors once and exits if any of them is invalid, logging it with
+  the reason, instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
+  So no element is clicked then, including the ones matched by valid selectors before the invalid one,
+  e.g. a selector with a pseudo-class which is not supported by the browser.
 
 ### Deprecated
 
@@ -26,6 +65,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `xml-prune` evaluating an XPath expression without the closing parenthesis with its last character dropped,
+  e.g. `xpath(//*[name()="Period"]/@duration` as `//*[name()="Period"]/@duratio`, instead of logging it as invalid.
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
 - Scriptlets which re-apply themselves on DOM changes, e.g. `remove-attr` and `remove-class`, no longer stop
   doing it after an error thrown on a DOM change, e.g. by the page for an element. Also, `remove-attr`,
@@ -88,8 +129,50 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and logged only once.
 - `remove-class` and `remove-attr` not removing classes or attributes whose names are not valid CSS identifiers,
   e.g. `md:hidden` or `x-on:click`, if no selector is specified.
+- `trusted-click-element` splitting selectors by commas inside pseudo-classes, e.g. `:is(.accept, .agree)`,
+  by commas inside quoted attribute values, e.g. `[title="Accept, agree"]`, and by escaped commas,
+  e.g. `#accept\,agree`, which made such selectors invalid. Also, `>>>` inside quoted strings or CSS comments,
+  e.g. in `[title=" >>> "]`, is no longer taken for the shadow combinator.
+- `trusted-click-element` ignoring `containsText` when it finds an element again because the found one
+  was removed from DOM before the click, which could click another element matching the selector.
+- `trusted-click-element` not clicking an element if `containsText`, or the key of a `cookie` condition,
+  is a regexp with `g` or `y` flag, as each next check started from the end of the previous match,
+  e.g. `cookie:/consent/g=/yes/` did not match `consent_a=no; consent_b=yes`.
+- `trusted-click-element` clicking next elements of the sequence if a previous element was removed from DOM
+  before the click and could not be found again.
+- `trusted-click-element` not clicking elements after an empty selector, e.g. `#accept` in `#settings,, #accept`,
+  and not calling `hit` if there is a trailing comma, e.g. in `#accept,`: empty selectors, and ones with only
+  a CSS comment, are skipped.
+- `trusted-click-element` hooking event listeners and `attachShadow` even when it exits early
+  because of invalid timeout, delay or reload values or unmatched `extraMatch` conditions [#582].
+- `trusted-click-element` failing to remove or deduplicate listeners shared across event targets,
+  registered with non-boolean `capture` values or with options which return a different value on each read,
+  and failing to remove a listener registered before the scriptlet ran if the same listener was also added
+  after it [#582].
+- `trusted-click-element` not finding elements in a closed shadow root attached with options which return
+  a different `mode` on each read.
+- `trusted-click-element` not clicking next elements of the sequence if a React click handler of the page throws,
+  and clicking the element again when the sequence is continued, with the error not logged but reported
+  as an unhandled rejection: the error is logged once and the next elements are clicked.
+- `trusted-click-element` silently not spoofing `isTrusted`, or not tracking shadow roots attached later,
+  if another script has made `addEventListener()`, `removeEventListener()` or `attachShadow()` read-only:
+  it is logged now, and elements which can still be found are clicked.
+- `trusted-click-element` with `>>>` combinator observing shadow roots attached after it has found all elements
+  or its observer has timed out, which changed an attribute of the `html` element on each of their changes
+  and so woke up all observers of the page for its whole lifetime.
+- `trusted-click-element` throwing when inline `on*` handlers or React handlers set `cancelBubble`
+  or `returnValue` on a scriptlet click [#582].
+- `trusted-click-element` restoring inline `on*` handlers of the clicked element
+  that the page replaced or cleared during the click [#582].
+- `trusted-click-element` exposing a bound `constructor` on spoofed events
+  and an untrusted `nativeEvent` to React handlers [#582].
+- `trusted-click-element` passing an untrusted event to an inline `on...` handler of the clicked element
+  which the page assigns during an earlier event of the click, e.g. `onclick` set on `mousedown`.
+- `trusted-click-element` reporting outdated `isDefaultPrevented()` and `isPropagationStopped()` to React handlers
+  if the default action or propagation is changed through `nativeEvent`, `returnValue` or `cancelBubble`.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
+[#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
 
 ### Security
 

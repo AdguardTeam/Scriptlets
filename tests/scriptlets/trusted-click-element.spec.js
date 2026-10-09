@@ -1,9 +1,12 @@
 /* eslint-disable no-underscore-dangle, no-console */
 import {
+    afterAll,
     beforeAll,
+    beforeEach,
     vi,
     afterEach,
     describe,
+    expect,
     test,
 } from 'vitest';
 
@@ -16,13 +19,20 @@ import {
     createPanel,
     removePanel,
     createClickable,
+    allowSpoofedClicksReset,
 } from '../helpers';
+import { useViewlessMouseEvents } from '../vitest-helpers';
+
+// Spoofed clicks are deleted by a test, so the hook is installed again
+let restoreDefineProperty;
+beforeAll(() => {
+    restoreDefineProperty = allowSpoofedClicksReset();
+});
+afterAll(() => {
+    restoreDefineProperty();
+});
 
 beforeAll(() => {
-    global.__debug = () => {
-        global.hit = 'FIRED';
-    };
-    global.clickOrder = [];
     Object.defineProperty(window, 'location', {
         configurable: true,
         value: {
@@ -31,6 +41,14 @@ beforeAll(() => {
         },
     });
     window.console.trace = vi.fn();
+});
+
+beforeEach(() => {
+    // Set before each test, as afterEach clears it
+    global.__debug = () => {
+        global.hit = 'FIRED';
+    };
+    global.clickOrder = [];
 });
 
 afterEach(() => {
@@ -45,7 +63,18 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         verbose: true,
     };
 
-    test('Single element clicked with passed reload value', (done) => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        useViewlessMouseEvents();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    test('Single element clicked with passed reload value', async () => {
         const ELEM_COUNT = 1;
         const panel = createPanel();
         const clickable = createClickable(1);
@@ -53,26 +82,15 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
         const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick:100');
-        setTimeout(() => {
-            try {
-                expect(clickable.getAttribute('clicked')).toBeTruthy();
-                expect(reloadSpy).toHaveBeenCalledTimes(1);
-                expect(window.hit).toBe('FIRED');
-                done();
-            } catch (error) {
-                done(error);
-            } finally {
-                reloadSpy.mockRestore();
-            }
-        }, 350);
-        // Explanation of the 350ms delay:
-        // 1. Initial delay before the click is triggered: 100ms
-        // 2. Additional delay after the click is processed: 150ms
-        // 3. Delay before the reload action is executed: 100ms
-        // Total delay calculation: 100ms + 150ms + 100ms = 350ms
+        // Click after the 100ms delay, reload 100ms after the click
+        await vi.advanceTimersByTimeAsync(200);
+
+        expect(clickable.getAttribute('clicked')).toBeTruthy();
+        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        expect(window.hit).toBe('FIRED');
     });
 
-    test('Multiple elements clicked with passed reload value', (done) => {
+    test('Multiple elements clicked with passed reload value', async () => {
         const CLICK_ORDER = [1, 2, 3];
         const panel = createPanel();
         const clickables = CLICK_ORDER.map((number) => {
@@ -83,28 +101,18 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         const selectorsString = createSelectorsString(CLICK_ORDER);
         const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick:100');
-        setTimeout(() => {
-            try {
-                clickables.forEach((clickable) => {
-                    expect(clickable.getAttribute('clicked')).toBeTruthy();
-                });
-                expect(reloadSpy).toHaveBeenCalledTimes(1);
-                expect(window.hit).toBe('FIRED');
-                done();
-            } catch (error) {
-                done(error);
-            } finally {
-                reloadSpy.mockRestore();
-            }
-        }, 650);
-        // Explanation of the 650ms delay:
-        // 1. Initial delay before the click is triggered: 100ms
-        // 2. Additional delay after the click is processed: 150ms * 3 = 450ms
-        // 3. Delay before the reload action is executed: 100ms
-        // Total delay calculation: 100ms + 450ms + 100ms = 650ms
+        // First click after the 100ms delay, 150ms between the 3 clicks, reload 100ms after the last one
+        await vi.advanceTimersByTimeAsync(500);
+
+        clickables.forEach((clickable) => {
+            expect(clickable.getAttribute('clicked')).toBeTruthy();
+        });
+        expect(window.clickOrder).toEqual(CLICK_ORDER);
+        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        expect(window.hit).toBe('FIRED');
     });
 
-    test('Single element clicked with default reload value', (done) => {
+    test('Single element clicked with default reload value', async () => {
         const ELEM_COUNT = 1;
         const panel = createPanel();
         const clickable = createClickable(1);
@@ -112,26 +120,17 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         const selectorsString = `#${PANEL_ID} > #${CLICKABLE_NAME}${ELEM_COUNT}`;
         const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick');
-        setTimeout(() => {
-            try {
-                expect(clickable.getAttribute('clicked')).toBeTruthy();
-                expect(reloadSpy).toHaveBeenCalledTimes(1);
-                expect(window.hit).toBe('FIRED');
-                done();
-            } catch (error) {
-                done(error);
-            } finally {
-                reloadSpy.mockRestore();
-            }
-        }, 750);
-        // Explanation of the 750ms delay:
-        // 1. Initial delay before the click is triggered: 100ms
-        // 2. Additional delay after the click is processed: 150ms
-        // 3. Delay before the reload action is executed: 500ms
-        // Total delay calculation: 100ms + 150ms + 500ms = 750ms
+        // Click after the 100ms delay, reload after the default 500ms
+        await vi.advanceTimersByTimeAsync(100);
+        expect(clickable.getAttribute('clicked')).toBeTruthy();
+        expect(reloadSpy).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        expect(window.hit).toBe('FIRED');
     });
 
-    test('Passed reload option is not correct', (done) => {
+    test('Passed reload option is not correct', async () => {
         const ELEM_COUNT = 1;
         const panel = createPanel();
         const clickable = createClickable(1);
@@ -141,25 +140,166 @@ describe('Test trusted-click-element scriptlet - reload option', () => {
         const logMessageSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         // Attempt to trigger the click with an invalid reload value
         trustedClickElement(sourceParams, selectorsString, '', '100', 'reloadAfterClick10:10');
-        setTimeout(() => {
-            try {
-                // Expect no click to have been triggered
-                expect(clickable.getAttribute('clicked')).toBeFalsy();
-                // Expect no reload to have been triggered
-                expect(reloadSpy).not.toHaveBeenCalled();
-                // Expect the log message function to have been called with the error about the invalid reload value
-                expect(logMessageSpy).toHaveBeenCalledWith(
-                    expect.stringContaining("Passed reload option 'reloadAfterClick10:10' is invalid"),
-                );
-                // Ensure that 'window.hit' was not set to 'FIRED'
-                expect(window.hit).toBeUndefined();
-                done();
-            } catch (error) {
-                done(error);
-            } finally {
-                reloadSpy.mockRestore();
-                logMessageSpy.mockRestore();
+        await vi.advanceTimersByTimeAsync(100);
+
+        // Expect no click to have been triggered
+        expect(clickable.getAttribute('clicked')).toBeFalsy();
+        // Expect no reload to have been triggered
+        expect(reloadSpy).not.toHaveBeenCalled();
+        // Expect the log message function to have been called with the error about the invalid reload value
+        expect(logMessageSpy).toHaveBeenCalledWith(
+            expect.stringContaining("Passed reload option 'reloadAfterClick10:10' is invalid"),
+        );
+        // Ensure that 'window.hit' was not set to 'FIRED'
+        expect(window.hit).toBeUndefined();
+    });
+});
+
+describe('Test trusted-click-element scriptlet - hook installation', () => {
+    const sourceParams = {
+        sourceParams: 'trusted-click-element',
+        verbose: true,
+    };
+    const spoofedClicksKey = Symbol.for('adg-spoof-click-isTrusted');
+
+    test.each([
+        {
+            kind: 'read-only, so its assignment throws in strict mode',
+            lock: (descriptor) => ({ ...descriptor, writable: false }),
+        },
+        {
+            kind: 'locked with its assignment ignored, as in the injected code, which is not strict',
+            lock: (descriptor) => ({ configurable: true, get: () => descriptor.value, set: () => {} }),
+        },
+    ])('clicks without spoofing if addEventListener is $kind', ({ lock }) => {
+        useViewlessMouseEvents();
+        const panel = createPanel();
+        const clickable = createClickable(1);
+        panel.appendChild(clickable);
+        const addEventListenerDescriptor = Object.getOwnPropertyDescriptor(EventTarget.prototype, 'addEventListener');
+        const removeEventListenerBefore = EventTarget.prototype.removeEventListener;
+        // Earlier tests have installed the hook already; reset its guard so it is installed again
+        const spoofedClicksBefore = EventTarget.prototype[spoofedClicksKey];
+        delete EventTarget.prototype[spoofedClicksKey];
+        // E.g. another script has locked addEventListener
+        Object.defineProperty(EventTarget.prototype, 'addEventListener', lock(addEventListenerDescriptor));
+
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            trustedClickElement(sourceParams, `#${PANEL_ID} > #${CLICKABLE_NAME}1`);
+
+            expect(clickable.getAttribute('clicked')).toBeTruthy();
+            expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Cannot spoof isTrusted of clicks'));
+            // No wrapper is left installed without the other one, and the hook is not marked as installed
+            expect(EventTarget.prototype.removeEventListener).toBe(removeEventListenerBefore);
+            expect(EventTarget.prototype[spoofedClicksKey]).toBeUndefined();
+        } finally {
+            Object.defineProperty(EventTarget.prototype, 'addEventListener', addEventListenerDescriptor);
+            EventTarget.prototype.removeEventListener = removeEventListenerBefore;
+            if (spoofedClicksBefore) {
+                EventTarget.prototype[spoofedClicksKey] = spoofedClicksBefore;
             }
-        }, 100);
+            vi.unstubAllGlobals();
+            logSpy.mockRestore();
+        }
+    });
+
+    test.each([
+        {
+            kind: 'read-only, so its assignment throws in strict mode',
+            lock: (descriptor) => ({ ...descriptor, writable: false }),
+        },
+        {
+            kind: 'locked with its assignment ignored, as in the injected code, which is not strict',
+            lock: (descriptor) => ({ configurable: true, get: () => descriptor.value, set: () => {} }),
+        },
+    ])('clicks in an open shadow root and logs it if attachShadow is $kind', ({ lock }) => {
+        useViewlessMouseEvents();
+        const panel = createPanel();
+        const host = document.createElement('div');
+        host.id = 'host';
+        const clickable = createClickable(1);
+        host.attachShadow({ mode: 'open' }).appendChild(clickable);
+        panel.appendChild(host);
+        const attachShadowDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'attachShadow');
+        // E.g. another script has locked attachShadow
+        Object.defineProperty(Element.prototype, 'attachShadow', lock(attachShadowDescriptor));
+
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            trustedClickElement(sourceParams, `#${PANEL_ID} > #host >>> #${CLICKABLE_NAME}1`);
+
+            expect(clickable.getAttribute('clicked')).toBeTruthy();
+            expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Cannot track shadow roots attached later'));
+            expect(Element.prototype.attachShadow).toBe(attachShadowDescriptor.value);
+        } finally {
+            Object.defineProperty(Element.prototype, 'attachShadow', attachShadowDescriptor);
+            vi.unstubAllGlobals();
+            logSpy.mockRestore();
+        }
+    });
+});
+
+describe('Test trusted-click-element scriptlet - click errors', () => {
+    const sourceParams = {
+        sourceParams: 'trusted-click-element',
+        verbose: true,
+    };
+    const REACT_PROPS_KEY = '__reactProps$test';
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        useViewlessMouseEvents();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    /**
+     * Creates a clickable element whose React click handler of the page throws.
+     *
+     * @param {Function} onClick Mock of the handler, which is called before it throws.
+     *
+     * @returns {HTMLElement} Element which is clicked by its React handler.
+     */
+    const createThrowingClickable = (onClick) => {
+        const clickable = createClickable(1);
+        clickable[REACT_PROPS_KEY] = {
+            onClick: () => {
+                onClick();
+                throw new Error('Page error');
+            },
+        };
+        return clickable;
+    };
+
+    test.each([
+        { name: 'is connected', isReplaced: false },
+        // The page re-renders it before the delayed click, so it is found again
+        { name: 'is found again', isReplaced: true },
+    ])('logs a click error once and clicks next elements if the element $name', async ({ isReplaced }) => {
+        const panel = createPanel();
+        const onClick = vi.fn();
+        const first = createThrowingClickable(onClick);
+        const second = createClickable(2);
+        panel.append(first, second);
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        trustedClickElement(sourceParams, createSelectorsString([1, 2]), '', isReplaced ? '100' : '');
+        if (isReplaced) {
+            first.replaceWith(createThrowingClickable(onClick));
+        }
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(onClick).toHaveBeenCalledTimes(1);
+        const clickErrors = logSpy.mock.calls.filter(([message]) => message.includes('Could not click element'));
+        expect(clickErrors).toEqual([
+            [expect.stringContaining(`Could not click element: '#${PANEL_ID} > #${CLICKABLE_NAME}1'`)],
+        ]);
+        expect(second.getAttribute('clicked')).toBeTruthy();
+        expect(window.hit).toBe('FIRED');
     });
 });

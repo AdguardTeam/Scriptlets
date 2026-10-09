@@ -6,7 +6,157 @@ import {
     vi,
 } from 'vitest';
 
-import { findBaseHostElements } from '../../src/helpers';
+import {
+    doesElementContainText,
+    findBaseHostElements,
+    getShadowSelectorError,
+    queryShadowSelector,
+} from '../../src/helpers';
+
+describe('getShadowSelectorError', () => {
+    const CSS_ERROR = 'invalid or unsupported CSS selector';
+    const XPATH_ERROR = 'invalid XPath expression';
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        document.body.innerHTML = '';
+    });
+
+    test.each([
+        'div > button',
+        'button:not(.reject)',
+        '#host >>> div > button',
+        'xpath(//div[@id="host"])',
+        'xpath(//div[@id="host"]) >>> xpath(descendant-or-self::button)',
+        '#host >>> xpath(.//button[contains(text(), "Accept, all")]) >>> span',
+        'xpath(//div[starts-with(@id, "host")]) >>> xpath(descendant-or-self::button[normalize-space()="Accept all"])',
+        '#host >>> xpath(descendant-or-self::button[starts-with(@id, "accept") or text()="OK"])',
+        // absolute path is allowed after shadow combinator as well
+        '#host >>> xpath(//button)',
+        '#host >>> xpath(.//a | //button)',
+        '#host >>> xpath(descendant-or-self::button[normalize-space(//title)="Consent"])',
+    ])('valid: %s', (selector) => {
+        expect(getShadowSelectorError(selector)).toBeNull();
+    });
+
+    test.each([
+        { selector: '', error: `${CSS_ERROR} ''` },
+        { selector: '..class', error: `${CSS_ERROR} '..class'` },
+        // pseudo-class which is not supported by the browser cannot be told apart from a syntax error
+        { selector: 'div:has-text(Accept)', error: `${CSS_ERROR} 'div:has-text(Accept)'` },
+        // only the invalid part is reported
+        { selector: '#host >>> ..class', error: `${CSS_ERROR} '..class'` },
+        // empty part between combinators
+        { selector: '#host >>>  >>> button', error: `${CSS_ERROR} ''` },
+        { selector: 'xpath(//button[)', error: `${XPATH_ERROR} 'xpath(//button[)'` },
+        { selector: 'xpath(count(//button))', error: `${XPATH_ERROR} 'xpath(count(//button))'` },
+        { selector: 'xpath(//button', error: `${XPATH_ERROR} 'xpath(//button'` },
+        { selector: '#host >>> xpath(//button[)', error: `${XPATH_ERROR} 'xpath(//button[)'` },
+        // misspelled XPath is an invalid CSS selector
+        { selector: 'xpath (//button)', error: `${CSS_ERROR} 'xpath (//button)'` },
+        { selector: 'div xpath(//button)', error: `${CSS_ERROR} 'div xpath(//button)'` },
+    ])('invalid: "$selector"', ({ selector, error }) => {
+        expect(getShadowSelectorError(selector)).toBe(error);
+    });
+
+    test('reports the first invalid part', () => {
+        expect(getShadowSelectorError('..class >>> xpath(//button[)')).toBe(`${CSS_ERROR} '..class'`);
+    });
+
+    test.each([
+        { parts: ['#host', 'xpath(descendant-or-self::button)'], expected: null },
+        { parts: ['xpath(//div[@id="host"])', 'button'], expected: null },
+        { parts: ['#host', 'xpath(//button)'], expected: null },
+        { parts: ['#host', 'xpath(//button[)'], expected: `${XPATH_ERROR} 'xpath(//button[)'` },
+        { parts: ['#host', '..class'], expected: `${CSS_ERROR} '..class'` },
+    ])('checks parts of selector: $parts', ({ parts, expected }) => {
+        expect(getShadowSelectorError(parts)).toBe(expected);
+    });
+
+    test('does not query the page DOM', () => {
+        document.body.innerHTML = '<div id="host"><button></button></div>';
+        const querySelectorSpy = vi.spyOn(document, 'querySelector');
+        const querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll');
+        // XPath may be evaluated by any document, so the context node should not be a page one
+        const evaluateSpy = vi.spyOn(Document.prototype, 'evaluate');
+
+        getShadowSelectorError('#host >>> xpath(descendant-or-self::button)');
+
+        expect(querySelectorSpy).not.toHaveBeenCalled();
+        expect(querySelectorAllSpy).not.toHaveBeenCalled();
+        expect(evaluateSpy).toHaveBeenCalled();
+        evaluateSpy.mock.calls.forEach((args) => {
+            const contextNode = args[1];
+            expect(contextNode.ownerDocument || contextNode).not.toBe(document);
+        });
+    });
+});
+
+describe('queryShadowSelector', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test.each([
+        { name: 'selector', selector: '#host >>> div > button' },
+        { name: 'parts of selector', selector: ['#host', 'div > button'] },
+        { name: 'parts of selector with XPath', selector: ['xpath(//div[@id="host"])', 'xpath(.//button)'] },
+    ])('selects element inside shadow DOM by $name', ({ selector }) => {
+        document.body.innerHTML = '<div id="host"></div>';
+        const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = '<div><button id="button"></button></div>';
+
+        expect(queryShadowSelector(selector)).toBe(shadowRoot.getElementById('button'));
+    });
+
+    test.each([
+        { selector: 'xpath(body//button)', expected: 'button' },
+        { selector: 'xpath(.//button)', expected: 'button' },
+        { selector: 'xpath(//button)', expected: 'button' },
+        { selector: 'xpath(/html/body//button)', expected: 'button' },
+        // `html` element is the context node, so it is not its own child
+        { selector: 'xpath(html/body//button)', expected: null },
+        { selector: 'xpath(body/div[@id="host"]) >>> button', expected: 'inside' },
+        { selector: 'xpath(html/body/div[@id="host"]) >>> button', expected: null },
+    ])('evaluates relative XPath outside of shadow DOM against html element: $selector', ({ selector, expected }) => {
+        document.body.innerHTML = '<div id="host"></div><button id="button"></button>';
+        const shadowRoot = document.getElementById('host').attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = '<button id="inside"></button>';
+
+        const element = queryShadowSelector(selector);
+
+        expect(element ? element.id : null).toBe(expected);
+    });
+});
+
+describe('doesElementContainText', () => {
+    test.each([
+        { name: 'g flag', matchRegexp: /Reject/g },
+        { name: 'y flag', matchRegexp: /Reject/y },
+    ])('regexp with $name matches the same text each time', ({ matchRegexp }) => {
+        const element = document.createElement('button');
+        element.textContent = 'Reject';
+
+        expect(doesElementContainText(element, matchRegexp)).toBe(true);
+        expect(doesElementContainText(element, matchRegexp)).toBe(true);
+    });
+
+    test('regexp with g flag matches shorter text after longer one', () => {
+        const matchRegexp = /Reject/g;
+        const longer = document.createElement('button');
+        longer.textContent = 'Reject Reject';
+        const shorter = document.createElement('button');
+        shorter.textContent = 'Reject';
+
+        expect(doesElementContainText(longer, matchRegexp)).toBe(true);
+        expect(doesElementContainText(longer, matchRegexp)).toBe(true);
+        expect(doesElementContainText(shorter, matchRegexp)).toBe(true);
+    });
+
+    test('element without text does not match', () => {
+        expect(doesElementContainText(document.createElement('button'), /.*/)).toBe(false);
+    });
+});
 
 let hostCount = 0;
 

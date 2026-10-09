@@ -148,6 +148,25 @@ export const createPanel = () => {
 export const removePanel = () => document.getElementById('panel').remove();
 
 /**
+ * Wraps `Object.defineProperty()`, so that the property which stores spoofed clicks of `trusted-click-element`
+ * on `EventTarget.prototype` is defined as configurable, and tests can delete it to install the hook again.
+ * Outside of tests, it is not configurable, so the page cannot replace it.
+ *
+ * @returns {() => void} Function which restores the native `Object.defineProperty()`.
+ */
+export const allowSpoofedClicksReset = () => {
+    const SPOOFED_CLICKS_KEY = Symbol.for('adg-spoof-click-isTrusted');
+    const nativeDefineProperty = Object.defineProperty;
+    Object.defineProperty = function defineProperty(target, key, descriptor) {
+        const isSpoofedClicks = target === EventTarget.prototype && key === SPOOFED_CLICKS_KEY;
+        return nativeDefineProperty(target, key, isSpoofedClicks ? { ...descriptor, configurable: true } : descriptor);
+    };
+    return () => {
+        Object.defineProperty = nativeDefineProperty;
+    };
+};
+
+/**
  * Time to let attribute scriptlets apply initial values and let their throttled DOM observers settle.
  */
 export const ATTR_SETTLE_DELAY_MS = 100;

@@ -29,7 +29,8 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
   (redirect manifests)
 - **Storage**: None
 - **Testing**: QUnit (scriptlets, redirects, helpers — browser-level via
-  Puppeteer) and Vitest (API, validators, converters — jsdom)
+  Puppeteer) and Vitest (API, validators, converters, helpers, scriptlets —
+  jsdom)
 - **Target platform**: Browser extension and Corelibs
 - **Project type**: single
 - **Performance goals**: N/A
@@ -57,10 +58,11 @@ scriptlets/
 │   └── index.ts              # Main public API entry point
 ├── tests/
 │   ├── api/                  # Vitest tests for converters and validators
-│   ├── helpers/              # QUnit tests for helper utilities
+│   ├── helpers/              # QUnit and Vitest tests for helper utilities
 │   ├── redirects/            # QUnit tests for redirect resources
-│   ├── scriptlets/           # QUnit tests for scriptlets
-│   └── smoke/                # Smoke tests for ESM exports
+│   ├── scriptlets/           # QUnit and Vitest tests for scriptlets
+│   ├── smoke/                # Smoke tests for ESM exports
+│   └── vitest-helpers.ts     # Vitest-only test utilities (e.g. jsdom workarounds)
 ├── types/                    # Ambient type declarations
 ├── wiki/                     # Auto-generated documentation (scriptlet/redirect docs, compatibility table)
 ├── .dockerignore             # Docker build context exclusions
@@ -79,12 +81,15 @@ scriptlets/
 - `pnpm install` — install dependencies
 - `pnpm build` — clean `dist/` and build all bundles
 - `pnpm test` — run all tests (Vitest + smoke + QUnit)
-- `pnpm test:vitest` — run Vitest tests only (API, validators, converters)
+- `pnpm test:vitest` — run Vitest tests only (API, validators, converters,
+  helpers, scriptlets)
 - `pnpm test:qunit scriptlets` — run QUnit tests for all scriptlets
 - `pnpm test:qunit redirects` — run QUnit tests for all redirects
 - `pnpm test:qunit helpers` — run QUnit tests for helpers
-- `pnpm test:qunit scriptlets --name <name> --build` — run a single
-  scriptlet test with a rebuild
+- `pnpm test:qunit scriptlets --name <name>` — rebuild and run a single
+  scriptlet test
+- `pnpm test:qunit scriptlets --name <name> --build` — only rebuild a single
+  scriptlet test, without running it, e.g. while it is open with `--gui`
 - `pnpm test:qunit:build` — build the QUnit test bundles without running them
   (CI split-stage equivalent of `test:qunit --build`; paired with `test:qunit:run`)
 - `pnpm test:qunit:run` — run the QUnit tests without rebuilding (CI
@@ -112,8 +117,10 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - You MUST run the test suite to verify your changes do not break existing
   functionality. For scriptlet/redirect changes use
-  `pnpm test:qunit scriptlets --name <name> --build` (or `redirects`).
-  For API/validator/converter changes use `pnpm test:vitest`.
+  `pnpm test:qunit scriptlets --name <name>` (or `redirects`).
+  For API/validator/converter and helper changes, and for scriptlets which have
+  Vitest specs in `tests/scriptlets/`, use `pnpm test:vitest`, or e.g.
+  `pnpm test:vitest tests/scriptlets/<name>.spec.js` for a single spec.
 
 - When making changes to the project structure, ensure the Project structure
   section in `AGENTS.md` is updated and remains valid.
@@ -335,9 +342,14 @@ Project-specific rules:
     (compare before `setAttribute()` etc.) and MUST call `hit()` only if
     something has actually changed. Invalid arguments (e.g. selector) SHOULD
     be validated and logged once, before the observer is started; use the
-    `isValidSelector()` and `isValidAttributeName()` helpers, as they do not
-    query or change the page DOM. A failure to process an element SHOULD be
-    logged once and not again until the processed value of the element changes.
+    `isValidSelector()`, `isValidXpath()` and `isValidAttributeName()` helpers,
+    and `getShadowSelectorError()` for selectors of `queryShadowSelector()`,
+    i.e. with `>>>` combinator or `xpath(...)`, as they do not query or change
+    the page DOM. Such arguments SHOULD be parsed once as well, and passed
+    to helpers in the parsed form, e.g. selector parts split by `>>>` with
+    `splitSelectors()` to `queryShadowSelector()`, instead of being parsed again
+    on each DOM change. A failure to process an element SHOULD be logged once and not
+    again until the processed value of the element changes.
     Such a failure SHOULD be detected from the processed value and remembered
     per element, not inferred from whether the write has changed the target.
 
@@ -396,6 +408,37 @@ Project-specific rules:
     a browser page, and the helper can be reused by other scriptlets. Helpers are
     stringified one by one, so module-level constants are not in the built code.
 
+15. Event listener hooks which spoof or proxy events, e.g. the `isTrusted`
+    spoofing of `trusted-click-element`, MUST deliver every other event
+    unchanged: only the events which the scriptlet dispatches itself, and the
+    ones which the browser dispatches directly in response, e.g. the click
+    which a label forwards to its control, are spoofed, unless the rule
+    explicitly opts in to spoofing all events of the page, e.g. `isTrusted:all`.
+    Trusted events MUST be delivered unchanged. All listeners of a spoofed
+    event, including inline `on...` handlers, MUST receive the same proxy, so
+    they MUST resolve the delivered event with one shared function, e.g.
+    `getDeliveredEvent()` of `createSpoofedClicks()`. Listener wrappers shared
+    across targets MUST remain stable when a listener is removed from one
+    target; native registration handles deduplication, `once`, and
+    `AbortSignal` cleanup, so wrapper lookups MUST convert `capture` the same
+    way as `addEventListener` does, and a hook which reads the options MUST
+    read them once and pass the values read to the native method. Hooks which
+    withhold events on purpose, e.g. of `prevent-addEventListener` or
+    `prevent-element-src-loading`, are not covered by this rule. How
+    `trusted-click-element` recognizes the clicks which labels forward, e.g.
+    through slots and closed shadow roots, is described in the JSDoc of
+    `clickElement()` in `src/helpers/click-utils.ts` and of the functions
+    inside it.
+
+    **Rationale**: Popup guards compare event references, including
+    `window.event`, so replacing page or browser events breaks them, see
+    [#582](https://github.com/AdguardTeam/Scriptlets/issues/582), and so
+    spoofing all events of the page is only an opt-in fallback. Removing
+    a shared wrapper mapping breaks removal and deduplication on other
+    targets. Options may be getters which return a different value on each
+    read, so a wrapper looked up by one `capture` value and registered with
+    another cannot be removed and is not deduplicated.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,
@@ -403,9 +446,24 @@ Project-specific rules:
   a real browser environment via Puppeteer. Use these for scriptlet and redirect
   behavior testing.
 
-- **Vitest tests** (`tests/api/`, root `*.spec.js`/`*.spec.ts`): test files
-  are named `*.spec.js` or `*.spec.ts`. Use these for API-level, converter,
-  and validator testing. Environment is jsdom.
+- **Vitest tests** (`tests/api/`, `tests/helpers/`, `tests/scriptlets/`,
+  root `*.spec.js`/`*.spec.ts`): test files are named `*.spec.js` or
+  `*.spec.ts`. Use these for API-level, converter, validator and helper
+  testing, and for scriptlet behavior which needs no real browser, e.g. by
+  calling the scriptlet function directly. Environment is jsdom.
+
+- Tests of clicks which a label forwards to its control MUST make the label
+  forward them as untrusted, e.g. with `forwardUntrustedLabelClicks()` in
+  `tests/scriptlets/trusted-click-element.test.js`. Some browsers forward
+  them as untrusted, e.g. Firefox, but others as trusted, e.g. the Chrome
+  version which Puppeteer runs the tests in, where the spoofing of forwarded
+  clicks would not be tested otherwise.
+
+- Tests which install the click hook of `trusted-click-element` again, e.g.
+  after deleting it between tests, MUST call `allowSpoofedClicksReset()` from
+  `tests/helpers.js`, as the property which stores the shared spoofed clicks
+  is not configurable outside of tests, so the page cannot replace it. It is
+  tested without the wrapper in `tests/helpers/spoofed-clicks-property.spec.ts`.
 
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.
