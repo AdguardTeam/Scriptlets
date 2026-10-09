@@ -193,8 +193,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   so its side effects were repeated, and the second call could even succeed.
 - `trusted-suppress-native-method` throwing an error to the page and no longer intercepting the next calls
   after an error while a call is matched, e.g. thrown by a getter of an argument. Such call is not suppressed now.
-- `trusted-json-set` not modifying anything, even without `stack`, if reading the stack trace throws,
-  e.g. because of `Error.prepareStackTrace` of the page. Only the rules with `stack` are not applied then.
+- `trusted-json-set` not modifying anything, even without `stack`, if the stack trace cannot be read,
+  e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
+  Only the rules with `stack` are not applied then. The same applies to `JSONPath` rules of `json-prune`,
+  `json-prune-fetch-response` and `trusted-json-set-fetch-response`, and to `trusted-json-set-fetch-response`
+  rules with `verbose`.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` throwing an error from `XMLHttpRequest.send()`,
+  so the request was not sent at all, even without `stack`, if the stack trace cannot be read,
+  e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
+  Only the rules with `stack` are not applied then, and the request is sent as is.
 - `trusted-suppress-native-method`, `trusted-json-set`, `trusted-replace-argument`, `trusted-replace-outbound-text`,
   `trusted-prune-inbound-object` and `call-nothrow` not intercepting methods of `localStorage` and `sessionStorage`,
   e.g. `localStorage.setItem`, in Firefox, and storing an item named after the method in the storage instead,

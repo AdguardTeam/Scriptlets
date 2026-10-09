@@ -1153,12 +1153,13 @@ export function trustedJsonSet(
             // It is created here, in the wrapper called by the page, and gets the error message line
             // in all browsers, so `matchStackTrace()` keeps the frame of the caller,
             // regardless of the minification, which may inline a function created it otherwise.
-            // The page may make reading it throw, e.g. by `Error.prepareStackTrace`, or make it a non-string value,
-            // which should not stop the rules without `stack` from working, so it is read separately,
-            // and it is not processed without `stack`
+            // The page may make creating or reading it throw, e.g. by replacing `Error`
+            // or by `Error.prepareStackTrace`, or make it a non-string value,
+            // which should not stop the rules without `stack` from working,
+            // so the error is created in the same `try` in which the stack trace is read
             let isStackTraceRead = false;
             try {
-                currentStackTrace = new Error().stack || '';
+                currentStackTrace = String(new Error().stack || '');
                 isStackTraceRead = true;
             } catch {
                 // Rules with `stack` are not processed, as it cannot be matched
@@ -1166,10 +1167,7 @@ export function trustedJsonSet(
 
             try {
                 shouldProcess = !stack
-                    || (
-                        isStackTraceRead
-                        && matchStackTrace(stack, addStackTraceMessageLine(String(currentStackTrace)))
-                    );
+                    || (isStackTraceRead && matchStackTrace(stack, addStackTraceMessageLine(currentStackTrace)));
 
                 if (shouldProcess) {
                     const selectedArgumentIndexes = getSelectedArgumentIndexes(args.length);

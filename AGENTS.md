@@ -464,9 +464,16 @@ Project-specific rules:
     before it is matched, and only if `stack` is set, e.g.
     `matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))`.
     If it is read for rules without `stack` as well, e.g. for logs, an error
-    of reading it MUST NOT stop such rules, e.g. it is read in its own `try`.
+    of creating or reading it MUST NOT stop such rules, i.e. both `new Error()`
+    and reading its `stack` are in their own `try` at the call site, e.g.
+    `try { stackTrace = String(new Error().stack || ''); ... } catch { ... }`,
+    and rules with `stack` are not applied if it fails. Helpers which create
+    the stack trace for `stack` themselves, e.g. `jsonPath()`, MUST do it the
+    same way, and only if `stack` is set or it is logged.
     A new function MUST NOT be added only to create the stack trace one call
-    deeper instead. A scriptlet which suspends matching while it processes
+    deeper instead, and neither a helper which only reads the stack trace of
+    an error created by the caller, as creating it would not be guarded then.
+    A scriptlet which suspends matching while it processes
     a call, e.g. by `isMatchingSuspended`, MUST resume it on every return path,
     e.g. by `try`/`finally`, including a stack trace which does not match and
     an error thrown by the intercepted method.
@@ -483,7 +490,7 @@ Project-specific rules:
     inlined. The page may make the stack trace a non-string value, or make
     reading it throw, e.g. by `Error.prepareStackTrace` in Chrome or a getter
     of `Error.prototype.stack` in Firefox, which should not affect rules without
-    `stack`.
+    `stack`. The page may also replace `Error` with a constructor which throws.
     A call from another function, or an error of the intercepted method, would
     disable the rule for the next calls otherwise, e.g. in
     `trusted-replace-outbound-text`.

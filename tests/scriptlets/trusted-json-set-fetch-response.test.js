@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, useUnreadableStackTrace } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-json-set-fetch-response';
@@ -229,6 +229,27 @@ if (!isSupported) {
         assert.ok(adsVisibilityHiddenIncluded, 'ads object should be removed from the content');
         assert.notOk(adsVisibilityVisibleIncluded, 'ads object should not be visible in the content');
 
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('modifies the fetch response with verbose if the stack trace cannot be read', async (assert) => {
+        const done = assert.async();
+        runScriptlet(name, ['b2', 'changed', '', 'test01', '', '', 'true']);
+        // Content is logged in verbose mode
+        console.log = () => {};
+
+        // Stack trace cannot be read also when the response is processed after it is awaited
+        const restoreStackTrace = useUnreadableStackTrace();
+        let response;
+        try {
+            response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        } finally {
+            restoreStackTrace();
+        }
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 1, b2: 'changed', c3: 3 }, 'response should be modified');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });

@@ -1845,10 +1845,23 @@ export const jsonPath = (
 
     const nativeParse = resolveNativeParse(nativeObjects);
     const nativeStringify = resolveNativeStringify(nativeObjects);
-    const currentStackTrace = new Error().stack || '';
     const parseArgumentValue = (argumentValue: string) => parseJsonSetArgumentValue(source, argumentValue, nativeParse);
 
-    if (stack && !matchStackTrace(stack, currentStackTrace)) {
+    // Stack trace is read only if it is matched or logged, as the page may make creating or reading it throw,
+    // e.g. by replacing `Error` or by `Error.prepareStackTrace`, or make it a non-string value,
+    // which should not stop the rules without `stack` from working
+    let currentStackTrace = '';
+    let isStackTraceRead = false;
+    if (stack || !path) {
+        try {
+            currentStackTrace = String(new Error().stack || '');
+            isStackTraceRead = true;
+        } catch {
+            // Rules with `stack` are not processed, as it cannot be matched
+        }
+    }
+
+    if (stack && (!isStackTraceRead || !matchStackTrace(stack, currentStackTrace))) {
         return root;
     }
 

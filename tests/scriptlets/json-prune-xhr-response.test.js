@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    useFirefoxStackTraceFormat,
+    useThrowingErrorConstructor,
+    useUnreadableStackTrace,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'json-prune-xhr-response';
@@ -23,6 +29,22 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
+
+/**
+ * Sends the request while the stack trace cannot be created or read.
+ *
+ * @param {XMLHttpRequest} xhr request to send
+ * @param {Function} [useStackTraceFailure] function which makes creating or reading the stack trace throw
+ * and returns a function which restores it
+ */
+const sendWithStackTraceFailure = (xhr, useStackTraceFailure = useUnreadableStackTrace) => {
+    const restoreStackTrace = useStackTraceFailure();
+    try {
+        xhr.send();
+    } finally {
+        restoreStackTrace();
+    }
+};
 
 const isSupported = typeof Proxy !== 'undefined';
 
@@ -656,6 +678,69 @@ if (isSupported) {
             xhr.send();
         };
         getContentFunc();
+    });
+
+    test('Stack trace cannot be read - prune content without stack', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content pruned');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        sendWithStackTraceFailure(xhr);
+    });
+
+    test('Stack trace cannot be read - prune content without stack - JSONPath', async (assert) => {
+        runScriptlet(name, ['$.a1', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content pruned');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        sendWithStackTraceFailure(xhr);
+    });
+
+    test('Stack trace cannot be read - do not prune content with stack', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01', 'getContentFunc']);
+
+        const done = assert.async();
+        const getContentFunc = () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.onload = () => {
+                assert.deepEqual(xhr.response, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+                assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+                done();
+            };
+            xhr.responseType = 'json';
+            sendWithStackTraceFailure(xhr);
+        };
+        getContentFunc();
+    });
+
+    test('Error replaced by the page - prune content without stack', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content pruned');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        sendWithStackTraceFailure(xhr, useThrowingErrorConstructor);
     });
 } else {
     test('unsupported', (assert) => {

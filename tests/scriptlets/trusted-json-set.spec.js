@@ -9,7 +9,7 @@ import {
 } from 'vitest';
 
 import { trustedJsonSet } from '../../src/scriptlets/trusted-json-set';
-import { clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
+import { clearGlobalProps, useFirefoxStackTraceFormat, useThrowingErrorConstructor } from '../helpers';
 
 const nativeStringify = JSON.stringify;
 const nativeParse = JSON.parse;
@@ -357,6 +357,64 @@ describe('Test trusted-json-set with a stack trace which is not a string', () =>
                 result = JSON.parse('{"ads":{"enabled":true}}');
             } finally {
                 Error.prepareStackTrace = nativePrepareStackTrace;
+            }
+
+            expect(result).toEqual({ ads: { enabled: true } });
+        });
+
+        test('modifies the value without stack — JSONPath', () => {
+            trustedJsonSet(sourceParams, 'JSON.parse', '$.ads.enabled', 'false');
+
+            Error.prepareStackTrace = throwingPrepareStackTrace;
+            let result;
+            try {
+                result = JSON.parse('{"ads":{"enabled":true}}');
+            } finally {
+                Error.prepareStackTrace = nativePrepareStackTrace;
+            }
+
+            expect(result).toEqual({ ads: { enabled: false } });
+        });
+
+        test('does not modify the value with stack, as it cannot be matched — JSONPath', () => {
+            trustedJsonSet(sourceParams, 'JSON.parse', '$.ads.enabled', 'false', '', 'result', 'anyFunction');
+
+            Error.prepareStackTrace = throwingPrepareStackTrace;
+            let result;
+            try {
+                result = JSON.parse('{"ads":{"enabled":true}}');
+            } finally {
+                Error.prepareStackTrace = nativePrepareStackTrace;
+            }
+
+            expect(result).toEqual({ ads: { enabled: true } });
+        });
+    });
+
+    describe('which cannot be created, as the page has replaced Error', () => {
+        test('modifies the value without stack', () => {
+            trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false');
+
+            const restoreError = useThrowingErrorConstructor();
+            let result;
+            try {
+                result = JSON.parse('{"ads":{"enabled":true}}');
+            } finally {
+                restoreError();
+            }
+
+            expect(result).toEqual({ ads: { enabled: false } });
+        });
+
+        test('does not modify the value with stack, as it cannot be matched', () => {
+            trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false', '', 'result', 'anyFunction');
+
+            const restoreError = useThrowingErrorConstructor();
+            let result;
+            try {
+                result = JSON.parse('{"ads":{"enabled":true}}');
+            } finally {
+                restoreError();
             }
 
             expect(result).toEqual({ ads: { enabled: true } });

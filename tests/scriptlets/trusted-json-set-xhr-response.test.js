@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    useFirefoxStackTraceFormat,
+    useThrowingErrorConstructor,
+    useUnreadableStackTrace,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-json-set-xhr-response';
@@ -25,6 +31,22 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
+
+/**
+ * Sends the request while the stack trace cannot be created or read.
+ *
+ * @param {XMLHttpRequest} xhr request to send
+ * @param {Function} [useStackTraceFailure] function which makes creating or reading the stack trace throw
+ * and returns a function which restores it
+ */
+const sendWithStackTraceFailure = (xhr, useStackTraceFailure = useUnreadableStackTrace) => {
+    const restoreStackTrace = useStackTraceFailure();
+    try {
+        xhr.send();
+    } finally {
+        restoreStackTrace();
+    }
+};
 
 const isSupported = typeof Proxy !== 'undefined';
 
@@ -372,6 +394,70 @@ if (isSupported) {
         };
         xhr.responseType = 'json';
         xhr.send();
+    });
+
+    test('sets a property without stack if the stack trace cannot be read', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        sendWithStackTraceFailure(xhr);
+    });
+
+    test('sets a property without stack if the stack trace cannot be read — JSONPath', async (assert) => {
+        runScriptlet(name, ['$.a1', '10', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        sendWithStackTraceFailure(xhr);
+    });
+
+    test('does not set a property with stack if the stack trace cannot be read', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', 'getXhrContent']);
+
+        const done = assert.async();
+        const getXhrContent = () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.onload = () => {
+                assert.deepEqual(xhr.response, { a1: 1, b2: 'test', c3: 3 }, 'response should stay intact');
+                assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+                done();
+            };
+            xhr.responseType = 'json';
+            sendWithStackTraceFailure(xhr);
+        };
+
+        getXhrContent();
+    });
+
+    test('sets a property without stack if the page has replaced Error', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        sendWithStackTraceFailure(xhr, useThrowingErrorConstructor);
     });
 } else {
     test('unsupported', (assert) => {

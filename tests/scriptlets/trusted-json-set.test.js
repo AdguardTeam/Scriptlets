@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, saveStorageMethods } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    saveStorageMethods,
+    useThrowingErrorConstructor,
+    useUnreadableStackTrace,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-json-set';
@@ -1481,32 +1487,45 @@ test('Storage method: modifies the JSON read by localStorage.getItem', (assert) 
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 
+/**
+ * Parses the JSON text with `JSON.parse` while the stack trace cannot be created or read.
+ *
+ * @param {string} text JSON text to parse
+ * @param {Function} [useStackTraceFailure] function which makes creating or reading the stack trace throw
+ * and returns a function which restores it
+ * @returns {any} parsed value
+ */
+const parseWithStackTraceFailure = (text, useStackTraceFailure = useUnreadableStackTrace) => {
+    const restoreStackTrace = useStackTraceFailure();
+    try {
+        return JSON.parse(text);
+    } finally {
+        restoreStackTrace();
+    }
+};
+
 test('modifies the value without stack if the stack trace cannot be read', (assert) => {
     runScriptlet(name, ['JSON.parse', 'ads.enabled', 'false']);
 
-    // Page may make reading the stack trace throw, e.g. by `Error.prepareStackTrace` in Chrome,
-    // or by a getter of `Error.prototype.stack` in Firefox
-    const nativePrepareStackTrace = Error.prepareStackTrace;
-    const nativeStackDescriptor = Object.getOwnPropertyDescriptor(Error.prototype, 'stack');
-    const throwError = () => {
-        throw new Error('Stack trace cannot be read');
-    };
-    Error.prepareStackTrace = throwError;
-    // eslint-disable-next-line no-extend-native
-    Object.defineProperty(Error.prototype, 'stack', { configurable: true, get: throwError });
+    const result = parseWithStackTraceFailure('{"ads":{"enabled":true}}');
 
-    let result;
-    try {
-        result = JSON.parse('{"ads":{"enabled":true}}');
-    } finally {
-        Error.prepareStackTrace = nativePrepareStackTrace;
-        if (nativeStackDescriptor) {
-            // eslint-disable-next-line no-extend-native
-            Object.defineProperty(Error.prototype, 'stack', nativeStackDescriptor);
-        } else {
-            delete Error.prototype.stack;
-        }
-    }
+    assert.deepEqual(result, { ads: { enabled: false } }, 'should modify the payload');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('modifies the value without stack if the stack trace cannot be read — JSONPath', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads.enabled', 'false']);
+
+    const result = parseWithStackTraceFailure('{"ads":{"enabled":true}}');
+
+    assert.deepEqual(result, { ads: { enabled: false } }, 'should modify the payload');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('modifies the value without stack if the page has replaced Error', (assert) => {
+    runScriptlet(name, ['JSON.parse', 'ads.enabled', 'false']);
+
+    const result = parseWithStackTraceFailure('{"ads":{"enabled":true}}', useThrowingErrorConstructor);
 
     assert.deepEqual(result, { ads: { enabled: false } }, 'should modify the payload');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');

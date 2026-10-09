@@ -254,6 +254,18 @@ export function trustedJsonSetFetchResponse(
             return Reflect.apply(target, thisArg, args);
         }
 
+        // Stack trace is only logged, so it is read only in verbose mode, before the response is awaited,
+        // so it has the caller of `fetch()`. The page may make creating or reading it throw,
+        // e.g. by replacing `Error` or by `Error.prepareStackTrace`, which should not stop the rule from working
+        let stackTrace = '';
+        if (shouldLogContent) {
+            try {
+                stackTrace = String(new Error().stack || '');
+            } catch {
+                // Stack trace is not logged then
+            }
+        }
+
         let originalResponse;
         let clonedResponse;
         try {
@@ -278,7 +290,7 @@ export function trustedJsonSetFetchResponse(
             const json = nativeObjects.nativeParse(textContent);
             if (shouldLogContent) {
                 // eslint-disable-next-line max-len
-                logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
+                logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${stackTrace}`, true);
                 logMessage(source, json, true, false);
             }
 
@@ -286,7 +298,7 @@ export function trustedJsonSetFetchResponse(
 
             if (shouldLogContent) {
                 // eslint-disable-next-line max-len
-                logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
+                logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${stackTrace}`, true);
                 logMessage(source, modifiedJson, true, false);
             }
 
@@ -308,9 +320,9 @@ export function trustedJsonSetFetchResponse(
             if (lineEditResult.hasJsonLines) {
                 if (shouldLogContent) {
                     // eslint-disable-next-line max-len
-                    logMessage(source, `Original content:\n${window.location.hostname}\n${textContent}\nStack trace:\n${new Error().stack || ''}`, true);
+                    logMessage(source, `Original content:\n${window.location.hostname}\n${textContent}\nStack trace:\n${stackTrace}`, true);
                     // eslint-disable-next-line max-len
-                    logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${new Error().stack || ''}`, true);
+                    logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${stackTrace}`, true);
                 }
 
                 return forgeResponse(originalResponse, lineEditResult.text);

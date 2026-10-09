@@ -74,6 +74,50 @@ export const useFirefoxStackTraceFormat = () => {
 };
 
 /**
+ * Makes reading the stack trace of errors throw, as the page may do it,
+ * e.g. by `Error.prepareStackTrace()` in Chrome, or by a getter of `Error.prototype.stack` in Firefox.
+ *
+ * @returns {Function} function which makes the stack trace readable again
+ */
+export const useUnreadableStackTrace = () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+    const nativeStackDescriptor = Object.getOwnPropertyDescriptor(Error.prototype, 'stack');
+    const throwError = () => {
+        throw new Error('Stack trace cannot be read');
+    };
+    Error.prepareStackTrace = throwError;
+    // eslint-disable-next-line no-extend-native
+    Object.defineProperty(Error.prototype, 'stack', { configurable: true, get: throwError });
+
+    return () => {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+        if (nativeStackDescriptor) {
+            // eslint-disable-next-line no-extend-native
+            Object.defineProperty(Error.prototype, 'stack', nativeStackDescriptor);
+        } else {
+            delete Error.prototype.stack;
+        }
+    };
+};
+
+/**
+ * Replaces `Error` with a constructor which throws, as the page may do it,
+ * so an error to read the stack trace of cannot be even created.
+ *
+ * @returns {Function} function which restores `Error`
+ */
+export const useThrowingErrorConstructor = () => {
+    const NativeError = window.Error;
+    window.Error = function ThrowingError() {
+        throw new TypeError('Error cannot be created');
+    };
+
+    return () => {
+        window.Error = NativeError;
+    };
+};
+
+/**
  * Fetches and parses the redirects YAML file, returning an instance of Redirects.
  * @typedef {import('./path/to/redirects').Redirects} Redirects
  * @returns {Promise<Redirects>} A promise that resolves to an instance of Redirects.
