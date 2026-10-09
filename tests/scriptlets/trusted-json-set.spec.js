@@ -191,3 +191,195 @@ describe('Test trusted-json-set time keywords are not frozen', () => {
         expect(secondResult.data.time).toBe(42);
     });
 });
+
+// https://github.com/AdguardTeam/Scriptlets/issues/585
+describe('Test trusted-json-set with promise results', () => {
+    beforeEach(() => {
+        vi.useRealTimers();
+    });
+
+    afterEach(() => {
+        clearGlobalProps('getPayload');
+    });
+
+    test('keeps a thenable result which is not a promise synchronous', () => {
+        const then = vi.fn();
+        window.getPayload = () => ({ ads: { enabled: true }, then });
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const result = window.getPayload();
+
+        expect(result.ads.enabled).toBe(false);
+        expect(then).not.toHaveBeenCalled();
+    });
+
+    test('uses native "then" instead of the one replaced on the promise by the page', async () => {
+        const replacedThen = vi.fn();
+        let returnedPromise;
+        window.getPayload = () => {
+            returnedPromise = Promise.resolve({ ads: { enabled: true } });
+            returnedPromise.then = replacedThen;
+            return returnedPromise;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const promise = window.getPayload();
+
+        expect(promise).not.toBe(returnedPromise);
+        expect(replacedThen).not.toHaveBeenCalled();
+        expect(await promise).toEqual({ ads: { enabled: false } });
+    });
+
+    test('returns an object which only inherits from Promise.prototype unchanged', () => {
+        const fakePromise = Object.create(Promise.prototype);
+        window.getPayload = () => fakePromise;
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const result = window.getPayload();
+
+        expect(result).toBe(fakePromise);
+        expect(Object.keys(result)).toEqual([]);
+        expect(window.hit).toBeUndefined();
+    });
+
+    test('calls the intercepted method once if it throws', () => {
+        let shouldThrow = true;
+        const target = vi.fn(() => {
+            if (shouldThrow) {
+                throw new Error('page error');
+            }
+            return Promise.resolve({ ads: { enabled: true } });
+        });
+        window.getPayload = target;
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        expect(() => window.getPayload()).toThrow('page error');
+        expect(target).toHaveBeenCalledTimes(1);
+
+        shouldThrow = false;
+        // Matching should not be suspended after the error
+        return expect(window.getPayload()).resolves.toEqual({ ads: { enabled: false } });
+    });
+
+    test('keeps synchronous result of JSON.parse synchronous', () => {
+        trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false');
+
+        const result = JSON.parse('{"ads":{"enabled":true}}');
+
+        expect(result).toEqual({ ads: { enabled: false } });
+    });
+
+    test('returns the original promise and logs its value in logging-only mode', async () => {
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+        let returnedPromise;
+        window.getPayload = () => {
+            returnedPromise = Promise.resolve({ ads: { enabled: true } });
+            // e.g. a method which the page attaches to its promise
+            returnedPromise.json = () => 'json';
+            return returnedPromise;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload');
+
+        try {
+            const promise = window.getPayload();
+
+            expect(promise).toBe(returnedPromise);
+            expect(promise.json()).toBe('json');
+            expect(await promise).toEqual({ ads: { enabled: true } });
+            // Value is logged in the reaction which runs before the one of the caller
+            const logs = consoleLog.mock.calls.map((args) => String(args[0]));
+            expect(logs.some((log) => log.includes('Original content string of window.getPayload'))).toBe(true);
+            expect(logs.some((log) => log.includes('"enabled": true'))).toBe(true);
+        } finally {
+            consoleLog.mockRestore();
+        }
+    });
+
+    test('passes rejection of the original promise through in logging-only mode', async () => {
+        let returnedPromise;
+        window.getPayload = () => {
+            returnedPromise = Promise.reject(new Error('network error'));
+            return returnedPromise;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload');
+
+        const promise = window.getPayload();
+
+        expect(promise).toBe(returnedPromise);
+        // Promise of the logging handler is not rejected unhandled, Vitest would fail the run otherwise
+        await expect(promise).rejects.toThrow('network error');
+    });
+});
+
+describe('Test trusted-json-set with a stack trace which is not a string', () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+
+    afterEach(() => {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+    });
+
+    test('modifies the value without stack', () => {
+        trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false');
+        // e.g. a library of the page which gets call sites of a stack trace
+        Error.prepareStackTrace = (error, callSites) => callSites;
+
+        const result = JSON.parse('{"ads":{"enabled":true}}');
+
+        expect(result).toEqual({ ads: { enabled: false } });
+    });
+});
+
+describe('Test trusted-json-set stack matching with Firefox stack trace format', () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+    const nativeResponseJson = Response.prototype.json;
+
+    /**
+     * Formats stack trace like Firefox and Safari do, i.e. without the error message line,
+     * so the first line is the frame which has created the error,
+     * e.g. `objectWrapper@http://example.org/script.js:1:2`.
+     *
+     * @param {Error} error error which stack trace is formatted
+     * @param {object[]} callSites V8 call sites of the stack trace
+     * @returns {string} formatted stack trace
+     */
+    const formatFirefoxStackTrace = (error, callSites) => callSites
+        .map((callSite) => {
+            const functionName = callSite.getFunctionName() || '';
+            const location = `${callSite.getFileName()}:${callSite.getLineNumber()}:${callSite.getColumnNumber()}`;
+            return `${functionName}@${location}`;
+        })
+        .join('\n');
+
+    beforeEach(() => {
+        vi.useRealTimers();
+        Error.prepareStackTrace = formatFirefoxStackTrace;
+    });
+
+    afterEach(() => {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+        Response.prototype.json = nativeResponseJson;
+    });
+
+    test.each([
+        { mode: '', propsPath: 'ads.enabled', modeName: 'legacy' },
+        { mode: 'jsonpath', propsPath: '$.ads.enabled', modeName: 'jsonpath' },
+    ])('$modeName mode matches the function which calls the method', ({ mode, propsPath }) => {
+        trustedJsonSet(sourceParams, 'JSON.parse', propsPath, 'false', '', 'result', 'parseAdsConfig', mode);
+
+        const parseAdsConfig = () => JSON.parse('{"ads":{"enabled":true}}');
+        const parseContent = () => JSON.parse('{"ads":{"enabled":true}}');
+
+        expect(parseAdsConfig()).toEqual({ ads: { enabled: false } });
+        expect(parseContent()).toEqual({ ads: { enabled: true } });
+    });
+
+    test('matches the function which calls the method returning a promise', async () => {
+        trustedJsonSet(sourceParams, 'Response.prototype.json', 'ads.enabled', 'false', '', 'result', 'loadAdsConfig');
+
+        const loadAdsConfig = () => new Response('{"ads":{"enabled":true}}').json();
+        const loadContent = () => new Response('{"ads":{"enabled":true}}').json();
+
+        expect(await loadAdsConfig()).toEqual({ ads: { enabled: false } });
+        expect(await loadContent()).toEqual({ ads: { enabled: true } });
+    });
+});

@@ -7,6 +7,9 @@ const name = 'trusted-json-set';
 const nativeStringify = JSON.stringify;
 const nativeParse = JSON.parse;
 const nativeConsole = console.log;
+const nativeResponseJson = Response.prototype.json;
+const nativeResponseText = Response.prototype.text;
+const nativeRequestJson = Request.prototype.json;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -19,6 +22,9 @@ const afterEach = () => {
     JSON.stringify = nativeStringify;
     JSON.parse = nativeParse;
     console.log = nativeConsole;
+    Response.prototype.json = nativeResponseJson;
+    Response.prototype.text = nativeResponseText;
+    Request.prototype.json = nativeRequestJson;
 };
 
 module(name, { beforeEach, afterEach });
@@ -689,7 +695,9 @@ test('supports JSONPath guards instead of requiredInitialProps — JSON.parse re
 test('should log message when input is not valid JSON', (assert) => {
     assert.expect(2);
 
-    const message = 'is not valid JSON';
+    // Message of the scriptlet, not of the JSON.parse error, as the latter differs between browsers,
+    // e.g. 'is not valid JSON' is in Chrome only
+    const message = 'Error parsing JSON string';
     // mock console.log function for log checking
     console.log = function log(input) {
         if (input.includes('trace')) {
@@ -1207,4 +1215,248 @@ test('does not modify keyword-like value — JSON.stringify', (assert) => {
 
     assert.strictEqual(result.foo.bar, '$now', 'value has not been modified');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+// https://github.com/AdguardTeam/Scriptlets/issues/585
+const ADS_JSON = '{"ads":{"enabled":true},"content":"article"}';
+
+test('modifies value of the promise returned by Response.prototype.json', async (assert) => {
+    runScriptlet(name, ['Response.prototype.json', 'ads.enabled', 'false']);
+
+    const promise = new Response(ADS_JSON).json();
+
+    assert.ok(promise instanceof Promise, 'should return a promise');
+    assert.notOk(Object.prototype.hasOwnProperty.call(promise, 'ads'), 'should not modify the promise itself');
+    assert.deepEqual(
+        await promise,
+        { ads: { enabled: false }, content: 'article' },
+        'should modify the value the promise is fulfilled with',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('modifies value of the promise returned by Response.prototype.json — JSONPath', async (assert) => {
+    runScriptlet(name, ['Response.prototype.json', '$.ads.enabled', 'false']);
+
+    const promise = new Response(ADS_JSON).json();
+
+    assert.notOk(Object.prototype.hasOwnProperty.call(promise, 'ads'), 'should not modify the promise itself');
+    assert.deepEqual(
+        await promise,
+        { ads: { enabled: false }, content: 'article' },
+        'should modify the value the promise is fulfilled with',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('modifies value of the promise returned by Request.prototype.json', async (assert) => {
+    runScriptlet(name, ['Request.prototype.json', 'ads.enabled', 'false']);
+
+    const request = new Request('https://example.org/', { method: 'POST', body: ADS_JSON });
+    const promise = request.json();
+
+    assert.notOk(Object.prototype.hasOwnProperty.call(promise, 'ads'), 'should not modify the promise itself');
+    assert.deepEqual(
+        await promise,
+        { ads: { enabled: false }, content: 'article' },
+        'should modify the value the promise is fulfilled with',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('modifies values of Request.prototype.json and Response.prototype.json promises together', async (assert) => {
+    runScriptlet(name, ['Request.prototype.json', 'ads.enabled', 'false']);
+    runScriptlet(name, ['Response.prototype.json', 'ads.visible', 'false']);
+
+    const request = new Request('https://example.org/', { method: 'POST', body: ADS_JSON });
+    const requestPromise = request.json();
+    const responsePromise = new Response(ADS_JSON).json();
+
+    assert.notOk(
+        Object.prototype.hasOwnProperty.call(requestPromise, 'ads'),
+        'should not modify the promise of Request.prototype.json itself',
+    );
+    assert.notOk(
+        Object.prototype.hasOwnProperty.call(responsePromise, 'ads'),
+        'should not modify the promise of Response.prototype.json itself',
+    );
+    assert.deepEqual(
+        await requestPromise,
+        { ads: { enabled: false }, content: 'article' },
+        'should modify the value of Request.prototype.json by its rule only',
+    );
+    assert.deepEqual(
+        await responsePromise,
+        { ads: { enabled: true, visible: false }, content: 'article' },
+        'should modify the value of Response.prototype.json by its rule only',
+    );
+});
+
+test('modifies JSON string the promise returned by Response.prototype.text is fulfilled with', async (assert) => {
+    runScriptlet(name, ['Response.prototype.text', 'ads.enabled', 'false']);
+
+    const result = await new Response(ADS_JSON).text();
+
+    assert.strictEqual(typeof result, 'string', 'should fulfill the promise with a string');
+    assert.deepEqual(
+        nativeParse(result),
+        { ads: { enabled: false }, content: 'article' },
+        'should modify the JSON string',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('modifies values of several pending promises returned by Response.prototype.json', async (assert) => {
+    runScriptlet(name, ['Response.prototype.json', 'ads.enabled', 'false']);
+
+    const results = await Promise.all([
+        new Response('{"ads":{"enabled":true},"id":1}').json(),
+        new Response('{"ads":{"enabled":true},"id":2}').json(),
+    ]);
+    // Matching should not be suspended after the promises are fulfilled
+    const nextResult = await new Response('{"ads":{"enabled":true},"id":3}').json();
+
+    assert.deepEqual(results[0], { ads: { enabled: false }, id: 1 }, 'should modify the first value');
+    assert.deepEqual(results[1], { ads: { enabled: false }, id: 2 }, 'should modify the second value');
+    assert.deepEqual(nextResult, { ads: { enabled: false }, id: 3 }, 'should modify the next value');
+});
+
+test('passes rejection of the promise returned by Response.prototype.json through', async (assert) => {
+    runScriptlet(name, ['Response.prototype.json', 'ads.enabled', 'false']);
+
+    await assert.rejects(
+        new Response('not a JSON').json(),
+        SyntaxError,
+        'should reject with the original error',
+    );
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+});
+
+test('modifies value of the promise returned by Response.prototype.json when stack matches', async (assert) => {
+    runScriptlet(name, ['Response.prototype.json', 'ads.enabled', 'false', '', 'result', 'loadAdsConfig']);
+
+    // Stack is matched when the method is called, as the caller is no longer in the stack on promise fulfillment
+    const loadAdsConfig = () => new Response(ADS_JSON).json();
+
+    assert.deepEqual(
+        await loadAdsConfig(),
+        { ads: { enabled: false }, content: 'article' },
+        'should modify the value when stack matches',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('does NOT modify value of the promise returned by Response.prototype.json — no stack match', async (assert) => {
+    runScriptlet(name, ['Response.prototype.json', 'ads.enabled', 'false', '', 'result', 'loadAdsConfig']);
+
+    const loadContent = () => new Response(ADS_JSON).json();
+    const promise = loadContent();
+
+    assert.notOk(Object.prototype.hasOwnProperty.call(promise, 'ads'), 'should not modify the promise itself');
+    assert.deepEqual(
+        await promise,
+        { ads: { enabled: true }, content: 'article' },
+        'should not modify the value when stack does not match',
+    );
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+});
+
+test('logs value of the promise returned by Response.prototype.json in log-only mode', async (assert) => {
+    assert.expect(5);
+
+    let logCount = 0;
+    console.log = function log(...input) {
+        console.debug(...input);
+        const message = input[0];
+        if (
+            input.length === 1
+            && typeof message === 'string'
+            && message.includes('Original content string of Response.prototype.json')
+        ) {
+            logCount += 1;
+            assert.ok(message.includes('"enabled": true'), 'should log the value the promise is fulfilled with');
+            assert.ok(
+                message.includes('logAdsConfig'),
+                'should log the stack trace captured when the method is called',
+            );
+        }
+    };
+
+    runScriptlet(name, ['Response.prototype.json']);
+
+    const logAdsConfig = () => new Response(ADS_JSON).json();
+    const promise = logAdsConfig();
+
+    assert.strictEqual(logCount, 0, 'should not log the promise itself');
+    assert.deepEqual(
+        await promise,
+        { ads: { enabled: true }, content: 'article' },
+        'should leave the value unchanged in log-only mode',
+    );
+    assert.strictEqual(logCount, 1, 'should log the value once');
+});
+
+test('does not replace promise returned by the method when jsonSource is arg', async (assert) => {
+    let returnedPromise;
+    window.sendPayload = (payload) => {
+        returnedPromise = Promise.resolve(payload);
+        return returnedPromise;
+    };
+    runScriptlet(name, ['window.sendPayload', 'ads.enabled', 'false', '', 'arg:0']);
+
+    const promise = window.sendPayload({ ads: { enabled: true } });
+
+    assert.strictEqual(promise, returnedPromise, 'should return the original promise');
+    assert.deepEqual(await promise, { ads: { enabled: false } }, 'should modify the argument');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('sendPayload');
+});
+
+test('modifies arguments and value of the returned promise when jsonSource is all', async (assert) => {
+    let receivedPayload;
+    window.sendPayload = (payload) => {
+        receivedPayload = payload;
+        return Promise.resolve({ ads: { enabled: true } });
+    };
+    runScriptlet(name, ['window.sendPayload', 'ads.enabled', 'false', '', 'all']);
+
+    const result = await window.sendPayload({ ads: { enabled: true } });
+
+    assert.deepEqual(receivedPayload, { ads: { enabled: false } }, 'should modify the argument');
+    assert.deepEqual(result, { ads: { enabled: false } }, 'should modify the value the promise is fulfilled with');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('sendPayload');
+});
+
+test('modifies value of the promise returned by Response.prototype.json after Promise is replaced', async (assert) => {
+    runScriptlet(name, ['Response.prototype.json', 'ads.enabled', 'false']);
+
+    const NativePromise = window.Promise;
+    // Promise implementation of a polyfill or a library which replaces window.Promise,
+    // e.g. 'ZoneAwarePromise' of zone.js
+    function PolyfillPromise(executor) {
+        this.nativePromise = new NativePromise(executor);
+    }
+    PolyfillPromise.prototype.then = function then(onFulfilled, onRejected) {
+        return this.nativePromise.then(onFulfilled, onRejected);
+    };
+
+    let promise;
+    window.Promise = PolyfillPromise;
+    try {
+        // Native APIs return native promises regardless of window.Promise
+        promise = new Response(ADS_JSON).json();
+    } finally {
+        window.Promise = NativePromise;
+    }
+
+    assert.ok(promise instanceof NativePromise, 'should return a native promise');
+    assert.notOk(Object.prototype.hasOwnProperty.call(promise, 'ads'), 'should not modify the promise itself');
+    assert.deepEqual(
+        await promise,
+        { ads: { enabled: false }, content: 'article' },
+        'should modify the value the promise is fulfilled with',
+    );
 });

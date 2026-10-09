@@ -1,6 +1,11 @@
-import { test, expect } from 'vitest';
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 
-import { isEmptyObject } from '../../src/helpers';
+import { isEmptyObject, isNativePromise } from '../../src/helpers';
 
 test('isEmptyObject() for different inputs', async () => {
     const emptyObj = {};
@@ -20,4 +25,106 @@ test('isEmptyObject() for different inputs', async () => {
     expect(isEmptyObject(Array)).toBeFalsy();
     expect(isEmptyObject(Object)).toBeFalsy();
     expect(isEmptyObject(Function)).toBeFalsy();
+});
+
+// https://github.com/AdguardTeam/Scriptlets/issues/585
+describe('isNativePromise()', () => {
+    const NativePromise = window.Promise;
+
+    test('detects native promises', async () => {
+        const rejected = Promise.reject(new Error('rejected'));
+        // Rejection is handled so that it is not reported as unhandled
+        rejected.catch(() => {});
+
+        class PromiseSubclass extends Promise {}
+
+        expect(isNativePromise(Promise.resolve({ a: 1 }), NativePromise)).toBe(true);
+        expect(isNativePromise(rejected, NativePromise)).toBe(true);
+        expect(isNativePromise(new Promise(() => {}), NativePromise)).toBe(true);
+        expect(isNativePromise((async () => ({ a: 1 }))(), NativePromise)).toBe(true);
+        expect(isNativePromise(new Response('{"a":1}').json(), NativePromise)).toBe(true);
+        expect(isNativePromise(PromiseSubclass.resolve(1), NativePromise)).toBe(true);
+    });
+
+    test.each([
+        undefined,
+        null,
+        0,
+        '',
+        'Promise',
+        true,
+        {},
+        [],
+        { a: 1 },
+        '{"a":1}',
+        () => {},
+        Promise,
+        Promise.prototype.then,
+    ])('does not detect %o as a promise', (value) => {
+        expect(isNativePromise(value, NativePromise)).toBe(false);
+    });
+
+    test('does not detect thenables as promises', () => {
+        const thenable = { then: vi.fn() };
+        const thenableFunction = () => {};
+        thenableFunction.then = vi.fn();
+
+        expect(isNativePromise(thenable, NativePromise)).toBe(false);
+        expect(isNativePromise(thenableFunction, NativePromise)).toBe(false);
+        expect(thenable.then).not.toHaveBeenCalled();
+        expect(thenableFunction.then).not.toHaveBeenCalled();
+    });
+
+    test('does not read the "then" property', () => {
+        const thenGetter = vi.fn(() => {
+            throw new Error('then should not be read');
+        });
+        const value = {};
+        Object.defineProperty(value, 'then', { get: thenGetter });
+
+        expect(isNativePromise(value, NativePromise)).toBe(false);
+        expect(thenGetter).not.toHaveBeenCalled();
+    });
+
+    test('does not detect an object which only pretends to be a promise by its "toStringTag"', () => {
+        const value = { [Symbol.toStringTag]: 'Promise' };
+
+        expect(Object.prototype.toString.call(value)).toBe('[object Promise]');
+        expect(isNativePromise(value, NativePromise)).toBe(false);
+    });
+
+    test('does not throw for a proxy which throws on prototype access', () => {
+        const value = new Proxy({}, {
+            getPrototypeOf() {
+                throw new Error('getPrototypeOf trap');
+            },
+        });
+
+        expect(isNativePromise(value, NativePromise)).toBe(false);
+    });
+
+    test('detects native promises but not polyfill ones after window.Promise is replaced', async () => {
+        // Promise implementation of a polyfill or a library which replaces window.Promise,
+        // e.g. 'ZoneAwarePromise' of zone.js
+        function PolyfillPromise(executor) {
+            this.nativePromise = new NativePromise(executor);
+        }
+        PolyfillPromise.prototype.then = function then(onFulfilled, onRejected) {
+            return this.nativePromise.then(onFulfilled, onRejected);
+        };
+        PolyfillPromise.prototype[Symbol.toStringTag] = 'Promise';
+
+        window.Promise = PolyfillPromise;
+        try {
+            // Async functions return native promises regardless of window.Promise, as native APIs do
+            // in browsers, e.g. 'Response.prototype.json()', which is not native in Node.js though
+            expect(isNativePromise((async () => ({ a: 1 }))(), NativePromise)).toBe(true);
+            // Promises created by the page with the replaced window.Promise are not native
+            const polyfillPromise = new window.Promise((resolve) => resolve({ a: 1 }));
+            expect(isNativePromise(polyfillPromise, NativePromise)).toBe(false);
+            expect(await polyfillPromise).toEqual({ a: 1 });
+        } finally {
+            window.Promise = NativePromise;
+        }
+    });
 });

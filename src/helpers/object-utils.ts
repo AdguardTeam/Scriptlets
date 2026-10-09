@@ -55,3 +55,33 @@ export function setPropertyAccess(
 export function isArbitraryObject(value: unknown): value is ArbitraryObject {
     return value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof RegExp);
 }
+
+/**
+ * Checks whether the value is a native promise, i.e. an instance of the native `Promise` constructor
+ * or of its subclass, e.g. the one returned by `Response.prototype.json()` or by an async function.
+ * Native APIs and async functions return such promises even if the page has replaced `window.Promise`.
+ *
+ * Promises of other implementations, e.g. of a polyfill or a library which replaces `window.Promise`,
+ * like `ZoneAwarePromise` of zone.js, and other thenables, i.e. objects with a `then()` method,
+ * are not detected, and the `then` property is not read, as it may be a getter of the page.
+ *
+ * Note that only the prototype chain is checked, so native promises of other realms, e.g. of an iframe,
+ * are not detected, while an object which only inherits from `Promise.prototype` is,
+ * so a native method of `Promise.prototype` called on the value may still throw.
+ *
+ * @param value arbitrary value
+ * @param NativePromise native `Promise` constructor saved when the scriptlet runs,
+ * i.e. before the page could replace `window.Promise`
+ * @returns true, if value is a native promise
+ */
+export function isNativePromise(
+    value: unknown,
+    NativePromise: PromiseConstructor,
+): value is Promise<unknown> {
+    try {
+        return value instanceof NativePromise;
+    } catch {
+        // e.g. a proxy which throws in its 'getPrototypeOf' trap
+        return false;
+    }
+}

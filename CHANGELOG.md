@@ -170,9 +170,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   which the page assigns during an earlier event of the click, e.g. `onclick` set on `mousedown`.
 - `trusted-click-element` reporting outdated `isDefaultPrevented()` and `isPropagationStopped()` to React handlers
   if the default action or propagation is changed through `nativeEvent`, `returnValue` or `cancelBubble`.
+- `trusted-json-set` modifying a native `Promise` returned by the intercepted method, e.g. `Response.prototype.json`,
+  instead of the value it is fulfilled with [#585]. The value is modified now, and a new promise of it is returned,
+  while a rejection is passed through. In logging-only mode, the value is logged, and the original promise is
+  returned. Promises of polyfills or libraries which replace `window.Promise`, e.g. zone.js, are not supported.
+  `stack` is matched when the method is called, so it works for such values as well. Also, the intercepted method
+  is no longer called again if it throws an error.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 [#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
+[#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
 
 ### Security
 

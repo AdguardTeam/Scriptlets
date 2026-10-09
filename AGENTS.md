@@ -439,6 +439,34 @@ Project-specific rules:
     read, so a wrapper looked up by one `capture` value and registered with
     another cannot be removed and is not deduplicated.
 
+16. Scriptlets which intercept an arbitrary method and process its return
+    value, e.g. `trusted-json-set`, MUST process the value which a returned
+    promise is fulfilled with, not the promise itself. Detect it with
+    `isNativePromise()` against the `Promise` saved when the scriptlet runs,
+    return the promise chained with the saved native `Promise.prototype.then`,
+    or the original promise if its value is only logged, and keep other
+    results, including promises of polyfills and other thenables,
+    synchronous. `stack` MUST be matched once, when
+    the method is called, and the intercepted method MUST NOT be called again
+    if it throws. A stack trace for `matchStackTrace()` created by the wrapper
+    called by the page MUST be created in the wrapper itself and passed
+    through `addStackTraceMessageLine()`, not created by a function called by
+    the wrapper to add a frame instead.
+
+    **Rationale**: Path setters create missing properties on the promise
+    itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
+    The caller is no longer in the stack when the promise is fulfilled, and
+    the page may replace `Promise` or `then` of the promise. Native APIs and
+    async functions return native promises even then, while calling `then` of
+    any other object would turn its synchronous result into a promise for any
+    page object with a `then()` method. Calling the method again repeats its
+    side effects, e.g. consuming the body of a `Response`.
+    `matchStackTrace()` removes the first two lines of the stack trace, which
+    in Firefox and Safari has no error message line, so the frame of the page
+    function which calls the wrapper would be removed there. Corelibs builds
+    are minified with Terser, which inlines such function, so its frame
+    is not in the stack trace there, while the wrapper is called by the page.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,
