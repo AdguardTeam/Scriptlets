@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-json-set-xhr-response';
@@ -197,6 +197,32 @@ if (isSupported) {
         };
 
         getXhrContent();
+    });
+
+    test('applies when stack matches in Firefox stack trace format in xhr response', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', 'getXhrContent']);
+
+        const done = assert.async();
+        const getXhrContent = () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.onload = () => {
+                assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+                assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+                done();
+            };
+            xhr.responseType = 'json';
+            xhr.send();
+        };
+
+        // Stack trace of Firefox and Safari has no error message line,
+        // so the frame of the function which calls the method should not be removed as the scriptlet's own one
+        const restoreStackTraceFormat = useFirefoxStackTraceFormat();
+        try {
+            getXhrContent();
+        } finally {
+            restoreStackTraceFormat();
+        }
     });
 
     test('keeps request data isolated for multiple matched xhr instances', async (assert) => {

@@ -23,6 +23,7 @@ import {
     type XMLHttpRequestSharedRequestData,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     getMatchPropsData,
     getRequestProps,
@@ -273,7 +274,9 @@ export function jsonPruneXhrResponse(
         // so it has to be checked earlier
         const stackTrace = new Error().stack || '';
 
-        if (!xhrData || (stack && !matchStackTrace(stack, stackTrace))) {
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (!xhrData || (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(stackTrace))))) {
             xhrRequestHeaders.delete(thisArg);
             matchedXhrRequests.delete(thisArg);
             return Reflect.apply(target, thisArg, args);
@@ -450,6 +453,7 @@ jsonPruneXhrResponse.injections = [
     getXhrData,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     getMatchPropsData,
     getRequestProps,

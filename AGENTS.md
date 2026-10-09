@@ -448,10 +448,7 @@ Project-specific rules:
     results, including promises of polyfills and other thenables,
     synchronous. `stack` MUST be matched once, when
     the method is called, and the intercepted method MUST NOT be called again
-    if it throws. A stack trace for `matchStackTrace()` created by the wrapper
-    called by the page MUST be created in the wrapper itself and passed
-    through `addStackTraceMessageLine()`, not created by a function called by
-    the wrapper to add a frame instead.
+    if it throws.
 
     **Rationale**: Path setters create missing properties on the promise
     itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
@@ -461,11 +458,26 @@ Project-specific rules:
     any other object would turn its synchronous result into a promise for any
     page object with a `then()` method. Calling the method again repeats its
     side effects, e.g. consuming the body of a `Response`.
-    `matchStackTrace()` removes the first two lines of the stack trace, which
-    in Firefox and Safari has no error message line, so the frame of the page
-    function which calls the wrapper would be removed there. Corelibs builds
-    are minified with Terser, which inlines such function, so its frame
-    is not in the stack trace there, while the wrapper is called by the page.
+
+17. A stack trace for `matchStackTrace()` created by a function which the page
+    calls, e.g. a wrapper of the intercepted method or its Proxy trap, MUST be
+    created in that function itself, and, only if `stack` is set, passed
+    through `addStackTraceMessageLine()` to be matched, e.g.
+    `matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))`.
+    It MUST NOT be created by a function which the wrapper calls to add
+    a frame instead. A scriptlet which suspends matching while it processes
+    a call, e.g. by `isMatchingSuspended`, MUST resume it on every return path,
+    including the one for a stack trace which does not match.
+
+    **Rationale**: `matchStackTrace()` removes the first two lines of the stack
+    trace as the scriptlet's own ones. In Firefox and Safari the stack trace
+    has no error message line, so the frame of the page function which calls
+    the wrapper would be removed there. Corelibs builds are minified with
+    Terser, which inlines a function called by the wrapper, so its frame is not
+    in the stack trace there. The page may make the stack trace a non-string
+    value, e.g. by `Error.prepareStackTrace`, which should not affect rules
+    without `stack`. A call from another function would disable the rule for
+    the next calls otherwise, e.g. in `trusted-replace-outbound-text`.
 
 ### III. Testing discipline
 

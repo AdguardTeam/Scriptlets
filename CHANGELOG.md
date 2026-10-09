@@ -176,6 +176,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   returned. Promises of polyfills or libraries which replace `window.Promise`, e.g. zone.js, are not supported.
   `stack` is matched when the method is called, so it works for such values as well. Also, the intercepted method
   is no longer called again if it throws an error.
+- `stack` of `trusted-replace-outbound-text`, `trusted-suppress-native-method`, `json-prune-xhr-response`
+  and `trusted-json-set-xhr-response` not matching the function which calls the intercepted method in browsers
+  whose stack traces have no error message line, e.g. Firefox, as the frame of that function was removed
+  as the scriptlet's own one.
+- `trusted-replace-outbound-text` with `stack` not modifying any content after the intercepted method is called
+  from a function which does not match `stack`, e.g. by another script of the page.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 [#582]: https://github.com/AdguardTeam/Scriptlets/issues/582

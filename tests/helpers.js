@@ -31,6 +31,30 @@ export const getRandomNumber = (min, max) => {
 export const evalWrapper = eval;
 
 /**
+ * Makes stack traces of errors created in Chrome look like the ones of Firefox and Safari,
+ * i.e. without the error message line, so the first line is the frame which has created the error,
+ * e.g. `objectWrapper@https://example.org/script.js:1:2`.
+ *
+ * It uses `Error.prepareStackTrace()` of V8, i.e. Chrome and Node.js, while in Firefox it changes nothing,
+ * so the stack traces have their native format there.
+ *
+ * @returns {Function} function which restores the format of stack traces
+ */
+export const useFirefoxStackTraceFormat = () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+    Error.prepareStackTrace = (error, callSites) => callSites
+        .map((callSite) => {
+            const location = `${callSite.getFileName()}:${callSite.getLineNumber()}:${callSite.getColumnNumber()}`;
+            return `${callSite.getFunctionName() || ''}@${location}`;
+        })
+        .join('\n');
+
+    return () => {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+    };
+};
+
+/**
  * Fetches and parses the redirects YAML file, returning an instance of Redirects.
  * @typedef {import('./path/to/redirects').Redirects} Redirects
  * @returns {Promise<Redirects>} A promise that resolves to an instance of Redirects.

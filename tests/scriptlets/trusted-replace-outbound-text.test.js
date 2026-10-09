@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-replace-outbound-text';
@@ -131,6 +131,33 @@ test('replace text - JSON.stringify - match stack', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     };
     testStackFunction();
+});
+
+test('replace text - JSON.stringify - match stack in Firefox stack trace format', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const testStackFunction = () => JSON.stringify({ loadAds: true, content: 'bar' });
+
+    // Stack trace of Firefox and Safari has no error message line,
+    // so the frame of the function which calls the method should not be removed as the scriptlet's own one
+    const restoreStackTraceFormat = useFirefoxStackTraceFormat();
+    let result;
+    try {
+        result = testStackFunction();
+    } finally {
+        restoreStackTraceFormat();
+    }
+
+    assert.strictEqual(result, '{"loadAds":false,"content":"bar"}', 'Content modified');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('replace text - JSON.stringify - match stack after a call with NOT matching stack', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const otherFunction = () => JSON.stringify({ loadAds: true });
+    const testStackFunction = () => JSON.stringify({ loadAds: true });
+
+    assert.strictEqual(otherFunction(), '{"loadAds":true}', 'Content not modified for NOT matching stack');
+    assert.strictEqual(testStackFunction(), '{"loadAds":false}', 'Content modified for matching stack after it');
 });
 
 test('test stack - JSON.stringify - NOT match stack', (assert) => {

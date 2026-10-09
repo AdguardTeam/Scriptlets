@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
 import { noopFunc } from '../../src/helpers';
 
 const { test, module } = QUnit;
@@ -354,4 +354,26 @@ test('Regexp with pipe as signatureStr', (assert) => {
     assert.strictEqual(item, 'test-value-3', 'Call with "other3" regexp part was not prevented');
     assert.strictEqual(window.hit, undefined, 'hit should not fire');
     clearGlobalProps('hit');
+});
+
+test('Match: stack trace in Firefox stack trace format', (assert) => {
+    runScriptlet(name, ['testMatching', '"test"', 'prevent', 'testStackFunction']);
+    const testStackFunction = () => window.testMatching('test');
+    const otherFunction = () => window.testMatching('test');
+
+    // Stack trace of Firefox and Safari has no error message line,
+    // so the frame of the function which calls the method should not be removed as the scriptlet's own one
+    const restoreStackTraceFormat = useFirefoxStackTraceFormat();
+    let matchingResult;
+    let otherResult;
+    try {
+        otherResult = otherFunction();
+        matchingResult = testStackFunction();
+    } finally {
+        restoreStackTraceFormat();
+    }
+
+    assert.ok(otherResult, 'Call with NOT matching stack is not prevented');
+    assert.strictEqual(matchingResult, undefined, 'Call with matching stack is prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });

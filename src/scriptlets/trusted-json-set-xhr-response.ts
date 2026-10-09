@@ -8,6 +8,7 @@ import {
     type XMLHttpRequestSharedRequestData,
     jsonSetter,
     matchStackTrace,
+    addStackTraceMessageLine,
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -278,7 +279,9 @@ export function trustedJsonSetXhrResponse(
 
         const stackTrace = new Error().stack || '';
 
-        if (stack && !matchStackTrace(stack, stackTrace)) {
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(stackTrace)))) {
             xhrRequestHeaders.delete(thisArg);
             matchedXhrRequests.delete(thisArg);
             return Reflect.apply(target, thisArg, args);
@@ -476,6 +479,7 @@ trustedJsonSetXhrResponse.injections = [
     jsonPath,
     jsonSetter,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     getMatchPropsData,

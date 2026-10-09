@@ -1,6 +1,7 @@
 import {
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
     getPropertyInChain,
     getWildcardPropertyInChain,
     logMessage,
@@ -245,7 +246,11 @@ export function trustedReplaceOutboundText(
         hit(source);
         const result = Reflect.apply(target, thisArg, argumentsList);
 
-        if (stack && !matchStackTrace(stack, new Error().stack || '')) {
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))) {
+            // Matching is not suspended for the next calls, which may match
+            isMatchingSuspended = false;
             return result;
         }
 
@@ -293,6 +298,7 @@ trustedReplaceOutboundText.primaryName = trustedReplaceOutboundTextNames[0];
 trustedReplaceOutboundText.injections = [
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
     getPropertyInChain,
     getWildcardPropertyInChain,
     logMessage,

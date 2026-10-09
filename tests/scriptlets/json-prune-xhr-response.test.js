@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'json-prune-xhr-response';
@@ -588,6 +588,43 @@ if (isSupported) {
             xhr.send();
         };
         getContentFunc();
+    });
+
+    test('Match stack trace in Firefox stack trace format - prune content', async (assert) => {
+        const URL = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const METHOD = 'GET';
+
+        const expectedJson = {
+            b2: 'test',
+            c3: 3,
+        };
+
+        const PROPS_TO_REMOVE = 'a1';
+        const PROPS_TO_MATCH = 'test01';
+        const STACK = 'getContentFunc';
+        runScriptlet(name, [PROPS_TO_REMOVE, '', PROPS_TO_MATCH, STACK]);
+
+        const done = assert.async();
+        const getContentFunc = () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open(METHOD, URL);
+            xhr.onload = () => {
+                assert.deepEqual(xhr.response, expectedJson, 'Content pruned');
+                assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+                done();
+            };
+            xhr.responseType = 'json';
+            xhr.send();
+        };
+
+        // Stack trace of Firefox and Safari has no error message line,
+        // so the frame of the function which calls the method should not be removed as the scriptlet's own one
+        const restoreStackTraceFormat = useFirefoxStackTraceFormat();
+        try {
+            getContentFunc();
+        } finally {
+            restoreStackTraceFormat();
+        }
     });
 
     test('Stack trace not matched - do not prune content', async (assert) => {

@@ -6,6 +6,7 @@ import {
     isValueMatched,
     getAbortFunc,
     matchStackTrace,
+    addStackTraceMessageLine,
     getErrorMessage,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
@@ -188,7 +189,9 @@ export function trustedSuppressNativeMethod(
 
         isMatchingSuspended = true;
 
-        if (stack && !matchStackTrace(stack, new Error().stack || '')) {
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))) {
             isMatchingSuspended = false;
             return Reflect.apply(target, thisArg, argumentsList);
         }
@@ -222,6 +225,7 @@ trustedSuppressNativeMethod.injections = [
     isValueMatched,
     getAbortFunc,
     matchStackTrace,
+    addStackTraceMessageLine,
     getErrorMessage,
     splitByPipeRespectingRegex,
     // following helpers should be imported and injected

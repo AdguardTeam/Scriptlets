@@ -9,7 +9,7 @@ import {
 } from 'vitest';
 
 import { trustedJsonSet } from '../../src/scriptlets/trusted-json-set';
-import { clearGlobalProps } from '../helpers';
+import { clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
 
 const nativeStringify = JSON.stringify;
 const nativeParse = JSON.parse;
@@ -330,33 +330,16 @@ describe('Test trusted-json-set with a stack trace which is not a string', () =>
 });
 
 describe('Test trusted-json-set stack matching with Firefox stack trace format', () => {
-    const nativePrepareStackTrace = Error.prepareStackTrace;
     const nativeResponseJson = Response.prototype.json;
-
-    /**
-     * Formats stack trace like Firefox and Safari do, i.e. without the error message line,
-     * so the first line is the frame which has created the error,
-     * e.g. `objectWrapper@http://example.org/script.js:1:2`.
-     *
-     * @param {Error} error error which stack trace is formatted
-     * @param {object[]} callSites V8 call sites of the stack trace
-     * @returns {string} formatted stack trace
-     */
-    const formatFirefoxStackTrace = (error, callSites) => callSites
-        .map((callSite) => {
-            const functionName = callSite.getFunctionName() || '';
-            const location = `${callSite.getFileName()}:${callSite.getLineNumber()}:${callSite.getColumnNumber()}`;
-            return `${functionName}@${location}`;
-        })
-        .join('\n');
+    let restoreStackTraceFormat;
 
     beforeEach(() => {
         vi.useRealTimers();
-        Error.prepareStackTrace = formatFirefoxStackTrace;
+        restoreStackTraceFormat = useFirefoxStackTraceFormat();
     });
 
     afterEach(() => {
-        Error.prepareStackTrace = nativePrepareStackTrace;
+        restoreStackTraceFormat();
         Response.prototype.json = nativeResponseJson;
     });
 
