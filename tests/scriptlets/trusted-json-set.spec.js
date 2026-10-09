@@ -327,6 +327,41 @@ describe('Test trusted-json-set with a stack trace which is not a string', () =>
 
         expect(result).toEqual({ ads: { enabled: false } });
     });
+
+    describe('which cannot be read', () => {
+        // Reading `stack` of an error throws if `Error.prepareStackTrace` of the page throws
+        const throwingPrepareStackTrace = () => {
+            throw new Error('prepareStackTrace error');
+        };
+
+        test('modifies the value without stack', () => {
+            trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false');
+
+            Error.prepareStackTrace = throwingPrepareStackTrace;
+            let result;
+            try {
+                result = JSON.parse('{"ads":{"enabled":true}}');
+            } finally {
+                Error.prepareStackTrace = nativePrepareStackTrace;
+            }
+
+            expect(result).toEqual({ ads: { enabled: false } });
+        });
+
+        test('does not modify the value with stack, as it cannot be matched', () => {
+            trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false', '', 'result', 'anyFunction');
+
+            Error.prepareStackTrace = throwingPrepareStackTrace;
+            let result;
+            try {
+                result = JSON.parse('{"ads":{"enabled":true}}');
+            } finally {
+                Error.prepareStackTrace = nativePrepareStackTrace;
+            }
+
+            expect(result).toEqual({ ads: { enabled: true } });
+        });
+    });
 });
 
 describe('Test trusted-json-set stack matching with Firefox stack trace format', () => {

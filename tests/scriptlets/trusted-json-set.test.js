@@ -1480,3 +1480,34 @@ test('Storage method: modifies the JSON read by localStorage.getItem', (assert) 
     assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'getItem'), 'Storage has no own method');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
+
+test('modifies the value without stack if the stack trace cannot be read', (assert) => {
+    runScriptlet(name, ['JSON.parse', 'ads.enabled', 'false']);
+
+    // Page may make reading the stack trace throw, e.g. by `Error.prepareStackTrace` in Chrome,
+    // or by a getter of `Error.prototype.stack` in Firefox
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+    const nativeStackDescriptor = Object.getOwnPropertyDescriptor(Error.prototype, 'stack');
+    const throwError = () => {
+        throw new Error('Stack trace cannot be read');
+    };
+    Error.prepareStackTrace = throwError;
+    // eslint-disable-next-line no-extend-native
+    Object.defineProperty(Error.prototype, 'stack', { configurable: true, get: throwError });
+
+    let result;
+    try {
+        result = JSON.parse('{"ads":{"enabled":true}}');
+    } finally {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+        if (nativeStackDescriptor) {
+            // eslint-disable-next-line no-extend-native
+            Object.defineProperty(Error.prototype, 'stack', nativeStackDescriptor);
+        } else {
+            delete Error.prototype.stack;
+        }
+    }
+
+    assert.deepEqual(result, { ads: { enabled: false } }, 'should modify the payload');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});

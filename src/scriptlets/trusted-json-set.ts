@@ -1148,17 +1148,28 @@ export function trustedJsonSet(
             let shouldProcess = false;
             let modifiedThisArg = thisArg;
 
+            // Stack trace is matched once, when the method is called, as the value of a returned promise
+            // is modified on its fulfillment, when the caller is no longer in the stack.
+            // It is created here, in the wrapper called by the page, and gets the error message line
+            // in all browsers, so `matchStackTrace()` keeps the frame of the caller,
+            // regardless of the minification, which may inline a function created it otherwise.
+            // The page may make reading it throw, e.g. by `Error.prepareStackTrace`, or make it a non-string value,
+            // which should not stop the rules without `stack` from working, so it is read separately,
+            // and it is not processed without `stack`
+            let isStackTraceRead = false;
             try {
-                // Stack trace is matched once, when the method is called, as the value of a returned promise
-                // is modified on its fulfillment, when the caller is no longer in the stack.
-                // It is created here, in the wrapper called by the page, and gets the error message line
-                // in all browsers, so `matchStackTrace()` keeps the frame of the caller,
-                // regardless of the minification, which may inline a function created it otherwise.
-                // It is not processed without `stack`, as the page may make it a non-string value,
-                // e.g. by `Error.prepareStackTrace`, which should not stop such rules from working
                 currentStackTrace = new Error().stack || '';
+                isStackTraceRead = true;
+            } catch {
+                // Rules with `stack` are not processed, as it cannot be matched
+            }
+
+            try {
                 shouldProcess = !stack
-                    || matchStackTrace(stack, addStackTraceMessageLine(String(currentStackTrace)));
+                    || (
+                        isStackTraceRead
+                        && matchStackTrace(stack, addStackTraceMessageLine(String(currentStackTrace)))
+                    );
 
                 if (shouldProcess) {
                     const selectedArgumentIndexes = getSelectedArgumentIndexes(args.length);

@@ -463,6 +463,8 @@ Project-specific rules:
     itself, the stack trace MUST be passed through `addStackTraceMessageLine()`
     before it is matched, and only if `stack` is set, e.g.
     `matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))`.
+    If it is read for rules without `stack` as well, e.g. for logs, an error
+    of reading it MUST NOT stop such rules, e.g. it is read in its own `try`.
     A new function MUST NOT be added only to create the stack trace one call
     deeper instead. A scriptlet which suspends matching while it processes
     a call, e.g. by `isMatchingSuspended`, MUST resume it on every return path,
@@ -478,8 +480,10 @@ Project-specific rules:
     scriptlets create in a function called by the wrapper, e.g.
     `checkArgument()` of `trusted-replace-argument` or the getter handler of
     `set-constant`, keep the frame of the caller while that function is not
-    inlined. The page may make the stack trace a non-string value, e.g. by
-    `Error.prepareStackTrace`, which should not affect rules without `stack`.
+    inlined. The page may make the stack trace a non-string value, or make
+    reading it throw, e.g. by `Error.prepareStackTrace` in Chrome or a getter
+    of `Error.prototype.stack` in Firefox, which should not affect rules without
+    `stack`.
     A call from another function, or an error of the intercepted method, would
     disable the rule for the next calls otherwise, e.g. in
     `trusted-replace-outbound-text`.
