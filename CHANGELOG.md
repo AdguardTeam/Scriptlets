@@ -189,6 +189,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `trusted-replace-outbound-text` not modifying any content after the intercepted method is called
   from a function which does not match `stack`, e.g. by another script of the page, or after it throws an error,
   e.g. `JSON.stringify` of an object with a circular reference.
+- `trusted-replace-argument` calling the intercepted method or constructor again if it throws an error,
+  so its side effects were repeated, and the second call could even succeed.
+- `trusted-suppress-native-method` throwing an error to the page and no longer intercepting the next calls
+  after an error while a call is matched, e.g. thrown by a getter of an argument. Such call is not suppressed now.
 - `trusted-suppress-native-method`, `trusted-json-set`, `trusted-replace-argument`, `trusted-replace-outbound-text`,
   `trusted-prune-inbound-object` and `call-nothrow` not intercepting methods of `localStorage` and `sessionStorage`,
   e.g. `localStorage.setItem`, in Firefox, and storing an item named after the method in the storage instead,

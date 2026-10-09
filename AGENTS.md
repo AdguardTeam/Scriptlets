@@ -490,7 +490,9 @@ Project-specific rules:
     is the base object if that object is not the base one, e.g.
     `if (methodOwner !== base && thisArg !== base)` in the wrapper. Such calls
     MUST be passed through before any processing, e.g. outside of a `try`
-    whose `catch` calls the method again.
+    whose `catch` calls the method again. The intercepted method itself MUST be
+    called once, outside of such `try`, so its error is passed to the page as
+    is and its side effects are not repeated.
 
     **Rationale**: Assigning a property of a storage, i.e. `localStorage` or
     `sessionStorage`, stores an item in Firefox, even if it is a method, e.g.

@@ -356,19 +356,18 @@ export function trustedReplaceArgument(
 
     let isMatchingSuspended = false;
 
-    const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
-        // Calls on another storage are not processed, so they are passed through outside of `try`,
-        // as its `catch` calls the method again
-        if (methodOwner !== base && thisArg !== base) {
-            return Reflect.apply(target, thisArg, argumentsList);
-        }
-
+    /**
+     * Logs the arguments of the intercepted call, and replaces the target one if it matches.
+     *
+     * The arguments are replaced in a copy, so the original ones are returned if an error occurs,
+     * which is logged, and the intercepted method is called once by the wrapper anyway.
+     *
+     * @param argumentsList arguments of the intercepted call
+     * @returns arguments to call the intercepted method with
+     */
+    const processArguments = (argumentsList: unknown[]): unknown[] => {
+        isMatchingSuspended = true;
         try {
-            if (isMatchingSuspended) {
-                return Reflect.apply(target, thisArg, argumentsList);
-            }
-            isMatchingSuspended = true;
-
             // Log the original arguments before modification
             if (verbose === 'true') {
                 const formattedMessage = createFormattedMessage(argumentsList);
@@ -377,8 +376,7 @@ export function trustedReplaceArgument(
 
             // If we only need to log the arguments, skip further processing
             if (SHOULD_LOG_ONLY) {
-                isMatchingSuspended = false;
-                return Reflect.apply(target, thisArg, argumentsList);
+                return argumentsList;
             }
 
             const argumentToReplace = argumentsList[Number(argumentIndex)];
@@ -386,76 +384,47 @@ export function trustedReplaceArgument(
             const shouldSetArgument = checkArgument(argumentToReplace);
 
             if (!shouldSetArgument) {
-                isMatchingSuspended = false;
-                return Reflect.apply(target, thisArg, argumentsList);
+                return argumentsList;
             }
 
-            replaceTargetArgument(argumentsList);
+            const modifiedArguments = argumentsList.slice();
+            replaceTargetArgument(modifiedArguments);
 
             // Log the modified arguments after replacement
             if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(argumentsList, 'modified');
+                const formattedMessage = createFormattedMessage(modifiedArguments, 'modified');
                 logMessage(source, formattedMessage);
             }
 
             hit(source);
 
-            isMatchingSuspended = false;
-
-            return Reflect.apply(target, thisArg, argumentsList);
+            return modifiedArguments;
         } catch (error) {
-            isMatchingSuspended = false;
             logMessage(source, `Unexpected error during argument replacement: ${(error as Error).message}`);
-            return Reflect.apply(target, thisArg, argumentsList);
+            return argumentsList;
+        } finally {
+            isMatchingSuspended = false;
         }
     };
 
+    // The intercepted method is called once by the wrappers, outside of `try`,
+    // so its error is passed to the page as is, and it is not called again
+
+    const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
+        // Calls on another storage are not processed
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
+            return Reflect.apply(target, thisArg, argumentsList);
+        }
+
+        return Reflect.apply(target, thisArg, processArguments(argumentsList));
+    };
+
     const constructWrapper = (target: Function, argumentsList: unknown[], newTarget: any) => {
-        try {
-            if (isMatchingSuspended) {
-                return Reflect.construct(target, argumentsList, newTarget);
-            }
-            isMatchingSuspended = true;
-
-            // Log the original arguments before modification
-            if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(argumentsList);
-                logMessage(source, formattedMessage);
-            }
-
-            // If we only need to log the arguments, skip further processing
-            if (SHOULD_LOG_ONLY) {
-                isMatchingSuspended = false;
-                return Reflect.construct(target, argumentsList, newTarget);
-            }
-
-            const argumentToReplace = argumentsList[Number(argumentIndex)];
-
-            const shouldSetArgument = checkArgument(argumentToReplace);
-
-            if (!shouldSetArgument) {
-                isMatchingSuspended = false;
-                return Reflect.construct(target, argumentsList, newTarget);
-            }
-
-            replaceTargetArgument(argumentsList);
-
-            // Log the modified arguments after replacement
-            if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(argumentsList, 'modified');
-                logMessage(source, formattedMessage);
-            }
-
-            hit(source);
-
-            isMatchingSuspended = false;
-
-            return Reflect.construct(target, argumentsList, newTarget);
-        } catch (error) {
-            isMatchingSuspended = false;
-            logMessage(source, `Unexpected error during argument replacement: ${(error as Error).message}`);
+        if (isMatchingSuspended) {
             return Reflect.construct(target, argumentsList, newTarget);
         }
+
+        return Reflect.construct(target, processArguments(argumentsList), newTarget);
     };
 
     const getWrapper = (target: Function, propName: string, receiver: any) => {

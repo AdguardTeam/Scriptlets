@@ -376,3 +376,56 @@ test('Storage method: does not call the method on another storage again if it th
     assert.strictEqual(sessionStorage.getItem('config'), null, 'Item not stored');
     assert.strictEqual(window.hit, undefined, 'hit function should not fire');
 });
+
+test('calls the intercepted method once if it throws', (assert) => {
+    let calls = 0;
+    window.throwingFunc = (arg) => {
+        calls += 1;
+        throw new Error(`Page error: ${arg}`);
+    };
+    runScriptlet(name, ['throwingFunc', '0', 'replaced']);
+
+    assert.throws(() => window.throwingFunc('original'), /Page error: replaced/, 'Error of the method thrown');
+    assert.strictEqual(calls, 1, 'Method called once');
+
+    clearGlobalProps('throwingFunc');
+});
+
+test('calls the intercepted constructor once if it throws', (assert) => {
+    let calls = 0;
+    window.ThrowingConstructor = function ThrowingConstructor() {
+        calls += 1;
+        throw new Error('Constructor error');
+    };
+    runScriptlet(name, ['ThrowingConstructor', '0', 'replaced']);
+
+    assert.throws(() => new window.ThrowingConstructor('original'), /Constructor error/, 'Error thrown');
+    assert.strictEqual(calls, 1, 'Constructor called once');
+
+    clearGlobalProps('ThrowingConstructor');
+});
+
+test('calls the intercepted method once with the original arguments if the replacement fails', (assert) => {
+    let calls = 0;
+    let receivedArgument;
+    window.receivingFunc = (arg) => {
+        calls += 1;
+        receivedArgument = arg;
+        return 'result';
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    // Argument cannot be converted to a string to be matched with the pattern
+    const throwingArgument = () => {};
+    throwingArgument.toString = () => {
+        throw new Error('Conversion error');
+    };
+
+    assert.strictEqual(window.receivingFunc(throwingArgument), 'result', 'Result of the method returned');
+    assert.strictEqual(calls, 1, 'Method called once');
+    // QUnit converts the values of `strictEqual()` to strings, which throws for this argument
+    assert.ok(receivedArgument === throwingArgument, 'Original argument passed');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+
+    clearGlobalProps('receivingFunc');
+});

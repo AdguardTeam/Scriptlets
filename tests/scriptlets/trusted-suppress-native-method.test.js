@@ -416,3 +416,17 @@ test('Storage method: rules for both storages', (assert) => {
     assert.strictEqual(sessionStorage.getItem('local-key'), 'value', 'localStorage rule ignored sessionStorage');
     assert.strictEqual(sessionStorage.getItem('session-key'), null, 'sessionStorage rule prevented its call');
 });
+
+test('Error during matching does not disable the rule', (assert) => {
+    runScriptlet(name, ['testMatching', '{"key":"value"}', 'prevent']);
+    const throwingArgument = {
+        get key() {
+            throw new Error('Getter error');
+        },
+    };
+
+    assert.ok(window.testMatching(throwingArgument), 'Call which cannot be matched is not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    assert.notOk(window.testMatching({ key: 'value' }), 'Next matching call is prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});

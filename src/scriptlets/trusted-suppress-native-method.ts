@@ -191,17 +191,20 @@ export function trustedSuppressNativeMethod(
             return Reflect.apply(target, thisArg, argumentsList);
         }
 
+        let isMatching = false;
         isMatchingSuspended = true;
-
-        // Error message line is added to the stack trace created here, in the wrapper called by the page,
-        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
-        if (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))) {
+        try {
+            // Error message line is added to the stack trace created here, in the wrapper called by the page,
+            // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+            isMatching = (!stack || matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || ''))))
+                && matchMethodCall(argumentsList, signatureMatcher);
+        } catch (e) {
+            // e.g. a getter of an argument which throws, so the call is not suppressed
+            logMessage(source, `Could not match the call: ${getErrorMessage(e)}`);
+        } finally {
+            // Matching is resumed on every return path, as the next calls would not be processed otherwise
             isMatchingSuspended = false;
-            return Reflect.apply(target, thisArg, argumentsList);
         }
-        const isMatching = matchMethodCall(argumentsList, signatureMatcher);
-
-        isMatchingSuspended = false;
 
         if (isMatching) {
             hit(source);
