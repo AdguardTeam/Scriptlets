@@ -95,6 +95,8 @@ test('replace text - log original and modified content - atob', (assert) => {
 });
 
 test('text not matched - log original content and information about not modified content - atob', (assert) => {
+    // Both log assertions should run, as they are conditional
+    assert.expect(4);
     console.log = (...args) => {
         if (args.length === 1 && args[0].includes('Original text content:')) {
             assert.ok(args[0].includes('Text not matched.'), 'should log original text in console');
@@ -105,7 +107,7 @@ test('text not matched - log original content and information about not modified
         nativeConsole(...args);
     };
 
-    runScriptlet(name, ['atob', 'NOT_MATCH', '', '', 'true']);
+    runScriptlet(name, ['atob', 'NOT_MATCH', '', '', '', 'true']);
 
     const text = btoa('Text not matched.');
     const result = atob(text);
@@ -166,7 +168,22 @@ test('replace text - JSON.stringify - match stack after a call with NOT matching
     const testStackFunction = () => JSON.stringify({ loadAds: true });
 
     assert.strictEqual(otherFunction(), '{"loadAds":true}', 'Content not modified for NOT matching stack');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire for NOT matching stack');
     assert.strictEqual(testStackFunction(), '{"loadAds":false}', 'Content modified for matching stack after it');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for matching stack');
+});
+
+test('replace text - JSON.stringify - after a call which throws', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false']);
+    const circular = {};
+    circular.self = circular;
+
+    assert.throws(() => JSON.stringify(circular), TypeError, 'Error of the method thrown');
+    assert.strictEqual(
+        JSON.stringify({ loadAds: true }),
+        '{"loadAds":false}',
+        'Content modified for the next call',
+    );
 });
 
 test('test stack - JSON.stringify - NOT match stack', (assert) => {
@@ -178,7 +195,7 @@ test('test stack - JSON.stringify - NOT match stack', (assert) => {
             '{"foo":true,"bar":false}',
             'Content not modified',
         );
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
     };
     testFunction();
 });

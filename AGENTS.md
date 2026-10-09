@@ -440,15 +440,14 @@ Project-specific rules:
     another cannot be removed and is not deduplicated.
 
 16. Scriptlets which intercept an arbitrary method and process its return
-    value, e.g. `trusted-json-set`, MUST process the value which a returned
-    promise is fulfilled with, not the promise itself. Detect it with
-    `isNativePromise()` against the `Promise` saved when the scriptlet runs,
-    return the promise chained with the saved native `Promise.prototype.then`,
-    or the original promise if its value is only logged, and keep other
-    results, including promises of polyfills and other thenables,
-    synchronous. `stack` MUST be matched once, when
-    the method is called, and the intercepted method MUST NOT be called again
-    if it throws.
+    value as JSON, e.g. `trusted-json-set`, MUST process the value which
+    a returned promise is fulfilled with, not the promise itself. Detect it
+    with `isNativePromise()` against the `Promise` saved when the scriptlet
+    runs, return the promise chained with the saved native
+    `Promise.prototype.then`, or the original promise if its value is only
+    logged, and keep other results, including promises of polyfills and other
+    thenables, synchronous. `stack` MUST be matched once, when the method is
+    called, and the intercepted method MUST NOT be called again if it throws.
 
     **Rationale**: Path setters create missing properties on the promise
     itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
@@ -459,25 +458,31 @@ Project-specific rules:
     page object with a `then()` method. Calling the method again repeats its
     side effects, e.g. consuming the body of a `Response`.
 
-17. A stack trace for `matchStackTrace()` created by a function which the page
-    calls, e.g. a wrapper of the intercepted method or its Proxy trap, MUST be
-    created in that function itself, and, only if `stack` is set, passed
-    through `addStackTraceMessageLine()` to be matched, e.g.
+17. If a function which the page calls, e.g. a wrapper of the intercepted
+    method or its Proxy trap, creates a stack trace for `matchStackTrace()`
+    itself, the stack trace MUST be passed through `addStackTraceMessageLine()`
+    before it is matched, and only if `stack` is set, e.g.
     `matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))`.
-    It MUST NOT be created by a function which the wrapper calls to add
-    a frame instead. A scriptlet which suspends matching while it processes
+    A new function MUST NOT be added only to create the stack trace one call
+    deeper instead. A scriptlet which suspends matching while it processes
     a call, e.g. by `isMatchingSuspended`, MUST resume it on every return path,
-    including the one for a stack trace which does not match.
+    e.g. by `try`/`finally`, including a stack trace which does not match and
+    an error thrown by the intercepted method.
 
     **Rationale**: `matchStackTrace()` removes the first two lines of the stack
     trace as the scriptlet's own ones. In Firefox and Safari the stack trace
     has no error message line, so the frame of the page function which calls
     the wrapper would be removed there. Corelibs builds are minified with
-    Terser, which inlines a function called by the wrapper, so its frame is not
-    in the stack trace there. The page may make the stack trace a non-string
-    value, e.g. by `Error.prepareStackTrace`, which should not affect rules
-    without `stack`. A call from another function would disable the rule for
-    the next calls otherwise, e.g. in `trusted-replace-outbound-text`.
+    Terser, which may inline a function added only to create the stack trace,
+    so its frame is not in the stack trace there. Stack traces which existing
+    scriptlets create in a function called by the wrapper, e.g.
+    `checkArgument()` of `trusted-replace-argument` or the getter handler of
+    `set-constant`, keep the frame of the caller while that function is not
+    inlined. The page may make the stack trace a non-string value, e.g. by
+    `Error.prepareStackTrace`, which should not affect rules without `stack`.
+    A call from another function, or an error of the intercepted method, would
+    disable the rule for the next calls otherwise, e.g. in
+    `trusted-replace-outbound-text`.
 
 18. Scriptlets which intercept a method by its path, e.g. `localStorage.setItem`,
     MUST replace it in the object returned by `getMethodOwner()` for the base

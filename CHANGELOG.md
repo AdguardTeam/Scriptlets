@@ -56,6 +56,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the reason, instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
   So no element is clicked then, including the ones matched by valid selectors before the invalid one,
   e.g. a selector with a pseudo-class which is not supported by the browser.
+- `stack` of `trusted-json-set` is matched against the stack trace of the intercepted call without the frames
+  of the scriptlet itself, which it contained before. So `stack` values which matched these frames no longer match
+  the calls from other scripts, e.g. `inlineScript` if the scriptlet is injected as an inline script.
+  Also, a call which does not match `stack` is not processed at all, e.g. a JSON string returned by it
+  is not parsed and serialized again, which removed its formatting before.
+- `trusted-replace-outbound-text` with `stack` calls `hit` only for the calls which match `stack`.
 
 ### Deprecated
 
@@ -180,8 +186,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and `trusted-json-set-xhr-response` not matching the function which calls the intercepted method in browsers
   whose stack traces have no error message line, e.g. Firefox, as the frame of that function was removed
   as the scriptlet's own one.
-- `trusted-replace-outbound-text` with `stack` not modifying any content after the intercepted method is called
-  from a function which does not match `stack`, e.g. by another script of the page.
+- `trusted-replace-outbound-text` not modifying any content after the intercepted method is called
+  from a function which does not match `stack`, e.g. by another script of the page, or after it throws an error,
+  e.g. `JSON.stringify` of an object with a circular reference.
 - `trusted-suppress-native-method`, `trusted-json-set`, `trusted-replace-argument`, `trusted-replace-outbound-text`,
   `trusted-prune-inbound-object` and `call-nothrow` not intercepting methods of `localStorage` and `sessionStorage`,
   e.g. `localStorage.setItem`, in Firefox, and storing an item named after the method in the storage instead,

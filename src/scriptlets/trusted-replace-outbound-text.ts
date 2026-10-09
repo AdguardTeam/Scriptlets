@@ -246,41 +246,45 @@ export function trustedReplaceOutboundText(
             return Reflect.apply(target, thisArg, argumentsList);
         }
         isMatchingSuspended = true;
-        hit(source);
-        const result = Reflect.apply(target, thisArg, argumentsList);
+        try {
+            const result = Reflect.apply(target, thisArg, argumentsList);
 
-        // Error message line is added to the stack trace created here, in the wrapper called by the page,
-        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
-        if (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))) {
-            // Matching is not suspended for the next calls, which may match
-            isMatchingSuspended = false;
+            // Error message line is added to the stack trace created here, in the wrapper called by the page,
+            // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+            if (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))) {
+                return result;
+            }
+
+            // Only the calls which match `stack` are counted
+            hit(source);
+
+            if (typeof result === 'string') {
+                if (logOriginalContent) {
+                    logMessage(source, `Original text content: ${result}`);
+                }
+
+                const patternRegexp = toRegExp(textToReplace);
+                const modifiedContent = textToReplace || logDecodedContent
+                    ? decodeAndReplaceContent(result, patternRegexp, replacement, decodeMethod, logContent)
+                    : result;
+
+                if (logModifiedContent) {
+                    const message = modifiedContent !== result
+                        ? `Modified text content: ${modifiedContent}`
+                        : 'Text content was not modified';
+
+                    logMessage(source, message);
+                }
+
+                return modifiedContent;
+            }
+            logMessage(source, 'Content is not a string');
             return result;
-        }
-
-        if (typeof result === 'string') {
-            if (logOriginalContent) {
-                logMessage(source, `Original text content: ${result}`);
-            }
-
-            const patternRegexp = toRegExp(textToReplace);
-            const modifiedContent = textToReplace || logDecodedContent
-                ? decodeAndReplaceContent(result, patternRegexp, replacement, decodeMethod, logContent)
-                : result;
-
-            if (logModifiedContent) {
-                const message = modifiedContent !== result
-                    ? `Modified text content: ${modifiedContent}`
-                    : 'Text content was not modified';
-
-                logMessage(source, message);
-            }
-
+        } finally {
+            // Matching is resumed on every return path, including a stack trace which does not match
+            // and an error thrown by the intercepted method, as the next calls would not be processed otherwise
             isMatchingSuspended = false;
-            return modifiedContent;
         }
-        isMatchingSuspended = false;
-        logMessage(source, 'Content is not a string');
-        return result;
     };
 
     const objectHandler = {
