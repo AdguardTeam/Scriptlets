@@ -10,8 +10,9 @@ const testMatching = (arg1, arg2, arg3) => true;
 
 // Links to the original methods to restore them after each test
 const natives = {
-    'sessionStorage.getItem': sessionStorage.getItem,
-    'localStorage.getItem': localStorage.getItem,
+    // Methods of storages are replaced in Storage.prototype
+    'Storage.prototype.getItem': Storage.prototype.getItem,
+    'Storage.prototype.setItem': Storage.prototype.setItem,
     'Object.prototype.hasOwnProperty': Object.prototype.hasOwnProperty,
     'Array.isArray': Array.isArray,
     'Node.prototype.appendChild': Node.prototype.appendChild,
@@ -376,4 +377,42 @@ test('Match: stack trace in Firefox stack trace format', (assert) => {
     assert.ok(otherResult, 'Call with NOT matching stack is not prevented');
     assert.strictEqual(matchingResult, undefined, 'Call with matching stack is prevented');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Storage method: does not store an item named after the method', (assert) => {
+    runScriptlet(name, ['localStorage.setItem', '/key/|"test-value"', 'prevent']);
+
+    localStorage.setItem('test-key', 'test-value');
+
+    assert.strictEqual(localStorage.getItem('test-key'), null, 'Call was prevented');
+    assert.strictEqual(localStorage.getItem('setItem'), null, 'Item named after the method was not stored');
+    assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'setItem'), 'Storage has no own method');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});
+
+test('Storage method: matches only calls on the storage of the rule', (assert) => {
+    runScriptlet(name, ['localStorage.setItem', '/key/|"test-value"', 'prevent']);
+
+    sessionStorage.setItem('test-key', 'test-value');
+    assert.strictEqual(sessionStorage.getItem('test-key'), 'test-value', 'Call on sessionStorage was not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+
+    Storage.prototype.setItem.call(localStorage, 'test-key', 'test-value');
+    assert.strictEqual(localStorage.getItem('test-key'), null, 'Call on localStorage via the prototype was prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});
+
+test('Storage method: rules for both storages', (assert) => {
+    runScriptlet(name, ['localStorage.setItem', '"local-key"', 'prevent']);
+    runScriptlet(name, ['sessionStorage.setItem', '"session-key"', 'prevent']);
+
+    localStorage.setItem('local-key', 'value');
+    localStorage.setItem('session-key', 'value');
+    sessionStorage.setItem('local-key', 'value');
+    sessionStorage.setItem('session-key', 'value');
+
+    assert.strictEqual(localStorage.getItem('local-key'), null, 'localStorage rule prevented its call');
+    assert.strictEqual(localStorage.getItem('session-key'), 'value', 'sessionStorage rule ignored localStorage');
+    assert.strictEqual(sessionStorage.getItem('local-key'), 'value', 'localStorage rule ignored sessionStorage');
+    assert.strictEqual(sessionStorage.getItem('session-key'), null, 'sessionStorage rule prevented its call');
 });

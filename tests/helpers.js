@@ -31,6 +31,25 @@ export const getRandomNumber = (min, max) => {
 export const evalWrapper = eval;
 
 /**
+ * Saves the methods of `Storage.prototype`, in which scriptlets replace methods of storages,
+ * i.e. `localStorage` and `sessionStorage`.
+ *
+ * @returns {Function} function which restores the methods and clears both storages
+ */
+export const saveStorageMethods = () => {
+    const methodNames = ['getItem', 'setItem', 'removeItem', 'clear', 'key'];
+    const nativeMethods = methodNames.map((methodName) => Storage.prototype[methodName]);
+
+    return () => {
+        methodNames.forEach((methodName, i) => {
+            Storage.prototype[methodName] = nativeMethods[i];
+        });
+        localStorage.clear();
+        sessionStorage.clear();
+    };
+};
+
+/**
  * Makes stack traces of errors created in Chrome look like the ones of Firefox and Safari,
  * i.e. without the error message line, so the first line is the frame which has created the error,
  * e.g. `objectWrapper@https://example.org/script.js:1:2`.

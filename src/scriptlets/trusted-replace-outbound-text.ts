@@ -3,6 +3,7 @@ import {
     matchStackTrace,
     addStackTraceMessageLine,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     shouldAbortInlineOrInjectedScript,
@@ -143,7 +144,9 @@ export function trustedReplaceOutboundText(
         return;
     }
 
-    const nativeMethod = base[prop];
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base);
+    const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
         return;
@@ -239,7 +242,7 @@ export function trustedReplaceOutboundText(
         thisArg: any,
         argumentsList: unknown[],
     ) => {
-        if (isMatchingSuspended) {
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
             return Reflect.apply(target, thisArg, argumentsList);
         }
         isMatchingSuspended = true;
@@ -284,7 +287,7 @@ export function trustedReplaceOutboundText(
         apply: objectWrapper,
     };
 
-    base[prop] = new Proxy(nativeMethod, objectHandler);
+    methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
 export const trustedReplaceOutboundTextNames = [
@@ -300,6 +303,7 @@ trustedReplaceOutboundText.injections = [
     matchStackTrace,
     addStackTraceMessageLine,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     // following helpers are needed for helpers above

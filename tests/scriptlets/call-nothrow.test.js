@@ -1,8 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, saveStorageMethods } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'call-nothrow';
+
+// Scriptlets replace methods of storages in Storage.prototype
+const restoreStorage = saveStorageMethods();
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -12,6 +15,7 @@ const beforeEach = () => {
 
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
+    restoreStorage();
 };
 
 module(name, { beforeEach, afterEach });
@@ -68,5 +72,16 @@ test('call-nothrow - Object.defineProperty', (assert) => {
     }
     assert.strictEqual(testPassed, true, 'testPassed set to true');
     assert.strictEqual(foo.bar, true, 'foo.bar set to true');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Storage method: localStorage.getItem does not throw', (assert) => {
+    runScriptlet(name, ['localStorage.getItem']);
+
+    // Native method throws without arguments
+    assert.strictEqual(localStorage.getItem(), undefined, 'Error not thrown');
+    assert.throws(() => sessionStorage.getItem(), TypeError, 'Error of sessionStorage.getItem thrown');
+    assert.strictEqual(localStorage.getItem('getItem'), null, 'Item named after the method was not stored');
+    assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'getItem'), 'Storage has no own method');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });

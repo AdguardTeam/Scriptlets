@@ -2,6 +2,7 @@ import {
     hit,
     matchStackTrace,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,
@@ -227,7 +228,13 @@ export function trustedPruneInboundObject(source, functionName, propsToRemove, r
     const prunePaths = getPrunePath(propsToRemove);
     const requiredPaths = getPrunePath(requiredInitialProps);
 
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base);
+
     const objectWrapper = (target, thisArg, args) => {
+        if (methodOwner !== base && thisArg !== base) {
+            return Reflect.apply(target, thisArg, args);
+        }
         let data = args[0];
         if (typeof data === 'object') {
             data = jsonPruner(source, data, prunePaths, requiredPaths, stack, nativeObjects);
@@ -240,7 +247,7 @@ export function trustedPruneInboundObject(source, functionName, propsToRemove, r
         apply: objectWrapper,
     };
 
-    base[prop] = new Proxy(base[prop], objectHandler);
+    methodOwner[prop] = new Proxy(methodOwner[prop], objectHandler);
 }
 
 export const trustedPruneInboundObjectNames = [
@@ -255,6 +262,7 @@ trustedPruneInboundObject.injections = [
     hit,
     matchStackTrace,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,

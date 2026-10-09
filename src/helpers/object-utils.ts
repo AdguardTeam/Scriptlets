@@ -85,3 +85,27 @@ export function isNativePromise(
         return false;
     }
 }
+
+/**
+ * Returns the object in which a method of `base` should be replaced to intercept the method.
+ *
+ * It is `base` itself, except for a storage, i.e. `localStorage` or `sessionStorage`, as assigning a property
+ * of a storage stores an item in Firefox, even if the property is a method, e.g. `localStorage.setItem`,
+ * so the method is not replaced, but the storage of the page is changed.
+ * For a storage, `Storage.prototype` is returned, so the method is replaced for all storages,
+ * and its wrapper should process only the calls whose `this` is `base`, i.e. when the returned object is not `base`.
+ *
+ * @param base object which has the method, e.g. `localStorage` for `localStorage.setItem`
+ * @returns object in which the method should be replaced
+ */
+export function getMethodOwner(base: Record<string, unknown>): Record<string, unknown> {
+    try {
+        if (typeof Storage !== 'undefined' && base instanceof Storage) {
+            return Storage.prototype as unknown as Record<string, unknown>;
+        }
+    } catch {
+        // e.g. a proxy which throws in its 'getPrototypeOf' trap
+    }
+
+    return base;
+}

@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console, no-eval */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, saveStorageMethods } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-replace-argument';
@@ -15,6 +15,9 @@ const nativeObjectDefineProperty = window.Object.defineProperty;
 const nativeStringReplace = String.prototype.replace;
 const nativeSetAttribute = window.Element.prototype.setAttribute;
 const nativeJSONStringify = window.JSON.stringify;
+
+// Scriptlets replace methods of storages in Storage.prototype
+const restoreStorage = saveStorageMethods();
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -35,6 +38,7 @@ const afterEach = () => {
     window.String.prototype.replace = nativeStringReplace;
     window.Element.prototype.setAttribute = nativeSetAttribute;
     window.JSON.stringify = nativeJSONStringify;
+    restoreStorage();
 };
 
 module(name, { beforeEach, afterEach });
@@ -338,5 +342,17 @@ test('Non-string constructor argument stays intact when "replace:" pattern does 
     const result = new Array(1, 2, 3);
 
     assert.deepEqual(result, [1, 2, 3], 'Constructor arguments should stay intact');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Storage method: replaces the argument of localStorage.setItem', (assert) => {
+    runScriptlet(name, ['localStorage.setItem', '1', 'replace:/true/false/', 'ads']);
+    localStorage.setItem('config', '{"ads":true}');
+    sessionStorage.setItem('config', '{"ads":true}');
+
+    assert.strictEqual(localStorage.getItem('config'), '{"ads":false}', 'Argument replaced');
+    assert.strictEqual(sessionStorage.getItem('config'), '{"ads":true}', 'Argument of sessionStorage not replaced');
+    assert.strictEqual(localStorage.getItem('setItem'), null, 'Item named after the method was not stored');
+    assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'setItem'), 'Storage has no own method');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });

@@ -13,6 +13,7 @@ import {
     matchStackTrace,
     addStackTraceMessageLine,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,
@@ -714,7 +715,9 @@ export function trustedJsonSet(
         return;
     }
 
-    const nativeMethod = base[prop];
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base);
+    const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
         return;
@@ -1135,7 +1138,7 @@ export function trustedJsonSet(
         thisArg: any,
         args: any[],
     ) => {
-        if (isMatchingSuspended) {
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
             return Reflect.apply(target, thisArg, args);
         }
 
@@ -1219,7 +1222,7 @@ export function trustedJsonSet(
         get: getWrapper,
     };
 
-    base[prop] = new Proxy(nativeMethod, objectHandler);
+    methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
 export const trustedJsonSetNames = [
@@ -1245,6 +1248,7 @@ trustedJsonSet.injections = [
     matchStackTrace,
     addStackTraceMessageLine,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,

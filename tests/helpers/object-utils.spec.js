@@ -1,11 +1,12 @@
 import {
+    afterEach,
     describe,
     test,
     expect,
     vi,
 } from 'vitest';
 
-import { isEmptyObject, isNativePromise } from '../../src/helpers';
+import { isEmptyObject, isNativePromise, getMethodOwner } from '../../src/helpers';
 
 test('isEmptyObject() for different inputs', async () => {
     const emptyObj = {};
@@ -126,5 +127,48 @@ describe('isNativePromise()', () => {
         } finally {
             window.Promise = NativePromise;
         }
+    });
+});
+
+describe('getMethodOwner()', () => {
+    // Storages are not available in some Node.js versions which run the tests, e.g. 26,
+    // so objects which inherit from Storage.prototype are used here, and real ones are tested by QUnit tests.
+    // Results are compared by `===`, as printing of Storage.prototype on a failure throws
+    const createStorage = () => Object.create(Storage.prototype);
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    test('returns Storage.prototype for a storage', () => {
+        expect(getMethodOwner(createStorage()) === Storage.prototype).toBe(true);
+    });
+
+    test.each([
+        { title: 'window', getBase: () => window },
+        { title: 'document', getBase: () => document },
+        { title: 'JSON', getBase: () => JSON },
+        { title: 'a plain object', getBase: () => ({ method: () => {} }) },
+        { title: 'Storage.prototype itself', getBase: () => Storage.prototype },
+    ])('returns the object itself for $title', ({ getBase }) => {
+        const base = getBase();
+        expect(getMethodOwner(base) === base).toBe(true);
+    });
+
+    test('returns the object itself if Storage is not available', () => {
+        const storage = createStorage();
+        vi.stubGlobal('Storage', undefined);
+
+        expect(getMethodOwner(storage) === storage).toBe(true);
+    });
+
+    test('does not throw for a proxy which throws on prototype access', () => {
+        const base = new Proxy({}, {
+            getPrototypeOf() {
+                throw new Error('getPrototypeOf trap');
+            },
+        });
+
+        expect(getMethodOwner(base) === base).toBe(true);
     });
 });

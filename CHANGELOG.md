@@ -182,6 +182,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   as the scriptlet's own one.
 - `trusted-replace-outbound-text` with `stack` not modifying any content after the intercepted method is called
   from a function which does not match `stack`, e.g. by another script of the page.
+- `trusted-suppress-native-method`, `trusted-json-set`, `trusted-replace-argument`, `trusted-replace-outbound-text`,
+  `trusted-prune-inbound-object` and `call-nothrow` not intercepting methods of `localStorage` and `sessionStorage`,
+  e.g. `localStorage.setItem`, in Firefox, and storing an item named after the method in the storage instead,
+  e.g. `setItem`. The method is replaced in `Storage.prototype` now, and only its calls on the storage
+  of the rule are processed, also the ones made through `Storage.prototype`.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 [#582]: https://github.com/AdguardTeam/Scriptlets/issues/582

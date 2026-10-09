@@ -479,6 +479,21 @@ Project-specific rules:
     without `stack`. A call from another function would disable the rule for
     the next calls otherwise, e.g. in `trusted-replace-outbound-text`.
 
+18. Scriptlets which intercept a method by its path, e.g. `localStorage.setItem`,
+    MUST replace it in the object returned by `getMethodOwner()` for the base
+    object of the path, and process only the calls whose `this` is the base
+    object if that object is not the base one, e.g.
+    `if (methodOwner !== base && thisArg !== base)` in the wrapper.
+
+    **Rationale**: Assigning a property of a storage, i.e. `localStorage` or
+    `sessionStorage`, stores an item in Firefox, even if it is a method, e.g.
+    `localStorage.setItem = proxy` stores the item `setItem`. So the method is
+    not replaced, and the storage of the page is changed. `getMethodOwner()`
+    returns `Storage.prototype` for a storage, in which the method is replaced
+    for all storages. Defining a getter or setter of a storage property throws
+    in all browsers, so `set-constant` and `trusted-set-constant` do not support
+    storage properties.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,

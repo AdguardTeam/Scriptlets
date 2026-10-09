@@ -1,6 +1,7 @@
 import {
     hit,
     getPropertyInChain,
+    getMethodOwner,
     logMessage,
     isEmptyObject,
 } from '../helpers';
@@ -65,7 +66,14 @@ export function callNoThrow(source, functionName) {
         return;
     }
 
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base);
+
     const objectWrapper = (...args) => {
+        // Arguments of the 'apply' trap are target, thisArg and arguments of the call
+        if (methodOwner !== base && args[1] !== base) {
+            return Reflect.apply(...args);
+        }
         let result;
         try {
             result = Reflect.apply(...args);
@@ -81,7 +89,7 @@ export function callNoThrow(source, functionName) {
         apply: objectWrapper,
     };
 
-    base[prop] = new Proxy(base[prop], objectHandler);
+    methodOwner[prop] = new Proxy(methodOwner[prop], objectHandler);
 }
 
 export const callNoThrowNames = [
@@ -98,6 +106,7 @@ callNoThrow.primaryName = callNoThrowNames[0];
 callNoThrow.injections = [
     hit,
     getPropertyInChain,
+    getMethodOwner,
     logMessage,
     // following helpers are needed for helpers above
     isEmptyObject,

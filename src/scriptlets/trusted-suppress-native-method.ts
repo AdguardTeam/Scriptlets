@@ -2,6 +2,7 @@ import {
     hit,
     logMessage,
     getPropertyInChain,
+    getMethodOwner,
     inferValue,
     isValueMatched,
     getAbortFunc,
@@ -152,7 +153,10 @@ export function trustedSuppressNativeMethod(
         return;
     }
 
-    const nativeMethod = base[prop];
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base);
+
+    const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
         return;
@@ -183,7 +187,7 @@ export function trustedSuppressNativeMethod(
     let isMatchingSuspended = false;
 
     function apply(target: Function, thisArg: any, argumentsList: unknown[]) {
-        if (isMatchingSuspended) {
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
             return Reflect.apply(target, thisArg, argumentsList);
         }
 
@@ -207,7 +211,7 @@ export function trustedSuppressNativeMethod(
         return Reflect.apply(target, thisArg, argumentsList);
     }
 
-    base[prop] = new Proxy(nativeMethod, { apply });
+    methodOwner[prop] = new Proxy(nativeMethod, { apply });
 }
 
 export const trustedSuppressNativeMethodNames = [
@@ -221,6 +225,7 @@ trustedSuppressNativeMethod.injections = [
     hit,
     logMessage,
     getPropertyInChain,
+    getMethodOwner,
     inferValue,
     isValueMatched,
     getAbortFunc,
