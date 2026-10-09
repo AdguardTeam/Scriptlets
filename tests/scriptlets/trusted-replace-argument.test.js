@@ -356,3 +356,23 @@ test('Storage method: replaces the argument of localStorage.setItem', (assert) =
     assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'setItem'), 'Storage has no own method');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
+
+test('Storage method: does not call the method on another storage again if it throws', (assert) => {
+    runScriptlet(name, ['localStorage.setItem', '1', 'replace:/true/false/', 'ads']);
+
+    let keyConversions = 0;
+    const key = {
+        toString() {
+            keyConversions += 1;
+            if (keyConversions === 1) {
+                throw new Error('Key conversion error');
+            }
+            return 'config';
+        },
+    };
+
+    assert.throws(() => sessionStorage.setItem(key, '{"ads":true}'), /Key conversion error/, 'Error thrown');
+    assert.strictEqual(keyConversions, 1, 'Method called once');
+    assert.strictEqual(sessionStorage.getItem('config'), null, 'Item not stored');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+});

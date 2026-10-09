@@ -292,3 +292,22 @@ test('Storage method: replaces the text returned by localStorage.getItem', (asse
     assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'getItem'), 'Storage has no own method');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
+
+test('Storage method: replaces the text returned by an own localStorage.getItem of the page', (assert) => {
+    // Page may assign its own method to the storage in Chrome before the scriptlet runs,
+    // while in Firefox it stores an item instead
+    const nativeGetItem = Storage.prototype.getItem;
+    localStorage.getItem = function getItem(key) {
+        return nativeGetItem.call(this, key);
+    };
+
+    try {
+        runScriptlet(name, ['localStorage.getItem', '"ads":true', '"ads":false']);
+        localStorage.setItem('config', '{"ads":true}');
+
+        assert.strictEqual(localStorage.getItem('config'), '{"ads":false}', 'Text replaced');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    } finally {
+        delete localStorage.getItem;
+    }
+});

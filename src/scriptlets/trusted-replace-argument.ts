@@ -259,7 +259,7 @@ export function trustedReplaceArgument(
     }
 
     // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
-    const methodOwner = getMethodOwner(base);
+    const methodOwner = getMethodOwner(base, prop);
     const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
@@ -357,8 +357,14 @@ export function trustedReplaceArgument(
     let isMatchingSuspended = false;
 
     const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
+        // Calls on another storage are not processed, so they are passed through outside of `try`,
+        // as its `catch` calls the method again
+        if (methodOwner !== base && thisArg !== base) {
+            return Reflect.apply(target, thisArg, argumentsList);
+        }
+
         try {
-            if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
+            if (isMatchingSuspended) {
                 return Reflect.apply(target, thisArg, argumentsList);
             }
             isMatchingSuspended = true;

@@ -481,16 +481,21 @@ Project-specific rules:
 
 18. Scriptlets which intercept a method by its path, e.g. `localStorage.setItem`,
     MUST replace it in the object returned by `getMethodOwner()` for the base
-    object of the path, and process only the calls whose `this` is the base
-    object if that object is not the base one, e.g.
-    `if (methodOwner !== base && thisArg !== base)` in the wrapper.
+    object and the name of the method, and process only the calls whose `this`
+    is the base object if that object is not the base one, e.g.
+    `if (methodOwner !== base && thisArg !== base)` in the wrapper. Such calls
+    MUST be passed through before any processing, e.g. outside of a `try`
+    whose `catch` calls the method again.
 
     **Rationale**: Assigning a property of a storage, i.e. `localStorage` or
     `sessionStorage`, stores an item in Firefox, even if it is a method, e.g.
     `localStorage.setItem = proxy` stores the item `setItem`. So the method is
     not replaced, and the storage of the page is changed. `getMethodOwner()`
     returns `Storage.prototype` for a storage, in which the method is replaced
-    for all storages. Defining a getter or setter of a storage property throws
+    for all storages, unless the storage has an own method, e.g. a wrapper
+    which the page has assigned in Chrome, as it hides the method of
+    `Storage.prototype`. Calls on another storage must behave as if they were
+    not intercepted. Defining a getter or setter of a storage property throws
     in all browsers, so `set-constant` and `trusted-set-constant` do not support
     storage properties.
 

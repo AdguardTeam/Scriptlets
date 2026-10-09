@@ -229,7 +229,7 @@ export function trustedPruneInboundObject(source, functionName, propsToRemove, r
     const requiredPaths = getPrunePath(requiredInitialProps);
 
     // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
-    const methodOwner = getMethodOwner(base);
+    const methodOwner = getMethodOwner(base, prop);
 
     const objectWrapper = (target, thisArg, args) => {
         if (methodOwner !== base && thisArg !== base) {

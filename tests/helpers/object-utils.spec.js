@@ -141,7 +141,16 @@ describe('getMethodOwner()', () => {
     });
 
     test('returns Storage.prototype for a storage', () => {
-        expect(getMethodOwner(createStorage()) === Storage.prototype).toBe(true);
+        expect(getMethodOwner(createStorage(), 'getItem') === Storage.prototype).toBe(true);
+    });
+
+    test('returns the storage itself if it has an own method', () => {
+        // e.g. a wrapper which the page has assigned in Chrome
+        const storage = createStorage();
+        storage.getItem = () => null;
+
+        expect(getMethodOwner(storage, 'getItem') === storage).toBe(true);
+        expect(getMethodOwner(storage, 'setItem') === Storage.prototype).toBe(true);
     });
 
     test.each([
@@ -152,14 +161,14 @@ describe('getMethodOwner()', () => {
         { title: 'Storage.prototype itself', getBase: () => Storage.prototype },
     ])('returns the object itself for $title', ({ getBase }) => {
         const base = getBase();
-        expect(getMethodOwner(base) === base).toBe(true);
+        expect(getMethodOwner(base, 'method') === base).toBe(true);
     });
 
     test('returns the object itself if Storage is not available', () => {
         const storage = createStorage();
         vi.stubGlobal('Storage', undefined);
 
-        expect(getMethodOwner(storage) === storage).toBe(true);
+        expect(getMethodOwner(storage, 'getItem') === storage).toBe(true);
     });
 
     test('does not throw for a proxy which throws on prototype access', () => {
@@ -169,6 +178,6 @@ describe('getMethodOwner()', () => {
             },
         });
 
-        expect(getMethodOwner(base) === base).toBe(true);
+        expect(getMethodOwner(base, 'method') === base).toBe(true);
     });
 });

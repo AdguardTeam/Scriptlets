@@ -67,7 +67,7 @@ export function callNoThrow(source, functionName) {
     }
 
     // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
-    const methodOwner = getMethodOwner(base);
+    const methodOwner = getMethodOwner(base, prop);
 
     const objectWrapper = (...args) => {
         // Arguments of the 'apply' trap are target, thisArg and arguments of the call

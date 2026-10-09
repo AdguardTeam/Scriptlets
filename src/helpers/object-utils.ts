@@ -95,12 +95,21 @@ export function isNativePromise(
  * For a storage, `Storage.prototype` is returned, so the method is replaced for all storages,
  * and its wrapper should process only the calls whose `this` is `base`, i.e. when the returned object is not `base`.
  *
+ * If the storage has an own method, e.g. a wrapper which the page has assigned in Chrome, where it is allowed,
+ * `base` is returned, as the own method hides the method of `Storage.prototype`.
+ * In Firefox the storage has no own method, as an item named after the method is not its own property.
+ *
  * @param base object which has the method, e.g. `localStorage` for `localStorage.setItem`
+ * @param prop name of the method, e.g. `setItem`
  * @returns object in which the method should be replaced
  */
-export function getMethodOwner(base: Record<string, unknown>): Record<string, unknown> {
+export function getMethodOwner(base: Record<string, unknown>, prop: string): Record<string, unknown> {
     try {
-        if (typeof Storage !== 'undefined' && base instanceof Storage) {
+        if (
+            typeof Storage !== 'undefined'
+            && base instanceof Storage
+            && !Object.prototype.hasOwnProperty.call(base, prop)
+        ) {
             return Storage.prototype as unknown as Record<string, unknown>;
         }
     } catch {

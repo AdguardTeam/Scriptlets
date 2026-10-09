@@ -154,7 +154,7 @@ export function trustedSuppressNativeMethod(
     }
 
     // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
-    const methodOwner = getMethodOwner(base);
+    const methodOwner = getMethodOwner(base, prop);
 
     const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
