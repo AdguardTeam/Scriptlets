@@ -961,12 +961,16 @@ export function trustedJsonSet(
     };
 
     /**
-     * Applies `jsonSetter` to an object value directly, or to a string value after JSON parsing.
-     * If parsing fails, the original value is returned unchanged.
+     * Modifies an object value directly by `applyJsonMutation()`, i.e. by `jsonPath` in JSONPath mode
+     * or by `jsonSetter` otherwise, or a string value after JSON parsing, which is stringified again then.
+     * A string which is not a JSON object is processed as line-delimited JSON,
+     * and it is returned unchanged only if it has no JSON lines either.
+     * In logging-only mode, the value is only logged. Values of other types are returned unchanged.
      *
      * @param jsonValue candidate JSON value to modify
      * @param errorMessage message prefix used for logging unexpected errors
-     * @param currentStackTrace stack trace captured and matched when the intercepted method is called
+     * @param currentStackTrace stack trace for logs, captured when the intercepted method is called,
+     * or an empty string if it is not needed
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
     const modifyJsonValue = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
@@ -1078,7 +1082,8 @@ export function trustedJsonSet(
      *
      * @param jsonValue candidate JSON value to modify
      * @param errorMessage message prefix used for logging unexpected errors
-     * @param currentStackTrace stack trace captured and matched when the intercepted method is called
+     * @param currentStackTrace stack trace for logs, captured when the intercepted method is called,
+     * or an empty string if it is not needed
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
     const modifyJsonValueSafely = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
@@ -1103,7 +1108,8 @@ export function trustedJsonSet(
      * In logging-only mode, the value is only logged, so the original promise is returned.
      *
      * @param result value returned by the intercepted method
-     * @param currentStackTrace stack trace captured and matched when the intercepted method is called
+     * @param currentStackTrace stack trace for logs, captured when the intercepted method is called,
+     * or an empty string if it is not needed
      * @returns modified result, or a promise of it
      */
     const modifyResult = (result: any, currentStackTrace: string) => {
