@@ -2,6 +2,7 @@
 import {
     runScriptlet,
     clearGlobalProps,
+    countCreatedErrors,
     useFirefoxStackTraceFormat,
     useThrowingErrorConstructor,
     useUnreadableStackTrace,
@@ -458,6 +459,38 @@ if (isSupported) {
         };
         xhr.responseType = 'json';
         sendWithStackTraceFailure(xhr, useThrowingErrorConstructor);
+    });
+
+    test('does not read the stack trace without stack and verbose', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+
+        assert.strictEqual(countCreatedErrors(() => xhr.send()), 0, 'No error created for the stack trace');
+    });
+
+    test('reads the stack trace with verbose', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', '', '', 'true']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+
+        assert.strictEqual(countCreatedErrors(() => xhr.send()), 1, 'Error created for the stack trace');
     });
 } else {
     test('unsupported', (assert) => {

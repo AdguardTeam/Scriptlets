@@ -2,6 +2,7 @@
 import {
     runScriptlet,
     clearGlobalProps,
+    countCreatedErrors,
     useFirefoxStackTraceFormat,
     useThrowingErrorConstructor,
     useUnreadableStackTrace,
@@ -741,6 +742,36 @@ if (isSupported) {
         };
         xhr.responseType = 'json';
         sendWithStackTraceFailure(xhr, useThrowingErrorConstructor);
+    });
+
+    test('Stack trace is not read without stack and logging', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content pruned');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+
+        assert.strictEqual(countCreatedErrors(() => xhr.send()), 0, 'No error created for the stack trace');
+    });
+
+    test('Stack trace is read for logging', async (assert) => {
+        runScriptlet(name, ['', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onload = () => {
+            assert.deepEqual(JSON.parse(xhr.response), { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+            done();
+        };
+
+        assert.strictEqual(countCreatedErrors(() => xhr.send()), 1, 'Error created for the stack trace');
     });
 } else {
     test('unsupported', (assert) => {

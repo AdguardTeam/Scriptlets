@@ -120,6 +120,30 @@ export const useThrowingErrorConstructor = (thrownValue) => {
 };
 
 /**
+ * Runs given function and returns the number of errors created by it synchronously by `new Error()`,
+ * e.g. to check whether the stack trace is read only when it is needed.
+ *
+ * @param {Function} fn function to run
+ * @returns {number} number of created errors
+ */
+export const countCreatedErrors = (fn) => {
+    const NativeError = window.Error;
+    let count = 0;
+    window.Error = new Proxy(NativeError, {
+        construct: (target, args, newTarget) => {
+            count += 1;
+            return Reflect.construct(target, args, newTarget);
+        },
+    });
+    try {
+        fn();
+    } finally {
+        window.Error = NativeError;
+    }
+    return count;
+};
+
+/**
  * Fetches and parses the redirects YAML file, returning an instance of Redirects.
  * @typedef {import('./path/to/redirects').Redirects} Redirects
  * @returns {Promise<Redirects>} A promise that resolves to an instance of Redirects.

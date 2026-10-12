@@ -271,16 +271,18 @@ export function jsonPruneXhrResponse(
 
         // Stack trace cannot be checked in jsonPruner helper,
         // because in this case it returns stack trace of our script,
-        // so it has to be checked earlier.
+        // so it has to be checked earlier. It is read only if it is matched or logged.
         // The page may make creating or reading it throw, e.g. by replacing `Error` or by `Error.prepareStackTrace`,
         // which should not stop the rules without `stack` from working, so it is done separately
         let stackTrace = '';
         let isStackTraceRead = false;
-        try {
-            stackTrace = String(new Error().stack || '');
-            isStackTraceRead = true;
-        } catch {
-            // Rules with `stack` are not processed, as it cannot be matched
+        if (stack || shouldLog) {
+            try {
+                stackTrace = String(new Error().stack || '');
+                isStackTraceRead = true;
+            } catch {
+                // Rules with `stack` are not processed, as it cannot be matched
+            }
         }
 
         // Error message line is added to the stack trace created here, in the wrapper called by the page,

@@ -202,11 +202,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
   Only the rules with `stack` are not applied then. The same applies to `JSONPath` rules of `json-prune`,
   `json-prune-fetch-response` and `trusted-json-set-fetch-response`, and to `trusted-json-set-fetch-response`
-  rules with `verbose`.
+  rules with `verbose`. `trusted-json-set` no longer reads the stack trace at all for rules without `stack`,
+  except in logging-only mode or with `verbose`.
 - `json-prune-xhr-response` and `trusted-json-set-xhr-response` throwing an error from `XMLHttpRequest.send()`,
   so the request was not sent at all, even without `stack`, if the stack trace cannot be read,
   e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
-  Only the rules with `stack` are not applied then, and the request is sent as is.
+  Only the rules with `stack` are not applied then, and the request is sent as is. They no longer read
+  the stack trace at all for rules without `stack`, except in logging mode of `json-prune-xhr-response`
+  or with `verbose` of `trusted-json-set-xhr-response`.
 - `trusted-replace-outbound-text` with `stack` throwing an error to the page instead of the result
   of the intercepted method if the stack trace cannot be read, e.g. because of `Error.prepareStackTrace`
   of the page or `Error` replaced by it. The result is returned unmodified then.

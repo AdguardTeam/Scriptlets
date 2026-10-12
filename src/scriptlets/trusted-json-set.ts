@@ -1153,16 +1153,19 @@ export function trustedJsonSet(
             // It is created here, in the wrapper called by the page, and gets the error message line
             // in all browsers, so `matchStackTrace()` keeps the frame of the caller,
             // regardless of the minification, which may inline a function created it otherwise.
+            // It is read only if it is matched or logged, i.e. with `stack`, in logging-only mode or with `verbose`.
             // The page may make creating or reading it throw, e.g. by replacing `Error`
             // or by `Error.prepareStackTrace`, or make it a non-string value,
             // which should not stop the rules without `stack` from working,
             // so the error is created in the same `try` in which the stack trace is read
             let isStackTraceRead = false;
-            try {
-                currentStackTrace = String(new Error().stack || '');
-                isStackTraceRead = true;
-            } catch {
-                // Rules with `stack` are not processed, as it cannot be matched
+            if (stack || isLogOnlyMode || shouldLogVerboseContent) {
+                try {
+                    currentStackTrace = String(new Error().stack || '');
+                    isStackTraceRead = true;
+                } catch {
+                    // Rules with `stack` are not processed, as it cannot be matched
+                }
             }
 
             try {

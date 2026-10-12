@@ -9,7 +9,12 @@ import {
 } from 'vitest';
 
 import { trustedJsonSet } from '../../src/scriptlets/trusted-json-set';
-import { clearGlobalProps, useFirefoxStackTraceFormat, useThrowingErrorConstructor } from '../helpers';
+import {
+    clearGlobalProps,
+    countCreatedErrors,
+    useFirefoxStackTraceFormat,
+    useThrowingErrorConstructor,
+} from '../helpers';
 
 const nativeStringify = JSON.stringify;
 const nativeParse = JSON.parse;
@@ -419,6 +424,28 @@ describe('Test trusted-json-set with a stack trace which is not a string', () =>
 
             expect(result).toEqual({ ads: { enabled: true } });
         });
+    });
+});
+
+describe('Test trusted-json-set stack trace reads', () => {
+    test.each([
+        { rule: 'without stack and logging', args: ['ads.enabled', 'false'], errorsCount: 0 },
+        { rule: 'without stack and logging — JSONPath', args: ['$.ads.enabled', 'false'], errorsCount: 0 },
+        { rule: 'with stack', args: ['ads.enabled', 'false', '', 'result', 'anyFunction'], errorsCount: 1 },
+        { rule: 'in logging-only mode', args: [], errorsCount: 1 },
+        { rule: 'with verbose', args: ['ads.enabled', 'false', '', 'result', '', '', 'true'], errorsCount: 1 },
+    ])('creates the error for the stack trace only if it is needed — $rule', ({ args, errorsCount }) => {
+        trustedJsonSet(sourceParams, 'JSON.parse', ...args);
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        let createdErrorsCount;
+        try {
+            createdErrorsCount = countCreatedErrors(() => JSON.parse('{"ads":{"enabled":true}}'));
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(createdErrorsCount).toBe(errorsCount);
     });
 });
 
