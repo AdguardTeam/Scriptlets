@@ -218,6 +218,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   Only the rules with `stack` are not applied then, and the request is sent as is. They no longer read
   the stack trace at all for rules without `stack`, except in logging mode of `json-prune-xhr-response`
   or with `verbose` of `trusted-json-set-xhr-response`.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` not firing `load` for the second matched request
+  of a reused `XMLHttpRequest` object, as the props of its response could not be defined again, and returning
+  the props of the previous response, e.g. `readyState` and `response`, for a request on such an object
+  which is not matched.
+- `json-prune-xhr-response` in logging mode returning the response as a string, even if another `responseType`
+  of the request is set, e.g. `json`, `arraybuffer` or `blob`.
 - `trusted-replace-outbound-text` with `stack` throwing an error to the page instead of the result
   of the intercepted method if the stack trace cannot be read, e.g. because of `Error.prepareStackTrace`
   of the page or `Error` replaced by it. The result is returned unmodified then.

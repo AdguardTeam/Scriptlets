@@ -236,8 +236,6 @@ if (!isSupported) {
     test('modifies the fetch response with verbose if the stack trace cannot be read', async (assert) => {
         const done = assert.async();
         runScriptlet(name, ['b2', 'changed', '', 'test01', '', '', 'true']);
-        // Content is logged in verbose mode
-        console.log = () => {};
 
         // Stack trace cannot be read also when the response is processed after it is awaited
         const restoreStackTrace = useUnreadableStackTrace();

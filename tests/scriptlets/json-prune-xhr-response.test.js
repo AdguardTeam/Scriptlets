@@ -773,6 +773,148 @@ if (isSupported) {
 
         assert.strictEqual(countCreatedErrors(() => xhr.send()), 1, 'Error created for the stack trace');
     });
+
+    [
+        { responseType: 'json', getJson: (response) => response, ResponseClass: Object },
+        {
+            responseType: 'arraybuffer',
+            getJson: (response) => JSON.parse(new TextDecoder().decode(response)),
+            ResponseClass: ArrayBuffer,
+        },
+        { responseType: 'blob', getJson: async (response) => JSON.parse(await response.text()), ResponseClass: Blob },
+    ].forEach(({ responseType, getJson, ResponseClass }) => {
+        test(`Logging keeps the response type of the request - ${responseType}`, async (assert) => {
+            runScriptlet(name, ['', '', 'test01']);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.responseType = responseType;
+            const loaded = new Promise((resolve) => {
+                xhr.onload = resolve;
+            });
+            xhr.send();
+            await loaded;
+
+            assert.ok(xhr.response instanceof ResponseClass, `Response is ${ResponseClass.name}`);
+            assert.deepEqual(await getJson(xhr.response), { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+        });
+    });
+
+    test('Reused XHR - prune content of each matched request', async (assert) => {
+        assert.timeout(3000);
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        let loadsCount = 0;
+        xhr.onload = () => {
+            loadsCount += 1;
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, `Content of request ${loadsCount} pruned`);
+            if (loadsCount === 2) {
+                done();
+                return;
+            }
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.responseType = 'json';
+            xhr.send();
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('Reused XHR - native response of a request which is not matched', async (assert) => {
+        assert.timeout(3000);
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content of the matched request pruned');
+
+            xhr.onload = () => {
+                assert.strictEqual(xhr.readyState, 4, 'Native readyState after load');
+                assert.deepEqual(xhr.response, { ad: 1, src: 'test', count: 3 }, 'Native content returned');
+                done();
+            };
+            const readyStatesDuringOpen = [];
+            xhr.onreadystatechange = () => {
+                readyStatesDuringOpen.push(xhr.readyState);
+            };
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test02.json`);
+            xhr.onreadystatechange = null;
+            assert.notOk(readyStatesDuringOpen.includes(4), 'Previous readyState is not read during open()');
+            assert.strictEqual(xhr.readyState, 1, 'Native readyState after open()');
+            xhr.responseType = 'json';
+            xhr.send();
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('Response of a synchronous request sent during open() is kept', (assert) => {
+        assert.timeout(3000);
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        let isSent = false;
+        // `open()` fires it synchronously, and the request may be sent in it,
+        // so its response is created before `open()` returns
+        xhr.onreadystatechange = () => {
+            if (!isSent && xhr.readyState === 1) {
+                isSent = true;
+                xhr.send();
+            }
+        };
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'readyState of the response');
+            assert.strictEqual(xhr.status, 200, 'status of the response');
+            assert.strictEqual(xhr.response, '{"b2":"test","c3":3}', 'Content pruned');
+            done();
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`, false);
+    });
+
+    test('Reused XHR - previous response is kept if open() throws', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        const loaded = new Promise((resolve) => {
+            xhr.onload = resolve;
+        });
+        xhr.send();
+        await loaded;
+
+        // State of the object is not changed by `open()` which throws, e.g. for an invalid URL
+        assert.throws(() => xhr.open('GET', 'http://['), 'open() throws for an invalid URL');
+        assert.strictEqual(xhr.readyState, 4, 'readyState is kept');
+        assert.strictEqual(xhr.status, 200, 'status is kept');
+        assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Pruned content is kept');
+    });
+
+    test('Prune content of a deeply nested JSON response - json', async (assert) => {
+        runScriptlet(name, ['a1']);
+
+        // Content which can be parsed, but not serialized again, as it exceeds the maximum call stack size
+        const NESTING_DEPTH = 12000;
+        const json = `{"a1":1,"nested":${'['.repeat(NESTING_DEPTH)}${']'.repeat(NESTING_DEPTH)}}`;
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `data:application/json,${encodeURIComponent(json)}`);
+        xhr.responseType = 'json';
+        const loaded = new Promise((resolve) => {
+            xhr.onload = resolve;
+        });
+        xhr.send();
+        await loaded;
+
+        assert.ok(xhr.response !== null && typeof xhr.response === 'object', 'Response is an object');
+        assert.notOk(Object.prototype.hasOwnProperty.call(xhr.response, 'a1'), 'Content pruned');
+        assert.ok(Array.isArray(xhr.response.nested), 'Other content is kept');
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

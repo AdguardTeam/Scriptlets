@@ -212,6 +212,21 @@ export function jsonPruneXhrResponse(
     const matchedXhrRequests = new Map<XMLHttpRequest, XMLHttpRequestSharedRequestData<any>>();
     const xhrRequestHeaders = new Map<XMLHttpRequest, any[]>();
 
+    // Props of the forged response which are defined on the XHR object of the page, as they are removed
+    // when the object is opened again, and a token of the forged response which each XHR object has.
+    // A new object is the token of each response, not its forged request, which would keep the whole original
+    // response alive while the page keeps the XHR object
+    const FORGED_RESPONSE_PROPS = [
+        'readyState',
+        'responseURL',
+        'responseXML',
+        'status',
+        'statusText',
+        'response',
+        'responseText',
+    ];
+    const forgedXhrResponses = new WeakMap<XMLHttpRequest, object>();
+
     const setRequestHeaderWrapper = (
         setRequestHeader: typeof XMLHttpRequest.prototype.setRequestHeader,
         thisArgument: XMLHttpRequest,
@@ -255,7 +270,24 @@ export function jsonPruneXhrResponse(
             thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
         }
 
-        return Reflect.apply(target, thisArg, args);
+        const previousForgedResponse = forgedXhrResponses.get(thisArg);
+
+        Reflect.apply(target, thisArg, args);
+
+        // The XHR object may be reused for the next request, so the props of the forged response
+        // of the previous one are removed, and the native ones are used again, unless it is matched as well.
+        // It is done only after the object is opened, as `open()` may throw, e.g. for an invalid URL,
+        // and the object keeps its state then. Only the response which the object has had before is removed,
+        // i.e. if it has the same token, as `open()` may fire `readystatechange` synchronously,
+        // e.g. for a new object, and its listener may send a synchronous request, whose response is created
+        // before `open()` returns. It is not fired for an object which has had a forged response,
+        // as its native state is already opened, since the forged request is sent instead of it
+        if (previousForgedResponse && forgedXhrResponses.get(thisArg) === previousForgedResponse) {
+            FORGED_RESPONSE_PROPS.forEach((prop) => {
+                Reflect.deleteProperty(thisArg, prop);
+            });
+            forgedXhrResponses.delete(thisArg);
+        }
     };
 
     const sendWrapper = (
@@ -332,33 +364,35 @@ export function jsonPruneXhrResponse(
                         // eslint-disable-next-line max-len
                         logMessage(source, `${window.location.hostname}\n${nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
                         logMessage(source, jsonContent, true, false);
-                        modifiedContent = content;
-                    } else {
-                        modifiedContent = pruneJsonValue(jsonContent);
-                        // Convert content to appropriate response type, only if it has been modified
-                        try {
-                            const { responseType } = thisArg;
-                            switch (responseType) {
-                                case '':
-                                case 'text':
-                                    modifiedContent = nativeStringify(modifiedContent);
-                                    break;
-                                case 'arraybuffer':
-                                    modifiedContent = new TextEncoder()
-                                        .encode(nativeStringify(modifiedContent))
-                                        .buffer;
-                                    break;
-                                case 'blob':
-                                    modifiedContent = new Blob([nativeStringify(modifiedContent)]);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        } catch (error) {
-                            const message = `Response body cannot be converted to response type: '${content}'`;
-                            logMessage(source, message);
-                            modifiedContent = content;
+                    }
+
+                    // Content is only logged in logging mode, so the original one is returned
+                    const resultJson = shouldLog ? jsonContent : pruneJsonValue(jsonContent);
+                    // Convert content to the response type of the request, as the forged request has the default one,
+                    // also in logging mode. It is serialized only for the types which need text,
+                    // as serializing may fail for content which can be parsed, e.g. too deeply nested
+                    const getResultText = () => (shouldLog ? content : nativeStringify(resultJson));
+                    try {
+                        const { responseType } = thisArg;
+                        switch (responseType) {
+                            case '':
+                            case 'text':
+                                modifiedContent = getResultText();
+                                break;
+                            case 'arraybuffer':
+                                modifiedContent = new TextEncoder().encode(getResultText()).buffer;
+                                break;
+                            case 'blob':
+                                modifiedContent = new Blob([getResultText()]);
+                                break;
+                            default:
+                                modifiedContent = resultJson;
+                                break;
                         }
+                    } catch (error) {
+                        const message = `Response body cannot be converted to response type: '${content}'`;
+                        logMessage(source, message);
+                        modifiedContent = content;
                     }
                 } catch (error) {
                     const message = `Response body cannot be converted to json: '${content}'`;
@@ -368,18 +402,25 @@ export function jsonPruneXhrResponse(
             }
 
             // Manually put required values into target XHR object
-            // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
+            // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied.
+            // They are configurable, so they can be removed when the object is opened again
             Object.defineProperties(thisArg, {
                 // original values
-                readyState: { value: readyState, writable: false },
-                responseURL: { value: responseURL, writable: false },
-                responseXML: { value: responseXML, writable: false },
-                status: { value: status, writable: false },
-                statusText: { value: statusText, writable: false },
+                readyState: { value: readyState, writable: false, configurable: true },
+                responseURL: { value: responseURL, writable: false, configurable: true },
+                responseXML: { value: responseXML, writable: false, configurable: true },
+                status: { value: status, writable: false, configurable: true },
+                statusText: { value: statusText, writable: false, configurable: true },
                 // modified values
-                response: { value: modifiedContent, writable: false },
-                responseText: { value: modifiedContent, writable: false },
+                response: { value: modifiedContent, writable: false, configurable: true },
+                responseText: { value: modifiedContent, writable: false, configurable: true },
             });
+            // The entry is kept until the object is opened again, as it is the only record that the object has
+            // the props of this response, which hide the native ones, and they are removed then.
+            // A new object is set for each response and compared by identity, so a response created
+            // during `open()` is told apart from the previous one, without changing the entry before `open()`
+            // and restoring it if `open()` throws
+            forgedXhrResponses.set(thisArg, {});
 
             // Mock events
             setTimeout(() => {

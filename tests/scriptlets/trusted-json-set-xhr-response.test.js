@@ -492,6 +492,102 @@ if (isSupported) {
 
         assert.strictEqual(countCreatedErrors(() => xhr.send()), 1, 'Error created for the stack trace');
     });
+
+    test('sets a property in the response of each matched request of a reused XHR', async (assert) => {
+        assert.timeout(3000);
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        let loadsCount = 0;
+        xhr.onload = () => {
+            loadsCount += 1;
+            assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, `response ${loadsCount} should be modified`);
+            if (loadsCount === 2) {
+                done();
+                return;
+            }
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.responseType = 'json';
+            xhr.send();
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('returns the native response of a reused XHR for a request which is not matched', async (assert) => {
+        assert.timeout(3000);
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+            assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'response of the matched request modified');
+
+            xhr.onload = () => {
+                assert.strictEqual(xhr.readyState, 4, 'native readyState after load');
+                assert.deepEqual(xhr.response, { ad: 1, src: 'test', count: 3 }, 'native response returned');
+                done();
+            };
+            const readyStatesDuringOpen = [];
+            xhr.onreadystatechange = () => {
+                readyStatesDuringOpen.push(xhr.readyState);
+            };
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test02.json`);
+            xhr.onreadystatechange = null;
+            assert.notOk(readyStatesDuringOpen.includes(4), 'previous readyState should not be read during open()');
+            assert.strictEqual(xhr.readyState, 1, 'native readyState after open()');
+            xhr.responseType = 'json';
+            xhr.send();
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('keeps the response of a synchronous request sent during open()', (assert) => {
+        assert.timeout(3000);
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        let isSent = false;
+        // `open()` fires it synchronously, and the request may be sent in it,
+        // so its response is created before `open()` returns
+        xhr.onreadystatechange = () => {
+            if (!isSent && xhr.readyState === 1) {
+                isSent = true;
+                xhr.send();
+            }
+        };
+        xhr.onload = () => {
+            assert.strictEqual(xhr.readyState, 4, 'readyState of the response');
+            assert.strictEqual(xhr.status, 200, 'status of the response');
+            assert.strictEqual(xhr.response, '{"a1":10,"b2":"test","c3":3}', 'response should be modified');
+            done();
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`, false);
+    });
+
+    test('keeps the previous response of a reused XHR if open() throws', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        const loaded = new Promise((resolve) => {
+            xhr.onload = resolve;
+        });
+        xhr.send();
+        await loaded;
+
+        // State of the object is not changed by `open()` which throws, e.g. for an invalid URL
+        assert.throws(() => xhr.open('GET', 'http://['), 'open() throws for an invalid URL');
+        assert.strictEqual(xhr.readyState, 4, 'readyState should be kept');
+        assert.strictEqual(xhr.status, 200, 'status should be kept');
+        assert.deepEqual(xhr.response, { a1: 10, b2: 'test', c3: 3 }, 'modified response should be kept');
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');
