@@ -317,6 +317,80 @@ describe('Test trusted-json-set with promise results', () => {
     });
 });
 
+describe('Test trusted-json-set with a value which cannot be processed', () => {
+    afterEach(() => {
+        clearGlobalProps('getPayload');
+    });
+
+    test('returns the string unchanged without processing it again as line-delimited JSON', () => {
+        const PAYLOAD = '{"ads":{"enabled":true}}';
+        window.getPayload = () => PAYLOAD;
+        // Saved by the scriptlet when it runs, so the modified value cannot be serialized
+        JSON.stringify = () => {
+            throw new Error('Value cannot be serialized');
+        };
+        const parse = vi.fn(nativeParse);
+        JSON.parse = parse;
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+        let result;
+        try {
+            result = window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe(PAYLOAD);
+        expect(parse.mock.calls.filter((args) => args[0] === PAYLOAD)).toHaveLength(1);
+    });
+
+    test('logs a value without a message thrown while it is modified', () => {
+        window.getPayload = () => '{"ads":{"enabled":true}}';
+        // Saved by the scriptlet when it runs, e.g. as `toJSON()` of the page throws `null`
+        JSON.stringify = () => {
+            // eslint-disable-next-line no-throw-literal
+            throw null;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        try {
+            window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(logs).toContain('trusted-json-set: Error during setting the result value: null');
+    });
+
+    test('logs a value without a message thrown while it is logged', () => {
+        window.getPayload = () => ({
+            ads: { enabled: true },
+            toJSON: () => {
+                // eslint-disable-next-line no-throw-literal
+                throw null;
+            },
+        });
+        trustedJsonSet(sourceParams, 'window.getPayload');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        try {
+            window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(logs).toContain('trusted-json-set: Error during setting the result value: null');
+    });
+});
+
 describe('Test trusted-json-set with a stack trace which is not a string', () => {
     const nativePrepareStackTrace = Error.prepareStackTrace;
 

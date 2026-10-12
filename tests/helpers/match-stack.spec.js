@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { matchStackTrace, addStackTraceMessageLine } from '../../src/helpers';
+import { matchStackTrace, addStackTraceMessageLine, isValidStackPattern } from '../../src/helpers';
 
 test('matchStackTrace() for working with getNativeRegexpTest() helper', async () => {
     expect(matchStackTrace('vitest', new Error().stack)).toBeTruthy();
@@ -67,5 +67,27 @@ describe('addStackTraceMessageLine()', () => {
         addStackTraceMessageLine(CHROME_STACK_TRACE);
 
         expect(RegExp.$1).toBe('page-match');
+    });
+});
+
+describe('isValidStackPattern()', () => {
+    test.each([
+        { stack: 'loadAds', expected: true },
+        { stack: 'inlineScript', expected: true },
+        { stack: '/load(Ads|Config)/', expected: true },
+        { stack: '/loadads/i', expected: true },
+        // `(` is escaped in a string pattern
+        { stack: 'load(', expected: true },
+        { stack: '/(/', expected: false },
+        { stack: '/(/i', expected: false },
+    ])('returns $expected for $stack', ({ stack, expected }) => {
+        expect(isValidStackPattern(stack)).toBe(expected);
+        // Invalid patterns are the ones for which matchStackTrace() throws
+        const match = () => matchStackTrace(stack, new Error().stack);
+        if (expected) {
+            expect(match).not.toThrow();
+        } else {
+            expect(match).toThrow();
+        }
     });
 });

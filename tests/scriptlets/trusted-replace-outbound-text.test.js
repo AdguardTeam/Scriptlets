@@ -229,6 +229,45 @@ test('replace text - JSON.stringify - match stack - Error replaced by the page',
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the next call');
 });
 
+test('replace text - invalid stack', (assert) => {
+    // Not JSON.stringify, as QUnit uses it, so an error thrown by it would stop the test run
+    window.getText = () => 'loadAds:true';
+    runScriptlet(name, ['getText', 'loadAds:true', 'loadAds:false', '', '/(/']);
+
+    const result = window.getText();
+
+    assert.strictEqual(result, 'loadAds:true', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+
+    clearGlobalProps('getText');
+});
+
+test('toString() of the intercepted method returns the original value', (assert) => {
+    const nativeFunction = function getText() {
+        return 'loadAds:true';
+    };
+    window.getText = nativeFunction;
+    runScriptlet(name, ['getText', 'loadAds:true', 'loadAds:false']);
+
+    assert.notStrictEqual(window.getText, nativeFunction, 'Method intercepted');
+    assert.strictEqual(window.getText.toString(), nativeFunction.toString(), 'toString() returns the original value');
+
+    clearGlobalProps('getText');
+});
+
+test('replace text - invalid textToReplace', (assert) => {
+    // Not JSON.stringify, as QUnit uses it, so an error thrown by it would stop the test run
+    window.getText = () => 'loadAds:true';
+    runScriptlet(name, ['getText', '/(/', 'loadAds:false']);
+
+    const result = window.getText();
+
+    assert.strictEqual(result, 'loadAds:true', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+
+    clearGlobalProps('getText');
+});
+
 test('replace text - JSON.stringify - Error replaced by the page - without stack', (assert) => {
     runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false']);
 

@@ -6,7 +6,12 @@ import {
     vi,
 } from 'vitest';
 
-import { isEmptyObject, isNativePromise, getMethodOwner } from '../../src/helpers';
+import {
+    isEmptyObject,
+    isNativePromise,
+    getMethodOwner,
+    getFunctionProxyProperty,
+} from '../../src/helpers';
 
 test('isEmptyObject() for different inputs', async () => {
     const emptyObj = {};
@@ -179,5 +184,32 @@ describe('getMethodOwner()', () => {
         });
 
         expect(getMethodOwner(base, 'method') === base).toBe(true);
+    });
+});
+
+describe('getFunctionProxyProperty()', () => {
+    test('returns toString() of the function for its Proxy', () => {
+        const nativeMethod = Array.prototype.push;
+        const pageFunction = function loadAds() {
+            return 'ads';
+        };
+        const nativeProxy = new Proxy(nativeMethod, { get: getFunctionProxyProperty });
+        const pageProxy = new Proxy(pageFunction, { get: getFunctionProxyProperty });
+
+        expect(nativeProxy.toString()).toBe(nativeMethod.toString());
+        expect(pageProxy.toString()).toBe(pageFunction.toString());
+        // Other properties are returned as they are
+        expect(nativeProxy.name).toBe('push');
+        expect(pageProxy.length).toBe(0);
+    });
+
+    test('returns a non-configurable own toString of the function as it is', () => {
+        const pageFunction = function loadAds() {};
+        const pageToString = () => 'page function';
+        Object.defineProperty(pageFunction, 'toString', { value: pageToString, writable: false, configurable: false });
+        const pageProxy = new Proxy(pageFunction, { get: getFunctionProxyProperty });
+
+        expect(pageProxy.toString).toBe(pageToString);
+        expect(pageProxy.toString()).toBe('page function');
     });
 });

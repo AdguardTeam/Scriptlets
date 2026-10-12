@@ -3,9 +3,12 @@ import {
     runScriptlet,
     clearGlobalProps,
     countCreatedErrors,
+    getLogs,
+    getSyncLogs,
     useFirefoxStackTraceFormat,
     useThrowingErrorConstructor,
     useUnreadableStackTrace,
+    sleep,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -14,6 +17,10 @@ const name = 'json-prune-xhr-response';
 const FETCH_OBJECTS_PATH = './test-files';
 const nativeXhrOpen = XMLHttpRequest.prototype.open;
 const nativeXhrSend = XMLHttpRequest.prototype.send;
+const nativeXhrSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+const nativeXhrGetResponseHeader = XMLHttpRequest.prototype.getResponseHeader;
+const nativeXhrGetAllResponseHeaders = XMLHttpRequest.prototype.getAllResponseHeaders;
+const nativeXhrAbort = XMLHttpRequest.prototype.abort;
 const nativeConsole = console.log;
 
 const beforeEach = () => {
@@ -26,6 +33,10 @@ const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     XMLHttpRequest.prototype.open = nativeXhrOpen;
     XMLHttpRequest.prototype.send = nativeXhrSend;
+    XMLHttpRequest.prototype.setRequestHeader = nativeXhrSetRequestHeader;
+    XMLHttpRequest.prototype.getResponseHeader = nativeXhrGetResponseHeader;
+    XMLHttpRequest.prototype.getAllResponseHeaders = nativeXhrGetAllResponseHeaders;
+    XMLHttpRequest.prototype.abort = nativeXhrAbort;
     console.log = nativeConsole;
 };
 
@@ -45,6 +56,20 @@ const sendWithStackTraceFailure = (xhr, useStackTraceFailure = useUnreadableStac
     } finally {
         restoreStackTrace();
     }
+};
+
+/**
+ * Sends the request and waits for its `load` event.
+ *
+ * @param {XMLHttpRequest} xhr opened request
+ * @returns {Promise<void>} promise which is resolved on `load`
+ */
+const sendAndWaitForLoad = (xhr) => {
+    const loaded = new Promise((resolve) => {
+        xhr.onload = resolve;
+    });
+    xhr.send();
+    return loaded;
 };
 
 const isSupported = typeof Proxy !== 'undefined';
@@ -894,6 +919,601 @@ if (isSupported) {
         assert.strictEqual(xhr.readyState, 4, 'readyState is kept');
         assert.strictEqual(xhr.status, 200, 'status is kept');
         assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Pruned content is kept');
+    });
+
+    test('Reused XHR - headers of each matched request are sent once', async (assert) => {
+        const headerCalls = [];
+        // Records the headers set by the page and by the scriptlet for the forged request
+        XMLHttpRequest.prototype.setRequestHeader = function setRequestHeader(...args) {
+            headerCalls.push({ target: this, args });
+            return Reflect.apply(nativeXhrSetRequestHeader, this, args);
+        };
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        for (let i = 0; i < 2; i += 1) {
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.setRequestHeader('X-Test', `value${i}`);
+            xhr.responseType = 'json';
+            // eslint-disable-next-line no-await-in-loop
+            await sendAndWaitForLoad(xhr);
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, `Content of request ${i + 1} pruned`);
+        }
+
+        const forgedHeaderCalls = headerCalls.filter(({ target }) => target !== xhr);
+        assert.deepEqual(
+            forgedHeaderCalls.map(({ args }) => args),
+            [['X-Test', 'value0'], ['X-Test', 'value1']],
+            'Header of each request set once for its forged request',
+        );
+        assert.notOk(Object.prototype.hasOwnProperty.call(xhr, 'setRequestHeader'), 'Object has no own method');
+    });
+
+    [
+        // e.g. a library which wraps the method of each object, and calls the native one saved before
+        { method: 'native method saved before', getTarget: (savedMethod) => savedMethod },
+        { method: 'method of the prototype', getTarget: () => XMLHttpRequest.prototype.setRequestHeader },
+    ].forEach(({ method, getTarget }) => {
+        test(`Headers set by an own method of the object which calls the ${method} are sent once`, async (assert) => {
+            const headerCalls = [];
+            // Records the headers set by the page and by the scriptlet for the forged request
+            XMLHttpRequest.prototype.setRequestHeader = function setRequestHeader(...args) {
+                headerCalls.push({ target: this, args });
+                return Reflect.apply(nativeXhrSetRequestHeader, this, args);
+            };
+            const savedMethod = XMLHttpRequest.prototype.setRequestHeader;
+            runScriptlet(name, ['a1', '', 'test01']);
+
+            const xhr = new XMLHttpRequest();
+            xhr.setRequestHeader = function ownSetRequestHeader(...args) {
+                return Reflect.apply(getTarget(savedMethod), this, args);
+            };
+            for (let i = 0; i < 2; i += 1) {
+                xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+                xhr.setRequestHeader('X-Test', `value${i}`);
+                xhr.responseType = 'json';
+                // eslint-disable-next-line no-await-in-loop
+                await sendAndWaitForLoad(xhr);
+                assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, `Content of request ${i + 1} pruned`);
+            }
+
+            const forgedHeaderCalls = headerCalls.filter(({ target }) => target !== xhr);
+            assert.deepEqual(
+                forgedHeaderCalls.map(({ args }) => args),
+                [['X-Test', 'value0'], ['X-Test', 'value1']],
+                'Header of each request set once for its forged request',
+            );
+        });
+    });
+
+    test('toString() of the intercepted methods returns the original value', (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        [
+            { method: 'open', nativeMethod: nativeXhrOpen },
+            { method: 'send', nativeMethod: nativeXhrSend },
+            { method: 'setRequestHeader', nativeMethod: nativeXhrSetRequestHeader },
+            { method: 'getResponseHeader', nativeMethod: nativeXhrGetResponseHeader },
+            { method: 'getAllResponseHeaders', nativeMethod: nativeXhrGetAllResponseHeaders },
+            { method: 'abort', nativeMethod: nativeXhrAbort },
+        ].forEach(({ method, nativeMethod }) => {
+            assert.notStrictEqual(XMLHttpRequest.prototype[method], nativeMethod, `${method} intercepted`);
+            assert.strictEqual(
+                XMLHttpRequest.prototype[method].toString(),
+                nativeMethod.toString(),
+                `${method}.toString() returns the original value`,
+            );
+        });
+
+        const xhr = new XMLHttpRequest();
+        const ownSetRequestHeader = function setRequestHeader(...args) {
+            return Reflect.apply(XMLHttpRequest.prototype.setRequestHeader, this, args);
+        };
+        xhr.setRequestHeader = ownSetRequestHeader;
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+
+        assert.notStrictEqual(xhr.setRequestHeader, ownSetRequestHeader, 'Own method of the object wrapped');
+        assert.strictEqual(
+            xhr.setRequestHeader.toString(),
+            ownSetRequestHeader.toString(),
+            'toString() of the own method returns its source',
+        );
+    });
+
+    /**
+     * Returns the response headers of a native request, without the ones which differ between requests.
+     *
+     * @param {XMLHttpRequest} xhr loaded request
+     * @returns {string} response headers as returned by `getAllResponseHeaders()`
+     */
+    const getStableResponseHeaders = (xhr) => {
+        return xhr.getAllResponseHeaders()
+            .split('\r\n')
+            .filter((header) => !header.startsWith('date:'))
+            .join('\r\n');
+    };
+
+    test('Response headers - headers of the forged response returned', async (assert) => {
+        const nativeXhr = new XMLHttpRequest();
+        nativeXhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        await sendAndWaitForLoad(nativeXhr);
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.strictEqual(xhr.getResponseHeader('Content-Type'), null, 'No headers before the response');
+        await sendAndWaitForLoad(xhr);
+
+        assert.strictEqual(xhr.response, '{"b2":"test","c3":3}', 'Content pruned');
+        assert.ok(xhr.getResponseHeader('Content-Type').includes('application/json'), 'Content-Type returned');
+        ['Content-Type', 'content-length', 'Cache-Control'].forEach((headerName) => {
+            assert.strictEqual(
+                xhr.getResponseHeader(headerName),
+                nativeXhr.getResponseHeader(headerName),
+                `${headerName} as the native one`,
+            );
+        });
+        assert.strictEqual(xhr.getResponseHeader('X-Missing'), null, 'null returned for a missing header');
+        assert.strictEqual(getStableResponseHeaders(xhr), getStableResponseHeaders(nativeXhr), 'All headers returned');
+        assert.notOk(Object.prototype.hasOwnProperty.call(xhr, 'getResponseHeader'), 'Object has no own method');
+        assert.throws(() => xhr.getResponseHeader(), TypeError, 'Error of the native method thrown');
+
+        xhr.abort();
+        assert.strictEqual(xhr.getResponseHeader('Content-Type'), null, 'No headers after abort()');
+        assert.strictEqual(xhr.getAllResponseHeaders(), '', 'No headers after abort()');
+    });
+
+    test('Response headers - native headers after the object is opened again', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        await sendAndWaitForLoad(xhr);
+        assert.ok(xhr.getAllResponseHeaders().length > 0, 'Headers of the forged response returned');
+
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test02.json`);
+        assert.strictEqual(xhr.getAllResponseHeaders(), '', 'No headers after open()');
+        await sendAndWaitForLoad(xhr);
+        assert.ok(xhr.getResponseHeader('Content-Type').includes('application/json'), 'Native headers returned');
+    });
+
+    test('Response headers - own methods of the object which call the methods of the prototype', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        // e.g. a library which changes the values of headers
+        xhr.getResponseHeader = function getResponseHeader(...args) {
+            const value = Reflect.apply(XMLHttpRequest.prototype.getResponseHeader, this, args);
+            return value && value.toUpperCase();
+        };
+        xhr.getAllResponseHeaders = function getAllResponseHeaders(...args) {
+            return Reflect.apply(XMLHttpRequest.prototype.getAllResponseHeaders, this, args).toUpperCase();
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        await sendAndWaitForLoad(xhr);
+
+        assert.strictEqual(xhr.getResponseHeader('Content-Type'), 'APPLICATION/JSON', 'Changed header returned');
+        assert.ok(xhr.getAllResponseHeaders().includes('CONTENT-TYPE: APPLICATION/JSON'), 'Changed headers returned');
+    });
+
+    test('Response headers - results of own methods of the object which hide headers are kept', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        // e.g. a library which hides headers on purpose
+        xhr.getResponseHeader = function getResponseHeader(...args) {
+            if (String(args[0]).toLowerCase() === 'content-type') {
+                return null;
+            }
+            return Reflect.apply(XMLHttpRequest.prototype.getResponseHeader, this, args);
+        };
+        xhr.getAllResponseHeaders = () => '';
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        await sendAndWaitForLoad(xhr);
+
+        assert.strictEqual(xhr.getResponseHeader('Content-Type'), null, 'Hidden header not returned');
+        assert.strictEqual(xhr.getResponseHeader('Cache-Control'), 'max-age=3600', 'Other headers returned');
+        assert.strictEqual(xhr.getAllResponseHeaders(), '', 'Hidden headers not returned');
+    });
+
+    test('toString() of an own method of the object which is fixed by the page can be read', (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        const ownSetRequestHeader = function setRequestHeader(...args) {
+            return Reflect.apply(XMLHttpRequest.prototype.setRequestHeader, this, args);
+        };
+        const pageToString = () => 'page method';
+        Object.defineProperty(ownSetRequestHeader, 'toString', {
+            value: pageToString,
+            writable: false,
+            configurable: false,
+        });
+        xhr.setRequestHeader = ownSetRequestHeader;
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+
+        assert.notStrictEqual(xhr.setRequestHeader, ownSetRequestHeader, 'Own method of the object wrapped');
+        assert.strictEqual(xhr.setRequestHeader.toString, pageToString, 'toString of the method returned');
+        assert.strictEqual(xhr.setRequestHeader.toString(), 'page method', 'toString() returns its value');
+    });
+
+    test('Result of an own method of the object which sets headers is returned', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        // e.g. a library which chains the calls
+        xhr.setRequestHeader = function setRequestHeader(...args) {
+            Reflect.apply(XMLHttpRequest.prototype.setRequestHeader, this, args);
+            return this;
+        };
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        const loaded = new Promise((resolve) => {
+            xhr.onload = resolve;
+        });
+        xhr.setRequestHeader('X-Test', 'value').send();
+        await loaded;
+
+        assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content pruned');
+    });
+
+    test('Reused XHR - methods of the object are wrapped once by multiple rules', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+        runScriptlet('trusted-json-set-xhr-response', ['c3', '10', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        const setRequestHeaderMethods = [];
+        for (let i = 0; i < 3; i += 1) {
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            setRequestHeaderMethods.push(xhr.setRequestHeader);
+            xhr.setRequestHeader('X-Test', `value${i}`);
+            xhr.responseType = 'json';
+            // eslint-disable-next-line no-await-in-loop
+            await sendAndWaitForLoad(xhr);
+            assert.deepEqual(xhr.response, { b2: 'test', c3: 10 }, `Content of request ${i + 1} modified by both`);
+        }
+
+        assert.ok(
+            setRequestHeaderMethods.every((method) => method === setRequestHeaderMethods[0]),
+            'Method of the object not wrapped again',
+        );
+    });
+
+    test('Forged request is created by the native constructor if the page has replaced it', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const NativeXMLHttpRequest = window.XMLHttpRequest;
+        const xhr = new NativeXMLHttpRequest();
+        let loaded;
+        // e.g. a library which wraps requests, and uses the native constructor itself
+        window.XMLHttpRequest = function FakeXMLHttpRequest() {};
+        try {
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+            xhr.responseType = 'json';
+            loaded = sendAndWaitForLoad(xhr);
+        } finally {
+            window.XMLHttpRequest = NativeXMLHttpRequest;
+        }
+        await loaded;
+
+        assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content pruned');
+    });
+
+    test('Reused XHR - request opened again before it is sent is matched again', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test02.json`);
+        xhr.responseType = 'json';
+        await sendAndWaitForLoad(xhr);
+
+        assert.deepEqual(xhr.response, { ad: 1, src: 'test', count: 3 }, 'Native content of the second request');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    });
+
+    test('Reused XHR - response of the previous request is not delivered after open()', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        let loadsCount = 0;
+        xhr.addEventListener('load', () => {
+            loadsCount += 1;
+        });
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.responseType = 'json';
+        xhr.send();
+
+        // Opened again while the forged request is in flight
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test02.json`);
+        xhr.responseType = 'json';
+        await sendAndWaitForLoad(xhr);
+        await sleep(200);
+
+        assert.strictEqual(loadsCount, 1, 'Only the second request is loaded');
+        assert.deepEqual(xhr.response, { ad: 1, src: 'test', count: 3 }, 'Native content of the second request');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    });
+
+    test('Aborted request - events of an aborted request, and its response is not delivered', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        const events = [];
+        ['readystatechange', 'load', 'abort', 'loadend'].forEach((type) => {
+            xhr.addEventListener(type, () => {
+                events.push(`${type}:${xhr.readyState}`);
+            });
+        });
+        const progressEvents = [];
+        ['abort', 'loadend'].forEach((type) => {
+            xhr.addEventListener(type, (event) => {
+                progressEvents.push(event);
+            });
+        });
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        events.length = 0;
+        xhr.send();
+        xhr.abort();
+
+        const ABORT_EVENTS = ['readystatechange:4', 'abort:4', 'loadend:4'];
+        assert.deepEqual(events, ABORT_EVENTS, 'Events of an aborted request dispatched');
+        assert.ok(
+            progressEvents.every((event) => event instanceof ProgressEvent && event.loaded === 0),
+            'abort and loadend are progress events of zero length',
+        );
+        assert.strictEqual(xhr.readyState, 0, 'readyState after abort()');
+        assert.strictEqual(xhr.status, 0, 'status after abort()');
+        assert.strictEqual(xhr.response, '', 'response after abort()');
+
+        await sleep(200);
+        assert.deepEqual(events, ABORT_EVENTS, 'Response of the aborted request not delivered');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
+
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.strictEqual(xhr.readyState, 1, 'Native readyState after open()');
+        xhr.responseType = 'json';
+        await sendAndWaitForLoad(xhr);
+        assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content of the next request pruned');
+    });
+
+    /**
+     * Sends a request, calls the action in a listener of the given event of its response,
+     * and returns the events of the response dispatched after that, with the final `readyState`.
+     *
+     * @param {string} url URL of the request
+     * @param {string} listenedType type of the event in whose listener the action is called
+     * @param {Function} act action, e.g. opening the object again
+     * @returns {Promise<string[]>} types of the dispatched events, and the final `readyState`
+     */
+    const getEventsAfterAction = async (url, listenedType, act) => {
+        const xhr = new XMLHttpRequest();
+        const events = [];
+        let isActed = false;
+        const acted = new Promise((resolve) => {
+            xhr.addEventListener(listenedType, () => {
+                if (isActed || xhr.readyState !== 4) {
+                    return;
+                }
+                isActed = true;
+                act(xhr);
+                resolve();
+            });
+        });
+        ['load', 'loadend'].forEach((type) => {
+            xhr.addEventListener(type, () => {
+                if (isActed) {
+                    events.push(type);
+                }
+            });
+        });
+        xhr.open('GET', url);
+        xhr.send();
+        await acted;
+        await sleep(100);
+        return [...events, `readyState:${xhr.readyState}`];
+    };
+
+    [
+        { action: 'open()', act: (xhr) => xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`), readyState: 1 },
+        { action: 'abort()', act: (xhr) => xhr.abort(), readyState: 0 },
+    ].forEach(({ action, act, readyState }) => {
+        ['readystatechange', 'load'].forEach((listenedType) => {
+            test(`Response events - load and loadend dispatched after ${action} in ${listenedType}`, async (assert) => {
+                runScriptlet(name, ['a1', '', 'test01']);
+
+                const events = await getEventsAfterAction(`${FETCH_OBJECTS_PATH}/test01.json`, listenedType, act);
+
+                // As in the specification and in Firefox, also after a listener of `readystatechange`,
+                // although Chromium-based browsers do not dispatch them then
+                assert.deepEqual(events, ['load', 'loadend', `readyState:${readyState}`], 'Events dispatched');
+            });
+        });
+    });
+
+    test('Response events - load and loadend are progress events of the response', async (assert) => {
+        const getProgress = ({ lengthComputable, loaded, total }) => ({ lengthComputable, loaded, total });
+        const nativeXhr = new XMLHttpRequest();
+        nativeXhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        const nativeLoadEvent = await new Promise((resolve) => {
+            nativeXhr.onload = resolve;
+            nativeXhr.send();
+        });
+
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        const progressEvents = {};
+        ['load', 'loadend'].forEach((type) => {
+            xhr.addEventListener(type, (event) => {
+                progressEvents[type] = event;
+            });
+        });
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        await sendAndWaitForLoad(xhr);
+
+        ['load', 'loadend'].forEach((type) => {
+            const event = progressEvents[type];
+            assert.ok(event instanceof ProgressEvent, `${type} is a progress event`);
+            assert.deepEqual(getProgress(event), getProgress(nativeLoadEvent), `${type} has the native progress`);
+        });
+    });
+
+    test('Aborted request - events of an aborted request before the events of its response', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        const events = [];
+        ['readystatechange', 'load', 'abort', 'loadend'].forEach((type) => {
+            xhr.addEventListener(type, () => {
+                events.push(`${type}:${xhr.readyState}`);
+            });
+        });
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        events.length = 0;
+        // Response of an asynchronous request is defined on the object before its events, which are deferred
+        const nativeDefineProperties = Object.defineProperties;
+        const responseDefined = new Promise((resolve) => {
+            Object.defineProperties = function defineProperties(...args) {
+                const result = Reflect.apply(nativeDefineProperties, this, args);
+                if (args[0] === xhr) {
+                    Object.defineProperties = nativeDefineProperties;
+                    resolve();
+                }
+                return result;
+            };
+        });
+        try {
+            xhr.send();
+            await responseDefined;
+        } finally {
+            Object.defineProperties = nativeDefineProperties;
+        }
+        assert.strictEqual(xhr.readyState, 4, 'Response defined');
+
+        xhr.abort();
+
+        const ABORT_EVENTS = ['readystatechange:4', 'abort:4', 'loadend:4'];
+        assert.deepEqual(events, ABORT_EVENTS, 'Events of an aborted request dispatched');
+        await sleep(100);
+        assert.deepEqual(events, ABORT_EVENTS, 'Events of the response not dispatched');
+        assert.strictEqual(xhr.readyState, 0, 'readyState after abort()');
+    });
+
+    test('Synchronous request - events of the response dispatched before send() returns', (assert) => {
+        /**
+         * Sends synchronous requests on the same object, and returns the events dispatched before `send()` returns.
+         *
+         * @param {string} url URL of the requests
+         * @returns {string[]} events with `readyState`
+         */
+        const getSyncEvents = (url) => {
+            const xhr = new XMLHttpRequest();
+            const events = [];
+            ['readystatechange', 'load', 'loadend'].forEach((type) => {
+                xhr.addEventListener(type, () => {
+                    events.push(`${type}:${xhr.readyState}`);
+                });
+            });
+            for (let i = 0; i < 2; i += 1) {
+                // e.g. the next request sent right after the previous one
+                xhr.open('GET', url, false);
+                events.push('send');
+                xhr.send();
+            }
+            return events;
+        };
+
+        // Request which is not matched
+        const nativeEvents = getSyncEvents(`${FETCH_OBJECTS_PATH}/test02.json`);
+        runScriptlet(name, ['a1', '', 'test01']);
+        const events = getSyncEvents(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+        assert.deepEqual(events, nativeEvents, `Events dispatched as native ones: ${nativeEvents}`);
+        assert.ok(events.includes('load:4'), 'load dispatched');
+    });
+
+    test('Request opened without async is sent asynchronously', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        const loaded = sendAndWaitForLoad(xhr);
+        assert.strictEqual(xhr.readyState, 1, 'Response not received when send() returns');
+
+        await loaded;
+        assert.strictEqual(xhr.response, '{"b2":"test","c3":3}', 'Content pruned');
+    });
+
+    test('Failed synchronous request is not sent again', (assert) => {
+        /**
+         * Sends a synchronous request which fails, and returns its state after that.
+         *
+         * @returns {{xhr: XMLHttpRequest, state: string}} object of the request, and its state
+         */
+        const sendFailingRequest = () => {
+            const xhr = new XMLHttpRequest();
+            const events = [];
+            ['readystatechange', 'load', 'error', 'loadend'].forEach((type) => {
+                xhr.addEventListener(type, () => {
+                    events.push(`${type}:${xhr.readyState}`);
+                });
+            });
+            // Port which browsers block, so the request fails without connecting
+            xhr.open('POST', 'http://127.0.0.1:1/', false);
+            events.length = 0;
+            let errorName = 'no error';
+            try {
+                xhr.send('body');
+            } catch (error) {
+                errorName = error.name;
+            }
+            const state = `${errorName}, readyState: ${xhr.readyState}, status: ${xhr.status}`
+                + `, response: '${xhr.response}', events: [${events}]`;
+            return { xhr, state };
+        };
+
+        const nativeState = sendFailingRequest().state;
+
+        let sendCalls = 0;
+        XMLHttpRequest.prototype.send = function send(...args) {
+            sendCalls += 1;
+            return Reflect.apply(nativeXhrSend, this, args);
+        };
+        runScriptlet(name, ['a1']);
+
+        const { xhr, state } = sendFailingRequest();
+        assert.strictEqual(state, nativeState, `State as of a native request: ${nativeState}`);
+        assert.strictEqual(sendCalls, 1, 'Request sent once');
+
+        const events = [];
+        ['readystatechange', 'abort', 'loadend'].forEach((type) => {
+            xhr.addEventListener(type, () => {
+                events.push(type);
+            });
+        });
+        xhr.abort();
+        assert.deepEqual(events, [], 'No events dispatched by abort() of the failed request');
+        assert.strictEqual(xhr.readyState, 0, 'readyState after abort()');
+    });
+
+    test('Invalid stack - request is not modified', async (assert) => {
+        const runLogs = getSyncLogs(() => runScriptlet(name, ['a1', '', 'test01', '/(/']));
+        assert.ok(runLogs.includes(`${name}: Invalid stack: /(/`), 'Invalid stack logged when the scriptlet runs');
+
+        const xhr = new XMLHttpRequest();
+        const requestLogs = await getLogs(async () => {
+            for (let i = 0; i < 2; i += 1) {
+                xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+                xhr.responseType = 'json';
+                // eslint-disable-next-line no-await-in-loop
+                await sendAndWaitForLoad(xhr);
+            }
+        });
+
+        assert.deepEqual(xhr.response, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+        assert.notOk(requestLogs.some((log) => log.includes('Invalid stack')), 'Invalid stack not logged on requests');
+        assert.strictEqual(window.hit, undefined, 'hit should not fire');
     });
 
     test('Prune content of a deeply nested JSON response - json', async (assert) => {

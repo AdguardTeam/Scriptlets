@@ -14,8 +14,10 @@ import {
     addStackTraceMessageLine,
     getPropertyInChain,
     getMethodOwner,
+    getFunctionProxyProperty,
     getWildcardPropertyInChain,
     logMessage,
+    getThrownValueMessage,
     isPruningNeeded,
     jsonSetter,
     getPrunePath,
@@ -542,7 +544,7 @@ export function trustedJsonSet(
                     return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))];
                 } catch {
                     // eslint-disable-next-line max-len
-                    return [`Could not clone content of ${methodPath} (original and modified objects are the same): ${(error as Error).message}\n`, value];
+                    return [`Could not clone content of ${methodPath} (original and modified objects are the same): ${getThrownValueMessage(error)}\n`, value];
                 }
             }
         }
@@ -961,8 +963,9 @@ export function trustedJsonSet(
      * Modifies an object value directly by `applyJsonMutation()`, i.e. by `jsonPath` in JSONPath mode
      * or by `jsonSetter` otherwise, or a string value after JSON parsing, which is stringified again then.
      * A string which is not a JSON object is processed as line-delimited JSON,
-     * and it is returned unchanged only if it has no JSON lines either.
+     * and it is returned unchanged if it has no JSON lines either.
      * In logging-only mode, the value is only logged. Values of other types are returned unchanged.
+     * A value is returned unchanged as well if its modification throws an error, which is logged.
      *
      * @param jsonValue candidate JSON value to modify
      * @param errorMessage message prefix used for logging unexpected errors
@@ -975,7 +978,7 @@ export function trustedJsonSet(
             try {
                 logOriginalOnlyContent(jsonValue, currentStackTrace);
             } catch (error) {
-                logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+                logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
             }
             return jsonValue;
         }
@@ -996,16 +999,24 @@ export function trustedJsonSet(
 
                 return mutationResult.value;
             } catch (error) {
-                logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+                logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
                 return jsonValue;
             }
         }
 
         if (typeof jsonValue === 'string') {
             let messageError = '';
+            let parsedValue;
             try {
-                const parsedValue = nativeObjects.nativeParse(jsonValue);
-                if (parsedValue !== null && typeof parsedValue === 'object') {
+                parsedValue = nativeObjects.nativeParse(jsonValue);
+            } catch (error) {
+                messageError = getThrownValueMessage(error);
+            }
+
+            // A JSON object is not processed as line-delimited JSON if its modification throws,
+            // as it would be parsed and modified again in the same way
+            if (parsedValue !== null && typeof parsedValue === 'object') {
+                try {
                     const originalSnapshot = shouldLogVerboseContent
                         ? captureOriginalStructuredContent(parsedValue)
                         : null;
@@ -1018,9 +1029,11 @@ export function trustedJsonSet(
                         }
                     }
                     return nativeObjects.nativeStringify(mutationResult.value);
+                } catch (error) {
+                    // e.g. thrown by `toJSON()` of the page, which may throw a value without a message
+                    logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
+                    return jsonValue;
                 }
-            } catch (error) {
-                messageError = error instanceof Error ? error.message : String(error);
             }
 
             // If parsing fails, try to process it as line-delimited JSON
@@ -1055,7 +1068,7 @@ export function trustedJsonSet(
 
                 return jsonValue;
             } catch (error) {
-                logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+                logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
                 return jsonValue;
             }
         }
@@ -1089,7 +1102,7 @@ export function trustedJsonSet(
         try {
             return modifyJsonValue(jsonValue, errorMessage, currentStackTrace);
         } catch (error) {
-            logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+            logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
             return jsonValue;
         } finally {
             isMatchingSuspended = wasMatchingSuspended;
@@ -1131,7 +1144,7 @@ export function trustedJsonSet(
         } catch (error) {
             // e.g. if the result only inherits from `Promise.prototype`,
             // so it is returned as is, and the intercepted method is not called again
-            logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+            logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
             return result;
         }
     };
@@ -1206,7 +1219,7 @@ export function trustedJsonSet(
                     }
                 }
             } catch (error) {
-                logMessage(source, `Unexpected error during JSON modification: ${(error as Error).message}`);
+                logMessage(source, `Unexpected error during JSON modification: ${getThrownValueMessage(error)}`);
             }
 
             // Errors thrown by the intercepted method are not caught, so it is not called again
@@ -1225,16 +1238,9 @@ export function trustedJsonSet(
         }
     };
 
-    const getWrapper = (target: Function, propName: string, receiver: any) => {
-        if (propName === 'toString') {
-            return target.toString.bind(target);
-        }
-        return Reflect.get(target, propName, receiver);
-    };
-
     const objectHandler = {
         apply: objectWrapper,
-        get: getWrapper,
+        get: getFunctionProxyProperty,
     };
 
     methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
@@ -1264,8 +1270,10 @@ trustedJsonSet.injections = [
     addStackTraceMessageLine,
     getPropertyInChain,
     getMethodOwner,
+    getFunctionProxyProperty,
     getWildcardPropertyInChain,
     logMessage,
+    getThrownValueMessage,
     isPruningNeeded,
     jsonSetter,
     getPrunePath,

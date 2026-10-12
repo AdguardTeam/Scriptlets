@@ -453,8 +453,18 @@ Project-specific rules:
     hook of `json-prune`: `stack` is matched in the wrapper before the
     response is awaited, calls which do not match it are passed through as
     is, and an empty `stack` is passed to the helpers which process the
-    response, e.g. `jsonPruner()` or `jsonPath()`. `fetch()` is called once,
-    outside of `try`, so its rejection is passed to the page as is.
+    response, e.g. `jsonPruner()` or `jsonPath()`. In logging mode of
+    `json-prune-fetch-response` and of the `Response.prototype.json` hook,
+    i.e. without properties to remove, `stack` is not matched, as `jsonPruner()`
+    logs the content regardless of it, e.g. for `JSON.parse()` of `json-prune`,
+    and the stack trace read in the wrapper is passed to it to be logged.
+    The `Response.prototype.json` hook chains a promise which is not an
+    instance of the saved `Promise` with its own `then()`, as `json()` always
+    returns a promise, but the saved `Promise` and its `then()` are not native
+    ones if the page has replaced them before the scriptlet has run, e.g. by
+    zone.js, and its `then()` may not support a native promise.
+    `fetch()` is called once, outside of `try`, so its rejection is passed to
+    the page as is.
 
     **Rationale**: Path setters create missing properties on the promise
     itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
@@ -481,6 +491,12 @@ Project-specific rules:
     If it is read only for `stack` but after the intercepted method is called,
     e.g. in `trusted-replace-outbound-text`, it MUST be guarded the same way,
     and the result of the call returned as is if it fails.
+    `matchStackTrace()` throws if `stack` is an invalid regular expression,
+    so a scriptlet which matches it in a wrapper SHOULD check it once when it
+    runs, with `isValidStackPattern()`, and not apply the rule then, which is
+    logged once. Otherwise the wrapper MUST catch the error and pass the call
+    through, as the helpers which match `stack` themselves do it, i.e.
+    `jsonPruner()`, `jsonSetter()` and `jsonPath()`.
     A new function MUST NOT be added only to create the stack trace one call
     deeper instead, and neither a helper which only reads the stack trace of
     an error created by the caller, as creating it would not be guarded then.
@@ -506,7 +522,10 @@ Project-specific rules:
     succeeded otherwise.
     A call from another function, or an error of the intercepted method, would
     disable the rule for the next calls otherwise, e.g. in
-    `trusted-replace-outbound-text`.
+    `trusted-replace-outbound-text`. The helpers which match `stack` catch the
+    error of an invalid one, so the content is left unmodified, and a wrapper
+    should not throw it to the page instead. An invalid `stack` checked on each
+    call would be matched and logged on each call, e.g. of `JSON.parse()`.
 
 18. Scriptlets which intercept a method by its path, e.g. `localStorage.setItem`,
     MUST replace it in the object returned by `getMethodOwner()` for the base
@@ -529,6 +548,83 @@ Project-specific rules:
     not intercepted. Defining a getter or setter of a storage property throws
     in all browsers, so `set-constant` and `trusted-set-constant` do not support
     storage properties.
+
+19. Scriptlets which send a forged `XMLHttpRequest` instead of the request of
+    the page, to modify its response, SHOULD use `interceptXhrResponses()`, and
+    otherwise MUST follow it. `trusted-replace-xhr-response`, `xml-prune` and
+    `m3u-prune` do not follow it yet, and SHOULD be moved to the helper when
+    they are changed. The state of a request, i.e. whether it is matched, its
+    headers and its forged request, is reset when its object is opened again,
+    and the forged request of the previous one is aborted, so its events are
+    not dispatched, also when the page calls `abort()`, which dispatches the
+    events of an aborted request instead.
+    Once the events of a response are dispatched, `load` and `loadend` follow
+    `readystatechange` even if its listener opens the object again or aborts it,
+    as in the specification and in Firefox, although Chromium-based browsers do
+    not dispatch them then, as a page which waits for them would never finish.
+    Events of a synchronous request are dispatched before `send()` returns, as
+    by a native one, while the ones of an asynchronous request are deferred.
+    An error of modifying or defining the response is caught, and the events
+    are dispatched anyway, with the original text of the response if it cannot
+    be modified, so the request of the page is always completed.
+    Headers are collected by one hook of `XMLHttpRequest.prototype.setRequestHeader`,
+    and by a wrapper of another method of a matched object, e.g. its own one,
+    or the hook of another rule, which the rules do not recognize, as the
+    method of each object is wrapped only once by each rule, so the wrappers
+    of multiple rules do not wrap each other again, and only the outermost
+    wrapper of each rule collects a header. The headers of the forged response
+    are returned by the hooks of `getResponseHeader()` and
+    `getAllResponseHeaders()` of the prototype, which replace only the result
+    of the object without headers, as it is not sent, but other methods of an
+    object are not wrapped for them, so a value which a method of the page
+    changes or hides on purpose is kept. The forged request is created by the
+    native constructor saved when the scriptlet runs, opened with the arguments
+    of `open()` of the page, and sent once, not in a `try` whose `catch` sends
+    it again. If it fails, e.g. a synchronous request with a network error,
+    its error is thrown to the page, and the object is done with the network
+    error, as a native one, while it would be still opened otherwise.
+
+    **Rationale**: The page may reuse the object for the next request, or abort
+    it, e.g. on each input of a search, and `open()` and `abort()` of the object
+    of the page change nothing, as it is never sent. A response of the previous
+    request would be delivered as the response of the next one otherwise, and
+    a wrapper created for each request of an object wraps the previous one
+    again, so each header is sent once more with each next request. The page
+    may wrap the method of an object, and call the native method saved before
+    the scriptlet has run, so the hook of the prototype alone would miss such
+    headers, e.g. of authentication. The object of the page has no response
+    headers otherwise, while the page may check them, e.g. `Content-Type`, see
+    [#419](https://github.com/AdguardTeam/Scriptlets/issues/419). `async` is
+    `true` if it is omitted, but `false` if it is `undefined`. A failed
+    synchronous request throws a network error, and sending it again repeats
+    its side effects.
+
+20. Errors thrown by functions of the page, e.g. by the intercepted method,
+    a getter of its argument or `toJSON()` of a value, MUST be logged with
+    `getThrownValueMessage()`, neither with `getErrorMessage()` nor by reading
+    their `message` directly.
+
+    **Rationale**: `getErrorMessage()` converts a value without a message by
+    `JSON.stringify()`, which calls `toJSON()` of the page, even if the message
+    is not logged, and it may be the method intercepted by the scriptlet itself,
+    e.g. `JSON.stringify` of `call-nothrow`, which would then be called again,
+    with the same error, until the call stack is exceeded. It also creates
+    an error by `Error`, which the page may replace with a constructor which
+    throws. The page may throw any value, e.g. `null` or `undefined`, so reading
+    its `message` throws another error, which replaces the logged one.
+
+21. A Proxy which replaces a function of the page, e.g. a method intercepted
+    by a scriptlet, SHOULD use `getFunctionProxyProperty()` as its `get` trap,
+    instead of a copy of it, so its `toString()` returns the same string as the
+    function.
+
+    **Rationale**: `toString()` of a Proxy of a function returns the string of
+    a native function without its name, e.g. `function () { [native code] }`,
+    instead of e.g. `function open() { [native code] }`, or the source of
+    a function of the page, which the page may check. The trap returns
+    a non-configurable own `toString` of the function as it is, as a Proxy
+    throws when it is read otherwise, e.g. if the page has defined it as not
+    writable on its own function.
 
 ### III. Testing discipline
 

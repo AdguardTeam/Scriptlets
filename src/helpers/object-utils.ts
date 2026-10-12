@@ -118,3 +118,30 @@ export function getMethodOwner(base: Record<string, unknown>, prop: string): Rec
 
     return base;
 }
+
+/**
+ * `get` trap of a Proxy of a function, which returns `toString()` of the function bound to it,
+ * so the Proxy returns the same string as the function, e.g. with its name, or the source of a function
+ * of the page, while `toString()` of a Proxy returns the string of a native function without its name.
+ *
+ * `toString` which is a non-configurable own property of the function, e.g. defined by the page
+ * as not writable, is returned as it is, as the trap must return it then, and reading it throws otherwise.
+ *
+ * @param target function wrapped by the Proxy
+ * @param propName name of the property
+ * @param receiver the Proxy
+ * @returns value of the property
+ */
+export function getFunctionProxyProperty<T extends Function>(
+    target: T,
+    propName: string | symbol,
+    receiver: unknown,
+): unknown {
+    if (propName === 'toString') {
+        const descriptor = Reflect.getOwnPropertyDescriptor(target, propName);
+        if (!descriptor || descriptor.configurable) {
+            return target.toString.bind(target);
+        }
+    }
+    return Reflect.get(target, propName, receiver);
+}

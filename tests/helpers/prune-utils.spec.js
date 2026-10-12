@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { jsonPruner, getPrunePath, jsonLineEdit } from '../../src/helpers';
-import { useThrowingErrorConstructor, useUnreadableStackTrace } from '../helpers';
+import { countCreatedErrors, useThrowingErrorConstructor, useUnreadableStackTrace } from '../helpers';
 
 const name = 'json-prune';
 const nativeObjects = {
@@ -1299,5 +1299,78 @@ describe.each([
 
         expect(result).toBe(root);
         expect(logs.some((log) => log.includes('"foo": 1') && log.endsWith('Stack trace:\n'))).toBe(true);
+    });
+});
+
+describe('jsonPruner logging with a stack trace passed to it', () => {
+    test.each([
+        { mode: 'logging-only', requiredPaths: '' },
+        { mode: 'logging of matched content', requiredPaths: 'foo' },
+    ])('logs the content in $mode mode with the passed stack trace', ({ requiredPaths }) => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        const root = { foo: 1 };
+
+        let result;
+        let createdErrorsCount;
+        try {
+            createdErrorsCount = countCreatedErrors(() => {
+                result = jsonPruner(name, root, [], getPrunePath(requiredPaths), '', nativeObjects, 'passed trace');
+            });
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe(root);
+        expect(createdErrorsCount).toBe(0);
+        expect(logs.some((log) => log.includes('"foo": 1') && log.endsWith('Stack trace:\npassed trace'))).toBe(true);
+    });
+});
+
+describe.each([
+    { failure: 'cannot be read', useStackTraceFailure: useUnreadableStackTrace },
+    // as the page has replaced `Error` with a constructor which throws
+    { failure: 'cannot be created', useStackTraceFailure: useThrowingErrorConstructor },
+])('jsonPruner with stack and a stack trace which $failure', ({ useStackTraceFailure }) => {
+    test('does not prune the content, and logs no error', () => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        const root = { foo: 1, bar: 2 };
+
+        const restoreStackTrace = useStackTraceFailure();
+        let result;
+        try {
+            result = jsonPruner({ name, verbose: true }, root, getPrunePath('foo'), [], 'stack', nativeObjects);
+        } finally {
+            restoreStackTrace();
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toEqual({ foo: 1, bar: 2 });
+        expect(logs).toEqual([]);
+    });
+});
+
+describe('jsonPruner with a value which cannot be converted to a string thrown by the page', () => {
+    test('does not throw while it is logged', () => {
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const root = {
+            get foo() {
+                throw Object.create(null);
+            },
+        };
+
+        let result;
+        try {
+            result = jsonPruner({ name, verbose: true }, root, getPrunePath('foo.bar'), [], '', nativeObjects);
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe(root);
     });
 });

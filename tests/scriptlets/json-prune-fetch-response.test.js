@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, getLogs } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'json-prune-fetch-response';
@@ -656,5 +656,40 @@ if (!isSupported) {
         assert.strictEqual(response, receivedResponse, 'Received response returned');
         assert.strictEqual(calls, 1, 'Request sent once');
         assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('toString() of fetch returns the original value', (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        assert.notStrictEqual(fetch, nativeFetch, 'fetch intercepted');
+        assert.strictEqual(fetch.toString(), nativeFetch.toString(), 'toString() returns the original value');
+    });
+
+    test('Invalid stack - request is sent and its content is not pruned', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01', '/(/']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const result = await response.json();
+
+        assert.deepEqual(result, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('Logging mode - content logged regardless of stack, with the caller of fetch', async (assert) => {
+        runScriptlet(name, ['', '', 'test01', 'notMatchingStack']);
+
+        // The function is no longer in the stack when the response is awaited
+        const getFetchResponse = () => fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        let result;
+        const logs = await getLogs(async () => {
+            const response = await getFetchResponse();
+            result = await response.json();
+        });
+
+        assert.deepEqual(result, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+        assert.ok(
+            logs.some((log) => log.includes('"c3": 3') && log.includes('getFetchResponse')),
+            'Content logged with the stack trace of the caller',
+        );
     });
 }

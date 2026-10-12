@@ -9,6 +9,7 @@ import {
     matchStackTrace,
     addStackTraceMessageLine,
     getErrorMessage,
+    getThrownValueMessage,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     toRegExp,
@@ -200,14 +201,9 @@ export function trustedSuppressNativeMethod(
                 && matchMethodCall(argumentsList, signatureMatcher);
         } catch (e) {
             // e.g. a getter of an argument which throws, so the call is not suppressed.
-            // Getting the error message may throw as well, as `getErrorMessage()` creates an error for a value
-            // without a message, e.g. a primitive thrown by `Error` replaced by the page,
-            // which should not stop the method from being called
-            try {
-                logMessage(source, `Could not match the call: ${getErrorMessage(e)}`);
-            } catch {
-                logMessage(source, 'Could not match the call');
-            }
+            // Error is not converted to get its message, as it may call the page again, e.g. its `toJSON()`,
+            // and the error may be a primitive thrown by the page, e.g. by `Error` replaced by it
+            logMessage(source, `Could not match the call: ${getThrownValueMessage(e)}`);
         } finally {
             // Matching is resumed on every return path, as the next calls would not be processed otherwise
             isMatchingSuspended = false;
@@ -242,6 +238,7 @@ trustedSuppressNativeMethod.injections = [
     matchStackTrace,
     addStackTraceMessageLine,
     getErrorMessage,
+    getThrownValueMessage,
     splitByPipeRespectingRegex,
     // following helpers should be imported and injected
     // because they are used by helpers above

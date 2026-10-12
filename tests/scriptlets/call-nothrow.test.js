@@ -12,6 +12,7 @@ const name = 'call-nothrow';
 
 // Scriptlets replace methods of storages in Storage.prototype
 const restoreStorage = saveStorageMethods();
+const nativeStringify = JSON.stringify;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -22,6 +23,7 @@ const beforeEach = () => {
 const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     restoreStorage();
+    JSON.stringify = nativeStringify;
 };
 
 module(name, { beforeEach, afterEach });
@@ -136,7 +138,7 @@ test('Error which has no message does not escape - Error replaced by the page', 
     };
     runScriptlet(name, ['throwingFunc']);
 
-    // A primitive has no message, so getting its message by creating an error throws as well
+    // A primitive has no message, and it is converted to a string without creating an error
     let result = 'not called';
     const logs = getSyncLogs(() => {
         const restoreError = useThrowingErrorConstructor('Error cannot be created');
@@ -148,8 +150,44 @@ test('Error which has no message does not escape - Error replaced by the page', 
     });
 
     assert.strictEqual(result, undefined, 'Error not thrown, undefined returned');
-    assert.ok(logs.includes(`${name}: Error calling throwingFunc`), 'Error logged without its message');
+    assert.ok(logs.includes(`${name}: Error calling throwingFunc: Page error`), 'Error logged with its message');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('throwingFunc');
+});
+
+[true, false].forEach((verbose) => {
+    test(`Intercepted method is not called again to get the message of its error - verbose: ${verbose}`, (assert) => {
+        runScriptlet(name, ['JSON.stringify'], verbose);
+
+        let toJSONCalls = 0;
+        const value = {
+            toJSON() {
+                toJSONCalls += 1;
+                // Object without a message, which would be converted by `JSON.stringify` to get one
+                // eslint-disable-next-line no-throw-literal
+                throw this;
+            },
+        };
+        let result = 'not called';
+        getSyncLogs(() => {
+            result = JSON.stringify(value);
+        });
+
+        assert.strictEqual(result, undefined, 'Error not thrown, undefined returned');
+        assert.strictEqual(toJSONCalls, 1, 'Method of the page called once');
+    });
+});
+
+test('toString() of the intercepted function returns the original value', (assert) => {
+    const nativeFunction = function throwingFunc() {
+        throw new Error('Page error');
+    };
+    window.throwingFunc = nativeFunction;
+    runScriptlet(name, ['throwingFunc']);
+
+    assert.notStrictEqual(window.throwingFunc, nativeFunction, 'Function intercepted');
+    assert.strictEqual(window.throwingFunc.toString(), nativeFunction.toString(), 'toString() returns the original');
 
     clearGlobalProps('throwingFunc');
 });

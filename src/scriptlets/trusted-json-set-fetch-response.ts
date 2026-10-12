@@ -11,6 +11,8 @@ import {
     isPruningNeeded,
     matchStackTrace,
     addStackTraceMessageLine,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,
@@ -45,6 +47,7 @@ import {
     parseJsonSetArgumentValue,
     parseKeywordValue,
     resolveJsonSetTimeKeywords,
+    getThrownValueMessage,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -185,6 +188,13 @@ export function trustedJsonSetFetchResponse(
         return;
     }
 
+    // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
+    // which is logged once, instead of on each request
+    if (stack && !isValidStackPattern(stack)) {
+        logMessage(source, `Invalid stack: ${stack}`);
+        return;
+    }
+
     const shouldLogContent = verbose === 'true';
 
     const nativeObjects = {
@@ -300,28 +310,42 @@ export function trustedJsonSetFetchResponse(
             return clonedResponse;
         }
 
+        let json;
+        let isParsed = false;
         try {
-            const json = nativeObjects.nativeParse(textContent);
-            if (shouldLogContent) {
-                // eslint-disable-next-line max-len
-                logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                logMessage(source, json, true, false);
-            }
-
-            const modifiedJson = applyJsonMutation(json);
-
-            if (shouldLogContent) {
-                // eslint-disable-next-line max-len
-                logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                logMessage(source, modifiedJson, true, false);
-            }
-
-            return forgeResponse(
-                originalResponse,
-                nativeObjects.nativeStringify(modifiedJson),
-            );
+            json = nativeObjects.nativeParse(textContent);
+            isParsed = true;
         } catch {
-            // If response body is not a single JSON document, try to process it as line-delimited JSON
+            // If response body is not a single JSON document, it is processed as line-delimited JSON below
+        }
+
+        // A JSON document is not processed as line-delimited JSON if its modification throws,
+        // as it would be parsed and modified again in the same way
+        if (isParsed) {
+            try {
+                if (shouldLogContent) {
+                    // eslint-disable-next-line max-len
+                    logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${stackTrace}`, true);
+                    logMessage(source, json, true, false);
+                }
+
+                const modifiedJson = applyJsonMutation(json);
+
+                if (shouldLogContent) {
+                    // eslint-disable-next-line max-len
+                    logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${stackTrace}`, true);
+                    logMessage(source, modifiedJson, true, false);
+                }
+
+                return forgeResponse(
+                    originalResponse,
+                    nativeObjects.nativeStringify(modifiedJson),
+                );
+            } catch (error) {
+                // e.g. thrown by serializing a value which is too deeply nested
+                logMessage(source, `Response body can't be modified: ${getThrownValueMessage(error)}`);
+                return clonedResponse;
+            }
         }
 
         try {
@@ -352,19 +376,12 @@ export function trustedJsonSetFetchResponse(
         }
     };
 
-    const getWrapper = (target: typeof fetch, propName: string, receiver: any) => {
-        if (propName === 'toString') {
-            return target.toString.bind(target);
-        }
-        return Reflect.get(target, propName, receiver);
-    };
-
     const fetchHandler = {
         apply: fetchHandlerWrapper,
-        get: getWrapper,
+        get: getFunctionProxyProperty,
     };
 
-    window.fetch = new Proxy(window.fetch, fetchHandler);
+    window.fetch = new Proxy<typeof fetch>(window.fetch, fetchHandler);
 }
 
 export const trustedJsonSetFetchResponseNames = [
@@ -387,6 +404,8 @@ trustedJsonSetFetchResponse.injections = [
     isPruningNeeded,
     matchStackTrace,
     addStackTraceMessageLine,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,
@@ -421,4 +440,5 @@ trustedJsonSetFetchResponse.injections = [
     parseJsonSetArgumentValue,
     parseKeywordValue,
     resolveJsonSetTimeKeywords,
+    getThrownValueMessage,
 ];

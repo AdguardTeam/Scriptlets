@@ -3,8 +3,9 @@ import {
     getPropertyInChain,
     getMethodOwner,
     logMessage,
-    getErrorMessage,
+    getThrownValueMessage,
     isEmptyObject,
+    getFunctionProxyProperty,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -79,14 +80,9 @@ export function callNoThrow(source, functionName) {
         try {
             result = Reflect.apply(...args);
         } catch (e) {
-            // Getting the error message may throw as well, as `getErrorMessage()` creates an error for a value
-            // without a message, e.g. a primitive thrown by the method, while `Error` is replaced by the page,
-            // which should not be thrown to the page
-            try {
-                logMessage(source, `Error calling ${functionName}: ${getErrorMessage(e)}`);
-            } catch {
-                logMessage(source, `Error calling ${functionName}`);
-            }
+            // Error is not converted to get its message, as it would call the intercepted method again,
+            // e.g. `JSON.stringify`, and the error may be `null` or `undefined`, which has no message
+            logMessage(source, `Error calling ${functionName}: ${getThrownValueMessage(e)}`);
         }
         hit(source);
         return result;
@@ -94,6 +90,7 @@ export function callNoThrow(source, functionName) {
 
     const objectHandler = {
         apply: objectWrapper,
+        get: getFunctionProxyProperty,
     };
 
     methodOwner[prop] = new Proxy(methodOwner[prop], objectHandler);
@@ -115,7 +112,8 @@ callNoThrow.injections = [
     getPropertyInChain,
     getMethodOwner,
     logMessage,
-    getErrorMessage,
+    getThrownValueMessage,
     // following helpers are needed for helpers above
     isEmptyObject,
+    getFunctionProxyProperty,
 ];

@@ -12,6 +12,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getThrownValueMessage,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -147,4 +148,5 @@ evalDataPrune.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getThrownValueMessage,
 ];

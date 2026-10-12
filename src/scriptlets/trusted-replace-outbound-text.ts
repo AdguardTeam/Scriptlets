@@ -2,6 +2,7 @@ import {
     hit,
     matchStackTrace,
     addStackTraceMessageLine,
+    isValidStackPattern,
     getPropertyInChain,
     getMethodOwner,
     getWildcardPropertyInChain,
@@ -13,6 +14,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getFunctionProxyProperty,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -39,6 +41,7 @@ import { type Source } from './scriptlets';
  *   but only if function call returns a string, otherwise it will log information that content is not a string.
  * - `textToReplace` — optional, string or regular expression which should be replaced.
  *   By default it's set to `''`. If it's not set to other value and `logContent` is set, it will log the original content.
+ *   If it is an invalid regular expression, the rule is not applied.
  * - `replacement` — optional, string which replace the matched text.
  *   By default it's set to '', so matched content will removed.
  * - `decodeMethod` — optional, string which specifies the method used to decode the content.
@@ -46,7 +49,7 @@ import { type Source } from './scriptlets';
  *   If it's set and `logContent` is also set and `textToReplace` and `replacement` are not set,
  *   then it will log the decoded content.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace.
- *   If regular expression is invalid it will be skipped.
+ *   If it is an invalid regular expression, the rule is not applied.
  * - `logContent` — optional, if set to any value, the original and modified content will be logged.
  *   By default it's set to '' and no content will be logged.
  *
@@ -128,6 +131,20 @@ export function trustedReplaceOutboundText(
     logContent = '',
 ) {
     if (!methodPath) {
+        return;
+    }
+
+    // `matchStackTrace()` throws for `stack` which is an invalid regular expression, and so does `toRegExp()`
+    // for such `textToReplace`, which would replace the result of each call, so such rule is not applied,
+    // which is logged once
+    if (stack && !isValidStackPattern(stack)) {
+        logMessage(source, `Invalid stack: ${stack}`);
+        return;
+    }
+    try {
+        toRegExp(textToReplace);
+    } catch {
+        logMessage(source, `Invalid textToReplace: ${textToReplace}`);
         return;
     }
 
@@ -303,6 +320,7 @@ export function trustedReplaceOutboundText(
 
     const objectHandler = {
         apply: objectWrapper,
+        get: getFunctionProxyProperty,
     };
 
     methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
@@ -320,6 +338,7 @@ trustedReplaceOutboundText.injections = [
     hit,
     matchStackTrace,
     addStackTraceMessageLine,
+    isValidStackPattern,
     getPropertyInChain,
     getMethodOwner,
     getWildcardPropertyInChain,
@@ -332,4 +351,5 @@ trustedReplaceOutboundText.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getFunctionProxyProperty,
 ];

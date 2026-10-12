@@ -12,9 +12,10 @@ import {
     matchStackTrace,
     getPropertyInChain,
     getMethodOwner,
+    getFunctionProxyProperty,
     extractRegexAndReplacement,
     logMessage,
-    getErrorMessage,
+    getThrownValueMessage,
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
@@ -321,7 +322,10 @@ export function trustedReplaceArgument(
                     const argString = stringifyObject(arg);
                     return !!argString && toRegExp(pattern).test(argString);
                 } catch (error) {
-                    logMessage(source, `Failed to stringify argument: ${arg}\nError: ${error}`);
+                    // Neither the argument nor the error is converted to a string to be logged, as it would call
+                    // the page again, e.g. its `toString()`, which may throw as well, so the argument would not be
+                    // converted to a string below, and the error may be a value without a message
+                    logMessage(source, `Failed to stringify argument: ${getThrownValueMessage(error)}`);
                 }
             }
 
@@ -400,14 +404,9 @@ export function trustedReplaceArgument(
 
             return modifiedArguments;
         } catch (error) {
-            // Getting the error message may throw as well, as `getErrorMessage()` creates an error for a value
-            // without a message, e.g. `null` thrown by `Error` replaced by the page,
-            // which should not stop the method from being called
-            try {
-                logMessage(source, `Unexpected error during argument replacement: ${getErrorMessage(error)}`);
-            } catch {
-                logMessage(source, 'Unexpected error during argument replacement');
-            }
+            // Error is not converted to get its message, as it may call the page again, e.g. its `toJSON()`,
+            // and the error may be `null` thrown by the page, e.g. by `Error` replaced by it, which has no message
+            logMessage(source, `Unexpected error during argument replacement: ${getThrownValueMessage(error)}`);
             return argumentsList;
         } finally {
             isMatchingSuspended = false;
@@ -434,17 +433,10 @@ export function trustedReplaceArgument(
         return Reflect.construct(target, processArguments(argumentsList), newTarget);
     };
 
-    const getWrapper = (target: Function, propName: string, receiver: any) => {
-        if (propName === 'toString') {
-            return target.toString.bind(target);
-        }
-        return Reflect.get(target, propName, receiver);
-    };
-
     const objectHandler = {
         apply: applyWrapper,
         construct: constructWrapper,
-        get: getWrapper,
+        get: getFunctionProxyProperty,
     };
 
     methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
@@ -472,9 +464,10 @@ trustedReplaceArgument.injections = [
     matchStackTrace,
     getPropertyInChain,
     getMethodOwner,
+    getFunctionProxyProperty,
     extractRegexAndReplacement,
     logMessage,
-    getErrorMessage,
+    getThrownValueMessage,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,

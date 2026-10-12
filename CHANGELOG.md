@@ -62,6 +62,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   Also, a call which does not match `stack` is not processed at all, e.g. a JSON string returned by it
   is not parsed and serialized again, which removed its formatting before.
 - `trusted-replace-outbound-text` with `stack` calls `hit` only for the calls which match `stack`.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` intercept `setRequestHeader()`, `getResponseHeader()`,
+  `getAllResponseHeaders()` and `abort()` of `XMLHttpRequest.prototype` as well, instead of `setRequestHeader()`
+  of each matched object, which no longer gets it as its own property, unless it has another method, which is wrapped
+  then, e.g. its own one assigned by the page, or the hook of another rule of these scriptlets.
+  `load` and `loadend` of a modified response are dispatched as `ProgressEvent`, instead of `Event`, with the progress
+  of the original response for an asynchronous request, as by a native request, and with zero length otherwise.
+- `stack` of `trusted-json-set-fetch-response`, `json-prune-fetch-response`, and of `json-prune`
+  for `Response.prototype.json()` is matched against the stack trace of the call of `fetch()` or `json()`
+  without the frames of the scriptlet itself, which it contained before, as it was matched after the response
+  was awaited. So `stack` values which matched these frames no longer match the calls from other scripts,
+  e.g. `inlineScript` if the scriptlet is injected as an inline script. Also, in Chromium-based browsers,
+  an async function which awaits the response no longer matches it if it is not in the stack when `fetch()`
+  or `json()` is called, e.g. if the request is sent by a timer. In logging mode of `json-prune-fetch-response`
+  and `json-prune`, `stack` is still not matched, and the stack trace of the call is logged with the content.
 
 ### Deprecated
 
@@ -203,11 +217,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   if `null` or `undefined` is thrown while the arguments are processed, e.g. by a conversion of an argument
   to a string, or by `Error` replaced by the page while the stack trace for `stack` is created.
   The method is called with the original arguments now.
+- `trusted-replace-argument` not matching an object argument by its string value if it cannot be serialized
+  as JSON, and the error of it cannot be converted to a string to be logged, e.g. `Object.create(null)` thrown
+  by its `toJSON()`. The argument and the error are no longer converted to strings to be logged.
 - `call-nothrow` throwing an error to the page if the intercepted method throws `null` or `undefined`,
   as getting the message of such error threw another one.
 - `trusted-suppress-native-method` throwing an error to the page and no longer intercepting the next calls
   after an error while a call is matched, e.g. thrown by a getter of an argument, or by `Error` replaced by the page
   while the stack trace for `stack` is created. Such call is not suppressed now.
+- `trusted-json-set` and `trusted-json-set-fetch-response` processing a JSON string or response body again
+  as line-delimited JSON if its modification fails, e.g. as the modified value cannot be serialized, so it was
+  modified again, and `hit` could be called twice. Such string or response is returned unchanged now.
+- `JSONPath` rules of `json-prune` and `json-prune-fetch-response` throwing an error to the page, e.g. from
+  `JSON.parse()` or by rejecting the promise of `fetch()`, if `null` or another value without a message
+  is thrown while the content is processed, e.g. by a getter of the page, as getting the message of it to log it
+  threw another error. The same applies to `json-prune`, `json-prune-fetch-response`, `evaldata-prune`
+  and `trusted-prune-inbound-object` while messages are logged, if such value cannot be converted to a string,
+  e.g. `Object.create(null)`.
 - `trusted-json-set` not modifying anything, even without `stack`, if the stack trace cannot be read,
   e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
   Only the rules with `stack` are not applied then. The same applies to `JSONPath` rules of `json-prune`,
@@ -227,9 +253,48 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `json-prune-xhr-response` and `trusted-json-set-xhr-response` not firing `load` for the second matched request
   of a reused `XMLHttpRequest` object, as the props of its response could not be defined again, and returning
   the props of the previous response, e.g. `readyState` and `response`, for a request on such an object
-  which is not matched.
-- `json-prune-xhr-response` in logging mode returning the response as a string, even if another `responseType`
-  of the request is set, e.g. `json`, `arraybuffer` or `blob`.
+  which is not matched. Also, for such an object, sending the headers of each request again with the next ones,
+  forging a request with the method and URL of the previous `open()` if the object is opened again before
+  it is sent, and delivering the response of a request after the object is opened again or the request
+  is aborted by `abort()`, which dispatches the events of an aborted request now. Also, `readystatechange`
+  is dispatched when such object is opened again, as by `open()` of a native object which is done.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` dispatching the events of a modified response
+  of a synchronous request after `XMLHttpRequest.send()` has returned, so the page could not use the response
+  in its `load` listener right after `send()`. They are dispatched before `send()` returns now, as by a native request.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` sending a request synchronously if it is opened
+  without `async`, e.g. by `open(method, url)`. Also, `user` and `password` passed to `open()` were not used
+  for the request.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` throwing an error from `XMLHttpRequest.send()`
+  for each matched request if the page has replaced `XMLHttpRequest` after the scriptlet has run, e.g. by a library
+  which wraps requests, as the forged request was created by it.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` sending the request again if sending it fails,
+  e.g. a synchronous POST request with a network error, so its side effects were repeated.
+  The error is thrown to the page now, and the object is done with no response then, as a native one.
+- `json-prune-xhr-response`, `trusted-json-set-xhr-response` and `trusted-replace-outbound-text`, and `JSONPath` rules
+  of `json-prune`, `json-prune-fetch-response` and `trusted-json-set-fetch-response`, throwing an error to the page
+  if `stack` is an invalid regular expression, e.g. from `XMLHttpRequest.send()`, so the request was not sent,
+  or from `JSON.parse()`, or rejecting the promise of `fetch()` or `Response.prototype.json()` with it.
+  Such rules are not applied now, and the call is passed through. The same applies to `trusted-replace-outbound-text`
+  if `textToReplace` is an invalid regular expression.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` returning no response headers
+  from `getResponseHeader()` and `getAllResponseHeaders()` of an intercepted `XMLHttpRequest` object, e.g. `null`
+  for `Content-Type`, as the object is not sent itself. The headers of the response are returned now,
+  as by `trusted-replace-xhr-response` [#419].
+- `json-prune-xhr-response`, `trusted-json-set-xhr-response`, `json-prune-fetch-response`, `call-nothrow`
+  and `trusted-replace-outbound-text` changing `toString()` of the intercepted methods, e.g.
+  `XMLHttpRequest.prototype.open.toString()` or `fetch.toString()`, which returned the string of a native function
+  without its name. It returns the original value now.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` never completing a request whose response
+  could not be modified, e.g. as logging a too deeply nested JSON response with `verbose` threw an error,
+  or defined on the object, e.g. if the page has made it not extensible. The events of the response are dispatched
+  now in both cases, with the original text of the response if it could not be modified, while the object keeps
+  its state if the response could not be defined.
+- `json-prune-xhr-response` in logging mode returning a JSON response as a string, even if another `responseType`
+  of the request is set, e.g. `json`, `arraybuffer` or `blob`. A response which is not JSON is still returned
+  as a string.
+- `json-prune` calling `then()` of the promise of `Response.prototype.json()`, which the page may replace,
+  to prune its value. Its own `then()` is still used only if `Promise` has been replaced before the scriptlet
+  has run, e.g. by zone.js.
 - `trusted-replace-outbound-text` with `stack` throwing an error to the page instead of the result
   of the intercepted method if the stack trace cannot be read, e.g. because of `Error.prepareStackTrace`
   of the page or `Error` replaced by it. The result is returned unmodified then.

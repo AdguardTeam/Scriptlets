@@ -1,4 +1,5 @@
 import { hit } from './hit';
+import { getThrownValueMessage } from './get-error-message';
 import { getWildcardPropertyInChain } from './get-wildcard-property-in-chain';
 import { logMessage } from './log-message';
 import { toRegExp } from './string-utils';
@@ -16,6 +17,8 @@ import { type Source } from '../scriptlets';
  * @param stack string which should be matched by stack trace
  * @param nativeObjects reference to native objects, required for a trusted-prune-inbound-object to fix infinite loop
  * which must be all present for the pruning to occur
+ * @param stackTraceToLog stack trace to log with the content, e.g. captured when the intercepted method is called,
+ * if the content is processed later, when the caller is no longer in the stack; it is created here if not passed
  * @returns true if pruning is required
  */
 export function isPruningNeeded(
@@ -25,6 +28,7 @@ export function isPruningNeeded(
     requiredPaths: { path: string; value?: any }[],
     stack: string,
     nativeObjects: any,
+    stackTraceToLog?: string,
 ): boolean | undefined {
     if (!root) {
         return false;
@@ -51,10 +55,14 @@ export function isPruningNeeded(
             // or by `Error.prepareStackTrace`, which should not stop the content from being logged
             // nor be thrown to the page, so it is done separately
             let stackTrace = '';
-            try {
-                stackTrace = String(new Error().stack || '');
-            } catch {
-                // Content is logged without the stack trace then
+            if (typeof stackTraceToLog === 'string') {
+                stackTrace = stackTraceToLog;
+            } else {
+                try {
+                    stackTrace = String(new Error().stack || '');
+                } catch {
+                    // Content is logged without the stack trace then
+                }
             }
             logMessage(
                 source,
@@ -69,9 +77,23 @@ export function isPruningNeeded(
         }
     }
 
-    if (stack && !matchStackTrace(stack, new Error().stack || '')) {
-        shouldProcess = false;
-        return shouldProcess;
+    if (stack) {
+        // The page may make creating or reading the stack trace throw, e.g. by replacing `Error`
+        // or by `Error.prepareStackTrace`, or make it a non-string value, so it is done separately,
+        // and the content is not pruned then, as `stack` cannot be matched
+        let stackTrace = '';
+        let isStackTraceRead = false;
+        try {
+            stackTrace = String(new Error().stack || '');
+            isStackTraceRead = true;
+        } catch {
+            // Content is not pruned, as `stack` cannot be matched
+        }
+
+        if (!isStackTraceRead || !matchStackTrace(stack, stackTrace)) {
+            shouldProcess = false;
+            return shouldProcess;
+        }
     }
 
     const wildcardSymbols = ['.*.', '*.', '.*', '.[].', '[].', '.[]'];
@@ -121,6 +143,8 @@ export function isPruningNeeded(
  * @param stack string which should be matched by stack trace
  * @param nativeObjects reference to native objects, required for a trusted-prune-inbound-object to fix infinite loop
  * which must be all present for the pruning to occur
+ * @param stackTraceToLog stack trace to log with the content, e.g. captured when the intercepted method is called,
+ * if the content is processed later, when the caller is no longer in the stack; it is created here if not passed
  * @returns pruned root
  */
 export const jsonPruner = (
@@ -130,6 +154,7 @@ export const jsonPruner = (
     requiredPaths: { path: string; value?: any }[],
     stack: string,
     nativeObjects: any,
+    stackTraceToLog?: string,
 ): ArbitraryObject => {
     const { nativeStringify } = nativeObjects;
     if (prunePaths.length === 0 && requiredPaths.length === 0) {
@@ -137,10 +162,14 @@ export const jsonPruner = (
         // or by `Error.prepareStackTrace`, which should not stop the content from being logged
         // nor be thrown to the page, so it is done separately
         let stackTrace = '';
-        try {
-            stackTrace = String(new Error().stack || '');
-        } catch {
-            // Content is logged without the stack trace then
+        if (typeof stackTraceToLog === 'string') {
+            stackTrace = stackTraceToLog;
+        } else {
+            try {
+                stackTrace = String(new Error().stack || '');
+            } catch {
+                // Content is logged without the stack trace then
+            }
         }
         logMessage(
             source,
@@ -154,7 +183,9 @@ export const jsonPruner = (
     }
 
     try {
-        if (isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects) === false) {
+        if (
+            isPruningNeeded(source, root, prunePaths, requiredPaths, stack, nativeObjects, stackTraceToLog) === false
+        ) {
             return root;
         }
 
@@ -193,7 +224,8 @@ export const jsonPruner = (
             }
         });
     } catch (e) {
-        logMessage(source, e);
+        // e.g. thrown by a getter of the page, which may be a value which cannot be converted to a string
+        logMessage(source, getThrownValueMessage(e));
     }
 
     return root;
@@ -303,7 +335,8 @@ export const jsonSetter = (
             notifyMutation();
         }
     } catch (e) {
-        logMessage(source, e);
+        // e.g. thrown by a getter of the page, which may be a value which cannot be converted to a string
+        logMessage(source, getThrownValueMessage(e));
     }
 
     return root;

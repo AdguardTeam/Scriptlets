@@ -2938,3 +2938,47 @@ describe('jsonPath with a stack trace which cannot be created, as the page has r
         }
     });
 });
+
+describe('jsonPath with an invalid stack', () => {
+    test('Does not set a value, and does not throw', () => {
+        const logSpy = vi.spyOn(window.console, 'log').mockImplementation(() => { });
+        const root = { ads: { enabled: true } };
+
+        try {
+            const result = jsonPath(
+                { ...source, verbose: true },
+                root,
+                '$.ads.enabled=false',
+                nativeObjects,
+                undefined,
+                '/(/',
+            );
+
+            expect(result).toStrictEqual({ ads: { enabled: true } });
+            expect(logSpy).toHaveBeenCalledWith('trusted-json-set: Invalid stack: /(/');
+        } finally {
+            logSpy.mockRestore();
+        }
+    });
+});
+
+describe('jsonPath with a value without a message thrown by the page', () => {
+    test('Does not throw, and returns the value unchanged', () => {
+        const logSpy = vi.spyOn(window.console, 'log').mockImplementation(() => { });
+        const root = {
+            get ads() {
+                // eslint-disable-next-line no-throw-literal
+                throw null;
+            },
+        };
+
+        try {
+            const result = jsonPath({ ...source, verbose: true }, root, '$.ads.enabled=false', nativeObjects);
+
+            expect(result).toBe(root);
+            expect(logSpy.mock.calls.some((args) => String(args[0]).endsWith(': null'))).toBe(true);
+        } finally {
+            logSpy.mockRestore();
+        }
+    });
+});

@@ -436,6 +436,64 @@ test('calls the intercepted method once with the original arguments if the repla
     clearGlobalProps('receivingFunc');
 });
 
+test('does not convert an error without a message to log it', (assert) => {
+    window.receivingFunc = () => 'result';
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    let toJSONCalls = 0;
+    const pageError = {
+        toJSON() {
+            toJSONCalls += 1;
+            return 'page error';
+        },
+    };
+    const throwingArgument = () => {};
+    throwingArgument.toString = () => {
+        throw pageError;
+    };
+
+    let result;
+    getSyncLogs(() => {
+        result = window.receivingFunc(throwingArgument);
+    });
+
+    assert.strictEqual(result, 'result', 'Result of the method returned');
+    assert.strictEqual(toJSONCalls, 0, 'Error not converted by its toJSON()');
+
+    clearGlobalProps('receivingFunc');
+});
+
+test('matches an argument by its string value if it cannot be stringified as JSON', (assert) => {
+    let receivedArgument;
+    window.receivingFunc = (arg) => {
+        receivedArgument = arg;
+        return 'result';
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    // Error which cannot be converted to a string
+    const pageError = Object.create(null);
+    const argument = {
+        toJSON() {
+            throw pageError;
+        },
+        toString() {
+            return 'pattern';
+        },
+    };
+
+    let result;
+    getSyncLogs(() => {
+        result = window.receivingFunc(argument);
+    });
+
+    assert.strictEqual(result, 'result', 'Result of the method returned');
+    assert.strictEqual(receivedArgument, 'replaced', 'Argument matched by its string value and replaced');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('receivingFunc');
+});
+
 test('calls the intercepted method with the original arguments if the replacement fails with null', (assert) => {
     let calls = 0;
     let receivedArgument;
@@ -481,7 +539,7 @@ test('calls the intercepted method with the original arguments if Error replaced
     const testStackFunction = () => window.receivingFunc('original');
 
     // Stack trace for `stack` cannot be created, and `null` has no message,
-    // so getting it by creating another error throws as well
+    // so it is converted to a string without creating another error
     let result;
     const logs = getSyncLogs(() => {
         const restoreError = useThrowingErrorConstructor(null);
@@ -496,8 +554,8 @@ test('calls the intercepted method with the original arguments if Error replaced
     assert.strictEqual(calls, 1, 'Method called once');
     assert.strictEqual(window.hit, undefined, 'hit function should not fire');
     assert.ok(
-        logs.includes(`${name}: Unexpected error during argument replacement`),
-        'Error logged without its message',
+        logs.includes(`${name}: Unexpected error during argument replacement: null`),
+        'Error logged with its message',
     );
     assert.strictEqual(testStackFunction(), 'replaced', 'Argument replaced for the next matching call');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');

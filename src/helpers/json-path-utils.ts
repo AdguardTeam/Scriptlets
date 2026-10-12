@@ -1,4 +1,5 @@
 import { getJsonSetValue, parseJsonSetArgumentValue } from './json-set-utils';
+import { getThrownValueMessage } from './get-error-message';
 import { logMessage } from './log-message';
 import { matchStackTrace } from './match-stack';
 import { parseKeywordValue } from './parse-keyword-value';
@@ -1861,7 +1862,17 @@ export const jsonPath = (
         }
     }
 
-    if (stack && (!isStackTraceRead || !matchStackTrace(stack, currentStackTrace))) {
+    // `matchStackTrace()` throws for an invalid regular expression of `stack`, which should not be thrown
+    // to the page, e.g. from `JSON.parse()` of `json-prune`, so the value is not processed then
+    let isStackMatched = !stack;
+    if (stack && isStackTraceRead) {
+        try {
+            isStackMatched = matchStackTrace(stack, currentStackTrace);
+        } catch {
+            logMessage(source, `Invalid stack: ${stack}`);
+        }
+    }
+    if (!isStackMatched) {
         return root;
     }
 
@@ -1915,7 +1926,7 @@ export const jsonPath = (
             }
         }
     } catch (error) {
-        logMessage(source, `JSONPath processing failed for expression '${path}': ${(error as Error).message}`);
+        logMessage(source, `JSONPath processing failed for expression '${path}': ${getThrownValueMessage(error)}`);
     }
 
     return root;
