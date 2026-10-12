@@ -3,6 +3,7 @@ import {
     getPropertyInChain,
     getMethodOwner,
     logMessage,
+    getErrorMessage,
     isEmptyObject,
 } from '../helpers';
 
@@ -78,8 +79,14 @@ export function callNoThrow(source, functionName) {
         try {
             result = Reflect.apply(...args);
         } catch (e) {
-            const message = `Error calling ${functionName}: ${e.message}`;
-            logMessage(source, message);
+            // Getting the error message may throw as well, as `getErrorMessage()` creates an error for a value
+            // without a message, e.g. a primitive thrown by the method, while `Error` is replaced by the page,
+            // which should not be thrown to the page
+            try {
+                logMessage(source, `Error calling ${functionName}: ${getErrorMessage(e)}`);
+            } catch {
+                logMessage(source, `Error calling ${functionName}`);
+            }
         }
         hit(source);
         return result;
@@ -108,6 +115,7 @@ callNoThrow.injections = [
     getPropertyInChain,
     getMethodOwner,
     logMessage,
+    getErrorMessage,
     // following helpers are needed for helpers above
     isEmptyObject,
 ];

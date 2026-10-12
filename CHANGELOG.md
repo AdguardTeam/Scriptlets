@@ -203,6 +203,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   if `null` or `undefined` is thrown while the arguments are processed, e.g. by a conversion of an argument
   to a string, or by `Error` replaced by the page while the stack trace for `stack` is created.
   The method is called with the original arguments now.
+- `call-nothrow` throwing an error to the page if the intercepted method throws `null` or `undefined`,
+  as getting the message of such error threw another one.
 - `trusted-suppress-native-method` throwing an error to the page and no longer intercepting the next calls
   after an error while a call is matched, e.g. thrown by a getter of an argument, or by `Error` replaced by the page
   while the stack trace for `stack` is created. Such call is not suppressed now.

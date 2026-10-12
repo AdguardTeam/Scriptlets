@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, saveStorageMethods } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    saveStorageMethods,
+    getSyncLogs,
+    useThrowingErrorConstructor,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'call-nothrow';
@@ -84,4 +90,66 @@ test('Storage method: localStorage.getItem does not throw', (assert) => {
     assert.strictEqual(localStorage.getItem('getItem'), null, 'Item named after the method was not stored');
     assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'getItem'), 'Storage has no own method');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Error which has no message does not escape - null', (assert) => {
+    window.throwingFunc = () => {
+        // eslint-disable-next-line no-throw-literal
+        throw null;
+    };
+    runScriptlet(name, ['throwingFunc']);
+
+    let result = 'not called';
+    const logs = getSyncLogs(() => {
+        result = window.throwingFunc();
+    });
+
+    assert.strictEqual(result, undefined, 'Error not thrown, undefined returned');
+    assert.ok(logs.includes(`${name}: Error calling throwingFunc: null`), 'Error logged with its message');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('throwingFunc');
+});
+
+test('Error which has no message does not escape - undefined', (assert) => {
+    window.throwingFunc = () => {
+        // eslint-disable-next-line no-throw-literal
+        throw undefined;
+    };
+    runScriptlet(name, ['throwingFunc']);
+
+    let result = 'not called';
+    getSyncLogs(() => {
+        result = window.throwingFunc();
+    });
+
+    assert.strictEqual(result, undefined, 'Error not thrown, undefined returned');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('throwingFunc');
+});
+
+test('Error which has no message does not escape - Error replaced by the page', (assert) => {
+    window.throwingFunc = () => {
+        // eslint-disable-next-line no-throw-literal
+        throw 'Page error';
+    };
+    runScriptlet(name, ['throwingFunc']);
+
+    // A primitive has no message, so getting its message by creating an error throws as well
+    let result = 'not called';
+    const logs = getSyncLogs(() => {
+        const restoreError = useThrowingErrorConstructor('Error cannot be created');
+        try {
+            result = window.throwingFunc();
+        } finally {
+            restoreError();
+        }
+    });
+
+    assert.strictEqual(result, undefined, 'Error not thrown, undefined returned');
+    assert.ok(logs.includes(`${name}: Error calling throwingFunc`), 'Error logged without its message');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('throwingFunc');
 });
