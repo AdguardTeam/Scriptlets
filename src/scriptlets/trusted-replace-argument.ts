@@ -299,8 +299,7 @@ export function trustedReplaceArgument(
             }
             return `${index}: ${String(arg)}`;
         });
-        const modifiedOrOriginal = when === 'modified' ? 'modified' : when;
-        const message = `${methodPath} ${modifiedOrOriginal} arguments:\n${formattedArgs.join(',\n')}`;
+        const message = `${methodPath} ${when} arguments:\n${formattedArgs.join(',\n')}`;
         return message;
     };
 
