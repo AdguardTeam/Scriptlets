@@ -536,13 +536,10 @@ export function trustedJsonSet(
     const createClonedObjectLogMessage = (label: string, value: unknown): [string, unknown] => {
         if (isStructuredCloneSupported) {
             try {
-                return [label, structuredClone(value)] as [string, unknown];
+                return [label, structuredClone(value)];
             } catch (error) {
                 try {
-                    return [
-                        label,
-                        nativeObjects.nativeParse(nativeObjects.nativeStringify(value)),
-                    ] as [string, unknown];
+                    return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))];
                 } catch {
                     // eslint-disable-next-line max-len
                     return [`Could not clone content of ${methodPath} (original and modified objects are the same): ${(error as Error).message}\n`, value];
@@ -551,7 +548,7 @@ export function trustedJsonSet(
         }
 
         try {
-            return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))] as [string, unknown];
+            return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))];
         } catch {
             // eslint-disable-next-line max-len
             return [`Structured cloning is not supported (original and modified objects are the same) for ${label}\n`, value];
