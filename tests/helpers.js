@@ -104,12 +104,14 @@ export const useUnreadableStackTrace = () => {
  * Replaces `Error` with a constructor which throws, as the page may do it,
  * so an error to read the stack trace of cannot be even created.
  *
+ * @param {*} [thrownValue] value which the constructor throws instead of a `TypeError`, e.g. a primitive,
+ * which has no message, so getting its message by creating another error throws as well
  * @returns {Function} function which restores `Error`
  */
-export const useThrowingErrorConstructor = () => {
+export const useThrowingErrorConstructor = (thrownValue) => {
     const NativeError = window.Error;
     window.Error = function ThrowingError() {
-        throw new TypeError('Error cannot be created');
+        throw thrownValue === undefined ? new TypeError('Error cannot be created') : thrownValue;
     };
 
     return () => {

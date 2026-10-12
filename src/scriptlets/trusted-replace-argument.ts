@@ -14,6 +14,7 @@ import {
     getMethodOwner,
     extractRegexAndReplacement,
     logMessage,
+    getErrorMessage,
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
@@ -400,7 +401,14 @@ export function trustedReplaceArgument(
 
             return modifiedArguments;
         } catch (error) {
-            logMessage(source, `Unexpected error during argument replacement: ${(error as Error).message}`);
+            // Getting the error message may throw as well, as `getErrorMessage()` creates an error for a value
+            // without a message, e.g. `null` thrown by `Error` replaced by the page,
+            // which should not stop the method from being called
+            try {
+                logMessage(source, `Unexpected error during argument replacement: ${getErrorMessage(error)}`);
+            } catch {
+                logMessage(source, 'Unexpected error during argument replacement');
+            }
             return argumentsList;
         } finally {
             isMatchingSuspended = false;
@@ -467,6 +475,7 @@ trustedReplaceArgument.injections = [
     getMethodOwner,
     extractRegexAndReplacement,
     logMessage,
+    getErrorMessage,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,

@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console, no-eval */
-import { runScriptlet, clearGlobalProps, saveStorageMethods } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    saveStorageMethods,
+    useThrowingErrorConstructor,
+    getSyncLogs,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-replace-argument';
@@ -426,6 +432,75 @@ test('calls the intercepted method once with the original arguments if the repla
     // QUnit converts the values of `strictEqual()` to strings, which throws for this argument
     assert.ok(receivedArgument === throwingArgument, 'Original argument passed');
     assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+
+    clearGlobalProps('receivingFunc');
+});
+
+test('calls the intercepted method with the original arguments if the replacement fails with null', (assert) => {
+    let calls = 0;
+    let receivedArgument;
+    window.receivingFunc = (arg) => {
+        calls += 1;
+        receivedArgument = arg;
+        return 'result';
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    // `null` has no message to read
+    const throwingArgument = () => {};
+    throwingArgument.toString = () => {
+        // eslint-disable-next-line no-throw-literal
+        throw null;
+    };
+
+    let result;
+    const logs = getSyncLogs(() => {
+        result = window.receivingFunc(throwingArgument);
+    });
+
+    assert.strictEqual(result, 'result', 'Result of the method returned');
+    assert.strictEqual(calls, 1, 'Method called once');
+    // QUnit converts the values of `strictEqual()` to strings, which throws for this argument
+    assert.ok(receivedArgument === throwingArgument, 'Original argument passed');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.ok(
+        logs.includes(`${name}: Unexpected error during argument replacement: null`),
+        'Error logged with its message',
+    );
+
+    clearGlobalProps('receivingFunc');
+});
+
+test('calls the intercepted method with the original arguments if Error replaced by the page throws null', (assert) => {
+    let calls = 0;
+    window.receivingFunc = (arg) => {
+        calls += 1;
+        return arg;
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', '', 'testStackFunction']);
+    const testStackFunction = () => window.receivingFunc('original');
+
+    // Stack trace for `stack` cannot be created, and `null` has no message,
+    // so getting it by creating another error throws as well
+    let result;
+    const logs = getSyncLogs(() => {
+        const restoreError = useThrowingErrorConstructor(null);
+        try {
+            result = testStackFunction();
+        } finally {
+            restoreError();
+        }
+    });
+
+    assert.strictEqual(result, 'original', 'Method called with the original argument');
+    assert.strictEqual(calls, 1, 'Method called once');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.ok(
+        logs.includes(`${name}: Unexpected error during argument replacement`),
+        'Error logged without its message',
+    );
+    assert.strictEqual(testStackFunction(), 'replaced', 'Argument replaced for the next matching call');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 
     clearGlobalProps('receivingFunc');
 });

@@ -199,8 +199,15 @@ export function trustedSuppressNativeMethod(
             isMatching = (!stack || matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || ''))))
                 && matchMethodCall(argumentsList, signatureMatcher);
         } catch (e) {
-            // e.g. a getter of an argument which throws, so the call is not suppressed
-            logMessage(source, `Could not match the call: ${getErrorMessage(e)}`);
+            // e.g. a getter of an argument which throws, so the call is not suppressed.
+            // Getting the error message may throw as well, as `getErrorMessage()` creates an error for a value
+            // without a message, e.g. a primitive thrown by `Error` replaced by the page,
+            // which should not stop the method from being called
+            try {
+                logMessage(source, `Could not match the call: ${getErrorMessage(e)}`);
+            } catch {
+                logMessage(source, 'Could not match the call');
+            }
         } finally {
             // Matching is resumed on every return path, as the next calls would not be processed otherwise
             isMatchingSuspended = false;

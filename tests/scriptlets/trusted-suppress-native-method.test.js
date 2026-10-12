@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, useFirefoxStackTraceFormat } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    useFirefoxStackTraceFormat,
+    useThrowingErrorConstructor,
+} from '../helpers';
 import { noopFunc } from '../../src/helpers';
 
 const { test, module } = QUnit;
@@ -428,5 +433,24 @@ test('Error during matching does not disable the rule', (assert) => {
     assert.ok(window.testMatching(throwingArgument), 'Call which cannot be matched is not prevented');
     assert.strictEqual(window.hit, undefined, 'hit should not fire');
     assert.notOk(window.testMatching({ key: 'value' }), 'Next matching call is prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});
+
+test('Error replaced by the page which throws a primitive - match stack', (assert) => {
+    runScriptlet(name, ['testMatching', '"test"', 'prevent', 'testStackFunction']);
+    const testStackFunction = () => window.testMatching('test');
+
+    // A primitive has no message, so getting the message of the error by creating another one throws as well
+    const restoreError = useThrowingErrorConstructor('Error cannot be created');
+    let result;
+    try {
+        result = testStackFunction();
+    } finally {
+        restoreError();
+    }
+
+    assert.ok(result, 'Call which cannot be matched is not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    assert.strictEqual(testStackFunction(), undefined, 'Next matching call is prevented');
     assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
 });

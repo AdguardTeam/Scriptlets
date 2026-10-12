@@ -191,8 +191,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. `JSON.stringify` of an object with a circular reference.
 - `trusted-replace-argument` calling the intercepted method or constructor again if it throws an error,
   so its side effects were repeated, and the second call could even succeed.
+- `trusted-replace-argument` throwing an error to the page instead of calling the intercepted method
+  if `null` or `undefined` is thrown while the arguments are processed, e.g. by a conversion of an argument
+  to a string, or by `Error` replaced by the page while the stack trace for `stack` is created.
+  The method is called with the original arguments now.
 - `trusted-suppress-native-method` throwing an error to the page and no longer intercepting the next calls
-  after an error while a call is matched, e.g. thrown by a getter of an argument. Such call is not suppressed now.
+  after an error while a call is matched, e.g. thrown by a getter of an argument, or by `Error` replaced by the page
+  while the stack trace for `stack` is created. Such call is not suppressed now.
 - `trusted-json-set` not modifying anything, even without `stack`, if the stack trace cannot be read,
   e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
   Only the rules with `stack` are not applied then. The same applies to `JSONPath` rules of `json-prune`,
