@@ -47,9 +47,18 @@ export function isPruningNeeded(
         const matchRegex = toRegExp(requiredPathsToCheck.join(''));
         const shouldLog = matchRegex.test(rootString);
         if (shouldLog) {
+            // Stack trace is only logged, and the page may make creating or reading it throw, e.g. by replacing `Error`
+            // or by `Error.prepareStackTrace`, which should not stop the content from being logged
+            // nor be thrown to the page, so it is done separately
+            let stackTrace = '';
+            try {
+                stackTrace = String(new Error().stack || '');
+            } catch {
+                // Content is logged without the stack trace then
+            }
             logMessage(
                 source,
-                `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${new Error().stack}`,
+                `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${stackTrace}`,
                 true,
             );
             if (root && typeof root === 'object') {
@@ -124,9 +133,18 @@ export const jsonPruner = (
 ): ArbitraryObject => {
     const { nativeStringify } = nativeObjects;
     if (prunePaths.length === 0 && requiredPaths.length === 0) {
+        // Stack trace is only logged, and the page may make creating or reading it throw, e.g. by replacing `Error`
+        // or by `Error.prepareStackTrace`, which should not stop the content from being logged
+        // nor be thrown to the page, so it is done separately
+        let stackTrace = '';
+        try {
+            stackTrace = String(new Error().stack || '');
+        } catch {
+            // Content is logged without the stack trace then
+        }
         logMessage(
             source,
-            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${new Error().stack}`,
+            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${stackTrace}`,
             true,
         );
         if (root && typeof root === 'object') {
@@ -223,9 +241,18 @@ export const jsonSetter = (
     };
 
     if (!setPath) {
+        // Stack trace is only logged, and the page may make creating or reading it throw, e.g. by replacing `Error`
+        // or by `Error.prepareStackTrace`, which should not stop the content from being logged
+        // nor be thrown to the page, so it is done separately
+        let stackTrace = '';
+        try {
+            stackTrace = String(new Error().stack || '');
+        } catch {
+            // Content is logged without the stack trace then
+        }
         logMessage(
             source,
-            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${new Error().stack}`,
+            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${stackTrace}`,
             true,
         );
         if (root && typeof root === 'object') {

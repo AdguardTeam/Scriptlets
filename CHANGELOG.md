@@ -220,6 +220,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   Only the rules with `stack` are not applied then, and the request is sent as is. They no longer read
   the stack trace at all for rules without `stack`, except in logging mode of `json-prune-xhr-response`
   or with `verbose` of `trusted-json-set-xhr-response`.
+- `json-prune`, `json-prune-fetch-response`, `evaldata-prune` and `trusted-prune-inbound-object` in logging mode
+  throwing an error to the page, e.g. from `JSON.parse()`, if the stack trace cannot be read, e.g. because
+  of `Error.prepareStackTrace` of the page or `Error` replaced by it. Also, the content matched by `obligatoryProps`
+  was not logged then, also by `json-prune-xhr-response`. The content is logged without the stack trace now.
 - `json-prune-xhr-response` and `trusted-json-set-xhr-response` not firing `load` for the second matched request
   of a reused `XMLHttpRequest` object, as the props of its response could not be defined again, and returning
   the props of the previous response, e.g. `readyState` and `response`, for a request on such an object

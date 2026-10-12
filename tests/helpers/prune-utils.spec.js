@@ -1,6 +1,12 @@
-import { describe, test, expect } from 'vitest';
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 
 import { jsonPruner, getPrunePath, jsonLineEdit } from '../../src/helpers';
+import { useThrowingErrorConstructor, useUnreadableStackTrace } from '../helpers';
 
 const name = 'json-prune';
 const nativeObjects = {
@@ -1264,5 +1270,34 @@ describe('jsonLineEdit tests', () => {
             hasJsonLines: true,
             text: input,
         });
+    });
+});
+
+describe.each([
+    { failure: 'cannot be read', useStackTraceFailure: useUnreadableStackTrace },
+    // as the page has replaced `Error` with a constructor which throws
+    { failure: 'cannot be created', useStackTraceFailure: useThrowingErrorConstructor },
+])('jsonPruner logging with a stack trace which $failure', ({ useStackTraceFailure }) => {
+    test.each([
+        { mode: 'logging-only', requiredPaths: '' },
+        { mode: 'logging of matched content', requiredPaths: 'foo' },
+    ])('logs the content in $mode mode without the stack trace', ({ requiredPaths }) => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        const root = { foo: 1 };
+
+        const restoreStackTrace = useStackTraceFailure();
+        let result;
+        try {
+            result = jsonPruner(name, root, [], getPrunePath(requiredPaths), '', nativeObjects);
+        } finally {
+            restoreStackTrace();
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe(root);
+        expect(logs.some((log) => log.includes('"foo": 1') && log.endsWith('Stack trace:\n'))).toBe(true);
     });
 });
