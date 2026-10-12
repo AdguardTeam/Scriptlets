@@ -280,6 +280,26 @@ test('Response.json() mocking -- remove single properties with [] for any array 
     done();
 });
 
+test('Response.json() mocking -- match stack of a function which returns the promise of json()', async (assert) => {
+    runScriptlet('json-prune', 'c3', '', 'getJsonContent');
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    // The function is no longer in the stack when the promise is fulfilled
+    const getJsonContent = () => response.json();
+    const actualJson = await getJsonContent();
+
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test' }, 'Content pruned');
+});
+
+test('Response.json() mocking -- stack does not match', async (assert) => {
+    runScriptlet('json-prune', 'c3', '', 'notMatchingStack');
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+});
+
 test('removes propsToRemove', (assert) => {
     runScriptlet('json-prune', 'c');
     assert.deepEqual(JSON.parse('{"a":1,"b":2,"c":3}'), { a: 1, b: 2 }, 'should remove single propsToRemove');

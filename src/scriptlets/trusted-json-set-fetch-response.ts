@@ -10,6 +10,7 @@ import {
     type FetchResource,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,
@@ -218,9 +219,11 @@ export function trustedJsonSetFetchResponse(
         return getJsonSetValue(currentValue, resolvedArgumentValue);
     };
 
+    // Stack trace is not passed to the helpers, as it is already matched by `fetchHandlerWrapper()`
+    // when `fetch()` is called, and the response is modified after it is awaited
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), stack);
+            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), '');
         }
 
         resolvedArgumentValue = resolveJsonSetTimeKeywords(
@@ -237,7 +240,7 @@ export function trustedJsonSetFetchResponse(
             setPathObj?.value,
             getValueToSet,
             requiredPaths,
-            stack,
+            '',
             nativeObjects,
         );
     };
@@ -254,27 +257,38 @@ export function trustedJsonSetFetchResponse(
             return Reflect.apply(target, thisArg, args);
         }
 
-        // Stack trace is only logged, so it is read only in verbose mode, before the response is awaited,
-        // so it has the caller of `fetch()`. The page may make creating or reading it throw,
-        // e.g. by replacing `Error` or by `Error.prepareStackTrace`, which should not stop the rule from working
+        // Stack trace is read only if it is matched or logged, before the response is awaited,
+        // so it has the caller of `fetch()`, which is no longer in the stack after that,
+        // e.g. a function which returns the promise of `fetch()`.
+        // The page may make creating or reading it throw, e.g. by replacing `Error` or by `Error.prepareStackTrace`,
+        // which should not stop the rules without `stack` from working, so it is done separately
         let stackTrace = '';
-        if (shouldLogContent) {
+        let isStackTraceRead = false;
+        if (stack || shouldLogContent) {
             try {
                 stackTrace = String(new Error().stack || '');
+                isStackTraceRead = true;
             } catch {
-                // Stack trace is not logged then
+                // Rules with `stack` are not applied, as it cannot be matched, and it is not logged
             }
         }
 
-        let originalResponse;
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (stack && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        // Request is sent once, outside of `try`, so its rejection is passed to the page as is,
+        // and it is not sent again, e.g. a POST request
+        const originalResponse = await Reflect.apply(nativeObjects.nativeFetch, null, args);
+
         let clonedResponse;
         try {
-            // eslint-disable-next-line prefer-spread
-            originalResponse = await nativeObjects.nativeFetch.apply(null, args);
             clonedResponse = nativeObjects.nativeResponseClone.call(originalResponse);
         } catch {
-            logMessage(source, `Could not make an original fetch request: ${fetchData.url}`);
-            return Reflect.apply(target, thisArg, args);
+            logMessage(source, `Could not clone the response: ${fetchData.url}`);
+            return originalResponse;
         }
 
         let textContent;
@@ -372,6 +386,7 @@ trustedJsonSetFetchResponse.injections = [
     forgeResponse,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,

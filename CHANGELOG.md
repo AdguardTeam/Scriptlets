@@ -186,6 +186,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and `trusted-json-set-xhr-response` not matching the function which calls the intercepted method in browsers
   whose stack traces have no error message line, e.g. Firefox, as the frame of that function was removed
   as the scriptlet's own one.
+- `stack` of `trusted-json-set-fetch-response`, `json-prune-fetch-response`, and of `json-prune`
+  for `Response.prototype.json()`, not matching a function which returns the promise of `fetch()` or `json()`,
+  as it was matched after the response was awaited, when the function was no longer in the stack.
+  It is matched when the method is called now, and the calls which do not match it are passed through as is,
+  so `json-prune-fetch-response` no longer calls `hit` for them.
+- `trusted-json-set-fetch-response` and `json-prune-fetch-response` sending the request again if it fails,
+  e.g. a POST request, or if its response cannot be cloned. The rejection of the request is passed to the page now,
+  and the response is returned as is if it cannot be cloned.
 - `trusted-replace-outbound-text` not modifying any content after the intercepted method is called
   from a function which does not match `stack`, e.g. by another script of the page, or after it throws an error,
   e.g. `JSON.stringify` of an object with a circular reference.

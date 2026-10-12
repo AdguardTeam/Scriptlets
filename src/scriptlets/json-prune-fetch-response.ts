@@ -23,6 +23,7 @@ import {
     type FetchResource,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,
@@ -206,12 +207,14 @@ export function jsonPruneFetchResponse(
         nativeStringify: window.JSON.stringify,
     };
 
+    // Stack trace is not passed to the helpers, as it is already matched by `fetchHandlerWrapper()`
+    // when `fetch()` is called, and the response is pruned after it is awaited
     const pruneJsonValue = (root: any) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stack);
+            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), '');
         }
 
-        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
+        return jsonPruner(source, root, prunePaths, requiredPaths, '', nativeObjects);
     };
 
     const fetchHandlerWrapper = async (
@@ -225,15 +228,37 @@ export function jsonPruneFetchResponse(
             return Reflect.apply(target, thisArg, args);
         }
 
-        let originalResponse;
+        // Stack trace is matched before the response is awaited, so it has the caller of `fetch()`,
+        // which is no longer in the stack after that, e.g. a function which returns the promise of `fetch()`.
+        // The page may make creating or reading it throw, e.g. by replacing `Error` or by `Error.prepareStackTrace`,
+        // which should not stop the rules without `stack` from working, so it is done separately
+        let stackTrace = '';
+        let isStackTraceRead = false;
+        if (stack) {
+            try {
+                stackTrace = String(new Error().stack || '');
+                isStackTraceRead = true;
+            } catch {
+                // Rules with `stack` are not applied, as it cannot be matched
+            }
+        }
+
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (stack && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        // Request is sent once, outside of `try`, so its rejection is passed to the page as is,
+        // and it is not sent again, e.g. a POST request
+        const originalResponse = await Reflect.apply(nativeFetch, null, args);
+
         let clonedResponse;
         try {
-            // eslint-disable-next-line prefer-spread
-            originalResponse = await nativeFetch.apply(null, args);
             clonedResponse = nativeResponseClone.call(originalResponse);
         } catch {
-            logMessage(source, `Could not make an original fetch request: ${fetchData.url}`);
-            return Reflect.apply(target, thisArg, args);
+            logMessage(source, `Could not clone the response: ${fetchData.url}`);
+            return originalResponse;
         }
 
         let json;
@@ -303,6 +328,7 @@ jsonPruneFetchResponse.injections = [
     forgeResponse,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,

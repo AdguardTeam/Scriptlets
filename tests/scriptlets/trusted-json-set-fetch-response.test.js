@@ -253,4 +253,62 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
     });
+
+    test('applies when stack matches a function which returns the promise of fetch', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', 'getFetchResponse']);
+
+        // The function is no longer in the stack when the response is awaited
+        const getFetchResponse = () => fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const response = await getFetchResponse();
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+
+    test('does not apply when stack does not match, and leaves the response as is', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', 'notMatchingStack']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'response should stay intact');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('sends the request once and passes its rejection through', async (assert) => {
+        let calls = 0;
+        window.fetch = () => {
+            calls += 1;
+            return Promise.reject(new TypeError('Failed to fetch'));
+        };
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        await assert.rejects(
+            fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' }),
+            /Failed to fetch/,
+            'rejection of the request passed through',
+        );
+        assert.strictEqual(calls, 1, 'request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('sends the request once and returns the response if it cannot be cloned', async (assert) => {
+        let calls = 0;
+        let receivedResponse;
+        window.fetch = async () => {
+            calls += 1;
+            receivedResponse = new Response('{"a1":1}');
+            // Response with a used body cannot be cloned
+            await receivedResponse.text();
+            return receivedResponse;
+        };
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' });
+
+        assert.strictEqual(response, receivedResponse, 'received response returned');
+        assert.strictEqual(calls, 1, 'request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
 }

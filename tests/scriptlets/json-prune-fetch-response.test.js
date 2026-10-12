@@ -603,7 +603,58 @@ if (!isSupported) {
 
         const result = await getContentFunc();
         assert.deepEqual(result, expectedJson, 'Content is intact');
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        // Only the calls which match `stack` are processed
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
         done();
+    });
+
+    test('Match stack trace of a function which returns the promise of fetch - prune content', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01', 'getFetchResponse']);
+
+        // The function is no longer in the stack when the response is awaited
+        const getFetchResponse = () => fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const response = await getFetchResponse();
+        const result = await response.json();
+
+        assert.deepEqual(result, { b2: 'test', c3: 3 }, 'Content pruned');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+
+    test('Request is sent once and its rejection is passed through', async (assert) => {
+        let calls = 0;
+        // eslint-disable-next-line no-global-assign
+        fetch = () => {
+            calls += 1;
+            return Promise.reject(new TypeError('Failed to fetch'));
+        };
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        await assert.rejects(
+            fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' }),
+            /Failed to fetch/,
+            'Rejection of the request passed through',
+        );
+        assert.strictEqual(calls, 1, 'Request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('Request is sent once and the response is returned if it cannot be cloned', async (assert) => {
+        let calls = 0;
+        let receivedResponse;
+        // eslint-disable-next-line no-global-assign
+        fetch = async () => {
+            calls += 1;
+            receivedResponse = new Response('{"a1":1}');
+            // Response with a used body cannot be cloned
+            await receivedResponse.text();
+            return receivedResponse;
+        };
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' });
+
+        assert.strictEqual(response, receivedResponse, 'Received response returned');
+        assert.strictEqual(calls, 1, 'Request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
     });
 }

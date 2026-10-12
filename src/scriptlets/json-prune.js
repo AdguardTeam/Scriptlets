@@ -1,6 +1,7 @@
 import {
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,
@@ -397,19 +398,19 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
         nativeStringify: window.JSON.stringify,
     };
 
-    const pruneJsonValue = (root) => {
+    const pruneJsonValue = (root, stackToMatch) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stack);
+            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stackToMatch);
         }
 
-        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
+        return jsonPruner(source, root, prunePaths, requiredPaths, stackToMatch, nativeObjects);
     };
 
     const jsonParseWrapper = (...args) => {
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeObjects.nativeParse.apply(JSON, args);
-        return pruneJsonValue(root);
+        return pruneJsonValue(root, stack);
     };
 
     // JSON.parse mocking
@@ -420,8 +421,30 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
     // eslint-disable-next-line func-names
     const responseJsonWrapper = function () {
         const promise = nativeResponseJson.apply(this);
+
+        // Stack trace is matched when the method is called, as the value is pruned when the promise is fulfilled,
+        // when the caller is no longer in the stack, e.g. a function which returns the promise of `json()`.
+        // The page may make creating or reading it throw, e.g. by replacing `Error` or by `Error.prepareStackTrace`,
+        // which should not stop the rules without `stack` from working, so it is done separately
+        let stackTrace = '';
+        let isStackTraceRead = false;
+        if (stack) {
+            try {
+                stackTrace = String(new Error().stack || '');
+                isStackTraceRead = true;
+            } catch {
+                // Rules with `stack` are not applied, as it cannot be matched
+            }
+        }
+
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (stack && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))) {
+            return promise;
+        }
+
         return promise.then((obj) => {
-            return pruneJsonValue(obj);
+            return pruneJsonValue(obj, '');
         });
     };
 
@@ -454,6 +477,7 @@ jsonPrune.primaryName = jsonPruneNames[0];
 jsonPrune.injections = [
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,

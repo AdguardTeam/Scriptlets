@@ -448,6 +448,13 @@ Project-specific rules:
     logged, and keep other results, including promises of polyfills and other
     thenables, synchronous. `stack` MUST be matched once, when the method is
     called, and the intercepted method MUST NOT be called again if it throws.
+    The same applies to scriptlets which process a response after it is
+    awaited, e.g. `json-prune-fetch-response` or the `Response.prototype.json`
+    hook of `json-prune`: `stack` is matched in the wrapper before the
+    response is awaited, calls which do not match it are passed through as
+    is, and an empty `stack` is passed to the helpers which process the
+    response, e.g. `jsonPruner()` or `jsonPath()`. `fetch()` is called once,
+    outside of `try`, so its rejection is passed to the page as is.
 
     **Rationale**: Path setters create missing properties on the promise
     itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
@@ -456,7 +463,8 @@ Project-specific rules:
     async functions return native promises even then, while calling `then` of
     any other object would turn its synchronous result into a promise for any
     page object with a `then()` method. Calling the method again repeats its
-    side effects, e.g. consuming the body of a `Response`.
+    side effects, e.g. consuming the body of a `Response`, or sending
+    a failed POST request again.
 
 17. If a function which the page calls, e.g. a wrapper of the intercepted
     method or its Proxy trap, creates a stack trace for `matchStackTrace()`
