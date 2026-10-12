@@ -3,6 +3,8 @@ import {
     runScriptlet,
     clearGlobalProps,
     useFirefoxStackTraceFormat,
+    useThrowingErrorConstructor,
+    useUnreadableStackTrace,
     saveStorageMethods,
 } from '../helpers';
 
@@ -33,6 +35,23 @@ const afterEach = () => {
 };
 
 module(name, { beforeEach, afterEach });
+
+/**
+ * Calls the function while the stack trace cannot be created or read.
+ *
+ * @param {Function} func function to call
+ * @param {Function} [useStackTraceFailure] function which makes creating or reading the stack trace throw
+ * and returns a function which restores it
+ * @returns {*} result of the function
+ */
+const callWithStackTraceFailure = (func, useStackTraceFailure = useUnreadableStackTrace) => {
+    const restoreStackTrace = useStackTraceFailure();
+    try {
+        return func();
+    } finally {
+        restoreStackTrace();
+    }
+};
 
 test('logs text if invoked with only first arg - atob', (assert) => {
     assert.expect(2);
@@ -184,6 +203,39 @@ test('replace text - JSON.stringify - after a call which throws', (assert) => {
         '{"loadAds":false}',
         'Content modified for the next call',
     );
+});
+
+test('replace text - JSON.stringify - match stack - stack trace cannot be read', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const testStackFunction = () => JSON.stringify({ loadAds: true });
+
+    const result = callWithStackTraceFailure(testStackFunction);
+
+    assert.strictEqual(result, '{"loadAds":true}', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.strictEqual(testStackFunction(), '{"loadAds":false}', 'Content modified for the next call');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the next call');
+});
+
+test('replace text - JSON.stringify - match stack - Error replaced by the page', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const testStackFunction = () => JSON.stringify({ loadAds: true });
+
+    const result = callWithStackTraceFailure(testStackFunction, useThrowingErrorConstructor);
+
+    assert.strictEqual(result, '{"loadAds":true}', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.strictEqual(testStackFunction(), '{"loadAds":false}', 'Content modified for the next call');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the next call');
+});
+
+test('replace text - JSON.stringify - Error replaced by the page - without stack', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false']);
+
+    const result = callWithStackTraceFailure(() => JSON.stringify({ loadAds: true }), useThrowingErrorConstructor);
+
+    assert.strictEqual(result, '{"loadAds":false}', 'Content modified');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 
 test('test stack - JSON.stringify - NOT match stack', (assert) => {

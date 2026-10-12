@@ -202,6 +202,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   so the request was not sent at all, even without `stack`, if the stack trace cannot be read,
   e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
   Only the rules with `stack` are not applied then, and the request is sent as is.
+- `trusted-replace-outbound-text` with `stack` throwing an error to the page instead of the result
+  of the intercepted method if the stack trace cannot be read, e.g. because of `Error.prepareStackTrace`
+  of the page or `Error` replaced by it. The result is returned unmodified then.
 - `trusted-suppress-native-method`, `trusted-json-set`, `trusted-replace-argument`, `trusted-replace-outbound-text`,
   `trusted-prune-inbound-object` and `call-nothrow` not intercepting methods of `localStorage` and `sessionStorage`,
   e.g. `localStorage.setItem`, in Firefox, and storing an item named after the method in the storage instead,

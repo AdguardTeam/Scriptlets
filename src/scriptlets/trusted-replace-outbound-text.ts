@@ -249,9 +249,23 @@ export function trustedReplaceOutboundText(
         try {
             const result = Reflect.apply(target, thisArg, argumentsList);
 
+            // Stack trace is read only if it is matched. The page may make creating or reading it throw,
+            // e.g. by replacing `Error` or by `Error.prepareStackTrace`, which should not replace the result
+            // of the call which has already succeeded, so it is done separately
+            let stackTrace = '';
+            let isStackTraceRead = false;
+            if (stack) {
+                try {
+                    stackTrace = String(new Error().stack || '');
+                    isStackTraceRead = true;
+                } catch {
+                    // Content is not modified, as `stack` cannot be matched
+                }
+            }
+
             // Error message line is added to the stack trace created here, in the wrapper called by the page,
             // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
-            if (stack && !matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))) {
+            if (stack && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))) {
                 return result;
             }
 

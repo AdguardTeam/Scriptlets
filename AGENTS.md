@@ -470,6 +470,9 @@ Project-specific rules:
     and rules with `stack` are not applied if it fails. Helpers which create
     the stack trace for `stack` themselves, e.g. `jsonPath()`, MUST do it the
     same way, and only if `stack` is set or it is logged.
+    If it is read only for `stack` but after the intercepted method is called,
+    e.g. in `trusted-replace-outbound-text`, it MUST be guarded the same way,
+    and the result of the call returned as is if it fails.
     A new function MUST NOT be added only to create the stack trace one call
     deeper instead, and neither a helper which only reads the stack trace of
     an error created by the caller, as creating it would not be guarded then.
@@ -491,6 +494,8 @@ Project-specific rules:
     reading it throw, e.g. by `Error.prepareStackTrace` in Chrome or a getter
     of `Error.prototype.stack` in Firefox, which should not affect rules without
     `stack`. The page may also replace `Error` with a constructor which throws.
+    Such an error would replace the result of a call which has already
+    succeeded otherwise.
     A call from another function, or an error of the intercepted method, would
     disable the rule for the next calls otherwise, e.g. in
     `trusted-replace-outbound-text`.
