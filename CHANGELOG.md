@@ -250,6 +250,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   throwing an error to the page, e.g. from `JSON.parse()`, if the stack trace cannot be read, e.g. because
   of `Error.prepareStackTrace` of the page or `Error` replaced by it. Also, the content matched by `obligatoryProps`
   was not logged then, also by `json-prune-xhr-response`. The content is logged without the stack trace now.
+- `json-prune`, `evaldata-prune` and `trusted-prune-inbound-object` in logging mode throwing an error to the page,
+  e.g. from `JSON.parse()` or `eval()`, or instead of calling the intercepted method, if the content cannot be
+  serialized to be logged, e.g. a circular object or a too deeply nested one. Also, `json-prune-fetch-response`
+  rejecting the promise of `fetch()` then, `json-prune-xhr-response` returning the text of such response instead
+  of its object for `responseType` `json`, and the content matched by `obligatoryProps` not being logged then.
+  Such content is logged only as an object now.
 - `json-prune-xhr-response` and `trusted-json-set-xhr-response` not firing `load` for the second matched request
   of a reused `XMLHttpRequest` object, as the props of its response could not be defined again, and returning
   the props of the previous response, e.g. `readyState` and `response`, for a request on such an object
@@ -290,8 +296,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   now in both cases, with the original text of the response if it could not be modified, while the object keeps
   its state if the response could not be defined.
 - `json-prune-fetch-response` rejecting the promise of `fetch()` of a request which has succeeded, if its response
-  could not be modified, e.g. as logging a too deeply nested JSON response in logging mode threw an error,
-  or serializing it threw in browsers whose `JSON.stringify()` is recursive. The original response is returned now.
+  could not be modified, e.g. as serializing a too deeply nested JSON response threw in browsers whose
+  `JSON.stringify()` is recursive. The original response is returned now.
 - `json-prune-xhr-response` in logging mode returning a JSON response as a string, even if another `responseType`
   of the request is set, e.g. `json`, `arraybuffer` or `blob`. A response which is not JSON is still returned
   as a string.

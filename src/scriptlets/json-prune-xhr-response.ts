@@ -41,6 +41,7 @@ import {
     restoreRegExpValues,
     isKeyInObject,
     getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -224,9 +225,7 @@ export function jsonPruneXhrResponse(
             try {
                 const jsonContent = nativeParse(content);
                 if (shouldLog) {
-                    // eslint-disable-next-line max-len
-                    logMessage(source, `${window.location.hostname}\n${nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                    logMessage(source, jsonContent, true, false);
+                    logJsonContent(source, jsonContent, nativeStringify, stackTrace);
                 }
 
                 // Content is only logged in logging mode, so the original one is returned
@@ -340,4 +339,5 @@ jsonPruneXhrResponse.injections = [
     restoreRegExpValues,
     isKeyInObject,
     getThrownValueMessage,
+    logJsonContent,
 ];

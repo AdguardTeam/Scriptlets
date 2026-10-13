@@ -46,6 +46,7 @@ import {
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -395,4 +396,5 @@ trustedJsonSetXhrResponse.injections = [
     resolveJsonSetTimeKeywords,
     toRegExp,
     getThrownValueMessage,
+    logJsonContent,
 ];

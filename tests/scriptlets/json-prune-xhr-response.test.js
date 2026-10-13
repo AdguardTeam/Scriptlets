@@ -1549,6 +1549,25 @@ if (isSupported) {
         assert.strictEqual(window.hit, undefined, 'hit should not fire');
     });
 
+    test('Logging mode - deeply nested JSON response logged without its content - json', async (assert) => {
+        runScriptlet(name);
+
+        // Content which can be parsed, but not serialized again to be logged, as it is too deeply nested
+        const NESTING_DEPTH = 12000;
+        const json = `{"a1":1,"nested":${'['.repeat(NESTING_DEPTH)}${']'.repeat(NESTING_DEPTH)}}`;
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `data:application/json,${encodeURIComponent(json)}`);
+        xhr.responseType = 'json';
+        const logs = await getLogs(() => sendAndWaitForLoad(xhr));
+
+        assert.ok(xhr.response !== null && typeof xhr.response === 'object', 'Response is an object');
+        assert.strictEqual(xhr.response.a1, 1, 'Content is intact');
+        assert.ok(
+            logs.some((log) => log.includes('Content cannot be serialized')),
+            'Content which cannot be serialized',
+        );
+    });
+
     test('Prune content of a deeply nested JSON response - json', async (assert) => {
         runScriptlet(name, ['a1']);
 

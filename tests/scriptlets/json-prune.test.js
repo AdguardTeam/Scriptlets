@@ -1008,6 +1008,34 @@ test('logs 10', (assert) => {
     JSON.parse(10);
 });
 
+test('logs content which is too deeply nested to be serialized - JSON.parse and Response.json', async (assert) => {
+    runScriptlet(name);
+    // Content which can be parsed, but not serialized again to be logged
+    const NESTING_DEPTH = 12000;
+    const json = `${'{"a":'.repeat(NESTING_DEPTH)}1${'}'.repeat(NESTING_DEPTH)}`;
+
+    let parseResult;
+    const parseLogs = getSyncLogs(() => {
+        parseResult = JSON.parse(json);
+    });
+    assert.strictEqual(typeof parseResult.a, 'object', 'Content parsed by JSON.parse returned');
+    assert.ok(
+        parseLogs.some((log) => log.includes('Content cannot be serialized')),
+        'Content which cannot be serialized - JSON.parse',
+    );
+
+    let jsonResult;
+    const jsonLogs = await getLogs(async () => {
+        const response = await fetch(`data:application/json,${encodeURIComponent(json)}`);
+        jsonResult = await response.json();
+    });
+    assert.strictEqual(typeof jsonResult.a, 'object', 'Content parsed by Response.json returned');
+    assert.ok(
+        jsonLogs.some((log) => log.includes('Content cannot be serialized')),
+        'Content which cannot be serialized - Response.json',
+    );
+});
+
 test('check if log contains specific stack trace function', (assert) => {
     assert.expect(2);
     console.log = (message) => {

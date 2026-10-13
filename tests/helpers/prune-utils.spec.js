@@ -5,7 +5,13 @@ import {
     vi,
 } from 'vitest';
 
-import { jsonPruner, getPrunePath, jsonLineEdit } from '../../src/helpers';
+import {
+    jsonPruner,
+    jsonSetter,
+    jsonPath,
+    getPrunePath,
+    jsonLineEdit,
+} from '../../src/helpers';
 import { countCreatedErrors, useThrowingErrorConstructor, useUnreadableStackTrace } from '../helpers';
 
 const name = 'json-prune';
@@ -1372,5 +1378,40 @@ describe('jsonPruner with a value which cannot be converted to a string thrown b
         }
 
         expect(result).toBe(root);
+    });
+});
+
+describe('Logging of content which cannot be serialized', () => {
+    test.each([
+        {
+            helper: 'jsonPruner',
+            process: (root) => jsonPruner(name, root, [], [], '', nativeObjects),
+        },
+        {
+            helper: 'jsonSetter',
+            process: (root) => jsonSetter(name, root, '', undefined, () => {}, [], '', nativeObjects),
+        },
+        {
+            helper: 'jsonPath',
+            process: (root) => jsonPath(name, root, '', nativeObjects),
+        },
+    ])('$helper logs a circular object without its content', ({ process }) => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((...args) => {
+            logs.push(args);
+        });
+        const root = { foo: 1 };
+        root.self = root;
+
+        let result;
+        try {
+            result = process(root);
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe(root);
+        expect(logs.some((args) => String(args[0]).includes('Content cannot be serialized'))).toBe(true);
+        expect(logs.some((args) => args[1] === root)).toBe(true);
     });
 });

@@ -12,6 +12,8 @@ const name = 'trusted-json-set';
 
 const nativeStringify = JSON.stringify;
 const nativeParse = JSON.parse;
+const nativeString = String;
+const nativeHasOwnProperty = Object.prototype.hasOwnProperty;
 const nativeConsole = console.log;
 const nativeResponseJson = Response.prototype.json;
 const nativeResponseText = Response.prototype.text;
@@ -30,6 +32,9 @@ const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     JSON.stringify = nativeStringify;
     JSON.parse = nativeParse;
+    window.String = nativeString;
+    // eslint-disable-next-line no-extend-native
+    Object.prototype.hasOwnProperty = nativeHasOwnProperty;
     console.log = nativeConsole;
     Response.prototype.json = nativeResponseJson;
     Response.prototype.text = nativeResponseText;

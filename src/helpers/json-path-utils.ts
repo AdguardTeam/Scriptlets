@@ -2,6 +2,7 @@ import { getJsonSetValue, parseJsonSetArgumentValue } from './json-set-utils';
 import { getThrownValueMessage } from './get-error-message';
 import { logMessage } from './log-message';
 import { matchStackTrace } from './match-stack';
+import { logJsonContent } from './prune-utils';
 import { parseKeywordValue } from './parse-keyword-value';
 import { toRegExp } from './string-utils';
 import { type Source } from '../scriptlets';
@@ -1877,12 +1878,7 @@ export const jsonPath = (
     }
 
     if (!path) {
-        logMessage(
-            source,
-            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${currentStackTrace}`,
-            true,
-        );
-        logMessage(source, root, true, false);
+        logJsonContent(source, root, nativeStringify, currentStackTrace);
         return root;
     }
 

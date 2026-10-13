@@ -48,6 +48,7 @@ import {
     parseKeywordValue,
     resolveJsonSetTimeKeywords,
     getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -441,4 +442,5 @@ trustedJsonSetFetchResponse.injections = [
     parseKeywordValue,
     resolveJsonSetTimeKeywords,
     getThrownValueMessage,
+    logJsonContent,
 ];

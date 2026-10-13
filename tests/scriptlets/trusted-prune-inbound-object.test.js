@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, saveStorageMethods } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    getSyncLogs,
+    saveStorageMethods,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-prune-inbound-object';
@@ -72,6 +77,20 @@ test('logs matched object and hostname if invoked with only first and third arg 
     );
 
     JSON.stringify({ asdfg: { doNotLog: 1 }, y: 2 });
+});
+
+test('logs a circular object without its content and calls the method - Object.keys', (assert) => {
+    runScriptlet(name, ['Object.keys']);
+    const circular = { a: 1 };
+    circular.self = circular;
+
+    let result;
+    const logs = getSyncLogs(() => {
+        result = Object.keys(circular);
+    });
+
+    assert.deepEqual(result, ['a', 'self'], 'Method called with the object');
+    assert.ok(logs.some((log) => log.includes('Content cannot be serialized')), 'Content which cannot be serialized');
 });
 
 test('removes propsToRemove - Object.getOwnPropertyNames, Object.keys , eval', (assert) => {

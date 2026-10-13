@@ -8,6 +8,37 @@ import { type ArbitraryObject, type ChainBase } from '../../types/types';
 import { type Source } from '../scriptlets';
 
 /**
+ * Logs the content of a JSON value with the hostname and the stack trace, as a string and as an object.
+ *
+ * The content may not be serializable, e.g. a circular value, such as a result of `eval()` of `evaldata-prune`,
+ * or a value which is too deeply nested, such as one parsed by `JSON.parse()` of `json-prune`. It is logged
+ * only as an object then, as an error of logging it should not be thrown to the page.
+ *
+ * @param source scriptlet properties
+ * @param root content to log
+ * @param nativeStringify native `JSON.stringify()` saved before the page can replace it
+ * @param stackTrace stack trace to log with the content
+ */
+export const logJsonContent = (
+    source: Source,
+    root: unknown,
+    nativeStringify: typeof JSON.stringify,
+    stackTrace: string,
+): void => {
+    let content;
+    try {
+        content = nativeStringify(root, null, 2);
+    } catch (error) {
+        // Error may be thrown by `toJSON()` of the page
+        content = `Content cannot be serialized: ${getThrownValueMessage(error)}`;
+    }
+    logMessage(source, `${window.location.hostname}\n${content}\nStack trace:\n${stackTrace}`, true);
+    if (root && typeof root === 'object') {
+        logMessage(source, root, true, false);
+    }
+};
+
+/**
  * Checks if pruning is required
  *
  * @param source required, scriptlet properties
@@ -64,14 +95,7 @@ export function isPruningNeeded(
                     // Content is logged without the stack trace then
                 }
             }
-            logMessage(
-                source,
-                `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${stackTrace}`,
-                true,
-            );
-            if (root && typeof root === 'object') {
-                logMessage(source, root, true, false);
-            }
+            logJsonContent(source, root, nativeStringify, stackTrace);
             shouldProcess = false;
             return shouldProcess;
         }
@@ -171,14 +195,7 @@ export const jsonPruner = (
                 // Content is logged without the stack trace then
             }
         }
-        logMessage(
-            source,
-            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${stackTrace}`,
-            true,
-        );
-        if (root && typeof root === 'object') {
-            logMessage(source, root, true, false);
-        }
+        logJsonContent(source, root, nativeStringify, stackTrace);
         return root;
     }
 
@@ -282,14 +299,7 @@ export const jsonSetter = (
         } catch {
             // Content is logged without the stack trace then
         }
-        logMessage(
-            source,
-            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${stackTrace}`,
-            true,
-        );
-        if (root && typeof root === 'object') {
-            logMessage(source, root, true, false);
-        }
+        logJsonContent(source, root, nativeStringify, stackTrace);
         return root;
     }
 

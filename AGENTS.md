@@ -629,6 +629,18 @@ Project-specific rules:
     throws when it is read otherwise, e.g. if the page has defined it as not
     writable on its own function.
 
+22. JSON content which a scriptlet only logs, e.g. in logging mode, SHOULD be
+    logged with `logJsonContent()`, which logs it only as an object if it
+    cannot be serialized, instead of serializing it at the call site. An error
+    of serializing content for a log MUST NOT be thrown to the page, nor stop
+    the intercepted call or the delivery of the response.
+
+    **Rationale**: Logged content may be circular, e.g. a result of `eval()`
+    of `evaldata-prune` or an argument of `trusted-prune-inbound-object`, or
+    too deeply nested, which `JSON.stringify()` with indentation cannot
+    serialize, even though `JSON.parse()` has parsed it. Logging should not
+    change the behavior of the page.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,

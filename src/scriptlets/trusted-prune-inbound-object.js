@@ -16,6 +16,7 @@ import {
     restoreRegExpValues,
     isKeyInObject,
     getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -278,4 +279,5 @@ trustedPruneInboundObject.injections = [
     restoreRegExpValues,
     isKeyInObject,
     getThrownValueMessage,
+    logJsonContent,
 ];

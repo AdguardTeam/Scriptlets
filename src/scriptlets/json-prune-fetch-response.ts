@@ -42,6 +42,7 @@ import {
     restoreRegExpValues,
     isKeyInObject,
     getThrownValueMessage,
+    logJsonContent,
     getFunctionProxyProperty,
 } from '../helpers';
 import { type Source } from './scriptlets';
@@ -376,5 +377,6 @@ jsonPruneFetchResponse.injections = [
     restoreRegExpValues,
     isKeyInObject,
     getThrownValueMessage,
+    logJsonContent,
     getFunctionProxyProperty,
 ];

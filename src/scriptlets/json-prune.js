@@ -31,6 +31,7 @@ import {
     noopPromiseReject,
     noopPromiseResolve,
     getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -539,4 +540,5 @@ jsonPrune.injections = [
     noopPromiseReject,
     noopPromiseResolve,
     getThrownValueMessage,
+    logJsonContent,
 ];

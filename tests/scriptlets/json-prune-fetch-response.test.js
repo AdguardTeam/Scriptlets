@@ -693,7 +693,7 @@ if (!isSupported) {
         );
     });
 
-    test('Logging mode - original response returned if the content cannot be logged', async (assert) => {
+    test('Logging mode - content which cannot be serialized is logged without it', async (assert) => {
         runScriptlet(name);
 
         // Content which can be parsed, but not serialized again to be logged, as it is too deeply nested
@@ -705,10 +705,10 @@ if (!isSupported) {
             result = await response.text();
         });
 
-        assert.strictEqual(result, json, 'Original content returned');
+        assert.strictEqual(result, json, 'Content is intact');
         assert.ok(
-            logs.some((log) => log.includes('Response body can\'t be modified')),
-            'Error logged',
+            logs.some((log) => log.includes('Content cannot be serialized')),
+            'Content which cannot be serialized',
         );
     });
 
