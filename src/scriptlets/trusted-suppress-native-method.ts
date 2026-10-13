@@ -24,6 +24,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     splitByPipeRespectingRegex,
+    getFunctionProxyProperty,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -217,7 +218,7 @@ export function trustedSuppressNativeMethod(
         return Reflect.apply(target, thisArg, argumentsList);
     }
 
-    methodOwner[prop] = new Proxy(nativeMethod, { apply });
+    methodOwner[prop] = new Proxy(nativeMethod, { apply, get: getFunctionProxyProperty });
 }
 
 export const trustedSuppressNativeMethodNames = [
@@ -240,6 +241,7 @@ trustedSuppressNativeMethod.injections = [
     getErrorMessage,
     getThrownValueMessage,
     splitByPipeRespectingRegex,
+    getFunctionProxyProperty,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,

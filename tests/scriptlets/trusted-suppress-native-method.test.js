@@ -422,6 +422,17 @@ test('Storage method: rules for both storages', (assert) => {
     assert.strictEqual(sessionStorage.getItem('session-key'), null, 'sessionStorage rule prevented its call');
 });
 
+test('toString() of the intercepted method returns the original value', (assert) => {
+    const nativeIsArray = Array.isArray;
+    runScriptlet(name, ['Array.isArray', '"test"', 'prevent']);
+    runScriptlet(name, ['testMatching', '"test"', 'prevent']);
+
+    assert.notStrictEqual(Array.isArray, nativeIsArray, 'Native method intercepted');
+    assert.strictEqual(Array.isArray.toString(), nativeIsArray.toString(), 'Native method with its name');
+    assert.notStrictEqual(window.testMatching, testMatching, 'Function of the page intercepted');
+    assert.strictEqual(window.testMatching.toString(), testMatching.toString(), 'Source of the function of the page');
+});
+
 test('Error during matching does not disable the rule', (assert) => {
     runScriptlet(name, ['testMatching', '{"key":"value"}', 'prevent']);
     const throwingArgument = {

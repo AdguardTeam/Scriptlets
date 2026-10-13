@@ -280,10 +280,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   from `getResponseHeader()` and `getAllResponseHeaders()` of an intercepted `XMLHttpRequest` object, e.g. `null`
   for `Content-Type`, as the object is not sent itself. The headers of the response are returned now,
   as by `trusted-replace-xhr-response` [#419].
-- `json-prune-xhr-response`, `trusted-json-set-xhr-response`, `json-prune-fetch-response`, `call-nothrow`
-  and `trusted-replace-outbound-text` changing `toString()` of the intercepted methods, e.g.
-  `XMLHttpRequest.prototype.open.toString()` or `fetch.toString()`, which returned the string of a native function
-  without its name. It returns the original value now.
+- `json-prune-xhr-response`, `trusted-json-set-xhr-response`, `json-prune-fetch-response`, `call-nothrow`,
+  `trusted-replace-outbound-text` and `trusted-suppress-native-method` changing `toString()` of the intercepted
+  methods, e.g. `XMLHttpRequest.prototype.open.toString()` or `fetch.toString()`, which returned the string
+  of a native function without its name. It returns the original value now.
 - `json-prune-xhr-response` and `trusted-json-set-xhr-response` never completing a request whose response
   could not be modified, e.g. as logging a too deeply nested JSON response with `verbose` threw an error,
   or defined on the object, e.g. if the page has made it not extensible. The events of the response are dispatched
