@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, useUnreadableStackTrace } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    useUnreadableStackTrace,
+    getLogs,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-json-set-fetch-response';
@@ -252,6 +257,40 @@ if (!isSupported) {
         assert.deepEqual(actualJson, { a1: 1, b2: 'changed', c3: 3 }, 'response should be modified');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
+    });
+
+    test('modifies the response with verbose if its content cannot be serialized to be logged', async (assert) => {
+        const nativeStringify = JSON.stringify;
+        // Saved by the scriptlet when it runs, so the content cannot be serialized only to be logged,
+        // e.g. as it is too deeply nested for `JSON.stringify()` with indentation
+        JSON.stringify = function stringify(...args) {
+            if (args[2] !== undefined) {
+                throw new Error('Value cannot be serialized');
+            }
+            return Reflect.apply(nativeStringify, this, args);
+        };
+        try {
+            runScriptlet(name, ['a1', '10', '', 'test01', '', '', 'true']);
+        } finally {
+            JSON.stringify = nativeStringify;
+        }
+
+        let actualJson;
+        const logs = await getLogs(async () => {
+            const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+            actualJson = await response.json();
+        });
+
+        assert.deepEqual(actualJson, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.ok(
+            logs.some((log) => log.includes('Original content:') && log.includes('Content cannot be serialized')),
+            'original content which cannot be serialized logged',
+        );
+        assert.ok(
+            logs.some((log) => log.includes('Modified content:') && log.includes('Content cannot be serialized')),
+            'modified content which cannot be serialized logged',
+        );
     });
 
     test('applies when stack matches a function which returns the promise of fetch', async (assert) => {

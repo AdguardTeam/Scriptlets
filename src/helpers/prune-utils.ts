@@ -18,12 +18,14 @@ import { type Source } from '../scriptlets';
  * @param root content to log
  * @param nativeStringify native `JSON.stringify()` saved before the page can replace it
  * @param stackTrace stack trace to log with the content
+ * @param label optional label to log before the content, e.g. 'Original content'
  */
 export const logJsonContent = (
     source: Source,
     root: unknown,
     nativeStringify: typeof JSON.stringify,
     stackTrace: string,
+    label = '',
 ): void => {
     let content;
     try {
@@ -32,7 +34,8 @@ export const logJsonContent = (
         // Error may be thrown by `toJSON()` of the page
         content = `Content cannot be serialized: ${getThrownValueMessage(error)}`;
     }
-    logMessage(source, `${window.location.hostname}\n${content}\nStack trace:\n${stackTrace}`, true);
+    const prefix = label ? `${label}:\n` : '';
+    logMessage(source, `${prefix}${window.location.hostname}\n${content}\nStack trace:\n${stackTrace}`, true);
     if (root && typeof root === 'object') {
         logMessage(source, root, true, false);
     }

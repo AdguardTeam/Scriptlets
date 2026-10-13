@@ -389,6 +389,57 @@ describe('Test trusted-json-set with a value which cannot be processed', () => {
 
         expect(logs).toContain('trusted-json-set: Error during setting the result value: null');
     });
+
+    test('modifies an object with verbose if its toJSON() throws while it is logged', () => {
+        window.getPayload = () => ({
+            ads: { enabled: true },
+            toJSON: () => {
+                throw new Error('Value cannot be serialized');
+            },
+        });
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false', '', 'result', '', '', 'true');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        let result;
+        try {
+            result = window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result.ads).toEqual({ enabled: false });
+        expect(logs.some((log) => log.includes('Content cannot be serialized: Value cannot be serialized'))).toBe(true);
+    });
+
+    test('modifies a string with verbose if its content cannot be serialized to be logged', () => {
+        window.getPayload = () => '{"ads":{"enabled":true}}';
+        // Saved by the scriptlet when it runs, so the content cannot be serialized only to be logged,
+        // e.g. as it is too deeply nested for `JSON.stringify()` with indentation
+        JSON.stringify = function stringify(...args) {
+            if (args[2] !== undefined) {
+                throw new Error('Value cannot be serialized');
+            }
+            return Reflect.apply(nativeStringify, this, args);
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false', '', 'result', '', '', 'true');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        let result;
+        try {
+            result = window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe('{"ads":{"enabled":false}}');
+        expect(logs.some((log) => log.includes('Content cannot be serialized: Value cannot be serialized'))).toBe(true);
+    });
 });
 
 describe('Test trusted-json-set with a stack trace which is not a string', () => {

@@ -7,6 +7,7 @@ import {
     useThrowingErrorConstructor,
     useUnreadableStackTrace,
     sleep,
+    getLogs,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -21,6 +22,7 @@ const nativeXhrGetAllResponseHeaders = XMLHttpRequest.prototype.getAllResponseHe
 const nativeXhrAbort = XMLHttpRequest.prototype.abort;
 const nativeConsole = console.log;
 const nativeJsonParse = JSON.parse;
+const nativeJsonStringify = JSON.stringify;
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -38,6 +40,7 @@ const afterEach = () => {
     XMLHttpRequest.prototype.abort = nativeXhrAbort;
     console.log = nativeConsole;
     JSON.parse = nativeJsonParse;
+    JSON.stringify = nativeJsonStringify;
 };
 
 module(name, { beforeEach, afterEach });
@@ -830,20 +833,76 @@ if (isSupported) {
     });
 
     test('returns the original response if it cannot be modified', async (assert) => {
-        assert.timeout(3000);
-        runScriptlet(name, ['a1', '10', '', '', '', '', 'true']);
-        // Content is logged with verbose
-        console.log = () => {};
+        // Saved by the scriptlet when it runs, so the modified value cannot be serialized
+        // Only the content is not serialized, as the arguments of the scriptlet are serialized to run it
+        JSON.stringify = function stringify(...args) {
+            if (args[0] !== null && typeof args[0] === 'object' && 'a1' in args[0]) {
+                throw new Error('Value cannot be serialized');
+            }
+            return Reflect.apply(nativeJsonStringify, this, args);
+        };
+        try {
+            runScriptlet(name, ['a1', '10']);
+        } finally {
+            JSON.stringify = nativeJsonStringify;
+        }
 
-        // Content which can be parsed, but not serialized again to be logged, as it is too deeply nested
-        const NESTING_DEPTH = 12000;
-        const json = `{"a1":1,"nested":${'['.repeat(NESTING_DEPTH)}${']'.repeat(NESTING_DEPTH)}}`;
+        const json = '{"a1":1,"b2":"test"}';
         const xhr = new XMLHttpRequest();
         xhr.open('GET', `data:application/json,${encodeURIComponent(json)}`);
         await sendAndWaitForLoad(xhr);
 
         assert.strictEqual(xhr.readyState, 4, 'request completed');
         assert.strictEqual(xhr.response, json, 'original response returned');
+    });
+
+    test('modifies the response with verbose if its content cannot be serialized to be logged', async (assert) => {
+        // Saved by the scriptlet when it runs, so the content cannot be serialized only to be logged,
+        // e.g. as it is too deeply nested for `JSON.stringify()` with indentation
+        JSON.stringify = function stringify(...args) {
+            if (args[2] !== undefined) {
+                throw new Error('Value cannot be serialized');
+            }
+            return Reflect.apply(nativeJsonStringify, this, args);
+        };
+        try {
+            runScriptlet(name, ['a1', '10', '', 'test01', '', '', 'true']);
+        } finally {
+            JSON.stringify = nativeJsonStringify;
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        const logs = await getLogs(() => sendAndWaitForLoad(xhr));
+
+        assert.strictEqual(xhr.response, '{"a1":10,"b2":"test","c3":3}', 'response should be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.ok(
+            logs.some((log) => log.includes('Original content:') && log.includes('Content cannot be serialized')),
+            'original content which cannot be serialized logged',
+        );
+        assert.ok(
+            logs.some((log) => log.includes('Modified content:') && log.includes('Content cannot be serialized')),
+            'modified content which cannot be serialized logged',
+        );
+    });
+
+    test('modifies a deeply nested response with verbose - json', async (assert) => {
+        assert.timeout(3000);
+        runScriptlet(name, ['a1', '10', '', '', '', '', 'true']);
+
+        // Content which can be parsed, but not serialized again to be logged, as it is too deeply nested
+        const NESTING_DEPTH = 12000;
+        const json = `{"a1":1,"nested":${'['.repeat(NESTING_DEPTH)}${']'.repeat(NESTING_DEPTH)}}`;
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `data:application/json,${encodeURIComponent(json)}`);
+        xhr.responseType = 'json';
+        // Content is logged with verbose
+        await getLogs(() => sendAndWaitForLoad(xhr));
+
+        assert.ok(xhr.response !== null && typeof xhr.response === 'object', 'response is an object');
+        assert.strictEqual(xhr.response.a1, 10, 'response should be modified');
+        assert.ok(Array.isArray(xhr.response.nested), 'other content is kept');
     });
 
     test('sends a request opened without async asynchronously', async (assert) => {

@@ -256,6 +256,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   rejecting the promise of `fetch()` then, `json-prune-xhr-response` returning the text of such response instead
   of its object for `responseType` `json`, and the content matched by `obligatoryProps` not being logged then.
   Such content is logged only as an object now.
+- `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response` with `verbose`
+  not modifying the content if it cannot be serialized to be logged, e.g. a too deeply nested JSON response
+  or an object whose `toJSON()` throws. Such content is logged only as an object now.
 - `json-prune-xhr-response` and `trusted-json-set-xhr-response` not firing `load` for the second matched request
   of a reused `XMLHttpRequest` object, as the props of its response could not be defined again, and returning
   the props of the previous response, e.g. `readyState` and `response`, for a request on such an object

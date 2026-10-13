@@ -621,13 +621,31 @@ export function trustedJsonSet(
     };
 
     /**
+     * Serializes a structured payload to be logged as a prettified JSON string.
+     *
+     * The payload may not be serializable, e.g. a value which is too deeply nested, or one whose `toJSON()`
+     * of the page throws. It is logged only as an object snapshot then, as an error of logging it
+     * should not stop its modification.
+     *
+     * @param value structured payload to serialize
+     * @returns prettified JSON content, or the reason why it cannot be serialized
+     */
+    const stringifyStructuredContent = (value: unknown) => {
+        try {
+            return nativeObjects.nativeStringify(value, null, 2);
+        } catch (error) {
+            return `Content cannot be serialized: ${getThrownValueMessage(error)}`;
+        }
+    };
+
+    /**
      * Logs the original structured payload as both a prettified JSON string and an object snapshot.
      *
      * @param value original object payload before any mutation attempt
      * @param stackTrace stack trace captured for the current interception
      */
     const logOriginalStructuredContent = (value: unknown, stackTrace: string) => {
-        logStringContent(nativeObjects.nativeStringify(value, null, 2), stackTrace);
+        logStringContent(stringifyStructuredContent(value), stackTrace);
         logClonedObject(createContentLabel('object'), value);
     };
 
@@ -638,7 +656,7 @@ export function trustedJsonSet(
      * @param stackTrace stack trace captured for the current interception
      */
     const logModifiedStructuredContent = (value: unknown, stackTrace: string) => {
-        logStringContent(nativeObjects.nativeStringify(value, null, 2), stackTrace, true);
+        logStringContent(stringifyStructuredContent(value), stackTrace, true);
         const message = [createContentLabel('object', true), value];
         logMessage(source, message, true, false);
     };
@@ -653,7 +671,7 @@ export function trustedJsonSet(
     const captureOriginalStructuredContent = (value: unknown) => {
         return {
             objectLogMessage: createClonedObjectLogMessage(createContentLabel('object'), value),
-            stringContent: nativeObjects.nativeStringify(value, null, 2),
+            stringContent: stringifyStructuredContent(value),
         };
     };
 

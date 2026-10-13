@@ -288,18 +288,22 @@ export function trustedJsonSetXhrResponse(
                     modifiedContent = content;
                 }
             } else {
+                // Content which cannot be serialized to be logged, e.g. too deeply nested, is logged only
+                // as an object, so the response is still modified
                 if (shouldLogContent) {
-                    // eslint-disable-next-line max-len
-                    logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                    logMessage(source, jsonContent, true, false);
+                    logJsonContent(source, jsonContent, nativeObjects.nativeStringify, stackTrace, 'Original content');
                 }
 
                 modifiedContent = applyJsonMutation(jsonContent);
 
                 if (shouldLogContent) {
-                    // eslint-disable-next-line max-len
-                    logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                    logMessage(source, modifiedContent, true, false);
+                    logJsonContent(
+                        source,
+                        modifiedContent,
+                        nativeObjects.nativeStringify,
+                        stackTrace,
+                        'Modified content',
+                    );
                 }
 
                 try {

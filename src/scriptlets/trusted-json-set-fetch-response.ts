@@ -324,18 +324,16 @@ export function trustedJsonSetFetchResponse(
         // as it would be parsed and modified again in the same way
         if (isParsed) {
             try {
+                // Content which cannot be serialized to be logged, e.g. too deeply nested, is logged only
+                // as an object, so the response is still modified
                 if (shouldLogContent) {
-                    // eslint-disable-next-line max-len
-                    logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                    logMessage(source, json, true, false);
+                    logJsonContent(source, json, nativeObjects.nativeStringify, stackTrace, 'Original content');
                 }
 
                 const modifiedJson = applyJsonMutation(json);
 
                 if (shouldLogContent) {
-                    // eslint-disable-next-line max-len
-                    logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                    logMessage(source, modifiedJson, true, false);
+                    logJsonContent(source, modifiedJson, nativeObjects.nativeStringify, stackTrace, 'Modified content');
                 }
 
                 return forgeResponse(

@@ -11,6 +11,7 @@ import {
     jsonPath,
     getPrunePath,
     jsonLineEdit,
+    logJsonContent,
 } from '../../src/helpers';
 import { countCreatedErrors, useThrowingErrorConstructor, useUnreadableStackTrace } from '../helpers';
 
@@ -1413,5 +1414,27 @@ describe('Logging of content which cannot be serialized', () => {
         expect(result).toBe(root);
         expect(logs.some((args) => String(args[0]).includes('Content cannot be serialized'))).toBe(true);
         expect(logs.some((args) => args[1] === root)).toBe(true);
+    });
+});
+
+describe('logJsonContent', () => {
+    test.each([
+        { label: undefined, expected: `${window.location.hostname}\n{\n  "foo": 1\n}\nStack trace:\nstack` },
+        // eslint-disable-next-line max-len
+        { label: 'Original content', expected: `Original content:\n${window.location.hostname}\n{\n  "foo": 1\n}\nStack trace:\nstack` },
+    ])('logs the content with label $label', ({ label, expected }) => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((...args) => {
+            logs.push(args);
+        });
+        const root = { foo: 1 };
+
+        try {
+            logJsonContent({ name }, root, nativeObjects.nativeStringify, 'stack', label);
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(logs).toEqual([[`${name}: ${expected}`], [`${name}:`, root]]);
     });
 });

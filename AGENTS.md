@@ -629,11 +629,13 @@ Project-specific rules:
     throws when it is read otherwise, e.g. if the page has defined it as not
     writable on its own function.
 
-22. JSON content which a scriptlet only logs, e.g. in logging mode, SHOULD be
-    logged with `logJsonContent()`, which logs it only as an object if it
-    cannot be serialized, instead of serializing it at the call site. An error
-    of serializing content for a log MUST NOT be thrown to the page, nor stop
-    the intercepted call or the delivery of the response.
+22. JSON content which a scriptlet only logs, e.g. in logging mode or with
+    `verbose`, SHOULD be logged with `logJsonContent()`, which logs it only as
+    an object if it cannot be serialized, instead of serializing it at the call
+    site, e.g. with the `label` `Original content` or `Modified content`.
+    An error of serializing content for a log MUST NOT be thrown to the page,
+    nor stop the intercepted call, the modification of the content, or the
+    delivery of the response.
 
     **Rationale**: Logged content may be circular, e.g. a result of `eval()`
     of `evaldata-prune` or an argument of `trusted-prune-inbound-object`, or

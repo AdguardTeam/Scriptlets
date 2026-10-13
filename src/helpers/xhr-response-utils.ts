@@ -462,8 +462,8 @@ export function interceptXhrResponses(
                 return;
             }
 
-            // The response is delivered to the page even if it cannot be modified, e.g. as logging content
-            // which is too deeply nested throws, so the request of the page does not wait for it forever.
+            // The response is delivered to the page even if it cannot be modified, e.g. as an unexpected error
+            // is thrown while it is processed, so the request of the page does not wait for it forever.
             // The original text of the response is returned then
             let modifiedContent;
             try {
