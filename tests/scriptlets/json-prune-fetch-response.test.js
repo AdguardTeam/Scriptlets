@@ -692,4 +692,43 @@ if (!isSupported) {
             'Content logged with the stack trace of the caller',
         );
     });
+
+    test('Logging mode - original response returned if the content cannot be logged', async (assert) => {
+        runScriptlet(name);
+
+        // Content which can be parsed, but not serialized again to be logged, as it is too deeply nested
+        const NESTING_DEPTH = 12000;
+        const json = `{"a1":1,"nested":${'['.repeat(NESTING_DEPTH)}${']'.repeat(NESTING_DEPTH)}}`;
+        let result;
+        const logs = await getLogs(async () => {
+            const response = await fetch(`data:application/json,${encodeURIComponent(json)}`);
+            result = await response.text();
+        });
+
+        assert.strictEqual(result, json, 'Original content returned');
+        assert.ok(
+            logs.some((log) => log.includes('Response body can\'t be modified')),
+            'Error logged',
+        );
+    });
+
+    test('Original response returned if the pruned content cannot be serialized', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        let result;
+        // e.g. as content which is too deeply nested cannot be serialized in browsers whose `JSON.stringify()`
+        // is recursive, unlike the one of the browser which runs the tests
+        // eslint-disable-next-line no-extend-native
+        Object.prototype.toJSON = () => {
+            throw new Error('Cannot be serialized');
+        };
+        try {
+            const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+            result = await response.text();
+        } finally {
+            delete Object.prototype.toJSON;
+        }
+
+        assert.deepEqual(JSON.parse(result), { a1: 1, b2: 'test', c3: 3 }, 'Original content returned');
+    });
 }

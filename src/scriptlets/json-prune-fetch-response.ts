@@ -290,15 +290,23 @@ export function jsonPruneFetchResponse(
             return clonedResponse;
         }
 
-        const modifiedJson = pruneJsonValue(json, stackTrace);
+        // The response is delivered to the page even if it cannot be modified or logged, as the request
+        // has succeeded, so its `fetch()` is not rejected. The original response is returned then
+        try {
+            const modifiedJson = pruneJsonValue(json, stackTrace);
 
-        const forgedResponse = forgeResponse(
-            originalResponse,
-            nativeObjects.nativeStringify(modifiedJson),
-        );
-        hit(source);
+            const forgedResponse = forgeResponse(
+                originalResponse,
+                nativeObjects.nativeStringify(modifiedJson),
+            );
+            hit(source);
 
-        return forgedResponse;
+            return forgedResponse;
+        } catch (error) {
+            // e.g. thrown by serializing a value which is too deeply nested
+            logMessage(source, `Response body can't be modified: ${getThrownValueMessage(error)}`);
+            return clonedResponse;
+        }
     };
 
     const fetchHandler = {

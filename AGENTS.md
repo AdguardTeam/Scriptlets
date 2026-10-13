@@ -464,7 +464,9 @@ Project-specific rules:
     ones if the page has replaced them before the scriptlet has run, e.g. by
     zone.js, and its `then()` may not support a native promise.
     `fetch()` is called once, outside of `try`, so its rejection is passed to
-    the page as is.
+    the page as is, while an error of processing, logging or forging the
+    response which it is fulfilled with, e.g. of serializing a too deeply
+    nested value, is caught and logged, and the original response is returned.
 
     **Rationale**: Path setters create missing properties on the promise
     itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
@@ -474,7 +476,8 @@ Project-specific rules:
     any other object would turn its synchronous result into a promise for any
     page object with a `then()` method. Calling the method again repeats its
     side effects, e.g. consuming the body of a `Response`, or sending
-    a failed POST request again.
+    a failed POST request again. The request of a response which cannot be
+    processed has succeeded, so the page should not get a rejection for it.
 
 17. If a function which the page calls, e.g. a wrapper of the intercepted
     method or its Proxy trap, creates a stack trace for `matchStackTrace()`

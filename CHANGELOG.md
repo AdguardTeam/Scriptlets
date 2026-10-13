@@ -289,6 +289,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   or defined on the object, e.g. if the page has made it not extensible. The events of the response are dispatched
   now in both cases, with the original text of the response if it could not be modified, while the object keeps
   its state if the response could not be defined.
+- `json-prune-fetch-response` rejecting the promise of `fetch()` of a request which has succeeded, if its response
+  could not be modified, e.g. as logging a too deeply nested JSON response in logging mode threw an error,
+  or serializing it threw in browsers whose `JSON.stringify()` is recursive. The original response is returned now.
 - `json-prune-xhr-response` in logging mode returning a JSON response as a string, even if another `responseType`
   of the request is set, e.g. `json`, `arraybuffer` or `blob`. A response which is not JSON is still returned
   as a string.
