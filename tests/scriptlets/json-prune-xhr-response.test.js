@@ -1277,6 +1277,39 @@ if (isSupported) {
         assert.deepEqual(xhr.response, { b2: 'test', c3: 3 }, 'Content of the next request pruned');
     });
 
+    test('Aborted request - events dispatched if the props of the response cannot be defined', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const xhr = new XMLHttpRequest();
+        // e.g. the props of the previous response of a reused object defined by `trusted-replace-xhr-response`,
+        // which are not configurable
+        Object.defineProperties(xhr, {
+            readyState: { value: 4, writable: false },
+            status: { value: 200, writable: false },
+            response: { value: 'previous', writable: false },
+            responseText: { value: 'previous', writable: false },
+        });
+        const events = [];
+        ['readystatechange', 'abort', 'loadend'].forEach((type) => {
+            xhr.addEventListener(type, () => {
+                events.push(type);
+            });
+        });
+
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        events.length = 0;
+        xhr.send();
+        xhr.abort();
+        assert.deepEqual(events, ['readystatechange', 'abort', 'loadend'], 'Events of an aborted request dispatched');
+
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        await sendAndWaitForLoad(xhr);
+        events.length = 0;
+        xhr.abort();
+        assert.deepEqual(events, [], 'No events dispatched by abort() of a loaded request');
+        assert.strictEqual(xhr.response, 'previous', 'Props which cannot be defined are kept');
+    });
+
     /**
      * Sends a request, calls the action in a listener of the given event of its response,
      * and returns the events of the response dispatched after that, with the final `readyState`.

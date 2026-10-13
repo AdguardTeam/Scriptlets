@@ -123,21 +123,30 @@ export function interceptXhrResponses(
      * Defines the props of a network error on the object of the page, i.e. of the response of a request
      * which is aborted or failed, e.g. a synchronous request with a network error.
      *
+     * The props may not be defined, e.g. if another scriptlet has defined them as not configurable
+     * on a reused object, which keeps its state then, as the events of an aborted request should be
+     * dispatched anyway, so the page does not wait for them, and an error of defining them should not
+     * replace the error of a failed request, or be thrown to the page by `abort()`.
+     *
      * @param xhr object of the page
      * @param readyState `4` for a failed request, or while the events of an aborted request are dispatched,
      * and `0` after that
      */
     const defineNetworkErrorProps = (xhr: XMLHttpRequest, readyState: number) => {
-        const { responseType } = xhr;
-        defineResponseProps(xhr, {
-            readyState,
-            responseURL: '',
-            responseXML: null,
-            status: 0,
-            statusText: '',
-            response: responseType === '' || responseType === 'text' ? '' : null,
-            responseText: '',
-        });
+        try {
+            const { responseType } = xhr;
+            defineResponseProps(xhr, {
+                readyState,
+                responseURL: '',
+                responseXML: null,
+                status: 0,
+                statusText: '',
+                response: responseType === '' || responseType === 'text' ? '' : null,
+                responseText: '',
+            });
+        } catch {
+            // Object keeps its state
+        }
     };
 
     /**
@@ -541,14 +550,9 @@ export function interceptXhrResponses(
                 forgedRequest.request = null;
                 // The object of the page is done with the network error then, as a native one,
                 // while it would be still opened otherwise, as it has not been sent.
-                // It is done only if the forged request is done, i.e. it has failed, not if it has not been sent.
-                // An error of defining it should not replace the error of the request
+                // It is done only if the forged request is done, i.e. it has failed, not if it has not been sent
                 if (request.readyState === 4) {
-                    try {
-                        defineNetworkErrorProps(thisArg, 4);
-                    } catch {
-                        // Object keeps its state
-                    }
+                    defineNetworkErrorProps(thisArg, 4);
                 }
             }
         }
