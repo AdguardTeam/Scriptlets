@@ -31,6 +31,119 @@ export const getRandomNumber = (min, max) => {
 export const evalWrapper = eval;
 
 /**
+ * Saves the methods of `Storage.prototype`, in which scriptlets replace methods of storages,
+ * i.e. `localStorage` and `sessionStorage`.
+ *
+ * @returns {Function} function which restores the methods and clears both storages
+ */
+export const saveStorageMethods = () => {
+    const methodNames = ['getItem', 'setItem', 'removeItem', 'clear', 'key'];
+    const nativeMethods = methodNames.map((methodName) => Storage.prototype[methodName]);
+
+    return () => {
+        methodNames.forEach((methodName, i) => {
+            Storage.prototype[methodName] = nativeMethods[i];
+        });
+        localStorage.clear();
+        sessionStorage.clear();
+    };
+};
+
+/**
+ * Makes stack traces of errors created in Chrome look like the ones of Firefox and Safari,
+ * i.e. without the error message line, so the first line is the frame which has created the error,
+ * e.g. `objectWrapper@https://example.org/script.js:1:2`.
+ *
+ * It uses `Error.prepareStackTrace()` of V8, i.e. Chrome and Node.js, while in Firefox it changes nothing,
+ * so the stack traces have their native format there.
+ *
+ * @returns {Function} function which restores the format of stack traces
+ */
+export const useFirefoxStackTraceFormat = () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+    Error.prepareStackTrace = (error, callSites) => callSites
+        .map((callSite) => {
+            const location = `${callSite.getFileName()}:${callSite.getLineNumber()}:${callSite.getColumnNumber()}`;
+            return `${callSite.getFunctionName() || ''}@${location}`;
+        })
+        .join('\n');
+
+    return () => {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+    };
+};
+
+/**
+ * Makes reading the stack trace of errors throw, as the page may do it,
+ * e.g. by `Error.prepareStackTrace()` in Chrome, or by a getter of `Error.prototype.stack` in Firefox.
+ *
+ * @returns {Function} function which makes the stack trace readable again
+ */
+export const useUnreadableStackTrace = () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+    const nativeStackDescriptor = Object.getOwnPropertyDescriptor(Error.prototype, 'stack');
+    const throwError = () => {
+        throw new Error('Stack trace cannot be read');
+    };
+    Error.prepareStackTrace = throwError;
+    // eslint-disable-next-line no-extend-native
+    Object.defineProperty(Error.prototype, 'stack', { configurable: true, get: throwError });
+
+    return () => {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+        if (nativeStackDescriptor) {
+            // eslint-disable-next-line no-extend-native
+            Object.defineProperty(Error.prototype, 'stack', nativeStackDescriptor);
+        } else {
+            delete Error.prototype.stack;
+        }
+    };
+};
+
+/**
+ * Replaces `Error` with a constructor which throws, as the page may do it,
+ * so an error to read the stack trace of cannot be even created.
+ *
+ * @param {*} [thrownValue] value which the constructor throws instead of a `TypeError`, e.g. a primitive,
+ * which has no message, so getting its message by creating another error throws as well
+ * @returns {Function} function which restores `Error`
+ */
+export const useThrowingErrorConstructor = (thrownValue) => {
+    const NativeError = window.Error;
+    window.Error = function ThrowingError() {
+        throw thrownValue === undefined ? new TypeError('Error cannot be created') : thrownValue;
+    };
+
+    return () => {
+        window.Error = NativeError;
+    };
+};
+
+/**
+ * Runs given function and returns the number of errors created by it synchronously by `new Error()`,
+ * e.g. to check whether the stack trace is read only when it is needed.
+ *
+ * @param {Function} fn function to run
+ * @returns {number} number of created errors
+ */
+export const countCreatedErrors = (fn) => {
+    const NativeError = window.Error;
+    let count = 0;
+    window.Error = new Proxy(NativeError, {
+        construct: (target, args, newTarget) => {
+            count += 1;
+            return Reflect.construct(target, args, newTarget);
+        },
+    });
+    try {
+        fn();
+    } finally {
+        window.Error = NativeError;
+    }
+    return count;
+};
+
+/**
  * Fetches and parses the redirects YAML file, returning an instance of Redirects.
  * @typedef {import('./path/to/redirects').Redirects} Redirects
  * @returns {Promise<Redirects>} A promise that resolves to an instance of Redirects.

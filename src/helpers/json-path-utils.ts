@@ -1,6 +1,8 @@
 import { getJsonSetValue, parseJsonSetArgumentValue } from './json-set-utils';
+import { getThrownValueMessage } from './get-error-message';
 import { logMessage } from './log-message';
 import { matchStackTrace } from './match-stack';
+import { logJsonContent } from './prune-utils';
 import { parseKeywordValue } from './parse-keyword-value';
 import { toRegExp } from './string-utils';
 import { type Source } from '../scriptlets';
@@ -1845,20 +1847,38 @@ export const jsonPath = (
 
     const nativeParse = resolveNativeParse(nativeObjects);
     const nativeStringify = resolveNativeStringify(nativeObjects);
-    const currentStackTrace = new Error().stack || '';
     const parseArgumentValue = (argumentValue: string) => parseJsonSetArgumentValue(source, argumentValue, nativeParse);
 
-    if (stack && !matchStackTrace(stack, currentStackTrace)) {
+    // Stack trace is read only if it is matched or logged, as the page may make creating or reading it throw,
+    // e.g. by replacing `Error` or by `Error.prepareStackTrace`, or make it a non-string value,
+    // which should not stop the rules without `stack` from working
+    let currentStackTrace = '';
+    let isStackTraceRead = false;
+    if (stack || !path) {
+        try {
+            currentStackTrace = String(new Error().stack || '');
+            isStackTraceRead = true;
+        } catch {
+            // Rules with `stack` are not processed, as it cannot be matched
+        }
+    }
+
+    // `matchStackTrace()` throws for an invalid regular expression of `stack`, which should not be thrown
+    // to the page, e.g. from `JSON.parse()` of `json-prune`, so the value is not processed then
+    let isStackMatched = !stack;
+    if (stack && isStackTraceRead) {
+        try {
+            isStackMatched = matchStackTrace(stack, currentStackTrace);
+        } catch {
+            logMessage(source, `Invalid stack: ${stack}`);
+        }
+    }
+    if (!isStackMatched) {
         return root;
     }
 
     if (!path) {
-        logMessage(
-            source,
-            `${window.location.hostname}\n${nativeStringify(root, null, 2)}\nStack trace:\n${currentStackTrace}`,
-            true,
-        );
-        logMessage(source, root, true, false);
+        logJsonContent(source, root, nativeStringify, currentStackTrace);
         return root;
     }
 
@@ -1902,7 +1922,7 @@ export const jsonPath = (
             }
         }
     } catch (error) {
-        logMessage(source, `JSONPath processing failed for expression '${path}': ${(error as Error).message}`);
+        logMessage(source, `JSONPath processing failed for expression '${path}': ${getThrownValueMessage(error)}`);
     }
 
     return root;

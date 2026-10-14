@@ -11,9 +11,14 @@ import {
     noopPromiseResolve,
     nativeIsNaN,
     matchStackTrace,
+    addStackTraceMessageLine,
     getPropertyInChain,
+    getMethodOwner,
+    getFunctionProxyProperty,
     getWildcardPropertyInChain,
     logMessage,
+    getThrownValueMessage,
+    logJsonContent,
     isPruningNeeded,
     jsonSetter,
     getPrunePath,
@@ -21,6 +26,7 @@ import {
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     isEmptyObject,
+    isNativePromise,
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
@@ -50,7 +56,10 @@ import { type Source } from './scriptlets';
  *
  * 1. one or more arguments;
  * 1. the intercepted method `thisArg`;
- * 1. the return value if it is an object or a JSON string.
+ * 1. the return value if it is an object or a JSON string;
+ *    if it is a native `Promise`, e.g. of `Response.prototype.json`, the value it is fulfilled with is modified
+ *    instead, and a new promise of the modified value is returned.
+ *    Promises of polyfills or libraries which replace `window.Promise`, e.g. zone.js, are not supported.
  *
  * ### Syntax
  *
@@ -132,6 +141,7 @@ import { type Source } from './scriptlets';
  *     - `all` — all arguments, `thisArg`, and the return value
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if a regular expression is invalid it will be skipped.
+ *   It is matched when the method is called, also if the value of a returned `Promise` is modified later.
  * - `mode` — optional, syntax mode selector.
  *   Supported values:
  *     - `legacy` — force the existing legacy path syntax
@@ -446,6 +456,30 @@ import { type Source } from './scriptlets';
  *     { ads: { enabled: false }, content: 'article' }
  *     ```
  *
+ * 1. Sets `ads.enabled` to `false` in the value which the `Promise` returned by `Response.prototype.json` is fulfilled with
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'Response.prototype.json', 'ads.enabled', 'false')
+ *     ```
+ *
+ *     or `JSONPath` syntax:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'Response.prototype.json', '$.ads.enabled', 'false')
+ *     ```
+ *
+ *     For instance, the following call:
+ *
+ *     ```js
+ *     const data = await new Response('{"ads":{"enabled":true},"content":"article"}').json();
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```js
+ *     { ads: { enabled: false }, content: 'article' }
+ *     ```
+ *
  * <!-- markdownlint-enable line-length -->
  *
  * @added v2.3.0.
@@ -505,22 +539,19 @@ export function trustedJsonSet(
     const createClonedObjectLogMessage = (label: string, value: unknown): [string, unknown] => {
         if (isStructuredCloneSupported) {
             try {
-                return [label, structuredClone(value)] as [string, unknown];
+                return [label, structuredClone(value)];
             } catch (error) {
                 try {
-                    return [
-                        label,
-                        nativeObjects.nativeParse(nativeObjects.nativeStringify(value)),
-                    ] as [string, unknown];
+                    return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))];
                 } catch {
                     // eslint-disable-next-line max-len
-                    return [`Could not clone content of ${methodPath} (original and modified objects are the same): ${(error as Error).message}\n`, value];
+                    return [`Could not clone content of ${methodPath} (original and modified objects are the same): ${getThrownValueMessage(error)}\n`, value];
                 }
             }
         }
 
         try {
-            return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))] as [string, unknown];
+            return [label, nativeObjects.nativeParse(nativeObjects.nativeStringify(value))];
         } catch {
             // eslint-disable-next-line max-len
             return [`Structured cloning is not supported (original and modified objects are the same) for ${label}\n`, value];
@@ -590,13 +621,31 @@ export function trustedJsonSet(
     };
 
     /**
+     * Serializes a structured payload to be logged as a prettified JSON string.
+     *
+     * The payload may not be serializable, e.g. a value which is too deeply nested, or one whose `toJSON()`
+     * of the page throws. It is logged only as an object snapshot then, as an error of logging it
+     * should not stop its modification.
+     *
+     * @param value structured payload to serialize
+     * @returns prettified JSON content, or the reason why it cannot be serialized
+     */
+    const stringifyStructuredContent = (value: unknown) => {
+        try {
+            return nativeObjects.nativeStringify(value, null, 2);
+        } catch (error) {
+            return `Content cannot be serialized: ${getThrownValueMessage(error)}`;
+        }
+    };
+
+    /**
      * Logs the original structured payload as both a prettified JSON string and an object snapshot.
      *
      * @param value original object payload before any mutation attempt
      * @param stackTrace stack trace captured for the current interception
      */
     const logOriginalStructuredContent = (value: unknown, stackTrace: string) => {
-        logStringContent(nativeObjects.nativeStringify(value, null, 2), stackTrace);
+        logStringContent(stringifyStructuredContent(value), stackTrace);
         logClonedObject(createContentLabel('object'), value);
     };
 
@@ -607,7 +656,7 @@ export function trustedJsonSet(
      * @param stackTrace stack trace captured for the current interception
      */
     const logModifiedStructuredContent = (value: unknown, stackTrace: string) => {
-        logStringContent(nativeObjects.nativeStringify(value, null, 2), stackTrace, true);
+        logStringContent(stringifyStructuredContent(value), stackTrace, true);
         const message = [createContentLabel('object', true), value];
         logMessage(source, message, true, false);
     };
@@ -622,7 +671,7 @@ export function trustedJsonSet(
     const captureOriginalStructuredContent = (value: unknown) => {
         return {
             objectLogMessage: createClonedObjectLogMessage(createContentLabel('object'), value),
-            stringContent: nativeObjects.nativeStringify(value, null, 2),
+            stringContent: stringifyStructuredContent(value),
         };
     };
 
@@ -684,7 +733,9 @@ export function trustedJsonSet(
         return;
     }
 
-    const nativeMethod = base[prop];
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base, prop);
+    const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
         return;
@@ -807,6 +858,10 @@ export function trustedJsonSet(
      * Uses `jsonPath` for `jsonpath` mode and falls back to the legacy
      * `jsonSetter` implementation otherwise.
      *
+     * Stack trace is not passed to them, as it is already matched by `objectWrapper()`
+     * when the intercepted method is called, and the mutation may happen later,
+     * e.g. on fulfillment of the returned promise.
+     *
      * @param jsonValue object value selected from args, thisArg, or result
      * @returns mutated object value together with a change flag
      */
@@ -817,7 +872,7 @@ export function trustedJsonSet(
             const value = jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => {
                 changed = true;
                 hit(source);
-            }, stack);
+            }, '');
 
             return {
                 changed,
@@ -839,7 +894,7 @@ export function trustedJsonSet(
             setPathObj?.value,
             getValueToSet,
             requiredPaths,
-            stack,
+            '',
             nativeObjects,
             () => {
                 changed = true;
@@ -924,23 +979,25 @@ export function trustedJsonSet(
     };
 
     /**
-     * Applies `jsonSetter` to an object value directly, or to a string value after JSON parsing.
-     * If parsing fails, the original value is returned unchanged.
+     * Modifies an object value directly by `applyJsonMutation()`, i.e. by `jsonPath` in JSONPath mode
+     * or by `jsonSetter` otherwise, or a string value after JSON parsing, which is stringified again then.
+     * A string which is not a JSON object is processed as line-delimited JSON,
+     * and it is returned unchanged if it has no JSON lines either.
+     * In logging-only mode, the value is only logged. Values of other types are returned unchanged.
+     * A value is returned unchanged as well if its modification throws an error, which is logged.
      *
      * @param jsonValue candidate JSON value to modify
      * @param errorMessage message prefix used for logging unexpected errors
+     * @param currentStackTrace stack trace for logs, captured when the intercepted method is called,
+     * or an empty string if it is not needed
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
-    const modifyJsonValue = (jsonValue: any, errorMessage: string) => {
-        const currentStackTrace = new Error().stack || '';
-
+    const modifyJsonValue = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
         if (isLogOnlyMode) {
-            if (!stack || matchStackTrace(stack, currentStackTrace)) {
-                try {
-                    logOriginalOnlyContent(jsonValue, currentStackTrace);
-                } catch (error) {
-                    logMessage(source, `${errorMessage}: ${(error as Error).message}`);
-                }
+            try {
+                logOriginalOnlyContent(jsonValue, currentStackTrace);
+            } catch (error) {
+                logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
             }
             return jsonValue;
         }
@@ -961,16 +1018,24 @@ export function trustedJsonSet(
 
                 return mutationResult.value;
             } catch (error) {
-                logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+                logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
                 return jsonValue;
             }
         }
 
         if (typeof jsonValue === 'string') {
             let messageError = '';
+            let parsedValue;
             try {
-                const parsedValue = nativeObjects.nativeParse(jsonValue);
-                if (parsedValue !== null && typeof parsedValue === 'object') {
+                parsedValue = nativeObjects.nativeParse(jsonValue);
+            } catch (error) {
+                messageError = getThrownValueMessage(error);
+            }
+
+            // A JSON object is not processed as line-delimited JSON if its modification throws,
+            // as it would be parsed and modified again in the same way
+            if (parsedValue !== null && typeof parsedValue === 'object') {
+                try {
                     const originalSnapshot = shouldLogVerboseContent
                         ? captureOriginalStructuredContent(parsedValue)
                         : null;
@@ -983,9 +1048,11 @@ export function trustedJsonSet(
                         }
                     }
                     return nativeObjects.nativeStringify(mutationResult.value);
+                } catch (error) {
+                    // e.g. thrown by `toJSON()` of the page, which may throw a value without a message
+                    logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
+                    return jsonValue;
                 }
-            } catch (error) {
-                messageError = error instanceof Error ? error.message : String(error);
             }
 
             // If parsing fails, try to process it as line-delimited JSON
@@ -1020,7 +1087,7 @@ export function trustedJsonSet(
 
                 return jsonValue;
             } catch (error) {
-                logMessage(source, `${errorMessage}: ${(error as Error).message}`);
+                logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
                 return jsonValue;
             }
         }
@@ -1028,65 +1095,174 @@ export function trustedJsonSet(
         return jsonValue;
     };
 
+    // Saved before the page can replace them, as a promise returned by the intercepted method,
+    // e.g. by `Response.prototype.json()`, is modified on its fulfillment
+    // https://github.com/AdguardTeam/Scriptlets/issues/585
+    const NativePromise = window.Promise;
+    const nativePromiseThen = NativePromise.prototype.then;
+
     let isMatchingSuspended = false;
+
+    /**
+     * Calls `modifyJsonValue()` with matching suspended, so the intercepted method is not processed again
+     * if it is called during the modification, e.g. by a helper, also when a promise is fulfilled,
+     * i.e. after `objectWrapper()` has returned.
+     * Unexpected errors are logged and the original value is returned then.
+     *
+     * @param jsonValue candidate JSON value to modify
+     * @param errorMessage message prefix used for logging unexpected errors
+     * @param currentStackTrace stack trace for logs, captured when the intercepted method is called,
+     * or an empty string if it is not needed
+     * @returns modified JSON-compatible value or the original input if it cannot be processed
+     */
+    const modifyJsonValueSafely = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
+        const wasMatchingSuspended = isMatchingSuspended;
+        isMatchingSuspended = true;
+        try {
+            return modifyJsonValue(jsonValue, errorMessage, currentStackTrace);
+        } catch (error) {
+            logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
+            return jsonValue;
+        } finally {
+            isMatchingSuspended = wasMatchingSuspended;
+        }
+    };
+
+    /**
+     * Modifies the result of the intercepted method.
+     *
+     * If it is a native promise, e.g. of `Response.prototype.json()`, the value it is fulfilled with is modified
+     * instead of the promise itself, so a new promise of the modified value is returned,
+     * and a rejection of the original promise is passed through.
+     * In logging-only mode, the value is only logged, so the original promise is returned.
+     *
+     * @param result value returned by the intercepted method
+     * @param currentStackTrace stack trace for logs, captured when the intercepted method is called,
+     * or an empty string if it is not needed
+     * @returns modified result, or a promise of it
+     */
+    const modifyResult = (result: any, currentStackTrace: string) => {
+        const errorMessage = 'Error during setting the result value';
+        if (!isNativePromise(result, NativePromise)) {
+            return modifyJsonValueSafely(result, errorMessage, currentStackTrace);
+        }
+
+        const onFulfilled = (value: unknown) => modifyJsonValueSafely(value, errorMessage, currentStackTrace);
+
+        try {
+            // Native method is used, as `then` of the promise may be replaced by the page
+            if (isLogOnlyMode) {
+                // The original promise is returned, so the page keeps its identity and properties.
+                // Its rejection is handled here, as the promise of this handler is not returned,
+                // so it would be rejected unhandled otherwise
+                Reflect.apply(nativePromiseThen, result, [onFulfilled, noopFunc]);
+                return result;
+            }
+
+            return Reflect.apply(nativePromiseThen, result, [onFulfilled]);
+        } catch (error) {
+            // e.g. if the result only inherits from `Promise.prototype`,
+            // so it is returned as is, and the intercepted method is not called again
+            logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
+            return result;
+        }
+    };
 
     const objectWrapper = (
         target: Function,
         thisArg: any,
         args: any[],
     ) => {
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        isMatchingSuspended = true;
         try {
-            if (isMatchingSuspended) {
-                return Reflect.apply(target, thisArg, args);
-            }
-            isMatchingSuspended = true;
+            let currentStackTrace = '';
+            let shouldProcess = false;
+            let modifiedThisArg = thisArg;
 
-            const selectedArgumentIndexes = getSelectedArgumentIndexes(args.length);
-
-            for (let i = 0; i < selectedArgumentIndexes.length; i += 1) {
-                const index = selectedArgumentIndexes[i];
-                args[index] = modifyJsonValue(args[index], `Error during setting the argument at index ${index}`);
-            }
-
-            if (normalizedJsonSource === JSON_SOURCES.ARGS || normalizedJsonSource === JSON_SOURCES.ALL) {
-                for (let i = 0; i < args.length; i += 1) {
-                    args[i] = modifyJsonValue(args[i], `Error during setting the argument at index ${i}`);
+            // Stack trace is matched once, when the method is called, as the value of a returned promise
+            // is modified on its fulfillment, when the caller is no longer in the stack.
+            // It is created here, in the wrapper called by the page, and gets the error message line
+            // in all browsers, so `matchStackTrace()` keeps the frame of the caller,
+            // regardless of the minification, which may inline a function created it otherwise.
+            // It is read only if it is matched or logged, i.e. with `stack`, in logging-only mode or with `verbose`.
+            // The page may make creating or reading it throw, e.g. by replacing `Error`
+            // or by `Error.prepareStackTrace`, or make it a non-string value,
+            // which should not stop the rules without `stack` from working,
+            // so the error is created in the same `try` in which the stack trace is read
+            let isStackTraceRead = false;
+            if (stack || isLogOnlyMode || shouldLogVerboseContent) {
+                try {
+                    currentStackTrace = String(new Error().stack || '');
+                    isStackTraceRead = true;
+                } catch {
+                    // Rules with `stack` are not processed, as it cannot be matched
                 }
             }
 
-            let modifiedThisArg = thisArg;
-            if (normalizedJsonSource === JSON_SOURCES.THIS || normalizedJsonSource === JSON_SOURCES.ALL) {
-                modifiedThisArg = modifyJsonValue(thisArg, 'Error during setting the thisArg value');
+            try {
+                shouldProcess = !stack
+                    || (isStackTraceRead && matchStackTrace(stack, addStackTraceMessageLine(currentStackTrace)));
+
+                if (shouldProcess) {
+                    const selectedArgumentIndexes = getSelectedArgumentIndexes(args.length);
+
+                    for (let i = 0; i < selectedArgumentIndexes.length; i += 1) {
+                        const index = selectedArgumentIndexes[i];
+                        args[index] = modifyJsonValueSafely(
+                            args[index],
+                            `Error during setting the argument at index ${index}`,
+                            currentStackTrace,
+                        );
+                    }
+
+                    if (normalizedJsonSource === JSON_SOURCES.ARGS || normalizedJsonSource === JSON_SOURCES.ALL) {
+                        for (let i = 0; i < args.length; i += 1) {
+                            args[i] = modifyJsonValueSafely(
+                                args[i],
+                                `Error during setting the argument at index ${i}`,
+                                currentStackTrace,
+                            );
+                        }
+                    }
+
+                    if (normalizedJsonSource === JSON_SOURCES.THIS || normalizedJsonSource === JSON_SOURCES.ALL) {
+                        modifiedThisArg = modifyJsonValueSafely(
+                            thisArg,
+                            'Error during setting the thisArg value',
+                            currentStackTrace,
+                        );
+                    }
+                }
+            } catch (error) {
+                logMessage(source, `Unexpected error during JSON modification: ${getThrownValueMessage(error)}`);
             }
 
-            let result = Reflect.apply(target, modifiedThisArg, args);
+            // Errors thrown by the intercepted method are not caught, so it is not called again
+            const result = Reflect.apply(target, modifiedThisArg, args);
 
-            if (normalizedJsonSource === JSON_SOURCES.RESULT || normalizedJsonSource === JSON_SOURCES.ALL) {
-                result = modifyJsonValue(result, 'Error during setting the result value');
+            if (
+                !shouldProcess
+                || (normalizedJsonSource !== JSON_SOURCES.RESULT && normalizedJsonSource !== JSON_SOURCES.ALL)
+            ) {
+                return result;
             }
 
+            return modifyResult(result, currentStackTrace);
+        } finally {
             isMatchingSuspended = false;
-            return result;
-        } catch (error) {
-            isMatchingSuspended = false;
-            logMessage(source, `Unexpected error during JSON modification: ${(error as Error).message}`);
-            return Reflect.apply(target, thisArg, args);
         }
-    };
-
-    const getWrapper = (target: Function, propName: string, receiver: any) => {
-        if (propName === 'toString') {
-            return target.toString.bind(target);
-        }
-        return Reflect.get(target, propName, receiver);
     };
 
     const objectHandler = {
         apply: objectWrapper,
-        get: getWrapper,
+        get: getFunctionProxyProperty,
     };
 
-    base[prop] = new Proxy(nativeMethod, objectHandler);
+    methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
 export const trustedJsonSetNames = [
@@ -1110,9 +1286,14 @@ trustedJsonSet.injections = [
     noopPromiseResolve,
     nativeIsNaN,
     matchStackTrace,
+    addStackTraceMessageLine,
     getPropertyInChain,
+    getMethodOwner,
+    getFunctionProxyProperty,
     getWildcardPropertyInChain,
     logMessage,
+    getThrownValueMessage,
+    logJsonContent,
     isPruningNeeded,
     jsonSetter,
     getPrunePath,
@@ -1120,6 +1301,7 @@ trustedJsonSet.injections = [
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     isEmptyObject,
+    isNativePromise,
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,

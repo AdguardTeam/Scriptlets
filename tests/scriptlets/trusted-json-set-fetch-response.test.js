@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    useUnreadableStackTrace,
+    getLogs,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-json-set-fetch-response';
@@ -231,5 +236,167 @@ if (!isSupported) {
 
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
         done();
+    });
+
+    test('modifies the fetch response with verbose if the stack trace cannot be read', async (assert) => {
+        const done = assert.async();
+        runScriptlet(name, ['b2', 'changed', '', 'test01', '', '', 'true']);
+        // Content is logged in verbose mode
+        console.log = () => {};
+
+        // Stack trace cannot be read also when the response is processed after it is awaited
+        const restoreStackTrace = useUnreadableStackTrace();
+        let response;
+        try {
+            response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        } finally {
+            restoreStackTrace();
+        }
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 1, b2: 'changed', c3: 3 }, 'response should be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('modifies the response with verbose if its content cannot be serialized to be logged', async (assert) => {
+        const nativeStringify = JSON.stringify;
+        // Saved by the scriptlet when it runs, so the content cannot be serialized only to be logged,
+        // e.g. as it is too deeply nested for `JSON.stringify()` with indentation
+        JSON.stringify = function stringify(...args) {
+            if (args[2] !== undefined) {
+                throw new Error('Value cannot be serialized');
+            }
+            return Reflect.apply(nativeStringify, this, args);
+        };
+        try {
+            runScriptlet(name, ['a1', '10', '', 'test01', '', '', 'true']);
+        } finally {
+            JSON.stringify = nativeStringify;
+        }
+
+        let actualJson;
+        const logs = await getLogs(async () => {
+            const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+            actualJson = await response.json();
+        });
+
+        assert.deepEqual(actualJson, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.ok(
+            logs.some((log) => log.includes('Original content:') && log.includes('Content cannot be serialized')),
+            'original content which cannot be serialized logged',
+        );
+        assert.ok(
+            logs.some((log) => log.includes('Modified content:') && log.includes('Content cannot be serialized')),
+            'modified content which cannot be serialized logged',
+        );
+    });
+
+    test('applies when stack matches a function which returns the promise of fetch', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', 'getFetchResponse']);
+
+        // The function is no longer in the stack when the response is awaited
+        const getFetchResponse = () => fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const response = await getFetchResponse();
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 10, b2: 'test', c3: 3 }, 'response should be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+
+    test('does not apply when stack does not match, and leaves the response as is', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', 'notMatchingStack']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'response should stay intact');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('sends the request once and passes its rejection through', async (assert) => {
+        let calls = 0;
+        window.fetch = () => {
+            calls += 1;
+            return Promise.reject(new TypeError('Failed to fetch'));
+        };
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        await assert.rejects(
+            fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' }),
+            /Failed to fetch/,
+            'rejection of the request passed through',
+        );
+        assert.strictEqual(calls, 1, 'request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('sends the request once and returns the response if it cannot be cloned', async (assert) => {
+        let calls = 0;
+        let receivedResponse;
+        window.fetch = async () => {
+            calls += 1;
+            receivedResponse = new Response('{"a1":1}');
+            // Response with a used body cannot be cloned
+            await receivedResponse.text();
+            return receivedResponse;
+        };
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' });
+
+        assert.strictEqual(response, receivedResponse, 'received response returned');
+        assert.strictEqual(calls, 1, 'request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('does not process a JSON body again as line-delimited JSON if it cannot be modified', async (assert) => {
+        const nativeParse = JSON.parse;
+        const nativeStringify = JSON.stringify;
+        let bodyParses = 0;
+        // Saved by the scriptlet when it runs, so the modified value cannot be serialized
+        JSON.parse = function parse(...args) {
+            if (typeof args[0] === 'string' && args[0].includes('"a1"')) {
+                bodyParses += 1;
+            }
+            return Reflect.apply(nativeParse, this, args);
+        };
+        // Only the content is not serialized, as the arguments of the scriptlet are serialized to run it
+        JSON.stringify = function stringify(...args) {
+            if (args[0] !== null && typeof args[0] === 'object' && 'a1' in args[0]) {
+                throw new Error('Value cannot be serialized');
+            }
+            return Reflect.apply(nativeStringify, this, args);
+        };
+        try {
+            runScriptlet(name, ['a1', '10', '', 'test01']);
+        } finally {
+            JSON.parse = nativeParse;
+            JSON.stringify = nativeStringify;
+        }
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'response should stay intact');
+        assert.strictEqual(bodyParses, 1, 'body should be parsed once');
+    });
+
+    test('returns the original value from toString() of fetch', (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01']);
+
+        assert.notStrictEqual(window.fetch, nativeFetch, 'fetch intercepted');
+        assert.strictEqual(window.fetch.toString(), nativeFetch.toString(), 'toString() returns the original value');
+    });
+
+    test('does not modify the response if stack is an invalid regular expression', async (assert) => {
+        runScriptlet(name, ['a1', '10', '', 'test01', '/(/']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'response should stay intact');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
     });
 }

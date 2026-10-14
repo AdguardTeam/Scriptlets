@@ -439,6 +439,210 @@ Project-specific rules:
     read, so a wrapper looked up by one `capture` value and registered with
     another cannot be removed and is not deduplicated.
 
+16. Scriptlets which intercept an arbitrary method and process its return
+    value as JSON, e.g. `trusted-json-set`, MUST process the value which
+    a returned promise is fulfilled with, not the promise itself. Detect it
+    with `isNativePromise()` against the `Promise` saved when the scriptlet
+    runs, return the promise chained with the saved native
+    `Promise.prototype.then`, or the original promise if its value is only
+    logged, and keep other results, including promises of polyfills and other
+    thenables, synchronous. `stack` MUST be matched once, when the method is
+    called, and the intercepted method MUST NOT be called again if it throws.
+    The same applies to scriptlets which process a response after it is
+    awaited, e.g. `json-prune-fetch-response` or the `Response.prototype.json`
+    hook of `json-prune`: `stack` is matched in the wrapper before the
+    response is awaited, calls which do not match it are passed through as
+    is, and an empty `stack` is passed to the helpers which process the
+    response, e.g. `jsonPruner()` or `jsonPath()`. In logging mode of
+    `json-prune-fetch-response` and of the `Response.prototype.json` hook,
+    i.e. without properties to remove, `stack` is not matched, as `jsonPruner()`
+    logs the content regardless of it, e.g. for `JSON.parse()` of `json-prune`,
+    and the stack trace read in the wrapper is passed to it to be logged.
+    The `Response.prototype.json` hook chains a promise which is not an
+    instance of the saved `Promise` with its own `then()`, as `json()` always
+    returns a promise, but the saved `Promise` and its `then()` are not native
+    ones if the page has replaced them before the scriptlet has run, e.g. by
+    zone.js, and its `then()` may not support a native promise.
+    `fetch()` is called once, outside of `try`, so its rejection is passed to
+    the page as is, while an error of processing, logging or forging the
+    response which it is fulfilled with, e.g. of serializing a too deeply
+    nested value, is caught and logged, and the original response is returned.
+
+    **Rationale**: Path setters create missing properties on the promise
+    itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
+    The caller is no longer in the stack when the promise is fulfilled, and
+    the page may replace `Promise` or `then` of the promise. Native APIs and
+    async functions return native promises even then, while calling `then` of
+    any other object would turn its synchronous result into a promise for any
+    page object with a `then()` method. Calling the method again repeats its
+    side effects, e.g. consuming the body of a `Response`, or sending
+    a failed POST request again. The request of a response which cannot be
+    processed has succeeded, so the page should not get a rejection for it.
+
+17. If a function which the page calls, e.g. a wrapper of the intercepted
+    method or its Proxy trap, creates a stack trace for `matchStackTrace()`
+    itself, the stack trace MUST be passed through `addStackTraceMessageLine()`
+    before it is matched, and only if `stack` is set, e.g.
+    `matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))`.
+    If it is read for rules without `stack` as well, e.g. for logs, an error
+    of creating or reading it MUST NOT stop such rules, i.e. both `new Error()`
+    and reading its `stack` are in their own `try` at the call site, e.g.
+    `try { stackTrace = String(new Error().stack || ''); ... } catch { ... }`,
+    and rules with `stack` are not applied if it fails. Helpers which create
+    the stack trace for `stack` themselves, e.g. `jsonPath()`, MUST do it the
+    same way, and only if `stack` is set or it is logged.
+    If it is read only for `stack` but after the intercepted method is called,
+    e.g. in `trusted-replace-outbound-text`, it MUST be guarded the same way,
+    and the result of the call returned as is if it fails.
+    `matchStackTrace()` throws if `stack` is an invalid regular expression,
+    so a scriptlet which matches it in a wrapper SHOULD check it once when it
+    runs, with `isValidStackPattern()`, and not apply the rule then, which is
+    logged once. Otherwise the wrapper MUST catch the error and pass the call
+    through, as the helpers which match `stack` themselves do it, i.e.
+    `jsonPruner()`, `jsonSetter()` and `jsonPath()`.
+    A new function MUST NOT be added only to create the stack trace one call
+    deeper instead, and neither a helper which only reads the stack trace of
+    an error created by the caller, as creating it would not be guarded then.
+    A scriptlet which suspends matching while it processes
+    a call, e.g. by `isMatchingSuspended`, MUST resume it on every return path,
+    e.g. by `try`/`finally`, including a stack trace which does not match and
+    an error thrown by the intercepted method.
+
+    **Rationale**: `matchStackTrace()` removes the first two lines of the stack
+    trace as the scriptlet's own ones. In Firefox and Safari the stack trace
+    has no error message line, so the frame of the page function which calls
+    the wrapper would be removed there. Corelibs builds are minified with
+    Terser, which may inline a function added only to create the stack trace,
+    so its frame is not in the stack trace there. Stack traces which existing
+    scriptlets create in a function called by the wrapper, e.g.
+    `checkArgument()` of `trusted-replace-argument` or the getter handler of
+    `set-constant`, keep the frame of the caller while that function is not
+    inlined. The page may make the stack trace a non-string value, or make
+    reading it throw, e.g. by `Error.prepareStackTrace` in Chrome or a getter
+    of `Error.prototype.stack` in Firefox, which should not affect rules without
+    `stack`. The page may also replace `Error` with a constructor which throws.
+    Such an error would replace the result of a call which has already
+    succeeded otherwise.
+    A call from another function, or an error of the intercepted method, would
+    disable the rule for the next calls otherwise, e.g. in
+    `trusted-replace-outbound-text`. The helpers which match `stack` catch the
+    error of an invalid one, so the content is left unmodified, and a wrapper
+    should not throw it to the page instead. An invalid `stack` checked on each
+    call would be matched and logged on each call, e.g. of `JSON.parse()`.
+
+18. Scriptlets which intercept a method by its path, e.g. `localStorage.setItem`,
+    MUST replace it in the object returned by `getMethodOwner()` for the base
+    object and the name of the method, and process only the calls whose `this`
+    is the base object if that object is not the base one, e.g.
+    `if (methodOwner !== base && thisArg !== base)` in the wrapper. Such calls
+    MUST be passed through before any processing, e.g. outside of a `try`
+    whose `catch` calls the method again. The intercepted method itself MUST be
+    called once, outside of such `try`, so its error is passed to the page as
+    is and its side effects are not repeated.
+
+    **Rationale**: Assigning a property of a storage, i.e. `localStorage` or
+    `sessionStorage`, stores an item in Firefox, even if it is a method, e.g.
+    `localStorage.setItem = proxy` stores the item `setItem`. So the method is
+    not replaced, and the storage of the page is changed. `getMethodOwner()`
+    returns `Storage.prototype` for a storage, in which the method is replaced
+    for all storages, unless the storage has an own method, e.g. a wrapper
+    which the page has assigned in Chrome, as it hides the method of
+    `Storage.prototype`. Calls on another storage must behave as if they were
+    not intercepted. Defining a getter or setter of a storage property throws
+    in all browsers, so `set-constant` and `trusted-set-constant` do not support
+    storage properties.
+
+19. Scriptlets which send a forged `XMLHttpRequest` instead of the request of
+    the page, to modify its response, SHOULD use `interceptXhrResponses()`, and
+    otherwise MUST follow it. `trusted-replace-xhr-response`, `xml-prune` and
+    `m3u-prune` do not follow it yet, and SHOULD be moved to the helper when
+    they are changed. The state of a request, i.e. whether it is matched, its
+    headers and its forged request, is reset when its object is opened again,
+    and the forged request of the previous one is aborted, so its events are
+    not dispatched, also when the page calls `abort()`, which dispatches the
+    events of an aborted request instead.
+    Once the events of a response are dispatched, `load` and `loadend` follow
+    `readystatechange` even if its listener opens the object again or aborts it,
+    as in the specification and in Firefox, although Chromium-based browsers do
+    not dispatch them then, as a page which waits for them would never finish.
+    Events of a synchronous request are dispatched before `send()` returns, as
+    by a native one, while the ones of an asynchronous request are deferred.
+    An error of modifying or defining the response is caught, and the events
+    are dispatched anyway, with the original text of the response if it cannot
+    be modified, so the request of the page is always completed.
+    Headers are collected by one hook of `XMLHttpRequest.prototype.setRequestHeader`,
+    and by a wrapper of another method of a matched object, e.g. its own one,
+    or the hook of another rule, which the rules do not recognize, as the
+    method of each object is wrapped only once by each rule, so the wrappers
+    of multiple rules do not wrap each other again, and only the outermost
+    wrapper of each rule collects a header. The headers of the forged response
+    are returned by the hooks of `getResponseHeader()` and
+    `getAllResponseHeaders()` of the prototype, which replace only the result
+    of the object without headers, as it is not sent, but other methods of an
+    object are not wrapped for them, so a value which a method of the page
+    changes or hides on purpose is kept. The forged request is created by the
+    native constructor saved when the scriptlet runs, opened with the arguments
+    of `open()` of the page, and sent once, not in a `try` whose `catch` sends
+    it again. If it fails, e.g. a synchronous request with a network error,
+    its error is thrown to the page, and the object is done with the network
+    error, as a native one, while it would be still opened otherwise.
+
+    **Rationale**: The page may reuse the object for the next request, or abort
+    it, e.g. on each input of a search, and `open()` and `abort()` of the object
+    of the page change nothing, as it is never sent. A response of the previous
+    request would be delivered as the response of the next one otherwise, and
+    a wrapper created for each request of an object wraps the previous one
+    again, so each header is sent once more with each next request. The page
+    may wrap the method of an object, and call the native method saved before
+    the scriptlet has run, so the hook of the prototype alone would miss such
+    headers, e.g. of authentication. The object of the page has no response
+    headers otherwise, while the page may check them, e.g. `Content-Type`, see
+    [#419](https://github.com/AdguardTeam/Scriptlets/issues/419). `async` is
+    `true` if it is omitted, but `false` if it is `undefined`. A failed
+    synchronous request throws a network error, and sending it again repeats
+    its side effects.
+
+20. Errors thrown by functions of the page, e.g. by the intercepted method,
+    a getter of its argument or `toJSON()` of a value, MUST be logged with
+    `getThrownValueMessage()`, neither with `getErrorMessage()` nor by reading
+    their `message` directly.
+
+    **Rationale**: `getErrorMessage()` converts a value without a message by
+    `JSON.stringify()`, which calls `toJSON()` of the page, even if the message
+    is not logged, and it may be the method intercepted by the scriptlet itself,
+    e.g. `JSON.stringify` of `call-nothrow`, which would then be called again,
+    with the same error, until the call stack is exceeded. It also creates
+    an error by `Error`, which the page may replace with a constructor which
+    throws. The page may throw any value, e.g. `null` or `undefined`, so reading
+    its `message` throws another error, which replaces the logged one.
+
+21. A Proxy which replaces a function of the page, e.g. a method intercepted
+    by a scriptlet, SHOULD use `getFunctionProxyProperty()` as its `get` trap,
+    instead of a copy of it, so its `toString()` returns the same string as the
+    function.
+
+    **Rationale**: `toString()` of a Proxy of a function returns the string of
+    a native function without its name, e.g. `function () { [native code] }`,
+    instead of e.g. `function open() { [native code] }`, or the source of
+    a function of the page, which the page may check. The trap returns
+    a non-configurable own `toString` of the function as it is, as a Proxy
+    throws when it is read otherwise, e.g. if the page has defined it as not
+    writable on its own function.
+
+22. JSON content which a scriptlet only logs, e.g. in logging mode or with
+    `verbose`, SHOULD be logged with `logJsonContent()`, which logs it only as
+    an object if it cannot be serialized, instead of serializing it at the call
+    site, e.g. with the `label` `Original content` or `Modified content`.
+    An error of serializing content for a log MUST NOT be thrown to the page,
+    nor stop the intercepted call, the modification of the content, or the
+    delivery of the response.
+
+    **Rationale**: Logged content may be circular, e.g. a result of `eval()`
+    of `evaldata-prune` or an argument of `trusted-prune-inbound-object`, or
+    too deeply nested, which `JSON.stringify()` with indentation cannot
+    serialize, even though `JSON.parse()` has parsed it. Logging should not
+    change the behavior of the page.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,

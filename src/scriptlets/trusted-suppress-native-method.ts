@@ -2,11 +2,14 @@ import {
     hit,
     logMessage,
     getPropertyInChain,
+    getMethodOwner,
     inferValue,
     isValueMatched,
     getAbortFunc,
     matchStackTrace,
+    addStackTraceMessageLine,
     getErrorMessage,
+    getThrownValueMessage,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     toRegExp,
@@ -21,6 +24,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     splitByPipeRespectingRegex,
+    getFunctionProxyProperty,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -151,7 +155,10 @@ export function trustedSuppressNativeMethod(
         return;
     }
 
-    const nativeMethod = base[prop];
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base, prop);
+
+    const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
         return;
@@ -182,19 +189,26 @@ export function trustedSuppressNativeMethod(
     let isMatchingSuspended = false;
 
     function apply(target: Function, thisArg: any, argumentsList: unknown[]) {
-        if (isMatchingSuspended) {
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
             return Reflect.apply(target, thisArg, argumentsList);
         }
 
+        let isMatching = false;
         isMatchingSuspended = true;
-
-        if (stack && !matchStackTrace(stack, new Error().stack || '')) {
+        try {
+            // Error message line is added to the stack trace created here, in the wrapper called by the page,
+            // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+            isMatching = (!stack || matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || ''))))
+                && matchMethodCall(argumentsList, signatureMatcher);
+        } catch (e) {
+            // e.g. a getter of an argument which throws, so the call is not suppressed.
+            // Error is not converted to get its message, as it may call the page again, e.g. its `toJSON()`,
+            // and the error may be a primitive thrown by the page, e.g. by `Error` replaced by it
+            logMessage(source, `Could not match the call: ${getThrownValueMessage(e)}`);
+        } finally {
+            // Matching is resumed on every return path, as the next calls would not be processed otherwise
             isMatchingSuspended = false;
-            return Reflect.apply(target, thisArg, argumentsList);
         }
-        const isMatching = matchMethodCall(argumentsList, signatureMatcher);
-
-        isMatchingSuspended = false;
 
         if (isMatching) {
             hit(source);
@@ -204,7 +218,7 @@ export function trustedSuppressNativeMethod(
         return Reflect.apply(target, thisArg, argumentsList);
     }
 
-    base[prop] = new Proxy(nativeMethod, { apply });
+    methodOwner[prop] = new Proxy(nativeMethod, { apply, get: getFunctionProxyProperty });
 }
 
 export const trustedSuppressNativeMethodNames = [
@@ -218,12 +232,16 @@ trustedSuppressNativeMethod.injections = [
     hit,
     logMessage,
     getPropertyInChain,
+    getMethodOwner,
     inferValue,
     isValueMatched,
     getAbortFunc,
     matchStackTrace,
+    addStackTraceMessageLine,
     getErrorMessage,
+    getThrownValueMessage,
     splitByPipeRespectingRegex,
+    getFunctionProxyProperty,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,

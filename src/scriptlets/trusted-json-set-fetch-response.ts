@@ -10,6 +10,9 @@ import {
     type FetchResource,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,
@@ -44,6 +47,8 @@ import {
     parseJsonSetArgumentValue,
     parseKeywordValue,
     resolveJsonSetTimeKeywords,
+    getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -184,6 +189,13 @@ export function trustedJsonSetFetchResponse(
         return;
     }
 
+    // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
+    // which is logged once, instead of on each request
+    if (stack && !isValidStackPattern(stack)) {
+        logMessage(source, `Invalid stack: ${stack}`);
+        return;
+    }
+
     const shouldLogContent = verbose === 'true';
 
     const nativeObjects = {
@@ -218,9 +230,11 @@ export function trustedJsonSetFetchResponse(
         return getJsonSetValue(currentValue, resolvedArgumentValue);
     };
 
+    // Stack trace is not passed to the helpers, as it is already matched by `fetchHandlerWrapper()`
+    // when `fetch()` is called, and the response is modified after it is awaited
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), stack);
+            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), '');
         }
 
         resolvedArgumentValue = resolveJsonSetTimeKeywords(
@@ -237,7 +251,7 @@ export function trustedJsonSetFetchResponse(
             setPathObj?.value,
             getValueToSet,
             requiredPaths,
-            stack,
+            '',
             nativeObjects,
         );
     };
@@ -254,15 +268,38 @@ export function trustedJsonSetFetchResponse(
             return Reflect.apply(target, thisArg, args);
         }
 
-        let originalResponse;
+        // Stack trace is read only if it is matched or logged, before the response is awaited,
+        // so it has the caller of `fetch()`, which is no longer in the stack after that,
+        // e.g. a function which returns the promise of `fetch()`.
+        // The page may make creating or reading it throw, e.g. by replacing `Error` or by `Error.prepareStackTrace`,
+        // which should not stop the rules without `stack` from working, so it is done separately
+        let stackTrace = '';
+        let isStackTraceRead = false;
+        if (stack || shouldLogContent) {
+            try {
+                stackTrace = String(new Error().stack || '');
+                isStackTraceRead = true;
+            } catch {
+                // Rules with `stack` are not applied, as it cannot be matched, and it is not logged
+            }
+        }
+
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (stack && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        // Request is sent once, outside of `try`, so its rejection is passed to the page as is,
+        // and it is not sent again, e.g. a POST request
+        const originalResponse = await Reflect.apply(nativeObjects.nativeFetch, null, args);
+
         let clonedResponse;
         try {
-            // eslint-disable-next-line prefer-spread
-            originalResponse = await nativeObjects.nativeFetch.apply(null, args);
             clonedResponse = nativeObjects.nativeResponseClone.call(originalResponse);
         } catch {
-            logMessage(source, `Could not make an original fetch request: ${fetchData.url}`);
-            return Reflect.apply(target, thisArg, args);
+            logMessage(source, `Could not clone the response: ${fetchData.url}`);
+            return originalResponse;
         }
 
         let textContent;
@@ -274,28 +311,40 @@ export function trustedJsonSetFetchResponse(
             return clonedResponse;
         }
 
+        let json;
+        let isParsed = false;
         try {
-            const json = nativeObjects.nativeParse(textContent);
-            if (shouldLogContent) {
-                // eslint-disable-next-line max-len
-                logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(json, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-                logMessage(source, json, true, false);
-            }
-
-            const modifiedJson = applyJsonMutation(json);
-
-            if (shouldLogContent) {
-                // eslint-disable-next-line max-len
-                logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedJson, null, 2)}\nStack trace:\n${new Error().stack || ''}`, true);
-                logMessage(source, modifiedJson, true, false);
-            }
-
-            return forgeResponse(
-                originalResponse,
-                nativeObjects.nativeStringify(modifiedJson),
-            );
+            json = nativeObjects.nativeParse(textContent);
+            isParsed = true;
         } catch {
-            // If response body is not a single JSON document, try to process it as line-delimited JSON
+            // If response body is not a single JSON document, it is processed as line-delimited JSON below
+        }
+
+        // A JSON document is not processed as line-delimited JSON if its modification throws,
+        // as it would be parsed and modified again in the same way
+        if (isParsed) {
+            try {
+                // Content which cannot be serialized to be logged, e.g. too deeply nested, is logged only
+                // as an object, so the response is still modified
+                if (shouldLogContent) {
+                    logJsonContent(source, json, nativeObjects.nativeStringify, stackTrace, 'Original content');
+                }
+
+                const modifiedJson = applyJsonMutation(json);
+
+                if (shouldLogContent) {
+                    logJsonContent(source, modifiedJson, nativeObjects.nativeStringify, stackTrace, 'Modified content');
+                }
+
+                return forgeResponse(
+                    originalResponse,
+                    nativeObjects.nativeStringify(modifiedJson),
+                );
+            } catch (error) {
+                // e.g. thrown by serializing a value which is too deeply nested
+                logMessage(source, `Response body can't be modified: ${getThrownValueMessage(error)}`);
+                return clonedResponse;
+            }
         }
 
         try {
@@ -308,9 +357,9 @@ export function trustedJsonSetFetchResponse(
             if (lineEditResult.hasJsonLines) {
                 if (shouldLogContent) {
                     // eslint-disable-next-line max-len
-                    logMessage(source, `Original content:\n${window.location.hostname}\n${textContent}\nStack trace:\n${new Error().stack || ''}`, true);
+                    logMessage(source, `Original content:\n${window.location.hostname}\n${textContent}\nStack trace:\n${stackTrace}`, true);
                     // eslint-disable-next-line max-len
-                    logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${new Error().stack || ''}`, true);
+                    logMessage(source, `Modified content:\n${window.location.hostname}\n${lineEditResult.text}\nStack trace:\n${stackTrace}`, true);
                 }
 
                 return forgeResponse(originalResponse, lineEditResult.text);
@@ -326,19 +375,12 @@ export function trustedJsonSetFetchResponse(
         }
     };
 
-    const getWrapper = (target: typeof fetch, propName: string, receiver: any) => {
-        if (propName === 'toString') {
-            return target.toString.bind(target);
-        }
-        return Reflect.get(target, propName, receiver);
-    };
-
     const fetchHandler = {
         apply: fetchHandlerWrapper,
-        get: getWrapper,
+        get: getFunctionProxyProperty,
     };
 
-    window.fetch = new Proxy(window.fetch, fetchHandler);
+    window.fetch = new Proxy<typeof fetch>(window.fetch, fetchHandler);
 }
 
 export const trustedJsonSetFetchResponseNames = [
@@ -360,6 +402,9 @@ trustedJsonSetFetchResponse.injections = [
     forgeResponse,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,
@@ -394,4 +439,6 @@ trustedJsonSetFetchResponse.injections = [
     parseJsonSetArgumentValue,
     parseKeywordValue,
     resolveJsonSetTimeKeywords,
+    getThrownValueMessage,
+    logJsonContent,
 ];

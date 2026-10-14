@@ -9,7 +9,7 @@ import {
 } from 'vitest';
 
 import { trustedJsonSetFetchResponse } from '../../src/scriptlets/trusted-json-set-fetch-response';
-import { clearGlobalProps } from '../helpers';
+import { clearGlobalProps, useThrowingErrorConstructor, useUnreadableStackTrace } from '../helpers';
 
 const nativeFetch = window.fetch;
 
@@ -107,5 +107,53 @@ describe('Test trusted-json-set-fetch-response time keywords are not frozen', ()
 
         expect(firstContent.data.time).toBe(42);
         expect(secondContent.data.time).toBe(42);
+    });
+});
+
+describe('Test trusted-json-set-fetch-response verbose logs with a stack trace which cannot be read', () => {
+    let consoleLog;
+
+    beforeEach(() => {
+        consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        consoleLog.mockRestore();
+    });
+
+    /**
+     * Fetches the test url while the stack trace cannot be read, also when the response is processed.
+     *
+     * @param {Function} useStackTraceFailure function which makes the stack trace fail
+     * and returns a function which restores it
+     * @returns {Promise<object>} parsed content of the intercepted response
+     */
+    const fetchWithStackTraceFailure = async (useStackTraceFailure) => {
+        const restoreStackTrace = useStackTraceFailure();
+        let response;
+        try {
+            response = await fetch(TEST_URL);
+        } finally {
+            restoreStackTrace();
+        }
+        return response.json();
+    };
+
+    test('modifies the response if reading the stack trace throws', async () => {
+        trustedJsonSetFetchResponse(sourceParams, 'data.time', '42', '', '', '', '', 'true');
+
+        const content = await fetchWithStackTraceFailure(useUnreadableStackTrace);
+
+        expect(content.data.time).toBe(42);
+        const logs = consoleLog.mock.calls.map((args) => String(args[0]));
+        expect(logs.some((log) => log.includes('Modified content'))).toBe(true);
+    });
+
+    test('modifies the response if the page has replaced Error', async () => {
+        trustedJsonSetFetchResponse(sourceParams, 'data.time', '42', '', '', '', '', 'true');
+
+        const content = await fetchWithStackTraceFailure(useThrowingErrorConstructor);
+
+        expect(content.data.time).toBe(42);
     });
 });

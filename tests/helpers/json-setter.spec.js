@@ -1,6 +1,12 @@
-import { describe, test, expect } from 'vitest';
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 
 import { jsonSetter, getPrunePath } from '../../src/helpers';
+import { useThrowingErrorConstructor, useUnreadableStackTrace } from '../helpers';
 
 const source = 'trusted-json-set';
 const nativeObjects = {
@@ -413,5 +419,31 @@ describe('jsonSetter tests', () => {
             },
             abc: 2,
         });
+    });
+});
+
+describe('jsonSetter logging with a stack trace which cannot be created or read', () => {
+    test.each([
+        { failure: 'cannot be read', useStackTraceFailure: useUnreadableStackTrace },
+        // as the page has replaced `Error` with a constructor which throws
+        { failure: 'cannot be created', useStackTraceFailure: useThrowingErrorConstructor },
+    ])('logs the content without the stack trace if it $failure', ({ useStackTraceFailure }) => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        const root = { foo: 1 };
+
+        const restoreStackTrace = useStackTraceFailure();
+        let result;
+        try {
+            result = jsonSetter(source, root, '', undefined, () => true, getPrunePath(''), '', nativeObjects);
+        } finally {
+            restoreStackTrace();
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe(root);
+        expect(logs.some((log) => log.includes('"foo": 1') && log.endsWith('Stack trace:\n'))).toBe(true);
     });
 });

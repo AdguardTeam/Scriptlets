@@ -48,3 +48,4 @@ export * from './click-utils';
 export * from './set-constant-utils';
 export * from './chain-prop-utils';
 export * from './xpath-utils';
+export * from './xhr-response-utils';

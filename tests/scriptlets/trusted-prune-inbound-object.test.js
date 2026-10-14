@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    getSyncLogs,
+    saveStorageMethods,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-prune-inbound-object';
@@ -16,6 +21,9 @@ const nativeSeal = Object.seal;
 // eslint-disable-next-line no-eval
 const nativeEval = eval;
 
+// Scriptlets replace methods of storages in Storage.prototype
+const restoreStorage = saveStorageMethods();
+
 const beforeEach = () => {
     window.__debug = () => {
         window.hit = 'FIRED';
@@ -31,6 +39,7 @@ const afterEach = () => {
     Object.seal = nativeSeal;
     // eslint-disable-next-line no-eval
     window.eval = nativeEval;
+    restoreStorage();
 };
 
 module(name, { beforeEach, afterEach });
@@ -68,6 +77,20 @@ test('logs matched object and hostname if invoked with only first and third arg 
     );
 
     JSON.stringify({ asdfg: { doNotLog: 1 }, y: 2 });
+});
+
+test('logs a circular object without its content and calls the method - Object.keys', (assert) => {
+    runScriptlet(name, ['Object.keys']);
+    const circular = { a: 1 };
+    circular.self = circular;
+
+    let result;
+    const logs = getSyncLogs(() => {
+        result = Object.keys(circular);
+    });
+
+    assert.deepEqual(result, ['a', 'self'], 'Method called with the object');
+    assert.ok(logs.some((log) => log.includes('Content cannot be serialized')), 'Content which cannot be serialized');
 });
 
 test('removes propsToRemove - Object.getOwnPropertyNames, Object.keys , eval', (assert) => {
@@ -136,4 +159,20 @@ test('can NOT remove propsToRemove because of no stack match - Object.seal', (as
         { a: 1, b: 2, c: 3 },
         'stack match: should remove single propsToRemove',
     );
+});
+
+test('Storage method: prunes the object passed to localStorage.getItem', (assert) => {
+    runScriptlet(name, ['localStorage.getItem', 'ads']);
+    // Methods of storages take strings, so an object is passed only to check that the method is intercepted,
+    // as the scriptlet prunes only the first argument
+    const localKey = { ads: true, content: 'article' };
+    const sessionKey = { ads: true, content: 'article' };
+    localStorage.getItem(localKey);
+    sessionStorage.getItem(sessionKey);
+
+    assert.deepEqual(localKey, { content: 'article' }, 'Object pruned');
+    assert.deepEqual(sessionKey, { ads: true, content: 'article' }, 'Object passed to sessionStorage not pruned');
+    assert.strictEqual(localStorage.getItem('getItem'), null, 'Item named after the method was not stored');
+    assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'getItem'), 'Storage has no own method');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
