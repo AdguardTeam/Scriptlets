@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- Documented that the `stack` parameter of `abort-on-stack-trace` scriptlet supports
+  regular expressions [#393].
+
+[#393]: https://github.com/AdguardTeam/Scriptlets/issues/393
+
 ### Deprecated
 
 ### Removed

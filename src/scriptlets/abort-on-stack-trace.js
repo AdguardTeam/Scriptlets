@@ -36,7 +36,8 @@ import {
  * ```
  *
  * - `property` — required, path to a property. The property must be attached to window.
- * - `stack` — required, string that must match the current function call stack trace.
+ * - `stack` — required, string or regular expression that must match the current function call stack trace;
+ *   invalid regular expression will cause exit and rule will not work.
  *     - values to abort inline or injected script, accordingly:
  *         - `inlineScript`
  *         - `injectedScript`
@@ -47,6 +48,12 @@ import {
  *
  *     ```adblock
  *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+ *     ```
+ *
+ * 1. Aborts script when it tries to access `window.Ya` and it's error stack trace matches the regular expression
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', '/yandex\.js/')
  *     ```
  *
  * 1. Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
