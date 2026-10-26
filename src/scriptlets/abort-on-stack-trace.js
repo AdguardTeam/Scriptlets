@@ -9,7 +9,6 @@ import {
     getDescriptorAddon,
     logMessage,
     shouldAbortInlineOrInjectedScript,
-    escapeRegExp,
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
@@ -37,7 +36,8 @@ import {
  *
  * - `property` — required, path to a property. The property must be attached to window.
  * - `stack` — required, string or regular expression that must match the current function call stack trace;
- *   an invalid regular expression makes the rule exit and not work.
+ *   an invalid regular expression makes the rule exit and not work, while a slash-delimited value whose
+ *   trailing part is not a valid flag set, e.g. `/foo/z`, is matched as plain text.
  *     - values to abort inline or injected script, accordingly:
  *         - `inlineScript`
  *         - `injectedScript`
@@ -165,7 +165,6 @@ abortOnStackTrace.injections = [
     createOnErrorHandler,
     hit,
     isValidStrPattern,
-    escapeRegExp,
     matchStackTrace,
     getDescriptorAddon,
     logMessage,
