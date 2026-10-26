@@ -37,7 +37,7 @@ import {
  *
  * - `property` — required, path to a property. The property must be attached to window.
  * - `stack` — required, string or regular expression that must match the current function call stack trace;
- *   an invalid regular expression is not always detected and may make the rule not work.
+ *   an invalid regular expression makes the rule exit and not work.
  *     - values to abort inline or injected script, accordingly:
  *         - `inlineScript`
  *         - `injectedScript`

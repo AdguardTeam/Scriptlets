@@ -641,6 +641,9 @@ test('simple, does NOT match stack with regexp', (assert) => {
     const scriptletArgs = [PROPERTY, stackMatch];
     runScriptlet(name, scriptletArgs);
 
+    const descriptor = Object.getOwnPropertyDescriptor(window, PROPERTY);
+    assert.ok(descriptor && typeof descriptor.get === 'function', 'accessor installed');
+
     assert.strictEqual(
         window[PROPERTY],
         'value',

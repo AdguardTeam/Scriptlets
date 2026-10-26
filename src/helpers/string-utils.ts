@@ -135,18 +135,20 @@ export const toRegExp = (rawInput?: RawStrPattern | null): RegExp => {
 export const isValidStrPattern = (input: RawStrPattern): boolean => {
     const FORWARD_SLASH = '/';
     let str = escapeRegExp(input);
-    if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-        str = input.slice(1, -1);
+    const closingSlashIndex = input.lastIndexOf(FORWARD_SLASH);
+    // Pattern can be followed by flags, e.g. '/pattern/i',
+    // so only the part between the delimiters should be validated.
+    if (input[0] === FORWARD_SLASH && closingSlashIndex > 0) {
+        str = input.slice(1, closingSlashIndex);
     }
 
-    let isValid;
     try {
-        isValid = new RegExp(str);
-        isValid = true;
+        // eslint-disable-next-line no-new
+        new RegExp(str);
+        return true;
     } catch (e) {
-        isValid = false;
+        return false;
     }
-    return isValid;
 };
 
 /**

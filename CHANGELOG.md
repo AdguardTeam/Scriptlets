@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Fixed
 
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
+- `isValidStrPattern` helper not validating a regular expression pattern with flags,
+  e.g. `/foo(/i`, so such a pattern was treated as valid and scriptlets failed
+  when converting it to a regexp.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 

@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 
 import {
     toRegExp,
+    isValidStrPattern,
     inferValue,
     extractRegexAndReplacement,
     splitByNotEscapedDelimiter,
@@ -115,6 +116,34 @@ describe('Test string utils', () => {
             expect(() => {
                 toRegExp(pattern);
             }).toThrow();
+        });
+    });
+
+    describe('Test isValidStrPattern', () => {
+        const validPatterns = [
+            'simpleStr',
+            'test.js',
+            '/abc/',
+            '/[a-z]{1,9}/',
+            '/no_match-\\d+/',
+            '/ABORT-ON-STACK-TRACE/i',
+            // a leading slash alone does not make a pattern with flags
+            '/path/to/file',
+        ];
+        test.each(validPatterns)('"%s" is valid', (pattern) => {
+            expect(isValidStrPattern(pattern)).toBe(true);
+        });
+
+        const invalidPatterns = [
+            '/\\/',
+            '/[/',
+            '/*/',
+            '/[0-9]++/',
+            // flags must not hide an invalid pattern from the check
+            '/foo(/i',
+        ];
+        test.each(invalidPatterns)('"%s" is not valid', (pattern) => {
+            expect(isValidStrPattern(pattern)).toBe(false);
         });
     });
 
