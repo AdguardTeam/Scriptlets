@@ -94,7 +94,10 @@ export function trustedSetLocalStorageItem(source, key, value) {
 
 export const trustedSetLocalStorageItemNames = [
     'trusted-set-local-storage-item',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-set-local-storage-item.js',
+    'ubo-trusted-set-local-storage-item',
 ];
 
 // eslint-disable-next-line prefer-destructuring

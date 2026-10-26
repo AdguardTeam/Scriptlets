@@ -203,7 +203,12 @@ export function trustedReplaceFetchResponse(
 
 export const trustedReplaceFetchResponseNames = [
     'trusted-replace-fetch-response',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-replace-fetch-response.js',
+    'ubo-trusted-replace-fetch-response',
+    'ubo-trusted-rpfr.js',
+    'ubo-trusted-rpfr',
 ];
 
 // eslint-disable-next-line prefer-destructuring

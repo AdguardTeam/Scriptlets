@@ -124,7 +124,10 @@ export function trustedSetAttr(source, selector, attr, value = '') {
 
 export const trustedSetAttrNames = [
     'trusted-set-attr',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-set-attr.js',
+    'ubo-trusted-set-attr',
 ];
 
 // eslint-disable-next-line prefer-destructuring

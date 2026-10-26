@@ -114,7 +114,10 @@ export function trustedPreventXhr(source: Source, propsToMatch?: string, directi
 
 export const trustedPreventXhrNames = [
     'trusted-prevent-xhr',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-prevent-xhr.js',
+    'ubo-trusted-prevent-xhr',
 ];
 
 // eslint-disable-next-line prefer-destructuring

@@ -643,6 +643,35 @@ Project-specific rules:
     serialize, even though `JSON.parse()` has parsed it. Logging should not
     change the behavior of the page.
 
+23. A trusted scriptlet MUST NOT have any aliases except uBO ones, i.e. `ubo-`
+    followed by a uBO name of the scriptlet, with and without `.js`, e.g.
+    `ubo-trusted-replace-node-text`, `ubo-trusted-rpnt.js` and `ubo-rpnt` for
+    uBO `trusted-replace-node-text.js` and its aliases. Each of them MUST be
+    excluded by FiltersCompiler from filters which may not use trusted
+    scriptlets, i.e. by the lines `#%#//scriptlet('ubo-trusted-`,
+    `#%#//scriptlet('ubo-rpnt` and `#%#//scriptlet('ubo-replace-node-text`,
+    and the same with double quotes, in its `exclusions-high.txt`, so a uBO name
+    which neither starts with `trusted-` nor with `rpnt` or `replace-node-text`
+    requires a new line there first. Names of other scriptlets MUST NOT start
+    with `trusted-` nor be excluded by these lines.
+    `tests/api/scriptlet-names.spec.ts` checks both.
+    If the arguments of the uBO scriptlet differ, its aliases MUST be added
+    together with their handling, for the calls whose `source.name` is one of
+    them.
+
+    **Rationale**: Trusted scriptlets are recognized by the `trusted-` prefix
+    of the name in the rule, e.g. FiltersCompiler excludes rules with
+    `#%#//scriptlet('trusted-` from filters which may not use them. Converters
+    of uBO rules, i.e. AGTree and the own converter of CoreLibs, convert every
+    uBO name to `ubo-<name>`, so the uBO aliases of trusted scriptlets do not
+    have the prefix, and without the separate exclusion the uBO rules of
+    trusted scriptlets in such filters would be applied. Products do not run
+    scriptlets from untrusted custom filters, so only the filters compiled by
+    FiltersCompiler need it. Both the extension and CoreLibs pass the name from
+    the rule as `source.name`, e.g. `ubo-rpnt`. An alias without the handling
+    of uBO arguments would turn a rejected rule into a valid one which does
+    something else.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,

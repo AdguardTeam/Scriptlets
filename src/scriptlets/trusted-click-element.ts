@@ -878,7 +878,10 @@ export function trustedClickElement(
 
 export const trustedClickElementNames = [
     'trusted-click-element',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-click-element.js',
+    'ubo-trusted-click-element',
 ];
 
 // eslint-disable-next-line prefer-destructuring

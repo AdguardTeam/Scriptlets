@@ -36,6 +36,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after another condition
   as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click regardless of the
   `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
+- uBO aliases of trusted scriptlets whose arguments are the same as in uBO [#586], so that uBO rules with them,
+  e.g. `example.org##+js(trusted-set-attr, div, data-ad, none)`, are no longer rejected: `ubo-trusted-click-element`,
+  `ubo-trusted-prevent-xhr`, `ubo-trusted-replace-fetch-response`, `ubo-trusted-replace-xhr-response`,
+  `ubo-trusted-rpfr`, `ubo-trusted-set-attr`, `ubo-trusted-set-cookie-reload`, `ubo-trusted-set-local-storage-item`
+  and `ubo-trusted-set-session-storage-item`, each also with `.js`. As these aliases do not start with `trusted-`,
+  filter compilers have to exclude them separately from filters which may not use trusted scriptlets, e.g.
+  FiltersCompiler by the lines `#%#//scriptlet('ubo-trusted-`, `#%#//scriptlet('ubo-rpnt`
+  and `#%#//scriptlet('ubo-replace-node-text`, and the same with double quotes, in `exclusions-high.txt`,
+  before they use this version.
 
 ### Changed
 
@@ -320,6 +329,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 [#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
 [#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
+[#586]: https://github.com/AdguardTeam/Scriptlets/issues/586
 
 ### Security
 

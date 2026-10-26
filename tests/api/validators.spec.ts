@@ -26,6 +26,10 @@ describe('validators', () => {
                 'example.org##+js(set-constant, config.ads.desktopAd, \'\')',
                 // multiple selectors for remove-attr/class
                 'example.org##+js(ra, href|target, #image > [href][onclick]\\, #page_effect > [href][onclick])',
+                // uBO trusted scriptlets
+                "example.org#%#//scriptlet('ubo-trusted-set-attr', 'div', 'data-ad', 'none')",
+                'example.org##+js(trusted-set-attr, div, data-ad, none)',
+                'example.org##+js(trusted-rpfr, ad, ok)',
             ];
             test.each(validRules)('%s', (rule: string) => {
                 expect(isValidScriptletRule(rule)).toBeTruthy();

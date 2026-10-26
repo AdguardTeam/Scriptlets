@@ -317,7 +317,10 @@ export function trustedReplaceXhrResponse(source, pattern = '', replacement = ''
 
 export const trustedReplaceXhrResponseNames = [
     'trusted-replace-xhr-response',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-replace-xhr-response.js',
+    'ubo-trusted-replace-xhr-response',
 ];
 
 // eslint-disable-next-line prefer-destructuring

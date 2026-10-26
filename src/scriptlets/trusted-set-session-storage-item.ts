@@ -103,7 +103,10 @@ export function trustedSetSessionStorageItem(
 
 export const trustedSetSessionStorageItemNames = [
     'trusted-set-session-storage-item',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-set-session-storage-item.js',
+    'ubo-trusted-set-session-storage-item',
 ];
 
 // eslint-disable-next-line prefer-destructuring

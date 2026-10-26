@@ -165,7 +165,10 @@ export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '
 
 export const trustedSetCookieReloadNames = [
     'trusted-set-cookie-reload',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-set-cookie-reload.js',
+    'ubo-trusted-set-cookie-reload',
 ];
 
 // eslint-disable-next-line prefer-destructuring
