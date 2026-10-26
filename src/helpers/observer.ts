@@ -49,8 +49,13 @@ export const observeDOMChanges = (
      */
     function callbackWrapper() {
         disconnect();
-        callback();
-        connect();
+        // Observer is connected again even if callback throws, e.g. because of the page,
+        // otherwise the scriptlet would stop working on the page
+        try {
+            callback();
+        } finally {
+            connect();
+        }
     }
 
     connect();

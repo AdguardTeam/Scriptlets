@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, getLogs } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'xml-prune';
@@ -538,6 +538,29 @@ if (!isSupported) {
         const responseMPD = await response.text();
 
         assert.ok(responseMPD.includes('pre-roll-1-ad-1'));
+        assert.strictEqual(window.hit, undefined, 'should not hit');
+        done();
+    });
+
+    test('fetch - XPath without closing parenthesis is logged as invalid', async (assert) => {
+        // Without its last character, it would be a valid expression which selects nothing
+        const MATCH_DATA = ['xpath(//*[name()="Period"]/@duration'];
+
+        runScriptlet(name, MATCH_DATA);
+
+        const done = assert.async();
+
+        let responseMPD = '';
+        const logs = await getLogs(async () => {
+            const response = await fetch(MPD_OBJECTS_PATH);
+            responseMPD = await response.text();
+        });
+
+        assert.ok(responseMPD.includes('duration='), 'Response content is intact');
+        assert.ok(
+            logs.some((log) => log.includes(`Invalid XPath parameter: ${MATCH_DATA[0]}`)),
+            'Invalid XPath is logged',
+        );
         assert.strictEqual(window.hit, undefined, 'should not hit');
         done();
     });

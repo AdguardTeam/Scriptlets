@@ -63,7 +63,7 @@ Build output goes to `dist/`.
 # All tests (Vitest + smoke + QUnit)
 pnpm test
 
-# Vitest only (API, validators, converters)
+# Vitest only (API, validators, converters, helpers, scriptlets)
 pnpm test:vitest
 
 # QUnit only (scriptlets)
@@ -73,6 +73,9 @@ pnpm test:qunit scriptlets
 pnpm test:qunit redirects
 
 # Single scriptlet with rebuild
+pnpm test:qunit scriptlets --name <scriptlet-name>
+
+# Only rebuild a single scriptlet test, e.g. while it is open with --gui
 pnpm test:qunit scriptlets --name <scriptlet-name> --build
 ```
 
@@ -90,25 +93,26 @@ pnpm lint:md     # markdownlint
 
 ## Available Commands
 
-| Command                                            | Description                                         |
-| -------------------------------------------------- | --------------------------------------------------- |
-| `pnpm install`                                     | Install dependencies                                |
-| `pnpm build`                                       | Clean `dist/` and build all bundles                 |
-| `pnpm test`                                        | Run all tests (Vitest + smoke + QUnit)              |
-| `pnpm test:vitest`                                 | Run Vitest tests only (API, validators, converters) |
-| `pnpm test:qunit scriptlets`                       | Run QUnit tests for all scriptlets                  |
-| `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                   |
-| `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                         |
-| `pnpm test:qunit scriptlets --name <name> --build` | Run a single scriptlet test with rebuild            |
-| `pnpm test:qunit:build`                            | Build QUnit test bundles (CI split-stage)           |
-| `pnpm test:qunit:run`                              | Run QUnit tests without rebuilding (CI split-stage) |
-| `pnpm tgz`                                         | Pack `scriptlets.tgz` (needs a version)             |
-| `pnpm lint`                                        | Run all linters                                     |
-| `pnpm lint:code`                                   | Run ESLint                                          |
-| `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)       |
-| `pnpm lint:md`                                     | Run markdownlint                                    |
-| `pnpm wiki:build-table`                            | Regenerate compatibility table                      |
-| `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc  |
+| Command                                            | Description                                                              |
+| -------------------------------------------------- | ------------------------------------------------------------------------ |
+| `pnpm install`                                     | Install dependencies                                                     |
+| `pnpm build`                                       | Clean `dist/` and build all bundles                                      |
+| `pnpm test`                                        | Run all tests (Vitest + smoke + QUnit)                                   |
+| `pnpm test:vitest`                                 | Run Vitest tests only (API, validators, converters, helpers, scriptlets) |
+| `pnpm test:qunit scriptlets`                       | Run QUnit tests for all scriptlets                                       |
+| `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                                        |
+| `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                                              |
+| `pnpm test:qunit scriptlets --name <name>`         | Run a single scriptlet test with rebuild                                 |
+| `pnpm test:qunit scriptlets --name <name> --build` | Only rebuild a single scriptlet test, without running it                 |
+| `pnpm test:qunit:build`                            | Build QUnit test bundles (CI split-stage)                                |
+| `pnpm test:qunit:run`                              | Run QUnit tests without rebuilding (CI split-stage)                      |
+| `pnpm tgz`                                         | Pack `scriptlets.tgz` (needs a version)                                  |
+| `pnpm lint`                                        | Run all linters                                                          |
+| `pnpm lint:code`                                   | Run ESLint                                                               |
+| `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)                            |
+| `pnpm lint:md`                                     | Run markdownlint                                                         |
+| `pnpm wiki:build-table`                            | Regenerate compatibility table                                           |
+| `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc                       |
 
 > **Note**: `pnpm tgz` (and `pnpm pack`) need a version in `package.json`,
 > which ships versionless. CI stamps the dev version via the shared
@@ -134,8 +138,8 @@ Run these checks before every commit:
 pnpm lint
 
 # Run the relevant test suite
-pnpm test:qunit scriptlets --name <name> --build  # for scriptlet changes
-pnpm test:vitest                                  # for API/converter/validator changes
+pnpm test:qunit scriptlets --name <name>          # for scriptlet changes
+pnpm test:vitest                                  # for API/converter/validator/helper changes and scriptlet specs
 ```
 
 Both must pass with no errors.
@@ -170,7 +174,7 @@ regeneration during the release flow, which has no ticket number) use a
 2. Create `src/scriptlets/<name>.ts` with a JSDoc `@scriptlet` header.
 3. Add a QUnit test file at `tests/scriptlets/<name>.test.js`.
 4. Update `scripts/compatibility-table.json` with the new entry.
-5. Run `pnpm test:qunit scriptlets --name <name> --build` to verify.
+5. Run `pnpm test:qunit scriptlets --name <name>` to verify.
 6. Run `pnpm wiki:build-docs` to regenerate the wiki documentation.
 
 ### Adding a New Redirect Resource
@@ -179,7 +183,7 @@ regeneration during the release flow, which has no ticket number) use a
 2. Create the source file in `src/redirects/` and a YAML manifest alongside it.
 3. Add a QUnit test file at `tests/redirects/<name>.test.js`.
 4. Update `scripts/compatibility-table.json` with the new entry.
-5. Run `pnpm test:qunit redirects --build` to verify.
+5. Run `pnpm test:qunit redirects --name <name>` to verify.
 6. Run `pnpm wiki:build-docs` to regenerate the wiki documentation.
 
 ### Updating Wiki Documentation

@@ -1,7 +1,10 @@
 import {
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     shouldAbortInlineOrInjectedScript,
@@ -11,6 +14,7 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getFunctionProxyProperty,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -37,6 +41,7 @@ import { type Source } from './scriptlets';
  *   but only if function call returns a string, otherwise it will log information that content is not a string.
  * - `textToReplace` — optional, string or regular expression which should be replaced.
  *   By default it's set to `''`. If it's not set to other value and `logContent` is set, it will log the original content.
+ *   If it is an invalid regular expression, the rule is not applied.
  * - `replacement` — optional, string which replace the matched text.
  *   By default it's set to '', so matched content will removed.
  * - `decodeMethod` — optional, string which specifies the method used to decode the content.
@@ -44,7 +49,7 @@ import { type Source } from './scriptlets';
  *   If it's set and `logContent` is also set and `textToReplace` and `replacement` are not set,
  *   then it will log the decoded content.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace.
- *   If regular expression is invalid it will be skipped.
+ *   If it is an invalid regular expression, the rule is not applied.
  * - `logContent` — optional, if set to any value, the original and modified content will be logged.
  *   By default it's set to '' and no content will be logged.
  *
@@ -129,6 +134,20 @@ export function trustedReplaceOutboundText(
         return;
     }
 
+    // `matchStackTrace()` throws for `stack` which is an invalid regular expression, and so does `toRegExp()`
+    // for such `textToReplace`, which would replace the result of each call, so such rule is not applied,
+    // which is logged once
+    if (stack && !isValidStackPattern(stack)) {
+        logMessage(source, `Invalid stack: ${stack}`);
+        return;
+    }
+    try {
+        toRegExp(textToReplace);
+    } catch {
+        logMessage(source, `Invalid textToReplace: ${textToReplace}`);
+        return;
+    }
+
     const getPathParts = getPropertyInChain as unknown as (base: Window, chain: string) => {
         base: Record<string, unknown>;
         prop: string;
@@ -142,7 +161,9 @@ export function trustedReplaceOutboundText(
         return;
     }
 
-    const nativeMethod = base[prop];
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base, prop);
+    const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
         return;
@@ -238,48 +259,71 @@ export function trustedReplaceOutboundText(
         thisArg: any,
         argumentsList: unknown[],
     ) => {
-        if (isMatchingSuspended) {
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
             return Reflect.apply(target, thisArg, argumentsList);
         }
         isMatchingSuspended = true;
-        hit(source);
-        const result = Reflect.apply(target, thisArg, argumentsList);
+        try {
+            const result = Reflect.apply(target, thisArg, argumentsList);
 
-        if (stack && !matchStackTrace(stack, new Error().stack || '')) {
+            // Stack trace is read only if it is matched. The page may make creating or reading it throw,
+            // e.g. by replacing `Error` or by `Error.prepareStackTrace`, which should not replace the result
+            // of the call which has already succeeded, so it is done separately
+            let stackTrace = '';
+            let isStackTraceRead = false;
+            if (stack) {
+                try {
+                    stackTrace = String(new Error().stack || '');
+                    isStackTraceRead = true;
+                } catch {
+                    // Content is not modified, as `stack` cannot be matched
+                }
+            }
+
+            // Error message line is added to the stack trace created here, in the wrapper called by the page,
+            // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+            if (stack && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))) {
+                return result;
+            }
+
+            // Only the calls which match `stack` are counted
+            hit(source);
+
+            if (typeof result === 'string') {
+                if (logOriginalContent) {
+                    logMessage(source, `Original text content: ${result}`);
+                }
+
+                const patternRegexp = toRegExp(textToReplace);
+                const modifiedContent = textToReplace || logDecodedContent
+                    ? decodeAndReplaceContent(result, patternRegexp, replacement, decodeMethod, logContent)
+                    : result;
+
+                if (logModifiedContent) {
+                    const message = modifiedContent !== result
+                        ? `Modified text content: ${modifiedContent}`
+                        : 'Text content was not modified';
+
+                    logMessage(source, message);
+                }
+
+                return modifiedContent;
+            }
+            logMessage(source, 'Content is not a string');
             return result;
-        }
-
-        if (typeof result === 'string') {
-            if (logOriginalContent) {
-                logMessage(source, `Original text content: ${result}`);
-            }
-
-            const patternRegexp = toRegExp(textToReplace);
-            const modifiedContent = textToReplace || logDecodedContent
-                ? decodeAndReplaceContent(result, patternRegexp, replacement, decodeMethod, logContent)
-                : result;
-
-            if (logModifiedContent) {
-                const message = modifiedContent !== result
-                    ? `Modified text content: ${modifiedContent}`
-                    : 'Text content was not modified';
-
-                logMessage(source, message);
-            }
-
+        } finally {
+            // Matching is resumed on every return path, including a stack trace which does not match
+            // and an error thrown by the intercepted method, as the next calls would not be processed otherwise
             isMatchingSuspended = false;
-            return modifiedContent;
         }
-        isMatchingSuspended = false;
-        logMessage(source, 'Content is not a string');
-        return result;
     };
 
     const objectHandler = {
         apply: objectWrapper,
+        get: getFunctionProxyProperty,
     };
 
-    base[prop] = new Proxy(nativeMethod, objectHandler);
+    methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
 export const trustedReplaceOutboundTextNames = [
@@ -293,7 +337,10 @@ trustedReplaceOutboundText.primaryName = trustedReplaceOutboundTextNames[0];
 trustedReplaceOutboundText.injections = [
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
     getPropertyInChain,
+    getMethodOwner,
     getWildcardPropertyInChain,
     logMessage,
     // following helpers are needed for helpers above
@@ -304,4 +351,5 @@ trustedReplaceOutboundText.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getFunctionProxyProperty,
 ];

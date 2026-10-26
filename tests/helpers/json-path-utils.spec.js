@@ -6,6 +6,7 @@ import {
 } from 'vitest';
 
 import { buildJsonPathExpression, jsonPath, matchesJsonPath } from '../../src/helpers';
+import { useThrowingErrorConstructor } from '../helpers';
 
 const source = {
     args: [],
@@ -2837,5 +2838,147 @@ describe('jsonPath time keywords', () => {
         const result = jsonPath(source, root, '$.config.consent=$now', nativeObjects);
 
         expect(result.config.consent).toBe('$now');
+    });
+});
+
+describe('jsonPath with a stack trace which cannot be read', () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+
+    /**
+     * Calls the callback while reading `stack` of an error throws,
+     * as it does if `Error.prepareStackTrace` of the page throws.
+     *
+     * @param {Function} callback function to call
+     * @returns {any} value returned by the callback
+     */
+    const callWithUnreadableStackTrace = (callback) => {
+        Error.prepareStackTrace = () => {
+            throw new Error('prepareStackTrace error');
+        };
+        try {
+            return callback();
+        } finally {
+            Error.prepareStackTrace = nativePrepareStackTrace;
+        }
+    };
+
+    test('Sets a value without stack', () => {
+        const root = { ads: { enabled: true } };
+
+        const result = callWithUnreadableStackTrace(() => {
+            return jsonPath(source, root, '$.ads.enabled=false', nativeObjects);
+        });
+
+        expect(result).toStrictEqual({ ads: { enabled: false } });
+    });
+
+    test('Does not set a value with stack, as it cannot be matched', () => {
+        const root = { ads: { enabled: true } };
+
+        const result = callWithUnreadableStackTrace(() => {
+            return jsonPath(source, root, '$.ads.enabled=false', nativeObjects, undefined, 'anyFunction');
+        });
+
+        expect(result).toStrictEqual({ ads: { enabled: true } });
+    });
+
+    test('Logs payload when selector is empty', () => {
+        const logSpy = vi.spyOn(window.console, 'log').mockImplementation(() => { });
+        const root = { ads: { enabled: true } };
+
+        try {
+            const result = callWithUnreadableStackTrace(() => jsonPath(source, root, '', nativeObjects));
+
+            expect(result).toBe(root);
+            expect(logSpy).toHaveBeenCalledTimes(2);
+            expect(logSpy.mock.calls[0][0].includes(`${source.name}: ${window.location.hostname}`)).toBeTruthy();
+        } finally {
+            logSpy.mockRestore();
+        }
+    });
+});
+
+describe('jsonPath with a stack trace which cannot be created, as the page has replaced Error', () => {
+    /**
+     * Calls the callback while `Error` cannot be constructed.
+     *
+     * @param {Function} callback function to call
+     * @returns {any} value returned by the callback
+     */
+    const callWithThrowingErrorConstructor = (callback) => {
+        const restoreError = useThrowingErrorConstructor();
+        try {
+            return callback();
+        } finally {
+            restoreError();
+        }
+    };
+
+    test('Does not set a value with stack, as it cannot be matched', () => {
+        const root = { ads: { enabled: true } };
+
+        const result = callWithThrowingErrorConstructor(() => {
+            return jsonPath(source, root, '$.ads.enabled=false', nativeObjects, undefined, 'anyFunction');
+        });
+
+        expect(result).toStrictEqual({ ads: { enabled: true } });
+    });
+
+    test('Logs payload when selector is empty', () => {
+        const logSpy = vi.spyOn(window.console, 'log').mockImplementation(() => { });
+        const root = { ads: { enabled: true } };
+
+        try {
+            const result = callWithThrowingErrorConstructor(() => jsonPath(source, root, '', nativeObjects));
+
+            expect(result).toBe(root);
+            expect(logSpy).toHaveBeenCalledTimes(2);
+        } finally {
+            logSpy.mockRestore();
+        }
+    });
+});
+
+describe('jsonPath with an invalid stack', () => {
+    test('Does not set a value, and does not throw', () => {
+        const logSpy = vi.spyOn(window.console, 'log').mockImplementation(() => { });
+        const root = { ads: { enabled: true } };
+
+        try {
+            const result = jsonPath(
+                { ...source, verbose: true },
+                root,
+                '$.ads.enabled=false',
+                nativeObjects,
+                undefined,
+                '/(/',
+            );
+
+            expect(result).toStrictEqual({ ads: { enabled: true } });
+            expect(logSpy).toHaveBeenCalledWith('trusted-json-set: Invalid stack: /(/');
+        } finally {
+            logSpy.mockRestore();
+        }
+    });
+});
+
+describe('jsonPath with a value without a message thrown by the page', () => {
+    test('Does not throw, and returns the value unchanged', () => {
+        const logSpy = vi.spyOn(window.console, 'log').mockImplementation(() => { });
+        const root = {
+            get ads() {
+                // eslint-disable-next-line no-throw-literal
+                throw null;
+            },
+        };
+
+        try {
+            const result = jsonPath({ ...source, verbose: true }, root, '$.ads.enabled=false', nativeObjects);
+
+            expect(result).toBe(root);
+            expect(logSpy.mock.calls.some((args) => String(args[0]).endsWith(': null'))).toBe(true);
+        } finally {
+            logSpy.mockRestore();
+        }
     });
 });

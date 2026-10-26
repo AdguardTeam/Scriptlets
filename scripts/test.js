@@ -122,9 +122,12 @@ program
     .command('scriptlets')
     .option('--name <name>', 'for specific scriptlet testing')
     .option('--gui', 'for gui testing, requires --name')
+    // Declared only to be listed in `--help`. Commander assigns `--build` to the main program even if it is passed
+    // after the subcommand, so the handler reads it with `optsWithGlobals()`. It returns the subcommand's own
+    // options as well, e.g. `--name`, so `options` is not passed
     .option('--build', 'build sources; requires --name; cannot be used with --gui')
-    .action(async (options) => {
-        await runSpecificTests(SCRIPTLETS_TYPE, options);
+    .action(async (options, command) => {
+        await runSpecificTests(SCRIPTLETS_TYPE, command.optsWithGlobals());
     });
 
 program
@@ -132,9 +135,12 @@ program
     .command('redirects')
     .option('--name <name>', 'for specific redirect testing')
     .option('--gui', 'for gui testing, requires --name')
+    // Declared only to be listed in `--help`. Commander assigns `--build` to the main program even if it is passed
+    // after the subcommand, so the handler reads it with `optsWithGlobals()`. It returns the subcommand's own
+    // options as well, e.g. `--name`, so `options` is not passed
     .option('--build', 'build sources; requires --name; cannot be used with --gui')
-    .action(async (options) => {
-        await runSpecificTests(REDIRECTS_TYPE, options);
+    .action(async (options, command) => {
+        await runSpecificTests(REDIRECTS_TYPE, command.optsWithGlobals());
     });
 
 program

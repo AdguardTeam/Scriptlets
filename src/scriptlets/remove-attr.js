@@ -3,6 +3,7 @@ import {
     observeDOMChanges,
     parseFlags,
     logMessage,
+    isValidSelector,
     throttle,
 } from '../helpers';
 
@@ -81,22 +82,44 @@ export function removeAttr(source, attrs, selector, applying = 'asap stay') {
     }
     attrs = attrs.split(/\s*\|\s*/);
     if (!selector) {
-        selector = `[${attrs.join('],[')}]`;
+        // attribute names are escaped, because they may be not valid CSS identifiers, e.g. 'x-on:click' or '@click'
+        selector = attrs.map((attr) => `[${CSS.escape(attr)}]`).join(',');
     }
 
+    // Selector is validated once, otherwise the error would be logged on each DOM change
+    if (!isValidSelector(selector)) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+
     const rmattr = () => {
-        let nodes = [];
-        try {
-            nodes = [].slice.call(document.querySelectorAll(selector));
-        } catch (e) {
-            logMessage(source, `Invalid selector arg: '${selector}'`);
-        }
+        // selector is validated before
+        const nodes = [].slice.call(document.querySelectorAll(selector));
         let removed = false;
         nodes.forEach((node) => {
-            attrs.forEach((attr) => {
-                node.removeAttribute(attr);
-                removed = true;
-            });
+            // Error for one element, e.g. caused by the page, should not stop processing of other elements
+            try {
+                attrs.forEach((attr) => {
+                    // Selector may match nodes without the attribute, and hit should be called only on actual
+                    // removal, otherwise idle observer would log on each unrelated mutation
+                    if (!node.hasAttribute(attr)) {
+                        return;
+                    }
+                    node.removeAttribute(attr);
+                    removed = true;
+                });
+            } catch {
+                if (!loggedFailedElems.has(node)) {
+                    loggedFailedElems.add(node);
+                    // Element is logged as is, since its string representation does not identify it
+                    logMessage(source, ['Failed to remove attributes from element:', node], false, false);
+                }
+            }
         });
         if (removed) {
             hit(source);
@@ -156,6 +179,7 @@ removeAttr.injections = [
     observeDOMChanges,
     parseFlags,
     logMessage,
+    isValidSelector,
     // following helpers should be imported and injected
     // because they are used by helpers above
     throttle,

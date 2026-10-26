@@ -1,6 +1,9 @@
 import {
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
+    isNativePromise,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,
@@ -27,6 +30,8 @@ import {
     throwFunc,
     noopPromiseReject,
     noopPromiseResolve,
+    getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -55,7 +60,7 @@ import {
  *   In `jsonpath` mode this argument is ignored. Express such preconditions
  *   directly in `propsToRemove` with leading JSONPath guards and filters.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- *   if regular expression is invalid it will be skipped.
+ *   if it is an invalid regular expression, the rule is not applied.
  * - `mode` — optional, syntax mode selector.
  *   Supported values:
  *     - `legacy` — force the existing legacy path syntax;
@@ -397,39 +402,89 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
         nativeStringify: window.JSON.stringify,
     };
 
-    const pruneJsonValue = (root) => {
+    // Content is only logged without properties to remove, regardless of `stack`, as by `jsonPruner()`
+    const isLoggingMode = syntaxModeDetails.mode === 'legacy' && prunePaths.length === 0;
+
+    // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
+    // which is logged once, instead of on each call
+    if (stack && !isLoggingMode && !isValidStackPattern(stack)) {
+        logMessage(source, `Invalid stack: ${stack}`);
+        return;
+    }
+
+    const pruneJsonValue = (root, stackToMatch, stackTraceToLog) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stack);
+            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stackToMatch);
         }
 
-        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
+        return jsonPruner(source, root, prunePaths, requiredPaths, stackToMatch, nativeObjects, stackTraceToLog);
     };
 
     const jsonParseWrapper = (...args) => {
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeObjects.nativeParse.apply(JSON, args);
-        return pruneJsonValue(root);
+        // `stack` is not matched in logging mode, as it is not checked when the scriptlet runs then,
+        // and it changes nothing, as the content is logged regardless of it, and nothing is pruned
+        return pruneJsonValue(root, isLoggingMode ? '' : stack);
     };
 
     // JSON.parse mocking
     jsonParseWrapper.toString = nativeObjects.nativeParse.toString.bind(nativeObjects.nativeParse);
     JSON.parse = jsonParseWrapper;
 
-    const nativeResponseJson = Response.prototype.json;
-    // eslint-disable-next-line func-names
-    const responseJsonWrapper = function () {
-        const promise = nativeResponseJson.apply(this);
-        return promise.then((obj) => {
-            return pruneJsonValue(obj);
-        });
-    };
-
     // do nothing if browser does not support Response (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/Response
     if (typeof Response === 'undefined') {
         return;
     }
+
+    // Saved before the page can replace them, as the promise returned by `Response.prototype.json()`
+    // is pruned on its fulfillment
+    const NativePromise = window.Promise;
+    const nativePromiseThen = NativePromise.prototype.then;
+    const nativeResponseJson = Response.prototype.json;
+    // eslint-disable-next-line func-names
+    const responseJsonWrapper = function () {
+        const promise = Reflect.apply(nativeResponseJson, this, []);
+
+        // Stack trace is read only if it is matched or logged, when the method is called, as the value is pruned
+        // when the promise is fulfilled, when the caller is no longer in the stack, e.g. a function which returns
+        // the promise of `json()`. The page may make creating or reading it throw, e.g. by replacing `Error`
+        // or by `Error.prepareStackTrace`, which should not stop the rules without `stack` from working,
+        // so it is done separately
+        let stackTrace = '';
+        let isStackTraceRead = false;
+        if (stack || isLoggingMode) {
+            try {
+                stackTrace = String(new Error().stack || '');
+                isStackTraceRead = true;
+            } catch {
+                // Rules with `stack` are not applied, as it cannot be matched, and it is not logged
+            }
+        }
+
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (
+            stack
+            && !isLoggingMode
+            && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))
+        ) {
+            return promise;
+        }
+
+        const onFulfilled = (obj) => pruneJsonValue(obj, '', stackTrace);
+
+        // Native method is used, as `then` of the promise may be replaced by the page.
+        // `json()` returns a promise which is not an instance of the saved `Promise` if `Promise` has been replaced
+        // before the scriptlet has run, e.g. by zone.js, or `json()` itself, e.g. by a polyfill.
+        // Its own `then()` is used then, as the saved one may not support it, while it is still a promise
+        if (isNativePromise(promise, NativePromise)) {
+            return Reflect.apply(nativePromiseThen, promise, [onFulfilled]);
+        }
+        return promise.then(onFulfilled);
+    };
 
     Response.prototype.json = responseJsonWrapper;
 }
@@ -454,6 +509,9 @@ jsonPrune.primaryName = jsonPruneNames[0];
 jsonPrune.injections = [
     hit,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
+    isNativePromise,
     getWildcardPropertyInChain,
     logMessage,
     isPruningNeeded,
@@ -481,4 +539,6 @@ jsonPrune.injections = [
     throwFunc,
     noopPromiseReject,
     noopPromiseResolve,
+    getThrownValueMessage,
+    logJsonContent,
 ];

@@ -1,4 +1,6 @@
 /* eslint-disable no-eval, no-underscore-dangle, no-console */
+import { getLogs, getSyncLogs } from '../helpers';
+
 const { test, module } = QUnit;
 const name = 'json-prune';
 
@@ -278,6 +280,121 @@ test('Response.json() mocking -- remove single properties with [] for any array 
 
     assert.deepEqual(actualJson, expectedJson);
     done();
+});
+
+test('Response.json() mocking -- match stack of a function which returns the promise of json()', async (assert) => {
+    runScriptlet('json-prune', 'c3', '', 'getJsonContent');
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    // The function is no longer in the stack when the promise is fulfilled
+    const getJsonContent = () => response.json();
+    const actualJson = await getJsonContent();
+
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test' }, 'Content pruned');
+});
+
+test('Response.json() mocking -- stack does not match', async (assert) => {
+    runScriptlet('json-prune', 'c3', '', 'notMatchingStack');
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+});
+
+test('Response.json() mocking -- invalid stack does not throw', async (assert) => {
+    runScriptlet('json-prune', 'c3', '', '/(/');
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+});
+
+test('JSON.parse mocking -- invalid stack in JSONPath mode does not throw', (assert) => {
+    runScriptlet('json-prune', '$.c', '', '/(/');
+
+    let result;
+    try {
+        result = JSON.parse('{"a":1,"c":3}');
+    } finally {
+        JSON.parse = nativeParse;
+    }
+
+    assert.deepEqual(result, { a: 1, c: 3 }, 'Content is intact');
+});
+
+test('JSON.parse mocking -- invalid stack in logging mode is not matched', (assert) => {
+    let logs;
+    try {
+        runScriptlet('json-prune', '', 'foo', '/(/');
+        logs = getSyncLogs(() => {
+            JSON.parse('{"a":1}');
+            JSON.parse('{"b":2}');
+        });
+    } finally {
+        JSON.parse = nativeParse;
+    }
+
+    assert.notOk(logs.some((log) => log.includes('Invalid regular expression')), 'No error logged on calls');
+});
+
+test('Response.json() mocking -- uses native "then" instead of the one replaced by the page', async (assert) => {
+    runScriptlet('json-prune', 'c3');
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    const nativeThen = Promise.prototype.then;
+    let thenCalls = 0;
+    // eslint-disable-next-line no-extend-native
+    Promise.prototype.then = function then(...args) {
+        thenCalls += 1;
+        return Reflect.apply(nativeThen, this, args);
+    };
+    let promise;
+    try {
+        promise = response.json();
+    } finally {
+        // eslint-disable-next-line no-extend-native
+        Promise.prototype.then = nativeThen;
+    }
+    const actualJson = await promise;
+
+    assert.strictEqual(thenCalls, 0, '"then" replaced by the page is not called');
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test' }, 'Content pruned');
+});
+
+test('Response.json() mocking -- prunes the value if Promise has been replaced before', async (assert) => {
+    const NativePromise = window.Promise;
+    // e.g. by zone.js, so the promise of `json()` is not an instance of `Promise` saved by the scriptlet
+    window.Promise = function PolyfillPromise() {};
+    try {
+        runScriptlet('json-prune', 'c3');
+    } finally {
+        window.Promise = NativePromise;
+    }
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    const actualJson = await response.json();
+
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test' }, 'Content pruned');
+});
+
+test('Response.json() mocking -- logging mode logs content regardless of stack, with the caller', async (assert) => {
+    runScriptlet('json-prune', '', '', 'notMatchingStack');
+    const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+
+    // The function is no longer in the stack when the promise is fulfilled
+    const getJsonContent = () => response.json();
+    let actualJson;
+    const logs = await getLogs(async () => {
+        actualJson = await getJsonContent();
+    });
+
+    assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+    assert.ok(
+        logs.some((log) => log.includes('"c3": 3') && log.includes('getJsonContent')),
+        'Content logged with the stack trace of the caller',
+    );
 });
 
 test('removes propsToRemove', (assert) => {
@@ -889,6 +1006,34 @@ test('logs 10', (assert) => {
     };
     runScriptlet('json-prune');
     JSON.parse(10);
+});
+
+test('logs content which is too deeply nested to be serialized - JSON.parse and Response.json', async (assert) => {
+    runScriptlet(name);
+    // Content which can be parsed, but not serialized again to be logged
+    const NESTING_DEPTH = 12000;
+    const json = `${'{"a":'.repeat(NESTING_DEPTH)}1${'}'.repeat(NESTING_DEPTH)}`;
+
+    let parseResult;
+    const parseLogs = getSyncLogs(() => {
+        parseResult = JSON.parse(json);
+    });
+    assert.strictEqual(typeof parseResult.a, 'object', 'Content parsed by JSON.parse returned');
+    assert.ok(
+        parseLogs.some((log) => log.includes('Content cannot be serialized')),
+        'Content which cannot be serialized - JSON.parse',
+    );
+
+    let jsonResult;
+    const jsonLogs = await getLogs(async () => {
+        const response = await fetch(`data:application/json,${encodeURIComponent(json)}`);
+        jsonResult = await response.json();
+    });
+    assert.strictEqual(typeof jsonResult.a, 'object', 'Content parsed by Response.json returned');
+    assert.ok(
+        jsonLogs.some((log) => log.includes('Content cannot be serialized')),
+        'Content which cannot be serialized - Response.json',
+    );
 });
 
 test('check if log contains specific stack trace function', (assert) => {

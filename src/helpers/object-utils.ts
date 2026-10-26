@@ -55,3 +55,93 @@ export function setPropertyAccess(
 export function isArbitraryObject(value: unknown): value is ArbitraryObject {
     return value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof RegExp);
 }
+
+/**
+ * Checks whether the value is a native promise, i.e. an instance of the native `Promise` constructor
+ * or of its subclass, e.g. the one returned by `Response.prototype.json()` or by an async function.
+ * Native APIs and async functions return such promises even if the page has replaced `window.Promise`.
+ *
+ * Promises of other implementations, e.g. of a polyfill or a library which replaces `window.Promise`,
+ * like `ZoneAwarePromise` of zone.js, and other thenables, i.e. objects with a `then()` method,
+ * are not detected, and the `then` property is not read, as it may be a getter of the page.
+ *
+ * Note that only the prototype chain is checked, so native promises of other realms, e.g. of an iframe,
+ * are not detected, while an object which only inherits from `Promise.prototype` is,
+ * so a native method of `Promise.prototype` called on the value may still throw.
+ *
+ * @param value arbitrary value
+ * @param NativePromise native `Promise` constructor saved when the scriptlet runs,
+ * i.e. before the page could replace `window.Promise`
+ * @returns true, if value is a native promise
+ */
+export function isNativePromise(
+    value: unknown,
+    NativePromise: PromiseConstructor,
+): value is Promise<unknown> {
+    try {
+        return value instanceof NativePromise;
+    } catch {
+        // e.g. a proxy which throws in its 'getPrototypeOf' trap
+        return false;
+    }
+}
+
+/**
+ * Returns the object in which a method of `base` should be replaced to intercept the method.
+ *
+ * It is `base` itself, except for a storage, i.e. `localStorage` or `sessionStorage`, as assigning a property
+ * of a storage stores an item in Firefox, even if the property is a method, e.g. `localStorage.setItem`,
+ * so the method is not replaced, but the storage of the page is changed.
+ * For a storage, `Storage.prototype` is returned, so the method is replaced for all storages,
+ * and its wrapper should process only the calls whose `this` is `base`, i.e. when the returned object is not `base`.
+ *
+ * If the storage has an own method, e.g. a wrapper which the page has assigned in Chrome, where it is allowed,
+ * `base` is returned, as the own method hides the method of `Storage.prototype`.
+ * In Firefox the storage has no own method, as an item named after the method is not its own property.
+ *
+ * @param base object which has the method, e.g. `localStorage` for `localStorage.setItem`
+ * @param prop name of the method, e.g. `setItem`
+ * @returns object in which the method should be replaced
+ */
+export function getMethodOwner(base: Record<string, unknown>, prop: string): Record<string, unknown> {
+    try {
+        if (
+            typeof Storage !== 'undefined'
+            && base instanceof Storage
+            && !Object.prototype.hasOwnProperty.call(base, prop)
+        ) {
+            return Storage.prototype as unknown as Record<string, unknown>;
+        }
+    } catch {
+        // e.g. a proxy which throws in its 'getPrototypeOf' trap
+    }
+
+    return base;
+}
+
+/**
+ * `get` trap of a Proxy of a function, which returns `toString()` of the function bound to it,
+ * so the Proxy returns the same string as the function, e.g. with its name, or the source of a function
+ * of the page, while `toString()` of a Proxy returns the string of a native function without its name.
+ *
+ * `toString` which is a non-configurable own property of the function, e.g. defined by the page
+ * as not writable, is returned as it is, as the trap must return it then, and reading it throws otherwise.
+ *
+ * @param target function wrapped by the Proxy
+ * @param propName name of the property
+ * @param receiver the Proxy
+ * @returns value of the property
+ */
+export function getFunctionProxyProperty<T extends Function>(
+    target: T,
+    propName: string | symbol,
+    receiver: unknown,
+): unknown {
+    if (propName === 'toString') {
+        const descriptor = Reflect.getOwnPropertyDescriptor(target, propName);
+        if (!descriptor || descriptor.configurable) {
+            return target.toString.bind(target);
+        }
+    }
+    return Reflect.get(target, propName, receiver);
+}

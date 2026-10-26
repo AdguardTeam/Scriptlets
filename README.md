@@ -65,7 +65,8 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 Scriptlet is a JavaScript function which can be used in a declarative manner in AdGuard filtering rules.
 
 AdGuard supports a lot of different scriptlets.
-Please note, that in order to achieve cross-blocker compatibility, we also support syntax of uBO and ABP.
+Please note, that in order to achieve cross-blocker compatibility,
+we also support syntax of uBlock Origin and Adblock Plus.
 
 ### <a name="scriptlet-syntax"></a> Syntax
 
@@ -280,7 +281,8 @@ pnpm test
     pnpm test:qunit scriptlets --name set-cookie --build
     ```
 
-1. Run all jest tests:
+1. Vitest is used for testing of the API, converters, validators, helpers, and scriptlets
+    which can be tested without a real browser:
 
     ```bash
     pnpm test:vitest
@@ -293,7 +295,8 @@ pnpm test
     pnpm test:vitest -t isValidScriptletRule
     ```
 
-Tests run by `jest` should be named `.spec.js`, so they will be not included in the `QUnit` tests.
+Tests run by Vitest should be named `.spec.js` or `.spec.ts`, so they will be not included in the QUnit tests,
+which are named `.test.js`.
 
 #### Debugging
 
@@ -883,7 +886,8 @@ declare function convertAdgRedirectToUbo(rule: string): string;
 |-----------------------|:--------|
 | Chrome                | ✅ 55   |
 | Firefox               | ✅ 52   |
-| Edge                  | ✅ 15   |
+| Edge Chromium         | ✅ 80   |
+| Edge Legacy           | ❌      |
 | Opera                 | ✅ 42   |
 | Safari                | ✅ 13   |
 | Internet Explorer     | ❌      |

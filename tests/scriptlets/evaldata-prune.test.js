@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console, no-eval */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, getSyncLogs } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'evaldata-prune';
@@ -213,4 +213,18 @@ test('logs null', (assert) => {
     };
     runScriptlet(name);
     eval(null);
+});
+
+test('logs a circular object returned by eval without its content', (assert) => {
+    runScriptlet(name);
+    const circular = { a: 1 };
+    circular.self = circular;
+
+    let result;
+    const logs = getSyncLogs(() => {
+        result = eval(circular);
+    });
+
+    assert.strictEqual(result, circular, 'Result of eval returned');
+    assert.ok(logs.some((log) => log.includes('Content cannot be serialized')), 'Content which cannot be serialized');
 });

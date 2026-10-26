@@ -11,8 +11,11 @@ import {
     noopPromiseResolve,
     matchStackTrace,
     getPropertyInChain,
+    getMethodOwner,
+    getFunctionProxyProperty,
     extractRegexAndReplacement,
     logMessage,
+    getThrownValueMessage,
     toRegExp,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
@@ -257,7 +260,9 @@ export function trustedReplaceArgument(
         return;
     }
 
-    const nativeMethod = base[prop];
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base, prop);
+    const nativeMethod = methodOwner[prop];
     if (!nativeMethod || typeof nativeMethod !== 'function') {
         logMessage(source, `Could not retrieve the method: ${methodPath}`);
         return;
@@ -295,8 +300,7 @@ export function trustedReplaceArgument(
             }
             return `${index}: ${String(arg)}`;
         });
-        const modifiedOrOriginal = when === 'modified' ? 'modified' : when;
-        const message = `${methodPath} ${modifiedOrOriginal} arguments:\n${formattedArgs.join(',\n')}`;
+        const message = `${methodPath} ${when} arguments:\n${formattedArgs.join(',\n')}`;
         return message;
     };
 
@@ -318,7 +322,10 @@ export function trustedReplaceArgument(
                     const argString = stringifyObject(arg);
                     return !!argString && toRegExp(pattern).test(argString);
                 } catch (error) {
-                    logMessage(source, `Failed to stringify argument: ${arg}\nError: ${error}`);
+                    // Neither the argument nor the error is converted to a string to be logged, as it would call
+                    // the page again, e.g. its `toString()`, which may throw as well, so the argument would not be
+                    // converted to a string below, and the error may be a value without a message
+                    logMessage(source, `Failed to stringify argument: ${getThrownValueMessage(error)}`);
                 }
             }
 
@@ -353,13 +360,18 @@ export function trustedReplaceArgument(
 
     let isMatchingSuspended = false;
 
-    const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
+    /**
+     * Logs the arguments of the intercepted call, and replaces the target one if it matches.
+     *
+     * The arguments are replaced in a copy, so the original ones are returned if an error occurs,
+     * which is logged, and the intercepted method is called once by the wrapper anyway.
+     *
+     * @param argumentsList arguments of the intercepted call
+     * @returns arguments to call the intercepted method with
+     */
+    const processArguments = (argumentsList: unknown[]): unknown[] => {
+        isMatchingSuspended = true;
         try {
-            if (isMatchingSuspended) {
-                return Reflect.apply(target, thisArg, argumentsList);
-            }
-            isMatchingSuspended = true;
-
             // Log the original arguments before modification
             if (verbose === 'true') {
                 const formattedMessage = createFormattedMessage(argumentsList);
@@ -368,8 +380,7 @@ export function trustedReplaceArgument(
 
             // If we only need to log the arguments, skip further processing
             if (SHOULD_LOG_ONLY) {
-                isMatchingSuspended = false;
-                return Reflect.apply(target, thisArg, argumentsList);
+                return argumentsList;
             }
 
             const argumentToReplace = argumentsList[Number(argumentIndex)];
@@ -377,92 +388,58 @@ export function trustedReplaceArgument(
             const shouldSetArgument = checkArgument(argumentToReplace);
 
             if (!shouldSetArgument) {
-                isMatchingSuspended = false;
-                return Reflect.apply(target, thisArg, argumentsList);
+                return argumentsList;
             }
 
-            replaceTargetArgument(argumentsList);
+            const modifiedArguments = argumentsList.slice();
+            replaceTargetArgument(modifiedArguments);
 
             // Log the modified arguments after replacement
             if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(argumentsList, 'modified');
+                const formattedMessage = createFormattedMessage(modifiedArguments, 'modified');
                 logMessage(source, formattedMessage);
             }
 
             hit(source);
 
-            isMatchingSuspended = false;
-
-            return Reflect.apply(target, thisArg, argumentsList);
+            return modifiedArguments;
         } catch (error) {
+            // Error is not converted to get its message, as it may call the page again, e.g. its `toJSON()`,
+            // and the error may be `null` thrown by the page, e.g. by `Error` replaced by it, which has no message
+            logMessage(source, `Unexpected error during argument replacement: ${getThrownValueMessage(error)}`);
+            return argumentsList;
+        } finally {
             isMatchingSuspended = false;
-            logMessage(source, `Unexpected error during argument replacement: ${(error as Error).message}`);
+        }
+    };
+
+    // The intercepted method is called once by the wrappers, outside of `try`,
+    // so its error is passed to the page as is, and it is not called again
+
+    const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
+        // Calls on another storage are not processed
+        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
             return Reflect.apply(target, thisArg, argumentsList);
         }
+
+        return Reflect.apply(target, thisArg, processArguments(argumentsList));
     };
 
     const constructWrapper = (target: Function, argumentsList: unknown[], newTarget: any) => {
-        try {
-            if (isMatchingSuspended) {
-                return Reflect.construct(target, argumentsList, newTarget);
-            }
-            isMatchingSuspended = true;
-
-            // Log the original arguments before modification
-            if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(argumentsList);
-                logMessage(source, formattedMessage);
-            }
-
-            // If we only need to log the arguments, skip further processing
-            if (SHOULD_LOG_ONLY) {
-                isMatchingSuspended = false;
-                return Reflect.construct(target, argumentsList, newTarget);
-            }
-
-            const argumentToReplace = argumentsList[Number(argumentIndex)];
-
-            const shouldSetArgument = checkArgument(argumentToReplace);
-
-            if (!shouldSetArgument) {
-                isMatchingSuspended = false;
-                return Reflect.construct(target, argumentsList, newTarget);
-            }
-
-            replaceTargetArgument(argumentsList);
-
-            // Log the modified arguments after replacement
-            if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(argumentsList, 'modified');
-                logMessage(source, formattedMessage);
-            }
-
-            hit(source);
-
-            isMatchingSuspended = false;
-
-            return Reflect.construct(target, argumentsList, newTarget);
-        } catch (error) {
-            isMatchingSuspended = false;
-            logMessage(source, `Unexpected error during argument replacement: ${(error as Error).message}`);
+        if (isMatchingSuspended) {
             return Reflect.construct(target, argumentsList, newTarget);
         }
-    };
 
-    const getWrapper = (target: Function, propName: string, receiver: any) => {
-        if (propName === 'toString') {
-            return target.toString.bind(target);
-        }
-        return Reflect.get(target, propName, receiver);
+        return Reflect.construct(target, processArguments(argumentsList), newTarget);
     };
 
     const objectHandler = {
         apply: applyWrapper,
         construct: constructWrapper,
-        get: getWrapper,
+        get: getFunctionProxyProperty,
     };
 
-    base[prop] = new Proxy(nativeMethod, objectHandler);
+    methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
 }
 
 export const trustedReplaceArgumentNames = [
@@ -486,8 +463,11 @@ trustedReplaceArgument.injections = [
     noopPromiseResolve,
     matchStackTrace,
     getPropertyInChain,
+    getMethodOwner,
+    getFunctionProxyProperty,
     extractRegexAndReplacement,
     logMessage,
+    getThrownValueMessage,
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,

@@ -29,7 +29,8 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
   (redirect manifests)
 - **Storage**: None
 - **Testing**: QUnit (scriptlets, redirects, helpers — browser-level via
-  Puppeteer) and Vitest (API, validators, converters — jsdom)
+  Puppeteer) and Vitest (API, validators, converters, helpers, scriptlets —
+  jsdom)
 - **Target platform**: Browser extension and Corelibs
 - **Project type**: single
 - **Performance goals**: N/A
@@ -57,10 +58,11 @@ scriptlets/
 │   └── index.ts              # Main public API entry point
 ├── tests/
 │   ├── api/                  # Vitest tests for converters and validators
-│   ├── helpers/              # QUnit tests for helper utilities
+│   ├── helpers/              # QUnit and Vitest tests for helper utilities
 │   ├── redirects/            # QUnit tests for redirect resources
-│   ├── scriptlets/           # QUnit tests for scriptlets
-│   └── smoke/                # Smoke tests for ESM exports
+│   ├── scriptlets/           # QUnit and Vitest tests for scriptlets
+│   ├── smoke/                # Smoke tests for ESM exports
+│   └── vitest-helpers.ts     # Vitest-only test utilities (e.g. jsdom workarounds)
 ├── types/                    # Ambient type declarations
 ├── wiki/                     # Auto-generated documentation (scriptlet/redirect docs, compatibility table)
 ├── .dockerignore             # Docker build context exclusions
@@ -79,12 +81,15 @@ scriptlets/
 - `pnpm install` — install dependencies
 - `pnpm build` — clean `dist/` and build all bundles
 - `pnpm test` — run all tests (Vitest + smoke + QUnit)
-- `pnpm test:vitest` — run Vitest tests only (API, validators, converters)
+- `pnpm test:vitest` — run Vitest tests only (API, validators, converters,
+  helpers, scriptlets)
 - `pnpm test:qunit scriptlets` — run QUnit tests for all scriptlets
 - `pnpm test:qunit redirects` — run QUnit tests for all redirects
 - `pnpm test:qunit helpers` — run QUnit tests for helpers
-- `pnpm test:qunit scriptlets --name <name> --build` — run a single
-  scriptlet test with a rebuild
+- `pnpm test:qunit scriptlets --name <name>` — rebuild and run a single
+  scriptlet test
+- `pnpm test:qunit scriptlets --name <name> --build` — only rebuild a single
+  scriptlet test, without running it, e.g. while it is open with `--gui`
 - `pnpm test:qunit:build` — build the QUnit test bundles without running them
   (CI split-stage equivalent of `test:qunit --build`; paired with `test:qunit:run`)
 - `pnpm test:qunit:run` — run the QUnit tests without rebuilding (CI
@@ -112,8 +117,10 @@ You MUST follow the following rules for EVERY task that you perform:
 
 - You MUST run the test suite to verify your changes do not break existing
   functionality. For scriptlet/redirect changes use
-  `pnpm test:qunit scriptlets --name <name> --build` (or `redirects`).
-  For API/validator/converter changes use `pnpm test:vitest`.
+  `pnpm test:qunit scriptlets --name <name>` (or `redirects`).
+  For API/validator/converter and helper changes, and for scriptlets which have
+  Vitest specs in `tests/scriptlets/`, use `pnpm test:vitest`, or e.g.
+  `pnpm test:vitest tests/scriptlets/<name>.spec.js` for a single spec.
 
 - When making changes to the project structure, ensure the Project structure
   section in `AGENTS.md` is updated and remains valid.
@@ -330,6 +337,312 @@ Project-specific rules:
    **Rationale**: The Prepare release tag and `CHANGELOG.md` are the version
    sources of truth.
 
+10. Scriptlets which re-apply themselves on DOM changes (e.g. via
+    `observeDOMChanges`) MUST NOT write a value the target already has
+    (compare before `setAttribute()` etc.) and MUST call `hit()` only if
+    something has actually changed. Invalid arguments (e.g. selector) SHOULD
+    be validated and logged once, before the observer is started; use the
+    `isValidSelector()`, `isValidXpath()` and `isValidAttributeName()` helpers,
+    and `getShadowSelectorError()` for selectors of `queryShadowSelector()`,
+    i.e. with `>>>` combinator or `xpath(...)`, as they do not query or change
+    the page DOM. Such arguments SHOULD be parsed once as well, and passed
+    to helpers in the parsed form, e.g. selector parts split by `>>>` with
+    `splitSelectors()` to `queryShadowSelector()`, instead of being parsed again
+    on each DOM change. A failure to process an element SHOULD be logged once and not
+    again until the processed value of the element changes.
+    Such a failure SHOULD be detected from the processed value and remembered
+    per element, not inferred from whether the write has changed the target.
+
+    **Rationale**: `observeDOMChanges` only ignores the scriptlet's own
+    mutations. A write of the same value still produces a mutation record
+    which wakes up observers of other rules, so two such rules re-trigger
+    each other infinitely, and a `hit()`, an argument error or an element
+    failure logged on each callback floods the console on every unrelated
+    DOM change. The target may already hold the result of the failed
+    processing, e.g. in a copy of a processed element, so a failure logged
+    only on change may be never logged for it.
+
+11. To check whether an element is still matched by the scriptlet selector,
+    e.g. after the scriptlet has changed it, use `element.matches()` with
+    `:scope` replaced by `:root` (outside quoted strings), instead of querying
+    the whole document again.
+
+    **Rationale**: `:scope` refers to the root element in
+    `document.querySelectorAll()`, but to the element itself in
+    `element.matches()`, so e.g. `:scope a` never matches the link itself.
+
+12. Use the URL parser for values explicitly selected from URL attributes,
+    parameters or encoded destinations. Limit prose checks to visible link text.
+    When coordinating DOM writes between rules, track actual writes instead of
+    inferring their origin from similarities between values, and accept another
+    rule's write only if it continues the write the rule has seen, i.e. compare
+    write records by identity, not by the written value.
+    Keep shared per-element records on the affected elements rather than in a
+    `window` registry; use non-enumerable symbol properties, not HTML attributes.
+
+    **Rationale**: Valid URLs can contain spaces, parentheses and other URLs.
+    Page edits can resemble a rule's output, so guessing can reject valid values
+    or prevent a rule from correcting a page edit. The written value alone cannot
+    tell whether another rule continued this rule's write or changed a page edit.
+    Element metadata avoids global storage and does not trigger DOM mutation
+    observers.
+
+13. Scriptlets which process matched elements on DOM changes MUST catch errors
+    per element, log such an error once per element, and continue with other
+    elements.
+
+    **Rationale**: An error for one element, e.g. caused by the page, would
+    otherwise stop processing of the other elements on each DOM change and be
+    reported as uncaught on the page each time. `observeDOMChanges` only
+    connects the observer again after its callback throws, so that the
+    scriptlet does not stop working on the page.
+
+14. Non-trivial parsing logic of a scriptlet which depends only on its arguments
+    and has many edge cases, e.g. parsing of a URL parameter, SHOULD be a helper
+    in `src/helpers/` covered by a Vitest spec in `tests/helpers/`, rather than
+    a function inside the scriptlet. Constants of such a helper, e.g. regular
+    expressions, MUST be defined inside the function, see
+    [Helper injection mechanism](#helper-injection-mechanism).
+
+    **Rationale**: Edge cases can be tested directly and quickly, without
+    a browser page, and the helper can be reused by other scriptlets. Helpers are
+    stringified one by one, so module-level constants are not in the built code.
+
+15. Event listener hooks which spoof or proxy events, e.g. the `isTrusted`
+    spoofing of `trusted-click-element`, MUST deliver every other event
+    unchanged: only the events which the scriptlet dispatches itself, and the
+    ones which the browser dispatches directly in response, e.g. the click
+    which a label forwards to its control, are spoofed, unless the rule
+    explicitly opts in to spoofing all events of the page, e.g. `isTrusted:all`.
+    Trusted events MUST be delivered unchanged. All listeners of a spoofed
+    event, including inline `on...` handlers, MUST receive the same proxy, so
+    they MUST resolve the delivered event with one shared function, e.g.
+    `getDeliveredEvent()` of `createSpoofedClicks()`. Listener wrappers shared
+    across targets MUST remain stable when a listener is removed from one
+    target; native registration handles deduplication, `once`, and
+    `AbortSignal` cleanup, so wrapper lookups MUST convert `capture` the same
+    way as `addEventListener` does, and a hook which reads the options MUST
+    read them once and pass the values read to the native method. Hooks which
+    withhold events on purpose, e.g. of `prevent-addEventListener` or
+    `prevent-element-src-loading`, are not covered by this rule. How
+    `trusted-click-element` recognizes the clicks which labels forward, e.g.
+    through slots and closed shadow roots, is described in the JSDoc of
+    `clickElement()` in `src/helpers/click-utils.ts` and of the functions
+    inside it.
+
+    **Rationale**: Popup guards compare event references, including
+    `window.event`, so replacing page or browser events breaks them, see
+    [#582](https://github.com/AdguardTeam/Scriptlets/issues/582), and so
+    spoofing all events of the page is only an opt-in fallback. Removing
+    a shared wrapper mapping breaks removal and deduplication on other
+    targets. Options may be getters which return a different value on each
+    read, so a wrapper looked up by one `capture` value and registered with
+    another cannot be removed and is not deduplicated.
+
+16. Scriptlets which intercept an arbitrary method and process its return
+    value as JSON, e.g. `trusted-json-set`, MUST process the value which
+    a returned promise is fulfilled with, not the promise itself. Detect it
+    with `isNativePromise()` against the `Promise` saved when the scriptlet
+    runs, return the promise chained with the saved native
+    `Promise.prototype.then`, or the original promise if its value is only
+    logged, and keep other results, including promises of polyfills and other
+    thenables, synchronous. `stack` MUST be matched once, when the method is
+    called, and the intercepted method MUST NOT be called again if it throws.
+    The same applies to scriptlets which process a response after it is
+    awaited, e.g. `json-prune-fetch-response` or the `Response.prototype.json`
+    hook of `json-prune`: `stack` is matched in the wrapper before the
+    response is awaited, calls which do not match it are passed through as
+    is, and an empty `stack` is passed to the helpers which process the
+    response, e.g. `jsonPruner()` or `jsonPath()`. In logging mode of
+    `json-prune-fetch-response` and of the `Response.prototype.json` hook,
+    i.e. without properties to remove, `stack` is not matched, as `jsonPruner()`
+    logs the content regardless of it, e.g. for `JSON.parse()` of `json-prune`,
+    and the stack trace read in the wrapper is passed to it to be logged.
+    The `Response.prototype.json` hook chains a promise which is not an
+    instance of the saved `Promise` with its own `then()`, as `json()` always
+    returns a promise, but the saved `Promise` and its `then()` are not native
+    ones if the page has replaced them before the scriptlet has run, e.g. by
+    zone.js, and its `then()` may not support a native promise.
+    `fetch()` is called once, outside of `try`, so its rejection is passed to
+    the page as is, while an error of processing, logging or forging the
+    response which it is fulfilled with, e.g. of serializing a too deeply
+    nested value, is caught and logged, and the original response is returned.
+
+    **Rationale**: Path setters create missing properties on the promise
+    itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
+    The caller is no longer in the stack when the promise is fulfilled, and
+    the page may replace `Promise` or `then` of the promise. Native APIs and
+    async functions return native promises even then, while calling `then` of
+    any other object would turn its synchronous result into a promise for any
+    page object with a `then()` method. Calling the method again repeats its
+    side effects, e.g. consuming the body of a `Response`, or sending
+    a failed POST request again. The request of a response which cannot be
+    processed has succeeded, so the page should not get a rejection for it.
+
+17. If a function which the page calls, e.g. a wrapper of the intercepted
+    method or its Proxy trap, creates a stack trace for `matchStackTrace()`
+    itself, the stack trace MUST be passed through `addStackTraceMessageLine()`
+    before it is matched, and only if `stack` is set, e.g.
+    `matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || '')))`.
+    If it is read for rules without `stack` as well, e.g. for logs, an error
+    of creating or reading it MUST NOT stop such rules, i.e. both `new Error()`
+    and reading its `stack` are in their own `try` at the call site, e.g.
+    `try { stackTrace = String(new Error().stack || ''); ... } catch { ... }`,
+    and rules with `stack` are not applied if it fails. Helpers which create
+    the stack trace for `stack` themselves, e.g. `jsonPath()`, MUST do it the
+    same way, and only if `stack` is set or it is logged.
+    If it is read only for `stack` but after the intercepted method is called,
+    e.g. in `trusted-replace-outbound-text`, it MUST be guarded the same way,
+    and the result of the call returned as is if it fails.
+    `matchStackTrace()` throws if `stack` is an invalid regular expression,
+    so a scriptlet which matches it in a wrapper SHOULD check it once when it
+    runs, with `isValidStackPattern()`, and not apply the rule then, which is
+    logged once. Otherwise the wrapper MUST catch the error and pass the call
+    through, as the helpers which match `stack` themselves do it, i.e.
+    `jsonPruner()`, `jsonSetter()` and `jsonPath()`.
+    A new function MUST NOT be added only to create the stack trace one call
+    deeper instead, and neither a helper which only reads the stack trace of
+    an error created by the caller, as creating it would not be guarded then.
+    A scriptlet which suspends matching while it processes
+    a call, e.g. by `isMatchingSuspended`, MUST resume it on every return path,
+    e.g. by `try`/`finally`, including a stack trace which does not match and
+    an error thrown by the intercepted method.
+
+    **Rationale**: `matchStackTrace()` removes the first two lines of the stack
+    trace as the scriptlet's own ones. In Firefox and Safari the stack trace
+    has no error message line, so the frame of the page function which calls
+    the wrapper would be removed there. Corelibs builds are minified with
+    Terser, which may inline a function added only to create the stack trace,
+    so its frame is not in the stack trace there. Stack traces which existing
+    scriptlets create in a function called by the wrapper, e.g.
+    `checkArgument()` of `trusted-replace-argument` or the getter handler of
+    `set-constant`, keep the frame of the caller while that function is not
+    inlined. The page may make the stack trace a non-string value, or make
+    reading it throw, e.g. by `Error.prepareStackTrace` in Chrome or a getter
+    of `Error.prototype.stack` in Firefox, which should not affect rules without
+    `stack`. The page may also replace `Error` with a constructor which throws.
+    Such an error would replace the result of a call which has already
+    succeeded otherwise.
+    A call from another function, or an error of the intercepted method, would
+    disable the rule for the next calls otherwise, e.g. in
+    `trusted-replace-outbound-text`. The helpers which match `stack` catch the
+    error of an invalid one, so the content is left unmodified, and a wrapper
+    should not throw it to the page instead. An invalid `stack` checked on each
+    call would be matched and logged on each call, e.g. of `JSON.parse()`.
+
+18. Scriptlets which intercept a method by its path, e.g. `localStorage.setItem`,
+    MUST replace it in the object returned by `getMethodOwner()` for the base
+    object and the name of the method, and process only the calls whose `this`
+    is the base object if that object is not the base one, e.g.
+    `if (methodOwner !== base && thisArg !== base)` in the wrapper. Such calls
+    MUST be passed through before any processing, e.g. outside of a `try`
+    whose `catch` calls the method again. The intercepted method itself MUST be
+    called once, outside of such `try`, so its error is passed to the page as
+    is and its side effects are not repeated.
+
+    **Rationale**: Assigning a property of a storage, i.e. `localStorage` or
+    `sessionStorage`, stores an item in Firefox, even if it is a method, e.g.
+    `localStorage.setItem = proxy` stores the item `setItem`. So the method is
+    not replaced, and the storage of the page is changed. `getMethodOwner()`
+    returns `Storage.prototype` for a storage, in which the method is replaced
+    for all storages, unless the storage has an own method, e.g. a wrapper
+    which the page has assigned in Chrome, as it hides the method of
+    `Storage.prototype`. Calls on another storage must behave as if they were
+    not intercepted. Defining a getter or setter of a storage property throws
+    in all browsers, so `set-constant` and `trusted-set-constant` do not support
+    storage properties.
+
+19. Scriptlets which send a forged `XMLHttpRequest` instead of the request of
+    the page, to modify its response, SHOULD use `interceptXhrResponses()`, and
+    otherwise MUST follow it. `trusted-replace-xhr-response`, `xml-prune` and
+    `m3u-prune` do not follow it yet, and SHOULD be moved to the helper when
+    they are changed. The state of a request, i.e. whether it is matched, its
+    headers and its forged request, is reset when its object is opened again,
+    and the forged request of the previous one is aborted, so its events are
+    not dispatched, also when the page calls `abort()`, which dispatches the
+    events of an aborted request instead.
+    Once the events of a response are dispatched, `load` and `loadend` follow
+    `readystatechange` even if its listener opens the object again or aborts it,
+    as in the specification and in Firefox, although Chromium-based browsers do
+    not dispatch them then, as a page which waits for them would never finish.
+    Events of a synchronous request are dispatched before `send()` returns, as
+    by a native one, while the ones of an asynchronous request are deferred.
+    An error of modifying or defining the response is caught, and the events
+    are dispatched anyway, with the original text of the response if it cannot
+    be modified, so the request of the page is always completed.
+    Headers are collected by one hook of `XMLHttpRequest.prototype.setRequestHeader`,
+    and by a wrapper of another method of a matched object, e.g. its own one,
+    or the hook of another rule, which the rules do not recognize, as the
+    method of each object is wrapped only once by each rule, so the wrappers
+    of multiple rules do not wrap each other again, and only the outermost
+    wrapper of each rule collects a header. The headers of the forged response
+    are returned by the hooks of `getResponseHeader()` and
+    `getAllResponseHeaders()` of the prototype, which replace only the result
+    of the object without headers, as it is not sent, but other methods of an
+    object are not wrapped for them, so a value which a method of the page
+    changes or hides on purpose is kept. The forged request is created by the
+    native constructor saved when the scriptlet runs, opened with the arguments
+    of `open()` of the page, and sent once, not in a `try` whose `catch` sends
+    it again. If it fails, e.g. a synchronous request with a network error,
+    its error is thrown to the page, and the object is done with the network
+    error, as a native one, while it would be still opened otherwise.
+
+    **Rationale**: The page may reuse the object for the next request, or abort
+    it, e.g. on each input of a search, and `open()` and `abort()` of the object
+    of the page change nothing, as it is never sent. A response of the previous
+    request would be delivered as the response of the next one otherwise, and
+    a wrapper created for each request of an object wraps the previous one
+    again, so each header is sent once more with each next request. The page
+    may wrap the method of an object, and call the native method saved before
+    the scriptlet has run, so the hook of the prototype alone would miss such
+    headers, e.g. of authentication. The object of the page has no response
+    headers otherwise, while the page may check them, e.g. `Content-Type`, see
+    [#419](https://github.com/AdguardTeam/Scriptlets/issues/419). `async` is
+    `true` if it is omitted, but `false` if it is `undefined`. A failed
+    synchronous request throws a network error, and sending it again repeats
+    its side effects.
+
+20. Errors thrown by functions of the page, e.g. by the intercepted method,
+    a getter of its argument or `toJSON()` of a value, MUST be logged with
+    `getThrownValueMessage()`, neither with `getErrorMessage()` nor by reading
+    their `message` directly.
+
+    **Rationale**: `getErrorMessage()` converts a value without a message by
+    `JSON.stringify()`, which calls `toJSON()` of the page, even if the message
+    is not logged, and it may be the method intercepted by the scriptlet itself,
+    e.g. `JSON.stringify` of `call-nothrow`, which would then be called again,
+    with the same error, until the call stack is exceeded. It also creates
+    an error by `Error`, which the page may replace with a constructor which
+    throws. The page may throw any value, e.g. `null` or `undefined`, so reading
+    its `message` throws another error, which replaces the logged one.
+
+21. A Proxy which replaces a function of the page, e.g. a method intercepted
+    by a scriptlet, SHOULD use `getFunctionProxyProperty()` as its `get` trap,
+    instead of a copy of it, so its `toString()` returns the same string as the
+    function.
+
+    **Rationale**: `toString()` of a Proxy of a function returns the string of
+    a native function without its name, e.g. `function () { [native code] }`,
+    instead of e.g. `function open() { [native code] }`, or the source of
+    a function of the page, which the page may check. The trap returns
+    a non-configurable own `toString` of the function as it is, as a Proxy
+    throws when it is read otherwise, e.g. if the page has defined it as not
+    writable on its own function.
+
+22. JSON content which a scriptlet only logs, e.g. in logging mode or with
+    `verbose`, SHOULD be logged with `logJsonContent()`, which logs it only as
+    an object if it cannot be serialized, instead of serializing it at the call
+    site, e.g. with the `label` `Original content` or `Modified content`.
+    An error of serializing content for a log MUST NOT be thrown to the page,
+    nor stop the intercepted call, the modification of the content, or the
+    delivery of the response.
+
+    **Rationale**: Logged content may be circular, e.g. a result of `eval()`
+    of `evaldata-prune` or an argument of `trusted-prune-inbound-object`, or
+    too deeply nested, which `JSON.stringify()` with indentation cannot
+    serialize, even though `JSON.parse()` has parsed it. Logging should not
+    change the behavior of the page.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,
@@ -337,9 +650,24 @@ Project-specific rules:
   a real browser environment via Puppeteer. Use these for scriptlet and redirect
   behavior testing.
 
-- **Vitest tests** (`tests/api/`, root `*.spec.js`/`*.spec.ts`): test files
-  are named `*.spec.js` or `*.spec.ts`. Use these for API-level, converter,
-  and validator testing. Environment is jsdom.
+- **Vitest tests** (`tests/api/`, `tests/helpers/`, `tests/scriptlets/`,
+  root `*.spec.js`/`*.spec.ts`): test files are named `*.spec.js` or
+  `*.spec.ts`. Use these for API-level, converter, validator and helper
+  testing, and for scriptlet behavior which needs no real browser, e.g. by
+  calling the scriptlet function directly. Environment is jsdom.
+
+- Tests of clicks which a label forwards to its control MUST make the label
+  forward them as untrusted, e.g. with `forwardUntrustedLabelClicks()` in
+  `tests/scriptlets/trusted-click-element.test.js`. Some browsers forward
+  them as untrusted, e.g. Firefox, but others as trusted, e.g. the Chrome
+  version which Puppeteer runs the tests in, where the spoofing of forwarded
+  clicks would not be tested otherwise.
+
+- Tests which install the click hook of `trusted-click-element` again, e.g.
+  after deleting it between tests, MUST call `allowSpoofedClicksReset()` from
+  `tests/helpers.js`, as the property which stores the shared spoofed clicks
+  is not configurable outside of tests, so the page cannot replace it. It is
+  tested without the wrapper in `tests/helpers/spoofed-clicks-property.spec.ts`.
 
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.

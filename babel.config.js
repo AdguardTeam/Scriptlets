@@ -19,7 +19,7 @@ module.exports = (api) => {
                         'not dead',
                         'chrome >= 55',
                         'firefox >= 52',
-                        'edge >= 15',
+                        'edge >= 80',
                         'opera >= 42',
                         'safari >= 13',
                     ],
