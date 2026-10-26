@@ -129,22 +129,15 @@ export const toRegExp = (rawInput?: RawStrPattern | null): RegExp => {
 /**
  * Checks whether the input string can be converted to regexp
  *
+ * Uses `toRegExp()` itself, so that the check and the conversion cannot disagree
+ * on whether a value is a regexp pattern, a pattern with flags, or a literal.
+ *
  * @param input literal string or regexp pattern
  * @returns if input can be converted to regexp
  */
 export const isValidStrPattern = (input: RawStrPattern): boolean => {
-    const FORWARD_SLASH = '/';
-    let str = escapeRegExp(input);
-    const closingSlashIndex = input.lastIndexOf(FORWARD_SLASH);
-    // Pattern can be followed by flags, e.g. '/pattern/i',
-    // so only the part between the delimiters should be validated.
-    if (input[0] === FORWARD_SLASH && closingSlashIndex > 0) {
-        str = input.slice(1, closingSlashIndex);
-    }
-
     try {
-        // eslint-disable-next-line no-new
-        new RegExp(str);
+        toRegExp(input);
         return true;
     } catch (e) {
         return false;

@@ -127,8 +127,14 @@ describe('Test string utils', () => {
             '/[a-z]{1,9}/',
             '/no_match-\\d+/',
             '/ABORT-ON-STACK-TRACE/i',
-            // a leading slash alone does not make a pattern with flags
+            // a leading slash alone does not make a pattern with flags,
+            // and the text after the last slash is not a valid flag set,
+            // so such values are literals escaped by toRegExp()
             '/path/to/file',
+            '/c++/lib.js',
+            '/(ads/banner.js',
+            '/test\\/g',
+            '/foo(/bar',
         ];
         test.each(validPatterns)('"%s" is valid', (pattern) => {
             expect(isValidStrPattern(pattern)).toBe(true);
