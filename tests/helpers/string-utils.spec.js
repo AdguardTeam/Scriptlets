@@ -92,6 +92,18 @@ describe('Test string utils', () => {
                 expected: /\/test\\\/g/,
             },
             {
+                // the non-empty part after the last slash is not a valid flag set,
+                // so the value is matched as plain text
+                actual: '/foo/z',
+                expected: /\/foo\/z/,
+            },
+            {
+                // the value starts and ends with a slash, so it is a regular expression,
+                // even though the part after the last slash is empty
+                actual: '/foo/bar/',
+                expected: /foo\/bar/,
+            },
+            {
                 actual: '',
                 expected: defaultRegexp,
             },

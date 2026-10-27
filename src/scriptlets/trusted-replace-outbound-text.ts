@@ -2,7 +2,7 @@ import {
     hit,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
+    isValidStrPattern,
     getPropertyInChain,
     getMethodOwner,
     getWildcardPropertyInChain,
@@ -137,7 +137,7 @@ export function trustedReplaceOutboundText(
     // `matchStackTrace()` throws for `stack` which is an invalid regular expression, and so does `toRegExp()`
     // for such `textToReplace`, which would replace the result of each call, so such rule is not applied,
     // which is logged once
-    if (stack && !isValidStackPattern(stack)) {
+    if (stack && !isValidStrPattern(stack)) {
         logMessage(source, `Invalid stack: ${stack}`);
         return;
     }
@@ -338,7 +338,7 @@ trustedReplaceOutboundText.injections = [
     hit,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
+    isValidStrPattern,
     getPropertyInChain,
     getMethodOwner,
     getWildcardPropertyInChain,

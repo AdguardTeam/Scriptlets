@@ -24,7 +24,6 @@ import {
     isPruningNeeded,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
     resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,
@@ -216,7 +215,7 @@ export function jsonPruneFetchResponse(
 
     // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
     // which is logged once, instead of on each request
-    if (stack && !isLoggingMode && !isValidStackPattern(stack)) {
+    if (stack && !isLoggingMode && !isValidStrPattern(stack)) {
         logMessage(source, `Invalid stack: ${stack}`);
         return;
     }
@@ -358,7 +357,6 @@ jsonPruneFetchResponse.injections = [
     isPruningNeeded,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
     resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,
