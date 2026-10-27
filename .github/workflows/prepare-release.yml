@@ -14,10 +14,11 @@ on:
         required: true
         type: string
 
-# `contents: write` — update-wiki commits/pushes the wiki to the release branch
-# `id-token: write` — Octopass OIDC (the create-pr action inside the shared
-#   workflow and protected-push in the update-wiki job both exchange the
-#   id-token for a short-lived App installation token)
+# These workflow-level scopes are inherited only by the reusable
+# `create-release-pr` job: `contents: write` lets it create the release branch
+# and PR, and `id-token: write` lets the create-pr action inside it exchange
+# the OIDC token for a short-lived App installation token. The `update-wiki`
+# job declares its own scopes below.
 permissions:
   contents: write
   id-token: write
@@ -50,21 +51,25 @@ jobs:
           fetch-depth: 0
 
       # Build the wiki but do NOT block the release on failure: the job stays
-      # green (continue-on-error). We still capture the exit code and a log
-      # excerpt so the step below can notify the release PR with the error.
+      # green (continue-on-error). The build log is captured so the step below
+      # can notify the release PR with the error excerpt.
       - name: Build wiki
         id: build-wiki
         continue-on-error: true
+        timeout-minutes: 30
         shell: bash
         run: |
           set +e
+          # BuildKit writes its progress and the final error to stderr, so
+          # merge stderr into the pipe before tee; PIPESTATUS[0] stays the
+          # exit status of docker itself.
           DOCKER_BUILDKIT=1 docker build --progress plain \
-            --target wiki-output --output ./wiki-out . | tee /tmp/wiki-build.log
+            --target wiki-output --output ./wiki-out . 2>&1 \
+            | tee "$RUNNER_TEMP/wiki-build.log"
           exit_code=${PIPESTATUS[0]}
           set -e
-          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
           if [ "${exit_code}" -ne 0 ]; then
-            tail -n 80 /tmp/wiki-build.log > /tmp/wiki-build-error.txt
+            tail -n 80 "$RUNNER_TEMP/wiki-build.log" > "$RUNNER_TEMP/wiki-build-error.txt"
           fi
           exit "${exit_code}"
 
@@ -103,9 +108,12 @@ jobs:
       # comment on the release PR with the captured error so a maintainer can
       # fix it (e.g. commit the needed wiki changes manually).
       - name: Comment on release PR about wiki build failure
-        if: steps.build-wiki.outcome == 'failure'
+        if: >-
+          steps.build-wiki.outcome == 'failure' ||
+          steps.build-wiki.outcome == 'cancelled'
         # Best-effort notification: update-wiki must stay green even if the
-        # comment cannot be posted (e.g. transient API error).
+        # comment cannot be posted (e.g. transient API error). Such an error is
+        # still surfaced on the run page, see the script below.
         continue-on-error: true
         uses: actions/github-script@v8
         env:
@@ -113,61 +121,127 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const path = require('path');
 
             const releaseBranch = process.env.RELEASE_BRANCH;
+            const marker = '<!-- ext-scriptlets:wiki-build-failure -->';
+            // Keep the comment well below GitHub's 65,536-character limit.
+            const maxExcerptLength = 60000;
+            const runUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // The job stays green, so a failure that cannot be reported on the
+            // PR must at least be visible on the run page.
+            const reportFailure = async (message) => {
+              core.error(message);
+              await core.summary
+                .addHeading('Wiki build failure notification failed', 2)
+                .addRaw(`${message}\n\nFull log: ${runUrl}\n`)
+                .write();
+            };
+
+            const errorMessage = (err) => String(err && err.message ? err.message : err);
 
             // The release PR is opened by the shared create-release-pr workflow
             // on the release-bump/<tag> branch; resolve its number by head ref.
-            const { data: pulls } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              head: `${context.repo.owner}:${releaseBranch}`,
-            });
-
-            if (pulls.length === 0) {
-              core.warning(
-                `No open release PR found for branch ${releaseBranch}; ` +
-                  'cannot notify about the wiki build failure.',
+            let number;
+            try {
+              const { data: pulls } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                head: `${context.repo.owner}:${releaseBranch}`,
+              });
+              if (pulls.length === 0) {
+                await reportFailure(
+                  `No open release PR found for branch ${releaseBranch}; ` +
+                    'the wiki build failure is not reported on a PR.',
+                );
+                return;
+              }
+              number = pulls[0].number;
+            } catch (err) {
+              await reportFailure(
+                `Could not look up the release PR for branch ${releaseBranch}: ` +
+                  errorMessage(err),
               );
               return;
             }
 
             let errorText = '(no error output captured)';
             try {
-              const captured = fs.readFileSync('/tmp/wiki-build-error.txt', 'utf8').trim();
+              const errorFile = path.join(process.env.RUNNER_TEMP, 'wiki-build-error.txt');
+              const captured = fs.readFileSync(errorFile, 'utf8').trim();
               if (captured) {
-                errorText = captured;
+                errorText =
+                  captured.length > maxExcerptLength
+                    ? `…(truncated)\n${captured.slice(-maxExcerptLength)}`
+                    : captured;
               }
             } catch (err) {
-              core.warning(`Could not read wiki build error log: ${err.message}`);
+              core.warning(`Could not read wiki build error log: ${errorMessage(err)}`);
             }
 
-            const runUrl =
-              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const { number } = pulls[0];
-
             const body = [
+              marker,
               `⚠️ **Wiki regeneration failed** for the release of \`${releaseBranch}\`.`,
               '',
-              'The `update-wiki` job stays green (it is not a blocking stage), so this comment is the only notification. The regenerated `wiki/` was **not** committed to this PR. Please fix the underlying issue (e.g. commit the needed wiki changes manually) so the docs stay in sync with the released code.',
+              'The `update-wiki` job stays green (it is not a blocking stage), ' +
+                'so this comment is the only notification. The regenerated ' +
+                '`wiki/` was **not** committed to this PR. Please fix the ' +
+                'underlying issue (e.g. commit the needed wiki changes ' +
+                'manually) so the docs stay in sync with the released code.',
               '',
               `Full log: ${runUrl}`,
               '',
               '<details><summary>Build error (last lines)</summary>',
               '',
-              '```text',
+              '````text',
               errorText,
-              '```',
+              '````',
               '',
               '</details>',
             ].join('\n');
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: number,
-              body,
-            });
+            // A re-run must update the previous notification instead of posting
+            // a duplicate comment on the human-reviewed release PR.
+            let previous;
+            try {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: number,
+                per_page: 100,
+              });
+              previous = comments.find((comment) => (comment.body || '').includes(marker));
+            } catch (err) {
+              core.warning(
+                `Could not list the comments of release PR #${number}: ` +
+                  `${errorMessage(err)}; posting a new comment.`,
+              );
+            }
 
-            core.info(`Commented about the wiki build failure on release PR #${number}`);
+            try {
+              if (previous) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: previous.id,
+                  body,
+                });
+                core.info(`Updated the wiki build failure comment on release PR #${number}`);
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: number,
+                  body,
+                });
+                core.info(`Commented about the wiki build failure on release PR #${number}`);
+              }
+            } catch (err) {
+              await reportFailure(
+                `Could not post the wiki build failure comment on release PR #${number}: ` +
+                  errorMessage(err),
+              );
+            }

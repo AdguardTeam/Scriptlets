@@ -19,7 +19,9 @@
    release. (Only the wiki build is best-effort — the `Build wiki` step runs
    with `continue-on-error: true` because the shared remote BuildKit instance
    can be transiently unreachable, so a build failure leaves the release PR fully
-   mergeable without the wiki; the wiki is retried next release. The commit/push
+   mergeable without the wiki; the wiki is retried next release. Because the
+   job stays green, a failed build also posts a warning comment with the
+   captured build log on the release PR. The commit/push
    step, however, only runs when the build succeeded, so wiki changes that WERE
    built always reach the PR — and a push failure surfaces as a real red job
    rather than being silently swallowed. Either way it is not a required check
