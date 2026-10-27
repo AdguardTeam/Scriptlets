@@ -62,7 +62,7 @@ AdGuard's Scriptlets and Redirect resources library which provides extended capa
 
 ## Scriptlets
 
-Scriptlet is a JavaScript function which can be used in a declarative manner in AdGuard filtering rules.
+Scriptlets are JavaScript functions which can be used in a declarative manner in AdGuard filtering rules.
 
 AdGuard supports a lot of different scriptlets.
 Please note, that in order to achieve cross-blocker compatibility,
