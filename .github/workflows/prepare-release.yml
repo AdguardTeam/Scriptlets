@@ -51,8 +51,8 @@ jobs:
           fetch-depth: 0
 
       # Build the wiki but do NOT block the release on failure: the job stays
-      # green (continue-on-error). The build log is captured so the step below
-      # can notify the release PR with the error excerpt.
+      # green (continue-on-error). The full build log is captured so the step
+      # below can quote its tail, even when this step times out.
       - name: Build wiki
         id: build-wiki
         continue-on-error: true
@@ -62,15 +62,12 @@ jobs:
           set +e
           # BuildKit writes its progress and the final error to stderr, so
           # merge stderr into the pipe before tee; PIPESTATUS[0] stays the
-          # exit status of docker itself.
+          # exit status of docker itself. tee keeps filling the log until the
+          # step is killed, so the log is the only excerpt source needed.
           DOCKER_BUILDKIT=1 docker build --progress plain \
             --target wiki-output --output ./wiki-out . 2>&1 \
             | tee "$RUNNER_TEMP/wiki-build.log"
           exit_code=${PIPESTATUS[0]}
-          set -e
-          if [ "${exit_code}" -ne 0 ]; then
-            tail -n 80 "$RUNNER_TEMP/wiki-build.log" > "$RUNNER_TEMP/wiki-build-error.txt"
-          fi
           exit "${exit_code}"
 
       # Only append when the wiki was actually built; a transient build failure
@@ -105,12 +102,13 @@ jobs:
       # The update-wiki job intentionally stays green when the wiki build fails
       # (see build-wiki's continue-on-error), so a silent failure would leave
       # the release PR without regenerated docs and nobody would notice. Post a
-      # comment on the release PR with the captured error so a maintainer can
-      # fix it (e.g. commit the needed wiki changes manually).
+      # comment on the release PR with the captured error. `always()` is needed
+      # for the `cancelled` outcome, which the implicit `success()` would skip.
       - name: Comment on release PR about wiki build failure
         if: >-
-          steps.build-wiki.outcome == 'failure' ||
-          steps.build-wiki.outcome == 'cancelled'
+          always() &&
+          (steps.build-wiki.outcome == 'failure' ||
+          steps.build-wiki.outcome == 'cancelled')
         # Best-effort notification: update-wiki must stay green even if the
         # comment cannot be posted (e.g. transient API error). Such an error is
         # still surfaced on the run page, see the script below.
@@ -170,16 +168,19 @@ jobs:
 
             let errorText = '(no error output captured)';
             try {
-              const errorFile = path.join(process.env.RUNNER_TEMP, 'wiki-build-error.txt');
-              const captured = fs.readFileSync(errorFile, 'utf8').trim();
-              if (captured) {
+              const logFile = path.join(process.env.RUNNER_TEMP, 'wiki-build.log');
+              const log = fs.readFileSync(logFile, 'utf8').trim();
+              if (log) {
+                // The step timeout can kill the build before an error file is
+                // written, so take the tail of the log tee has been filling.
+                const tail = log.split('\n').slice(-80).join('\n');
                 errorText =
-                  captured.length > maxExcerptLength
-                    ? `…(truncated)\n${captured.slice(-maxExcerptLength)}`
-                    : captured;
+                  tail.length > maxExcerptLength
+                    ? `…(truncated)\n${tail.slice(-maxExcerptLength)}`
+                    : tail;
               }
             } catch (err) {
-              core.warning(`Could not read wiki build error log: ${errorMessage(err)}`);
+              core.warning(`Could not read wiki build log: ${errorMessage(err)}`);
             }
 
             const body = [
@@ -189,8 +190,9 @@ jobs:
               'The `update-wiki` job stays green (it is not a blocking stage), ' +
                 'so this comment is the only notification. The regenerated ' +
                 '`wiki/` was **not** committed to this PR. Please fix the ' +
-                'underlying issue (e.g. commit the needed wiki changes ' +
-                'manually) so the docs stay in sync with the released code.',
+                'underlying issue, then regenerate the wiki locally with ' +
+                '`pnpm wiki:build-docs` and commit the generated `wiki/` ' +
+                'output so the docs stay in sync with the released code.',
               '',
               `Full log: ${runUrl}`,
               '',
@@ -243,5 +245,70 @@ jobs:
               await reportFailure(
                 `Could not post the wiki build failure comment on release PR #${number}: ` +
                   errorMessage(err),
+              );
+            }
+
+      # A later successful run must not leave the stale failure comment on the
+      # release PR: it would contradict the committed wiki/ exactly when a
+      # maintainer reviews and merges the PR. Remove it (best-effort).
+      - name: Remove stale wiki build failure comment
+        if: steps.build-wiki.outcome == 'success'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        env:
+          RELEASE_BRANCH: release-bump/${{ inputs.tag }}
+        with:
+          script: |
+            const marker = '<!-- ext-scriptlets:wiki-build-failure -->';
+            const releaseBranch = process.env.RELEASE_BRANCH;
+            const { owner, repo } = context.repo;
+
+            let number;
+            try {
+              const { data: pulls } = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                head: `${owner}:${releaseBranch}`,
+              });
+              if (pulls.length === 0) {
+                core.info(
+                  `No open release PR found for branch ${releaseBranch}; nothing to clean up.`,
+                );
+                return;
+              }
+              number = pulls[0].number;
+            } catch (err) {
+              core.warning(
+                `Could not look up the release PR for branch ${releaseBranch}: ` +
+                  `${err && err.message ? err.message : err}`,
+              );
+              return;
+            }
+
+            try {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: number,
+                per_page: 100,
+              });
+              const previous = comments.find((comment) => (comment.body || '').includes(marker));
+              if (!previous) {
+                core.info(`No stale wiki build failure comment on release PR #${number}.`);
+                return;
+              }
+              await github.rest.issues.deleteComment({
+                owner,
+                repo,
+                comment_id: previous.id,
+              });
+              core.info(
+                `Removed the stale wiki build failure comment from release PR #${number}.`,
+              );
+            } catch (err) {
+              core.warning(
+                `Could not remove the stale wiki build failure comment from release PR ` +
+                  `#${number}: ${err && err.message ? err.message : err}`,
               );
             }
