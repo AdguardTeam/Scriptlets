@@ -1,5 +1,12 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    useFirefoxStackTraceFormat,
+    useThrowingErrorConstructor,
+    useUnreadableStackTrace,
+    saveStorageMethods,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-replace-outbound-text';
@@ -8,6 +15,9 @@ const nativeConsole = console.log;
 const nativeAtob = atob;
 const nativeJSONStringify = JSON.stringify;
 const nativeArrayJoin = Array.prototype.join;
+
+// Scriptlets replace methods of storages in Storage.prototype
+const restoreStorage = saveStorageMethods();
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -21,9 +31,27 @@ const afterEach = () => {
     window.atob = nativeAtob;
     window.JSON.stringify = nativeJSONStringify;
     window.Array.prototype.join = nativeArrayJoin;
+    restoreStorage();
 };
 
 module(name, { beforeEach, afterEach });
+
+/**
+ * Calls the function while the stack trace cannot be created or read.
+ *
+ * @param {Function} func function to call
+ * @param {Function} [useStackTraceFailure] function which makes creating or reading the stack trace throw
+ * and returns a function which restores it
+ * @returns {*} result of the function
+ */
+const callWithStackTraceFailure = (func, useStackTraceFailure = useUnreadableStackTrace) => {
+    const restoreStackTrace = useStackTraceFailure();
+    try {
+        return func();
+    } finally {
+        restoreStackTrace();
+    }
+};
 
 test('logs text if invoked with only first arg - atob', (assert) => {
     assert.expect(2);
@@ -86,6 +114,8 @@ test('replace text - log original and modified content - atob', (assert) => {
 });
 
 test('text not matched - log original content and information about not modified content - atob', (assert) => {
+    // Both log assertions should run, as they are conditional
+    assert.expect(4);
     console.log = (...args) => {
         if (args.length === 1 && args[0].includes('Original text content:')) {
             assert.ok(args[0].includes('Text not matched.'), 'should log original text in console');
@@ -96,7 +126,7 @@ test('text not matched - log original content and information about not modified
         nativeConsole(...args);
     };
 
-    runScriptlet(name, ['atob', 'NOT_MATCH', '', '', 'true']);
+    runScriptlet(name, ['atob', 'NOT_MATCH', '', '', '', 'true']);
 
     const text = btoa('Text not matched.');
     const result = atob(text);
@@ -133,6 +163,120 @@ test('replace text - JSON.stringify - match stack', (assert) => {
     testStackFunction();
 });
 
+test('replace text - JSON.stringify - match stack in Firefox stack trace format', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const testStackFunction = () => JSON.stringify({ loadAds: true, content: 'bar' });
+
+    // Stack trace of Firefox and Safari has no error message line,
+    // so the frame of the function which calls the method should not be removed as the scriptlet's own one
+    const restoreStackTraceFormat = useFirefoxStackTraceFormat();
+    let result;
+    try {
+        result = testStackFunction();
+    } finally {
+        restoreStackTraceFormat();
+    }
+
+    assert.strictEqual(result, '{"loadAds":false,"content":"bar"}', 'Content modified');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('replace text - JSON.stringify - match stack after a call with NOT matching stack', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const otherFunction = () => JSON.stringify({ loadAds: true });
+    const testStackFunction = () => JSON.stringify({ loadAds: true });
+
+    assert.strictEqual(otherFunction(), '{"loadAds":true}', 'Content not modified for NOT matching stack');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire for NOT matching stack');
+    assert.strictEqual(testStackFunction(), '{"loadAds":false}', 'Content modified for matching stack after it');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for matching stack');
+});
+
+test('replace text - JSON.stringify - after a call which throws', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false']);
+    const circular = {};
+    circular.self = circular;
+
+    assert.throws(() => JSON.stringify(circular), TypeError, 'Error of the method thrown');
+    assert.strictEqual(
+        JSON.stringify({ loadAds: true }),
+        '{"loadAds":false}',
+        'Content modified for the next call',
+    );
+});
+
+test('replace text - JSON.stringify - match stack - stack trace cannot be read', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const testStackFunction = () => JSON.stringify({ loadAds: true });
+
+    const result = callWithStackTraceFailure(testStackFunction);
+
+    assert.strictEqual(result, '{"loadAds":true}', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.strictEqual(testStackFunction(), '{"loadAds":false}', 'Content modified for the next call');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the next call');
+});
+
+test('replace text - JSON.stringify - match stack - Error replaced by the page', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false', '', 'testStackFunction']);
+    const testStackFunction = () => JSON.stringify({ loadAds: true });
+
+    const result = callWithStackTraceFailure(testStackFunction, useThrowingErrorConstructor);
+
+    assert.strictEqual(result, '{"loadAds":true}', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.strictEqual(testStackFunction(), '{"loadAds":false}', 'Content modified for the next call');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the next call');
+});
+
+test('replace text - invalid stack', (assert) => {
+    // Not JSON.stringify, as QUnit uses it, so an error thrown by it would stop the test run
+    window.getText = () => 'loadAds:true';
+    runScriptlet(name, ['getText', 'loadAds:true', 'loadAds:false', '', '/(/']);
+
+    const result = window.getText();
+
+    assert.strictEqual(result, 'loadAds:true', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+
+    clearGlobalProps('getText');
+});
+
+test('toString() of the intercepted method returns the original value', (assert) => {
+    const nativeFunction = function getText() {
+        return 'loadAds:true';
+    };
+    window.getText = nativeFunction;
+    runScriptlet(name, ['getText', 'loadAds:true', 'loadAds:false']);
+
+    assert.notStrictEqual(window.getText, nativeFunction, 'Method intercepted');
+    assert.strictEqual(window.getText.toString(), nativeFunction.toString(), 'toString() returns the original value');
+
+    clearGlobalProps('getText');
+});
+
+test('replace text - invalid textToReplace', (assert) => {
+    // Not JSON.stringify, as QUnit uses it, so an error thrown by it would stop the test run
+    window.getText = () => 'loadAds:true';
+    runScriptlet(name, ['getText', '/(/', 'loadAds:false']);
+
+    const result = window.getText();
+
+    assert.strictEqual(result, 'loadAds:true', 'Result of the call returned, content not modified');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+
+    clearGlobalProps('getText');
+});
+
+test('replace text - JSON.stringify - Error replaced by the page - without stack', (assert) => {
+    runScriptlet(name, ['JSON.stringify', '"loadAds":true', '"loadAds":false']);
+
+    const result = callWithStackTraceFailure(() => JSON.stringify({ loadAds: true }), useThrowingErrorConstructor);
+
+    assert.strictEqual(result, '{"loadAds":false}', 'Content modified');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
 test('test stack - JSON.stringify - NOT match stack', (assert) => {
     runScriptlet(name, ['JSON.stringify', 'true', 'false', '', 'notMatchStack']);
     const testFunction = () => {
@@ -142,7 +286,7 @@ test('test stack - JSON.stringify - NOT match stack', (assert) => {
             '{"foo":true,"bar":false}',
             'Content not modified',
         );
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
     };
     testFunction();
 });
@@ -243,4 +387,35 @@ test('log - Array.prototype.join, base64', (assert) => {
     assert.deepEqual(result, expectedTextInBase64, 'Encoded text content is intact');
     assert.deepEqual(decodedResult, expectedText, 'Decoded text content is intact');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Storage method: replaces the text returned by localStorage.getItem', (assert) => {
+    runScriptlet(name, ['localStorage.getItem', '"ads":true', '"ads":false']);
+    localStorage.setItem('config', '{"ads":true}');
+    sessionStorage.setItem('config', '{"ads":true}');
+
+    assert.strictEqual(localStorage.getItem('config'), '{"ads":false}', 'Text replaced');
+    assert.strictEqual(sessionStorage.getItem('config'), '{"ads":true}', 'Text of sessionStorage not replaced');
+    assert.strictEqual(localStorage.getItem('getItem'), null, 'Item named after the method was not stored');
+    assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'getItem'), 'Storage has no own method');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Storage method: replaces the text returned by an own localStorage.getItem of the page', (assert) => {
+    // Page may assign its own method to the storage in Chrome before the scriptlet runs,
+    // while in Firefox it stores an item instead
+    const nativeGetItem = Storage.prototype.getItem;
+    localStorage.getItem = function getItem(key) {
+        return nativeGetItem.call(this, key);
+    };
+
+    try {
+        runScriptlet(name, ['localStorage.getItem', '"ads":true', '"ads":false']);
+        localStorage.setItem('config', '{"ads":true}');
+
+        assert.strictEqual(localStorage.getItem('config'), '{"ads":false}', 'Text replaced');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    } finally {
+        delete localStorage.getItem;
+    }
 });

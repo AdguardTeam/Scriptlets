@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, no-console, no-eval */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    saveStorageMethods,
+    useThrowingErrorConstructor,
+    getSyncLogs,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'trusted-replace-argument';
@@ -15,6 +21,9 @@ const nativeObjectDefineProperty = window.Object.defineProperty;
 const nativeStringReplace = String.prototype.replace;
 const nativeSetAttribute = window.Element.prototype.setAttribute;
 const nativeJSONStringify = window.JSON.stringify;
+
+// Scriptlets replace methods of storages in Storage.prototype
+const restoreStorage = saveStorageMethods();
 
 const beforeEach = () => {
     window.__debug = () => {
@@ -35,6 +44,7 @@ const afterEach = () => {
     window.String.prototype.replace = nativeStringReplace;
     window.Element.prototype.setAttribute = nativeSetAttribute;
     window.JSON.stringify = nativeJSONStringify;
+    restoreStorage();
 };
 
 module(name, { beforeEach, afterEach });
@@ -339,4 +349,216 @@ test('Non-string constructor argument stays intact when "replace:" pattern does 
 
     assert.deepEqual(result, [1, 2, 3], 'Constructor arguments should stay intact');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Storage method: replaces the argument of localStorage.setItem', (assert) => {
+    runScriptlet(name, ['localStorage.setItem', '1', 'replace:/true/false/', 'ads']);
+    localStorage.setItem('config', '{"ads":true}');
+    sessionStorage.setItem('config', '{"ads":true}');
+
+    assert.strictEqual(localStorage.getItem('config'), '{"ads":false}', 'Argument replaced');
+    assert.strictEqual(sessionStorage.getItem('config'), '{"ads":true}', 'Argument of sessionStorage not replaced');
+    assert.strictEqual(localStorage.getItem('setItem'), null, 'Item named after the method was not stored');
+    assert.notOk(Object.prototype.hasOwnProperty.call(localStorage, 'setItem'), 'Storage has no own method');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('Storage method: does not call the method on another storage again if it throws', (assert) => {
+    runScriptlet(name, ['localStorage.setItem', '1', 'replace:/true/false/', 'ads']);
+
+    let keyConversions = 0;
+    const key = {
+        toString() {
+            keyConversions += 1;
+            if (keyConversions === 1) {
+                throw new Error('Key conversion error');
+            }
+            return 'config';
+        },
+    };
+
+    assert.throws(() => sessionStorage.setItem(key, '{"ads":true}'), /Key conversion error/, 'Error thrown');
+    assert.strictEqual(keyConversions, 1, 'Method called once');
+    assert.strictEqual(sessionStorage.getItem('config'), null, 'Item not stored');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+});
+
+test('calls the intercepted method once if it throws', (assert) => {
+    let calls = 0;
+    window.throwingFunc = (arg) => {
+        calls += 1;
+        throw new Error(`Page error: ${arg}`);
+    };
+    runScriptlet(name, ['throwingFunc', '0', 'replaced']);
+
+    assert.throws(() => window.throwingFunc('original'), /Page error: replaced/, 'Error of the method thrown');
+    assert.strictEqual(calls, 1, 'Method called once');
+
+    clearGlobalProps('throwingFunc');
+});
+
+test('calls the intercepted constructor once if it throws', (assert) => {
+    let calls = 0;
+    window.ThrowingConstructor = function ThrowingConstructor() {
+        calls += 1;
+        throw new Error('Constructor error');
+    };
+    runScriptlet(name, ['ThrowingConstructor', '0', 'replaced']);
+
+    assert.throws(() => new window.ThrowingConstructor('original'), /Constructor error/, 'Error thrown');
+    assert.strictEqual(calls, 1, 'Constructor called once');
+
+    clearGlobalProps('ThrowingConstructor');
+});
+
+test('calls the intercepted method once with the original arguments if the replacement fails', (assert) => {
+    let calls = 0;
+    let receivedArgument;
+    window.receivingFunc = (arg) => {
+        calls += 1;
+        receivedArgument = arg;
+        return 'result';
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    // Argument cannot be converted to a string to be matched with the pattern
+    const throwingArgument = () => {};
+    throwingArgument.toString = () => {
+        throw new Error('Conversion error');
+    };
+
+    assert.strictEqual(window.receivingFunc(throwingArgument), 'result', 'Result of the method returned');
+    assert.strictEqual(calls, 1, 'Method called once');
+    // QUnit converts the values of `strictEqual()` to strings, which throws for this argument
+    assert.ok(receivedArgument === throwingArgument, 'Original argument passed');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+
+    clearGlobalProps('receivingFunc');
+});
+
+test('does not convert an error without a message to log it', (assert) => {
+    window.receivingFunc = () => 'result';
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    let toJSONCalls = 0;
+    const pageError = {
+        toJSON() {
+            toJSONCalls += 1;
+            return 'page error';
+        },
+    };
+    const throwingArgument = () => {};
+    throwingArgument.toString = () => {
+        throw pageError;
+    };
+
+    let result;
+    getSyncLogs(() => {
+        result = window.receivingFunc(throwingArgument);
+    });
+
+    assert.strictEqual(result, 'result', 'Result of the method returned');
+    assert.strictEqual(toJSONCalls, 0, 'Error not converted by its toJSON()');
+
+    clearGlobalProps('receivingFunc');
+});
+
+test('matches an argument by its string value if it cannot be stringified as JSON', (assert) => {
+    let receivedArgument;
+    window.receivingFunc = (arg) => {
+        receivedArgument = arg;
+        return 'result';
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    // Error which cannot be converted to a string
+    const pageError = Object.create(null);
+    const argument = {
+        toJSON() {
+            throw pageError;
+        },
+        toString() {
+            return 'pattern';
+        },
+    };
+
+    let result;
+    getSyncLogs(() => {
+        result = window.receivingFunc(argument);
+    });
+
+    assert.strictEqual(result, 'result', 'Result of the method returned');
+    assert.strictEqual(receivedArgument, 'replaced', 'Argument matched by its string value and replaced');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('receivingFunc');
+});
+
+test('calls the intercepted method with the original arguments if the replacement fails with null', (assert) => {
+    let calls = 0;
+    let receivedArgument;
+    window.receivingFunc = (arg) => {
+        calls += 1;
+        receivedArgument = arg;
+        return 'result';
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', 'pattern']);
+
+    // `null` has no message to read
+    const throwingArgument = () => {};
+    throwingArgument.toString = () => {
+        // eslint-disable-next-line no-throw-literal
+        throw null;
+    };
+
+    let result;
+    const logs = getSyncLogs(() => {
+        result = window.receivingFunc(throwingArgument);
+    });
+
+    assert.strictEqual(result, 'result', 'Result of the method returned');
+    assert.strictEqual(calls, 1, 'Method called once');
+    // QUnit converts the values of `strictEqual()` to strings, which throws for this argument
+    assert.ok(receivedArgument === throwingArgument, 'Original argument passed');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.ok(
+        logs.includes(`${name}: Unexpected error during argument replacement: null`),
+        'Error logged with its message',
+    );
+
+    clearGlobalProps('receivingFunc');
+});
+
+test('calls the intercepted method with the original arguments if Error replaced by the page throws null', (assert) => {
+    let calls = 0;
+    window.receivingFunc = (arg) => {
+        calls += 1;
+        return arg;
+    };
+    runScriptlet(name, ['receivingFunc', '0', 'replaced', '', 'testStackFunction']);
+    const testStackFunction = () => window.receivingFunc('original');
+
+    // Stack trace for `stack` cannot be created, and `null` has no message,
+    // so it is converted to a string without creating another error
+    let result;
+    const logs = getSyncLogs(() => {
+        const restoreError = useThrowingErrorConstructor(null);
+        try {
+            result = testStackFunction();
+        } finally {
+            restoreError();
+        }
+    });
+
+    assert.strictEqual(result, 'original', 'Method called with the original argument');
+    assert.strictEqual(calls, 1, 'Method called once');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.ok(
+        logs.includes(`${name}: Unexpected error during argument replacement: null`),
+        'Error logged with its message',
+    );
+    assert.strictEqual(testStackFunction(), 'replaced', 'Argument replaced for the next matching call');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+    clearGlobalProps('receivingFunc');
 });

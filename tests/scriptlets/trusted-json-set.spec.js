@@ -9,7 +9,13 @@ import {
 } from 'vitest';
 
 import { trustedJsonSet } from '../../src/scriptlets/trusted-json-set';
-import { clearGlobalProps } from '../helpers';
+import {
+    clearGlobalProps,
+    countCreatedErrors,
+    useFirefoxStackTraceFormat,
+    useThrowingErrorConstructor,
+    useUnreadableStackTrace,
+} from '../helpers';
 
 const nativeStringify = JSON.stringify;
 const nativeParse = JSON.parse;
@@ -189,5 +195,354 @@ describe('Test trusted-json-set time keywords are not frozen', () => {
 
         expect(firstResult.data.time).toBe(42);
         expect(secondResult.data.time).toBe(42);
+    });
+});
+
+// https://github.com/AdguardTeam/Scriptlets/issues/585
+describe('Test trusted-json-set with promise results', () => {
+    beforeEach(() => {
+        vi.useRealTimers();
+    });
+
+    afterEach(() => {
+        clearGlobalProps('getPayload');
+    });
+
+    test('keeps a thenable result which is not a promise synchronous', () => {
+        const then = vi.fn();
+        window.getPayload = () => ({ ads: { enabled: true }, then });
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const result = window.getPayload();
+
+        expect(result.ads.enabled).toBe(false);
+        expect(then).not.toHaveBeenCalled();
+    });
+
+    test('uses native "then" instead of the one replaced on the promise by the page', async () => {
+        const replacedThen = vi.fn();
+        let returnedPromise;
+        window.getPayload = () => {
+            returnedPromise = Promise.resolve({ ads: { enabled: true } });
+            returnedPromise.then = replacedThen;
+            return returnedPromise;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const promise = window.getPayload();
+
+        expect(promise).not.toBe(returnedPromise);
+        expect(replacedThen).not.toHaveBeenCalled();
+        expect(await promise).toEqual({ ads: { enabled: false } });
+    });
+
+    test('returns an object which only inherits from Promise.prototype unchanged', () => {
+        const fakePromise = Object.create(Promise.prototype);
+        window.getPayload = () => fakePromise;
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const result = window.getPayload();
+
+        expect(result).toBe(fakePromise);
+        expect(Object.keys(result)).toEqual([]);
+        expect(window.hit).toBeUndefined();
+    });
+
+    test('calls the intercepted method once if it throws', () => {
+        let shouldThrow = true;
+        const target = vi.fn(() => {
+            if (shouldThrow) {
+                throw new Error('page error');
+            }
+            return Promise.resolve({ ads: { enabled: true } });
+        });
+        window.getPayload = target;
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        expect(() => window.getPayload()).toThrow('page error');
+        expect(target).toHaveBeenCalledTimes(1);
+
+        shouldThrow = false;
+        // Matching should not be suspended after the error
+        return expect(window.getPayload()).resolves.toEqual({ ads: { enabled: false } });
+    });
+
+    test('keeps synchronous result of JSON.parse synchronous', () => {
+        trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false');
+
+        const result = JSON.parse('{"ads":{"enabled":true}}');
+
+        expect(result).toEqual({ ads: { enabled: false } });
+    });
+
+    test('returns the original promise and logs its value in logging-only mode', async () => {
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+        let returnedPromise;
+        window.getPayload = () => {
+            returnedPromise = Promise.resolve({ ads: { enabled: true } });
+            // e.g. a method which the page attaches to its promise
+            returnedPromise.json = () => 'json';
+            return returnedPromise;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload');
+
+        try {
+            const promise = window.getPayload();
+
+            expect(promise).toBe(returnedPromise);
+            expect(promise.json()).toBe('json');
+            expect(await promise).toEqual({ ads: { enabled: true } });
+            // Value is logged in the reaction which runs before the one of the caller
+            const logs = consoleLog.mock.calls.map((args) => String(args[0]));
+            expect(logs.some((log) => log.includes('Original content string of window.getPayload'))).toBe(true);
+            expect(logs.some((log) => log.includes('"enabled": true'))).toBe(true);
+        } finally {
+            consoleLog.mockRestore();
+        }
+    });
+
+    test('passes rejection of the original promise through in logging-only mode', async () => {
+        let returnedPromise;
+        window.getPayload = () => {
+            returnedPromise = Promise.reject(new Error('network error'));
+            return returnedPromise;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload');
+
+        const promise = window.getPayload();
+
+        expect(promise).toBe(returnedPromise);
+        // Promise of the logging handler is not rejected unhandled, Vitest would fail the run otherwise
+        await expect(promise).rejects.toThrow('network error');
+    });
+});
+
+describe('Test trusted-json-set with a value which cannot be processed', () => {
+    afterEach(() => {
+        clearGlobalProps('getPayload');
+    });
+
+    test('returns the string unchanged without processing it again as line-delimited JSON', () => {
+        const PAYLOAD = '{"ads":{"enabled":true}}';
+        window.getPayload = () => PAYLOAD;
+        // Saved by the scriptlet when it runs, so the modified value cannot be serialized
+        JSON.stringify = () => {
+            throw new Error('Value cannot be serialized');
+        };
+        const parse = vi.fn(nativeParse);
+        JSON.parse = parse;
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+        let result;
+        try {
+            result = window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe(PAYLOAD);
+        expect(parse.mock.calls.filter((args) => args[0] === PAYLOAD)).toHaveLength(1);
+    });
+
+    test('logs a value without a message thrown while it is modified', () => {
+        window.getPayload = () => '{"ads":{"enabled":true}}';
+        // Saved by the scriptlet when it runs, e.g. as `toJSON()` of the page throws `null`
+        JSON.stringify = () => {
+            // eslint-disable-next-line no-throw-literal
+            throw null;
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        try {
+            window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(logs).toContain('trusted-json-set: Error during setting the result value: null');
+    });
+
+    test('logs a value without a message thrown while it is logged', () => {
+        window.getPayload = () => ({
+            ads: { enabled: true },
+            toJSON: () => {
+                // eslint-disable-next-line no-throw-literal
+                throw null;
+            },
+        });
+        trustedJsonSet(sourceParams, 'window.getPayload');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        try {
+            window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(logs).toContain('trusted-json-set: Error during setting the result value: null');
+    });
+
+    test('modifies an object with verbose if its toJSON() throws while it is logged', () => {
+        window.getPayload = () => ({
+            ads: { enabled: true },
+            toJSON: () => {
+                throw new Error('Value cannot be serialized');
+            },
+        });
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false', '', 'result', '', '', 'true');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        let result;
+        try {
+            result = window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result.ads).toEqual({ enabled: false });
+        expect(logs.some((log) => log.includes('Content cannot be serialized: Value cannot be serialized'))).toBe(true);
+    });
+
+    test('modifies a string with verbose if its content cannot be serialized to be logged', () => {
+        window.getPayload = () => '{"ads":{"enabled":true}}';
+        // Saved by the scriptlet when it runs, so the content cannot be serialized only to be logged,
+        // e.g. as it is too deeply nested for `JSON.stringify()` with indentation
+        JSON.stringify = function stringify(...args) {
+            if (args[2] !== undefined) {
+                throw new Error('Value cannot be serialized');
+            }
+            return Reflect.apply(nativeStringify, this, args);
+        };
+        trustedJsonSet(sourceParams, 'window.getPayload', 'ads.enabled', 'false', '', 'result', '', '', 'true');
+
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((message) => {
+            logs.push(String(message));
+        });
+        let result;
+        try {
+            result = window.getPayload();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe('{"ads":{"enabled":false}}');
+        expect(logs.some((log) => log.includes('Content cannot be serialized: Value cannot be serialized'))).toBe(true);
+    });
+});
+
+describe('Test trusted-json-set with a stack trace which is not a string', () => {
+    const nativePrepareStackTrace = Error.prepareStackTrace;
+
+    afterEach(() => {
+        Error.prepareStackTrace = nativePrepareStackTrace;
+    });
+
+    test('modifies the value without stack', () => {
+        trustedJsonSet(sourceParams, 'JSON.parse', 'ads.enabled', 'false');
+        // e.g. a library of the page which gets call sites of a stack trace
+        Error.prepareStackTrace = (error, callSites) => callSites;
+
+        const result = JSON.parse('{"ads":{"enabled":true}}');
+
+        expect(result).toEqual({ ads: { enabled: false } });
+    });
+
+    describe.each([
+        // e.g. by `Error.prepareStackTrace` of the page which throws
+        { failure: 'cannot be read', useStackTraceFailure: useUnreadableStackTrace },
+        // as the page has replaced `Error` with a constructor which throws
+        { failure: 'cannot be created', useStackTraceFailure: useThrowingErrorConstructor },
+    ])('which $failure', ({ useStackTraceFailure }) => {
+        // Rules with stack are not applied, as it cannot be matched
+        test.each([
+            { propsPath: 'ads.enabled', stack: '', isModified: true },
+            { propsPath: 'ads.enabled', stack: 'anyFunction', isModified: false },
+            { propsPath: '$.ads.enabled', stack: '', isModified: true },
+            { propsPath: '$.ads.enabled', stack: 'anyFunction', isModified: false },
+        ])('path $propsPath with stack $stack modifies the value: $isModified', ({ propsPath, stack, isModified }) => {
+            trustedJsonSet(sourceParams, 'JSON.parse', propsPath, 'false', '', 'result', stack);
+
+            const restoreStackTrace = useStackTraceFailure();
+            let result;
+            try {
+                result = JSON.parse('{"ads":{"enabled":true}}');
+            } finally {
+                restoreStackTrace();
+            }
+
+            expect(result).toEqual({ ads: { enabled: !isModified } });
+        });
+    });
+});
+
+describe('Test trusted-json-set stack trace reads', () => {
+    test.each([
+        { rule: 'without stack and logging', args: ['ads.enabled', 'false'], errorsCount: 0 },
+        { rule: 'without stack and logging — JSONPath', args: ['$.ads.enabled', 'false'], errorsCount: 0 },
+        { rule: 'with stack', args: ['ads.enabled', 'false', '', 'result', 'anyFunction'], errorsCount: 1 },
+        { rule: 'in logging-only mode', args: [], errorsCount: 1 },
+        { rule: 'with verbose', args: ['ads.enabled', 'false', '', 'result', '', '', 'true'], errorsCount: 1 },
+    ])('creates the error for the stack trace only if it is needed — $rule', ({ args, errorsCount }) => {
+        trustedJsonSet(sourceParams, 'JSON.parse', ...args);
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        let createdErrorsCount;
+        try {
+            createdErrorsCount = countCreatedErrors(() => JSON.parse('{"ads":{"enabled":true}}'));
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(createdErrorsCount).toBe(errorsCount);
+    });
+});
+
+describe('Test trusted-json-set stack matching with Firefox stack trace format', () => {
+    const nativeResponseJson = Response.prototype.json;
+    let restoreStackTraceFormat;
+
+    beforeEach(() => {
+        vi.useRealTimers();
+        restoreStackTraceFormat = useFirefoxStackTraceFormat();
+    });
+
+    afterEach(() => {
+        restoreStackTraceFormat();
+        Response.prototype.json = nativeResponseJson;
+    });
+
+    test.each([
+        { mode: '', propsPath: 'ads.enabled', modeName: 'legacy' },
+        { mode: 'jsonpath', propsPath: '$.ads.enabled', modeName: 'jsonpath' },
+    ])('$modeName mode matches the function which calls the method', ({ mode, propsPath }) => {
+        trustedJsonSet(sourceParams, 'JSON.parse', propsPath, 'false', '', 'result', 'parseAdsConfig', mode);
+
+        const parseAdsConfig = () => JSON.parse('{"ads":{"enabled":true}}');
+        const parseContent = () => JSON.parse('{"ads":{"enabled":true}}');
+
+        expect(parseAdsConfig()).toEqual({ ads: { enabled: false } });
+        expect(parseContent()).toEqual({ ads: { enabled: true } });
+    });
+
+    test('matches the function which calls the method returning a promise', async () => {
+        trustedJsonSet(sourceParams, 'Response.prototype.json', 'ads.enabled', 'false', '', 'result', 'loadAdsConfig');
+
+        const loadAdsConfig = () => new Response('{"ads":{"enabled":true}}').json();
+        const loadContent = () => new Response('{"ads":{"enabled":true}}').json();
+
+        expect(await loadAdsConfig()).toEqual({ ads: { enabled: false } });
+        expect(await loadContent()).toEqual({ ads: { enabled: true } });
     });
 });

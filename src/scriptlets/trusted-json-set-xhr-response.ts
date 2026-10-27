@@ -5,9 +5,12 @@ import {
     matchRequestProps,
     jsonPath,
     getXhrData,
-    type XMLHttpRequestSharedRequestData,
+    interceptXhrResponses,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     jsonSetter,
     matchStackTrace,
+    addStackTraceMessageLine,
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
@@ -42,6 +45,8 @@ import {
     toRegExp,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
+    getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -181,12 +186,6 @@ export function trustedJsonSetXhrResponse(
         nativeStringify: window.JSON.stringify,
     };
 
-    const nativeOpen = window.XMLHttpRequest.prototype.open;
-    const nativeSend = window.XMLHttpRequest.prototype.send;
-
-    const matchedXhrRequests = new Map<XMLHttpRequest, XMLHttpRequestSharedRequestData<any>>();
-    const xhrRequestHeaders = new Map<XMLHttpRequest, any[]>();
-
     // Value which is used for all the nodes matched in the intercepted payload.
     // Time keywords in it are resolved before every payload is mutated
     // https://github.com/AdguardTeam/Scriptlets/issues/573
@@ -224,239 +223,125 @@ export function trustedJsonSetXhrResponse(
         );
     };
 
-    const setRequestHeaderWrapper = (
-        setRequestHeader: typeof XMLHttpRequest.prototype.setRequestHeader,
-        thisArgument: XMLHttpRequest,
-        argsList: any,
-    ): void => {
-        const headers = xhrRequestHeaders.get(thisArgument);
-        if (headers) {
-            headers.push(argsList);
-        }
-        return Reflect.apply(setRequestHeader, thisArgument, argsList);
-    };
+    /**
+     * Returns the content of the response for the request of the page, modified,
+     * converted to its response type.
+     *
+     * @param content text of the forged response
+     * @param xhr object of the page
+     * @param stackTrace stack trace of `send()` for logs
+     * @returns content of the response
+     */
+    const modifyResponse = (content: any, xhr: XMLHttpRequest, stackTrace: string) => {
+        let modifiedContent = content;
+        if (typeof content === 'string') {
+            let jsonContent;
+            let parseFailed = false;
 
-    const setRequestHeaderHandler = {
-        apply: setRequestHeaderWrapper,
-    };
-
-    // TODO: Consider to move all wrappers to helper and share it with json-prune-xhr-response scriptlet
-    const openWrapper = (
-        target: typeof XMLHttpRequest.prototype.open,
-        thisArg: XMLHttpRequest,
-        args: [
-            method: string,
-            url: string,
-            async?: boolean,
-            user?: string,
-            password?: string,
-        ],
-    ): void => {
-        // eslint-disable-next-line prefer-spread
-        const xhrData: XMLHttpRequestSharedRequestData<any> = getXhrData.apply(null, args);
-
-        if (matchRequestProps(source, propsToMatch, xhrData)) {
-            matchedXhrRequests.set(thisArg, xhrData);
-        }
-
-        if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
-            xhrRequestHeaders.set(thisArg, []);
-            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
-        }
-
-        return Reflect.apply(target, thisArg, args);
-    };
-
-    const sendWrapper = (
-        target: typeof XMLHttpRequest.prototype.send,
-        thisArg: XMLHttpRequest,
-        args: any,
-    ): void => {
-        if (!matchedXhrRequests.has(thisArg)) {
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        const stackTrace = new Error().stack || '';
-
-        if (stack && !matchStackTrace(stack, stackTrace)) {
-            xhrRequestHeaders.delete(thisArg);
-            matchedXhrRequests.delete(thisArg);
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        const xhrData = matchedXhrRequests.get(thisArg);
-        if (!xhrData) {
-            xhrRequestHeaders.delete(thisArg);
-            matchedXhrRequests.delete(thisArg);
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        const forgedRequest = new XMLHttpRequest();
-        forgedRequest.withCredentials = thisArg.withCredentials;
-        forgedRequest.addEventListener('readystatechange', () => {
-            if (forgedRequest.readyState !== 4) {
-                return;
+            try {
+                jsonContent = nativeObjects.nativeParse(content);
+            } catch {
+                parseFailed = true;
             }
 
-            const {
-                readyState,
-                response,
-                responseText,
-                responseURL,
-                responseXML,
-                status,
-                statusText,
-            } = forgedRequest;
-
-            const content = responseText || response;
-            if (typeof content !== 'string' && typeof content !== 'object') {
-                return;
-            }
-
-            let modifiedContent = content;
-            if (typeof content === 'string') {
-                let jsonContent;
-                let parseFailed = false;
-
+            if (parseFailed) {
                 try {
-                    jsonContent = nativeObjects.nativeParse(content);
-                } catch {
-                    parseFailed = true;
-                }
+                    const lineEditResult = jsonLineEdit(
+                        (parsedLine) => applyJsonMutation(parsedLine),
+                        nativeObjects,
+                        content,
+                    );
 
-                if (parseFailed) {
-                    try {
-                        const lineEditResult = jsonLineEdit(
-                            (parsedLine) => applyJsonMutation(parsedLine),
-                            nativeObjects,
-                            content,
-                        );
+                    if (lineEditResult.hasJsonLines) {
+                        modifiedContent = lineEditResult.text;
 
-                        if (lineEditResult.hasJsonLines) {
-                            modifiedContent = lineEditResult.text;
+                        if (shouldLogContent) {
+                            // eslint-disable-next-line max-len
+                            logMessage(source, `Original content:\n${window.location.hostname}\n${content}\nStack trace:\n${stackTrace}`, true);
+                            // eslint-disable-next-line max-len
+                            logMessage(source, `Modified content:\n${window.location.hostname}\n${modifiedContent}\nStack trace:\n${stackTrace}`, true);
+                        }
 
-                            if (shouldLogContent) {
-                                // eslint-disable-next-line max-len
-                                logMessage(source, `Original content:\n${window.location.hostname}\n${content}\nStack trace:\n${stackTrace}`, true);
-                                // eslint-disable-next-line max-len
-                                logMessage(source, `Modified content:\n${window.location.hostname}\n${modifiedContent}\nStack trace:\n${stackTrace}`, true);
+                        try {
+                            const { responseType } = xhr;
+                            switch (responseType) {
+                                case 'arraybuffer':
+                                    modifiedContent = new TextEncoder().encode(modifiedContent).buffer;
+                                    break;
+                                case 'blob':
+                                    modifiedContent = new Blob([modifiedContent]);
+                                    break;
+                                default:
+                                    break;
                             }
-
-                            try {
-                                const { responseType } = thisArg;
-                                switch (responseType) {
-                                    case 'arraybuffer':
-                                        modifiedContent = new TextEncoder().encode(modifiedContent).buffer;
-                                        break;
-                                    case 'blob':
-                                        modifiedContent = new Blob([modifiedContent]);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            } catch {
-                                modifiedContent = content;
-                            }
-                        } else {
-                            const message = `Response body cannot be converted to json: '${content}'`;
-                            logMessage(source, message);
+                        } catch {
                             modifiedContent = content;
                         }
-                    } catch {
+                    } else {
                         const message = `Response body cannot be converted to json: '${content}'`;
                         logMessage(source, message);
                         modifiedContent = content;
                     }
-                } else {
-                    if (shouldLogContent) {
-                        // eslint-disable-next-line max-len
-                        logMessage(source, `Original content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                        logMessage(source, jsonContent, true, false);
-                    }
-
-                    modifiedContent = applyJsonMutation(jsonContent);
-
-                    if (shouldLogContent) {
-                        // eslint-disable-next-line max-len
-                        logMessage(source, `Modified content:\n${window.location.hostname}\n${nativeObjects.nativeStringify(modifiedContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                        logMessage(source, modifiedContent, true, false);
-                    }
-
-                    try {
-                        const { responseType } = thisArg;
-                        switch (responseType) {
-                            case '':
-                            case 'text':
-                                modifiedContent = nativeObjects.nativeStringify(modifiedContent);
-                                break;
-                            case 'arraybuffer':
-                                modifiedContent = new TextEncoder()
-                                    .encode(nativeObjects.nativeStringify(modifiedContent))
-                                    .buffer;
-                                break;
-                            case 'blob':
-                                modifiedContent = new Blob([nativeObjects.nativeStringify(modifiedContent)]);
-                                break;
-                            default:
-                                break;
-                        }
-                    } catch {
-                        modifiedContent = content;
-                    }
+                } catch {
+                    const message = `Response body cannot be converted to json: '${content}'`;
+                    logMessage(source, message);
+                    modifiedContent = content;
                 }
-            } else if (content !== null) {
-                modifiedContent = applyJsonMutation(content);
+            } else {
+                // Content which cannot be serialized to be logged, e.g. too deeply nested, is logged only
+                // as an object, so the response is still modified
+                if (shouldLogContent) {
+                    logJsonContent(source, jsonContent, nativeObjects.nativeStringify, stackTrace, 'Original content');
+                }
+
+                modifiedContent = applyJsonMutation(jsonContent);
+
+                if (shouldLogContent) {
+                    logJsonContent(
+                        source,
+                        modifiedContent,
+                        nativeObjects.nativeStringify,
+                        stackTrace,
+                        'Modified content',
+                    );
+                }
+
+                try {
+                    const { responseType } = xhr;
+                    switch (responseType) {
+                        case '':
+                        case 'text':
+                            modifiedContent = nativeObjects.nativeStringify(modifiedContent);
+                            break;
+                        case 'arraybuffer':
+                            modifiedContent = new TextEncoder()
+                                .encode(nativeObjects.nativeStringify(modifiedContent))
+                                .buffer;
+                            break;
+                        case 'blob':
+                            modifiedContent = new Blob([nativeObjects.nativeStringify(modifiedContent)]);
+                            break;
+                        default:
+                            break;
+                    }
+                } catch {
+                    modifiedContent = content;
+                }
             }
-
-            Object.defineProperties(thisArg, {
-                readyState: { value: readyState, writable: false },
-                responseURL: { value: responseURL, writable: false },
-                responseXML: { value: responseXML, writable: false },
-                status: { value: status, writable: false },
-                statusText: { value: statusText, writable: false },
-                response: { value: modifiedContent, writable: false },
-                responseText: { value: modifiedContent, writable: false },
-            });
-
-            setTimeout(() => {
-                const stateEvent = new Event('readystatechange');
-                thisArg.dispatchEvent(stateEvent);
-
-                const loadEvent = new Event('load');
-                thisArg.dispatchEvent(loadEvent);
-
-                const loadEndEvent = new Event('loadend');
-                thisArg.dispatchEvent(loadEndEvent);
-            }, 1);
-        });
-
-        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url, Boolean(xhrData.async)]);
-
-        const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
-        collectedHeaders.forEach((header) => {
-            forgedRequest.setRequestHeader(header[0], header[1]);
-        });
-        xhrRequestHeaders.delete(thisArg);
-        matchedXhrRequests.delete(thisArg);
-
-        try {
-            Reflect.apply(nativeSend, forgedRequest, args);
-        } catch {
-            return Reflect.apply(target, thisArg, args);
+        } else if (content !== null) {
+            modifiedContent = applyJsonMutation(content);
         }
-        return undefined;
+
+        return modifiedContent;
     };
 
-    const openHandler = {
-        apply: openWrapper,
-    };
-
-    const sendHandler = {
-        apply: sendWrapper,
-    };
-
-    XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
-    XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+    interceptXhrResponses(
+        source,
+        stack,
+        shouldLogContent,
+        (xhrData) => matchRequestProps(source, propsToMatch, xhrData),
+        modifyResponse,
+    );
 }
 
 export const trustedJsonSetXhrResponseNames = [
@@ -473,9 +358,13 @@ trustedJsonSetXhrResponse.injections = [
     objectToString,
     matchRequestProps,
     getXhrData,
+    interceptXhrResponses,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     jsonPath,
     jsonSetter,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     getMatchPropsData,
@@ -510,4 +399,6 @@ trustedJsonSetXhrResponse.injections = [
     parseKeywordValue,
     resolveJsonSetTimeKeywords,
     toRegExp,
+    getThrownValueMessage,
+    logJsonContent,
 ];

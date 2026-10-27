@@ -14,17 +14,312 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
+  e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
+  e.g. `div#host >>> xpath(descendant-or-self::button)`. Absolute paths after `>>>` are evaluated against
+  the document in Chromium-based browsers before version 146, so e.g. `xpath(//button)` selects nothing there,
+  and relative paths with `descendant-or-self::` axis should be used instead. Invalid XPath expressions are logged once
+  and the scriptlet exits. Errors which occur only on evaluation of page elements,
+  e.g. a type error in a predicate like `//button[count(1)]`, may not be detected and are not logged,
+  and such expression selects nothing while the error occurs, e.g. while there is a button on the page,
+  or after `>>>` only the elements of top-level elements of the shadow root without the error.
+- `isTrusted:all` in `extraMatch` of `trusted-click-element` to spoof `isTrusted` for all click-related events on the
+  page, including the page's own ones, e.g. a click which a page handler dispatches on another element in response,
+  similarly to the behavior before [#582], but trusted events are passed unchanged, and all listeners of an event
+  receive the same proxy. Only listeners added by `addEventListener()` after the scriptlet has run receive spoofed
+  events of the page; inline `on...` handlers receive spoofed events only on the clicked element during an event of the
+  scriptlet of the same type, including the page's own events of that type dispatched on it meanwhile, so other page
+  events may reach them unspoofed. It is enabled for the whole page, including the clicks of other rules, and may break
+  the page, e.g. its guards which compare events, or its code which passes events to native methods, so use it only if
+  the page does not accept the clicks of the scriptlet otherwise. It can be combined with other conditions in any
+  order, but for compatibility with older versions of the scriptlet, it should be the first or the only condition,
+  e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after another condition
+  as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click regardless of the
+  `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
+
 ### Changed
 
+- Minimum supported Microsoft Edge version is now Edge Chromium 80.
+- `trusted-click-element` spoofs `isTrusted` by default only for its own clicks, and for the clicks which labels
+  forward from them to their controls, as one event shared by all listeners, instead of all click-related events
+  on the page, which replaced the page's own events with proxies and broke popup opening-event guards [#582].
+  The spoofed event is still not the same object as `window.event`. If a rule needs the page's own events
+  to be spoofed as well, e.g. a click which a page handler dispatches in response, `isTrusted:all` should be added
+  to its `extraMatch`, as the first condition for compatibility with older versions. It is needed as well for a click
+  forwarded by a label in a closed shadow root which wraps the slot of the clicked element, as such label is not found
+  by default. If an older version of `trusted-click-element` runs on the same page as well, e.g. in another AdGuard
+  product, and this version hooks event listeners first, the clicks of the older version are not spoofed
+  for event listeners until the page is reloaded, unless a rule of this version has `isTrusted:all`.
+  If the page has sealed `EventTarget.prototype` before the scriptlet runs, `isTrusted` is not spoofed for event
+  listeners, which is logged, as the rules cannot share the hook then, but the elements are still clicked.
+- `trusted-click-element` validates its selectors once and exits if any of them is invalid, logging it with
+  the reason, instead of throwing an error after hooking event listeners and `attachShadow`, or on each DOM change.
+  So no element is clicked then, including the ones matched by valid selectors before the invalid one,
+  e.g. a selector with a pseudo-class which is not supported by the browser.
+- `stack` of `trusted-json-set` is matched against the stack trace of the intercepted call without the frames
+  of the scriptlet itself, which it contained before. So `stack` values which matched these frames no longer match
+  the calls from other scripts, e.g. `inlineScript` if the scriptlet is injected as an inline script.
+  Also, a call which does not match `stack` is not processed at all, e.g. a JSON string returned by it
+  is not parsed and serialized again, which removed its formatting before.
+- `trusted-replace-outbound-text` with `stack` calls `hit` only for the calls which match `stack`.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` intercept `setRequestHeader()`, `getResponseHeader()`,
+  `getAllResponseHeaders()` and `abort()` of `XMLHttpRequest.prototype` as well, instead of `setRequestHeader()`
+  of each matched object, which no longer gets it as its own property, unless it has another method, which is wrapped
+  then, e.g. its own one assigned by the page, or the hook of another rule of these scriptlets.
+  `load` and `loadend` of a modified response are dispatched as `ProgressEvent`, instead of `Event`, with the progress
+  of the original response for an asynchronous request, as by a native request, and with zero length otherwise.
+- `stack` of `trusted-json-set-fetch-response`, `json-prune-fetch-response`, and of `json-prune`
+  for `Response.prototype.json()` is matched against the stack trace of the call of `fetch()` or `json()`
+  without the frames of the scriptlet itself, which it contained before, as it was matched after the response
+  was awaited. So `stack` values which matched these frames no longer match the calls from other scripts,
+  e.g. `inlineScript` if the scriptlet is injected as an inline script. Also, in Chromium-based browsers,
+  an async function which awaits the response no longer matches it if it is not in the stack when `fetch()`
+  or `json()` is called, e.g. if the request is sent by a timer. In logging mode of `json-prune-fetch-response`
+  and `json-prune`, `stack` is still not matched, and the stack trace of the call is logged with the content.
+
 ### Deprecated
+
+- Edge Legacy support.
 
 ### Removed
 
 ### Fixed
 
+- `xml-prune` evaluating an XPath expression without the closing parenthesis with its last character dropped,
+  e.g. `xpath(//*[name()="Period"]/@duration` as `//*[name()="Period"]/@duratio`, instead of logging it as invalid.
 - Fetch-based scriptlets failing to match requests when `fetch` receives a `URL` object [#577].
+- Scriptlets which re-apply themselves on DOM changes, e.g. `remove-attr` and `remove-class`, no longer stop
+  doing it after an error thrown on a DOM change, e.g. by the page for an element. Also, `remove-attr`,
+  `remove-class`, `remove-in-shadow-dom` and `hide-in-shadow-dom` log an error thrown for an element once,
+  and continue with other elements, including ones added later, even if the error is thrown when the rule
+  is applied.
+- Infinite mutation loop and repeated logging when several non-conflicting `set-attr` or `trusted-set-attr`
+  rules are applied on the same page: the attribute is no longer re-set, and `hit` is not called,
+  if it already has the required value. Also, `set-attr` logs a missing attribute to copy the value from
+  once for each element until the attribute is found, even if the element already holds the copied value.
+  An error thrown for an element, e.g. by the page, is logged once for the element and does not stop setting
+  the attribute on other elements, including ones added later, or prevent `hit` for changed elements.
+  An invalid name of the attribute to copy the value from, e.g. `[data a]` or `[]`, is logged once
+  as an invalid value, instead of setting the attribute to `null` on each matched element.
+- Infinite mutation loop between several non-conflicting `href-sanitizer` rules, and `hit` called
+  on each DOM change: `href` is no longer re-set, and `hit` is not called, if the link, including SVG `<a>`
+  element, already points to the sanitized URL. Also, `href-sanitizer` logs invalid arguments only once,
+  logs a failure to sanitize a link only once until its `href` or the value taken from the link is changed,
+  or the URL resolved from it if the failure depends on the document base URL, and does not log a link
+  sanitized by the rule as a failure, e.g. one without the URL parameter, or a base64 string which is not a URL
+  if another one in the same value is decoded. An error thrown for a link, e.g. by the page, is logged once
+  and does not stop sanitizing of other links.
+- `href-sanitizer` resolving relative URLs against the page URL or its origin instead of the document base URL,
+  e.g. `removeHash` and `removeParam` transforms rewrote a path-relative link to a wrong URL,
+  or a link within the page, e.g. `#comments`, to another page.
+- Infinite mutation loop between an `href-sanitizer` rule and another one which changes the URL set by it,
+  e.g. a rule with link text and a rule with `removeParam:utm_source` on the same link, or a rule
+  with an attribute and a rule with `?url` which unwraps the redirect set by the first one. Rules share their
+  last actual write on the affected link, without a `window` registry or HTML attributes, so page edits
+  of the link are still corrected, including ones which another rule has changed.
+- `href-sanitizer` not sanitizing SVG `<a>` element by a URL parameter, e.g. `?url`.
+- `removeHash` and `removeParam` transforms of `href-sanitizer` not setting the URL found in the link text,
+  attribute or URL parameter if there is nothing to remove from it, as it is done without a transform.
+- `href-sanitizer` setting link text which is not a URL as a relative URL or as a broken URL: link text is set
+  only if it is an absolute URL or a path without whitespaces, e.g. not `Click here`, `Download`, `?`
+  or `https://example.org/ (external)`, and not if a tab or newline is between its words, e.g. between
+  the URL and the title of a card, rather than next to a URL delimiter, e.g. `/`. Also, a value of only
+  whitespaces is not set, and neither is a placeholder hash, i.e. `#` or `#!`, unless it is `href` of the link.
+- `href-sanitizer` decoding `+` in the URL parameter as a whitespace if the parameter is a URL which is not
+  encoded, e.g. `?url=https://example.org/c++/docs` or `?url=https%3A//example.org/c++/docs`.
+- `href-sanitizer` not decoding base64 string in a relative `href`, in `href` within the page, e.g. `#<base64>`,
+  or in the hash if the query has no base64 encoded URL, e.g. `https://example.org/?ref=1#<base64>`.
+- `href-sanitizer` accepting any transform starting with `removeParam`, e.g. `removeParams`, which removed
+  all parameters.
+- `href-sanitizer` unwrapping nested redirects in the URL parameter or base64 encoded ones only one by one
+  on each DOM change; now up to 10 of them are unwrapped at once, and the rest right after that, as long as
+  the link is still matched by the selector. Relative URL in the nested redirect, e.g. a parameter of the target
+  with the same name, is not followed and not logged, since it is relative to the redirect, except for
+  a scheme-relative one, e.g. `//example.org/`.
+- Repeated logging on each DOM change by `remove-attr` if its selector matches elements without the attribute:
+  `hit` is called only if some attribute has actually been removed. Also, invalid selector is logged only once.
+- Infinite mutation loop between several `hide-in-shadow-dom` rules whose targets are light DOM children
+  of shadow hosts, and `hit` called on each DOM change: already hidden elements are no longer re-hidden,
+  and `hit` is called only if some element has actually been hidden.
+- `hide-in-shadow-dom` and `remove-in-shadow-dom` not working if `baseSelector` matches an element
+  which is not a shadow host itself, e.g. a container of shadow hosts. Also, both scriptlets log an invalid
+  `selector` or `baseSelector` instead of throwing an error.
+- Invalid selector logged on each DOM change by `remove-class`, `set-attr` and `trusted-set-attr`,
+  as well as invalid attribute name by `set-attr` and `trusted-set-attr`: they are now validated
+  and logged only once.
+- `remove-class` and `remove-attr` not removing classes or attributes whose names are not valid CSS identifiers,
+  e.g. `md:hidden` or `x-on:click`, if no selector is specified.
+- `trusted-click-element` splitting selectors by commas inside pseudo-classes, e.g. `:is(.accept, .agree)`,
+  by commas inside quoted attribute values, e.g. `[title="Accept, agree"]`, and by escaped commas,
+  e.g. `#accept\,agree`, which made such selectors invalid. Also, `>>>` inside quoted strings or CSS comments,
+  e.g. in `[title=" >>> "]`, is no longer taken for the shadow combinator.
+- `trusted-click-element` ignoring `containsText` when it finds an element again because the found one
+  was removed from DOM before the click, which could click another element matching the selector.
+- `trusted-click-element` not clicking an element if `containsText`, or the key of a `cookie` condition,
+  is a regexp with `g` or `y` flag, as each next check started from the end of the previous match,
+  e.g. `cookie:/consent/g=/yes/` did not match `consent_a=no; consent_b=yes`.
+- `trusted-click-element` clicking next elements of the sequence if a previous element was removed from DOM
+  before the click and could not be found again.
+- `trusted-click-element` not clicking elements after an empty selector, e.g. `#accept` in `#settings,, #accept`,
+  and not calling `hit` if there is a trailing comma, e.g. in `#accept,`: empty selectors, and ones with only
+  a CSS comment, are skipped.
+- `trusted-click-element` hooking event listeners and `attachShadow` even when it exits early
+  because of invalid timeout, delay or reload values or unmatched `extraMatch` conditions [#582].
+- `trusted-click-element` failing to remove or deduplicate listeners shared across event targets,
+  registered with non-boolean `capture` values or with options which return a different value on each read,
+  and failing to remove a listener registered before the scriptlet ran if the same listener was also added
+  after it [#582].
+- `trusted-click-element` not finding elements in a closed shadow root attached with options which return
+  a different `mode` on each read.
+- `trusted-click-element` not clicking next elements of the sequence if a React click handler of the page throws,
+  and clicking the element again when the sequence is continued, with the error not logged but reported
+  as an unhandled rejection: the error is logged once and the next elements are clicked.
+- `trusted-click-element` silently not spoofing `isTrusted`, or not tracking shadow roots attached later,
+  if another script has made `addEventListener()`, `removeEventListener()` or `attachShadow()` read-only:
+  it is logged now, and elements which can still be found are clicked.
+- `trusted-click-element` with `>>>` combinator observing shadow roots attached after it has found all elements
+  or its observer has timed out, which changed an attribute of the `html` element on each of their changes
+  and so woke up all observers of the page for its whole lifetime.
+- `trusted-click-element` throwing when inline `on*` handlers or React handlers set `cancelBubble`
+  or `returnValue` on a scriptlet click [#582].
+- `trusted-click-element` restoring inline `on*` handlers of the clicked element
+  that the page replaced or cleared during the click [#582].
+- `trusted-click-element` exposing a bound `constructor` on spoofed events
+  and an untrusted `nativeEvent` to React handlers [#582].
+- `trusted-click-element` passing an untrusted event to an inline `on...` handler of the clicked element
+  which the page assigns during an earlier event of the click, e.g. `onclick` set on `mousedown`.
+- `trusted-click-element` reporting outdated `isDefaultPrevented()` and `isPropagationStopped()` to React handlers
+  if the default action or propagation is changed through `nativeEvent`, `returnValue` or `cancelBubble`.
+- `trusted-json-set` modifying a native `Promise` returned by the intercepted method, e.g. `Response.prototype.json`,
+  instead of the value it is fulfilled with [#585]. The value is modified now, and a new promise of it is returned,
+  while a rejection is passed through. In logging-only mode, the value is logged, and the original promise is
+  returned. Promises of polyfills or libraries which replace `window.Promise`, e.g. zone.js, are not supported.
+  `stack` is matched when the method is called, so it works for such values as well. Also, the intercepted method
+  is no longer called again if it throws an error.
+- `stack` of `trusted-replace-outbound-text`, `trusted-suppress-native-method`, `json-prune-xhr-response`
+  and `trusted-json-set-xhr-response` not matching the function which calls the intercepted method in browsers
+  whose stack traces have no error message line, e.g. Firefox, as the frame of that function was removed
+  as the scriptlet's own one.
+- `stack` of `trusted-json-set-fetch-response`, `json-prune-fetch-response`, and of `json-prune`
+  for `Response.prototype.json()`, not matching a function which returns the promise of `fetch()` or `json()`,
+  as it was matched after the response was awaited, when the function was no longer in the stack.
+  It is matched when the method is called now, and the calls which do not match it are passed through as is,
+  so `json-prune-fetch-response` no longer calls `hit` for them.
+- `trusted-json-set-fetch-response` and `json-prune-fetch-response` sending the request again if it fails,
+  e.g. a POST request, or if its response cannot be cloned. The rejection of the request is passed to the page now,
+  and the response is returned as is if it cannot be cloned.
+- `trusted-replace-outbound-text` not modifying any content after the intercepted method is called
+  from a function which does not match `stack`, e.g. by another script of the page, or after it throws an error,
+  e.g. `JSON.stringify` of an object with a circular reference.
+- `trusted-replace-argument` calling the intercepted method or constructor again if it throws an error,
+  so its side effects were repeated, and the second call could even succeed.
+- `trusted-replace-argument` throwing an error to the page instead of calling the intercepted method
+  if `null` or `undefined` is thrown while the arguments are processed, e.g. by a conversion of an argument
+  to a string, or by `Error` replaced by the page while the stack trace for `stack` is created.
+  The method is called with the original arguments now.
+- `trusted-replace-argument` not matching an object argument by its string value if it cannot be serialized
+  as JSON, and the error of it cannot be converted to a string to be logged, e.g. `Object.create(null)` thrown
+  by its `toJSON()`. The argument and the error are no longer converted to strings to be logged.
+- `call-nothrow` throwing an error to the page if the intercepted method throws `null` or `undefined`,
+  as getting the message of such error threw another one.
+- `trusted-suppress-native-method` throwing an error to the page and no longer intercepting the next calls
+  after an error while a call is matched, e.g. thrown by a getter of an argument, or by `Error` replaced by the page
+  while the stack trace for `stack` is created. Such call is not suppressed now.
+- `trusted-json-set` and `trusted-json-set-fetch-response` processing a JSON string or response body again
+  as line-delimited JSON if its modification fails, e.g. as the modified value cannot be serialized, so it was
+  modified again, and `hit` could be called twice. Such string or response is returned unchanged now.
+- `JSONPath` rules of `json-prune` and `json-prune-fetch-response` throwing an error to the page, e.g. from
+  `JSON.parse()` or by rejecting the promise of `fetch()`, if `null` or another value without a message
+  is thrown while the content is processed, e.g. by a getter of the page, as getting the message of it to log it
+  threw another error. The same applies to `json-prune`, `json-prune-fetch-response`, `evaldata-prune`
+  and `trusted-prune-inbound-object` while messages are logged, if such value cannot be converted to a string,
+  e.g. `Object.create(null)`.
+- `trusted-json-set` not modifying anything, even without `stack`, if the stack trace cannot be read,
+  e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
+  Only the rules with `stack` are not applied then. The same applies to `JSONPath` rules of `json-prune`,
+  `json-prune-fetch-response` and `trusted-json-set-fetch-response`, and to `trusted-json-set-fetch-response`
+  rules with `verbose`. `trusted-json-set` no longer reads the stack trace at all for rules without `stack`,
+  except in logging-only mode or with `verbose`.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` throwing an error from `XMLHttpRequest.send()`,
+  so the request was not sent at all, even without `stack`, if the stack trace cannot be read,
+  e.g. because of `Error.prepareStackTrace` of the page or `Error` replaced by it.
+  Only the rules with `stack` are not applied then, and the request is sent as is. They no longer read
+  the stack trace at all for rules without `stack`, except in logging mode of `json-prune-xhr-response`
+  or with `verbose` of `trusted-json-set-xhr-response`.
+- `json-prune`, `json-prune-fetch-response`, `evaldata-prune` and `trusted-prune-inbound-object` in logging mode
+  throwing an error to the page, e.g. from `JSON.parse()`, if the stack trace cannot be read, e.g. because
+  of `Error.prepareStackTrace` of the page or `Error` replaced by it. Also, the content matched by `obligatoryProps`
+  was not logged then, also by `json-prune-xhr-response`. The content is logged without the stack trace now.
+- `json-prune`, `evaldata-prune` and `trusted-prune-inbound-object` in logging mode throwing an error to the page,
+  e.g. from `JSON.parse()` or `eval()`, or instead of calling the intercepted method, if the content cannot be
+  serialized to be logged, e.g. a circular object or a too deeply nested one. Also, `json-prune-fetch-response`
+  rejecting the promise of `fetch()` then, `json-prune-xhr-response` returning the text of such response instead
+  of its object for `responseType` `json`, and the content matched by `obligatoryProps` not being logged then.
+  Such content is logged only as an object now.
+- `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response` with `verbose`
+  not modifying the content if it cannot be serialized to be logged, e.g. a too deeply nested JSON response
+  or an object whose `toJSON()` throws. Such content is logged only as an object now.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` not firing `load` for the second matched request
+  of a reused `XMLHttpRequest` object, as the props of its response could not be defined again, and returning
+  the props of the previous response, e.g. `readyState` and `response`, for a request on such an object
+  which is not matched. Also, for such an object, sending the headers of each request again with the next ones,
+  forging a request with the method and URL of the previous `open()` if the object is opened again before
+  it is sent, and delivering the response of a request after the object is opened again or the request
+  is aborted by `abort()`, which dispatches the events of an aborted request now. Also, `readystatechange`
+  is dispatched when such object is opened again, as by `open()` of a native object which is done.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` dispatching the events of a modified response
+  of a synchronous request after `XMLHttpRequest.send()` has returned, so the page could not use the response
+  in its `load` listener right after `send()`. They are dispatched before `send()` returns now, as by a native request.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` sending a request synchronously if it is opened
+  without `async`, e.g. by `open(method, url)`. Also, `user` and `password` passed to `open()` were not used
+  for the request.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` throwing an error from `XMLHttpRequest.send()`
+  for each matched request if the page has replaced `XMLHttpRequest` after the scriptlet has run, e.g. by a library
+  which wraps requests, as the forged request was created by it.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` sending the request again if sending it fails,
+  e.g. a synchronous POST request with a network error, so its side effects were repeated.
+  The error is thrown to the page now, and the object is done with no response then, as a native one.
+- `json-prune-xhr-response`, `trusted-json-set-xhr-response` and `trusted-replace-outbound-text`, and `JSONPath` rules
+  of `json-prune`, `json-prune-fetch-response` and `trusted-json-set-fetch-response`, throwing an error to the page
+  if `stack` is an invalid regular expression, e.g. from `XMLHttpRequest.send()`, so the request was not sent,
+  or from `JSON.parse()`, or rejecting the promise of `fetch()` or `Response.prototype.json()` with it.
+  Such rules are not applied now, and the call is passed through. The same applies to `trusted-replace-outbound-text`
+  if `textToReplace` is an invalid regular expression.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` returning no response headers
+  from `getResponseHeader()` and `getAllResponseHeaders()` of an intercepted `XMLHttpRequest` object, e.g. `null`
+  for `Content-Type`, as the object is not sent itself. The headers of the response are returned now,
+  as by `trusted-replace-xhr-response` [#419].
+- `json-prune-xhr-response`, `trusted-json-set-xhr-response`, `json-prune-fetch-response`, `call-nothrow`,
+  `trusted-replace-outbound-text` and `trusted-suppress-native-method` changing `toString()` of the intercepted
+  methods, e.g. `XMLHttpRequest.prototype.open.toString()` or `fetch.toString()`, which returned the string
+  of a native function without its name. It returns the original value now.
+- `json-prune-xhr-response` and `trusted-json-set-xhr-response` never completing a request whose response
+  could not be modified, e.g. as logging a too deeply nested JSON response with `verbose` threw an error,
+  or defined on the object, e.g. if the page has made it not extensible. The events of the response are dispatched
+  now in both cases, with the original text of the response if it could not be modified, while the object keeps
+  its state if the response could not be defined.
+- `json-prune-fetch-response` rejecting the promise of `fetch()` of a request which has succeeded, if its response
+  could not be modified, e.g. as serializing a too deeply nested JSON response threw in browsers whose
+  `JSON.stringify()` is recursive. The original response is returned now.
+- `json-prune-xhr-response` in logging mode returning a JSON response as a string, even if another `responseType`
+  of the request is set, e.g. `json`, `arraybuffer` or `blob`. A response which is not JSON is still returned
+  as a string.
+- `json-prune` calling `then()` of the promise of `Response.prototype.json()`, which the page may replace,
+  to prune its value. Its own `then()` is still used only if `Promise` has been replaced before the scriptlet
+  has run, e.g. by zone.js.
+- `trusted-replace-outbound-text` with `stack` throwing an error to the page instead of the result
+  of the intercepted method if the stack trace cannot be read, e.g. because of `Error.prepareStackTrace`
+  of the page or `Error` replaced by it. The result is returned unmodified then.
+- `trusted-suppress-native-method`, `trusted-json-set`, `trusted-replace-argument`, `trusted-replace-outbound-text`,
+  `trusted-prune-inbound-object` and `call-nothrow` not intercepting methods of `localStorage` and `sessionStorage`,
+  e.g. `localStorage.setItem`, in Firefox, and storing an item named after the method in the storage instead,
+  e.g. `setItem`. The method is replaced in `Storage.prototype` now, unless the page has assigned its own method
+  to the storage, e.g. in Chrome, and only its calls on the storage of the rule are processed, also the ones made
+  through `Storage.prototype`.
 
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
+[#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
+[#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
 
 ### Security
 

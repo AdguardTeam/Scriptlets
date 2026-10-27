@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import { runScriptlet, clearGlobalProps, getLogs } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'json-prune-fetch-response';
@@ -603,7 +603,132 @@ if (!isSupported) {
 
         const result = await getContentFunc();
         assert.deepEqual(result, expectedJson, 'Content is intact');
-        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        // Only the calls which match `stack` are processed
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
         done();
+    });
+
+    test('Match stack trace of a function which returns the promise of fetch - prune content', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01', 'getFetchResponse']);
+
+        // The function is no longer in the stack when the response is awaited
+        const getFetchResponse = () => fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const response = await getFetchResponse();
+        const result = await response.json();
+
+        assert.deepEqual(result, { b2: 'test', c3: 3 }, 'Content pruned');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+
+    test('Request is sent once and its rejection is passed through', async (assert) => {
+        let calls = 0;
+        // eslint-disable-next-line no-global-assign
+        fetch = () => {
+            calls += 1;
+            return Promise.reject(new TypeError('Failed to fetch'));
+        };
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        await assert.rejects(
+            fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' }),
+            /Failed to fetch/,
+            'Rejection of the request passed through',
+        );
+        assert.strictEqual(calls, 1, 'Request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('Request is sent once and the response is returned if it cannot be cloned', async (assert) => {
+        let calls = 0;
+        let receivedResponse;
+        // eslint-disable-next-line no-global-assign
+        fetch = async () => {
+            calls += 1;
+            receivedResponse = new Response('{"a1":1}');
+            // Response with a used body cannot be cloned
+            await receivedResponse.text();
+            return receivedResponse;
+        };
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' });
+
+        assert.strictEqual(response, receivedResponse, 'Received response returned');
+        assert.strictEqual(calls, 1, 'Request sent once');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('toString() of fetch returns the original value', (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        assert.notStrictEqual(fetch, nativeFetch, 'fetch intercepted');
+        assert.strictEqual(fetch.toString(), nativeFetch.toString(), 'toString() returns the original value');
+    });
+
+    test('Invalid stack - request is sent and its content is not pruned', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01', '/(/']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const result = await response.json();
+
+        assert.deepEqual(result, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+        assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    });
+
+    test('Logging mode - content logged regardless of stack, with the caller of fetch', async (assert) => {
+        runScriptlet(name, ['', '', 'test01', 'notMatchingStack']);
+
+        // The function is no longer in the stack when the response is awaited
+        const getFetchResponse = () => fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        let result;
+        const logs = await getLogs(async () => {
+            const response = await getFetchResponse();
+            result = await response.json();
+        });
+
+        assert.deepEqual(result, { a1: 1, b2: 'test', c3: 3 }, 'Content is intact');
+        assert.ok(
+            logs.some((log) => log.includes('"c3": 3') && log.includes('getFetchResponse')),
+            'Content logged with the stack trace of the caller',
+        );
+    });
+
+    test('Logging mode - content which cannot be serialized is logged without it', async (assert) => {
+        runScriptlet(name);
+
+        // Content which can be parsed, but not serialized again to be logged, as it is too deeply nested
+        const NESTING_DEPTH = 12000;
+        const json = `{"a1":1,"nested":${'['.repeat(NESTING_DEPTH)}${']'.repeat(NESTING_DEPTH)}}`;
+        let result;
+        const logs = await getLogs(async () => {
+            const response = await fetch(`data:application/json,${encodeURIComponent(json)}`);
+            result = await response.text();
+        });
+
+        assert.strictEqual(result, json, 'Content is intact');
+        assert.ok(
+            logs.some((log) => log.includes('Content cannot be serialized')),
+            'Content which cannot be serialized',
+        );
+    });
+
+    test('Original response returned if the pruned content cannot be serialized', async (assert) => {
+        runScriptlet(name, ['a1', '', 'test01']);
+
+        let result;
+        // e.g. as content which is too deeply nested cannot be serialized in browsers whose `JSON.stringify()`
+        // is recursive, unlike the one of the browser which runs the tests
+        // eslint-disable-next-line no-extend-native
+        Object.prototype.toJSON = () => {
+            throw new Error('Cannot be serialized');
+        };
+        try {
+            const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+            result = await response.text();
+        } finally {
+            delete Object.prototype.toJSON;
+        }
+
+        assert.deepEqual(JSON.parse(result), { a1: 1, b2: 'test', c3: 3 }, 'Original content returned');
     });
 }

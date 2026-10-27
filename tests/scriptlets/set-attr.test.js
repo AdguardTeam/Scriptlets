@@ -1,5 +1,17 @@
-/* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+/* eslint-disable no-underscore-dangle, no-console */
+import {
+    runScriptlet,
+    clearGlobalProps,
+    ATTR_SETTLE_DELAY_MS,
+    createAttrMutationCounter,
+    runAttrRulesAndCountIdleChanges,
+    checkTwoAttrRulesSettle,
+    checkAttrErrorForOneElement,
+    countLogsAfterDomChange,
+    getLogs,
+    makeUnrelatedDomChange,
+    sleep,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'set-attr';
@@ -8,6 +20,8 @@ const TARGET_ELEM_ID = 'target';
 const MISMATCH_ELEM_ID = 'mismatch';
 const TARGET_ATTR_NAME = 'test-attr';
 const TARGET_ELEM_BAIT_ATTR = 'another-attr-value';
+
+const nativeConsole = console.log;
 
 let context;
 let testCaseCount = 0;
@@ -52,6 +66,7 @@ const beforeEach = () => {
 const afterEach = () => {
     clearContext();
     clearGlobalProps('hit', '__debug');
+    console.log = nativeConsole;
 };
 
 module(name, { beforeEach, afterEach });
@@ -294,4 +309,230 @@ test('copying another attribute value', (assert) => {
         assert.strictEqual(window.hit, 'FIRED', 'hit function has been called again');
         done();
     }, 30);
+});
+
+test('two rules on same element settle, logging enabled', async (assert) => {
+    const { targetElem } = context;
+    await checkTwoAttrRulesSettle(assert, name, { firstElem: targetElem, secondElem: targetElem });
+});
+
+test('two rules on same element settle, logging disabled', async (assert) => {
+    const { targetElem } = context;
+    await checkTwoAttrRulesSettle(assert, name, { firstElem: targetElem, secondElem: targetElem, verbose: false });
+});
+
+test('two rules on different elements settle', async (assert) => {
+    const { targetElem, mismatchElem } = context;
+    await checkTwoAttrRulesSettle(assert, name, { firstElem: targetElem, secondElem: mismatchElem });
+});
+
+test('two rules on same element settle, one of them copies attribute value', async (assert) => {
+    const { targetElem } = context;
+    targetElem.setAttribute('data-source', 'copied');
+    await checkTwoAttrRulesSettle(assert, name, {
+        firstElem: targetElem,
+        secondElem: targetElem,
+        secondValue: '[data-source]',
+        secondExpected: 'copied',
+    });
+});
+
+test('two rules on different elements settle, one of them copies attribute value', async (assert) => {
+    const { targetElem, mismatchElem } = context;
+    mismatchElem.setAttribute('data-source', 'copied');
+    await checkTwoAttrRulesSettle(assert, name, {
+        firstElem: targetElem,
+        secondElem: mismatchElem,
+        secondValue: '[data-source]',
+        secondExpected: 'copied',
+    });
+});
+
+test('copying missing attribute value settles and logs it only once', async (assert) => {
+    const { targetElem } = context;
+    // existing value should be overwritten once and not on each mutation
+    targetElem.setAttribute(TARGET_ATTR_NAME, 'initial');
+    let missingAttrLogCount = 0;
+    console.log = (...args) => {
+        if (typeof args[0] === 'string' && args[0].includes('No element attribute found to copy value from')) {
+            missingAttrLogCount += 1;
+        }
+        nativeConsole(...args);
+    };
+
+    const { initialMutations, mutations, hits } = await runAttrRulesAndCountIdleChanges(name, [
+        { elem: targetElem, attr: TARGET_ATTR_NAME, value: '[data-missing]' },
+    ]);
+
+    assert.ok(initialMutations > 0, 'initial attribute change is counted');
+    assert.strictEqual(mutations, 0, 'no attribute mutations while page is idle');
+    assert.strictEqual(hits, 0, 'hit is not called while page is idle');
+    assert.strictEqual(missingAttrLogCount, 1, 'missing attribute is logged only on the initial change');
+});
+
+/**
+ * Returns the message logged by the rule copying the value from missing attribute.
+ *
+ * @param {string} sourceAttr attribute to copy the value from, should be unique for the test,
+ * since observers of rules from previous tests are still active
+ * @returns {string} logged message
+ */
+const getMissingSourceMessage = (sourceAttr) => {
+    return `${name}: No element attribute found to copy value from: [${sourceAttr}]`;
+};
+
+test('missing source attribute is logged once if target already holds copied missing value', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const sourceAttr = 'data-ag-missing-null';
+    // e.g. set in page markup or by the same rule applied twice
+    targetElem.setAttribute(TARGET_ATTR_NAME, 'null');
+    const counter = createAttrMutationCounter([targetElem], [TARGET_ATTR_NAME]);
+
+    const count = await countLogsAfterDomChange(
+        name,
+        [targetSelector, TARGET_ATTR_NAME, `[${sourceAttr}]`],
+        getMissingSourceMessage(sourceAttr),
+    );
+    const mutations = counter.count;
+    counter.disconnect();
+
+    assert.strictEqual(count, 1, 'missing source attribute is logged once');
+    assert.strictEqual(mutations, 0, 'attribute is not re-set');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('missing source attribute is logged for a copy of processed element', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const sourceAttr = 'data-ag-missing-clone';
+    let clone;
+
+    const logs = await getLogs(async () => {
+        runScriptlet(name, [targetSelector, TARGET_ATTR_NAME, `[${sourceAttr}]`]);
+        // page copies the processed element, so the copy already holds the copied missing value
+        clone = targetElem.cloneNode(true);
+        document.body.appendChild(clone);
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        await makeUnrelatedDomChange();
+    });
+    const count = logs.filter((log) => log === getMissingSourceMessage(sourceAttr)).length;
+    clone.remove();
+
+    assert.strictEqual(clone.getAttribute(TARGET_ATTR_NAME), 'null', 'copy holds the copied missing value');
+    assert.strictEqual(count, 2, 'missing source attribute is logged once for each element');
+});
+
+test('missing source attribute is logged again only after it has been found', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const sourceAttr = 'data-ag-missing-again';
+
+    const logs = await getLogs(async () => {
+        runScriptlet(name, [targetSelector, TARGET_ATTR_NAME, `[${sourceAttr}]`]);
+        // page changes the target, while the source attribute is still missing
+        targetElem.setAttribute(TARGET_ATTR_NAME, 'page-value');
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), 'null', 'page change is overwritten');
+
+        targetElem.setAttribute(sourceAttr, 'copied');
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        assert.strictEqual(targetElem.getAttribute(TARGET_ATTR_NAME), 'copied', 'found value is copied');
+
+        targetElem.removeAttribute(sourceAttr);
+        await sleep(ATTR_SETTLE_DELAY_MS);
+        await makeUnrelatedDomChange();
+    });
+    const count = logs.filter((log) => log === getMissingSourceMessage(sourceAttr)).length;
+
+    assert.strictEqual(count, 2, 'missing source attribute is logged once before and once after it is found');
+});
+
+test('attribute is not re-set and hit is not called if value already matches', (assert) => {
+    const { targetSelector, targetElem } = context;
+    const plainAttr = 'data-ag-test-a';
+    const copyAttr = 'data-ag-test-b';
+    targetElem.setAttribute(plainAttr, '1');
+    targetElem.setAttribute('data-source', 'copied');
+    targetElem.setAttribute(copyAttr, 'copied');
+
+    const counter = createAttrMutationCounter([targetElem], [plainAttr, copyAttr]);
+
+    runScriptlet(name, [targetSelector, plainAttr, '1']);
+    runScriptlet(name, [targetSelector, copyAttr, '[data-source]']);
+
+    const done = assert.async();
+    // mutation observer callbacks are async, so wait for them
+    setTimeout(() => {
+        const mutations = counter.count;
+        counter.disconnect();
+        assert.strictEqual(targetElem.getAttribute(plainAttr), '1', `${plainAttr} value is unchanged`);
+        assert.strictEqual(targetElem.getAttribute(copyAttr), 'copied', `${copyAttr} value is unchanged`);
+        assert.strictEqual(mutations, 0, 'setAttribute is not called for matching values');
+        assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+        done();
+    }, ATTR_SETTLE_DELAY_MS);
+});
+
+test('invalid selector is logged only once', async (assert) => {
+    const selector = '..ag-test-invalid-selector';
+    const count = await countLogsAfterDomChange(
+        name,
+        [selector, TARGET_ATTR_NAME, '1'],
+        `${name}: Invalid selector arg: '${selector}'`,
+    );
+    assert.strictEqual(count, 1, 'invalid selector is logged once');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('invalid attribute name is logged only once', async (assert) => {
+    const { targetSelector, targetElem } = context;
+    const attr = 'ag-test invalid';
+    const count = await countLogsAfterDomChange(
+        name,
+        [targetSelector, attr, '1'],
+        `${name}: Invalid attribute name: '${attr}'`,
+    );
+    assert.strictEqual(count, 1, 'invalid attribute name is logged once');
+    assert.strictEqual(targetElem.attributes.length, 1, 'no attribute has been set');
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+});
+
+test('error for one element does not stop setting attribute on other elements and is logged once', async (assert) => {
+    await checkAttrErrorForOneElement(assert, name);
+});
+
+/**
+ * Checks that an invalid name of the attribute to copy the value from is logged once for the rule
+ * and the rule does nothing, instead of treating the attribute as missing on each matched element.
+ *
+ * @param {object} assert QUnit assert
+ * @param {string} value value argument with the invalid attribute name, e.g. '[data a]'
+ */
+const checkInvalidSourceAttrIsLoggedOnce = async (assert, value) => {
+    const { targetElem, mismatchElem } = context;
+    const elems = [targetElem, mismatchElem];
+    // several elements are matched, so the name should be logged once for the rule and not for each element
+    const selector = elems.map((elem) => `#${elem.id}`).join(', ');
+
+    const logs = await getLogs(async () => {
+        runScriptlet(name, [selector, TARGET_ATTR_NAME, value]);
+        await makeUnrelatedDomChange();
+    });
+    const invalidValueCount = logs.filter((log) => {
+        return log === `${name}: Invalid attribute value provided: '${value}'`;
+    }).length;
+    const missingSourceCount = logs.filter((log) => log === getMissingSourceMessage(value.slice(1, -1))).length;
+
+    assert.strictEqual(invalidValueCount, 1, 'invalid attribute name is logged once');
+    assert.strictEqual(missingSourceCount, 0, 'attribute is not logged as missing');
+    elems.forEach((elem) => {
+        assert.strictEqual(elem.hasAttribute(TARGET_ATTR_NAME), false, `attribute has not been set to #${elem.id}`);
+    });
+    assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+};
+
+test('invalid attribute name to copy value from is logged only once', async (assert) => {
+    await checkInvalidSourceAttrIsLoggedOnce(assert, '[data-ag invalid]');
+});
+
+test('empty attribute name to copy value from is logged only once', async (assert) => {
+    await checkInvalidSourceAttrIsLoggedOnce(assert, '[]');
 });

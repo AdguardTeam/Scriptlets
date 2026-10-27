@@ -1,8 +1,11 @@
 import {
     hit,
     getPropertyInChain,
+    getMethodOwner,
     logMessage,
+    getThrownValueMessage,
     isEmptyObject,
+    getFunctionProxyProperty,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -65,13 +68,21 @@ export function callNoThrow(source, functionName) {
         return;
     }
 
+    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
+    const methodOwner = getMethodOwner(base, prop);
+
     const objectWrapper = (...args) => {
+        // Arguments of the 'apply' trap are target, thisArg and arguments of the call
+        if (methodOwner !== base && args[1] !== base) {
+            return Reflect.apply(...args);
+        }
         let result;
         try {
             result = Reflect.apply(...args);
         } catch (e) {
-            const message = `Error calling ${functionName}: ${e.message}`;
-            logMessage(source, message);
+            // Error is not converted to get its message, as it would call the intercepted method again,
+            // e.g. `JSON.stringify`, and the error may be `null` or `undefined`, which has no message
+            logMessage(source, `Error calling ${functionName}: ${getThrownValueMessage(e)}`);
         }
         hit(source);
         return result;
@@ -79,9 +90,10 @@ export function callNoThrow(source, functionName) {
 
     const objectHandler = {
         apply: objectWrapper,
+        get: getFunctionProxyProperty,
     };
 
-    base[prop] = new Proxy(base[prop], objectHandler);
+    methodOwner[prop] = new Proxy(methodOwner[prop], objectHandler);
 }
 
 export const callNoThrowNames = [
@@ -98,7 +110,10 @@ callNoThrow.primaryName = callNoThrowNames[0];
 callNoThrow.injections = [
     hit,
     getPropertyInChain,
+    getMethodOwner,
     logMessage,
+    getThrownValueMessage,
     // following helpers are needed for helpers above
     isEmptyObject,
+    getFunctionProxyProperty,
 ];

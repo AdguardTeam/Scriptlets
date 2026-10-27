@@ -23,6 +23,8 @@ import {
     type FetchResource,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
     resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,
@@ -39,6 +41,9 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getThrownValueMessage,
+    logJsonContent,
+    getFunctionProxyProperty,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -75,7 +80,7 @@ import { type Source } from './scriptlets';
  *         - `value` is string or regular expression for matching the value of the option passed to fetch call;
  *           invalid regular expression will cause any value matching.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- *   if regular expression is invalid it will be skipped.
+ *   if it is an invalid regular expression, the rule is not applied.
  * - `mode` — optional, syntax mode selector.
  *   Supported values:
  *     - `legacy` — force the existing legacy path syntax;
@@ -206,12 +211,26 @@ export function jsonPruneFetchResponse(
         nativeStringify: window.JSON.stringify,
     };
 
-    const pruneJsonValue = (root: any) => {
+    // Content is only logged without properties to remove, regardless of `stack`,
+    // as `jsonPruner()` logs it for other scriptlets as well, e.g. `json-prune` for `JSON.parse()`
+    const isLoggingMode = syntaxModeDetails.mode === 'legacy' && prunePaths.length === 0;
+
+    // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
+    // which is logged once, instead of on each request
+    if (stack && !isLoggingMode && !isValidStackPattern(stack)) {
+        logMessage(source, `Invalid stack: ${stack}`);
+        return;
+    }
+
+    // `stack` is not passed to the helpers, as it is already matched by `fetchHandlerWrapper()`
+    // when `fetch()` is called, and the response is pruned after it is awaited,
+    // when the caller is no longer in the stack, so the stack trace read then is passed to be logged instead
+    const pruneJsonValue = (root: any, stackTrace: string) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stack);
+            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), '');
         }
 
-        return jsonPruner(source, root, prunePaths, requiredPaths, stack, nativeObjects);
+        return jsonPruner(source, root, prunePaths, requiredPaths, '', nativeObjects, stackTrace);
     };
 
     const fetchHandlerWrapper = async (
@@ -225,15 +244,42 @@ export function jsonPruneFetchResponse(
             return Reflect.apply(target, thisArg, args);
         }
 
-        let originalResponse;
+        // Stack trace is read only if it is matched or logged, before the response is awaited,
+        // so it has the caller of `fetch()`, which is no longer in the stack after that,
+        // e.g. a function which returns the promise of `fetch()`.
+        // The page may make creating or reading it throw, e.g. by replacing `Error` or by `Error.prepareStackTrace`,
+        // which should not stop the rules without `stack` from working, so it is done separately
+        let stackTrace = '';
+        let isStackTraceRead = false;
+        if (stack || isLoggingMode) {
+            try {
+                stackTrace = String(new Error().stack || '');
+                isStackTraceRead = true;
+            } catch {
+                // Rules with `stack` are not applied, as it cannot be matched, and it is not logged
+            }
+        }
+
+        // Error message line is added to the stack trace created here, in the wrapper called by the page,
+        // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
+        if (
+            stack
+            && !isLoggingMode
+            && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))
+        ) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        // Request is sent once, outside of `try`, so its rejection is passed to the page as is,
+        // and it is not sent again, e.g. a POST request
+        const originalResponse = await Reflect.apply(nativeFetch, null, args);
+
         let clonedResponse;
         try {
-            // eslint-disable-next-line prefer-spread
-            originalResponse = await nativeFetch.apply(null, args);
             clonedResponse = nativeResponseClone.call(originalResponse);
         } catch {
-            logMessage(source, `Could not make an original fetch request: ${fetchData.url}`);
-            return Reflect.apply(target, thisArg, args);
+            logMessage(source, `Could not clone the response: ${fetchData.url}`);
+            return originalResponse;
         }
 
         let json;
@@ -245,22 +291,31 @@ export function jsonPruneFetchResponse(
             return clonedResponse;
         }
 
-        const modifiedJson = pruneJsonValue(json);
+        // The response is delivered to the page even if it cannot be modified or logged, as the request
+        // has succeeded, so its `fetch()` is not rejected. The original response is returned then
+        try {
+            const modifiedJson = pruneJsonValue(json, stackTrace);
 
-        const forgedResponse = forgeResponse(
-            originalResponse,
-            nativeObjects.nativeStringify(modifiedJson),
-        );
-        hit(source);
+            const forgedResponse = forgeResponse(
+                originalResponse,
+                nativeObjects.nativeStringify(modifiedJson),
+            );
+            hit(source);
 
-        return forgedResponse;
+            return forgedResponse;
+        } catch (error) {
+            // e.g. thrown by serializing a value which is too deeply nested
+            logMessage(source, `Response body can't be modified: ${getThrownValueMessage(error)}`);
+            return clonedResponse;
+        }
     };
 
     const fetchHandler = {
         apply: fetchHandlerWrapper,
+        get: getFunctionProxyProperty,
     };
 
-    window.fetch = new Proxy(window.fetch, fetchHandler);
+    window.fetch = new Proxy<typeof fetch>(window.fetch, fetchHandler);
 }
 
 export const jsonPruneFetchResponseNames = [
@@ -303,6 +358,8 @@ jsonPruneFetchResponse.injections = [
     forgeResponse,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
+    isValidStackPattern,
     resolveJsonSyntaxMode,
     toRegExp,
     isValidStrPattern,
@@ -319,4 +376,7 @@ jsonPruneFetchResponse.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getThrownValueMessage,
+    logJsonContent,
+    getFunctionProxyProperty,
 ];

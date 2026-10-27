@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import { runScriptlet, clearGlobalProps } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    countLogsAfterDomChange,
+    checkErrorForOneElement,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'remove-in-shadow-dom';
@@ -289,5 +294,93 @@ if (!isSupported) {
         assert.strictEqual(window.hit, 'FIRED', 'hit fired');
         // clean up test elements
         elemsToClean.push(shadowChild, simpleChild, testHost);
+    });
+
+    test('baseSelector matches container of shadow hosts', (assert) => {
+        const container = document.createElement('div');
+        container.id = 'ag-test-hosts-container';
+        const testHost = document.createElement('div');
+        container.appendChild(testHost);
+        const testChild = document.createElement('p');
+        // unique class, so rules from previous tests, whose observers are still active, do not match it
+        testChild.classList.add('ag-test-remove-in-container');
+        testHost.attachShadow({ mode: 'open' }).appendChild(testChild);
+        const lightElem = document.createElement('p');
+        lightElem.classList.add('ag-test-remove-in-container');
+        container.appendChild(lightElem);
+        document.body.appendChild(container);
+
+        // <body>
+        //   <div#ag-test-hosts-container>
+        //     <div>
+        //       #shadow-root (open)
+        //         <p.ag-test-remove-in-container></p>
+        //     </div>
+        //     <p.ag-test-remove-in-container></p>   // not inside any shadow host, so it is not removed
+        //   </div>
+        // </body>
+
+        const SELECTOR = '.ag-test-remove-in-container';
+        runScriptlet(name, [SELECTOR, `#${container.id}`]);
+
+        assert.strictEqual(testHost.shadowRoot.querySelector(SELECTOR), null, `Element ${SELECTOR} is removed`);
+        assert.ok(lightElem.isConnected, 'element outside shadow hosts is not removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+        // clean up test elements
+        elemsToClean.push(container);
+    });
+
+    test('invalid selectors are logged', async (assert) => {
+        // shadow host is present, so the selectors are used on the first run and on the DOM change
+        const testHost = document.createElement('div');
+        const testChild = document.createElement('p');
+        testChild.classList.add('ag-test-remove-invalid');
+        testHost.attachShadow({ mode: 'open' }).appendChild(testChild);
+        document.body.appendChild(testHost);
+        elemsToClean.push(testHost);
+
+        const invalidSelector = '..ag-test-invalid-selector';
+        const cases = [
+            {
+                args: [invalidSelector],
+                message: `${name}: Invalid selector arg: '${invalidSelector}'`,
+            },
+            {
+                args: ['.ag-test-remove-invalid', invalidSelector],
+                message: `${name}: Invalid baseSelector arg: '${invalidSelector}'`,
+            },
+        ];
+
+        for (let i = 0; i < cases.length; i += 1) {
+            const { args, message } = cases[i];
+            const count = await countLogsAfterDomChange(name, args, message);
+            assert.strictEqual(count, 1, `${message} is logged once`);
+        }
+
+        assert.ok(testChild.isConnected, 'element is not removed');
+        assert.strictEqual(window.hit, undefined, 'hit function has not been called');
+    });
+
+    test('error for one element does not stop removing other elements and is logged once', async (assert) => {
+        const className = 'ag-test-remove-in-shadow-dom-error';
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const shadowRoot = host.attachShadow({ mode: 'open' });
+        elemsToClean.push(host);
+
+        await checkErrorForOneElement(assert, name, {
+            args: [`.${className}`],
+            createElem: () => {
+                const elem = document.createElement('p');
+                elem.classList.add(className);
+                shadowRoot.appendChild(elem);
+                return elem;
+            },
+            // e.g. the page overrides the method for the element
+            makeFailing: (elem, throwPageError) => {
+                Object.defineProperty(elem, 'remove', { value: throwPageError, configurable: true });
+            },
+            isProcessed: (elem) => !elem.isConnected,
+        });
     });
 }

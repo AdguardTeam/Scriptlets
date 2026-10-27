@@ -19,8 +19,10 @@ export * from './prune-utils';
 export * from './regexp-utils';
 export * from './response-utils';
 export * from './request-utils';
+export * from './selector-utils';
 export * from './storage-utils';
 export * from './string-utils';
+export * from './url-utils';
 
 export * from './log-message';
 export * from './create-on-error-handler';
@@ -45,3 +47,5 @@ export * from './value-matchers';
 export * from './click-utils';
 export * from './set-constant-utils';
 export * from './chain-prop-utils';
+export * from './xpath-utils';
+export * from './xhr-response-utils';

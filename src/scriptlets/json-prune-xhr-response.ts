@@ -20,9 +20,12 @@ import {
     objectToString,
     matchRequestProps,
     getXhrData,
-    type XMLHttpRequestSharedRequestData,
+    interceptXhrResponses,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     getMatchPropsData,
     getRequestProps,
@@ -37,6 +40,8 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getThrownValueMessage,
+    logJsonContent,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -71,7 +76,7 @@ import { type Source } from './scriptlets';
  *         - `value` — string or regular expression for matching the value of the option
  *           passed to `XMLHttpRequest.open()` call.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
- *   if regular expression is invalid it will be skipped.
+ *   if it is an invalid regular expression, the rule is not applied.
  * - `mode` — optional, syntax mode selector.
  *   Supported values:
  *     - `legacy` — force the existing legacy path syntax;
@@ -205,209 +210,74 @@ export function jsonPruneXhrResponse(
         return jsonPruner(source, root, prunePaths, requiredPaths, '', nativeObjects);
     };
 
-    const nativeOpen = window.XMLHttpRequest.prototype.open;
-    const nativeSend = window.XMLHttpRequest.prototype.send;
+    /**
+     * Returns the content of the response for the request of the page, pruned or logged,
+     * converted to its response type.
+     *
+     * @param content text of the forged response
+     * @param xhr object of the page
+     * @param stackTrace stack trace of `send()` for logs
+     * @returns content of the response
+     */
+    const modifyResponse = (content: any, xhr: XMLHttpRequest, stackTrace: string) => {
+        let modifiedContent;
+        if (typeof content === 'string') {
+            try {
+                const jsonContent = nativeParse(content);
+                if (shouldLog) {
+                    logJsonContent(source, jsonContent, nativeStringify, stackTrace);
+                }
 
-    const matchedXhrRequests = new Map<XMLHttpRequest, XMLHttpRequestSharedRequestData<any>>();
-    const xhrRequestHeaders = new Map<XMLHttpRequest, any[]>();
-
-    const setRequestHeaderWrapper = (
-        setRequestHeader: typeof XMLHttpRequest.prototype.setRequestHeader,
-        thisArgument: XMLHttpRequest,
-        argsList: any,
-    ): void => {
-        const headers = xhrRequestHeaders.get(thisArgument);
-        if (headers) {
-            headers.push(argsList);
-        }
-        return Reflect.apply(setRequestHeader, thisArgument, argsList);
-    };
-
-    const setRequestHeaderHandler = {
-        apply: setRequestHeaderWrapper,
-    };
-
-    const openWrapper = (
-        target: typeof XMLHttpRequest.prototype.open,
-        thisArg: XMLHttpRequest,
-        args: [
-            method: string,
-            url: string,
-            async?: boolean,
-            user?: string,
-            password?: string,
-        ],
-    ): void => {
-        // eslint-disable-next-line prefer-spread
-        const xhrData: XMLHttpRequestSharedRequestData<any> = getXhrData.apply(null, args);
-
-        if (matchRequestProps(source, propsToMatch, xhrData) || shouldLog) {
-            matchedXhrRequests.set(thisArg, xhrData);
-        }
-
-        // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
-            xhrRequestHeaders.set(thisArg, []);
-
-            // setRequestHeader can only be called on open xhr object,
-            // so we can safely proxy it here
-            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
-        }
-
-        return Reflect.apply(target, thisArg, args);
-    };
-
-    const sendWrapper = (
-        target: typeof XMLHttpRequest.prototype.send,
-        thisArg: XMLHttpRequest,
-        args: any,
-    ): void => {
-        if (!matchedXhrRequests.has(thisArg)) {
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        const xhrData = matchedXhrRequests.get(thisArg);
-
-        // Stack trace cannot be checked in jsonPruner helper,
-        // because in this case it returns stack trace of our script,
-        // so it has to be checked earlier
-        const stackTrace = new Error().stack || '';
-
-        if (!xhrData || (stack && !matchStackTrace(stack, stackTrace))) {
-            xhrRequestHeaders.delete(thisArg);
-            matchedXhrRequests.delete(thisArg);
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        /**
-         * Create separate XHR request with original request's input
-         * to be able to collect response data without triggering
-         * listeners on original XHR object
-         */
-        const forgedRequest = new XMLHttpRequest();
-        forgedRequest.withCredentials = thisArg.withCredentials;
-        forgedRequest.addEventListener('readystatechange', () => {
-            if (forgedRequest.readyState !== 4) {
-                return;
-            }
-
-            const {
-                readyState,
-                response,
-                responseText,
-                responseURL,
-                responseXML,
-                status,
-                statusText,
-            } = forgedRequest;
-
-            // Extract content from response
-            const content = responseText || response;
-            if (typeof content !== 'string' && typeof content !== 'object') {
-                return;
-            }
-
-            let modifiedContent;
-            if (typeof content === 'string') {
+                // Content is only logged in logging mode, so the original one is returned
+                const resultJson = shouldLog ? jsonContent : pruneJsonValue(jsonContent);
+                // Convert content to the response type of the request, as the forged request has the default one,
+                // also in logging mode. It is serialized only for the types which need text,
+                // as serializing may fail for content which can be parsed, e.g. too deeply nested
+                const getResultText = () => (shouldLog ? content : nativeStringify(resultJson));
                 try {
-                    const jsonContent = nativeParse(content);
-                    if (shouldLog) {
-                        // eslint-disable-next-line max-len
-                        logMessage(source, `${window.location.hostname}\n${nativeStringify(jsonContent, null, 2)}\nStack trace:\n${stackTrace}`, true);
-                        logMessage(source, jsonContent, true, false);
-                        modifiedContent = content;
-                    } else {
-                        modifiedContent = pruneJsonValue(jsonContent);
-                        // Convert content to appropriate response type, only if it has been modified
-                        try {
-                            const { responseType } = thisArg;
-                            switch (responseType) {
-                                case '':
-                                case 'text':
-                                    modifiedContent = nativeStringify(modifiedContent);
-                                    break;
-                                case 'arraybuffer':
-                                    modifiedContent = new TextEncoder()
-                                        .encode(nativeStringify(modifiedContent))
-                                        .buffer;
-                                    break;
-                                case 'blob':
-                                    modifiedContent = new Blob([nativeStringify(modifiedContent)]);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        } catch (error) {
-                            const message = `Response body cannot be converted to response type: '${content}'`;
-                            logMessage(source, message);
-                            modifiedContent = content;
-                        }
+                    const { responseType } = xhr;
+                    switch (responseType) {
+                        case '':
+                        case 'text':
+                            modifiedContent = getResultText();
+                            break;
+                        case 'arraybuffer':
+                            modifiedContent = new TextEncoder().encode(getResultText()).buffer;
+                            break;
+                        case 'blob':
+                            modifiedContent = new Blob([getResultText()]);
+                            break;
+                        default:
+                            modifiedContent = resultJson;
+                            break;
                     }
                 } catch (error) {
-                    const message = `Response body cannot be converted to json: '${content}'`;
+                    const message = `Response body cannot be converted to response type: '${content}'`;
                     logMessage(source, message);
                     modifiedContent = content;
                 }
+            } catch (error) {
+                const message = `Response body cannot be converted to json: '${content}'`;
+                logMessage(source, message);
+                modifiedContent = content;
             }
-
-            // Manually put required values into target XHR object
-            // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
-            Object.defineProperties(thisArg, {
-                // original values
-                readyState: { value: readyState, writable: false },
-                responseURL: { value: responseURL, writable: false },
-                responseXML: { value: responseXML, writable: false },
-                status: { value: status, writable: false },
-                statusText: { value: statusText, writable: false },
-                // modified values
-                response: { value: modifiedContent, writable: false },
-                responseText: { value: modifiedContent, writable: false },
-            });
-
-            // Mock events
-            setTimeout(() => {
-                const stateEvent = new Event('readystatechange');
-                thisArg.dispatchEvent(stateEvent);
-
-                const loadEvent = new Event('load');
-                thisArg.dispatchEvent(loadEvent);
-
-                const loadEndEvent = new Event('loadend');
-                thisArg.dispatchEvent(loadEndEvent);
-            }, 1);
-
-            hit(source);
-        });
-
-        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url, Boolean(xhrData.async)]);
-
-        const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
-        // Mimic request headers before sending
-        // setRequestHeader can only be called on open request objects
-        collectedHeaders.forEach((header) => {
-            forgedRequest.setRequestHeader(header[0], header[1]);
-        });
-        xhrRequestHeaders.delete(thisArg);
-        matchedXhrRequests.delete(thisArg);
-
-        try {
-            Reflect.apply(nativeSend, forgedRequest, args);
-        } catch {
-            return Reflect.apply(target, thisArg, args);
         }
-        return undefined;
+
+        hit(source);
+
+        return modifiedContent;
     };
 
-    const openHandler = {
-        apply: openWrapper,
-    };
-
-    const sendHandler = {
-        apply: sendWrapper,
-    };
-
-    XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
-    XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+    // All requests are intercepted in logging mode.
+    // Stack trace cannot be checked in jsonPruner helper, because it would return the stack trace of our script,
+    // so it is matched when the request is sent, and read for logging mode as well
+    interceptXhrResponses(
+        source,
+        stack,
+        shouldLog,
+        (xhrData) => matchRequestProps(source, propsToMatch, xhrData) || shouldLog,
+        modifyResponse,
+    );
 }
 
 export const jsonPruneXhrResponseNames = [
@@ -448,8 +318,12 @@ jsonPruneXhrResponse.injections = [
     objectToString,
     matchRequestProps,
     getXhrData,
+    interceptXhrResponses,
+    isValidStackPattern,
+    getFunctionProxyProperty,
     isPruningNeeded,
     matchStackTrace,
+    addStackTraceMessageLine,
     resolveJsonSyntaxMode,
     getMatchPropsData,
     getRequestProps,
@@ -464,4 +338,6 @@ jsonPruneXhrResponse.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    getThrownValueMessage,
+    logJsonContent,
 ];

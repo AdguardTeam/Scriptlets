@@ -4,6 +4,8 @@ import {
     nativeIsNaN,
     defaultAttributeSetter,
     logMessage,
+    isValidSelector,
+    isValidAttributeName,
     throttle,
     hit,
 } from '../helpers';
@@ -98,8 +100,26 @@ export function trustedSetAttr(source, selector, attr, value = '') {
         return;
     }
 
-    setAttributeBySelector(source, selector, attr, value);
-    observeDOMChanges(() => setAttributeBySelector(source, selector, attr, value), true);
+    // Selector and attribute name are validated once, otherwise the error would be logged on each DOM change
+    if (!isValidSelector(selector)) {
+        logMessage(source, `Invalid selector arg: '${selector}'`);
+        return;
+    }
+    if (!isValidAttributeName(attr)) {
+        logMessage(source, `Invalid attribute name: '${attr}'`);
+        return;
+    }
+
+    /**
+     * Elements whose error has been logged, so it is not logged on each DOM change.
+     */
+    const loggedFailedElems = new WeakSet();
+    const applyAttr = () => {
+        setAttributeBySelector(source, selector, attr, value, defaultAttributeSetter, loggedFailedElems);
+    };
+
+    applyAttr();
+    observeDOMChanges(applyAttr, true);
 }
 
 export const trustedSetAttrNames = [
@@ -114,6 +134,8 @@ trustedSetAttr.injections = [
     setAttributeBySelector,
     observeDOMChanges,
     nativeIsNaN,
+    isValidSelector,
+    isValidAttributeName,
     // following helpers should be imported and injected
     // because they are used by helpers above
     defaultAttributeSetter,
