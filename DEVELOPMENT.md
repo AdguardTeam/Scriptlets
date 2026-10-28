@@ -175,7 +175,7 @@ regeneration during the release flow, which has no ticket number) use a
 3. Add a QUnit test file at `tests/scriptlets/<name>.test.js`.
 4. Update `scripts/compatibility-table.json` with the new entry.
 5. Run `pnpm test:qunit scriptlets --name <name>` to verify.
-6. Run `pnpm wiki:build-docs` to regenerate the wiki documentation.
+6. Run `pnpm wiki` to regenerate the wiki documentation.
 
 ### Adding a New Redirect Resource
 
@@ -184,7 +184,7 @@ regeneration during the release flow, which has no ticket number) use a
 3. Add a QUnit test file at `tests/redirects/<name>.test.js`.
 4. Update `scripts/compatibility-table.json` with the new entry.
 5. Run `pnpm test:qunit redirects --name <name>` to verify.
-6. Run `pnpm wiki:build-docs` to regenerate the wiki documentation.
+6. Run `pnpm wiki` to regenerate the wiki documentation.
 
 ### Updating Wiki Documentation
 
