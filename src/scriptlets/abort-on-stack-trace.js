@@ -9,7 +9,6 @@ import {
     getDescriptorAddon,
     logMessage,
     shouldAbortInlineOrInjectedScript,
-    escapeRegExp,
     toRegExp,
     isEmptyObject,
     getNativeRegexpTest,
@@ -36,7 +35,10 @@ import {
  * ```
  *
  * - `property` — required, path to a property. The property must be attached to window.
- * - `stack` — required, string that must match the current function call stack trace.
+ * - `stack` — required, string or regular expression that must match the current function call stack trace;
+ *   an invalid regular expression makes the rule exit and not work; a value whose non-empty trailing part
+ *   after the last slash is not a valid flag set, e.g. `/foo/z`, is matched as plain text, while a value
+ *   which starts and ends with `/`, e.g. `/foo/bar/`, is still a regular expression.
  *     - values to abort inline or injected script, accordingly:
  *         - `inlineScript`
  *         - `injectedScript`
@@ -47,6 +49,12 @@ import {
  *
  *     ```adblock
  *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+ *     ```
+ *
+ * 1. Aborts script when it tries to access `window.Ya` and it's error stack trace matches the regular expression
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', '/yandex\.js/')
  *     ```
  *
  * 1. Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
@@ -158,7 +166,6 @@ abortOnStackTrace.injections = [
     createOnErrorHandler,
     hit,
     isValidStrPattern,
-    escapeRegExp,
     matchStackTrace,
     getDescriptorAddon,
     logMessage,

@@ -76,6 +76,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   an async function which awaits the response no longer matches it if it is not in the stack when `fetch()`
   or `json()` is called, e.g. if the request is sent by a timer. In logging mode of `json-prune-fetch-response`
   and `json-prune`, `stack` is still not matched, and the stack trace of the call is logged with the content.
+- Documented that the `stack` parameter of `abort-on-stack-trace` scriptlet supports
+  regular expressions [#393].
 
 ### Deprecated
 
@@ -316,7 +318,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. `setItem`. The method is replaced in `Storage.prototype` now, unless the page has assigned its own method
   to the storage, e.g. in Chrome, and only its calls on the storage of the rule are processed, also the ones made
   through `Storage.prototype`.
+- `isValidStrPattern` helper not validating a regular expression pattern with flags,
+  e.g. `/foo(/i`, so such a pattern was treated as valid and scriptlets failed
+  when converting it to a regexp.
 
+[#393]: https://github.com/AdguardTeam/Scriptlets/issues/393
 [#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
 [#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
 [#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
