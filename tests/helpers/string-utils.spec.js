@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 
 import {
     toRegExp,
+    isValidStrPattern,
     inferValue,
     extractRegexAndReplacement,
     splitByNotEscapedDelimiter,
@@ -91,6 +92,18 @@ describe('Test string utils', () => {
                 expected: /\/test\\\/g/,
             },
             {
+                // the non-empty part after the last slash is not a valid flag set,
+                // so the value is matched as plain text
+                actual: '/foo/z',
+                expected: /\/foo\/z/,
+            },
+            {
+                // the value starts and ends with a slash, so it is a regular expression,
+                // even though the part after the last slash is empty
+                actual: '/foo/bar/',
+                expected: /foo\/bar/,
+            },
+            {
                 actual: '',
                 expected: defaultRegexp,
             },
@@ -115,6 +128,40 @@ describe('Test string utils', () => {
             expect(() => {
                 toRegExp(pattern);
             }).toThrow();
+        });
+    });
+
+    describe('Test isValidStrPattern', () => {
+        const validPatterns = [
+            'simpleStr',
+            'test.js',
+            '/abc/',
+            '/[a-z]{1,9}/',
+            '/no_match-\\d+/',
+            '/ABORT-ON-STACK-TRACE/i',
+            // a leading slash alone does not make a pattern with flags,
+            // and the text after the last slash is not a valid flag set,
+            // so such values are literals escaped by toRegExp()
+            '/path/to/file',
+            '/c++/lib.js',
+            '/(ads/banner.js',
+            '/test\\/g',
+            '/foo(/bar',
+        ];
+        test.each(validPatterns)('"%s" is valid', (pattern) => {
+            expect(isValidStrPattern(pattern)).toBe(true);
+        });
+
+        const invalidPatterns = [
+            '/\\/',
+            '/[/',
+            '/*/',
+            '/[0-9]++/',
+            // flags must not hide an invalid pattern from the check
+            '/foo(/i',
+        ];
+        test.each(invalidPatterns)('"%s" is not valid', (pattern) => {
+            expect(isValidStrPattern(pattern)).toBe(false);
         });
     });
 

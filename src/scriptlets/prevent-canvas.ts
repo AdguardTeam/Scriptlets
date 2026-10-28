@@ -4,7 +4,6 @@ import {
     parseMatchArg,
     isValidMatchStr,
     toRegExp,
-    escapeRegExp,
     isValidStrPattern,
 } from '../helpers';
 import { type Source } from './scriptlets';
@@ -102,6 +101,5 @@ preventCanvas.injections = [
     parseMatchArg,
     isValidMatchStr,
     toRegExp,
-    escapeRegExp,
     isValidStrPattern,
 ];
