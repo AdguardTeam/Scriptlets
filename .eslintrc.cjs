@@ -32,7 +32,10 @@ module.exports = {
         'no-underscore-dangle': ['error', {
             allow: ['__filename', '__dirname'],
         }],
-        'import/extensions': ['error', 'never', { json: 'always' }],
+        'import/extensions': ['error', 'never', {
+            json: 'always',
+            cjs: 'always',
+        }],
         'no-param-reassign': 0,
         'no-shadow': 0,
         'no-bitwise': 0,
@@ -87,6 +90,13 @@ module.exports = {
         ],
     },
     overrides: [
+        // CommonJS scripts, e.g. `scripts/wiki-build-failure-notify.cjs`,
+        // which workflow steps require. ESLint 8 on a directory lints only
+        // `.js` plus the patterns of `overrides`, so this entry is what makes
+        // `lint:code` cover `.cjs` as well.
+        {
+            files: ['**/*.cjs'],
+        },
         {
             files: ['**/*.ts'],
             parser: '@typescript-eslint/parser',
