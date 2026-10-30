@@ -111,6 +111,7 @@ pnpm lint:md     # markdownlint
 | `pnpm lint:code`                                   | Run ESLint                                                               |
 | `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)                            |
 | `pnpm lint:md`                                     | Run markdownlint                                                         |
+| `pnpm wiki`                                        | Regenerate the whole wiki (compatibility table, then docs)               |
 | `pnpm wiki:build-table`                            | Regenerate compatibility table                                           |
 | `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc                       |
 

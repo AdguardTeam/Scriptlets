@@ -61,6 +61,7 @@ scriptlets/
 │   ├── helpers/              # QUnit and Vitest tests for helper utilities
 │   ├── redirects/            # QUnit tests for redirect resources
 │   ├── scriptlets/           # QUnit and Vitest tests for scriptlets
+│   ├── scripts/              # Vitest tests for workflow helper scripts in scripts/
 │   ├── smoke/                # Smoke tests for ESM exports
 │   └── vitest-helpers.ts     # Vitest-only test utilities (e.g. jsdom workarounds)
 ├── types/                    # Ambient type declarations
@@ -100,6 +101,7 @@ scriptlets/
 - `pnpm lint:code` — run ESLint
 - `pnpm lint:types` — run TypeScript type checking (`tsc --noEmit`)
 - `pnpm lint:md` — run markdownlint
+- `pnpm wiki` — regenerate the whole wiki (compatibility table, then docs)
 - `pnpm wiki:build-table` — regenerate compatibility table
 - `pnpm wiki:build-docs` — regenerate scriptlet/redirect wiki docs from JSDoc
 
@@ -651,9 +653,9 @@ Project-specific rules:
   behavior testing.
 
 - **Vitest tests** (`tests/api/`, `tests/helpers/`, `tests/scriptlets/`,
-  root `*.spec.js`/`*.spec.ts`): test files are named `*.spec.js` or
-  `*.spec.ts`. Use these for API-level, converter, validator and helper
-  testing, and for scriptlet behavior which needs no real browser, e.g. by
+  `tests/scripts/`, root `*.spec.js`/`*.spec.ts`): test files are named
+  `*.spec.js` or `*.spec.ts`. Use these for API-level, converter, validator and
+  helper testing, and for scriptlet behavior which needs no real browser, e.g. by
   calling the scriptlet function directly. Environment is jsdom.
 
 - Tests of clicks which a label forwards to its control MUST make the label
