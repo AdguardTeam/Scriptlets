@@ -14,10 +14,12 @@ on:
         required: true
         type: string
 
-# `contents: write` — update-wiki commits/pushes the wiki to the release branch
-# `id-token: write` — Octopass OIDC (the create-pr action inside the shared
-#   workflow and protected-push in the update-wiki job both exchange the
-#   id-token for a short-lived App installation token)
+# These workflow-level scopes are inherited only by the reusable
+# `create-release-pr` job: `contents: write` lets it push the release branch,
+# and `id-token: write` lets the create-pr action inside it exchange the OIDC
+# token for a short-lived App installation token (the PR itself is opened with
+# that token, not GITHUB_TOKEN). The `update-wiki` job declares its own scopes
+# below.
 permissions:
   contents: write
   id-token: write
@@ -36,19 +38,49 @@ jobs:
   update-wiki:
     needs: create-release-pr
     runs-on: team-extensions
+    # Scopes of the update-wiki job only:
+    #   `contents: read` — checkout reads the release branch; nothing in this
+    #     job writes with GITHUB_TOKEN (protected-push swaps in the Octopass
+    #     token instead);
+    #   `id-token: write` — protected-push exchanges the OIDC token for the
+    #     short-lived Octopass App installation token;
+    #   `pull-requests: write` — post, update and delete the wiki build failure
+    #     comment on the release PR.
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    env:
+      RELEASE_BRANCH: release-bump/${{ inputs.tag }}
+      # File which `tee` fills with the build log. The notification step reads
+      # the name from here too, so the shell and the script cannot drift apart.
+      WIKI_BUILD_LOG: wiki-build.log
     steps:
+      # The release branch always has scripts/wiki-build-failure-notify.cjs:
+      # the create-release-pr job above cuts it from this same github.sha, and
+      # a dispatch from an older ref runs the older workflow, which has no
+      # notification step at all.
       - name: Checkout release branch
         uses: actions/checkout@v5
         with:
-          ref: release-bump/${{ inputs.tag }}
-          fetch-depth: 0
+          ref: ${{ env.RELEASE_BRANCH }}
 
+      # Build the wiki but do NOT block the release on failure: the job stays
+      # green (continue-on-error). The full build log is captured so the step
+      # below can quote its tail, even when this step times out.
       - name: Build wiki
         id: build-wiki
         continue-on-error: true
-        run: >-
-          DOCKER_BUILDKIT=1 docker build --progress plain
-          --target wiki-output --output ./wiki-out .
+        timeout-minutes: 30
+        shell: bash
+        run: |
+          # BuildKit writes its progress and the final error to stderr, so
+          # merge stderr into the pipe before tee. With pipefail the step
+          # already exits with docker's status; tee keeps filling the log until
+          # the step is killed, so a timed-out build still has a tail.
+          DOCKER_BUILDKIT=1 docker build --progress plain \
+            --target wiki-output --output ./wiki-out . 2>&1 \
+            | tee "$RUNNER_TEMP/$WIKI_BUILD_LOG"
 
       # Only append when the wiki was actually built; a transient build failure
       # (steps.build-wiki.outcome != 'success') is skipped so we don't try to
@@ -63,8 +95,9 @@ jobs:
 
       # Commit and push the wiki to the release branch. protected-push:
       #   - no-ops (has_changes=false, exit 0) when the rebuild is a no-op;
-      #   - resolves the remote branch head and pushes with --force-with-lease
-      #     (refuses to clobber a concurrent push);
+      #   - resolves the remote branch head right before the push and uses it
+      #     as the --force-with-lease value, so it does NOT protect a commit
+      #     pushed while the build was running (see AG-61398);
       #   - authenticates with an Octopass token instead of GITHUB_TOKEN.
       - name: Commit and push wiki
         if: steps.build-wiki.outcome == 'success'
@@ -75,6 +108,135 @@ jobs:
           # empty repository and rejects the request ("invalid token scope
           # request").
           repository: ${{ github.repository }}
-          branch: release-bump/${{ inputs.tag }}
+          branch: ${{ env.RELEASE_BRANCH }}
           commit-message: 'docs: regenerate wiki docs for release'
           files: wiki
+
+      # The update-wiki job intentionally stays green when the wiki build fails
+      # (see build-wiki's continue-on-error), so a silent failure would leave
+      # the release PR without regenerated docs and nobody would notice. Post a
+      # comment on the release PR with the captured error. Only `failure` is
+      # handled: a step that hits its own timeout-minutes also reports
+      # `failure`, while a manual cancel has nothing to fix.
+      - name: Comment on release PR about wiki build failure
+        if: steps.build-wiki.outcome == 'failure'
+        # Best-effort notification: update-wiki must stay green even if the
+        # comment cannot be posted (e.g. transient API error). An uncaught
+        # error of this step is annotated on the run page, and continue-on-error
+        # keeps the job green either way.
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          # One 5xx response would lose what the comment text calls the only
+          # notification. 4xx errors are not retried.
+          retries: 3
+          script: |
+            const {
+                readWikiBuildLogTail,
+                resolveReleasePr,
+                upsertFailureComment,
+            } = require('./scripts/wiki-build-failure-notify.cjs');
+
+            const releaseBranch = process.env.RELEASE_BRANCH;
+            const runUrl =
+                `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+                `/actions/runs/${context.runId}`;
+
+            // The job stays green, so a failure that cannot be reported on the
+            // PR must at least raise an error annotation on the run page.
+            const number = await resolveReleasePr({ github, context, releaseBranch });
+            if (number === null) {
+                core.setFailed(
+                    `No open release PR found for branch ${releaseBranch}; ` +
+                        'the wiki build failure is not reported on a PR.',
+                );
+                return;
+            }
+
+            const errorText =
+                readWikiBuildLogTail(process.env.RUNNER_TEMP, process.env.WIKI_BUILD_LOG) ||
+                '(no error output captured)';
+
+            const body = [
+                `⚠️ **Wiki regeneration failed** for the release of \`${releaseBranch}\`.`,
+                '',
+                'The `update-wiki` job stays green (it is not a blocking stage), ' +
+                    'so this comment is the only notification. The regenerated ' +
+                    '`wiki/` was **not** committed to this PR. To recover, push ' +
+                    'the fix to the release branch if there is one, then re-run ' +
+                    '**only the `update-wiki` job** — not "Re-run all jobs", ' +
+                    'which recreates the release branch and drops the fix. The ' +
+                    'job rebuilds the wiki, commits it to this PR and removes ' +
+                    'this comment. Alternatively, run `pnpm wiki` locally and ' +
+                    'commit the generated `wiki/` together with ' +
+                    '`scripts/compatibility-table.json`, then delete this ' +
+                    'comment by hand. If `pnpm wiki` reports that the sources ' +
+                    'have changed, review `scripts/compatibility-table.json` ' +
+                    'and run `pnpm wiki` again before the commit.',
+                '',
+                `Full log: ${runUrl}`,
+                '',
+                '<details><summary>Build error (last lines)</summary>',
+                '',
+                '````text',
+                errorText,
+                '````',
+                '',
+                '</details>',
+            ].join('\n');
+
+            // A re-run must update the previous notification instead of posting
+            // a duplicate comment on the human-reviewed release PR. Overlapping
+            // runs can both post one, so the first comment is updated and the
+            // rest are deleted.
+            const { created, removed } = await upsertFailureComment({
+                github,
+                context,
+                number,
+                body,
+            });
+            core.info(created
+                ? `Commented about the wiki build failure on release PR #${number}`
+                : `Updated the wiki build failure comment on release PR #${number}`);
+            if (removed > 0) {
+                core.info(`Removed ${removed} duplicate marker comment(s)`);
+            }
+
+      # A later successful run must not leave the stale failure comment on the
+      # release PR: it would contradict the committed wiki/ exactly when a
+      # maintainer reviews and merges the PR. Remove every such comment
+      # (best-effort).
+      - name: Remove stale wiki build failure comment
+        if: steps.build-wiki.outcome == 'success'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          retries: 3
+          script: |
+            const {
+                deleteFailureComments,
+                resolveReleasePr,
+            } = require('./scripts/wiki-build-failure-notify.cjs');
+
+            const releaseBranch = process.env.RELEASE_BRANCH;
+
+            const number = await resolveReleasePr({ github, context, releaseBranch });
+            if (number === null) {
+                core.info(
+                    `No open release PR found for branch ${releaseBranch}; nothing to clean up.`,
+                );
+                return;
+            }
+
+            // Overlapping failure runs can leave several marker comments, so
+            // delete every one. Only comments of github-actions[bot] are
+            // matched, so a quote of the comment by a human is kept.
+            const removed = await deleteFailureComments({ github, context, number });
+            if (removed === 0) {
+                core.info(`No stale wiki build failure comment on release PR #${number}.`);
+                return;
+            }
+            core.info(
+                `Removed ${removed} stale wiki build failure comment(s) ` +
+                    `from release PR #${number}.`,
+            );

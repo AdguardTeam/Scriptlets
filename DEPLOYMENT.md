@@ -19,11 +19,19 @@
    release. (Only the wiki build is best-effort — the `Build wiki` step runs
    with `continue-on-error: true` because the shared remote BuildKit instance
    can be transiently unreachable, so a build failure leaves the release PR fully
-   mergeable without the wiki; the wiki is retried next release. The commit/push
-   step, however, only runs when the build succeeded, so wiki changes that WERE
-   built always reach the PR — and a push failure surfaces as a real red job
-   rather than being silently swallowed. Either way it is not a required check
-   on the release PR, so it never blocks the merge.)
+   mergeable without the wiki. Because the job stays green, such a failure is
+   reported by a warning comment on the release PR instead of a red job; to
+   recover, push the fix to the release branch if there is one, then re-run
+   only the `update-wiki` job — not "Re-run all jobs", which recreates the
+   release branch and drops the fix. The job rebuilds the wiki, commits it and
+   removes the comment. Alternatively, regenerate the wiki locally with
+   `pnpm wiki` (if it reports changed sources, review
+   `scripts/compatibility-table.json` and run it again), commit `wiki/`
+   with `scripts/compatibility-table.json` and delete the comment by hand. The
+   commit/push step, however, only runs when the build succeeded, so wiki
+   changes that WERE built always reach the PR — and a push failure surfaces as
+   a real red job rather than being silently swallowed. Either way it is not a
+   required check on the release PR, so it never blocks the merge.)
 2. Merge the release PR. **Publish release**
    (`.github/workflows/publish-release.yml`) runs the shared
    `ext-shared-actions/publish-release.yml`: it tags the commit from the
