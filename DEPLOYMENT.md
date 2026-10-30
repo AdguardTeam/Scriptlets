@@ -21,10 +21,12 @@
    can be transiently unreachable, so a build failure leaves the release PR fully
    mergeable without the wiki. Because the job stays green, such a failure is
    reported by a warning comment on the release PR instead of a red job; to
-   recover, push the fix to the release branch and re-run the `update-wiki`
-   job — it rebuilds the wiki, commits it and removes the comment — or
-   regenerate the wiki locally with `pnpm wiki` (if it reports changed sources,
-   review `scripts/compatibility-table.json` and run it again), commit `wiki/`
+   recover, push the fix to the release branch if there is one, then re-run
+   only the `update-wiki` job — not "Re-run all jobs", which recreates the
+   release branch and drops the fix. The job rebuilds the wiki, commits it and
+   removes the comment. Alternatively, regenerate the wiki locally with
+   `pnpm wiki` (if it reports changed sources, review
+   `scripts/compatibility-table.json` and run it again), commit `wiki/`
    with `scripts/compatibility-table.json` and delete the comment by hand. The
    commit/push step, however, only runs when the build succeeded, so wiki
    changes that WERE built always reach the PR — and a push failure surfaces as

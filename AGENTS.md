@@ -28,9 +28,7 @@ AdGuard/uBO/ABP syntaxes, and compatibility metadata.
 - **Primary dependencies**: `@adguard/agtree` (rule parsing), `js-yaml`
   (redirect manifests)
 - **Storage**: None
-- **Testing**: QUnit (scriptlets, redirects, helpers — browser-level via
-  Puppeteer) and Vitest (API, validators, converters, helpers, scriptlets —
-  jsdom)
+- **Testing**: QUnit (browser-level via Puppeteer) and Vitest (jsdom)
 - **Target platform**: Browser extension and Corelibs
 - **Project type**: single
 - **Performance goals**: N/A
@@ -82,8 +80,7 @@ scriptlets/
 - `pnpm install` — install dependencies
 - `pnpm build` — clean `dist/` and build all bundles
 - `pnpm test` — run all tests (Vitest + smoke + QUnit)
-- `pnpm test:vitest` — run Vitest tests only (API, validators, converters,
-  helpers, scriptlets)
+- `pnpm test:vitest` — run Vitest tests only
 - `pnpm test:qunit scriptlets` — run QUnit tests for all scriptlets
 - `pnpm test:qunit redirects` — run QUnit tests for all redirects
 - `pnpm test:qunit helpers` — run QUnit tests for helpers

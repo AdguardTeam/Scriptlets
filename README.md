@@ -316,13 +316,20 @@ During development, you might need to link these packages using `pnpm link`.
 
 ### <a name="how-to-update-wiki"></a> How to update wiki
 
-There are two scripts to update wiki:
+Run `pnpm wiki` to regenerate the auto-generated `wiki/`. It runs two
+sub-commands:
 
-1. `pnpm wiki:build-table` — checks compatibility data updates and updates the compatibility table.
-    Should be run manually while the release preparation.
-1. `pnpm wiki:build-docs` — updates wiki pages `about-scriptlets.md` and `about-redirects.md`.
-    They are being generated from JSDoc-type comments of corresponding scriptlets and redirects source files
-    due to `@scriptlet`/`@redirect` and `@description` tags. Runs automatically while the release build.
+1. `pnpm wiki:build-table` — checks the upstream compatibility sources and
+   regenerates `compatibility-table.md`. If the sources have changed, it writes
+   the new entries and exits before the docs are generated, so review
+   `scripts/compatibility-table.json` and run `pnpm wiki` again.
+1. `pnpm wiki:build-docs` — regenerates `about-scriptlets.md`,
+   `about-trusted-scriptlets.md` and `about-redirects.md` from the
+   `@scriptlet`/`@trustedScriptlet`/`@redirect` and `@description` comments of
+   the source files.
+
+The Prepare release workflow runs `pnpm wiki` and commits the result to the
+release PR. Do not edit the generated pages by hand.
 
 ## <a name="usage"></a> Usage
 
