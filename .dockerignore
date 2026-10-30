@@ -10,6 +10,8 @@
 dist/
 tmp/
 tests/dist/
+# Helper checkout of the prepare-release workflow
+wiki-notify/
 .eslintcache
 *.tgz
 output.md

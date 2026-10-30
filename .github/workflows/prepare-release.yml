@@ -60,6 +60,18 @@ jobs:
           ref: ${{ env.RELEASE_BRANCH }}
           fetch-depth: 0
 
+      # The notification helpers are required from the ref the workflow was
+      # dispatched from, NOT from the release branch above: a release branch
+      # cut before a helper was added has no such file, and the notification
+      # would be lost. The separate path keeps the release checkout intact.
+      - name: Checkout notification helpers
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          path: wiki-notify
+          sparse-checkout: scripts
+          persist-credentials: false
+
       # Build the wiki but do NOT block the release on failure: the job stays
       # green (continue-on-error). The full build log is captured so the step
       # below can quote its tail, even when this step times out.
@@ -90,8 +102,9 @@ jobs:
 
       # Commit and push the wiki to the release branch. protected-push:
       #   - no-ops (has_changes=false, exit 0) when the rebuild is a no-op;
-      #   - resolves the remote branch head and pushes with --force-with-lease
-      #     (refuses to clobber a concurrent push);
+      #   - resolves the remote branch head right before the push and uses it
+      #     as the --force-with-lease value, so it does NOT protect a commit
+      #     pushed while the build was running (see AG-61398);
       #   - authenticates with an Octopass token instead of GITHUB_TOKEN.
       - name: Commit and push wiki
         if: steps.build-wiki.outcome == 'success'
@@ -126,7 +139,7 @@ jobs:
               findMarkerComments,
               readWikiBuildLogTail,
               resolveReleasePr,
-            } = require('./scripts/wiki-build-failure-notify.cjs');
+            } = require('./wiki-notify/scripts/wiki-build-failure-notify.cjs');
 
             const releaseBranch = process.env.RELEASE_BRANCH;
             const marker = process.env.WIKI_FAILURE_MARKER;
@@ -161,7 +174,9 @@ jobs:
                 'it to this PR and removes this comment. Alternatively, run ' +
                 '`pnpm wiki` locally and commit the generated `wiki/` together ' +
                 'with `scripts/compatibility-table.json`, then delete this ' +
-                'comment by hand.',
+                'comment by hand. If `pnpm wiki` reports that the sources have ' +
+                'changed, review `scripts/compatibility-table.json` and run ' +
+                '`pnpm wiki` again before the commit.',
               '',
               `Full log: ${runUrl}`,
               '',
@@ -175,22 +190,34 @@ jobs:
             ].join('\n');
 
             // A re-run must update the previous notification instead of posting
-            // a duplicate comment on the human-reviewed release PR.
-            const previous = (await findMarkerComments({
+            // a duplicate comment on the human-reviewed release PR. Two
+            // overlapping runs can both post one before either finds the other,
+            // so the first comment is updated and the rest are deleted.
+            const previousComments = await findMarkerComments({
               github,
               context,
               number,
               marker,
-            }))[0];
+            });
 
-            if (previous) {
+            if (previousComments.length > 0) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: previous.id,
+                comment_id: previousComments[0].id,
                 body,
               });
+              for (const duplicate of previousComments.slice(1)) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: duplicate.id,
+                });
+              }
               core.info(`Updated the wiki build failure comment on release PR #${number}`);
+              if (previousComments.length > 1) {
+                core.info(`Removed ${previousComments.length - 1} duplicate marker comment(s)`);
+              }
             } else {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -214,7 +241,7 @@ jobs:
             const {
               findMarkerComments,
               resolveReleasePr,
-            } = require('./scripts/wiki-build-failure-notify.cjs');
+            } = require('./wiki-notify/scripts/wiki-build-failure-notify.cjs');
 
             const releaseBranch = process.env.RELEASE_BRANCH;
             const marker = process.env.WIKI_FAILURE_MARKER;
@@ -227,9 +254,10 @@ jobs:
               return;
             }
 
-            // The failure step may have posted more than one marker comment
-            // (e.g. when listing comments failed and it could not find the
-            // previous one), so delete every comment carrying the marker.
+            // Two overlapping failure runs may both post a marker comment, and
+            // the failure step itself only updates the first one, so delete
+            // every marker comment. Only comments of github-actions[bot] are
+            // matched, so a quote of the comment by a human is kept.
             const stale = await findMarkerComments({ github, context, number, marker });
             if (stale.length === 0) {
               core.info(`No stale wiki build failure comment on release PR #${number}.`);

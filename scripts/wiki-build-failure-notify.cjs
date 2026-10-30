@@ -6,6 +6,10 @@ const path = require('path');
 const MAX_EXCERPT_LENGTH = 60000;
 const MAX_EXCERPT_LINES = 80;
 
+// Comments of GITHUB_TOKEN are authored by this bot. The login also keeps
+// a human comment that quotes the body, and thus the marker, from matching.
+const COMMENT_AUTHOR = 'github-actions[bot]';
+
 /**
  * Resolve the number of the open release PR whose head branch is
  * `releaseBranch`. Returns `null` when no open PR matches.
@@ -27,7 +31,8 @@ const resolveReleasePr = async ({ github, context, releaseBranch }) => {
 };
 
 /**
- * Every comment of PR `number` whose body contains `marker`.
+ * Every comment of PR `number` that the bot posted and whose body contains
+ * `marker`.
  *
  * @param {object} args
  * @param {object} args.github Octokit client provided by actions/github-script
@@ -45,7 +50,8 @@ const findMarkerComments = async ({
         issue_number: number,
         per_page: 100,
     });
-    return comments.filter((comment) => (comment.body || '').includes(marker));
+    return comments.filter((comment) => comment.user?.login === COMMENT_AUTHOR
+        && (comment.body || '').includes(marker));
 };
 
 /**
