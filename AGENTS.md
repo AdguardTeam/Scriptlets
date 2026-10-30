@@ -94,7 +94,7 @@ scriptlets/
   split-stage; expects `test:qunit:build` to have run first)
 - `pnpm tgz` — pack `@adguard/scriptlets` into `scriptlets.tgz` (requires a
   version; CI stamps it via `set-dev-version`, local builds must stamp first)
-- `pnpm lint` — run all linters (`lint:code` + `lint:types` + `lint:md`)
+- `pnpm lint` — run all linters
 - `pnpm lint:code` — run ESLint
 - `pnpm lint:types` — run TypeScript type checking (`tsc --noEmit`)
 - `pnpm lint:md` — run markdownlint

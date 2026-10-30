@@ -128,7 +128,7 @@ jobs:
         uses: actions/github-script@v8
         with:
           # One 5xx response would lose what the comment text calls the only
-          # notification. 4xx errors are not retried.
+          # notification.
           retries: 3
           script: |
             const {
@@ -167,10 +167,11 @@ jobs:
                     '**only the `update-wiki` job** — not "Re-run all jobs", ' +
                     'which recreates the release branch and drops the fix. The ' +
                     'job rebuilds the wiki, commits it to this PR and removes ' +
-                    'this comment. Alternatively, run `pnpm wiki` locally and ' +
+                    'this comment. Alternatively, run `pnpm wiki` locally, ' +
                     'commit the generated `wiki/` together with ' +
-                    '`scripts/compatibility-table.json`, then delete this ' +
-                    'comment by hand. If `pnpm wiki` reports that the sources ' +
+                    '`scripts/compatibility-table.json`, push the commit to ' +
+                    'the release branch, then delete this comment by hand. ' +
+                    'If `pnpm wiki` reports that the sources ' +
                     'have changed, review `scripts/compatibility-table.json` ' +
                     'and run `pnpm wiki` again before the commit.',
                 '',
