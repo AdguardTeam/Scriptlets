@@ -24,7 +24,7 @@
         "prepublishOnly": "pnpm build"
     },
     "lint-staged": {
-        "{src,tests,scripts}/**/*.{js,cjs}": [
+        "{src,tests,scripts}/**/*.{js,cjs,ts}": [
             "eslint"
         ],
         "**/*.md": [

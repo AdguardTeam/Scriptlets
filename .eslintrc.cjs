@@ -32,10 +32,7 @@ module.exports = {
         'no-underscore-dangle': ['error', {
             allow: ['__filename', '__dirname'],
         }],
-        'import/extensions': ['error', 'never', {
-            json: 'always',
-            cjs: 'always',
-        }],
+        'import/extensions': ['error', 'never', { json: 'always' }],
         'no-param-reassign': 0,
         'no-shadow': 0,
         'no-bitwise': 0,
