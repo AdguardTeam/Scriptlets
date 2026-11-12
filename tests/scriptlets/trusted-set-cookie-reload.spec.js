@@ -268,3 +268,128 @@ describe('Test trusted-set-cookie-reload scriptlet', () => {
         clearCookie(cName);
     });
 });
+
+describe('trusted-set-cookie-reload with uBO arguments', () => {
+    const uboSource = { name: 'ubo-trusted-set-cookie-reload', verbose: true };
+    const adgSource = { name: 'trusted-set-cookie-reload', verbose: true };
+
+    let cookieSetter;
+
+    beforeEach(() => {
+        cookieSetter = vi.spyOn(Document.prototype, 'cookie', 'set');
+    });
+
+    afterEach(() => {
+        cookieSetter.mockRestore();
+    });
+
+    /**
+     * Returns the cookie strings written by the scriptlet.
+     *
+     * @returns {string[]} Written cookie strings.
+     */
+    const getWrittenCookies = () => cookieSetter.mock.calls.map((call) => call[0]);
+
+    test('reloads once the cookie is set, and not again', () => {
+        const cName = '__test-ubo-reload';
+        trustedSetCookieReload(uboSource, cName, '1');
+
+        expect(getWrittenCookies()).toEqual([`${cName}=1; path=/`]);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        expect(window.hit).toBe('FIRED');
+
+        // after the reload the cookie is already set
+        trustedSetCookieReload(uboSource, cName, '1');
+        expect(getWrittenCookies().length).toBe(1);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        clearCookie(cName);
+    });
+
+    test('reload option with 0 sets the cookie without reloading', () => {
+        const cName = '__test-ubo-reload-0';
+        trustedSetCookieReload(uboSource, cName, '1', '', '', 'reload', '0');
+
+        expect(parseCookieString(document.cookie)[cName]).toBe('1');
+        expect(window.location.reload).not.toHaveBeenCalled();
+        clearCookie(cName);
+    });
+
+    test('empty path sets the root path, and domain option is used', () => {
+        const { hostname } = document.location;
+        const cName = '__test-ubo-reload-path-domain';
+        trustedSetCookieReload(uboSource, cName, '1', '', '', 'domain', hostname);
+
+        expect(getWrittenCookies()).toEqual([`${cName}=1; path=/; domain=${hostname}`]);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        clearCookie(cName);
+    });
+
+    test('domain option which does not match the hostname sets no cookie', () => {
+        const cName = '__test-ubo-reload-domain-other';
+        trustedSetCookieReload(uboSource, cName, '1', '', '', 'domain', 'example.com');
+
+        expect(getWrittenCookies()).toEqual([]);
+        expect(window.location.reload).not.toHaveBeenCalled();
+        expect(window.hit).toBeUndefined();
+    });
+
+    test('dontOverwrite option keeps an existing cookie and does not reload', () => {
+        const cName = '__test-ubo-reload-dont-overwrite';
+        document.cookie = `${cName}=page`;
+        cookieSetter.mockClear();
+
+        trustedSetCookieReload(uboSource, cName, 'rule', '', '', 'dontOverwrite', '1');
+
+        expect(getWrittenCookies()).toEqual([]);
+        expect(parseCookieString(document.cookie)[cName]).toBe('page');
+        expect(window.location.reload).not.toHaveBeenCalled();
+        clearCookie(cName);
+    });
+
+    test('value with characters not allowed in cookies is encoded', () => {
+        const cName = '__test-ubo-reload-encoded';
+        trustedSetCookieReload(uboSource, cName, 'a;b');
+
+        expect(getWrittenCookies()).toEqual([`${cName}=a%3Bb; path=/`]);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        trustedSetCookieReload(uboSource, cName, 'a;b');
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        clearCookie(cName);
+    });
+
+    test('$currentDate$ is set in the format of toUTCString(), and not reloaded again', () => {
+        const cName = '__test-ubo-reload-current-date';
+        trustedSetCookieReload(uboSource, cName, '$currentDate$');
+
+        const cookieValue = parseCookieString(document.cookie)[cName];
+        expect(cookieValue).toMatch(/^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        trustedSetCookieReload(uboSource, cName, '$currentDate$');
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        clearCookie(cName);
+    });
+
+    test('offsetExpiresSec 0 removes the cookie', () => {
+        const cName = '__test-ubo-reload-expires-0';
+        document.cookie = `${cName}=1; path=/`;
+        cookieSetter.mockClear();
+
+        trustedSetCookieReload(uboSource, cName, '', '0', '');
+
+        expect(getWrittenCookies().at(-1)).toMatch(new RegExp(`^${cName}=; path=/; expires=`));
+        expect(document.cookie.includes(cName)).toBe(false);
+    });
+
+    test('empty path and options are still invalid in AdGuard syntax', () => {
+        const cName = '__test-adg-reload-options';
+        trustedSetCookieReload(adgSource, cName, '1', '', '');
+        // `dontOverwrite` is the `domain` argument here, which does not match the origin
+        trustedSetCookieReload(adgSource, cName, '1', '', '/', 'dontOverwrite', '1');
+
+        expect(getWrittenCookies()).toEqual([]);
+        expect(window.location.reload).not.toHaveBeenCalled();
+        expect(window.hit).toBeUndefined();
+    });
+});

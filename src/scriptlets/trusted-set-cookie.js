@@ -12,6 +12,7 @@ import {
     getUboCookieDomain,
     encodeUboCookieValue,
     parseCookieString,
+    setUboCookie,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -142,60 +143,24 @@ export function trustedSetCookie(
 
     // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
     // and uBO arguments, i.e. named options instead of `domain`
-    const isUboRule = typeof source.name === 'string' && source.name.startsWith('ubo-');
-    // uBO accepts only digits or keywords
-    const UBO_OFFSET_EXPIRES_REGEXP = /^(?:\d+|1day|1year)$/;
-
-    let cookieValue = value;
-    let cookiePath = path;
-    let cookieDomain = domain;
-    let shouldReload = false;
-
-    if (isUboRule) {
-        const options = parseUboOptions([domain].concat(extraArgs));
-
-        const uboDomain = getUboCookieDomain(options.domain, document.location.hostname);
-        if (uboDomain === null) {
-            logMessage(source, `Cookie domain not matched by hostname: '${options.domain}'`);
-            return;
-        }
-        cookieDomain = uboDomain;
-
-        if (cookiePath === '') {
-            cookiePath = '/';
-        }
-
-        cookieValue = encodeUboCookieValue(value);
-
-        if (
-            options.dontOverwrite
-            && Object.prototype.hasOwnProperty.call(parseCookieString(document.cookie), name)
-        ) {
-            return;
-        }
-
-        shouldReload = !!options.reload;
-        // Prevent infinite reloads if the cookie has been set already
-        if (shouldReload && isCookieSetWithValue(document.cookie, name, cookieValue, true)) {
-            return;
-        }
-    }
-
-    // `$currentDate$` is set in the format of `toUTCString()` in uBO rules
-    const parsedValue = parseKeywordValue(cookieValue, isUboRule);
-
-    if (!isValidCookiePath(cookiePath)) {
-        logMessage(source, `Invalid cookie path: '${cookiePath}'`);
+    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
+        setUboCookie(source, name, value, offsetExpiresSec, path, [domain].concat(extraArgs));
         return;
     }
 
-    // Domain of uBO rules is checked above against the hostname
-    if (!isUboRule && !document.location.origin.includes(cookieDomain)) {
-        logMessage(source, `Cookie domain not matched by origin: '${cookieDomain}'`);
+    const parsedValue = parseKeywordValue(value);
+
+    if (!isValidCookiePath(path)) {
+        logMessage(source, `Invalid cookie path: '${path}'`);
         return;
     }
 
-    let cookieToSet = serializeCookie(name, parsedValue, cookiePath, cookieDomain, false);
+    if (!document.location.origin.includes(domain)) {
+        logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
+        return;
+    }
+
+    let cookieToSet = serializeCookie(name, parsedValue, path, domain, false);
     if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
@@ -205,11 +170,7 @@ export function trustedSetCookie(
     if (offsetExpiresSec) {
         const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
 
-        // `0` is allowed in uBO rules, as it removes the cookie
-        const isValidOffset = isUboRule
-            ? UBO_OFFSET_EXPIRES_REGEXP.test(offsetExpiresSec)
-            : !!parsedOffsetMs;
-        if (!isValidOffset) {
+        if (!parsedOffsetMs) {
             logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
             return;
         }
@@ -220,12 +181,6 @@ export function trustedSetCookie(
 
     document.cookie = cookieToSet;
     hit(source);
-
-    // Reload only if the cookie has actually been set, e.g. not blocked by the browser,
-    // otherwise the page would be reloaded infinitely
-    if (shouldReload && isCookieSetWithValue(document.cookie, name, cookieValue, true)) {
-        window.location.reload();
-    }
 }
 
 export const trustedSetCookieNames = [
@@ -253,4 +208,5 @@ trustedSetCookie.injections = [
     getUboCookieDomain,
     encodeUboCookieValue,
     parseCookieString,
+    setUboCookie,
 ];

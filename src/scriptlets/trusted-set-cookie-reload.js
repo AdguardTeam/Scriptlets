@@ -9,6 +9,10 @@ import {
     getTrustedCookieOffsetMs,
     parseCookieString,
     getCookiePath,
+    parseUboOptions,
+    getUboCookieDomain,
+    encodeUboCookieValue,
+    setUboCookie,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -52,6 +56,17 @@ import {
  * > Note that the scriptlet does not encode cookie names and values.
  * > As a result, if a cookie's name or value includes `;`,
  * > the scriptlet will not set the cookie since this may cause the cookie to break.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g. `example.org##+js(trusted-set-cookie-reload, name, value)`,
+ * as by [`trusted-set-cookie`](#trusted-set-cookie) with `reload, 1` option:
+ *
+ * ```text
+ * example.org##+js(trusted-set-cookie-reload, name, value[, offsetExpiresSec[, path[, ...options]]])
+ * ```
+ *
+ * The options are the same as in `trusted-set-cookie`, so `reload, 0` sets the cookie without reloading the page.
  *
  * ### Examples
  *
@@ -101,13 +116,28 @@ import {
  */
 /* eslint-enable max-len */
 
-export function trustedSetCookieReload(source, name, value, offsetExpiresSec = '', path = '/', domain = '') {
+export function trustedSetCookieReload(
+    source,
+    name,
+    value,
+    offsetExpiresSec = '',
+    path = '/',
+    domain = '',
+    ...extraArgs
+) {
     if (typeof name === 'undefined') {
         logMessage(source, 'Cookie name should be specified');
         return;
     }
     if (typeof value === 'undefined') {
         logMessage(source, 'Cookie value should be specified');
+        return;
+    }
+
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments.
+    // As in uBO, it is `trusted-set-cookie` with `reload, 1` option, which the options of the rule may override
+    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
+        setUboCookie(source, name, value, offsetExpiresSec, path, ['reload', '1', domain].concat(extraArgs));
         return;
     }
 
@@ -185,4 +215,8 @@ trustedSetCookieReload.injections = [
     parseKeywordValue,
     parseCookieString,
     getCookiePath,
+    parseUboOptions,
+    getUboCookieDomain,
+    encodeUboCookieValue,
+    setUboCookie,
 ];
