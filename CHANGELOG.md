@@ -45,6 +45,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   FiltersCompiler by the lines `#%#//scriptlet('ubo-trusted-`, `#%#//scriptlet('ubo-rpnt`
   and `#%#//scriptlet('ubo-replace-node-text`, and the same with double quotes, in `exclusions-high.txt`,
   before they use this version.
+- uBO aliases of `trusted-set-cookie`, `ubo-trusted-set-cookie` and `ubo-trusted-set-cookie.js` [#586], with uBO
+  arguments: an empty `path` sets the root path, `offsetExpiresSec` `0` removes the cookie, a value with characters
+  not allowed in cookies, e.g. `;`, is encoded instead of rejected, `$currentDate$` is set in UTC,
+  e.g. `Tue, 08 Nov 2022 10:53:19 GMT`, and the named options `reload, 1`,
+  `domain, value` (also with a leading dot, or a regular expression matched against the hostname)
+  and `dontOverwrite, 1` follow `path` instead of the positional `domain` argument,
+  e.g. `example.org##+js(trusted-set-cookie, consent, accept, , , reload, 1)`.
 
 ### Changed
 

@@ -1,6 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { isCookieSetWithValue, serializeCookie } from '../../src/helpers/cookie-utils';
+import {
+    encodeUboCookieValue,
+    getUboCookieDomain,
+    isCookieSetWithValue,
+    serializeCookie,
+} from '../../src/helpers/cookie-utils';
 import { parseKeywordValue } from '../../src/helpers/parse-keyword-value';
 
 describe('serializeCookie', () => {
@@ -166,6 +171,26 @@ describe('isCookieSetWithValue', () => {
             expect(isCookieSetWithValue(cookieString, 'name', '$currentDate$')).toBe(false);
         });
 
+        describe('$currentDate$ in the format of toUTCString() for uBO rules', () => {
+            test('cookie set just now is considered to be set', () => {
+                const cookieString = `name=${parseKeywordValue('{"date":"$currentDate$"}', true)}`;
+
+                expect(isCookieSetWithValue(cookieString, 'name', '{"date":"$currentDate$"}', true)).toBe(true);
+            });
+
+            test('cookie set more than a day ago should be set again', () => {
+                const cookieString = `name=${new Date(Date.now() - ONE_DAY_MS - 1000).toUTCString()}`;
+
+                expect(isCookieSetWithValue(cookieString, 'name', '$currentDate$', true)).toBe(false);
+            });
+
+            test('cookie value in the format of toString() should be set again', () => {
+                const cookieString = `name=${new Date().toString()}`;
+
+                expect(isCookieSetWithValue(cookieString, 'name', '$currentDate$', true)).toBe(false);
+            });
+        });
+
         test('$currentDate$ cookie value with no timezone name is recognized', () => {
             // timezone name is implementation-defined so it may be absent
             const cookieValue = new Date().toString().replace(/\s\(.+\)$/, '');
@@ -265,5 +290,51 @@ describe('isCookieSetWithValue', () => {
                 expect(isCookieSetWithValue(`name=${Date.now()}`, 'name', value)).toBe(false);
             });
         });
+    });
+});
+
+describe('getUboCookieDomain', () => {
+    const hostname = 'www.example.org';
+
+    test.each([
+        // no domain option
+        { domain: undefined, expected: '' },
+        { domain: '', expected: '' },
+        // hostname and its parent domains, also with a leading dot
+        { domain: 'www.example.org', expected: 'www.example.org' },
+        { domain: 'example.org', expected: 'example.org' },
+        { domain: '.example.org', expected: '.example.org' },
+        { domain: 'EXAMPLE.org', expected: 'EXAMPLE.org' },
+        // not the hostname nor its parent domain
+        { domain: 'example.com', expected: null },
+        { domain: 'ample.org', expected: null },
+        { domain: 'sub.www.example.org', expected: null },
+        // regular expression, its match in the hostname is the domain
+        { domain: '/[^.]+\\.[^.]+$/', expected: 'example.org' },
+        // no match, no domain
+        { domain: '/example\\.com$/', expected: '' },
+        // invalid regular expression
+        { domain: '/(/', expected: null },
+    ])('$domain -> $expected', ({ domain, expected }) => {
+        expect(getUboCookieDomain(domain, hostname)).toBe(expected);
+    });
+});
+
+describe('encodeUboCookieValue', () => {
+    test.each([
+        // allowed characters are kept as they are
+        { value: 'accept', expected: 'accept' },
+        { value: '{"a":1,"b":[2]}', expected: '{"a":1,"b":[2]}' },
+        { value: 'a b', expected: 'a b' },
+        { value: '$now$', expected: '$now$' },
+        // the whole value is encoded if it has a character not allowed in cookies
+        { value: 'a;b', expected: 'a%3Bb' },
+        { value: 'a\\b', expected: 'a%5Cb' },
+        { value: 'zażółć', expected: 'za%C5%BC%C3%B3%C5%82%C4%87' },
+        // keywords are kept for parseKeywordValue() and isCookieSetWithValue()
+        { value: 'a;$now$;b', expected: 'a%3B$now$%3Bb' },
+        { value: '$currentDate$;$currentISODate$', expected: '$currentDate$%3B$currentISODate$' },
+    ])('$value -> $expected', ({ value, expected }) => {
+        expect(encodeUboCookieValue(value)).toBe(expected);
     });
 });

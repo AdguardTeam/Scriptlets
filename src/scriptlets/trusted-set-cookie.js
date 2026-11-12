@@ -8,6 +8,10 @@ import {
     parseKeywordValue,
     getTrustedCookieOffsetMs,
     getCookiePath,
+    parseUboOptions,
+    getUboCookieDomain,
+    encodeUboCookieValue,
+    parseCookieString,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -49,6 +53,26 @@ import {
  * > Note that the scriptlet does not encode cookie names and values.
  * > As a result, if a cookie's name or value includes `;`,
  * > the scriptlet will not set the cookie since this may cause the cookie to break.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g. `example.org##+js(trusted-set-cookie, name, value)`:
+ *
+ * ```text
+ * example.org##+js(trusted-set-cookie, name, value[, offsetExpiresSec[, path[, ...options]]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `offsetExpiresSec` — `0` is allowed, it expires the cookie at once, i.e. removes it
+ * - `path` — empty string sets the root path `/`
+ * - options are pairs of a name and a value which follow `path`:
+ *     - `reload, 1` — reload the page after the cookie is set, unless it is set already
+ *     - `domain, value` — cookie domain, the hostname of the page or its parent domain, also with a leading dot,
+ *       or a regular expression whose match in the hostname is the domain
+ *     - `dontOverwrite, 1` — do not set the cookie if a cookie with the same name exists
+ * - a value with characters not allowed in cookies, e.g. `;`, is encoded instead of rejected
+ * - `$currentDate$` keyword sets current time in UTC, e.g. 'Tue, 08 Nov 2022 10:53:19 GMT'
  *
  * ### Examples
  *
@@ -98,7 +122,15 @@ import {
  */
 /* eslint-enable max-len */
 
-export function trustedSetCookie(source, name, value, offsetExpiresSec = '', path = '/', domain = '') {
+export function trustedSetCookie(
+    source,
+    name,
+    value,
+    offsetExpiresSec = '',
+    path = '/',
+    domain = '',
+    ...extraArgs
+) {
     if (typeof name === 'undefined') {
         logMessage(source, 'Cookie name should be specified');
         return;
@@ -108,19 +140,62 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
         return;
     }
 
-    const parsedValue = parseKeywordValue(value);
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
+    // and uBO arguments, i.e. named options instead of `domain`
+    const isUboRule = typeof source.name === 'string' && source.name.startsWith('ubo-');
+    // uBO accepts only digits or keywords
+    const UBO_OFFSET_EXPIRES_REGEXP = /^(?:\d+|1day|1year)$/;
 
-    if (!isValidCookiePath(path)) {
-        logMessage(source, `Invalid cookie path: '${path}'`);
+    let cookieValue = value;
+    let cookiePath = path;
+    let cookieDomain = domain;
+    let shouldReload = false;
+
+    if (isUboRule) {
+        const options = parseUboOptions([domain].concat(extraArgs));
+
+        const uboDomain = getUboCookieDomain(options.domain, document.location.hostname);
+        if (uboDomain === null) {
+            logMessage(source, `Cookie domain not matched by hostname: '${options.domain}'`);
+            return;
+        }
+        cookieDomain = uboDomain;
+
+        if (cookiePath === '') {
+            cookiePath = '/';
+        }
+
+        cookieValue = encodeUboCookieValue(value);
+
+        if (
+            options.dontOverwrite
+            && Object.prototype.hasOwnProperty.call(parseCookieString(document.cookie), name)
+        ) {
+            return;
+        }
+
+        shouldReload = !!options.reload;
+        // Prevent infinite reloads if the cookie has been set already
+        if (shouldReload && isCookieSetWithValue(document.cookie, name, cookieValue, true)) {
+            return;
+        }
+    }
+
+    // `$currentDate$` is set in the format of `toUTCString()` in uBO rules
+    const parsedValue = parseKeywordValue(cookieValue, isUboRule);
+
+    if (!isValidCookiePath(cookiePath)) {
+        logMessage(source, `Invalid cookie path: '${cookiePath}'`);
         return;
     }
 
-    if (!document.location.origin.includes(domain)) {
-        logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
+    // Domain of uBO rules is checked above against the hostname
+    if (!isUboRule && !document.location.origin.includes(cookieDomain)) {
+        logMessage(source, `Cookie domain not matched by origin: '${cookieDomain}'`);
         return;
     }
 
-    let cookieToSet = serializeCookie(name, parsedValue, path, domain, false);
+    let cookieToSet = serializeCookie(name, parsedValue, cookiePath, cookieDomain, false);
     if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
@@ -130,7 +205,11 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
     if (offsetExpiresSec) {
         const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
 
-        if (!parsedOffsetMs) {
+        // `0` is allowed in uBO rules, as it removes the cookie
+        const isValidOffset = isUboRule
+            ? UBO_OFFSET_EXPIRES_REGEXP.test(offsetExpiresSec)
+            : !!parsedOffsetMs;
+        if (!isValidOffset) {
             logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
             return;
         }
@@ -141,11 +220,20 @@ export function trustedSetCookie(source, name, value, offsetExpiresSec = '', pat
 
     document.cookie = cookieToSet;
     hit(source);
+
+    // Reload only if the cookie has actually been set, e.g. not blocked by the browser,
+    // otherwise the page would be reloaded infinitely
+    if (shouldReload && isCookieSetWithValue(document.cookie, name, cookieValue, true)) {
+        window.location.reload();
+    }
 }
 
 export const trustedSetCookieNames = [
     'trusted-set-cookie',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-set-cookie.js',
+    'ubo-trusted-set-cookie',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -161,4 +249,8 @@ trustedSetCookie.injections = [
     getTrustedCookieOffsetMs,
     parseKeywordValue,
     getCookiePath,
+    parseUboOptions,
+    getUboCookieDomain,
+    encodeUboCookieValue,
+    parseCookieString,
 ];

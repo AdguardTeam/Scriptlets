@@ -325,3 +325,17 @@ test('Set cookie with invalid expires', (assert) => {
     assert.strictEqual(document.cookie.includes(cValue), false, 'Cookie value has not been set');
     clearCookie(cName);
 });
+
+test('uBO rule with empty path, options and a value to encode', (assert) => {
+    const cName = '__test-cookie_ubo';
+    runScriptlet('ubo-trusted-set-cookie', [cName, 'a;b', '', '', 'dontOverwrite', '1']);
+
+    assert.strictEqual(window.hit, 'FIRED', 'Hit was fired');
+    assert.strictEqual(parseCookieString(document.cookie)[cName], 'a%3Bb', 'Cookie value has been encoded and set');
+    clearGlobalProps('hit');
+
+    runScriptlet('ubo-trusted-set-cookie', [cName, 'other', '', '', 'dontOverwrite', '1']);
+    assert.strictEqual(window.hit, undefined, 'Hit was not fired');
+    assert.strictEqual(parseCookieString(document.cookie)[cName], 'a%3Bb', 'Existing cookie has not been overwritten');
+    clearCookie(cName);
+});

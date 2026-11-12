@@ -82,6 +82,25 @@ describe('parseKeywordValue', () => {
             expect(Date.now() - new Date(parsed).getTime()).toBeLessThan(TOLERANCE_MS);
         });
 
+        test('$currentDate$ in the format of toString() by default', () => {
+            const parsed = parseKeywordValue('$currentDate$');
+
+            expect(parsed).toMatch(/^\w{3} \w{3} \d{2} \d{4} \d{2}:\d{2}:\d{2} GMT[+-]\d{4}/);
+        });
+
+        test('$currentDate$ in the format of toUTCString() for uBO rules', () => {
+            const parsed = parseKeywordValue('accepted at $currentDate$', true);
+
+            expect(parsed).toMatch(/^accepted at \w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/);
+            const dateValue = parsed.slice('accepted at '.length);
+            expect(Date.now() - new Date(dateValue).getTime()).toBeLessThan(TOLERANCE_MS);
+        });
+
+        test('other keywords do not depend on isUtcDate', () => {
+            expect(parseKeywordValue('$currentISODate$', true)).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
+            expect(parseKeywordValue('$now$', true)).toMatch(/^\d+$/);
+        });
+
         test('$currentISODate$', () => {
             const parsed = parseKeywordValue('$currentISODate$');
 

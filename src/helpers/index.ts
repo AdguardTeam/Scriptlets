@@ -22,6 +22,7 @@ export * from './request-utils';
 export * from './selector-utils';
 export * from './storage-utils';
 export * from './string-utils';
+export * from './ubo-utils';
 export * from './url-utils';
 
 export * from './log-message';

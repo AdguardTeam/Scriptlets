@@ -7,13 +7,17 @@
  *
  * Supported keywords:
  *   - '$now$' - returns current time in ms, e.g 1667915146503
- *   - '$currentDate$' - returns current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
+ *   - '$currentDate$' - returns current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300',
+ *     or e.g. 'Tue, 08 Nov 2022 10:53:19 GMT' if `isUtcDate` is set
  *   - '$currentISODate$' - returns current date in ISO format e.g '2022-11-08T13:53:19.650Z'
  *
  * @param rawValue value which may contain keywords
+ * @param isUtcDate if true, '$currentDate$' is set by `toUTCString()` as in uBO, defaults to false;
+ * should be set only for uBO rules, i.e. for scriptlets called by `ubo-` names,
+ * as AdGuard rules keep the format of `toString()`
  * @returns parsed value
  */
-export const parseKeywordValue = (rawValue: string): string => {
+export const parseKeywordValue = (rawValue: string, isUtcDate = false): string => {
     // !IMPORTANT: Do not move constants outside of this function
     // Remember to add new keywords to "isCookieSetWithValue" function in "cookie-utils", if required
     // https://github.com/AdguardTeam/Scriptlets/issues/489
@@ -57,8 +61,9 @@ export const parseKeywordValue = (rawValue: string): string => {
                 // Set to current time in ms, e.g 1667915146503
                 return date.getTime().toString();
             case CURRENT_DATE_KEYWORD:
-                // Set to current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300'
-                return date.toString();
+                // Set to current date e.g 'Tue Nov 08 2022 13:53:19 GMT+0300',
+                // or e.g. 'Tue, 08 Nov 2022 10:53:19 GMT' for uBO rules
+                return isUtcDate ? date.toUTCString() : date.toString();
             case CURRENT_ISO_DATE_KEYWORD:
                 // Set to current date e.g '2022-11-08T13:53:19.650Z'
                 return date.toISOString();
