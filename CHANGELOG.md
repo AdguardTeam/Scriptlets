@@ -78,6 +78,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and `json-prune`, `stack` is still not matched, and the stack trace of the call is logged with the content.
 - Documented that the `stack` parameter of `abort-on-stack-trace` scriptlet supports
   regular expressions [#393].
+- Updated [@adguard/agtree] to v4.4.0.
 
 ### Deprecated
 
