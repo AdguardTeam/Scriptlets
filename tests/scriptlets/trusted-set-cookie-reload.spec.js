@@ -393,3 +393,61 @@ describe('trusted-set-cookie-reload with uBO arguments', () => {
         expect(window.hit).toBeUndefined();
     });
 });
+
+/* global jsdom */
+// Rules from AdGuard and uBO filter lists
+describe('trusted-set-cookie-reload with rules from filter lists', () => {
+    const initialUrl = document.location.href;
+
+    afterEach(() => {
+        jsdom.cookieJar.removeAllCookiesSync();
+        jsdom.reconfigure({ url: initialUrl });
+    });
+
+    test.each([
+        {
+            // eslint-disable-next-line max-len
+            // 4-bike.pl#%#//scriptlet('trusted-set-cookie-reload', 'CookieConsent', '{"required":true,…,"timestamp":$now$}')
+            url: 'https://4-bike.pl/',
+            name: 'trusted-set-cookie-reload',
+            args: ['CookieConsent', '{"required":true,"timestamp":$now$}'],
+            expected: /^\{"required":true,"timestamp":\d+\}$/,
+        },
+        {
+            // blog.kilo.ai#%#//scriptlet('trusted-set-cookie-reload', 'intro_popup_last_hidden_at', '$currentISODate$')
+            url: 'https://blog.kilo.ai/',
+            name: 'trusted-set-cookie-reload',
+            args: ['intro_popup_last_hidden_at', '$currentISODate$'],
+            expected: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+        },
+        {
+            // cockta.eu##+js(trusted-set-cookie-reload, cookies_confirm, true)
+            url: 'https://www.cockta.eu/',
+            name: 'ubo-trusted-set-cookie-reload',
+            args: ['cookies_confirm', 'true'],
+            expected: /^true$/,
+        },
+        {
+            // filen.io,~app.filen.io##+js(trusted-set-cookie-reload, cookieConsent, onlyNeeded)
+            url: 'https://filen.io/',
+            name: 'ubo-trusted-set-cookie-reload',
+            args: ['cookieConsent', 'onlyNeeded'],
+            expected: /^onlyNeeded$/,
+        },
+    ])('$name $args', ({
+        url,
+        name,
+        args,
+        expected,
+    }) => {
+        jsdom.reconfigure({ url });
+
+        trustedSetCookieReload({ name }, ...args);
+        expect(parseCookieString(document.cookie)[args[0]]).toMatch(expected);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        // after the reload the cookie is already set
+        trustedSetCookieReload({ name }, ...args);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+    });
+});

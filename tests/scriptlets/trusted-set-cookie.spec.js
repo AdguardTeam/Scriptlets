@@ -311,3 +311,161 @@ describe('trusted-set-cookie with uBO arguments', () => {
         expect(getWrittenCookies()).toEqual([]);
     });
 });
+
+/* global jsdom */
+// Rules from AdGuard and uBO filter lists, uBO ones converted to AdGuard syntax by AGTree,
+// so that their arguments are the same as received by the scriptlet, e.g. `'` is escaped by the converter
+describe('trusted-set-cookie with rules from filter lists', () => {
+    const NOW = new Date('2026-11-13T12:00:00.000Z');
+    const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+    const initialUrl = document.location.href;
+
+    /**
+     * Opens the page of the rule, so that the domain of the cookie is checked against it.
+     *
+     * @param {string} url Page URL.
+     */
+    const openPage = (url) => {
+        jsdom.reconfigure({ url });
+    };
+
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'], now: NOW });
+    });
+
+    afterEach(() => {
+        jsdom.cookieJar.removeAllCookiesSync();
+        jsdom.reconfigure({ url: initialUrl });
+        vi.useRealTimers();
+    });
+
+    test('AdGuard rule with path and domain', () => {
+        // 116117.de#%#//scriptlet('trusted-set-cookie', 'cookieConsent', 'level1', '', '/', '116117.de')
+        openPage('https://www.116117.de/');
+        trustedSetCookie({ name: 'trusted-set-cookie' }, 'cookieConsent', 'level1', '', '/', '116117.de');
+
+        expect(getWrittenCookies()).toEqual(['cookieConsent=level1; path=/; domain=116117.de']);
+        expect(parseCookieString(document.cookie).cookieConsent).toBe('level1');
+    });
+
+    test('AdGuard rule with $currentDate$ keeps its format', () => {
+        // eslint-disable-next-line max-len
+        // auth.hbomax.com#%#//scriptlet('trusted-set-cookie', 'OptanonAlertBoxClosed', '$currentDate$', '', '/', 'hbomax.com')
+        openPage('https://auth.hbomax.com/');
+        trustedSetCookie(
+            { name: 'trusted-set-cookie' },
+            'OptanonAlertBoxClosed',
+            '$currentDate$',
+            '',
+            '/',
+            'hbomax.com',
+        );
+
+        expect(getWrittenCookies()).toEqual([`OptanonAlertBoxClosed=${NOW.toString()}; path=/; domain=hbomax.com`]);
+    });
+
+    test('AdGuard rule with 1year', () => {
+        // bike24.de#%#//scriptlet('trusted-set-cookie', 'cookieConsent', '{"algolia":false,…}', '1year')
+        openPage('https://www.bike24.de/');
+        trustedSetCookie({ name: 'trusted-set-cookie' }, 'cookieConsent', '{"algolia":false}', '1year');
+
+        const expires = new Date(NOW.getTime() + ONE_YEAR_MS).toUTCString();
+        expect(getWrittenCookies()).toEqual([`cookieConsent={"algolia":false}; path=/; expires=${expires}`]);
+    });
+
+    test('uBO rule with 1year and domain option', () => {
+        // eslint-disable-next-line max-len
+        // softonic.com##+js(trusted-set-cookie, euconsent-v2, CP2KIMAP2KIMAAHABBENAcEgAAAAAAAAAAiQ…, 1year, , domain, softonic.com)
+        openPage('https://en.softonic.com/');
+        trustedSetCookie(
+            { name: 'ubo-trusted-set-cookie' },
+            'euconsent-v2',
+            'CP2KIMAP2KIMAAHABBENAcEgAAAAAAAAAAiQ',
+            '1year',
+            '',
+            'domain',
+            'softonic.com',
+        );
+
+        const expires = new Date(NOW.getTime() + ONE_YEAR_MS).toUTCString();
+        expect(getWrittenCookies()).toEqual([
+            `euconsent-v2=CP2KIMAP2KIMAAHABBENAcEgAAAAAAAAAAiQ; path=/; domain=softonic.com; expires=${expires}`,
+        ]);
+    });
+
+    test('uBO rule with offset in seconds', () => {
+        // multitronic.fi##+js(trusted-set-cookie, consentCookieV2, '{"consentAnalytics":false,…}', 15778476)
+        openPage('https://www.multitronic.fi/');
+        trustedSetCookie(
+            { name: 'ubo-trusted-set-cookie' },
+            'consentCookieV2',
+            '{"consentAnalytics":false}',
+            '15778476',
+        );
+
+        const expires = new Date(NOW.getTime() + 15778476 * 1000).toUTCString();
+        expect(getWrittenCookies()).toEqual([`consentCookieV2={"consentAnalytics":false}; path=/; expires=${expires}`]);
+    });
+
+    test('uBO rule with offset 0 removes the cookie', () => {
+        // naszemiasto.pl##+js(trusted-set-cookie, _sharedid, , 0, , domain, .naszemiasto.pl)
+        openPage('https://www.naszemiasto.pl/');
+        document.cookie = '_sharedid=abc; path=/; domain=.naszemiasto.pl';
+        expect(parseCookieString(document.cookie)._sharedid).toBe('abc');
+
+        trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, '_sharedid', '', '0', '', 'domain', '.naszemiasto.pl');
+
+        expect(document.cookie.includes('_sharedid')).toBe(false);
+    });
+
+    test('uBO rule with reload option, not reloaded again', () => {
+        // threads.com##+js(trusted-set-cookie, cb, '{"version":"1","date":"2029_07_03",…}', , ,reload, 1)
+        openPage('https://www.threads.com/');
+        const args = ['cb', '{"version":"1","date":"2029_07_03"}', '', '', 'reload', '1'];
+
+        trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, ...args);
+        expect(parseCookieString(document.cookie).cb).toBe('{"version":"1","date":"2029_07_03"}');
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, ...args);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+    });
+
+    test('uBO rule with value with characters not allowed in cookies', () => {
+        // eslint-disable-next-line max-len
+        // wavecon.de##+js(trusted-set-cookie, _pm_datenschutz_cookie, 80ce7170aa:false;4b086eb24b:true;3a0521a8ad:false, , , reload, 1)
+        openPage('https://www.wavecon.de/');
+        const value = '80ce7170aa:false;4b086eb24b:true;3a0521a8ad:false';
+        trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, '_pm_datenschutz_cookie', value, '', '', 'reload', '1');
+
+        expect(parseCookieString(document.cookie)._pm_datenschutz_cookie).toBe(encodeURIComponent(value));
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+    });
+
+    test('uBO rule with quotes escaped by the converter', () => {
+        // asket.com##+js(trusted-set-cookie, CookieConsent, "{stamp:'',necessary:true,…,method:'explicit'}")
+        openPage('https://www.asket.com/');
+        trustedSetCookie(
+            { name: 'ubo-trusted-set-cookie' },
+            'CookieConsent',
+            "{stamp:\\'\\',necessary:true,method:\\'explicit\\'}",
+        );
+
+        expect(parseCookieString(document.cookie).CookieConsent).toBe("{stamp:'',necessary:true,method:'explicit'}");
+    });
+
+    test('uBO rule with the value in the name, as uBO does not check names of trusted cookies', () => {
+        // jobzhub.store,fitdynamos.com,labgame.io##+js(trusted-set-cookie, ad_expire=true;, $now$)
+        openPage('https://jobzhub.store/');
+        trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, 'ad_expire=true;', '$now$');
+
+        expect(parseCookieString(document.cookie).ad_expire).toBe('true');
+    });
+
+    test('AdGuard rule with `;` in the name is still rejected', () => {
+        openPage('https://jobzhub.store/');
+        trustedSetCookie({ name: 'trusted-set-cookie' }, 'ad_expire=true;', '$now$');
+
+        expect(getWrittenCookies()).toEqual([]);
+    });
+});

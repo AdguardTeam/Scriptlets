@@ -8,11 +8,13 @@ import {
     parseKeywordValue,
     getTrustedCookieOffsetMs,
     getCookiePath,
+    parseCookieString,
     parseUboOptions,
     getUboCookieDomain,
     encodeUboCookieValue,
-    parseCookieString,
-    setUboCookie,
+    getAdgCookieSettings,
+    getUboCookieSettings,
+    setCookieBySettings,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -73,6 +75,8 @@ import {
  *       or a regular expression whose match in the hostname is the domain
  *     - `dontOverwrite, 1` — do not set the cookie if a cookie with the same name exists
  * - a value with characters not allowed in cookies, e.g. `;`, is encoded instead of rejected
+ * - a name with `;` is not rejected, as uBO does not check names of trusted cookies,
+ *   e.g. `ad_expire=true;` sets the cookie `ad_expire=true`
  * - `$currentDate$` keyword sets current time in UTC, e.g. 'Tue, 08 Nov 2022 10:53:19 GMT'
  *
  * ### Examples
@@ -143,44 +147,15 @@ export function trustedSetCookie(
 
     // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
     // and uBO arguments, i.e. named options instead of `domain`
-    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
-        setUboCookie(source, name, value, offsetExpiresSec, path, [domain].concat(extraArgs));
+    const cookieSettings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+        ? getUboCookieSettings(source, name, value, offsetExpiresSec, path, [domain].concat(extraArgs))
+        : getAdgCookieSettings(source, name, value, offsetExpiresSec, path, domain, false);
+
+    if (cookieSettings === null) {
         return;
     }
 
-    const parsedValue = parseKeywordValue(value);
-
-    if (!isValidCookiePath(path)) {
-        logMessage(source, `Invalid cookie path: '${path}'`);
-        return;
-    }
-
-    if (!document.location.origin.includes(domain)) {
-        logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
-        return;
-    }
-
-    let cookieToSet = serializeCookie(name, parsedValue, path, domain, false);
-    if (!cookieToSet) {
-        logMessage(source, 'Invalid cookie name or value');
-        return;
-    }
-
-    // TODO: Move this concat to serializeCookie
-    if (offsetExpiresSec) {
-        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
-
-        if (!parsedOffsetMs) {
-            logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
-            return;
-        }
-
-        const expires = Date.now() + parsedOffsetMs;
-        cookieToSet += `; expires=${new Date(expires).toUTCString()}`;
-    }
-
-    document.cookie = cookieToSet;
-    hit(source);
+    setCookieBySettings(source, cookieSettings);
 }
 
 export const trustedSetCookieNames = [
@@ -201,12 +176,14 @@ trustedSetCookie.injections = [
     isCookieSetWithValue,
     serializeCookie,
     isValidCookiePath,
-    getTrustedCookieOffsetMs,
     parseKeywordValue,
+    getTrustedCookieOffsetMs,
     getCookiePath,
+    parseCookieString,
     parseUboOptions,
     getUboCookieDomain,
     encodeUboCookieValue,
-    parseCookieString,
-    setUboCookie,
+    getAdgCookieSettings,
+    getUboCookieSettings,
+    setCookieBySettings,
 ];

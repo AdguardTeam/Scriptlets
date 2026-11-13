@@ -2,7 +2,9 @@ import { describe, test, expect } from 'vitest';
 
 import {
     encodeUboCookieValue,
+    getAdgCookieSettings,
     getUboCookieDomain,
+    getUboCookieSettings,
     isCookieSetWithValue,
     serializeCookie,
 } from '../../src/helpers/cookie-utils';
@@ -336,5 +338,86 @@ describe('encodeUboCookieValue', () => {
         { value: '$currentDate$;$currentISODate$', expected: '$currentDate$%3B$currentISODate$' },
     ])('$value -> $expected', ({ value, expected }) => {
         expect(encodeUboCookieValue(value)).toBe(expected);
+    });
+});
+
+describe('serializeCookie name validation', () => {
+    test('name with `;` is rejected unless validation is disabled for uBO rules', () => {
+        expect(serializeCookie('ad_expire=true;', '1', '/', '', false)).toBeNull();
+        expect(serializeCookie('ad_expire=true;', '1', '/', '', false, false)).toBe('ad_expire=true;=1; path=/');
+    });
+});
+
+describe('getAdgCookieSettings', () => {
+    const source = { name: 'trusted-set-cookie' };
+
+    test('settings of AdGuard rules', () => {
+        expect(getAdgCookieSettings(source, 'consent', '1', '1day', 'none', '', true)).toEqual({
+            name: 'consent',
+            value: '1',
+            path: 'none',
+            domain: '',
+            offsetExpiresMs: 24 * 60 * 60 * 1000,
+            isUtcDate: false,
+            shouldReload: true,
+            shouldKeepExisting: false,
+            shouldValidateName: true,
+            isReloadCheckedByValue: false,
+        });
+        // the value is kept as it is
+        expect(getAdgCookieSettings(source, 'consent', "it\\'s;", '', '/', '', false)?.value).toBe("it\\'s;");
+        // the offset is parsed by `parseInt()`, as before
+        expect(getAdgCookieSettings(source, 'consent', '1', '10s', '/', '', false)?.offsetExpiresMs).toBe(10000);
+    });
+
+    test.each([
+        // path has to be `/` or `none`
+        ['consent', '1', '', '', ''],
+        ['consent', '1', '', '/path', ''],
+        // offset 0 is invalid, and so is the one which is not a number
+        ['consent', '1', '0', '/', ''],
+        ['consent', '1', 'abc', '/', ''],
+        // domain has to be a part of the origin
+        ['consent', '1', '', '/', 'other.org'],
+    ])('invalid %j is not applied', (name, value, offset, path, domain) => {
+        expect(getAdgCookieSettings(source, name, value, offset, path, domain, false)).toBeNull();
+    });
+});
+
+describe('getUboCookieSettings', () => {
+    const source = { name: 'ubo-trusted-set-cookie' };
+    const { hostname } = document.location;
+
+    test('settings of uBO rules', () => {
+        expect(getUboCookieSettings(source, 'consent', 'a;b', '0', '', ['reload', '1', 'dontOverwrite', '1'])).toEqual({
+            name: 'consent',
+            value: 'a%3Bb',
+            path: '/',
+            domain: '',
+            offsetExpiresMs: 0,
+            isUtcDate: true,
+            shouldReload: true,
+            shouldKeepExisting: true,
+            shouldValidateName: false,
+            isReloadCheckedByValue: true,
+        });
+        expect(getUboCookieSettings(source, 'consent', '1', '', '', ['domain', hostname])?.domain).toBe(hostname);
+    });
+
+    test('quotes escaped by the converter are unescaped', () => {
+        // asket.com##+js(trusted-set-cookie, CookieConsent, "{stamp:'',necessary:true,…}")
+        const settings = getUboCookieSettings(source, 'CookieConsent', "{stamp:\\'\\',necessary:true}", '', '', []);
+        expect(settings?.value).toBe("{stamp:'',necessary:true}");
+    });
+
+    test.each([
+        // only digits and keywords
+        ['10s', '', []],
+        // path has to be `/`, `none` or empty
+        ['', '/path', []],
+        // domain has to match the hostname
+        ['', '', ['domain', 'other.org']],
+    ])('invalid offset %j, path %j or options %j is not applied', (offset, path, args) => {
+        expect(getUboCookieSettings(source, 'consent', '1', offset, path, args)).toBeNull();
     });
 });

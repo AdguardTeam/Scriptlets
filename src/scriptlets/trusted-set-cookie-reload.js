@@ -7,12 +7,14 @@ import {
     isValidCookiePath,
     parseKeywordValue,
     getTrustedCookieOffsetMs,
-    parseCookieString,
     getCookiePath,
+    parseCookieString,
     parseUboOptions,
     getUboCookieDomain,
     encodeUboCookieValue,
-    setUboCookie,
+    getAdgCookieSettings,
+    getUboCookieSettings,
+    setCookieBySettings,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -136,61 +138,15 @@ export function trustedSetCookieReload(
 
     // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments.
     // As in uBO, it is `trusted-set-cookie` with `reload, 1` option, which the options of the rule may override
-    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
-        setUboCookie(source, name, value, offsetExpiresSec, path, ['reload', '1', domain].concat(extraArgs));
+    const cookieSettings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+        ? getUboCookieSettings(source, name, value, offsetExpiresSec, path, ['reload', '1', domain].concat(extraArgs))
+        : getAdgCookieSettings(source, name, value, offsetExpiresSec, path, domain, true);
+
+    if (cookieSettings === null) {
         return;
     }
 
-    // Prevent infinite reloads if cookie was already set or blocked by the browser
-    // https://github.com/AdguardTeam/Scriptlets/issues/212
-    if (isCookieSetWithValue(document.cookie, name, value)) {
-        return;
-    }
-
-    const parsedValue = parseKeywordValue(value);
-
-    if (!isValidCookiePath(path)) {
-        logMessage(source, `Invalid cookie path: '${path}'`);
-        return;
-    }
-
-    if (!document.location.origin.includes(domain)) {
-        logMessage(source, `Cookie domain not matched by origin: '${domain}'`);
-        return;
-    }
-
-    let cookieToSet = serializeCookie(name, parsedValue, path, domain, false);
-    if (!cookieToSet) {
-        logMessage(source, 'Invalid cookie name or value');
-        return;
-    }
-
-    // TODO: Move this concat to serializeCookie
-    if (offsetExpiresSec) {
-        const parsedOffsetMs = getTrustedCookieOffsetMs(offsetExpiresSec);
-
-        if (!parsedOffsetMs) {
-            logMessage(source, `Invalid offsetExpiresSec value: ${offsetExpiresSec}`);
-            return;
-        }
-
-        const expires = Date.now() + parsedOffsetMs;
-        cookieToSet += `; expires=${new Date(expires).toUTCString()}`;
-    }
-
-    document.cookie = cookieToSet;
-    hit(source);
-
-    // Get cookie value, it's required for checking purpose
-    // in case if $now$ or $currentDate$ value is used
-    // https://github.com/AdguardTeam/Scriptlets/issues/291
-    const cookieValueToCheck = parseCookieString(document.cookie)[name];
-
-    // Only reload the page if cookie was set
-    // https://github.com/AdguardTeam/Scriptlets/issues/212
-    if (isCookieSetWithValue(document.cookie, name, cookieValueToCheck)) {
-        window.location.reload();
-    }
+    setCookieBySettings(source, cookieSettings);
 }
 
 export const trustedSetCookieReloadNames = [
@@ -211,12 +167,14 @@ trustedSetCookieReload.injections = [
     isCookieSetWithValue,
     serializeCookie,
     isValidCookiePath,
-    getTrustedCookieOffsetMs,
     parseKeywordValue,
-    parseCookieString,
+    getTrustedCookieOffsetMs,
     getCookiePath,
+    parseCookieString,
     parseUboOptions,
     getUboCookieDomain,
     encodeUboCookieValue,
-    setUboCookie,
+    getAdgCookieSettings,
+    getUboCookieSettings,
+    setCookieBySettings,
 ];
