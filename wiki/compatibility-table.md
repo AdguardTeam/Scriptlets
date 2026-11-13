@@ -199,3 +199,4 @@
 |  | nitropay_ads.js |  |
 |  | adthrive_abd.js |  |
 |  | piano-analytics.js |  |
+|  | freestar_pubfig.js |  |

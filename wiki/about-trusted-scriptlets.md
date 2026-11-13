@@ -42,6 +42,29 @@ example.com#%#//scriptlet('trusted-click-element', selectors[, extraMatch[, dela
 ```
 <!-- markdownlint-disable-next-line line-length -->
 - `selectors` — required, string with query selectors delimited by comma. The scriptlet supports `>>>` combinator to select elements inside open shadow DOM. For usage, see example below.
+  Commas inside pseudo-classes, e.g. `:is(.accept, .agree)`, and quoted attribute values are not delimiters.
+  Empty selectors, e.g. after a trailing comma, and ones with only a CSS comment are skipped.
+  If any selector is invalid, it is logged with the reason and no element is clicked.
+  XPath expressions are supported as well, if wrapped in `xpath()`, e.g. `xpath(//button[text()="Accept"])`;
+  commas inside `xpath()` are not delimiters either. Relative paths without `>>>` combinator, or before it,
+  are evaluated against the `html` element, so e.g. `xpath(body//button)` selects buttons of the page,
+  but `xpath(html/body//button)` selects nothing. XPath can be combined with `>>>` combinator,
+  then absolute paths after it, e.g. `xpath(//button)`, select elements of the whole shadow tree.
+  It applies to absolute paths in predicates as well, e.g. `//title` in
+  `xpath(.//button[contains(//title, "Accept")])` after `>>>` does not select the page title.
+  But Chromium-based browsers before version 146 evaluate absolute paths after `>>>` against the document,
+  so there `xpath(//button)` selects nothing, as elements outside of the shadow tree are skipped,
+  and `//title` in a predicate selects the page title. For rules which should work in all browsers,
+  use relative paths with `descendant-or-self::` axis after `>>>` instead.
+  Shadow root cannot be an XPath context node, so relative paths after `>>>` are evaluated
+  against each top-level element of the shadow root. Use `descendant-or-self::` axis to select elements
+  at any level of the shadow DOM, e.g. `xpath(descendant-or-self::button)`, as `xpath(.//button)`
+  skips top-level elements. Positional predicates of relative paths are applied to each top-level element
+  separately, e.g. `xpath((descendant-or-self::button)[2])` selects the second button of a top-level element,
+  unlike `xpath((//button)[2])`, which selects the second button of the shadow tree. XPath errors which occur
+  only on evaluation of page elements, e.g. a type error in a predicate like `xpath(//input[count(1)])`,
+  may not be detected and are not logged, and such expression selects nothing while the error occurs,
+  or after `>>>` only the elements of top-level elements of the shadow root without the error.
 - `extraMatch` — optional, extra condition to check on a page;
    allows to match `cookie`, `localStorage` and specified text;
 can be set as `name:key[=value]` where `value` is optional.
@@ -52,7 +75,36 @@ and each of them should match the syntax. Possible `names`:
     - `cookie` — test string or regex against cookies on a page
     - `localStorage` — check if localStorage item is present
     - `containsText` — check if clicked element contains specified text
-    - `clickType` — set click behavior; supported value is `native`
+    - `clickType` — set click behavior; supported value is `native`,
+      other values are logged and the default click behavior is used
+    - `isTrusted` — set which click-related events have `isTrusted` spoofed to `true`; supported value is `all`,
+      other values are logged and the default is used. By default, only the clicks of the scriptlet are spoofed,
+      and the clicks which labels forward from them to their controls. With `all`, the page's own events are spoofed
+      as well, e.g. a click which a page handler dispatches on another element in response, but it may break
+      the page, so use it only if the page does not accept the clicks of the scriptlet otherwise:
+        - spoofed events are `click`, `mousedown`, `mouseup`, `mouseover`, `mouseenter`, `pointerdown`,
+          `pointerup`, `pointerover` and `pointerenter`
+        - events are spoofed only for listeners added by `addEventListener()` after the scriptlet has run;
+          inline `on...` handlers receive spoofed events only on the clicked element, and only during an event
+          of the scriptlet of the same type: that event, the click which a label forwards from it, and with `all`,
+          the page's own events of that type dispatched on the clicked element meanwhile, so other page events
+          may reach inline handlers unspoofed even with `all`
+        - listeners receive a proxy of a spoofed event, so it is not the same object as `window.event`,
+          and a page guard which compares them may still fail
+        - a click which the page dispatches on a label's control during the click of the scriptlet,
+          or on any element of the closed shadow root which contains such control, or on its host,
+          is spoofed by default as well, as it cannot be told apart from the forwarded one
+        - a label in a closed shadow root which wraps the slot of the clicked element is not found,
+          as the slot is not exposed, so the click which it forwards is spoofed only with `all`
+        - `all` is enabled for the whole page until it is reloaded, including the clicks of other rules,
+          and may break the page, e.g. its guards which compare events, or its code which passes events
+          to native methods, as listeners receive proxies of them,
+          see [#582](https://github.com/AdguardTeam/Scriptlets/issues/582)
+        - `isTrusted:all` can be combined with other conditions in any order, but for compatibility with older
+          versions of the scriptlet, which do not support it, it should be the first or the only condition,
+          e.g. `isTrusted:all, !cookie:consent`: older versions ignore it only there, but take it after another
+          condition as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click
+          regardless of the `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click
 - `delay` — optional, time in **ms** to delay scriptlet execution, defaults to instant execution.
   Must be a number less than `observerTimeout` (default 10 _seconds_)
   which can be configured.
@@ -138,10 +190,38 @@ and each of them should match the syntax. Possible `names`:
     example.com#%#//scriptlet('trusted-click-element', 'button[name="agree"]', 'clickType:native')
     ```
 
+1. Spoof `isTrusted` for all click-related events on the page, e.g. if a page handler of the click
+   dispatches another click which should be trusted as well. It may break the page, see `isTrusted` above
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-click-element', 'div.toggle', 'isTrusted:all')
+    ```
+
+1. Spoof `isTrusted` for all click-related events on the page and click element only if cookie with name `consent`
+   does not exist; `isTrusted:all` should go first for compatibility with older versions, see `isTrusted` above
+
+    ```adblock
+    example.com#%#//scriptlet('trusted-click-element', 'div.toggle', 'isTrusted:all, !cookie:consent')
+    ```
+
 1. Click element inside open shadow DOM, which could be selected by `div > button`, but is inside shadow host element with host element selected by `article .container`
 
    ```adblock
    example.com#%#//scriptlet('trusted-click-element', 'article .container > div#host >>> div > button')
+   ```
+
+1. Click element selected by XPath expression, e.g. button containing text `Accept`
+
+   ```adblock
+   example.com#%#//scriptlet('trusted-click-element', 'xpath(//button[contains(text(), "Accept")])')
+   ```
+
+1. Click element at any level of open shadow DOM, selected by relative XPath expression,
+   with shadow host element selected by `div#host`. Unlike absolute path `xpath(//button[text()="Accept"])`,
+   it works in Chromium-based browsers before version 146 as well
+
+   ```adblock
+   example.com#%#//scriptlet('trusted-click-element', 'div#host >>> xpath(descendant-or-self::button[text()="Accept"])')
    ```
 
 1. Click elements after 1000ms delay and reload page after all elements have been clicked with 200ms delay
@@ -469,7 +549,10 @@ Depending on `jsonSource`, the scriptlet can modify:
 
 1. one or more arguments;
 1. the intercepted method `thisArg`;
-1. the return value if it is an object or a JSON string.
+1. the return value if it is an object or a JSON string;
+   if it is a native `Promise`, e.g. of `Response.prototype.json`, the value it is fulfilled with is modified
+   instead, and a new promise of the modified value is returned.
+   Promises of polyfills or libraries which replace `window.Promise`, e.g. zone.js, are not supported.
 
 ### Syntax
 
@@ -551,6 +634,7 @@ example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentV
     - `all` — all arguments, `thisArg`, and the return value
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
   if a regular expression is invalid it will be skipped.
+  It is matched when the method is called, also if the value of a returned `Promise` is modified later.
 - `mode` — optional, syntax mode selector.
   Supported values:
     - `legacy` — force the existing legacy path syntax
@@ -857,6 +941,30 @@ example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentV
     function adManager() {
         return JSON.parse('{"ads":{"enabled":true},"content":"article"}');
     }
+    ```
+
+    Output:
+
+    ```js
+    { ads: { enabled: false }, content: 'article' }
+    ```
+
+1. Sets `ads.enabled` to `false` in the value which the `Promise` returned by `Response.prototype.json` is fulfilled with
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'Response.prototype.json', 'ads.enabled', 'false')
+    ```
+
+    or `JSONPath` syntax:
+
+    ```adblock
+    example.org#%#//scriptlet('trusted-json-set', 'Response.prototype.json', '$.ads.enabled', 'false')
+    ```
+
+    For instance, the following call:
+
+    ```js
+    const data = await new Response('{"ads":{"enabled":true},"content":"article"}').json();
     ```
 
     Output:
@@ -1484,6 +1592,7 @@ example.org#%#//scriptlet('trusted-replace-outbound-text', methodPath[, textToRe
   but only if function call returns a string, otherwise it will log information that content is not a string.
 - `textToReplace` — optional, string or regular expression which should be replaced.
   By default it's set to `''`. If it's not set to other value and `logContent` is set, it will log the original content.
+  If it is an invalid regular expression, the rule is not applied.
 - `replacement` — optional, string which replace the matched text.
   By default it's set to '', so matched content will removed.
 - `decodeMethod` — optional, string which specifies the method used to decode the content.
@@ -1491,7 +1600,7 @@ example.org#%#//scriptlet('trusted-replace-outbound-text', methodPath[, textToRe
   If it's set and `logContent` is also set and `textToReplace` and `replacement` are not set,
   then it will log the decoded content.
 - `stack` — optional, string or regular expression that must match the current function call stack trace.
-  If regular expression is invalid it will be skipped.
+  If it is an invalid regular expression, the rule is not applied.
 - `logContent` — optional, if set to any value, the original and modified content will be logged.
   By default it's set to '' and no content will be logged.
 

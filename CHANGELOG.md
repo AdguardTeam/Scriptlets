@@ -14,6 +14,20 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.6.0] - 2026-11-13
+
+### Added
+
 - XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
   e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
   e.g. `div#host >>> xpath(descendant-or-self::button)`. Absolute paths after `>>>` are evaluated against
@@ -83,8 +97,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Deprecated
 
 - Edge Legacy support.
-
-### Removed
 
 ### Fixed
 
@@ -322,11 +334,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `isValidStrPattern` helper not validating a regular expression pattern with flags,
   e.g. `/foo(/i`, so such a pattern was treated as valid and scriptlets failed
   when converting it to a regexp.
-
-[#393]: https://github.com/AdguardTeam/Scriptlets/issues/393
-[#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
-[#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
-[#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
 
 ### Security
 
@@ -1416,7 +1423,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1...HEAD
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1...v2.6.0
 [2.5.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...v2.5.1
 [2.5.1-beta.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1-beta.0...v2.5.1-beta.1
 [2.5.1-beta.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...v2.5.1-beta.0
@@ -1473,3 +1481,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [v1.7.13]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.10...v1.7.13
 [v1.7.10]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.3...v1.7.10
 [v1.7.3]: https://github.com/AdguardTeam/Scriptlets/compare/v1.6.55...v1.7.3
+
+[#393]: https://github.com/AdguardTeam/Scriptlets/issues/393
+[#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
+[#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
+[#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
