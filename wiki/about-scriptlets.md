@@ -104,7 +104,7 @@ https://gitlab.com/eyeo/snippets/-/blob/main/source/behavioral/abort-current-inl
 example.org#%#//scriptlet('abort-current-inline-script', property[, search])
 ```
 
-- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`
+- `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
 - `search` — optional, string or regular expression that must match the inline script content.
   Defaults to abort all scripts which are trying to access the specified property.
   Invalid regular expression will cause exit and rule will not work.
@@ -241,7 +241,10 @@ example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
 ```
 
 - `property` — required, path to a property. The property must be attached to window.
-- `stack` — required, string that must match the current function call stack trace.
+- `stack` — required, string or regular expression that must match the current function call stack trace;
+  an invalid regular expression makes the rule exit and not work; a value whose non-empty trailing part
+  after the last slash is not a valid flag set, e.g. `/foo/z`, is matched as plain text, while a value
+  which starts and ends with `/`, e.g. `/foo/bar/`, is still a regular expression.
     - values to abort inline or injected script, accordingly:
         - `inlineScript`
         - `injectedScript`
@@ -252,6 +255,12 @@ example.com#%#//scriptlet('abort-on-stack-trace', property, stack)
 
     ```adblock
     example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', 'test.js')
+    ```
+
+1. Aborts script when it tries to access `window.Ya` and it's error stack trace matches the regular expression
+
+    ```adblock
+    example.org#%#//scriptlet('abort-on-stack-trace', 'Ya', '/yandex\.js/')
     ```
 
 1. Aborts script when it tries to access `window.Ya.videoAd` and it's error stack trace contains `test.js`
@@ -914,7 +923,10 @@ example.org#%#//scriptlet('hide-in-shadow-dom', selector[, baseSelector])
 - `selector` — required, CSS selector of element in shadow-dom to hide
 - `baseSelector` — optional, selector of specific page DOM element,
   narrows down the part of the page DOM where shadow-dom host supposed to be,
-  defaults to document.documentElement
+  defaults to document.documentElement.
+  It may match a shadow-dom host itself or an element containing shadow-dom hosts, e.g. `#app`.
+  In both cases elements are searched only in the hosts, i.e. in their shadow DOM and their own subtree,
+  so elements of the container outside of the hosts are not hidden.
 
 > `baseSelector` should match element of the page DOM, but not of shadow DOM.
 
@@ -955,7 +967,8 @@ example.org#%#//scriptlet('href-sanitizer', selector[, attribute[, transform]])
 - `attribute` — optional, default to `text`:
     - `text` — use the text content of the matched element,
     - `[<attribute-name>]` copy the value from attribute `attribute-name` on the same element,
-    - `?<parameter-name>` copy the value from URL parameter `parameter-name` of the same element's `href` attribute.
+    - `?<parameter-name>` copy the value from URL parameter `parameter-name` of the same element's `href` attribute,
+      `?` alone copies the value of the parameter with empty name, e.g. `?=https://example.org/`.
 - `transform` — optional, defaults to no transforming. Possible values:
     - `base64decode` — decode the base64 string from specified attribute.
       `-base64` can be used as an alias.
@@ -965,7 +978,33 @@ example.org#%#//scriptlet('href-sanitizer', selector[, attribute[, transform]])
       if no parameter is specified, remove all parameters.
 
 > Note that in the case where the discovered value does not correspond to a valid URL with the appropriate
-> HTTP or HTTPS protocols, the value will not be set.
+> HTTP or HTTPS protocols, the value will not be set. Relative URL is resolved against the document base URL.
+> Link text is considered a URL only if it is an absolute URL or a path, i.e. it starts with `/`, `./`, `../`
+> or `?` followed by a query, without whitespaces, so e.g. `Click here`, `Download`, `?`
+> or `https://example.org/ (new)` is not set.
+> Attribute, URL parameter and decoded base64 values follow URL parser rules, including relative URLs
+> and spaces in paths or queries, e.g. `files/Annual Report.pdf` or `https://example.org/search?q=Report (1)`.
+> Tab and newline characters are removed, as the URL parser does, but in link text only next to a URL
+> delimiter, e.g. `/`, otherwise they separate text blocks, e.g. the URL and the title of a card.
+> A value of only whitespaces is not set, and placeholder hash, i.e. `#` or `#!`, is not considered a URL,
+> unless it is `href` of the link itself.
+> For `base64decode` of `href` within the page, e.g. `#<base64>`, only its hash is decoded.
+
+> If the new URL is still matched by `selector` and contains another URL to sanitize,
+> i.e. nested redirect in the same URL parameter or base64 encoded one in `href`, it is sanitized as well,
+> up to 10 nested redirects at once, and the rest right after that.
+> So `selector` should match all redirect URLs, e.g. of different tracking domains, but not the target URL,
+> if it contains another URL to sanitize, e.g. a URL parameter with the same name or,
+> for `base64decode` of `href`, a base64 encoded URL, e.g. return URL of the login page.
+> Relative URL in the nested redirect is not followed, since it is relative to the redirect, not the page,
+> except for a scheme-relative one, e.g. `//example.org/`, which is resolved against the redirect.
+
+> `removeHash` and `removeParam` do not remove anything from a link within the page, e.g. `#section`.
+> If there is nothing to remove, the discovered value is set as is, the same as without `transform`.
+
+> `+` in the URL parameter is decoded as a whitespace, unless the parameter is a URL which is not encoded,
+> e.g. `?url=https://example.org/c++/docs` is sanitized to `https://example.org/c++/docs`,
+> or it is in the query of the URL, where it means a whitespace anyway.
 
 ### Examples
 
@@ -1176,7 +1215,7 @@ example.org#%#//scriptlet('json-prune-fetch-response'[, propsToRemove[, obligato
         - `value` is string or regular expression for matching the value of the option passed to fetch call;
           invalid regular expression will cause any value matching.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
-  if regular expression is invalid it will be skipped.
+  if it is an invalid regular expression, the rule is not applied.
 - `mode` — optional, syntax mode selector.
   Supported values:
     - `legacy` — force the existing legacy path syntax;
@@ -1309,7 +1348,7 @@ example.org#%#//scriptlet('json-prune-xhr-response'[, propsToRemove[, obligatory
         - `value` — string or regular expression for matching the value of the option
           passed to `XMLHttpRequest.open()` call.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
-  if regular expression is invalid it will be skipped.
+  if it is an invalid regular expression, the rule is not applied.
 - `mode` — optional, syntax mode selector.
   Supported values:
     - `legacy` — force the existing legacy path syntax;
@@ -1434,7 +1473,7 @@ example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, sta
   In `jsonpath` mode this argument is ignored. Express such preconditions
   directly in `propsToRemove` with leading JSONPath guards and filters.
 - `stack` — optional, string or regular expression that must match the current function call stack trace;
-  if regular expression is invalid it will be skipped.
+  if it is an invalid regular expression, the rule is not applied.
 - `mode` — optional, syntax mode selector.
   Supported values:
     - `legacy` — force the existing legacy path syntax;
@@ -3535,8 +3574,11 @@ example.org#%#//scriptlet('remove-in-shadow-dom', selector[, baseSelector])
 
 - `selector` — required, CSS selector of element in shadow-dom to remove
 - `baseSelector` — optional, selector of specific page DOM element,
-narrows down the part of the page DOM where shadow-dom host supposed to be,
-defaults to document.documentElement
+  narrows down the part of the page DOM where shadow-dom host supposed to be,
+  defaults to document.documentElement.
+  It may match a shadow-dom host itself or an element containing shadow-dom hosts, e.g. `#app`.
+  In both cases elements are searched only in the hosts, i.e. in their shadow DOM and their own subtree,
+  so elements of the container outside of the hosts are not removed.
 
 > `baseSelector` should match element of the page DOM, but not of shadow DOM.
 

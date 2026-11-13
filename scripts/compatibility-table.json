@@ -658,6 +658,9 @@
         },
         {
             "ubo": "piano-analytics.js"
+        },
+        {
+            "ubo": "freestar_pubfig.js"
         }
     ]
 }
