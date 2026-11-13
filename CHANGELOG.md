@@ -55,10 +55,28 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - uBO arguments in `trusted-set-cookie-reload` with its uBO aliases [#586], as in `trusted-set-cookie`
   with `reload, 1` option, which `reload, 0` overrides,
   e.g. `example.org##+js(trusted-set-cookie-reload, consent, accept, , , domain, example.org)`.
+- uBO aliases of `trusted-replace-node-text` [#586], `ubo-trusted-replace-node-text`, `ubo-trusted-rpnt`,
+  `ubo-replace-node-text` and `ubo-rpnt`, each also with `.js`, with uBO arguments: `nodeName, pattern, replacement`
+  without `textMatch`, followed by the named options `includes` or `condition`, `excludes`, `sedCount`, `stay`
+  and `quitAfter`. As in uBO, the node name is matched case-insensitively against the whole name, a string pattern
+  replaces all its occurrences, and nodes are processed until the document is interactive, unless `stay, 1` is set,
+  e.g. `example.org##+js(rpnt, script, /ads = true/, ads = false, condition, adblock)`. Unlike uBO, a rule with an
+  invalid regular expression is not applied.
+- `excludes`, `sedCount`, `stay` and `quitAfter` options of `trusted-replace-node-text`, each followed by its value
+  after `replacement`, e.g. `example.org#%#//scriptlet('trusted-replace-node-text', 'script', 'adblock', 'true',
+  'false', 'excludes', 'nonce', 'sedCount', '1', 'stay', '1')`: `excludes` skips the text which contains a string or
+  matches a regular expression, `sedCount` replaces the text of at most this number of nodes, `stay` keeps replacing
+  the text of added nodes until the page is unloaded, and `quitAfter` keeps replacing it for this number
+  of milliseconds after the document is interactive, instead of 10 seconds after the scriptlet has run.
+  A rule with an invalid `sedCount` or `quitAfter` is not applied.
 
 ### Changed
 
 - Minimum supported Microsoft Edge version is now Edge Chromium 80.
+- `trusted-replace-node-text` writes the text of a node and calls `hit()` only if the text has changed,
+  and logs an error of processing a node once, while other nodes are still processed. Its Trusted Types policy
+  is created once, only when the text of a script is replaced, and if the page disallows it,
+  e.g. by `trusted-types 'none'`, the text of the script is set as is.
 - `trusted-click-element` spoofs `isTrusted` by default only for its own clicks, and for the clicks which labels
   forward from them to their controls, as one event shared by all listeners, instead of all click-related events
   on the page, which replaced the page's own events with proxies and broke popup opening-event guards [#582].
@@ -103,6 +121,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Removed
 
 ### Fixed
+
+- `trusted-replace-node-text` with `#text` node name not replacing the text of the text nodes which are present
+  when the scriptlet runs, only of the ones added later.
 
 - `xml-prune` evaluating an XPath expression without the closing parenthesis with its last character dropped,
   e.g. `xpath(//*[name()="Period"]/@duration` as `//*[name()="Period"]/@duratio`, instead of logging it as invalid.

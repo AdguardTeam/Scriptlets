@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'vitest';
 
 import * as scriptletsNamesList from '../../src/scriptlets/scriptlets-names-list';
+import { convertScriptletToAdg } from '../../src/converters/converters';
+import { isValidScriptletRule } from '../../src/validators';
 
 const TRUSTED_SCRIPTLET_PREFIX = 'trusted-';
 const UBO_SCRIPTLET_PREFIX = 'ubo-';
@@ -74,5 +76,29 @@ describe('scriptlet names', () => {
                 expect(getExclusionResults(alias)).toEqual([false, false]);
             });
         });
+    });
+});
+
+/**
+ * uBO aliases of trusted scriptlets, with the uBO names which are converted to them,
+ * e.g. `ubo-trusted-rpnt.js` for `trusted-rpnt.js`.
+ */
+const uboTrustedAliases = trustedNamesLists
+    .flatMap(([, names]) => names.slice(1).map((alias): [string, string] => [
+        alias,
+        alias.slice(UBO_SCRIPTLET_PREFIX.length),
+    ]));
+
+/**
+ * uBO rules of trusted scriptlets are converted by their uBO names to the uBO aliases,
+ * i.e. with `ubo-` prefix, which are valid names of the trusted scriptlets.
+ */
+describe('uBO aliases of trusted scriptlets', () => {
+    test.each(uboTrustedAliases)('%s is the name of uBO rule with %s', (alias, uboName) => {
+        const uboRule = `example.org##+js(${uboName}, arg)`;
+
+        expect(isValidScriptletRule(uboRule)).toBe(true);
+        expect(convertScriptletToAdg(uboRule)).toEqual([`example.org#%#//scriptlet('${alias}', 'arg')`]);
+        expect(isValidScriptletRule(`example.org#%#//scriptlet('${alias}', 'arg')`)).toBe(true);
     });
 });

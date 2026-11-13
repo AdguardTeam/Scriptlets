@@ -1,16 +1,14 @@
 import {
-    observeDocumentWithTimeout,
-    handleExistingNodes,
-    handleMutations,
-    replaceNodeText,
-    isTargetNode,
-    parseNodeTextParams,
-    logMessage,
     hit,
-    nodeListToArray,
-    getAddedNodes,
+    logMessage,
     toRegExp,
     getTrustedTypesApi,
+    parseNodeTextParams,
+    parseUboOptions,
+    uboPatternToRegExp,
+    getAdgNodeTextReplacement,
+    getUboNodeTextReplacement,
+    replaceNodesText,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -23,7 +21,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('trusted-replace-node-text', nodeName, textMatch, pattern, replacement)
+ * example.org#%#//scriptlet('trusted-replace-node-text', nodeName, textMatch, pattern, replacement[, ...extraArgs])
  * ```
  *
  * - `nodeName` — required, string or RegExp, specifies DOM node name from which the text will be removed.
@@ -33,9 +31,49 @@ import {
  * - `pattern` — required, string or regexp for matching contents of `node.textContent` that should be replaced.
  * By default only first occurrence is replaced. To replace all occurrences use `g` flag in RegExp - `/pattern/g`.
  * - `replacement` — required, string to replace text content matched by `pattern`.
- * - `...extraArgs` — optional, string, if includes 'verbose' will log original and modified text content.
+ * - `...extraArgs` — optional, `verbose` and options, each option followed by its value:
+ *     - `verbose` — log original and modified text content
+ *     - `excludes, value` — string or RegExp, do not replace the text if it contains or matches it
+ *     - `sedCount, n` — replace the text of at most `n` nodes, positive integer
+ *     - `stay, 1` — keep replacing the text of added nodes until the page is unloaded,
+ *       instead of 10 seconds after the scriptlet has run
+ *     - `quitAfter, ms` — keep replacing the text of added nodes for `ms` milliseconds after the document
+ *       is interactive, i.e. on `DOMContentLoaded`, instead of 10 seconds after the scriptlet has run;
+ *       `0` stops when the document is interactive
+ *
+ *   A rule with an invalid `sedCount` or `quitAfter` is not applied.
  *
  * > `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
+ *
+ * Text of the nodes which are present when the scriptlet runs is replaced, also of text nodes for `#text`,
+ * and of the nodes added later, as long as added nodes are processed.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g. `example.org##+js(rpnt, script, ads, noads)`,
+ * also by its other names `trusted-replace-node-text`, `trusted-rpnt` and `replace-node-text`:
+ *
+ * ```text
+ * example.org##+js(rpnt, nodeName, pattern[, replacement[, ...options]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `nodeName` — matched against the whole node name case-insensitively, e.g. `script` or `#text`,
+ *   or by a regular expression
+ * - there is no `textMatch`, the text of a node is replaced if `pattern` matches it
+ * - `pattern` — a string replaces all its occurrences, a regular expression is used with its own flags only,
+ *   e.g. `/ad/` replaces the first occurrence, and an empty pattern replaces the whole text
+ * - `replacement` — optional, defaults to an empty string, i.e. the matched text is removed
+ * - options are pairs of a name and a value which follow `replacement`:
+ *     - `includes, value` or `condition, value` — the text has to match a string or a regular expression
+ *     - `excludes, value` — the text must not match a string or a regular expression
+ *     - `sedCount, n` — replace the text of at most `n` nodes
+ *     - `stay, 1` — keep replacing the text of added nodes, instead of stopping when the document is interactive,
+ *       i.e. on `DOMContentLoaded`
+ *     - `quitAfter, ms` — keep replacing the text of added nodes for `ms` milliseconds
+ *       after the document is interactive
+ * - a rule with an invalid regular expression is not applied
  *
  * ### Examples
  *
@@ -89,6 +127,13 @@ import {
  *     <p>fox bxr bxz</p> // text content has changed
  *     ```
  *
+ * 1. Replace the text of the first script which contains `adblock`, unless it contains `nonce`,
+ *    and keep replacing the text of added scripts until the page is unloaded:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-node-text', 'script', 'adblock', 'true', 'false', 'excludes', 'nonce', 'sedCount', '1', 'stay', '1')
+ *     ```
+ *
  * 1. Replace node's text content and log original and modified text content:
  *
  *     ```adblock
@@ -99,91 +144,66 @@ import {
  */
 /* eslint-enable max-len */
 export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, replacement, ...extraArgs) {
-    // Remove quotes' escapes for cases where scriptlet rule argument has own escaped quotes
-    // https://github.com/AdguardTeam/Scriptlets/issues/440
-    const fixQuotes = (str) => {
-        if (typeof str !== 'string') {
-            return str;
-        }
-        return str
-            .replace(/\\'/g, "'")
-            .replace(/\\"/g, '"');
-    };
+    let nodeTextReplacement;
 
-    const fixedPattern = fixQuotes(pattern);
-    const fixedReplacement = fixQuotes(replacement);
-
-    const {
-        selector,
-        nodeNameMatch,
-        textContentMatch,
-        patternMatch,
-    } = parseNodeTextParams(nodeName, textMatch, fixedPattern);
-
-    const shouldLog = extraArgs.includes('verbose');
-
-    /**
-     * Handles nodes by removing text content of matched nodes
-     *
-     * Note: instead of drilling down all the arguments for both replace-node-text
-     * and trusted-replace-node-text scriptlets, only the handler is being passed
-     *
-     * @param {Node[]} nodes nodes to handle
-     * @returns {void}
-     */
-    const handleNodes = (nodes) => nodes.forEach((node) => {
-        const shouldReplace = isTargetNode(
-            node,
-            nodeNameMatch,
-            textContentMatch,
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments:
+    // `nodeName, pattern, replacement` followed by named options, so they are shifted by one
+    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
+        // The converter escapes each `'` of the arguments, but keeps `\"` as it is,
+        // which uBO keeps as well, e.g. in a script which is a replacement
+        const unescapeQuotes = (str) => (typeof str === 'string' ? str.replace(/\\'/g, "'") : str);
+        const uboArgs = [textMatch, pattern, replacement].concat(extraArgs).map(unescapeQuotes);
+        nodeTextReplacement = getUboNodeTextReplacement(
+            source,
+            typeof nodeName === 'string' ? nodeName : '',
+            typeof uboArgs[0] === 'string' ? uboArgs[0] : '',
+            typeof uboArgs[1] === 'string' ? uboArgs[1] : '',
+            uboArgs.slice(2),
         );
-        if (shouldReplace) {
-            if (shouldLog) {
-                const originalText = node.textContent;
-                if (originalText) {
-                    logMessage(source, `Original text content: ${originalText}`);
-                }
-            }
-            replaceNodeText(source, node, patternMatch, fixedReplacement);
-            if (shouldLog) {
-                const modifiedText = node.textContent;
-                if (modifiedText) {
-                    logMessage(source, `Modified text content: ${modifiedText}`);
-                }
-            }
-        }
-    });
-
-    // Apply dedicated handler to already rendered nodes...
-    if (document.documentElement) {
-        handleExistingNodes(selector, handleNodes);
+    } else {
+        nodeTextReplacement = getAdgNodeTextReplacement(
+            source,
+            nodeName,
+            textMatch,
+            pattern,
+            replacement,
+            extraArgs,
+        );
     }
 
-    // and newly added nodes
-    observeDocumentWithTimeout((mutations) => handleMutations(mutations, handleNodes));
+    if (nodeTextReplacement === null) {
+        return;
+    }
+
+    replaceNodesText(source, nodeTextReplacement);
 }
 
 export const trustedReplaceNodeTextNames = [
     'trusted-replace-node-text',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-replace-node-text.js',
+    'ubo-trusted-replace-node-text',
+    'ubo-trusted-rpnt.js',
+    'ubo-trusted-rpnt',
+    'ubo-replace-node-text.js',
+    'ubo-replace-node-text',
+    'ubo-rpnt.js',
+    'ubo-rpnt',
 ];
 
 // eslint-disable-next-line prefer-destructuring
 trustedReplaceNodeText.primaryName = trustedReplaceNodeTextNames[0];
 
 trustedReplaceNodeText.injections = [
-    observeDocumentWithTimeout,
-    handleExistingNodes,
-    handleMutations,
-    replaceNodeText,
-    isTargetNode,
-    parseNodeTextParams,
-    logMessage,
-    // following helpers should be imported and injected
-    // because they are used by helpers above
     hit,
-    nodeListToArray,
-    getAddedNodes,
+    logMessage,
     toRegExp,
     getTrustedTypesApi,
+    parseNodeTextParams,
+    parseUboOptions,
+    uboPatternToRegExp,
+    getAdgNodeTextReplacement,
+    getUboNodeTextReplacement,
+    replaceNodesText,
 ];
