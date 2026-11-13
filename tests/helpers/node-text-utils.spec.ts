@@ -375,6 +375,7 @@ describe('replaceNodesText', () => {
         timeout: 10000,
         shouldHandleTemplates: false,
         shouldLog: false,
+        findTargetNodes: null,
         ...settings,
     });
 
@@ -480,6 +481,17 @@ describe('replaceNodesText', () => {
         expect(third.textContent).toBe('ad third');
     });
 
+    test('sedCount stops processing also with stay, once it is reached by present nodes', async () => {
+        const present = addParagraph('ad present');
+
+        replaceNodesText(adgSource, getTestSettings({ sedCount: 1, stay: true }));
+        expect(present.textContent).toBe('x present');
+
+        const added = addParagraph('ad added');
+        await flushMutations();
+        expect(added.textContent).toBe('ad added');
+    });
+
     test('nodes in templates are processed only if enabled', () => {
         const template = document.createElement('template');
         template.innerHTML = '<p>ad in template</p>';
@@ -531,6 +543,35 @@ describe('replaceNodesText', () => {
         const failureLogs = log.mock.calls.filter((call) => String(call[0]).includes('Failed to replace text'));
         expect(failureLogs).toHaveLength(1);
         log.mockRestore();
+    });
+
+    test('findTargetNodes is used instead of the document, also for added nodes', async () => {
+        const parent = document.createElement('section');
+        parent.appendChild(document.createTextNode('ad inside'));
+        document.body.appendChild(parent);
+        const outside = document.createTextNode('ad outside');
+        document.body.appendChild(outside);
+        const findTargetNodes = vi.fn(() => Array.from(parent.childNodes));
+
+        replaceNodesText(adgSource, getTestSettings({
+            isTargetNodeName: (nodeName) => nodeName === '#text',
+            findTargetNodes,
+        }));
+        expect(parent.textContent).toBe('x inside');
+        expect(outside.textContent).toBe('ad outside');
+        expect(findTargetNodes).toHaveBeenCalledTimes(1);
+
+        // found again once for the nodes added at once
+        parent.appendChild(document.createTextNode(' ad new'));
+        parent.appendChild(document.createTextNode(' ad more'));
+        await flushMutations();
+        expect(parent.textContent).toBe('x inside x new x more');
+        expect(findTargetNodes).toHaveBeenCalledTimes(2);
+
+        // not found again if no nodes are added
+        parent.removeChild(parent.lastChild as Node);
+        await flushMutations();
+        expect(findTargetNodes).toHaveBeenCalledTimes(2);
     });
 
     describe('Trusted Types', () => {

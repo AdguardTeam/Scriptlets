@@ -676,7 +676,7 @@ Project-specific rules:
     with `ubo-` prefix, SHOULD parse the arguments of each syntax once into the same
     settings, and process them by one implementation, e.g. `getAdgNodeTextReplacement()`
     and `getUboNodeTextReplacement()` with `replaceNodesText()` of
-    `trusted-replace-node-text`, instead of keeping a separate implementation for uBO
+    `trusted-replace-node-text` and `remove-node-text`, instead of keeping a separate implementation for uBO
     rules. Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.

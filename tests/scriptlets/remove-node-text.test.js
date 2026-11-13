@@ -340,3 +340,198 @@ test('both matchers working as regexes', (assert) => {
         done();
     }, 1);
 });
+
+/**
+ * Adds a script node which is not executed, to the end of the body.
+ *
+ * @param {string} textContent Text of the script.
+ *
+ * @returns {HTMLScriptElement} Added script node.
+ */
+const addInertScript = (textContent) => {
+    const node = document.createElement('script');
+    node.type = 'text/plain';
+    node.textContent = textContent;
+    elements.push(node);
+    document.body.appendChild(node);
+    return node;
+};
+
+// Rules from AdGuard filter lists
+module(`${name} with AdGuard rules`, { beforeEach, afterEach });
+
+test('present text nodes are removed', (assert) => {
+    // betweenjpandkr.blog#%#//scriptlet('remove-node-text', '#text', 'PR:')
+    const element = addNode('div', 'PR: sponsored adg-1');
+    const textNode = element.firstChild;
+
+    runScriptlet(name, ['#text', 'PR:']);
+
+    assert.strictEqual(textNode.textContent, '', 'present text node removed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+});
+
+test('present text nodes of the parent are removed', (assert) => {
+    // devonlive.com#%#//scriptlet('remove-node-text', '#text', 'Follow Devon Live:', 'section[data-testid="social-follow"]')
+    const parent = document.createElement('section');
+    parent.setAttribute('data-testid', 'social-follow');
+    parent.appendChild(document.createTextNode('Follow Devon Live: adg-2'));
+    elements.push(parent);
+    document.body.appendChild(parent);
+    const outside = addNode('div', 'Follow Devon Live: adg-2');
+
+    runScriptlet(name, ['#text', 'Follow Devon Live:', 'section[data-testid="social-follow"]']);
+
+    assert.strictEqual(parent.textContent, '', 'text of the parent removed');
+    assert.strictEqual(outside.textContent, 'Follow Devon Live: adg-2', 'text outside of the parent not removed');
+});
+
+test('regular expression with `g` flag matches each node', (assert) => {
+    // qr.quel.jp#%#//scriptlet('remove-node-text', 'div', '/シェアする/g')
+    const nodes = [
+        addNode('div', 'シェアする adg-3'),
+        addNode('div', 'before シェアする after adg-3'),
+        addNode('div', '  シェアする  adg-3'),
+    ];
+
+    runScriptlet(name, ['div', '/シェアする/g']);
+
+    nodes.forEach((node) => assert.strictEqual(node.textContent, '', 'text removed'));
+});
+
+test('options: `excludes`, `sedCount` and `quitAfter`', (assert) => {
+    const done = assert.async();
+    // elamigosgamez.net#%#//scriptlet('remove-node-text', 'script', 'checkAdblockUser'), with the options added
+    const excluded = addInertScript('checkAdblockUser(); nonce // adg-4');
+    const first = addInertScript('checkAdblockUser(); // adg-4');
+    const second = addInertScript('checkAdblockUser(); // adg-4');
+
+    runScriptlet(name, ['script', 'checkAdblockUser', '', 'excludes', 'nonce', 'sedCount', '2', 'quitAfter', '0']);
+    const added = addInertScript('checkAdblockUser(); // adg-4');
+
+    setTimeout(() => {
+        assert.strictEqual(excluded.textContent, 'checkAdblockUser(); nonce // adg-4', 'excluded');
+        assert.strictEqual(first.textContent, '', 'first matched node removed');
+        assert.strictEqual(second.textContent, '', 'second matched node removed');
+        assert.strictEqual(added.textContent, 'checkAdblockUser(); // adg-4', 'added node not removed');
+        done();
+    }, 10);
+});
+
+test('`stay` option removes text of nodes added later', (assert) => {
+    const done = assert.async();
+    runScriptlet(name, ['script', 'adg-5-adblock', '', 'stay', '1']);
+    const added = addInertScript('adg-5-adblock();');
+
+    setTimeout(() => {
+        assert.strictEqual(added.textContent, '', 'added node removed');
+        done();
+    }, 10);
+});
+
+test('invalid parent selector is not applied', (assert) => {
+    const node = addNode('div', 'adg-6 text');
+
+    runScriptlet(name, ['div', 'adg-6', 'div[']);
+
+    assert.strictEqual(node.textContent, 'adg-6 text', 'not removed');
+});
+
+// Rules from uBO filter lists and converted uBO rules from AdGuard filter lists,
+// with arguments as converted to AdGuard syntax by AGTree
+module(`${name} with uBO arguments`, { beforeEach, afterEach });
+
+test('`excludes` option', (assert) => {
+    // baseball-reference.com,…##+js(rmnt, script, reviveScroll, excludes, self.__next)
+    const matched = addInertScript('reviveScroll(); // ubo-1');
+    const excluded = addInertScript('self.__next_f.push(reviveScroll); // ubo-1');
+
+    runScriptlet('ubo-rmnt', ['script', 'reviveScroll', 'excludes', 'self.__next']);
+
+    assert.strictEqual(matched.textContent, '', 'removed');
+    assert.strictEqual(excluded.textContent, 'self.__next_f.push(reviveScroll); // ubo-1', 'excluded');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+});
+
+test('`includes` option replaces the second argument', (assert) => {
+    // epiotrkow.pl#%#//scriptlet('ubo-rmnt', 'script', 'testScript.onerror', 'includes', 'adblock')
+    const matched = addInertScript('if (adblock) { warn(); } // ubo-2');
+    const notMatched = addInertScript('testScript.onerror = f; // ubo-2');
+
+    runScriptlet('ubo-rmnt', ['script', 'testScript.onerror', 'includes', 'adblock']);
+
+    assert.strictEqual(matched.textContent, '', 'matched by includes option removed');
+    assert.strictEqual(notMatched.textContent, 'testScript.onerror = f; // ubo-2', 'second argument is replaced');
+});
+
+test('`condition` option is not used with `includes`', (assert) => {
+    // gramedia.com#%#//scriptlet('ubo-rmnt', 'script', 'replaceState', 'condition', 'shope.ee')
+    const matched = addInertScript('history.replaceState(null, ""); // ubo-3');
+
+    runScriptlet('ubo-rmnt', ['script', 'replaceState', 'condition', 'shope.ee']);
+
+    assert.strictEqual(matched.textContent, '', 'matched by includes removed, condition is not checked');
+});
+
+test('no `includes` removes text of all nodes with the name', (assert) => {
+    // dinbyggare.se#%#//scriptlet('ubo-rmnt', 'noscript')
+    const node = addNode('noscript', 'Enable JavaScript ubo-4');
+
+    runScriptlet('ubo-rmnt', ['noscript']);
+
+    assert.strictEqual(node.textContent, '', 'removed');
+});
+
+test('nodes added after the document is interactive are not removed by default', (assert) => {
+    const done = assert.async();
+    // canale-tv.net,cool-tv.net##+js(rmnt, script, .preventDefault(), includes, contextmenu)
+    const present = addInertScript('addEventListener("contextmenu", (e) => e.preventDefault()); // ubo-5');
+    runScriptlet('ubo-rmnt', ['script', '.preventDefault()', 'includes', 'contextmenu']);
+    const added = addInertScript('addEventListener("contextmenu", (e) => e.preventDefault()); // ubo-5');
+
+    setTimeout(() => {
+        assert.strictEqual(present.textContent, '', 'present node removed');
+        assert.strictEqual(
+            added.textContent,
+            'addEventListener("contextmenu", (e) => e.preventDefault()); // ubo-5',
+            'added node not removed',
+        );
+        done();
+    }, 10);
+});
+
+test('`stay` option removes text of nodes added later', (assert) => {
+    const done = assert.async();
+    // multishows.top##+js(rmnt, script, /adbl/i, stay, 1)
+    runScriptlet('ubo-rmnt', ['script', '/adbl/i', 'stay', '1']);
+    const added = addInertScript('if (ADBLOCK) { warn(); } // ubo-6');
+
+    setTimeout(() => {
+        assert.strictEqual(added.textContent, '', 'added node removed');
+        done();
+    }, 10);
+});
+
+test('`#text` node name with regular expression', (assert) => {
+    // resizer.myct.jp##+js(rmnt, #text, /スポンサーリンク|Sponsored Link|广告/)
+    const element = addNode('div', 'Sponsored Link ubo-7');
+    const textNode = element.firstChild;
+
+    runScriptlet('ubo-rmnt', ['#text', '/スポンサーリンク|Sponsored Link|广告/']);
+
+    assert.strictEqual(textNode.textContent, '', 'text node removed');
+});
+
+test.each('uBO names', [
+    'ubo-remove-node-text.js',
+    'ubo-remove-node-text',
+    'ubo-rmnt.js',
+    'ubo-rmnt',
+], (assert, uboName) => {
+    // baseball-reference.com,…##+js(rmnt, script, reviveScroll, excludes, self.__next)
+    const excluded = addInertScript(`self.__next_f.push(reviveScroll); // ${uboName}`);
+
+    runScriptlet(uboName, ['script', 'reviveScroll', 'excludes', 'self.__next']);
+
+    assert.strictEqual(excluded.textContent, `self.__next_f.push(reviveScroll); // ${uboName}`, 'uBO arguments are used');
+});

@@ -1,6 +1,5 @@
 import { hit } from './hit';
 import { nodeListToArray } from './array-utils';
-import { getAddedNodes } from './observer';
 import { toRegExp } from './string-utils';
 import { type Source } from '../scriptlets';
 import { getTrustedTypesApi, type PolicyApi } from './trusted-types-utils';
@@ -44,88 +43,6 @@ export const handleExistingNodes = (
     // If not, process nodes within the document.
     const parents = parentSelector ? document.querySelectorAll(parentSelector) : [document];
     parents.forEach((parent) => processNodes(parent));
-};
-
-/**
- * Extracts added nodes from mutations and passes them to a given handler.
- *
- * @param mutations mutations to find eligible nodes in
- * @param handler handler to pass eligible nodes to
- * @param selector CSS selector to find nodes by
- * @param parentSelector CSS selector to find parent nodes by
- */
-export const handleMutations = (
-    mutations: MutationRecord[],
-    handler: NodeHandler,
-    selector?: string,
-    parentSelector?: string,
-): void => {
-    const addedNodes = getAddedNodes(mutations);
-    if (selector && parentSelector) {
-        addedNodes.forEach(() => {
-            handleExistingNodes(selector, handler, parentSelector);
-        });
-    } else {
-        handler(addedNodes);
-    }
-};
-
-/**
- * Checks if given node's text content should be replaced
- *
- * @param node  node to check
- * @param nodeNameMatch regexp or string to match node name
- * @param textContentMatch regexp or string to match node's text content
- * @returns true if node's text content should be replaced
- */
-export const isTargetNode = (
-    node: Node,
-    nodeNameMatch: RegExp | string,
-    textContentMatch: RegExp | string,
-): boolean => {
-    const { nodeName, textContent } = node;
-    const nodeNameLowerCase = nodeName.toLowerCase();
-    return textContent !== null
-        && textContent !== ''
-        && (nodeNameMatch instanceof RegExp
-            ? nodeNameMatch.test(nodeNameLowerCase)
-            : nodeNameMatch === nodeNameLowerCase
-        )
-        && (textContentMatch instanceof RegExp
-            ? textContentMatch.test(textContent)
-            : textContent.includes(textContentMatch)
-        );
-};
-
-/**
- * Replaces given node's text content with a given replacement.
- *
- * @param source source of the scriptlet
- * @param node node to replace text content in
- * @param pattern pattern to match text content
- * @param replacement replacement for matched text content
- */
-export const replaceNodeText = (
-    source: Source,
-    node: Node,
-    pattern: RegExp | string,
-    replacement: string,
-): void => {
-    const { textContent } = node;
-    if (textContent) {
-        let modifiedText = textContent.replace(pattern, replacement);
-
-        // For websites that use Trusted Types
-        // https://w3c.github.io/webappsec-trusted-types/dist/spec/
-        if (node.nodeName === 'SCRIPT') {
-            const trustedTypesApi = getTrustedTypesApi(source);
-            modifiedText = trustedTypesApi.createScript(modifiedText);
-        }
-
-        node.textContent = modifiedText;
-
-        hit(source);
-    }
 };
 
 /**
@@ -214,6 +131,15 @@ export interface NodeTextReplacement {
      * If true, the original and the modified text are logged.
      */
     shouldLog: boolean;
+
+    /**
+     * Returns the nodes whose text may be replaced, e.g. the text nodes of the elements
+     * matched by `parentSelector` of `remove-node-text`, or `null` to find them in the document.
+     * If set, it is called for the present nodes and again on each addition of nodes,
+     * instead of processing the added nodes, so the replacement has to be idempotent,
+     * e.g. removing the whole text.
+     */
+    findTargetNodes: (() => Node[]) | null;
 }
 
 /**
@@ -347,6 +273,7 @@ export const getAdgNodeTextReplacement = (
         timeout: DEFAULT_TIMEOUT_MS,
         shouldHandleTemplates: false,
         shouldLog,
+        findTargetNodes: null,
     };
 };
 
@@ -440,14 +367,17 @@ export const getUboNodeTextReplacement = (
         timeout: null,
         shouldHandleTemplates: true,
         shouldLog: true,
+        findTargetNodes: null,
     };
 };
 
 /**
  * Replaces the text of DOM nodes, which are present when the scriptlet runs and which are added later,
  * by the settings parsed from the arguments of `trusted-replace-node-text`:
- * - present elements and text nodes are found in document order, skipping the currently running script;
- * - added nodes are processed while the scriptlet's own changes are not observed;
+ * - present elements and text nodes are found in document order, skipping the currently running script,
+ *   or by `findTargetNodes` if it is set;
+ * - added nodes are processed while the scriptlet's own changes are not observed,
+ *   or the nodes are found by `findTargetNodes` again;
  * - a node is written only if its text has changed, and then `hit()` is called;
  * - an error of processing a node is logged once for the node, and other nodes are still processed;
  * - processing stops once `sedCount` nodes have been matched, and otherwise after `timeout`,
@@ -467,6 +397,7 @@ export const replaceNodesText = (source: Source, replacement: NodeTextReplacemen
         timeout,
         shouldHandleTemplates,
         shouldLog,
+        findTargetNodes,
     } = replacement;
 
     let { sedCount } = replacement;
@@ -567,7 +498,24 @@ export const replaceNodesText = (source: Source, replacement: NodeTextReplacemen
         }
     };
 
-    if (document.documentElement) {
+    /**
+     * Processes the nodes returned by `findTargetNodes`.
+     *
+     * @param find Function which returns the nodes.
+     */
+    const handleFoundNodes = (find: () => Node[]): void => {
+        const nodes = find();
+        const { currentScript } = document;
+        for (let i = 0; i < nodes.length && sedCount > 0; i += 1) {
+            if (nodes[i] !== currentScript && isTargetNodeName(nodes[i].nodeName)) {
+                handleNode(nodes[i]);
+            }
+        }
+    };
+
+    if (findTargetNodes !== null) {
+        handleFoundNodes(findTargetNodes);
+    } else if (document.documentElement) {
         handleTree(document.documentElement);
     }
 
@@ -578,6 +526,13 @@ export const replaceNodesText = (source: Source, replacement: NodeTextReplacemen
     let observer: MutationObserver | null = null;
 
     const handleAddedNodes = (mutations: MutationRecord[]): void => {
+        if (findTargetNodes !== null) {
+            // The nodes are found again once for all the added ones
+            if (mutations.some((mutation) => mutation.addedNodes.length > 0)) {
+                handleFoundNodes(findTargetNodes);
+            }
+            return;
+        }
         for (let i = 0; i < mutations.length; i += 1) {
             const { addedNodes } = mutations[i];
             for (let j = 0; j < addedNodes.length; j += 1) {

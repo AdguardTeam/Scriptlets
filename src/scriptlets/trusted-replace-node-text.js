@@ -34,7 +34,9 @@ import {
  * - `...extraArgs` — optional, `verbose` and options, each option followed by its value:
  *     - `verbose` — log original and modified text content
  *     - `excludes, value` — string or RegExp, do not replace the text if it contains or matches it
- *     - `sedCount, n` — replace the text of at most `n` nodes, positive integer
+ *     - `sedCount, n` — replace the text of at most `n` nodes, positive integer; nodes are counted
+ *       if their text is matched, the present ones first, and once `n` is reached,
+ *       no more nodes are processed, regardless of `stay` and `quitAfter`
  *     - `stay, 1` — keep replacing the text of added nodes until the page is unloaded,
  *       instead of 10 seconds after the scriptlet has run
  *     - `quitAfter, ms` — keep replacing the text of added nodes for `ms` milliseconds after the document
@@ -68,7 +70,7 @@ import {
  * - options are pairs of a name and a value which follow `replacement`:
  *     - `includes, value` or `condition, value` — the text has to match a string or a regular expression
  *     - `excludes, value` — the text must not match a string or a regular expression
- *     - `sedCount, n` — replace the text of at most `n` nodes
+ *     - `sedCount, n` — replace the text of at most `n` nodes, then stop, also with `stay`
  *     - `stay, 1` — keep replacing the text of added nodes, instead of stopping when the document is interactive,
  *       i.e. on `DOMContentLoaded`
  *     - `quitAfter, ms` — keep replacing the text of added nodes for `ms` milliseconds
@@ -128,10 +130,16 @@ import {
  *     ```
  *
  * 1. Replace the text of the first script which contains `adblock`, unless it contains `nonce`,
- *    and keep replacing the text of added scripts until the page is unloaded:
+ *    also if the script is added later:
  *
  *     ```adblock
- *     example.org#%#//scriptlet('trusted-replace-node-text', 'script', 'adblock', 'true', 'false', 'excludes', 'nonce', 'sedCount', '1', 'stay', '1')
+ *     example.org#%#//scriptlet('trusted-replace-node-text', 'script', 'adblock', 'true', 'false', 'excludes', 'nonce', 'sedCount', '1')
+ *     ```
+ *
+ * 1. Keep replacing the text of added scripts until the page is unloaded:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-node-text', 'script', 'adblock', 'true', 'false', 'stay', '1')
  *     ```
  *
  * 1. Replace node's text content and log original and modified text content:
