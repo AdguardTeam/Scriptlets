@@ -63,6 +63,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   replaces all its occurrences, and nodes are processed until the document is interactive, unless `stay, 1` is set,
   e.g. `example.org##+js(rpnt, script, /ads = true/, ads = false, condition, adblock)`. Unlike uBO, a rule with an
   invalid regular expression is not applied.
+- `valueWrapper` argument of `trusted-set-constant`, as in `set-constant`, i.e. `asFunction`, `asCallback`,
+  `asResolved` and `asRejected`, and its `runAt` option, which follows `valueWrapper` and sets the property when
+  the document is `loading`, `interactive` or `complete`, e.g. `example.org#%#//scriptlet('trusted-set-constant',
+  'getConsent', '{"ads":false}', '', 'asFunction', 'runAt', 'interactive')`.
+- uBO aliases of `trusted-set-constant` [#586], `ubo-trusted-set-constant`, `ubo-trusted-set` and the same with `.js`,
+  with uBO arguments: uBO constants, i.e. `json:` followed by JSON, JSON of an object with `value`, e.g.
+  `{"value": "text"}` which sets `text`, and `noopFunc`, `trueFunc` and `falseFunc` which look like native functions,
+  while any other text is `undefined`, followed by the named options `as` and `runAt` instead of `stack`,
+  e.g. `example.org##+js(trusted-set, navigator.platform, {"value": "iPhone"})`. As in uBO, writes of the page
+  to the property are ignored, also of a value of another type.
 - `this` as `argumentIndex` of `trusted-replace-argument`, to replace the object which the method is called on,
   e.g. `example.org#%#//scriptlet('trusted-replace-argument', 'String.prototype.includes', 'this',
   'replace:/firefox/chrome/', 'mozilla/5.0')`, which `pattern` is matched against then.

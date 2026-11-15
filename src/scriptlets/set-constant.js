@@ -128,6 +128,10 @@ import {
  * @added v1.0.4.
  */
 /* eslint-enable max-len */
+// TODO: use the engine of `trusted-set-constant`, i.e. `setConstantBySettings()` of `set-constant-utils`,
+// with the parsers of AdGuard and uBO arguments, as AGENTS.md rule 24 says, keeping the parsing of AdGuard
+// arguments as it is, and support the current uBO options, e.g. `runAt, interactive`, instead of the old
+// positional `defer` or wrapper of uBO below, which ignores them, see the uBO `set-constant` scriptlet
 export function setConstant(source, property, value, stack = '', valueWrapper = '', setProxyTrap = false) {
     const uboAliases = [
         'set-constant.js',

@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { clearGlobalProps } from '../helpers';
+import { clearGlobalProps, runScriptlet } from '../helpers';
 import { nativeIsNaN } from '../../src/helpers';
 
 const { test, module } = QUnit;
@@ -433,3 +433,111 @@ if (!isSupported) {
         clearGlobalProps('testProp');
     });
 }
+
+// Rules from AdGuard filter lists, with the cases in which uBO arguments differ
+module(`${name} with AdGuard rules`, { afterEach });
+
+test('JSON string', (assert) => {
+    // letv8.cc,zhibo1.cc#%#//scriptlet('trusted-set-constant', 'adsv', '"Y"')
+    runScriptlet(name, ['adsv', '"Y"']);
+
+    assert.strictEqual(window.adsv, 'Y', 'string set');
+    // the page cancels the constant by a value of another type
+    window.adsv = 5;
+    assert.strictEqual(window.adsv, 5, 'value of another type replaces the constant');
+});
+
+test('JSON object is set as a whole', (assert) => {
+    // lexlege.pl#%#//scriptlet('trusted-set-constant', 'gapi', '{"plusone": {}}')
+    runScriptlet(name, ['gapi', '{"plusone": {}}']);
+
+    assert.deepEqual(window.gapi, { plusone: {} }, 'object set');
+});
+
+test('plain text is set as a string', (assert) => {
+    // otakufilmes.org#%#//scriptlet('trusted-set-constant', 'otakuAdsState', 'clear')
+    runScriptlet(name, ['otakuAdsState', 'clear']);
+
+    assert.strictEqual(window.otakuAdsState, 'clear', 'text set');
+});
+
+test('valueWrapper, as in set-constant', (assert) => {
+    // lexlege.pl#%#//scriptlet('trusted-set-constant', 'gapi', '{"plusone": {}}'), with `asFunction`
+    // and another property, as `gapi` is already set by the test above
+    runScriptlet(name, ['gapiFunction', '{"plusone": {}}', '', 'asFunction']);
+
+    assert.strictEqual(typeof window.gapiFunction, 'function', 'function set');
+    assert.deepEqual(window.gapiFunction(), { plusone: {} }, 'function returns the value');
+});
+
+// Rules from uBO filter lists, converted to AdGuard syntax by AGTree,
+// so that their arguments are the same as received by the scriptlet
+module(`${name} with uBO arguments`, { afterEach });
+
+test('{"value": …} sets the value, not the object', (assert) => {
+    // octopusenergy.de##+js(trusted-set, cmp_importvendors, '{"value": ["s23","s2564"]}')
+    runScriptlet('ubo-trusted-set', ['cmp_importvendors', '{"value": ["s23","s2564"]}']);
+
+    assert.deepEqual(window.cmp_importvendors, ['s23', 's2564'], 'value set');
+});
+
+test('json: in a chain created later', (assert) => {
+    // littlebigsnake.com##+js(trusted-set, ADS.STATUS_ERROR, json:"COMPLETE")
+    runScriptlet('ubo-trusted-set', ['ADS.STATUS_ERROR', 'json:"COMPLETE"']);
+    window.ADS = { STATUS_ERROR: 'ERROR' };
+
+    assert.strictEqual(window.ADS.STATUS_ERROR, 'COMPLETE', 'value set in the chain');
+});
+
+test('writes of the page are ignored, also of another type', (assert) => {
+    // savefrom.net##+js(trusted-set, clickAds.banner.urls, 'json:[{"url":{"limit":0,"url":""}}]')
+    runScriptlet('ubo-trusted-set', ['clickAds.banner.urls', 'json:[{"url":{"limit":0,"url":""}}]']);
+    window.clickAds = { banner: { urls: [{ url: 'https://ads.example' }] } };
+    const expected = [{ url: { limit: 0, url: '' } }];
+
+    assert.deepEqual(window.clickAds.banner.urls, expected, 'value set');
+    window.clickAds.banner.urls = 'https://ads.example';
+    assert.deepEqual(window.clickAds.banner.urls, expected, 'write of another type ignored');
+});
+
+test('as, function', (assert) => {
+    // funradio.fr##+js(trusted-set, getUserConsentStatus, json:{"dailymotion":true}, as, function)
+    runScriptlet('ubo-trusted-set', ['getUserConsentStatus', 'json:{"dailymotion":true}', 'as', 'function']);
+
+    assert.strictEqual(typeof window.getUserConsentStatus, 'function', 'function set');
+    assert.deepEqual(window.getUserConsentStatus(), { dailymotion: true }, 'function returns the value');
+});
+
+test('other text is undefined, as in uBO', (assert) => {
+    // emturbovid.com,…##+js(trusted-set, premium, "'1'"), converted by AGTree to `\'1\'`
+    window.premium = 0;
+    runScriptlet('ubo-trusted-set', ['premium', "\\'1\\'"]);
+
+    assert.strictEqual(window.premium, undefined, 'undefined set');
+    window.premium = 1;
+    assert.strictEqual(window.premium, undefined, 'write ignored');
+});
+
+test('trueFunc looks like a native function named as the property', (assert) => {
+    // synthetic, no uBO rule of trusted-set uses noopFunc, trueFunc or falseFunc yet,
+    // e.g. example.org##+js(trusted-set, uboCloakTest.isEnabled, trueFunc)
+    runScriptlet('ubo-trusted-set', ['uboCloakTest.isEnabled', 'trueFunc']);
+    window.uboCloakTest = {};
+
+    const fn = window.uboCloakTest.isEnabled;
+    assert.strictEqual(fn(), true, 'function returns true');
+    assert.strictEqual(fn.name, 'isEnabled', 'named as the property');
+    assert.strictEqual(fn.toString(), 'function isEnabled() { [native code] }', 'looks like a native function');
+});
+
+test.each('uBO names', [
+    ['ubo-trusted-set-constant.js', 'uboNameTest1'],
+    ['ubo-trusted-set-constant', 'uboNameTest2'],
+    ['ubo-trusted-set.js', 'uboNameTest3'],
+    ['ubo-trusted-set', 'uboNameTest4'],
+], (assert, [uboName, property]) => {
+    // octopusenergy.de##+js(trusted-set, cmp_importvendors, '{"value": ["s23","s2564"]}'), with another property
+    runScriptlet(uboName, [property, '{"value": ["s23","s2564"]}']);
+
+    assert.deepEqual(window[property], ['s23', 's2564'], 'uBO arguments are used');
+});

@@ -148,3 +148,29 @@ export const noopPromiseResolve = (
     // eslint-disable-next-line consistent-return
     return Promise.resolve(response);
 };
+
+/**
+ * Wraps a value as the `valueWrapper` argument of `set-constant` does, and so the `as` option of uBO:
+ * `asFunction` returns a function which returns the value, `asCallback` a function which returns such a function,
+ * `asResolved` and `asRejected` a promise which is resolved or rejected with the value.
+ *
+ * @param value Value to wrap.
+ * @param wrapper Name of the wrapper, e.g. `asFunction`.
+ *
+ * @returns Wrapped value, or the value as is for another name.
+ */
+export const wrapConstantValue = (value: unknown, wrapper: unknown): unknown => {
+    if (wrapper === 'asFunction') {
+        return () => value;
+    }
+    if (wrapper === 'asCallback') {
+        return () => () => value;
+    }
+    if (wrapper === 'asResolved') {
+        return Promise.resolve(value);
+    }
+    if (wrapper === 'asRejected') {
+        return Promise.reject(value);
+    }
+    return value;
+};

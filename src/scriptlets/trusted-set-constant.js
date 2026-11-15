@@ -23,6 +23,15 @@ import {
     backupRegExpValues,
     restoreRegExpValues,
     getDescriptorAddon,
+    parseUboOptions,
+    unescapeUboArgument,
+    getUboConstantValue,
+    wrapConstantValue,
+    cloakUboFunction,
+    runAtUboReadyState,
+    getAdgConstantSetting,
+    getUboConstantSetting,
+    setConstantBySettings,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -41,7 +50,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack])
+ * example.org#%#//scriptlet('trusted-set-constant', property, value[, stack[, valueWrapper[, ...options]]])
  * ```
  *
  * - `property` — required, path to a property (joined with `.` if needed). The property must be attached to `window`.
@@ -52,6 +61,40 @@ import {
  *   wrap argument into another pair of quotes, e.g. `'"500"'` for a string;
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if regular expression is invalid it will be skipped
+ * - `valueWrapper` – optional, function to modify a constant, as in `set-constant`. Possible wrappers:
+ *     - `asFunction` – function returning value
+ *     - `asCallback` – function returning callback, that would return value
+ *     - `asResolved` – Promise that would resolve with value
+ *     - `asRejected` – Promise that would reject with value
+ * - `...options` — optional, pairs of a name and a value which follow `valueWrapper`, which may be empty:
+ *     - `runAt, value` — set the property when the document is `loading`, `interactive` or `complete`,
+ *       instead of at once, i.e. on `DOMContentLoaded` for `interactive`
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g. `example.org##+js(trusted-set, ads.enabled, json:false)`,
+ * also by its other name `trusted-set-constant`:
+ *
+ * ```text
+ * example.org##+js(trusted-set, chain, rawValue[, ...options])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `rawValue` — one of:
+ *     - `json:` followed by JSON, e.g. `json:"text"` or `json:{"a":1}`
+ *     - JSON of an object with `value`, e.g. `{"value": "text"}` sets `text`, not the object
+ *     - `undefined`, `false`, `true`, `null`, `''` or empty, `[]` or `emptyArr`, `{}` or `emptyObj`,
+ *       `noopFunc`, `trueFunc`, `falseFunc`, `throwFunc`, or an integer between -32767 and 32767;
+ *       `noopFunc`, `trueFunc` and `falseFunc` look like native functions named as the property
+ *     - any other text is `undefined`, as in uBO, e.g. `visible` or `'1'`
+ * - options are pairs of a name and a value which follow `rawValue`:
+ *     - `as, value` — `function`, `callback`, `resolved` or `rejected`, to set a function which returns the value,
+ *       a function which returns such a function, or a promise of the value
+ *     - `runAt, value` — set the property when the document is `loading` or `1`, `interactive` or `2`,
+ *       or `complete` or `3`, instead of at once
+ * - writes of the page to the property are ignored, also of a value of another type
+ * - there is no `stack`
  *
  * ### Examples
  *
@@ -87,6 +130,14 @@ import {
  *     ✔ typeof window.test === 'string'
  *     ```
  *
+ * 1. Set a function which returns an object, when the document is interactive
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-constant', 'getConsent', '{"ads":false}', '', 'asFunction', 'runAt', 'interactive')
+ *
+ *     ✔ window.getConsent() // { ads: false }, after DOMContentLoaded
+ *     ```
+ *
  * 1. Use script stack matching to set value
  *
  *     ```adblock
@@ -99,93 +150,28 @@ import {
  * @added v1.8.2.
  */
 /* eslint-enable max-len */
-export function trustedSetConstant(source, property, value, stack) {
-    if (!property) {
+export function trustedSetConstant(source, property, value, stack, ...extraArgs) {
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
+    // and uBO arguments, i.e. named options instead of `stack`
+    const constantSetting = typeof source.name === 'string' && source.name.startsWith('ubo-')
+        ? getUboConstantSetting(property, value, typeof stack === 'undefined' ? extraArgs : [stack].concat(extraArgs))
+        : getAdgConstantSetting(source, property, value, stack, extraArgs[0], extraArgs.slice(1));
+
+    if (constantSetting === null) {
         return;
     }
 
-    let constantValue;
-    try {
-        constantValue = inferValue(value);
-    } catch (e) {
-        logMessage(source, e);
-        return;
-    }
-
-    let canceled = false;
-    const mustCancel = (value) => {
-        if (canceled) {
-            return canceled;
-        }
-        canceled = value !== undefined
-            && constantValue !== undefined
-            && typeof value !== typeof constantValue
-            && value !== null;
-        return canceled;
-    };
-
-    /**
-     * Safely sets property on a given object
-     *
-     * IMPORTANT! this duplicates corresponding func in set-constant scriptlet as
-     * reorganizing this to common helpers will most definitely complicate debugging
-     *
-     * @param {object} base arbitrary reachable object
-     * @param {string} prop property name
-     * @param {boolean} configurable if set property should be configurable
-     * @param {object} handler custom property descriptor object
-     * @returns {boolean} true if prop was trapped successfully
-     */
-    const trapProp = (base, prop, configurable, handler) => {
-        if (!handler.init(base[prop])) {
-            return false;
-        }
-
-        const origDescriptor = Object.getOwnPropertyDescriptor(base, prop);
-        let prevSetter;
-        // This is required to prevent scriptlets overwrite each over
-        if (origDescriptor instanceof Object) {
-            // This check is required to avoid defining non-configurable props
-            if (!origDescriptor.configurable) {
-                const message = `Property '${prop}' is not configurable`;
-                logMessage(source, message);
-                return false;
-            }
-
-            base[prop] = constantValue;
-            if (origDescriptor.set instanceof Function) {
-                prevSetter = origDescriptor.set;
-            }
-        }
-        Object.defineProperty(base, prop, {
-            configurable,
-            get() {
-                return handler.get();
-            },
-            set(a) {
-                if (prevSetter !== undefined) {
-                    prevSetter(a);
-                }
-                handler.set(a);
-            },
-        });
-        return true;
-    };
-
-    const setChainPropAccess = createSetChainPropAccessor({
-        source,
-        stack,
-        mustCancel,
-        trapProp,
-        getConstantValue: () => constantValue,
-        setConstantValue: (v) => { constantValue = v; },
-    });
-    setChainPropAccess(window, property);
+    setConstantBySettings(source, constantSetting);
 }
 
 export const trustedSetConstantNames = [
     'trusted-set-constant',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-set-constant.js',
+    'ubo-trusted-set-constant',
+    'ubo-trusted-set.js',
+    'ubo-trusted-set',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -196,6 +182,15 @@ trustedSetConstant.injections = [
     inferValue,
     logMessage,
     createSetChainPropAccessor,
+    parseUboOptions,
+    unescapeUboArgument,
+    getUboConstantValue,
+    wrapConstantValue,
+    cloakUboFunction,
+    runAtUboReadyState,
+    getAdgConstantSetting,
+    getUboConstantSetting,
+    setConstantBySettings,
     // following helpers should be imported and injected
     // because they are used by helpers above
     noopArray,
