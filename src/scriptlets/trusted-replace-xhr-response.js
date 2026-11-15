@@ -10,7 +10,6 @@ import {
     isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
 } from '../helpers';
 
@@ -338,6 +337,5 @@ trustedReplaceXhrResponse.injections = [
     isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
 ];

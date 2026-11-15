@@ -68,20 +68,3 @@ export const matchStackTrace = (stackMatch: string | undefined, stackTrace: stri
     }
     return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
 };
-
-/**
- * Checks whether `stack` of a rule can be matched by `matchStackTrace()`, i.e. whether it is not
- * an invalid regular expression, for which `matchStackTrace()` throws. It should be checked once,
- * when the scriptlet runs, so such rule is not applied, and it is logged once, instead of on each call.
- *
- * @param stackMatch `stack` of the rule
- * @returns true if `stack` can be matched
- */
-export const isValidStackPattern = (stackMatch: string): boolean => {
-    try {
-        toRegExp(stackMatch);
-        return true;
-    } catch {
-        return false;
-    }
-};

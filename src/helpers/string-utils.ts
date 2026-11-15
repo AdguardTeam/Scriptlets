@@ -129,24 +129,19 @@ export const toRegExp = (rawInput?: RawStrPattern | null): RegExp => {
 /**
  * Checks whether the input string can be converted to regexp
  *
+ * Uses `toRegExp()` itself, so that the check and the conversion cannot disagree
+ * on whether a value is a regexp pattern, a pattern with flags, or a literal.
+ *
  * @param input literal string or regexp pattern
  * @returns if input can be converted to regexp
  */
 export const isValidStrPattern = (input: RawStrPattern): boolean => {
-    const FORWARD_SLASH = '/';
-    let str = escapeRegExp(input);
-    if (input[0] === FORWARD_SLASH && input[input.length - 1] === FORWARD_SLASH) {
-        str = input.slice(1, -1);
-    }
-
-    let isValid;
     try {
-        isValid = new RegExp(str);
-        isValid = true;
+        toRegExp(input);
+        return true;
     } catch (e) {
-        isValid = false;
+        return false;
     }
-    return isValid;
 };
 
 /**

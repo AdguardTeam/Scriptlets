@@ -1,8 +1,9 @@
 import { getThrownValueMessage } from './get-error-message';
 import { logMessage } from './log-message';
-import { addStackTraceMessageLine, isValidStackPattern, matchStackTrace } from './match-stack';
+import { addStackTraceMessageLine, matchStackTrace } from './match-stack';
 import { getFunctionProxyProperty } from './object-utils';
 import { getXhrData, type XMLHttpRequestSharedRequestData } from './request-utils';
+import { isValidStrPattern } from './string-utils';
 import { type Source } from '../scriptlets';
 
 /**
@@ -73,7 +74,7 @@ export function interceptXhrResponses(
 
     // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
     // which is logged once, instead of on each request
-    if (stack && !isValidStackPattern(stack)) {
+    if (stack && !isValidStrPattern(stack)) {
         logMessage(source, `Invalid stack: ${stack}`);
         return;
     }

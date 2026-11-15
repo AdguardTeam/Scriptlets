@@ -10,7 +10,6 @@ import {
     getPreventGetter,
     noopNull,
     logMessage,
-    escapeRegExp,
     noopFunc,
     trueFunc,
     substringBefore,
@@ -218,7 +217,6 @@ preventWindowOpen.primaryName = preventWindowOpenNames[0];
 preventWindowOpen.injections = [
     hit,
     isValidStrPattern,
-    escapeRegExp,
     isValidMatchStr,
     toRegExp,
     nativeIsNaN,

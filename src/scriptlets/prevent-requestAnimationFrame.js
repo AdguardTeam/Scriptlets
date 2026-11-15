@@ -6,7 +6,6 @@ import {
     isValidCallback,
     callbackToString,
     logMessage,
-    escapeRegExp,
     toRegExp,
 } from '../helpers';
 
@@ -140,6 +139,5 @@ preventRequestAnimationFrame.injections = [
     callbackToString,
     logMessage,
     // following helpers should be injected as helpers above use them
-    escapeRegExp,
     toRegExp,
 ];

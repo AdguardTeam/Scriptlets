@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { matchStackTrace, addStackTraceMessageLine, isValidStackPattern } from '../../src/helpers';
+import { matchStackTrace, addStackTraceMessageLine, isValidStrPattern } from '../../src/helpers';
 
 test('matchStackTrace() for working with getNativeRegexpTest() helper', async () => {
     expect(matchStackTrace('vitest', new Error().stack)).toBeTruthy();
@@ -70,7 +70,7 @@ describe('addStackTraceMessageLine()', () => {
     });
 });
 
-describe('isValidStackPattern()', () => {
+describe('isValidStrPattern() for stack', () => {
     test.each([
         { stack: 'loadAds', expected: true },
         { stack: 'inlineScript', expected: true },
@@ -81,7 +81,7 @@ describe('isValidStackPattern()', () => {
         { stack: '/(/', expected: false },
         { stack: '/(/i', expected: false },
     ])('returns $expected for $stack', ({ stack, expected }) => {
-        expect(isValidStackPattern(stack)).toBe(expected);
+        expect(isValidStrPattern(stack)).toBe(expected);
         // Invalid patterns are the ones for which matchStackTrace() throws
         const match = () => matchStackTrace(stack, new Error().stack);
         if (expected) {

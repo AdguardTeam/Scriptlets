@@ -2,7 +2,7 @@ import {
     hit,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
+    isValidStrPattern,
     isNativePromise,
     getWildcardPropertyInChain,
     logMessage,
@@ -407,7 +407,7 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
 
     // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
     // which is logged once, instead of on each call
-    if (stack && !isLoggingMode && !isValidStackPattern(stack)) {
+    if (stack && !isLoggingMode && !isValidStrPattern(stack)) {
         logMessage(source, `Invalid stack: ${stack}`);
         return;
     }
@@ -510,7 +510,7 @@ jsonPrune.injections = [
     hit,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
+    isValidStrPattern,
     isNativePromise,
     getWildcardPropertyInChain,
     logMessage,

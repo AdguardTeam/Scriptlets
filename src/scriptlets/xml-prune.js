@@ -10,7 +10,6 @@ import {
     isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
     getXpathExpression,
 } from '../helpers';
@@ -513,7 +512,6 @@ xmlPrune.injections = [
     isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
     getXpathExpression,
 ];

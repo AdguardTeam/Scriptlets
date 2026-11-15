@@ -14,28 +14,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
-- XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
-  e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
-  e.g. `div#host >>> xpath(descendant-or-self::button)`. Absolute paths after `>>>` are evaluated against
-  the document in Chromium-based browsers before version 146, so e.g. `xpath(//button)` selects nothing there,
-  and relative paths with `descendant-or-self::` axis should be used instead. Invalid XPath expressions are logged once
-  and the scriptlet exits. Errors which occur only on evaluation of page elements,
-  e.g. a type error in a predicate like `//button[count(1)]`, may not be detected and are not logged,
-  and such expression selects nothing while the error occurs, e.g. while there is a button on the page,
-  or after `>>>` only the elements of top-level elements of the shadow root without the error.
-- `isTrusted:all` in `extraMatch` of `trusted-click-element` to spoof `isTrusted` for all click-related events on the
-  page, including the page's own ones, e.g. a click which a page handler dispatches on another element in response,
-  similarly to the behavior before [#582], but trusted events are passed unchanged, and all listeners of an event
-  receive the same proxy. Only listeners added by `addEventListener()` after the scriptlet has run receive spoofed
-  events of the page; inline `on...` handlers receive spoofed events only on the clicked element during an event of the
-  scriptlet of the same type, including the page's own events of that type dispatched on it meanwhile, so other page
-  events may reach them unspoofed. It is enabled for the whole page, including the clicks of other rules, and may break
-  the page, e.g. its guards which compare events, or its code which passes events to native methods, so use it only if
-  the page does not accept the clicks of the scriptlet otherwise. It can be combined with other conditions in any
-  order, but for compatibility with older versions of the scriptlet, it should be the first or the only condition,
-  e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after another condition
-  as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click regardless of the
-  `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
 - uBO aliases of trusted scriptlets whose arguments are the same as in uBO [#586], so that uBO rules with them,
   e.g. `example.org##+js(trusted-set-attr, div, data-ad, none)`, are no longer rejected: `ubo-trusted-click-element`,
   `ubo-trusted-prevent-xhr`, `ubo-trusted-replace-fetch-response`, `ubo-trusted-replace-xhr-response`,
@@ -106,7 +84,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- Minimum supported Microsoft Edge version is now Edge Chromium 80.
 - `trusted-replace-node-text` writes the text of a node and calls `hit()` only if the text has changed,
   and logs an error of processing a node once, while other nodes are still processed. Its Trusted Types policy
   is created once, only when the text of a script is replaced, and if the page disallows it,
@@ -117,6 +94,60 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the whole name, and added nodes are processed until the document is interactive, unless `stay, 1` is set, as in uBO,
   instead of 10 seconds after the scriptlet has run. Unlike uBO, a rule with an invalid regular expression
   is not applied.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- `trusted-replace-outbound-text` with `logContent`, without `textToReplace` and with `decodeMethod` other than
+  `base64` removing the first character of the text.
+- `trusted-replace-node-text` with `#text` node name not replacing the text of the text nodes which are present
+  when the scriptlet runs, only of the ones added later. The same for `remove-node-text` without `parentSelector`.
+- `remove-node-text` skipping some of the matched nodes if `textMatch` is a regular expression with `g` flag,
+  e.g. `/ad/g`, as its matching continued from the position of the previous match.
+- uBO rules of `remove-node-text` with options not being applied at all, as an option name was used as
+  `parentSelector`, e.g. `example.org##+js(rmnt, script, reviveScroll, excludes, self.__next)`, and with no
+  `includes` throwing an error, e.g. `example.org##+js(rmnt, noscript)`, which removes the text of all such nodes now.
+- `trusted-replace-argument` throwing an error to the page instead of calling the intercepted method
+  if logging an error of processing the arguments throws as well, e.g. `console.log()` replaced by the page.
+- `trusted-replace-argument` matching `pattern` with `RegExp.prototype.test` replaced after the rule has run,
+  e.g. by the page or by another rule which intercepts it, which could change the matched text.
+  The method saved when the rule runs is used now.
+
+### Security
+
+## [2.6.0] - 2026-11-13
+
+### Added
+
+- XPath expressions support in `trusted-click-element` selectors, wrapped in `xpath()`,
+  e.g. `xpath(//button[contains(text(), "Accept")])`, also combined with `>>>` combinator,
+  e.g. `div#host >>> xpath(descendant-or-self::button)`. Absolute paths after `>>>` are evaluated against
+  the document in Chromium-based browsers before version 146, so e.g. `xpath(//button)` selects nothing there,
+  and relative paths with `descendant-or-self::` axis should be used instead. Invalid XPath expressions are logged once
+  and the scriptlet exits. Errors which occur only on evaluation of page elements,
+  e.g. a type error in a predicate like `//button[count(1)]`, may not be detected and are not logged,
+  and such expression selects nothing while the error occurs, e.g. while there is a button on the page,
+  or after `>>>` only the elements of top-level elements of the shadow root without the error.
+- `isTrusted:all` in `extraMatch` of `trusted-click-element` to spoof `isTrusted` for all click-related events on the
+  page, including the page's own ones, e.g. a click which a page handler dispatches on another element in response,
+  similarly to the behavior before [#582], but trusted events are passed unchanged, and all listeners of an event
+  receive the same proxy. Only listeners added by `addEventListener()` after the scriptlet has run receive spoofed
+  events of the page; inline `on...` handlers receive spoofed events only on the clicked element during an event of the
+  scriptlet of the same type, including the page's own events of that type dispatched on it meanwhile, so other page
+  events may reach them unspoofed. It is enabled for the whole page, including the clicks of other rules, and may break
+  the page, e.g. its guards which compare events, or its code which passes events to native methods, so use it only if
+  the page does not accept the clicks of the scriptlet otherwise. It can be combined with other conditions in any
+  order, but for compatibility with older versions of the scriptlet, it should be the first or the only condition,
+  e.g. `isTrusted:all, !cookie:consent`. Older versions ignore it only there, but take it after another condition
+  as a part of that condition's value, e.g. with `!cookie:consent, isTrusted:all` they click regardless of the
+  `consent` cookie, and with `containsText:Accept, isTrusted:all` they never click.
+
+### Changed
+
+- Minimum supported Microsoft Edge version is now Edge Chromium 80.
 - `trusted-click-element` spoofs `isTrusted` by default only for its own clicks, and for the clicks which labels
   forward from them to their controls, as one event shared by all listeners, instead of all click-related events
   on the page, which replaced the page's own events with proxies and broke popup opening-event guards [#582].
@@ -153,24 +184,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   an async function which awaits the response no longer matches it if it is not in the stack when `fetch()`
   or `json()` is called, e.g. if the request is sent by a timer. In logging mode of `json-prune-fetch-response`
   and `json-prune`, `stack` is still not matched, and the stack trace of the call is logged with the content.
+- Documented that the `stack` parameter of `abort-on-stack-trace` scriptlet supports
+  regular expressions [#393].
+- Updated [@adguard/agtree] to v4.4.0.
 
 ### Deprecated
 
 - Edge Legacy support.
 
-### Removed
-
 ### Fixed
-
-- `trusted-replace-outbound-text` with `logContent`, without `textToReplace` and with `decodeMethod` other than
-  `base64` removing the first character of the text.
-- `trusted-replace-node-text` with `#text` node name not replacing the text of the text nodes which are present
-  when the scriptlet runs, only of the ones added later. The same for `remove-node-text` without `parentSelector`.
-- `remove-node-text` skipping some of the matched nodes if `textMatch` is a regular expression with `g` flag,
-  e.g. `/ad/g`, as its matching continued from the position of the previous match.
-- uBO rules of `remove-node-text` with options not being applied at all, as an option name was used as
-  `parentSelector`, e.g. `example.org##+js(rmnt, script, reviveScroll, excludes, self.__next)`, and with no
-  `includes` throwing an error, e.g. `example.org##+js(rmnt, noscript)`, which removes the text of all such nodes now.
 
 - `xml-prune` evaluating an XPath expression without the closing parenthesis with its last character dropped,
   e.g. `xpath(//*[name()="Period"]/@duration` as `//*[name()="Period"]/@duratio`, instead of logging it as invalid.
@@ -304,11 +326,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   if `null` or `undefined` is thrown while the arguments are processed, e.g. by a conversion of an argument
   to a string, or by `Error` replaced by the page while the stack trace for `stack` is created.
   The method is called with the original arguments now.
-- `trusted-replace-argument` throwing an error to the page instead of calling the intercepted method
-  if logging an error of processing the arguments throws as well, e.g. `console.log()` replaced by the page.
-- `trusted-replace-argument` matching `pattern` with `RegExp.prototype.test` replaced after the rule has run,
-  e.g. by the page or by another rule which intercepts it, which could change the matched text.
-  The method saved when the rule runs is used now.
 - `trusted-replace-argument` not matching an object argument by its string value if it cannot be serialized
   as JSON, and the error of it cannot be converted to a string to be logged, e.g. `Object.create(null)` thrown
   by its `toJSON()`. The argument and the error are no longer converted to strings to be logged.
@@ -408,11 +425,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. `setItem`. The method is replaced in `Storage.prototype` now, unless the page has assigned its own method
   to the storage, e.g. in Chrome, and only its calls on the storage of the rule are processed, also the ones made
   through `Storage.prototype`.
-
-[#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
-[#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
-[#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
-[#586]: https://github.com/AdguardTeam/Scriptlets/issues/586
+- `isValidStrPattern` helper not validating a regular expression pattern with flags,
+  e.g. `/foo(/i`, so such a pattern was treated as valid and scriptlets failed
+  when converting it to a regexp.
 
 ### Security
 
@@ -1502,7 +1517,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Trusted Types API]: https://developer.mozilla.org/docs/Web/API/Trusted_Types_API
 
-[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1...HEAD
+[Unreleased]: https://github.com/AdguardTeam/Scriptlets/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1...v2.6.0
 [2.5.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...v2.5.1
 [2.5.1-beta.1]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.1-beta.0...v2.5.1-beta.1
 [2.5.1-beta.0]: https://github.com/AdguardTeam/Scriptlets/compare/v2.5.0...v2.5.1-beta.0
@@ -1559,3 +1575,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [v1.7.13]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.10...v1.7.13
 [v1.7.10]: https://github.com/AdguardTeam/Scriptlets/compare/v1.7.3...v1.7.10
 [v1.7.3]: https://github.com/AdguardTeam/Scriptlets/compare/v1.6.55...v1.7.3
+
+[#393]: https://github.com/AdguardTeam/Scriptlets/issues/393
+[#577]: https://github.com/AdguardTeam/Scriptlets/issues/577
+[#582]: https://github.com/AdguardTeam/Scriptlets/issues/582
+[#585]: https://github.com/AdguardTeam/Scriptlets/issues/585
+[#586]: https://github.com/AdguardTeam/Scriptlets/issues/586

@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@adguard/agtree':
-        specifier: 4.2.1
-        version: 4.2.1
+        specifier: 4.4.0
+        version: 4.4.0
       '@types/trusted-types':
         specifier: 2.0.7
         version: 2.0.7
@@ -192,8 +192,8 @@ importers:
 
 packages:
 
-  '@adguard/agtree@4.2.1':
-    resolution: {integrity: sha512-SYS+88MBs7FxUovsjcWxxWS366toEjkvb3QzURJFlzHtGXNn4Sbx444RfHrBD2ZqojrJ7fFyWnlXPHxGE9/cZA==}
+  '@adguard/agtree@4.4.0':
+    resolution: {integrity: sha512-AohAFfgkPlbvFKif0x3UQJDOM5CmnBgL6lDX/OTDuWqDWnDM0oa4i54lINq4omO9dsXOtySkc1fogyVTQYCS8w==}
     engines: {node: '>=22'}
 
   '@adguard/css-tokenizer@1.2.0':
@@ -3970,18 +3970,18 @@ packages:
     resolution: {integrity: sha512-n1cw8k1k0x4pgA2+9XrOkFydTerNcJ1zWCO5Nn9scWHTD+5tp8dghT2x1uduQePZTZgd3Tupf+x9BxJjeJi77Q==}
     engines: {node: '>=14.0.0'}
 
-  tldts-core@5.7.112:
-    resolution: {integrity: sha512-mutrEUgG2sp0e/MIAnv9TbSLR0IPbvmAImpzqul5O/HJ2XM1/I1sajchQ/fbj0fPdA31IiuWde8EUhfwyldY1Q==}
-
   tldts-core@6.1.85:
     resolution: {integrity: sha512-DTjUVvxckL1fIoPSb3KE7ISNtkWSawZdpfxGxwiIrZoO6EbHVDXXUIlIuWympPaeS+BLGyggozX/HTMsRAdsoA==}
 
-  tldts@5.7.112:
-    resolution: {integrity: sha512-6VSJ/C0uBtc2PQlLsp4IT8MIk2UUh6qVeXB1HZtK+0HiXlAPzNcfF3p2WM9RqCO/2X1PIa4danlBLPoC2/Tc7A==}
-    hasBin: true
+  tldts-core@7.4.19:
+    resolution: {integrity: sha512-goNXV6Ho9TIOfpJZanTd6CKG5DyYgYAL+k+22T0SLh8l6+KHIfBUPFuePuSZv05UttIaaLmI9tb7TmGIdK5AkQ==}
 
   tldts@6.1.85:
     resolution: {integrity: sha512-gBdZ1RjCSevRPFix/hpaUWeak2/RNUZB4/8frF1r5uYMHjFptkiT0JXIebWvgI/0ZHXvxaUDDJshiA0j6GdL3w==}
+    hasBin: true
+
+  tldts@7.0.32:
+    resolution: {integrity: sha512-5eDV0tK2NhLAAqBeXDAQ36+EwuStd1HbsSOnGsp+JbExITnExcALLL5M1kTH8gjDYN5QvwmUWimE3GoMZ2A7xQ==}
     hasBin: true
 
   to-regex-range@5.0.1:
@@ -4300,7 +4300,7 @@ packages:
 
 snapshots:
 
-  '@adguard/agtree@4.2.1':
+  '@adguard/agtree@4.4.0':
     dependencies:
       '@adguard/css-tokenizer': 1.2.0
       camelcase-keys: 7.0.2
@@ -4309,7 +4309,7 @@ snapshots:
       is-ip: 3.1.0
       json5: 2.2.3
       sprintf-js: 1.1.3
-      tldts: 5.7.112
+      tldts: 7.0.32
       zod: 3.24.4
 
   '@adguard/css-tokenizer@1.2.0': {}
@@ -8483,17 +8483,17 @@ snapshots:
 
   tinyspy@3.0.2: {}
 
-  tldts-core@5.7.112: {}
-
   tldts-core@6.1.85: {}
 
-  tldts@5.7.112:
-    dependencies:
-      tldts-core: 5.7.112
+  tldts-core@7.4.19: {}
 
   tldts@6.1.85:
     dependencies:
       tldts-core: 6.1.85
+
+  tldts@7.0.32:
+    dependencies:
+      tldts-core: 7.4.19
 
   to-regex-range@5.0.1:
     dependencies:

@@ -1,9 +1,9 @@
 import { hit } from './hit';
 import { logMessage } from './log-message';
-import { matchStackTrace, addStackTraceMessageLine, isValidStackPattern } from './match-stack';
+import { matchStackTrace, addStackTraceMessageLine } from './match-stack';
 import { getPropertyInChain } from './get-property-in-chain';
 import { getMethodOwner, getFunctionProxyProperty } from './object-utils';
-import { toRegExp } from './string-utils';
+import { toRegExp, isValidStrPattern } from './string-utils';
 import { getNativeRegexpTest } from './regexp-utils';
 import { parseUboOptions, uboPatternToRegExp } from './ubo-utils';
 import { type Source } from '../scriptlets';
@@ -70,7 +70,7 @@ export interface OutboundTextReplacement {
  * Extra arguments may be the option `condition`, followed by a string or a regular expression, see `toRegExp()`,
  * which the text, after it is decoded, has to match, e.g. `'condition', 'ads'`.
  *
- * Requires `logMessage`, `toRegExp`, `isValidStackPattern` and `parseUboOptions` in the injections of the scriptlet.
+ * Requires `logMessage`, `toRegExp`, `isValidStrPattern` and `parseUboOptions` in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param methodPath Path to the method.
@@ -100,7 +100,7 @@ export const getAdgOutboundTextReplacement = (
     // `matchStackTrace()` throws for `stack` which is an invalid regular expression, and so does `toRegExp()`
     // for such `textToReplace`, which would replace the result of each call, so such rule is not applied,
     // which is logged once
-    if (stack && !isValidStackPattern(stack)) {
+    if (stack && !isValidStrPattern(stack)) {
         logMessage(source, `Invalid stack: ${stack}`);
         return null;
     }

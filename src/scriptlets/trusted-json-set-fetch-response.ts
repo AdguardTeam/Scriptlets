@@ -11,13 +11,11 @@ import {
     isPruningNeeded,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
     getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
     getRequestData,
     getRequestProps,
@@ -191,7 +189,7 @@ export function trustedJsonSetFetchResponse(
 
     // `matchStackTrace()` throws for `stack` which is an invalid regular expression, so such rule is not applied,
     // which is logged once, instead of on each request
-    if (stack && !isValidStackPattern(stack)) {
+    if (stack && !isValidStrPattern(stack)) {
         logMessage(source, `Invalid stack: ${stack}`);
         return;
     }
@@ -403,13 +401,11 @@ trustedJsonSetFetchResponse.injections = [
     isPruningNeeded,
     matchStackTrace,
     addStackTraceMessageLine,
-    isValidStackPattern,
     getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     toRegExp,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
     getRequestData,
     getRequestProps,

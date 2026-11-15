@@ -610,3 +610,66 @@ test('abort document.createElement, matches stack', (assert) => {
     assert.strictEqual(testPassed, true, 'testPassed set to true');
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+// NOTE: keep these tests at the end of the file.
+// 'abort JSON.parse, inline script line number regexp, two scripts abort only second'
+// matches a hardcoded line number of the generated test page, so inserting
+// tests above it shifts that line number and breaks the test.
+test('simple, matches stack with regexp', (assert) => {
+    window[PROPERTY] = 'value';
+    const stackMatch = '/abort-on-stack-tr\\w+/';
+    const scriptletArgs = [PROPERTY, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    assert.throws(
+        () => window[PROPERTY],
+        /ReferenceError/,
+        `Reference error thrown when trying to access property ${PROPERTY}`,
+    );
+    assert.throws(
+        // eslint-disable-next-line no-return-assign
+        () => window[PROPERTY] = 'new value',
+        /ReferenceError/,
+        `Reference error thrown when trying to reassign property ${PROPERTY}`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});
+
+test('simple, does NOT match stack with regexp', (assert) => {
+    window[PROPERTY] = 'value';
+    const stackMatch = '/no_match-\\d+/';
+    const scriptletArgs = [PROPERTY, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    const descriptor = Object.getOwnPropertyDescriptor(window, PROPERTY);
+    assert.ok(descriptor && typeof descriptor.get === 'function', 'accessor installed');
+
+    assert.strictEqual(
+        window[PROPERTY],
+        'value',
+        'Property is accessible',
+    );
+
+    window[PROPERTY] = 'reassigned';
+    assert.strictEqual(
+        window[PROPERTY],
+        'reassigned',
+        'Property is writeable',
+    );
+
+    assert.strictEqual(window.hit, undefined, 'hit should NOT fire');
+});
+
+test('simple, matches stack with regexp flags', (assert) => {
+    window[PROPERTY] = 'value';
+    const stackMatch = '/ABORT-ON-STACK-TRACE/i';
+    const scriptletArgs = [PROPERTY, stackMatch];
+    runScriptlet(name, scriptletArgs);
+
+    assert.throws(
+        () => window[PROPERTY],
+        /ReferenceError/,
+        `Reference error thrown when trying to access property ${PROPERTY}`,
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit fired');
+});

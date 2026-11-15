@@ -10,7 +10,6 @@ import {
     isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
 } from '../helpers';
 
@@ -553,6 +552,5 @@ m3uPrune.injections = [
     isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
-    escapeRegExp,
     isEmptyObject,
 ];

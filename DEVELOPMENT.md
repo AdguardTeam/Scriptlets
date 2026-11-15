@@ -63,7 +63,7 @@ Build output goes to `dist/`.
 # All tests (Vitest + smoke + QUnit)
 pnpm test
 
-# Vitest only (API, validators, converters, helpers, scriptlets)
+# Vitest only
 pnpm test:vitest
 
 # QUnit only (scriptlets)
@@ -98,7 +98,7 @@ pnpm lint:md     # markdownlint
 | `pnpm install`                                     | Install dependencies                                                     |
 | `pnpm build`                                       | Clean `dist/` and build all bundles                                      |
 | `pnpm test`                                        | Run all tests (Vitest + smoke + QUnit)                                   |
-| `pnpm test:vitest`                                 | Run Vitest tests only (API, validators, converters, helpers, scriptlets) |
+| `pnpm test:vitest`                                 | Run Vitest tests only                                                    |
 | `pnpm test:qunit scriptlets`                       | Run QUnit tests for all scriptlets                                       |
 | `pnpm test:qunit redirects`                        | Run QUnit tests for all redirects                                        |
 | `pnpm test:qunit helpers`                          | Run QUnit tests for helpers                                              |
@@ -111,6 +111,7 @@ pnpm lint:md     # markdownlint
 | `pnpm lint:code`                                   | Run ESLint                                                               |
 | `pnpm lint:types`                                  | Run TypeScript type checking (`tsc --noEmit`)                            |
 | `pnpm lint:md`                                     | Run markdownlint                                                         |
+| `pnpm wiki`                                        | Regenerate the whole wiki (compatibility table, then docs)               |
 | `pnpm wiki:build-table`                            | Regenerate compatibility table                                           |
 | `pnpm wiki:build-docs`                             | Regenerate scriptlet/redirect wiki docs from JSDoc                       |
 
@@ -175,7 +176,7 @@ regeneration during the release flow, which has no ticket number) use a
 3. Add a QUnit test file at `tests/scriptlets/<name>.test.js`.
 4. Update `scripts/compatibility-table.json` with the new entry.
 5. Run `pnpm test:qunit scriptlets --name <name>` to verify.
-6. Run `pnpm wiki:build-docs` to regenerate the wiki documentation.
+6. Run `pnpm wiki` to regenerate the wiki documentation.
 
 ### Adding a New Redirect Resource
 
@@ -184,17 +185,22 @@ regeneration during the release flow, which has no ticket number) use a
 3. Add a QUnit test file at `tests/redirects/<name>.test.js`.
 4. Update `scripts/compatibility-table.json` with the new entry.
 5. Run `pnpm test:qunit redirects --name <name>` to verify.
-6. Run `pnpm wiki:build-docs` to regenerate the wiki documentation.
+6. Run `pnpm wiki` to regenerate the wiki documentation.
 
 ### Updating Wiki Documentation
 
 ```bash
-# Regenerate compatibility table
-pnpm wiki:build-table
+# Regenerate the whole wiki: compatibility table, then the docs
+pnpm wiki
 
-# Regenerate scriptlet/redirect docs from JSDoc
+# Regenerate only one part
+pnpm wiki:build-table
 pnpm wiki:build-docs
 ```
+
+If `pnpm wiki` reports that the sources have changed, review
+`scripts/compatibility-table.json`, run `pnpm wiki` again, and only then commit
+the result.
 
 > **Note**: Files in `wiki/` are auto-generated. Do **not** edit them manually.
 

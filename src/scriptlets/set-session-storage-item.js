@@ -7,7 +7,6 @@ import {
     getLimitedStorageItemValue,
     isValidStrPattern,
     toRegExp,
-    escapeRegExp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -117,5 +116,4 @@ setSessionStorageItem.injections = [
     // following helpers are needed for helpers above
     isValidStrPattern,
     toRegExp,
-    escapeRegExp,
 ];
