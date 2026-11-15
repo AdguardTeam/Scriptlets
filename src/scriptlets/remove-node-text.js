@@ -8,6 +8,7 @@ import {
     parseNodeTextParams,
     isValidSelector,
     parseUboOptions,
+    unescapeUboArgument,
     uboPatternToRegExp,
     getAdgNodeTextReplacement,
     getUboNodeTextReplacement,
@@ -155,8 +156,6 @@ export function removeNodeText(source, nodeName, textMatch, parentSelector, ...e
     // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments:
     // `nodeName, includes` followed by named options instead of `parentSelector`
     if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
-        // The converter escapes each `'` of the arguments
-        const unescapeQuotes = (str) => (typeof str === 'string' ? str.replace(/\\'/g, "'") : str);
         const options = typeof parentSelector === 'undefined'
             ? extraArgs
             : [parentSelector].concat(extraArgs);
@@ -167,7 +166,7 @@ export function removeNodeText(source, nodeName, textMatch, parentSelector, ...e
             typeof nodeName === 'string' ? nodeName : '',
             '',
             '',
-            ['includes', textMatch || ''].concat(options).map(unescapeQuotes),
+            ['includes', textMatch || ''].concat(options).map(unescapeUboArgument),
         );
     } else {
         // The whole text is removed by the pattern which matches any text
@@ -229,6 +228,7 @@ removeNodeText.injections = [
     parseNodeTextParams,
     isValidSelector,
     parseUboOptions,
+    unescapeUboArgument,
     uboPatternToRegExp,
     getAdgNodeTextReplacement,
     getUboNodeTextReplacement,

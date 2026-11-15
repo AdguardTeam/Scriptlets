@@ -63,6 +63,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   replaces all its occurrences, and nodes are processed until the document is interactive, unless `stay, 1` is set,
   e.g. `example.org##+js(rpnt, script, /ads = true/, ads = false, condition, adblock)`. Unlike uBO, a rule with an
   invalid regular expression is not applied.
+- `this` as `argumentIndex` of `trusted-replace-argument`, to replace the object which the method is called on,
+  e.g. `example.org#%#//scriptlet('trusted-replace-argument', 'String.prototype.includes', 'this',
+  'replace:/firefox/chrome/', 'mozilla/5.0')`, which `pattern` is matched against then.
+- uBO aliases of `trusted-replace-argument` [#586], `ubo-trusted-replace-argument` and
+  `ubo-trusted-replace-argument.js`, with uBO arguments: `repl:/regex/replacement/flags`, `add:number`, uBO constants,
+  where any other text is `undefined`, and `this` as the position of the object which the method is called on,
+  followed by the named options `condition` and `as` instead of `pattern`, `stack` and `verbose`,
+  e.g. `example.org##+js(trusted-replace-argument, JSON.parse, 0, repl:/"ads":true/"ads":false/, condition, ads)`.
+  As in uBO, the argument is replaced only if it has changed, and a negative position replaces no argument.
+  Unlike uBO, a rule with an invalid regular expression is not applied.
 - `excludes`, `sedCount`, `stay` and `quitAfter` options of `trusted-replace-node-text`, each followed by its value
   after `replacement`, e.g. `example.org#%#//scriptlet('trusted-replace-node-text', 'script', 'adblock', 'true',
   'false', 'excludes', 'nonce', 'sedCount', '1')`: `excludes` skips the text which contains a string or matches
@@ -272,6 +282,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   if `null` or `undefined` is thrown while the arguments are processed, e.g. by a conversion of an argument
   to a string, or by `Error` replaced by the page while the stack trace for `stack` is created.
   The method is called with the original arguments now.
+- `trusted-replace-argument` throwing an error to the page instead of calling the intercepted method
+  if logging an error of processing the arguments throws as well, e.g. `console.log()` replaced by the page.
+- `trusted-replace-argument` matching `pattern` with `RegExp.prototype.test` replaced after the rule has run,
+  e.g. by the page or by another rule which intercepts it, which could change the matched text.
+  The method saved when the rule runs is used now.
 - `trusted-replace-argument` not matching an object argument by its string value if it cannot be serialized
   as JSON, and the error of it cannot be converted to a string to be logged, e.g. `Object.create(null)` thrown
   by its `toJSON()`. The argument and the error are no longer converted to strings to be logged.

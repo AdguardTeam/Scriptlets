@@ -8,6 +8,7 @@ import {
     splitByPipeRespectingRegex,
     isValidMatchNumber,
     parseDelayArg,
+    stringifyWithFunctions,
 } from '../../src/helpers';
 
 describe('Test string utils', () => {
@@ -893,5 +894,25 @@ describe('Test string utils', () => {
                 isDelayRange: false,
             });
         });
+    });
+});
+
+describe('stringifyWithFunctions', () => {
+    test('functions are converted to their source', () => {
+        // eslint-disable-next-line func-names, object-shorthand
+        expect(stringifyWithFunctions({ value: 1, fn: function () { return 2; } }))
+            .toBe('{"value":1,"fn":"function () { return 2; }"}');
+        expect(stringifyWithFunctions({ value: 'enabled' })).toBe('{"value":"enabled"}');
+    });
+
+    test('values without JSON', () => {
+        expect(stringifyWithFunctions(undefined)).toBeUndefined();
+        expect(stringifyWithFunctions(null)).toBe('null');
+    });
+
+    test('circular object throws', () => {
+        const circular = {};
+        circular.self = circular;
+        expect(() => stringifyWithFunctions(circular)).toThrow();
     });
 });

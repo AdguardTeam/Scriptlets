@@ -17,12 +17,21 @@ import {
     logMessage,
     getThrownValueMessage,
     toRegExp,
+    stringifyWithFunctions,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     nativeIsNaN,
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    parseUboReplaceDirective,
+    getUboConstantValue,
+    getAdgArgumentReplacement,
+    getUboArgumentReplacement,
+    replaceArguments,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -47,7 +56,9 @@ import { type Source } from './scriptlets';
  *
  *
  * - `methodPath` – required, string path to a native method (joined with `.` if needed). The property must be attached to `window`.
- * - `argumentIndex` – required, string index of the argument to replace (0-based).
+ * - `argumentIndex` – required, string index of the argument to replace (0-based),
+ *   or `this` to replace the object which the method is called on, e.g. the string of `String.prototype.includes`.
+ *   `pattern` is matched against that object then.
  * - `argumentValue` – required, string value to set for the argument.
  *   If it starts with `replace:`, it is treated as a replacement pattern in the format `replace:/regex/replacement/`.
  *   To replace all occurrences of a pattern, the replacement string must include the global flag `g`, like this: `replace:/foo/bar/g`, otherwise only the first occurrence will be replaced.
@@ -73,6 +84,34 @@ import { type Source } from './scriptlets';
  * - `stack` — optional, string or regular expression that must match the current function call stack trace.
  * - `verbose` — optional, string, if set to `'true'`, logs the method arguments. Defaults to `'false'`.
  *    It may be useful for debugging but it is not allowed for prod versions of filter lists.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g.
+ * `example.org##+js(trusted-replace-argument, JSON.parse, 0, repl:/"ads":true/"ads":false/, condition, ads)`:
+ *
+ * ```text
+ * example.org##+js(trusted-replace-argument, propChain, argpos, argraw[, ...options])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `argpos` — position of the argument, `this` for the object which the method is called on,
+ *   or empty to log the arguments; a negative position replaces no argument, as in uBO
+ * - `argraw` — one of:
+ *     - `repl:/regex/replacement/flags` — replaces the matches in the argument converted to a string,
+ *       e.g. `repl:/ads/no_ads/g`; `\/` is a slash in the regular expression or the replacement
+ *     - `add:number` — adds the number to the argument converted to a number
+ *     - `json:` followed by JSON, e.g. `json:"text"`, or JSON of an object with `value`, e.g. `{"value": "text"}`
+ *     - `undefined`, `false`, `true`, `null`, `''` or empty, `[]` or `emptyArr`, `{}` or `emptyObj`,
+ *       `noopFunc`, `trueFunc`, `falseFunc`, `throwFunc`, or an integer between -32767 and 32767
+ *     - any other text is `undefined`, as in uBO
+ * - options are pairs of a name and a value which follow `argraw`:
+ *     - `condition, value` — string or regular expression which the argument, converted to a string, has to match
+ *     - `as, value` — `function`, `callback`, `resolved` or `rejected`, to replace the argument with a function
+ *       which returns the value, a function which returns such a function, or a promise of the value
+ * - the argument is replaced only if it has changed, and only if the call has it
+ * - a rule with an invalid regular expression is not applied
  *
  *
  * ### Examples
@@ -154,6 +193,18 @@ import { type Source } from './scriptlets';
  *     const observerToPrevent = new MutationObserver(callback);
  *     ```
  *
+ * 1. Replace the string which `String.prototype.includes` is called on, if the pattern matches it:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-argument', 'String.prototype.includes', 'this', 'replace:/firefox/chrome/', 'mozilla/5.0')
+ *     ```
+ *
+ *     For instance, the following call will return `true`:
+ *
+ *     ```html
+ *     navigator.userAgent.toLowerCase().includes('chrome');
+ *     ```
+ *
  * <!-- markdownlint-enable line-length -->
  *
  * @added v2.2.9.
@@ -165,286 +216,48 @@ export function trustedReplaceArgument(
     methodPath: string,
     argumentIndex: string,
     argumentValue: string,
-    pattern: string,
-    stack = '',
-    verbose = 'false',
+    ...extraArgs: string[]
 ) {
-    // If verbose is 'false', methodPath, argumentIndex, and argumentValue are required.
-    // If verbose is 'true', only methodPath is required. It's only used for logging.
-    if (
-        ((!methodPath || !argumentIndex || !argumentValue) && verbose === 'false')
-        || (!methodPath && verbose === 'true')
-    ) {
-        return;
-    }
+    let argumentReplacement;
 
-    // Scriptlet should log when "verbose" is set to "true", "methodPath" is set
-    // and no other parameters are provided.
-    const SHOULD_LOG_ONLY = verbose === 'true' && !argumentIndex && !argumentValue && !pattern && !stack;
-
-    const MARKERS = {
-        JSON: 'json:',
-        REPLACE: 'replace:',
-    };
-
-    let constantValue;
-    let replaceRegexValue: RegExp | string = '';
-    let shouldReplaceArgument = false;
-
-    if (argumentValue.startsWith(MARKERS.REPLACE)) {
-        const replacementRegexPair = extractRegexAndReplacement(argumentValue);
-        if (!replacementRegexPair) {
-            logMessage(source, `Invalid argument value format: ${argumentValue}`);
-            return;
-        }
-        replaceRegexValue = replacementRegexPair.regexPart;
-        constantValue = replacementRegexPair.replacementPart;
-        shouldReplaceArgument = true;
-    } else if (argumentValue.startsWith(MARKERS.JSON)) {
-        try {
-            constantValue = JSON.parse(argumentValue.slice(MARKERS.JSON.length));
-        } catch (error) {
-            logMessage(source, `Invalid JSON argument value: ${argumentValue}`);
-            return;
-        }
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
+    // and uBO arguments, i.e. named options instead of `pattern`, `stack` and `verbose`
+    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
+        argumentReplacement = getUboArgumentReplacement(
+            source,
+            typeof methodPath === 'string' ? unescapeUboArgument(methodPath) as string : '',
+            typeof argumentIndex === 'string' ? unescapeUboArgument(argumentIndex) as string : '',
+            typeof argumentValue === 'string' ? unescapeUboArgument(argumentValue) as string : '',
+            extraArgs.map(unescapeUboArgument),
+        );
     } else {
-        const emptyArr = noopArray();
-        const emptyObj = noopObject();
-        if (argumentValue === 'undefined') {
-            constantValue = undefined;
-        } else if (argumentValue === 'false') {
-            constantValue = false;
-        } else if (argumentValue === 'true') {
-            constantValue = true;
-        } else if (argumentValue === 'null') {
-            constantValue = null;
-        } else if (argumentValue === 'emptyArr') {
-            constantValue = emptyArr;
-        } else if (argumentValue === 'emptyObj') {
-            constantValue = emptyObj;
-        } else if (argumentValue === 'noopFunc') {
-            constantValue = noopFunc;
-        } else if (argumentValue === 'noopCallbackFunc') {
-            constantValue = noopCallbackFunc;
-        } else if (argumentValue === 'trueFunc') {
-            constantValue = trueFunc;
-        } else if (argumentValue === 'falseFunc') {
-            constantValue = falseFunc;
-        } else if (argumentValue === 'throwFunc') {
-            constantValue = throwFunc;
-        } else if (argumentValue === 'noopPromiseResolve') {
-            constantValue = noopPromiseResolve;
-        } else if (argumentValue === 'noopPromiseReject') {
-            constantValue = noopPromiseReject;
-        } else if (/^-?\d+$/.test(argumentValue)) {
-            constantValue = parseFloat(argumentValue);
-            if (nativeIsNaN(constantValue)) {
-                return;
-            }
-        } else {
-            constantValue = argumentValue;
-        }
+        const pattern = extraArgs[0];
+        const stack = typeof extraArgs[1] !== 'undefined' ? extraArgs[1] : '';
+        const verbose = typeof extraArgs[2] !== 'undefined' ? extraArgs[2] : 'false';
+        argumentReplacement = getAdgArgumentReplacement(
+            source,
+            methodPath,
+            argumentIndex,
+            argumentValue,
+            pattern,
+            stack,
+            verbose,
+        );
     }
 
-    const getPathParts = getPropertyInChain as unknown as (base: Window, chain: string) => {
-        base: Record<string, unknown>;
-        prop: string;
-        chain?: string;
-    };
-
-    const { base, chain, prop } = getPathParts(window, methodPath);
-
-    // Undefined `chain` indicates successful reaching the end prop.
-    if (typeof chain !== 'undefined') {
-        logMessage(source, `Could not reach the end of the prop chain: ${methodPath}`);
+    if (argumentReplacement === null) {
         return;
     }
 
-    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
-    const methodOwner = getMethodOwner(base, prop);
-    const nativeMethod = methodOwner[prop];
-    if (!nativeMethod || typeof nativeMethod !== 'function') {
-        logMessage(source, `Could not retrieve the method: ${methodPath}`);
-        return;
-    }
-
-    /**
-     * Converts an object to a JSON string, converting functions to their string representation.
-     * Required in case if object contains functions, as JSON.stringify does not handle them.
-     * For example `{ foo: () => 'bar' }` will be stringified as `{}` by default.
-     *
-     * @param obj - The object to stringify.
-     * @returns The JSON string representation of the object, with functions stringified.
-     */
-    const stringifyObject = (obj: unknown) => {
-        return JSON.stringify(obj, (key, value) => (typeof value === 'function' ? value.toString() : value));
-    };
-
-    /**
-     * Formats the provided arguments into a readable string for logging purposes.
-     *
-     * @param args - The array of arguments to format.
-     * @param when - Optional. Indicates if the arguments are 'original' or 'modified'.
-     *               Defaults to 'original'. Use 'modified' to indicate arguments where modified after replacement.
-     * @returns A string representation of the arguments, including their indices and string values.
-     */
-    const createFormattedMessage = (args: unknown[], when = 'original') => {
-        const formattedArgs = args.map((arg, index) => {
-            if (typeof arg === 'object' && arg !== null) {
-                try {
-                    return `${index}: ${stringifyObject(arg)} // Object converted to string`;
-                } catch (e) {
-                    // If JSON.stringify fails, fall back to String conversion
-                    return `${index}: ${String(arg)} // Object conversion failed`;
-                }
-            }
-            return `${index}: ${String(arg)}`;
-        });
-        const message = `${methodPath} ${when} arguments:\n${formattedArgs.join(',\n')}`;
-        return message;
-    };
-
-    /**
-     * Checks whether the provided argument matches the specified pattern and stack trace requirements.
-     *
-     * @param arg - The argument to check.
-     * @returns True if the argument matches the pattern and stack trace (if provided), otherwise false.
-     */
-    const checkArgument = (arg: unknown) => {
-        if (stack && !matchStackTrace(stack, new Error().stack || '')) {
-            return false;
-        }
-
-        if (pattern) {
-            if (typeof arg === 'object' && arg !== null) {
-                // If the argument is an object, convert it to a string for pattern matching.
-                try {
-                    const argString = stringifyObject(arg);
-                    return !!argString && toRegExp(pattern).test(argString);
-                } catch (error) {
-                    // Neither the argument nor the error is converted to a string to be logged, as it would call
-                    // the page again, e.g. its `toString()`, which may throw as well, so the argument would not be
-                    // converted to a string below, and the error may be a value without a message
-                    logMessage(source, `Failed to stringify argument: ${getThrownValueMessage(error)}`);
-                }
-            }
-
-            const argumentContent = String(arg);
-            return !!argumentContent && toRegExp(pattern).test(argumentContent);
-        }
-        return true;
-    };
-
-    /**
-     * Replaces the argument at the target index in the provided arguments list.
-     *
-     * In `replace:` mode the argument is converted to a string and the regex replacement
-     * is applied; the result is assigned only if it differs from the converted value,
-     * so arguments that do not match the regex keep their original value and type
-     * (e.g. numbers). Otherwise the argument is set to the constant value.
-     *
-     * @param argumentsList - The arguments list to modify in place.
-     */
-    const replaceTargetArgument = (argumentsList: unknown[]) => {
-        const argumentToReplace = argumentsList[Number(argumentIndex)];
-        if (shouldReplaceArgument) {
-            const argumentString = String(argumentToReplace);
-            const replacedArgument = argumentString.replace(replaceRegexValue, constantValue as string);
-            if (replacedArgument !== argumentString) {
-                argumentsList[Number(argumentIndex)] = replacedArgument;
-            }
-        } else {
-            argumentsList[Number(argumentIndex)] = constantValue;
-        }
-    };
-
-    let isMatchingSuspended = false;
-
-    /**
-     * Logs the arguments of the intercepted call, and replaces the target one if it matches.
-     *
-     * The arguments are replaced in a copy, so the original ones are returned if an error occurs,
-     * which is logged, and the intercepted method is called once by the wrapper anyway.
-     *
-     * @param argumentsList arguments of the intercepted call
-     * @returns arguments to call the intercepted method with
-     */
-    const processArguments = (argumentsList: unknown[]): unknown[] => {
-        isMatchingSuspended = true;
-        try {
-            // Log the original arguments before modification
-            if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(argumentsList);
-                logMessage(source, formattedMessage);
-            }
-
-            // If we only need to log the arguments, skip further processing
-            if (SHOULD_LOG_ONLY) {
-                return argumentsList;
-            }
-
-            const argumentToReplace = argumentsList[Number(argumentIndex)];
-
-            const shouldSetArgument = checkArgument(argumentToReplace);
-
-            if (!shouldSetArgument) {
-                return argumentsList;
-            }
-
-            const modifiedArguments = argumentsList.slice();
-            replaceTargetArgument(modifiedArguments);
-
-            // Log the modified arguments after replacement
-            if (verbose === 'true') {
-                const formattedMessage = createFormattedMessage(modifiedArguments, 'modified');
-                logMessage(source, formattedMessage);
-            }
-
-            hit(source);
-
-            return modifiedArguments;
-        } catch (error) {
-            // Error is not converted to get its message, as it may call the page again, e.g. its `toJSON()`,
-            // and the error may be `null` thrown by the page, e.g. by `Error` replaced by it, which has no message
-            logMessage(source, `Unexpected error during argument replacement: ${getThrownValueMessage(error)}`);
-            return argumentsList;
-        } finally {
-            isMatchingSuspended = false;
-        }
-    };
-
-    // The intercepted method is called once by the wrappers, outside of `try`,
-    // so its error is passed to the page as is, and it is not called again
-
-    const applyWrapper = (target: Function, thisArg: any, argumentsList: unknown[]) => {
-        // Calls on another storage are not processed
-        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
-            return Reflect.apply(target, thisArg, argumentsList);
-        }
-
-        return Reflect.apply(target, thisArg, processArguments(argumentsList));
-    };
-
-    const constructWrapper = (target: Function, argumentsList: unknown[], newTarget: any) => {
-        if (isMatchingSuspended) {
-            return Reflect.construct(target, argumentsList, newTarget);
-        }
-
-        return Reflect.construct(target, processArguments(argumentsList), newTarget);
-    };
-
-    const objectHandler = {
-        apply: applyWrapper,
-        construct: constructWrapper,
-        get: getFunctionProxyProperty,
-    };
-
-    methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
+    replaceArguments(source, argumentReplacement);
 }
 
 export const trustedReplaceArgumentNames = [
     'trusted-replace-argument',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-replace-argument.js',
+    'ubo-trusted-replace-argument',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -468,8 +281,17 @@ trustedReplaceArgument.injections = [
     extractRegexAndReplacement,
     logMessage,
     getThrownValueMessage,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    parseUboReplaceDirective,
+    getUboConstantValue,
+    getAdgArgumentReplacement,
+    getUboArgumentReplacement,
+    replaceArguments,
     // following helpers are needed for helpers above
     toRegExp,
+    stringifyWithFunctions,
     getNativeRegexpTest,
     shouldAbortInlineOrInjectedScript,
     nativeIsNaN,

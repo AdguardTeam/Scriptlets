@@ -845,3 +845,16 @@ export function splitByPipeRespectingRegex(str: string): string[] {
     result.push(current);
     return result;
 }
+
+/**
+ * Converts a value to JSON, with the functions in it converted to their source,
+ * as `JSON.stringify()` omits them, e.g. `{ foo: () => 'bar' }` is `{}` otherwise.
+ * It is used to match and log arguments of the page, so it may throw, e.g. for a circular object.
+ *
+ * @param value Value to convert, e.g. an argument of an intercepted call.
+ *
+ * @returns JSON of the value, or `undefined` if it has none, e.g. for `undefined`.
+ */
+export const stringifyWithFunctions = (value: unknown): string | undefined => {
+    return JSON.stringify(value, (key, item) => (typeof item === 'function' ? item.toString() : item));
+};

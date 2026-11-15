@@ -2,7 +2,7 @@ import { nativeIsNaN } from './number-utils';
 import { hit } from './hit';
 import { logMessage } from './log-message';
 import { parseKeywordValue } from './parse-keyword-value';
-import { parseUboOptions } from './ubo-utils';
+import { parseUboOptions, unescapeUboArgument } from './ubo-utils';
 import { type Source } from '../scriptlets';
 
 /**
@@ -578,7 +578,7 @@ export const getAdgCookieSettings = (
  * as uBO receives the arguments without the escapes.
  *
  * Requires `logMessage`, `nativeIsNaN`, `isValidCookiePath`, `getTrustedCookieOffsetMs`, `parseUboOptions`,
- * `getUboCookieDomain` and `encodeUboCookieValue` in the injections of the scriptlet.
+ * `unescapeUboArgument`, `getUboCookieDomain` and `encodeUboCookieValue` in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param name Cookie name.
@@ -599,14 +599,9 @@ export const getUboCookieSettings = (
 ): CookieSettings | null => {
     // uBO accepts only digits or keywords
     const UBO_OFFSET_EXPIRES_REGEXP = /^(?:\d+|1day|1year)$/;
-    const ESCAPED_QUOTE_REGEXP = /\\'/g;
-
-    const unescapeQuotes = <T>(arg: T): T | string => (
-        typeof arg === 'string' ? arg.replace(ESCAPED_QUOTE_REGEXP, "'") : arg
-    );
-    const cookieName = unescapeQuotes(name) as string;
-    const cookieValue = unescapeQuotes(value) as string;
-    const options = parseUboOptions(args.map(unescapeQuotes));
+    const cookieName = unescapeUboArgument(name) as string;
+    const cookieValue = unescapeUboArgument(value) as string;
+    const options = parseUboOptions(args.map(unescapeUboArgument));
 
     const domain = getUboCookieDomain(options.domain, document.location.hostname);
     if (domain === null) {

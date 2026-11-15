@@ -522,6 +522,21 @@ test('`#text` node name with regular expression', (assert) => {
     assert.strictEqual(textNode.textContent, '', 'text node removed');
 });
 
+test('quotes escaped by the converter are unescaped', (assert) => {
+    // camere-live.ro##+js(rmnt, script, "'contextmenu'"), converted by AGTree to `\'contextmenu\'`
+    const matched = addInertScript("document.addEventListener('contextmenu', block); // ubo-8");
+    const notMatched = addInertScript('document.addEventListener("contextmenu", block); // ubo-8');
+
+    runScriptlet('ubo-rmnt', ['script', "\\'contextmenu\\'"]);
+
+    assert.strictEqual(matched.textContent, '', 'text with the quoted word removed');
+    assert.strictEqual(
+        notMatched.textContent,
+        'document.addEventListener("contextmenu", block); // ubo-8',
+        'text with other quotes kept',
+    );
+});
+
 test.each('uBO names', [
     'ubo-remove-node-text.js',
     'ubo-remove-node-text',

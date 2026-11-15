@@ -678,15 +678,23 @@ Project-specific rules:
     and `getUboNodeTextReplacement()` with `replaceNodesText()` of
     `trusted-replace-node-text` and `remove-node-text`, or `getAdgCookieSettings()` and
     `getUboCookieSettings()` with `setCookieBySettings()` of `trusted-set-cookie` and
-    `trusted-set-cookie-reload`, instead of keeping a separate implementation for uBO
+    `trusted-set-cookie-reload`, or `getAdgArgumentReplacement()` and `getUboArgumentReplacement()`
+    with `replaceArguments()` of `trusted-replace-argument`, instead of keeping a separate implementation for uBO
     rules. Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
+    Arguments of uBO rules which may contain `'` MUST be unescaped with `unescapeUboArgument()`, which removes
+    only the escapes of `'`, not with the handling of escaped quotes of AdGuard arguments,
+    e.g. `fixQuotes()` of `getAdgNodeTextReplacement()` or `toRegExp()`, which removes
+    the escapes of `"` as well.
 
     **Rationale**: Separate implementations of the same behavior diverge, e.g. in how
     added nodes are observed or errors are handled, and a fix of one of them is missed
     in the other. One implementation also makes the uBO options available in AdGuard
-    syntax, with the same meaning.
+    syntax, with the same meaning. The converters escape each `'` of a uBO argument as
+    `\'`, e.g. AGTree converts `'it\'s'` and `it's` to `'it\'s'`, while `\"` is kept as
+    it is, as uBO keeps it, e.g. in a script which is a replacement, so removing its
+    escape would change the argument.
 
 ### III. Testing discipline
 

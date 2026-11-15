@@ -562,3 +562,243 @@ test('calls the intercepted method with the original arguments if Error replaced
 
     clearGlobalProps('receivingFunc');
 });
+
+const nativeStringIncludes = String.prototype.includes;
+const nativeStringSplit = String.prototype.split;
+const nativeRegExpTest = RegExp.prototype.test;
+const nativeGetElementById = window.document.getElementById;
+const nativeMathMax = Math.max;
+
+const restoreUboTestMethods = () => {
+    // eslint-disable-next-line no-extend-native
+    String.prototype.includes = nativeStringIncludes;
+    // eslint-disable-next-line no-extend-native
+    String.prototype.split = nativeStringSplit;
+    // eslint-disable-next-line no-extend-native
+    RegExp.prototype.test = nativeRegExpTest;
+    window.document.getElementById = nativeGetElementById;
+    Math.max = nativeMathMax;
+    afterEach();
+};
+
+// Rules from AdGuard filter lists
+module(`${name} with AdGuard rules`, { beforeEach, afterEach: restoreUboTestMethods });
+
+test('replace: in Element.prototype.setAttribute', (assert) => {
+    // eslint-disable-next-line max-len
+    // buienalarm.nl,…#%#//scriptlet('trusted-replace-argument', 'Element.prototype.setAttribute', '1', 'replace:/.+(error-report|new Promise|:window|&&window,|\|\|window,|void 0\]|html-load\.com[\s\S]*_onerror).+//g')
+    runScriptlet(name, [
+        'Element.prototype.setAttribute',
+        '1',
+        // eslint-disable-next-line max-len
+        'replace:/.+(error-report|new Promise|:window|&&window,|\\|\\|window,|void 0\\]|html-load\\.com[\\s\\S]*_onerror).+//g',
+    ]);
+    const element = document.createElement('div');
+    element.setAttribute('onload', 'fetch("/error-report", { method: "POST" })');
+    element.setAttribute('title', 'Weather');
+
+    assert.strictEqual(element.getAttribute('onload'), '', 'matched value replaced');
+    assert.strictEqual(element.getAttribute('title'), 'Weather', 'other value kept');
+});
+
+test('number in Math.max', (assert) => {
+    // idlixku.com#%#//scriptlet('trusted-replace-argument', 'Math.max', '0', '0', '/^7$/')
+    runScriptlet(name, ['Math.max', '0', '0', '/^7$/']);
+
+    assert.strictEqual(Math.max(7, -1), 0, 'matched argument replaced');
+    assert.strictEqual(Math.max(8, -1), 8, 'other argument kept');
+});
+
+test('text in sessionStorage.getItem', (assert) => {
+    // fibwatch.art#%#//scriptlet('trusted-replace-argument', 'sessionStorage.getItem', '0', 'no_ads', 'w2pass_')
+    sessionStorage.setItem('no_ads', 'passed');
+    runScriptlet(name, ['sessionStorage.getItem', '0', 'no_ads', 'w2pass_']);
+
+    assert.strictEqual(sessionStorage.getItem('w2pass_123'), 'passed', 'key replaced');
+    sessionStorage.removeItem('no_ads');
+});
+
+test('this in String.prototype.includes', (assert) => {
+    // eslint-disable-next-line max-len
+    // cap3.*##+js(trusted-replace-argument, String.prototype.includes, this, 'json:"mozilla/5.0 …chrome/145.0.0.0…"', condition, mozilla/5.0),
+    // in AdGuard syntax
+    runScriptlet(name, ['String.prototype.includes', 'this', 'replace:/firefox/chrome/', 'mozilla/5.0']);
+
+    const isChrome = 'mozilla/5.0 (x11; linux x86_64; rv:130.0) gecko/20100101 firefox/130.0'.includes('chrome');
+    const other = 'example firefox'.includes('chrome');
+    // eslint-disable-next-line no-extend-native
+    String.prototype.includes = nativeStringIncludes;
+    assert.strictEqual(isChrome, true, 'object of the call replaced');
+    assert.strictEqual(other, false, 'object not matched by the pattern kept');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+});
+
+test('this in String.prototype.split', (assert) => {
+    // eslint-disable-next-line max-len
+    // aether.mom##+js(trusted-replace-argument, String.prototype.split, this, , condition, 'null,http'), in AdGuard syntax,
+    // which requires a value, so the matched text is removed by `replace:`
+    runScriptlet(name, ['String.prototype.split', 'this', 'replace:/^null,http.*//', 'null,http']);
+
+    const parts = 'null,https://ads.example'.split(',');
+    const other = 'a,b'.split(',');
+    // eslint-disable-next-line no-extend-native
+    String.prototype.split = nativeStringSplit;
+    assert.deepEqual(parts, [''], 'object of the call replaced');
+    assert.deepEqual(other, ['a', 'b'], 'object not matched by the pattern kept');
+});
+
+// Rules from uBO filter lists, converted to AdGuard syntax by AGTree,
+// so that their arguments are the same as received by the scriptlet
+module(`${name} with uBO arguments`, { beforeEach, afterEach: restoreUboTestMethods });
+
+test('repl: in JSON.parse with condition', (assert) => {
+    // eslint-disable-next-line max-len
+    // bild.de##+js(trusted-replace-argument, JSON.parse, 0, repl:/"adBlockWallEnabled":true/"adBlockWallEnabled":false/, condition, adBlockWallEnabled)
+    runScriptlet('ubo-trusted-replace-argument', [
+        'JSON.parse',
+        '0',
+        'repl:/"adBlockWallEnabled":true/"adBlockWallEnabled":false/',
+        'condition',
+        'adBlockWallEnabled',
+    ]);
+
+    assert.deepEqual(JSON.parse('{"adBlockWallEnabled":true}'), { adBlockWallEnabled: false }, 'replaced');
+    assert.deepEqual(JSON.parse('{"other":true}'), { other: true }, 'not matched by condition');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function should fire');
+});
+
+test('repl: with escaped regular expression in RegExp.prototype.test', (assert) => {
+    // mega.nz##+js(trusted-replace-argument, RegExp.prototype.test, 0, repl:/\.mp4$/.mp3/, condition, .mp4)
+    runScriptlet('ubo-trusted-replace-argument', [
+        'RegExp.prototype.test',
+        '0',
+        'repl:/\\.mp4$/.mp3/',
+        'condition',
+        '.mp4',
+    ]);
+
+    const isAudio = /\.mp3$/.test('video.mp4');
+    // eslint-disable-next-line no-extend-native
+    RegExp.prototype.test = nativeRegExpTest;
+    assert.strictEqual(isAudio, true, 'argument replaced');
+});
+
+test('json: in document.getElementById with regular expression condition', (assert) => {
+    // eslint-disable-next-line max-len
+    // enternity.gr##+js(trusted-replace-argument, document.getElementById, 0, json:"header", condition, /^[A-Za-z]{12}$/)
+    const header = document.createElement('div');
+    header.id = 'header';
+    document.body.appendChild(header);
+    runScriptlet('ubo-trusted-replace-argument', [
+        'document.getElementById',
+        '0',
+        'json:"header"',
+        'condition',
+        '/^[A-Za-z]{12}$/',
+    ]);
+
+    assert.strictEqual(document.getElementById('AbcdefGhijkl'), header, 'random id replaced');
+    assert.strictEqual(document.getElementById('missing-id'), null, 'other id kept');
+    header.remove();
+});
+
+test('null in document.getElementById', (assert) => {
+    // copyseeker.net##+js(trusted-replace-argument, document.getElementById, 0, null, condition, adsense-container)
+    const container = document.createElement('div');
+    container.id = 'adsense-container';
+    document.body.appendChild(container);
+    runScriptlet('ubo-trusted-replace-argument', [
+        'document.getElementById',
+        '0',
+        'null',
+        'condition',
+        'adsense-container',
+    ]);
+
+    assert.strictEqual(document.getElementById('adsense-container'), null, 'argument replaced with null');
+    container.remove();
+});
+
+test('{"value": …} in document.querySelector', (assert) => {
+    // eslint-disable-next-line max-len
+    // purepeople.com##+js(trusted-replace-argument, document.querySelector, 0, {"value": ".ad-placement-interstitial"}, condition, .easyAdsBox)
+    const placement = document.createElement('div');
+    placement.className = 'ad-placement-interstitial';
+    document.body.appendChild(placement);
+    runScriptlet('ubo-trusted-replace-argument', [
+        'document.querySelector',
+        '0',
+        '{"value": ".ad-placement-interstitial"}',
+        'condition',
+        '.easyAdsBox',
+    ]);
+
+    assert.strictEqual(document.querySelector('.easyAdsBox'), placement, 'selector replaced');
+    placement.remove();
+});
+
+test('this in String.prototype.includes', (assert) => {
+    // eslint-disable-next-line max-len
+    // cap3.*##+js(trusted-replace-argument, String.prototype.includes, this, 'json:"mozilla/5.0 (windows nt 10.0; win64; x64) applewebkit/537.36 (khtml, like gecko) chrome/145.0.0.0 safari/537.36"', condition, mozilla/5.0)
+    runScriptlet('ubo-trusted-replace-argument', [
+        'String.prototype.includes',
+        'this',
+        // eslint-disable-next-line max-len
+        'json:"mozilla/5.0 (windows nt 10.0; win64; x64) applewebkit/537.36 (khtml, like gecko) chrome/145.0.0.0 safari/537.36"',
+        'condition',
+        'mozilla/5.0',
+    ]);
+
+    const isChrome = 'mozilla/5.0 (x11; linux x86_64; rv:130.0) gecko/20100101 firefox/130.0'.includes('chrome/145');
+    const other = 'example'.includes('chrome/145');
+    // eslint-disable-next-line no-extend-native
+    String.prototype.includes = nativeStringIncludes;
+    assert.strictEqual(isChrome, true, 'object of the call replaced');
+    assert.strictEqual(other, false, 'other object kept');
+});
+
+test('empty value of this in String.prototype.split', (assert) => {
+    // aether.mom##+js(trusted-replace-argument, String.prototype.split, this, , condition, 'null,http')
+    runScriptlet('ubo-trusted-replace-argument', ['String.prototype.split', 'this', '', 'condition', 'null,http']);
+
+    const parts = 'null,https://ads.example'.split(',');
+    // eslint-disable-next-line no-extend-native
+    String.prototype.split = nativeStringSplit;
+    assert.deepEqual(parts, [''], 'object of the call replaced with an empty string');
+});
+
+test('negative position replaces no argument, as in uBO', (assert) => {
+    runScriptlet('ubo-trusted-replace-argument', ['JSON.parse', '-1', 'json:"[1]"']);
+
+    assert.deepEqual(JSON.parse('[0]'), [0], 'argument kept');
+});
+
+test('other text is undefined, as in uBO', (assert) => {
+    // imagereviser.com##+js(trusted-replace-argument, getComputedStyle, 0, body, condition, getComputedStyle),
+    // with document.getElementById instead, as replacing the argument of getComputedStyle with undefined throws
+    runScriptlet('ubo-trusted-replace-argument', ['document.getElementById', '0', 'body', 'condition', 'ubo-text']);
+
+    const element = document.createElement('div');
+    element.id = 'undefined';
+    document.body.appendChild(element);
+    assert.strictEqual(document.getElementById('ubo-text'), element, 'argument replaced with undefined');
+    element.remove();
+});
+
+test.each('uBO names', ['ubo-trusted-replace-argument.js', 'ubo-trusted-replace-argument'], (assert, uboName) => {
+    // eslint-disable-next-line max-len
+    // bild.de##+js(trusted-replace-argument, JSON.parse, 0, repl:/"adBlockWallEnabled":true/"adBlockWallEnabled":false/, condition, adBlockWallEnabled)
+    runScriptlet(uboName, [
+        'JSON.parse',
+        '0',
+        'repl:/"adBlockWallEnabled":true/"adBlockWallEnabled":false/',
+        'condition',
+        'adBlockWallEnabled',
+    ]);
+
+    assert.deepEqual(
+        JSON.parse('{"adBlockWallEnabled":true}'),
+        { adBlockWallEnabled: false },
+        'uBO arguments are used',
+    );
+});

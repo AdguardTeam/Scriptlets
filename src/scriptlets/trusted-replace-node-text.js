@@ -5,6 +5,7 @@ import {
     getTrustedTypesApi,
     parseNodeTextParams,
     parseUboOptions,
+    unescapeUboArgument,
     uboPatternToRegExp,
     getAdgNodeTextReplacement,
     getUboNodeTextReplacement,
@@ -159,8 +160,7 @@ export function trustedReplaceNodeText(source, nodeName, textMatch, pattern, rep
     if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
         // The converter escapes each `'` of the arguments, but keeps `\"` as it is,
         // which uBO keeps as well, e.g. in a script which is a replacement
-        const unescapeQuotes = (str) => (typeof str === 'string' ? str.replace(/\\'/g, "'") : str);
-        const uboArgs = [textMatch, pattern, replacement].concat(extraArgs).map(unescapeQuotes);
+        const uboArgs = [textMatch, pattern, replacement].concat(extraArgs).map(unescapeUboArgument);
         nodeTextReplacement = getUboNodeTextReplacement(
             source,
             typeof nodeName === 'string' ? nodeName : '',
@@ -210,6 +210,7 @@ trustedReplaceNodeText.injections = [
     getTrustedTypesApi,
     parseNodeTextParams,
     parseUboOptions,
+    unescapeUboArgument,
     uboPatternToRegExp,
     getAdgNodeTextReplacement,
     getUboNodeTextReplacement,
