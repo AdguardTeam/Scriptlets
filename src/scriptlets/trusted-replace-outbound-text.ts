@@ -15,6 +15,12 @@ import {
     restoreRegExpValues,
     isKeyInObject,
     getFunctionProxyProperty,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    getAdgOutboundTextReplacement,
+    getUboOutboundTextReplacement,
+    replaceOutboundText,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -32,7 +38,7 @@ import { type Source } from './scriptlets';
  *
  * <!-- markdownlint-disable line-length -->
  * ```text
- * example.org#%#//scriptlet('trusted-replace-outbound-text', methodPath[, textToReplace[, replacement[, decodeMethod[, stack[, logContent]]]]])
+ * example.org#%#//scriptlet('trusted-replace-outbound-text', methodPath[, textToReplace[, replacement[, decodeMethod[, stack[, logContent[, ...options]]]]]])
  * ```
  * <!-- markdownlint-enable line-length -->
  *
@@ -52,8 +58,32 @@ import { type Source } from './scriptlets';
  *   If it is an invalid regular expression, the rule is not applied.
  * - `logContent` — optional, if set to any value, the original and modified content will be logged.
  *   By default it's set to '' and no content will be logged.
+ * - `options` — optional, pairs of a name and a value which follow `logContent`, with the same meaning as in uBO:
+ *     - `condition, value` — string or regular expression which the text, after it is decoded, has to match
+ *       to be replaced, e.g. `'condition', '/"ads":\[/'`. If it is an invalid regular expression,
+ *       the rule is not applied.
  *
  * > Logging content may be useful for debugging but it is not allowed for prod versions of filter lists.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g.
+ * `example.org##+js(trusted-replace-outbound-text, atob, /.+/, , condition, /www|cloudfront/)`:
+ *
+ * ```text
+ * example.org##+js(trusted-replace-outbound-text, propChain[, pattern[, replacement[, ...options]]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `pattern` — a regular expression may have only the flags `gimsu`;
+ *   if it is empty, the text is logged
+ * - `replacement` — text, or `json:` followed by JSON of a value, e.g. `json:"text"`
+ * - options are pairs of a name and a value which follow `replacement`:
+ *     - `condition, value` — string or regular expression which the text, after it is decoded, has to match
+ *     - `encoding, base64` — the text is decoded before it is replaced, and encoded again after that
+ * - base64 text is decoded if `atob()` decodes it, and returned as it is if it has not been replaced
+ * - a rule with an invalid regular expression is not applied
  *
  * ### Examples
  *
@@ -116,6 +146,12 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', 'foo', 'bar', '', '', 'true')
  *     ```
  *
+ * 1. Replace any text from the payload of the `atob` call with an empty string if it contains `www` or `cloudfront`:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', '/.+/', '', '', '', '', 'condition', '/www|cloudfront/')
+ *     ```
+ *
  * <!-- markdownlint-enable line-length -->
  *
  * @added v1.11.1.
@@ -126,209 +162,49 @@ export function trustedReplaceOutboundText(
     methodPath: string,
     textToReplace = '',
     replacement = '',
-    decodeMethod = '',
-    stack = '',
-    logContent = '',
+    ...extraArgs: string[]
 ) {
-    if (!methodPath) {
+    let outboundTextReplacement;
+
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
+    // and uBO arguments, i.e. named options instead of `decodeMethod`, `stack` and `logContent`
+    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
+        outboundTextReplacement = getUboOutboundTextReplacement(
+            source,
+            typeof methodPath === 'string' ? unescapeUboArgument(methodPath) as string : '',
+            typeof textToReplace === 'string' ? unescapeUboArgument(textToReplace) as string : '',
+            typeof replacement === 'string' ? unescapeUboArgument(replacement) as string : '',
+            extraArgs.map(unescapeUboArgument),
+        );
+    } else {
+        const decodeMethod = typeof extraArgs[0] !== 'undefined' ? extraArgs[0] : '';
+        const stack = typeof extraArgs[1] !== 'undefined' ? extraArgs[1] : '';
+        const logContent = typeof extraArgs[2] !== 'undefined' ? extraArgs[2] : '';
+        outboundTextReplacement = getAdgOutboundTextReplacement(
+            source,
+            methodPath,
+            textToReplace,
+            replacement,
+            decodeMethod,
+            stack,
+            logContent,
+            extraArgs.slice(3),
+        );
+    }
+
+    if (outboundTextReplacement === null) {
         return;
     }
 
-    // `matchStackTrace()` throws for `stack` which is an invalid regular expression, and so does `toRegExp()`
-    // for such `textToReplace`, which would replace the result of each call, so such rule is not applied,
-    // which is logged once
-    if (stack && !isValidStackPattern(stack)) {
-        logMessage(source, `Invalid stack: ${stack}`);
-        return;
-    }
-    try {
-        toRegExp(textToReplace);
-    } catch {
-        logMessage(source, `Invalid textToReplace: ${textToReplace}`);
-        return;
-    }
-
-    const getPathParts = getPropertyInChain as unknown as (base: Window, chain: string) => {
-        base: Record<string, unknown>;
-        prop: string;
-        chain?: string;
-    };
-
-    const { base, chain, prop } = getPathParts(window, methodPath);
-
-    if (typeof chain !== 'undefined') {
-        logMessage(source, `Could not reach the end of the prop chain: ${methodPath}`);
-        return;
-    }
-
-    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
-    const methodOwner = getMethodOwner(base, prop);
-    const nativeMethod = methodOwner[prop];
-    if (!nativeMethod || typeof nativeMethod !== 'function') {
-        logMessage(source, `Could not retrieve the method: ${methodPath}`);
-        return;
-    }
-
-    /**
-     * A simple check if a string is a valid base64 encoded string.
-     * If after decoding and encoding the string is not the same as the original string,
-     * then the string is not a valid base64 encoded string.
-     *
-     * @param str - The string to be checked.
-     * @returns A boolean indicating whether the string is a valid base64 encoded string.
-     */
-    const isValidBase64 = (str: string): boolean => {
-        try {
-            if (str === '') {
-                return false;
-            }
-            const decodedString = atob(str);
-            const encodedString = btoa(decodedString);
-            // Encoded string may contains padding characters, so it's necessary to remove it before comparison
-            const stringWithoutPadding = str.replace(/=+$/, '');
-            const encodedStringWithoutPadding = encodedString.replace(/=+$/, '');
-            return encodedStringWithoutPadding === stringWithoutPadding;
-        } catch (e) {
-            return false;
-        }
-    };
-
-    /**
-     * Decodes the content, replaces the matched pattern with the specified text replacement,
-     * and returns the modified content.
-     * If the decode method is not specified, then content is modified without decoding.
-     *
-     * @param content - The original content to be decoded and replaced.
-     * @param pattern - The regular expression pattern to match.
-     * @param textReplacement - The text to replace the matched pattern.
-     * @param decode - The method used to decode the content. For now only supported value is 'base64'.
-     * @param log - The string, if set, decoded content should be logged.
-     * @returns The content after modifying.
-     */
-    const decodeAndReplaceContent = (
-        content: string,
-        pattern: RegExp,
-        textReplacement: string,
-        decode: string,
-        log: string,
-    ): String => {
-        switch (decode) {
-            case 'base64':
-                try {
-                    if (!isValidBase64(content)) {
-                        logMessage(source, `Text content is not a valid base64 encoded string: ${content}`);
-                        return content;
-                    }
-                    const decodedContent = atob(content);
-
-                    if (log) {
-                        logMessage(source, `Decoded text content: ${decodedContent}`);
-                    }
-
-                    const modifiedContent = textToReplace
-                        ? decodedContent.replace(pattern, textReplacement)
-                        : decodedContent;
-
-                    if (log) {
-                        const message = modifiedContent !== decodedContent
-                            ? `Modified decoded text content: ${modifiedContent}`
-                            : 'Decoded text content was not modified';
-
-                        logMessage(source, message);
-                    }
-
-                    const encodedContent = btoa(modifiedContent);
-                    return encodedContent;
-                } catch (e) {
-                    return content;
-                }
-            default:
-                return content.replace(pattern, textReplacement);
-        }
-    };
-
-    const logOriginalContent = !textToReplace || !!logContent;
-    const logModifiedContent = !!logContent;
-    const logDecodedContent = !!decodeMethod && !!logContent;
-
-    // This flag allows to prevent infinite loops when trapping props that are used by scriptlet's own code.
-    let isMatchingSuspended = false;
-
-    const objectWrapper = (
-        target: Function,
-        thisArg: any,
-        argumentsList: unknown[],
-    ) => {
-        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
-            return Reflect.apply(target, thisArg, argumentsList);
-        }
-        isMatchingSuspended = true;
-        try {
-            const result = Reflect.apply(target, thisArg, argumentsList);
-
-            // Stack trace is read only if it is matched. The page may make creating or reading it throw,
-            // e.g. by replacing `Error` or by `Error.prepareStackTrace`, which should not replace the result
-            // of the call which has already succeeded, so it is done separately
-            let stackTrace = '';
-            let isStackTraceRead = false;
-            if (stack) {
-                try {
-                    stackTrace = String(new Error().stack || '');
-                    isStackTraceRead = true;
-                } catch {
-                    // Content is not modified, as `stack` cannot be matched
-                }
-            }
-
-            // Error message line is added to the stack trace created here, in the wrapper called by the page,
-            // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
-            if (stack && (!isStackTraceRead || !matchStackTrace(stack, addStackTraceMessageLine(stackTrace)))) {
-                return result;
-            }
-
-            // Only the calls which match `stack` are counted
-            hit(source);
-
-            if (typeof result === 'string') {
-                if (logOriginalContent) {
-                    logMessage(source, `Original text content: ${result}`);
-                }
-
-                const patternRegexp = toRegExp(textToReplace);
-                const modifiedContent = textToReplace || logDecodedContent
-                    ? decodeAndReplaceContent(result, patternRegexp, replacement, decodeMethod, logContent)
-                    : result;
-
-                if (logModifiedContent) {
-                    const message = modifiedContent !== result
-                        ? `Modified text content: ${modifiedContent}`
-                        : 'Text content was not modified';
-
-                    logMessage(source, message);
-                }
-
-                return modifiedContent;
-            }
-            logMessage(source, 'Content is not a string');
-            return result;
-        } finally {
-            // Matching is resumed on every return path, including a stack trace which does not match
-            // and an error thrown by the intercepted method, as the next calls would not be processed otherwise
-            isMatchingSuspended = false;
-        }
-    };
-
-    const objectHandler = {
-        apply: objectWrapper,
-        get: getFunctionProxyProperty,
-    };
-
-    methodOwner[prop] = new Proxy(nativeMethod, objectHandler);
+    replaceOutboundText(source, outboundTextReplacement);
 }
 
 export const trustedReplaceOutboundTextNames = [
     'trusted-replace-outbound-text',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-replace-outbound-text.js',
+    'ubo-trusted-replace-outbound-text',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -341,9 +217,16 @@ trustedReplaceOutboundText.injections = [
     isValidStackPattern,
     getPropertyInChain,
     getMethodOwner,
-    getWildcardPropertyInChain,
+    getFunctionProxyProperty,
     logMessage,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    getAdgOutboundTextReplacement,
+    getUboOutboundTextReplacement,
+    replaceOutboundText,
     // following helpers are needed for helpers above
+    getWildcardPropertyInChain,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
     toRegExp,
@@ -351,5 +234,4 @@ trustedReplaceOutboundText.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
-    getFunctionProxyProperty,
 ];

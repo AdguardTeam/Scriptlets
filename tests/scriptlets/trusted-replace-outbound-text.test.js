@@ -15,6 +15,12 @@ const nativeConsole = console.log;
 const nativeAtob = atob;
 const nativeJSONStringify = JSON.stringify;
 const nativeArrayJoin = Array.prototype.join;
+const nativeArrayShift = Array.prototype.shift;
+const nativeStringTrim = String.prototype.trim;
+const nativeStringConcat = String.prototype.concat;
+const nativeDecodeURIComponent = decodeURIComponent;
+const nativeHeadersGet = Headers.prototype.get;
+const nativeTextDecoderDecode = TextDecoder.prototype.decode;
 
 // Scriptlets replace methods of storages in Storage.prototype
 const restoreStorage = saveStorageMethods();
@@ -31,6 +37,12 @@ const afterEach = () => {
     window.atob = nativeAtob;
     window.JSON.stringify = nativeJSONStringify;
     window.Array.prototype.join = nativeArrayJoin;
+    window.Array.prototype.shift = nativeArrayShift;
+    window.String.prototype.trim = nativeStringTrim;
+    window.String.prototype.concat = nativeStringConcat;
+    window.decodeURIComponent = nativeDecodeURIComponent;
+    window.Headers.prototype.get = nativeHeadersGet;
+    window.TextDecoder.prototype.decode = nativeTextDecoderDecode;
     restoreStorage();
 };
 
@@ -418,4 +430,191 @@ test('Storage method: replaces the text returned by an own localStorage.getItem 
     } finally {
         delete localStorage.getItem;
     }
+});
+
+test('AdGuard rule: replaces the text decoded by TextDecoder', (assert) => {
+    // eslint-disable-next-line max-len
+    // chatgpt.com#%#//scriptlet('trusted-replace-outbound-text', 'TextDecoder.prototype.decode', '"type":"ads","visibility":{"status":"allowed"', '"type":"ads","visibility":{"status":"hidden"')
+    runScriptlet(name, [
+        'TextDecoder.prototype.decode',
+        '"type":"ads","visibility":{"status":"allowed"',
+        '"type":"ads","visibility":{"status":"hidden"',
+    ]);
+    const bytes = new TextEncoder().encode('{"type":"ads","visibility":{"status":"allowed"}}');
+
+    assert.strictEqual(
+        new TextDecoder().decode(bytes),
+        '{"type":"ads","visibility":{"status":"hidden"}}',
+        'Text replaced',
+    );
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('AdGuard rule: condition option', (assert) => {
+    // eslint-disable-next-line max-len
+    // uploadmall.com#%#//scriptlet('trusted-replace-outbound-text', 'atob', '//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', 'data:text/javascript;base64,KCk9Pnt9'),
+    // with `condition`
+    runScriptlet(name, [
+        'atob',
+        '//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+        'data:text/javascript;base64,KCk9Pnt9',
+        '',
+        '',
+        '',
+        'condition',
+        '/\\.src = /',
+    ]);
+    // the test code is inlined in the test page, so it cannot contain a closing script tag
+    const script = 's.src = "//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";';
+    const url = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+
+    assert.strictEqual(
+        atob(btoa(script)),
+        's.src = "data:text/javascript;base64,KCk9Pnt9";',
+        'Text which matches the condition replaced',
+    );
+    assert.strictEqual(atob(btoa(url)), url, 'Text which does not match the condition not replaced');
+});
+
+test('AdGuard rule: invalid condition, rule is not applied', (assert) => {
+    runScriptlet(name, ['atob', 'foo', 'bar', '', '', '', 'condition', '/[/']);
+
+    assert.strictEqual(atob(btoa('foo')), 'foo', 'Text not replaced');
+    assert.strictEqual(window.hit, undefined, 'hit function not fired');
+});
+
+test('uBO rule: condition, text replaced with an empty string', (assert) => {
+    // animefire.io##+js(trusted-replace-outbound-text, atob, /.+/, , condition, /www|cloudfront/)
+    runScriptlet('ubo-trusted-replace-outbound-text.js', ['atob', '/.+/', '', 'condition', '/www|cloudfront/']);
+    const script = 'https://d1abc.cloudfront.net/ads.js';
+    const config = '{"player":"main"}';
+
+    assert.strictEqual(atob(btoa(script)), '', 'Text which matches the condition replaced');
+    assert.strictEqual(atob(btoa(config)), config, 'Text which does not match the condition not replaced');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('uBO rule: quotes escaped by the converter are unescaped', (assert) => {
+    // eslint-disable-next-line max-len
+    // infinityscans.xyz,infinityscans.net,infinityscans.org##+js(trusted-replace-outbound-text, atob, window.matchMedia('(display-mode: standalone)').matches, true),
+    // converted by AGTree to `window.matchMedia(\'(display-mode: standalone)\').matches`
+    runScriptlet('ubo-trusted-replace-outbound-text', [
+        'atob',
+        "window.matchMedia(\\'(display-mode: standalone)\\').matches",
+        'true',
+    ]);
+    const code = "if (window.matchMedia('(display-mode: standalone)').matches) { showApp(); }";
+
+    assert.strictEqual(atob(btoa(code)), 'if (true) { showApp(); }', 'Text replaced');
+});
+
+test('uBO rule: a string pattern is replaced once', (assert) => {
+    // shein.com##+js(trusted-replace-outbound-text, String.prototype.trim, iframe, nonframe)
+    runScriptlet('ubo-trusted-replace-outbound-text.js', ['String.prototype.trim', 'iframe', 'nonframe']);
+
+    assert.strictEqual(' iframe iframe '.trim(), 'nonframe iframe', 'First occurrence replaced');
+    assert.strictEqual(' div '.trim(), 'div', 'Other text not replaced');
+});
+
+test('uBO rule: String.prototype.trim, which the scriptlet may use itself', (assert) => {
+    // funradio.fr##+js(trusted-replace-outbound-text, String.prototype.trim, /^STOP_GTM_WARNING$/, IMA_ADS)
+    runScriptlet('ubo-trusted-replace-outbound-text.js', [
+        'String.prototype.trim',
+        '/^STOP_GTM_WARNING$/',
+        'IMA_ADS',
+    ]);
+
+    assert.strictEqual(' STOP_GTM_WARNING '.trim(), 'IMA_ADS', 'Text replaced');
+    assert.strictEqual(' STOP_GTM_WARNING_2 '.trim(), 'STOP_GTM_WARNING_2', 'Other text not replaced');
+});
+
+test('uBO rule: String.prototype.concat, which the scriptlet may use itself', (assert) => {
+    // eslint-disable-next-line max-len
+    // th.gl##+js(trusted-replace-outbound-text, String.prototype.concat, /.+/, adBlockerDismissed, condition, adBlockerDismissed_)
+    runScriptlet('ubo-trusted-replace-outbound-text.js', [
+        'String.prototype.concat',
+        '/.+/',
+        'adBlockerDismissed',
+        'condition',
+        'adBlockerDismissed_',
+    ]);
+
+    assert.strictEqual('adBlockerDismissed_'.concat('1700000000'), 'adBlockerDismissed', 'Text replaced');
+    assert.strictEqual('user_'.concat('42'), 'user_42', 'Other text not replaced');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('uBO rule: Array.prototype.shift, a result which is not a string is returned as it is', (assert) => {
+    // rufiiguta.com##+js(trusted-replace-outbound-text, Array.prototype.shift, /^.+$/s, '', condition, https)
+    runScriptlet('ubo-trusted-replace-outbound-text.js', [
+        'Array.prototype.shift',
+        '/^.+$/s',
+        '',
+        'condition',
+        'https',
+    ]);
+    const nested = ['https://example.org/'];
+
+    assert.strictEqual(['https://example.org/ad.js', 'b'].shift(), '', 'Text replaced');
+    assert.strictEqual(['local.js', 'b'].shift(), 'local.js', 'Other text not replaced');
+    // uBO throws `TypeError` to the page then, as it calls `replace()` of the array
+    assert.strictEqual([nested].shift(), nested, 'Array returned as it is');
+});
+
+test('uBO rule: Headers.prototype.get, null is returned as it is', (assert) => {
+    // eslint-disable-next-line max-len
+    // omuzaani.me##+js(trusted-replace-outbound-text, Headers.prototype.get, /.+/, image/png., condition, /^text\/plain;charset=UTF-8$/)
+    runScriptlet('ubo-trusted-replace-outbound-text.js', [
+        'Headers.prototype.get',
+        '/.+/',
+        'image/png.',
+        'condition',
+        '/^text\\/plain;charset=UTF-8$/',
+    ]);
+    const headers = new Headers({ 'Content-Type': 'text/plain;charset=UTF-8', 'X-Id': '42' });
+
+    assert.strictEqual(headers.get('Content-Type'), 'image/png.', 'Text replaced');
+    assert.strictEqual(headers.get('X-Id'), '42', 'Other text not replaced');
+    assert.strictEqual(headers.get('X-Missing'), null, 'null returned as it is');
+});
+
+test('uBO rule: decodeURIComponent', (assert) => {
+    // pahe.ink##+js(trusted-replace-outbound-text, decodeURIComponent, /^__x[0-9a-f]{7}$/, document)
+    runScriptlet('ubo-trusted-replace-outbound-text.js', ['decodeURIComponent', '/^__x[0-9a-f]{7}$/', 'document']);
+
+    assert.strictEqual(decodeURIComponent('__x1a2b3c4'), 'document', 'Text replaced');
+    assert.strictEqual(decodeURIComponent('a%20b'), 'a b', 'Other text not replaced');
+});
+
+test('uBO rule: encoding option', (assert) => {
+    // No uBO rule uses the option
+    runScriptlet('ubo-trusted-replace-outbound-text.js', [
+        'Array.prototype.join',
+        'disable_ads:false',
+        'disable_ads:true',
+        'encoding',
+        'base64',
+    ]);
+    const encoded = btoa('disable_ads:false');
+    // `atob()` decodes base64 text with whitespaces and without padding as well
+    const unpadded = `${btoa('ads:1').replace(/=+$/, '')} `;
+
+    assert.strictEqual(atob([encoded].join('')), 'disable_ads:true', 'Decoded text replaced');
+    assert.strictEqual([unpadded].join(''), unpadded, 'Text which is not replaced returned as it is');
+    assert.strictEqual(['!!!'].join(''), '!!!', 'Text which cannot be decoded returned as it is');
+});
+
+test('uBO rule: json: replacement', (assert) => {
+    // No uBO rule uses JSON replacement
+    runScriptlet('ubo-trusted-replace-outbound-text.js', ['atob', '/"ads":\\d+/', 'json:"\\"ads\\":0"']);
+
+    assert.strictEqual(atob(btoa('{"ads":3}')), '{"ads":0}', 'Text replaced with the parsed value');
+});
+
+test('uBO rule: invalid regular expression, rule is not applied', (assert) => {
+    // uBO would match any text by it, i.e. insert the replacement before any text
+    runScriptlet('ubo-trusted-replace-outbound-text.js', ['atob', '/[/', 'bar']);
+
+    assert.strictEqual(atob(btoa('foo')), 'foo', 'Text not replaced');
+    assert.strictEqual(window.hit, undefined, 'hit function not fired');
 });

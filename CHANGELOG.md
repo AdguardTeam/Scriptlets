@@ -93,6 +93,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   A rule with an invalid `sedCount` or `quitAfter` is not applied.
 - The same options of `remove-node-text`, after `parentSelector`, which may be empty, e.g.
   `example.org#%#//scriptlet('remove-node-text', 'script', 'adblock', '', 'stay', '1')`.
+- uBO aliases of `trusted-replace-outbound-text` [#586], `ubo-trusted-replace-outbound-text` and
+  `ubo-trusted-replace-outbound-text.js`, with uBO arguments: `json:` followed by JSON as `replacement`, and the named
+  options `condition` and `encoding, base64` instead of `decodeMethod`, `stack` and `logContent`,
+  e.g. `example.org##+js(trusted-replace-outbound-text, atob, /.+/, , condition, /www|cloudfront/)`.
+  As in uBO, base64 text is decoded if `atob()` decodes it, and returned as it is if it has not been replaced.
+  Unlike uBO, a rule with an invalid regular expression is not applied, and a result which is not a string
+  is returned as it is instead of throwing an error.
+- `condition` option of `trusted-replace-outbound-text`, followed by a string or a regular expression after
+  `logContent`, which the text, after it is decoded, has to match to be replaced, e.g.
+  `example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', '/.+/', '', '', '', '', 'condition', 'ads')`.
 
 ### Changed
 
@@ -152,6 +162,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `trusted-replace-outbound-text` with `logContent`, without `textToReplace` and with `decodeMethod` other than
+  `base64` removing the first character of the text.
 - `trusted-replace-node-text` with `#text` node name not replacing the text of the text nodes which are present
   when the scriptlet runs, only of the ones added later. The same for `remove-node-text` without `parentSelector`.
 - `remove-node-text` skipping some of the matched nodes if `textMatch` is a regular expression with `g` flag,
