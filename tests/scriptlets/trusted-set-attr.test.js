@@ -253,3 +253,70 @@ test('invalid attribute name is logged only once', async (assert) => {
 test('error for one element does not stop setting attribute on other elements and is logged once', async (assert) => {
     await checkAttrErrorForOneElement(assert, name);
 });
+
+/**
+ * Waits for the observers of the rules, which are throttled.
+ *
+ * @returns {Promise<void>} promise which is resolved after the delay
+ */
+const waitForObservers = () => new Promise((resolve) => {
+    setTimeout(resolve, ATTR_SETTLE_DELAY_MS);
+});
+
+test.each('uBO rule: sets the attribute', ['ubo-trusted-set-attr.js', 'ubo-trusted-set-attr'], (assert, uboName) => {
+    // cloubix.com##+js(trusted-set-attr, #countdown, data-status, active)
+    const elem = createElement('countdown');
+    elem.setAttribute('data-status', 'waiting');
+    // The document of the test page is complete, so the attribute is set immediately
+    runScriptlet(uboName, ['#countdown', 'data-status', 'active']);
+
+    assert.strictEqual(elem.getAttribute('data-status'), 'active', 'Attribute set');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    elem.remove();
+});
+
+test('uBO rule keeps the value set by the page, as in uBO, an AdGuard rule sets its own one again', async (assert) => {
+    // cloubix.com##+js(trusted-set-attr, #countdown, data-status, active)
+    const uboElem = createElement('countdown');
+    runScriptlet('ubo-trusted-set-attr', ['#countdown', 'data-status', 'active']);
+    // hk.yahoo.com,tw.yahoo.com#%#//scriptlet('trusted-set-attr', 'div#Homepage', 'data-top-center-ad-type', 'noAd')
+    const adgElem = createElement('Homepage');
+    runScriptlet(name, ['div#Homepage', 'data-top-center-ad-type', 'noAd']);
+    // Adding the element is a change of the DOM, after which the uBO rule sets the attribute again as well,
+    // so the page changes the attributes only after that
+    await waitForObservers();
+
+    uboElem.setAttribute('data-status', 'paused');
+    adgElem.setAttribute('data-top-center-ad-type', 'banner');
+    await waitForObservers();
+
+    assert.strictEqual(uboElem.getAttribute('data-status'), 'paused', 'Value of the page kept by the uBO rule');
+    assert.strictEqual(adgElem.getAttribute('data-top-center-ad-type'), 'noAd', 'Value set again by the AdGuard rule');
+    uboElem.remove();
+    adgElem.remove();
+});
+
+test('uBO rule does not set an event handler, as in uBO, an AdGuard rule does', (assert) => {
+    const main = document.createElement('main');
+    main.setAttribute('oncontextmenu', 'return false;');
+    document.body.appendChild(main);
+
+    // rehouse.co.jp#%#//scriptlet('trusted-set-attr', 'main[oncontextmenu]', 'oncontextmenu', 'return true;'),
+    // in uBO syntax
+    runScriptlet('ubo-trusted-set-attr', ['main[oncontextmenu]', 'oncontextmenu', 'return true;']);
+    assert.strictEqual(main.getAttribute('oncontextmenu'), 'return false;', 'Event handler not set by the uBO rule');
+
+    // rehouse.co.jp#%#//scriptlet('trusted-set-attr', 'main[oncontextmenu]', 'oncontextmenu', 'return true;')
+    runScriptlet(name, ['main[oncontextmenu]', 'oncontextmenu', 'return true;']);
+    assert.strictEqual(main.getAttribute('oncontextmenu'), 'return true;', 'Event handler set by the AdGuard rule');
+    main.remove();
+});
+
+test('uBO rule: quotes escaped by the converter are unescaped', (assert) => {
+    // A value with `'`, e.g. `it's`, is converted by AGTree to `it\'s`, which CoreLibs passes as it is
+    const elem = createElement('apostrophe-target');
+    runScriptlet('ubo-trusted-set-attr', ['#apostrophe-target', 'title', "it\\'s"]);
+
+    assert.strictEqual(elem.getAttribute('title'), "it's", 'Escape removed');
+    elem.remove();
+});

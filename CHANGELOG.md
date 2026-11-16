@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - uBO aliases of trusted scriptlets whose arguments are the same as in uBO [#586], so that uBO rules with them,
-  e.g. `example.org##+js(trusted-set-attr, div, data-ad, none)`, are no longer rejected: `ubo-trusted-click-element`,
-  `ubo-trusted-prevent-xhr`, `ubo-trusted-set-attr`
-  and `ubo-trusted-set-cookie-reload`, each also with `.js`. As these aliases do not start with `trusted-`,
+  e.g. `example.org##+js(trusted-click-element, #accept)`, are no longer rejected: `ubo-trusted-click-element`,
+  `ubo-trusted-prevent-xhr` and `ubo-trusted-set-cookie-reload`, each also with `.js`.
+  As these aliases do not start with `trusted-`,
   filter compilers have to exclude them separately from filters which may not use trusted scriptlets, e.g.
   FiltersCompiler by the lines `#%#//scriptlet('ubo-trusted-`, `#%#//scriptlet('ubo-rpnt`
   and `#%#//scriptlet('ubo-replace-node-text`, and the same with double quotes, in `exclusions-high.txt`,
@@ -109,6 +109,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   Unlike uBO, a rule with an invalid regular expression of the key is not applied, a regular expression with `g` flag
   matches all the keys, and the page is not reloaded again for a value with keywords which the rule has set before,
   as uBO would reload the page each time. AdGuard rules set their values as before.
+- uBO aliases of `trusted-set-attr` [#586], `ubo-trusted-set-attr` and `ubo-trusted-set-attr.js`, with uBO
+  arguments: an omitted value is empty, and the named option `runAt, value` sets the attribute when the document
+  is `loading`, `interactive` or `complete`, by default when it is `complete`, as in uBO,
+  e.g. `example.org##+js(trusted-set-attr, ins.adsbygoogle, data-ad-status, unfilled, runAt, interactive)`.
+  As in uBO, the attribute is set again only when nodes are added, not when the page changes an attribute,
+  and an attribute of an event handler of the element, e.g. `onclick`, is not set to a non-empty value.
+  AdGuard rules set the attribute as before.
 
 ### Changed
 

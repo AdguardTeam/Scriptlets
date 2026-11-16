@@ -691,7 +691,8 @@ Project-specific rules:
     the parsing and the replacement of the text with the fetch ones, i.e. `getAdgResponseTextReplacement()`,
     `getUboResponseTextReplacement()` and `replaceResponseText()`, or `getAdgStorageItemSettings()` and
     `getUboStorageItemSettings()` with `setStorageItemBySettings()` of `trusted-set-local-storage-item` and
-    `trusted-set-session-storage-item`, instead of keeping a separate implementation for uBO rules.
+    `trusted-set-session-storage-item`, or `getAdgAttrSettings()` and `getUboAttrSettings()` with
+    `setAttrBySettings()` of `trusted-set-attr`, instead of keeping a separate implementation for uBO rules.
     Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
