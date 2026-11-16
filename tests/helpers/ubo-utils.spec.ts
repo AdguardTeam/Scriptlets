@@ -7,6 +7,7 @@ import {
     getUboConstantValue,
     unescapeUboArgument,
     cloakUboFunction,
+    generateUboContent,
 } from '../../src/helpers/ubo-utils';
 
 describe('parseUboOptions', () => {
@@ -210,5 +211,57 @@ describe('cloakUboFunction', () => {
 
         expect(String(cloaked)).toBe('function adsEnabled() { [native code] }');
         expect(cloaked.other).toBe(1);
+    });
+});
+
+describe('generateUboContent', () => {
+    test.each([
+        { directive: 'emptyObj', expected: '{}' },
+        { directive: 'emptyArr', expected: '[]' },
+        { directive: 'emptyStr', expected: '' },
+        // `{}` and `[]` are not keywords of the content, unlike in uBO `set-constant.js`, but a text as it is
+        { directive: '{}', expected: '{}' },
+        { directive: '[]', expected: '[]' },
+        // `war:` is disabled in uBO for security reasons
+        // real rule: freex2line.online##+js(no-xhr-if, tpc.googlesyndication.com, war:32x32.png)
+        { directive: 'war:32x32.png', expected: '' },
+        { directive: 'join:||emptyObj||emptyArr', expected: '{}[]' },
+        { directive: 'join:--{"a":--1--}', expected: '{"a":1}' },
+        // `length:` cannot be combined with a text, as in uBO
+        { directive: 'length:20 body', expected: '' },
+        { directive: 'length:abc', expected: '' },
+        // eslint-disable-next-line max-len
+        // real rule: imasdk.googleapis.com##+js(trusted-prevent-xhr, vod.provider.plex.tv/ad?, <VAST version="3.0"></VAST>)
+        { directive: '<VAST version="3.0"></VAST>', expected: '<VAST version="3.0"></VAST>' },
+    ])('$directive', ({ directive, expected }) => {
+        expect(generateUboContent(directive, true)).toBe(expected);
+    });
+
+    test('text is empty in non-trusted scriptlets', () => {
+        expect(generateUboContent('<VAST version="3.0"></VAST>', false)).toBe('');
+        expect(generateUboContent('join:||body||emptyObj', false)).toBe('{}');
+        // Only the keywords are allowed there, so `{}` and `[]` are empty, as in uBO
+        expect(generateUboContent('{}', false)).toBe('');
+        expect(generateUboContent('[]', false)).toBe('');
+        expect(generateUboContent('emptyObj', false)).toBe('{}');
+        expect(generateUboContent('emptyArr', false)).toBe('[]');
+    });
+
+    test.each([
+        { directive: 'true', expected: 10 },
+        { directive: 'length:20', expected: 20 },
+        { directive: 'length:0', expected: 0 },
+        // As in uBO, the length is at most 500000, instead of rejected
+        { directive: 'length:600000', expected: 500000 },
+    ])('random text of $directive', ({ directive, expected }) => {
+        expect(generateUboContent(directive, true)).toHaveLength(expected);
+    });
+
+    test('random text of a range has a length in it', () => {
+        for (let i = 0; i < 20; i += 1) {
+            const { length } = generateUboContent('length:100-110', true);
+            expect(length).toBeGreaterThanOrEqual(100);
+            expect(length).toBeLessThanOrEqual(110);
+        }
     });
 });

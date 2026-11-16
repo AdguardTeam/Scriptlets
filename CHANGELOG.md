@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - uBO aliases of trusted scriptlets whose arguments are the same as in uBO [#586], so that uBO rules with them,
-  e.g. `example.org##+js(trusted-click-element, #accept)`, are no longer rejected: `ubo-trusted-click-element`,
-  `ubo-trusted-prevent-xhr` and `ubo-trusted-set-cookie-reload`, each also with `.js`.
-  As these aliases do not start with `trusted-`,
+  e.g. `example.org##+js(trusted-click-element, #accept)`, are no longer rejected: `ubo-trusted-click-element`
+  and `ubo-trusted-click-element.js`. The uBO aliases of other trusted scriptlets with uBO arguments are described
+  below. As these aliases do not start with `trusted-`,
   filter compilers have to exclude them separately from filters which may not use trusted scriptlets, e.g.
   FiltersCompiler by the lines `#%#//scriptlet('ubo-trusted-`, `#%#//scriptlet('ubo-rpnt`
   and `#%#//scriptlet('ubo-replace-node-text`, and the same with double quotes, in `exclusions-high.txt`,
@@ -119,6 +119,21 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `runAt` option of `set-attr` and `trusted-set-attr`, which follows the value, as in uBO, e.g.
   `example.org#%#//scriptlet('set-attr', 'iframe[data-src]', 'src', '[data-src]', 'runAt', 'interactive')`.
   Without it, the attribute is set immediately, as before.
+- uBO aliases of `trusted-prevent-xhr` [#586], `ubo-trusted-prevent-xhr` and `ubo-trusted-prevent-xhr.js`,
+  with uBO arguments, e.g. `example.org##+js(trusted-prevent-xhr, /googlesyndication|doubleclick/, emptyStr)`:
+  `propsToMatch` is matched against the method and the URL of the request only, a pattern may be negated by `!`,
+  e.g. `method:!POST`, an empty `propsToMatch` with a directive matches all requests while `*` is a text,
+  and requests are logged only if both arguments are empty. The directive `length:` cannot be combined with
+  a text, a length above 500000 is reduced to it instead of rejected, and `join:` followed by a separator
+  of 2 characters joins the content of the directives which it separates, e.g. `join:||true||emptyObj`.
+  As in uBO, the response of a request with `json` as `responseType` is always `{}`, and the response headers
+  are `date`, `content-type` of the response type and `content-length`, instead of the request headers.
+  Unlike uBO, a rule with an invalid regular expression is not applied, instead of throwing an error,
+  the request dispatches the same events as with AdGuard rules, e.g. also `loadstart` and `progress`,
+  and also when it is synchronous, and `responseText` of a response which is not a text, e.g. of `json`
+  as `responseType`, throws an error, as in browsers. AdGuard rules prevent requests as before.
+- `ubo-prevent-xhr` and `ubo-prevent-xhr.js` aliases of `prevent-xhr`, for uBO rules with `prevent-xhr.js`,
+  the name of `no-xhr-if.js` in uBO, e.g. `example.org##+js(prevent-xhr, ads_)`, which were rejected before.
 
 ### Changed
 

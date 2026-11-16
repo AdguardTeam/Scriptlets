@@ -7,6 +7,8 @@ const name = 'trusted-prevent-xhr';
 const FETCH_OBJECTS_PATH = './test-files';
 const nativeXhrOpen = XMLHttpRequest.prototype.open;
 const nativeXhrSend = XMLHttpRequest.prototype.send;
+const nativeGetResponseHeader = XMLHttpRequest.prototype.getResponseHeader;
+const nativeGetAllResponseHeaders = XMLHttpRequest.prototype.getAllResponseHeaders;
 const nativeConsole = console.log;
 
 const beforeEach = () => {
@@ -19,6 +21,8 @@ const afterEach = () => {
     clearGlobalProps('hit', '__debug');
     XMLHttpRequest.prototype.open = nativeXhrOpen;
     XMLHttpRequest.prototype.send = nativeXhrSend;
+    XMLHttpRequest.prototype.getResponseHeader = nativeGetResponseHeader;
+    XMLHttpRequest.prototype.getAllResponseHeaders = nativeGetAllResponseHeaders;
     console.log = nativeConsole;
 };
 
@@ -601,6 +605,115 @@ if (isSupported) {
             done();
         };
         xhr.send();
+    });
+    /**
+     * Sends a request and waits for it to be done.
+     *
+     * @param {string} url URL of the request
+     * @param {object} [options] options of the request
+     * @param {string} [options.method] method of the request
+     * @param {string} [options.type] `responseType` of the request
+     * @returns {Promise<XMLHttpRequest>} request which is done
+     */
+    const sendRequest = (url, { method = 'GET', type = '' } = {}) => new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, url);
+        xhr.responseType = type;
+        xhr.onloadend = () => resolve(xhr);
+        xhr.send();
+    });
+
+    const UBO_NAMES = ['ubo-trusted-prevent-xhr', 'ubo-trusted-prevent-xhr.js'];
+
+    test.each('uBO rule: quotes escaped by the converter are unescaped', UBO_NAMES, async (assert, uboName) => {
+        // namiko.net##+js(trusted-prevent-xhr, /googlesyndication|doubleclick/, "dataset.namikoVisitProbe='ready'"),
+        // which AGTree converts with `\'`, and CoreLibs passes it as it is
+        runScriptlet(uboName, ['/googlesyndication|doubleclick/', "dataset.namikoVisitProbe=\\'ready\\'"]);
+
+        const xhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json?doubleclick`);
+
+        assert.strictEqual(xhr.responseText, "dataset.namikoVisitProbe='ready'", 'Escape removed');
+        assert.strictEqual(xhr.status, 200, 'status set to 200');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+
+    test('uBO rule: response headers as in uBO, an AdGuard rule returns the request headers', async (assert) => {
+        // namiko.net##+js(trusted-prevent-xhr, /googlesyndication|doubleclick/, "dataset.namikoVisitProbe='ready'")
+        runScriptlet('ubo-trusted-prevent-xhr', ['/googlesyndication|doubleclick/', 'probe']);
+        const uboXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json?googlesyndication`);
+
+        assert.strictEqual(uboXhr.getResponseHeader('Content-Type'), 'text/plain', 'Content type of the text');
+        assert.strictEqual(uboXhr.getResponseHeader('content-length'), '5', 'Length of the text');
+        assert.ok(
+            /^date: .+ GMT\r\ncontent-type: text\/plain\r\ncontent-length: 5\r\n$/.test(uboXhr.getAllResponseHeaders()),
+            'All headers',
+        );
+
+        runScriptlet(name, ['test02.json', 'probe']);
+        const adgXhr = new XMLHttpRequest();
+        const done = assert.async();
+        adgXhr.open('GET', `${FETCH_OBJECTS_PATH}/test02.json`);
+        adgXhr.setRequestHeader('X-Test', '1');
+        adgXhr.onloadend = () => {
+            assert.strictEqual(adgXhr.getAllResponseHeaders(), 'x-test: 1', 'Request headers, as before');
+            done();
+        };
+        adgXhr.send();
+    });
+
+    test('uBO rule: json response is an empty object, as in uBO, AdGuard rule parses the directive', async (assert) => {
+        // eslint-disable-next-line max-len
+        // sbs.com.au##+js(trusted-prevent-xhr, securepubads.g.doubleclick.net/pagead/ima_ppub_config?ippd=https%3A%2F%2Fwww.sbs.com.au%2Fondemand%2F&ord=, ["4117"])
+        runScriptlet('ubo-trusted-prevent-xhr', ['test01.json', '["4117"]']);
+        const uboXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`, { type: 'json' });
+        assert.deepEqual(uboXhr.response, {}, 'Empty object by the uBO rule');
+        assert.strictEqual(uboXhr.getResponseHeader('content-type'), 'application/json', 'Content type of JSON');
+
+        runScriptlet(name, ['test02.json', '["4117"]']);
+        const adgXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test02.json`, { type: 'json' });
+        assert.deepEqual(adgXhr.response, ['4117'], 'Directive parsed by the AdGuard rule');
+    });
+
+    test('uBO rule: negated method, as in uBO', async (assert) => {
+        runScriptlet('ubo-trusted-prevent-xhr', ['test01.json method:!POST', 'prevented']);
+
+        const getXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.strictEqual(getXhr.responseText, 'prevented', 'GET request prevented');
+        const postXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST' });
+        assert.notStrictEqual(postXhr.responseText, 'prevented', 'POST request not prevented');
+    });
+
+    test('uBO rule: `*` is a text, as in uBO, an AdGuard rule matches all requests', async (assert) => {
+        runScriptlet('ubo-trusted-prevent-xhr', ['*', 'by uBO rule']);
+        const uboXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.notStrictEqual(uboXhr.responseText, 'by uBO rule', 'Not prevented by the uBO rule');
+
+        runScriptlet(name, ['*', 'by AdGuard rule']);
+        const adgXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.strictEqual(adgXhr.responseText, 'by AdGuard rule', 'Prevented by the AdGuard rule');
+    });
+
+    test('uBO rule: empty arguments log requests, as in uBO, an AdGuard rule prevents all requests', async (assert) => {
+        runScriptlet('ubo-trusted-prevent-xhr', ['', '']);
+        const uboXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.ok(uboXhr.responseText.length > 0, 'Not prevented by the uBO rule');
+
+        runScriptlet(name, ['', '']);
+        const adgXhr = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.strictEqual(adgXhr.responseText, '', 'Prevented by the AdGuard rule');
+    });
+
+    test('uBO rule: directives of uBO', async (assert) => {
+        runScriptlet('ubo-trusted-prevent-xhr', ['test01.json', 'join:||emptyObj||emptyArr']);
+        runScriptlet('ubo-trusted-prevent-xhr', ['test02.json', 'length:20 body']);
+        runScriptlet(name, ['test03.json', 'length:20 body']);
+
+        const joined = await sendRequest(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.strictEqual(joined.responseText, '{}[]', 'Content of the directives joined');
+        const uboLength = await sendRequest(`${FETCH_OBJECTS_PATH}/test02.json`);
+        assert.strictEqual(uboLength.responseText, '', 'Length with a text is empty, as in uBO');
+        const adgLength = await sendRequest(`${FETCH_OBJECTS_PATH}/test03.json`);
+        assert.strictEqual(adgLength.responseText, 'bodybodybodybodybody', 'Text repeated by the AdGuard rule');
     });
 } else {
     test('unsupported', (assert) => {

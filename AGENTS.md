@@ -273,6 +273,12 @@ abortCurrentInlineScript.injections = [
 When adding or modifying helpers in a scriptlet's `injections` list, always
 verify that every helper-of-helper dependency is also present in the array.
 
+A helper which calls itself, e.g. `generateUboContent()` for `join:`, MUST be
+a function declaration (`export function name() {}`), not a function assigned
+to a constant. Babel renames the recursive call of an arrow function assigned to
+a constant, e.g. to `_generateUboContent`, which is not defined in the built
+scriptlet, while a function declaration keeps its name.
+
 ### II. Code quality standards
 
 General code style guidelines are available via link:
@@ -692,8 +698,9 @@ Project-specific rules:
     `getUboResponseTextReplacement()` and `replaceResponseText()`, or `getAdgStorageItemSettings()` and
     `getUboStorageItemSettings()` with `setStorageItemBySettings()` of `trusted-set-local-storage-item` and
     `trusted-set-session-storage-item`, or `getAdgAttrSettings()` and `getUboAttrSettings()` with
-    `setAttrBySettings()` of `set-attr` and `trusted-set-attr`, instead of keeping a separate implementation for uBO
-    rules.
+    `setAttrBySettings()` of `set-attr` and `trusted-set-attr`, or `getAdgPreventXhrSettings()` and
+    `getUboPreventXhrSettings()` with `preventXhrBySettings()` of `prevent-xhr` and `trusted-prevent-xhr`,
+    instead of keeping a separate implementation for uBO rules.
     Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.

@@ -46,6 +46,21 @@ if (isSupported) {
         assert.strictEqual(codeByAdgParams, codeByUboParams, 'ubo name - ok');
     });
 
+    test.each('uBO alias of prevent-xhr.js', ['ubo-prevent-xhr', 'ubo-prevent-xhr.js'], async (assert, uboName) => {
+        // oxxfile.*##+js(prevent-xhr, ads_), with the URL of a test file
+        runScriptlet(uboName, ['test01.json']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/test01.json`);
+        xhr.onloadend = () => {
+            assert.strictEqual(xhr.responseText, '', 'Request prevented');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('Args, method matched, check xhr status, randomize response (length:25000-30000)', async (assert) => {
         const METHOD = 'GET';
         const URL = `${FETCH_OBJECTS_PATH}/test01.json`;

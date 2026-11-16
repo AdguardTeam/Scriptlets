@@ -352,3 +352,75 @@ export const cloakUboFunction = (fn: Function, name: string): Function => {
         },
     });
 };
+
+/**
+ * Generates the content of a response of uBO scriptlets, e.g. `trusted-prevent-xhr.js`, exactly as uBO
+ * `generateContentFn()` does:
+ * - `true` is a random text of 10 characters, `emptyObj` is `{}`, `emptyArr` is `[]` and `emptyStr` is empty;
+ * - `length:min-max` or `length:value` is a random text of this length, at most 500000, which consists of random
+ *   alphanumeric parts separated by spaces, or an empty one if the directive is not exactly in this format;
+ * - `join:` followed by a separator of 2 characters joins the content of the directives which it separates,
+ *   e.g. `join:||true||emptyObj` is a random text followed by `{}`;
+ * - `war:` is empty, as in uBO, which has disabled it for security reasons, see
+ *   https://github.com/gorhill/uBlock/commit/150df125fd and https://github.com/gorhill/uBlock/commit/73ef1b23f7,
+ *   while before it was the content of a web accessible resource of uBO, which AdGuard does not have;
+ * - any other directive is the content as it is in trusted scriptlets, and empty in other ones.
+ *
+ * @param directive Directive of the content, e.g. `emptyObj`.
+ * @param isTrusted If true, a directive which is not a keyword is the content as it is.
+ *
+ * @returns Content of the response.
+ */
+// A function declaration keeps its name in the built code, so that it can call itself for `join:`
+export function generateUboContent(directive: string, isTrusted: boolean): string {
+    // !IMPORTANT: Do not move constants outside of this function
+    const LENGTH_REGEXP = /^length:(\d+)(?:-(\d+))?$/;
+    const MAX_LENGTH = 500000;
+    const RANDOM_LENGTH = 10;
+
+    const randomize = (length: number): string => {
+        const chunks: string[] = [];
+        let textSize = 0;
+        do {
+            const chunk = Math.random().toString(36).slice(2);
+            chunks.push(chunk);
+            textSize += chunk.length;
+        } while (textSize < length);
+        return chunks.join(' ').slice(0, length);
+    };
+
+    if (directive === 'true') {
+        return randomize(RANDOM_LENGTH);
+    }
+    if (directive === 'emptyObj') {
+        return '{}';
+    }
+    if (directive === 'emptyArr') {
+        return '[]';
+    }
+    if (directive === 'emptyStr') {
+        return '';
+    }
+    if (directive.startsWith('length:')) {
+        const match = LENGTH_REGEXP.exec(directive);
+        if (match === null) {
+            return '';
+        }
+        const min = parseInt(match[1], 10);
+        const extent = Math.max(parseInt(match[2], 10) || 0, min) - min;
+        const length = Math.min(min + extent * Math.random(), MAX_LENGTH);
+        // eslint-disable-next-line no-bitwise
+        return randomize(length | 0);
+    }
+    if (directive.startsWith('war:')) {
+        // Disabled in uBO for security reasons, see the description of the function
+        return '';
+    }
+    if (directive.startsWith('join:')) {
+        return directive.slice(7)
+            .split(directive.slice(5, 7))
+            .map((part) => generateUboContent(part, isTrusted))
+            .join('');
+    }
+    return isTrusted ? directive : '';
+}

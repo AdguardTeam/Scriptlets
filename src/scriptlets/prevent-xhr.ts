@@ -1,7 +1,8 @@
 import {
     hit,
     objectToString,
-    createPreventXhrCore,
+    preventXhrBySettings,
+    getAdgPreventXhrSettings,
     generateResponseContent,
     matchRequestProps,
     getXhrData,
@@ -115,7 +116,7 @@ import { type Source } from './scriptlets';
  */
 /* eslint-enable max-len */
 export function preventXHR(source: Source, propsToMatch?: string, directive?: string): void {
-    createPreventXhrCore(source, propsToMatch, false, directive);
+    preventXhrBySettings(source, getAdgPreventXhrSettings(source, propsToMatch, directive, false));
 }
 
 export const preventXHRNames = [
@@ -124,6 +125,9 @@ export const preventXHRNames = [
     'no-xhr-if.js',
     'ubo-no-xhr-if.js',
     'ubo-no-xhr-if',
+    'prevent-xhr.js',
+    'ubo-prevent-xhr.js',
+    'ubo-prevent-xhr',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -132,7 +136,8 @@ preventXHR.primaryName = preventXHRNames[0];
 preventXHR.injections = [
     hit,
     objectToString,
-    createPreventXhrCore,
+    preventXhrBySettings,
+    getAdgPreventXhrSettings,
     generateResponseContent,
     matchRequestProps,
     getXhrData,

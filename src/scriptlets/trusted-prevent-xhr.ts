@@ -1,7 +1,15 @@
 import {
     hit,
     objectToString,
-    createPreventXhrCore,
+    preventXhrBySettings,
+    getAdgPreventXhrSettings,
+    getUboPreventXhrSettings,
+    parseUboPropsToMatch,
+    matchUboProps,
+    getRegexpTester,
+    getNativeRegexpTest,
+    generateUboContent,
+    unescapeUboArgument,
     generateResponseContent,
     matchRequestProps,
     getXhrData,
@@ -66,6 +74,31 @@ import { type Source } from './scriptlets';
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g.
+ * `example.org##+js(trusted-prevent-xhr, /googlesyndication|doubleclick/, "dataset.probe='ready'")`:
+ *
+ * ```text
+ * example.org##+js(trusted-prevent-xhr[, propsToMatch[, directive]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows, as in uBO:
+ *
+ * - `propsToMatch` is matched against the method and the URL passed to `XMLHttpRequest.open()` only:
+ *     - a property without a name is the URL, e.g. `ads`, and other ones are `method:value`
+ *     - a value is a text which the property has to contain, or a regular expression, e.g. `/ads/i`,
+ *       and `!` before it negates it, e.g. `method:!POST`
+ *     - an empty `propsToMatch` with a `directive` matches all requests, while `*` is a text
+ * - requests are logged only if both `propsToMatch` and `directive` are empty
+ * - `directive`:
+ *     - `length:value` and `length:min-max` set a random text of this length, at most 500000,
+ *       and cannot be combined with a text
+ *     - `join:` followed by a separator of 2 characters joins the content of the directives which it separates,
+ *       e.g. `join:||true||emptyObj`
+ * - the response of a request with `json` as `responseType` is always `{}`
+ * - the response headers are `date`, `content-type` of the response type and `content-length`
+ *
  * ### Examples
  *
  * 1. Log all XMLHttpRequests
@@ -108,7 +141,16 @@ import { type Source } from './scriptlets';
  */
 /* eslint-enable max-len */
 export function trustedPreventXhr(source: Source, propsToMatch?: string, directive?: string): void {
-    createPreventXhrCore(source, propsToMatch, true, directive);
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments
+    const settings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+        ? getUboPreventXhrSettings(source, unescapeUboArgument(propsToMatch), unescapeUboArgument(directive), true)
+        : getAdgPreventXhrSettings(source, propsToMatch, directive, true);
+
+    if (settings === null) {
+        return;
+    }
+
+    preventXhrBySettings(source, settings);
 }
 
 export const trustedPreventXhrNames = [
@@ -123,7 +165,15 @@ export const trustedPreventXhrNames = [
 trustedPreventXhr.primaryName = trustedPreventXhrNames[0];
 
 trustedPreventXhr.injections = [
-    createPreventXhrCore,
+    preventXhrBySettings,
+    getAdgPreventXhrSettings,
+    getUboPreventXhrSettings,
+    parseUboPropsToMatch,
+    matchUboProps,
+    getRegexpTester,
+    getNativeRegexpTest,
+    generateUboContent,
+    unescapeUboArgument,
     generateResponseContent,
     hit,
     objectToString,
