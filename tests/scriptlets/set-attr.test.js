@@ -536,3 +536,108 @@ test('invalid attribute name to copy value from is logged only once', async (ass
 test('empty attribute name to copy value from is logged only once', async (assert) => {
     await checkInvalidSourceAttrIsLoggedOnce(assert, '[]');
 });
+
+/**
+ * Waits for the observers of the rules, which are throttled.
+ *
+ * @returns {Promise<void>} promise which is resolved after the delay
+ */
+const waitForObservers = () => sleep(ATTR_SETTLE_DELAY_MS);
+
+/**
+ * Creates an iframe which loads nothing, with the given attributes.
+ *
+ * @param {{[key: string]: string}} attrs attributes of the iframe
+ * @returns {HTMLIFrameElement} iframe added to the document
+ */
+const createIframe = (attrs) => {
+    const iframe = document.createElement('iframe');
+    Object.keys(attrs).forEach((key) => iframe.setAttribute(key, attrs[key]));
+    document.body.appendChild(iframe);
+    return iframe;
+};
+
+const UBO_NAMES = ['ubo-set-attr.js', 'ubo-set-attr'];
+
+test.each('uBO rule: copies the value, or sets an empty one if it is missing', UBO_NAMES, (assert, uboName) => {
+    // 2embed.*##+js(set-attr, iframe#iframesrc, src, [data-src])
+    const iframe = createIframe({ id: 'iframesrc', src: 'about:blank#ad', 'data-src': 'about:blank#video' });
+    const missing = createIframe({ class: 'iframesrc-missing', src: 'about:blank#ad' });
+    // The document of the test page is complete, so the attribute is set immediately
+    runScriptlet(uboName, ['iframe#iframesrc', 'src', '[data-src]']);
+    runScriptlet(uboName, ['iframe.iframesrc-missing', 'src', '[data-src]']);
+
+    assert.strictEqual(iframe.getAttribute('src'), 'about:blank#video', 'Value copied');
+    assert.strictEqual(missing.getAttribute('src'), '', 'Empty value set, as in uBO');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    iframe.remove();
+    missing.remove();
+});
+
+test('uBO rule: number is set without leading zeros, as in uBO, an AdGuard rule sets it as it is', (assert) => {
+    // www.google.*##+js(set-attr, c-wiz[data-p] [data-query] a[target="_blank"][role="link"], rlhc, 1),
+    // with `007` instead of `1`
+    runScriptlet('ubo-set-attr', [context.targetSelector, 'rlhc', '007']);
+    assert.strictEqual(context.targetElem.getAttribute('rlhc'), '7', 'Number set by the uBO rule');
+
+    runScriptlet(name, [context.targetSelector, 'data-rlhc', '007']);
+    assert.strictEqual(context.targetElem.getAttribute('data-rlhc'), '007', 'Number set by the AdGuard rule');
+});
+
+test('uBO rule: value which uBO rejects is not set, as in uBO, an AdGuard rule sets it', (assert) => {
+    runScriptlet('ubo-set-attr', [context.targetSelector, 'rlhc', '12abc']);
+    assert.strictEqual(context.targetElem.getAttribute('rlhc'), null, 'Value not set by the uBO rule');
+
+    runScriptlet(name, [context.targetSelector, 'rlhc', '12abc']);
+    assert.strictEqual(context.targetElem.getAttribute('rlhc'), '12abc', 'Value set by the AdGuard rule, as before');
+});
+
+test('uBO rule keeps the value set by the page, as in uBO, an AdGuard rule sets its own one again', async (assert) => {
+    // statisticsanddata.org##+js(set-attr, iframe[data-src-cmplz][src="about:blank"], src, [data-src-cmplz])
+    const uboIframe = createIframe({ class: 'cmplz-ubo', src: 'about:blank', 'data-src-cmplz': 'about:blank#video' });
+    runScriptlet('ubo-set-attr', ['iframe.cmplz-ubo[data-src-cmplz]', 'src', '[data-src-cmplz]']);
+    // eslint-disable-next-line max-len
+    // polskieradio24.pl,smartphonevergleich.de#%#//scriptlet('set-attr', 'iframe[data-cmp-src]', 'src', '[data-cmp-src]')
+    const adgIframe = createIframe({ class: 'cmp-adg', src: 'about:blank', 'data-cmp-src': 'about:blank#video' });
+    runScriptlet(name, ['iframe.cmp-adg[data-cmp-src]', 'src', '[data-cmp-src]']);
+    // Adding the element is a change of the DOM, after which the uBO rule sets the attribute again as well,
+    // so the page changes the attributes only after that
+    await waitForObservers();
+
+    uboIframe.setAttribute('src', 'about:blank#page');
+    adgIframe.setAttribute('src', 'about:blank#page');
+    await waitForObservers();
+
+    assert.strictEqual(uboIframe.getAttribute('src'), 'about:blank#page', 'Value of the page kept by the uBO rule');
+    assert.strictEqual(adgIframe.getAttribute('src'), 'about:blank#video', 'Value set again by the AdGuard rule');
+    uboIframe.remove();
+    adgIframe.remove();
+});
+
+test('uBO rule does not copy a value to an event handler, as in uBO, an AdGuard rule does', (assert) => {
+    context.targetElem.setAttribute('data-handler', 'void 0');
+
+    runScriptlet('ubo-set-attr', [context.targetSelector, 'onclick', '[data-handler]']);
+    assert.strictEqual(context.targetElem.getAttribute('onclick'), null, 'Event handler not set by the uBO rule');
+
+    runScriptlet(name, [context.targetSelector, 'onclick', '[data-handler]']);
+    assert.strictEqual(context.targetElem.getAttribute('onclick'), 'void 0', 'Event handler set by the AdGuard rule');
+});
+
+test('uBO rule: quotes escaped by the converter are unescaped', (assert) => {
+    // A selector with `'`, e.g. `[data-x='1']`, is converted by AGTree to `[data-x=\'1\']`,
+    // which CoreLibs passes as it is
+    context.targetElem.setAttribute('data-x', '1');
+    runScriptlet('ubo-set-attr', [`${context.targetSelector}[data-x=\\'1\\']`, TARGET_ATTR_NAME, 'true']);
+
+    assert.strictEqual(context.targetElem.getAttribute(TARGET_ATTR_NAME), 'true', 'Escape removed');
+});
+
+test('AdGuard rule with runAt option', (assert) => {
+    // apkmoddone.com#%#//scriptlet('set-attr', '.adsbygoogle', 'data-ad-status', '0'), with `runAt`
+    // The document of the test page is complete, so the attribute is set immediately
+    runScriptlet(name, [context.targetSelector, 'data-ad-status', '0', 'runAt', 'interactive']);
+
+    assert.strictEqual(context.targetElem.getAttribute('data-ad-status'), '0', 'Attribute set');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});

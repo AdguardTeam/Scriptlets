@@ -11,8 +11,8 @@ import {
     unescapeUboArgument,
     getUboConstantValue,
     cloakUboFunction,
-    runAtUboReadyState,
 } from './ubo-utils';
+import { runAtReadyState } from './ready-state-utils';
 import { type Source } from '../scriptlets';
 import { type ChainBase } from '../../types/types';
 
@@ -253,7 +253,7 @@ export interface ConstantSetting {
     isCanceledByOtherType: boolean;
 
     /**
-     * Ready state of the document when the property is trapped, see `runAtUboReadyState()`,
+     * Ready state of the document when the property is trapped, see `runAtReadyState()`,
      * or `undefined` to trap it at once.
      */
     runAt: unknown;
@@ -264,7 +264,7 @@ export interface ConstantSetting {
  * is not applied if it throws, e.g. for a number greater than 32767, as before uBO arguments were supported;
  * `stack` is matched against the stack trace of reading the property; `valueWrapper` wraps the value
  * as in `set-constant`, see `wrapConstantValue()`; and the option `runAt, value` delays trapping the property,
- * see `runAtUboReadyState()`.
+ * see `runAtReadyState()`.
  *
  * Requires `logMessage`, `inferValue`, `wrapConstantValue` and `parseUboOptions`, with their dependencies,
  * in the injections of the scriptlet.
@@ -315,7 +315,7 @@ export const getAdgConstantSetting = (
  * - `noopFunc`, `trueFunc` and `falseFunc` look like native functions named as the property,
  *   see `cloakUboFunction()`;
  * - named options follow `rawValue`: `as, value` wraps the value, see `getUboConstantValue()`,
- *   and `runAt, value` delays trapping the property, see `runAtUboReadyState()`;
+ *   and `runAt, value` delays trapping the property, see `runAtReadyState()`;
  * - writes of the page are ignored, and there is no `stack`.
  *
  * Requires `parseUboOptions`, `unescapeUboArgument`, `getUboConstantValue` and `cloakUboFunction`
@@ -364,7 +364,7 @@ export const getUboConstantSetting = (
  * Each property of the path is trapped, so the value is set also if the path is created later,
  * and the last one returns the value, if `stack` matches the stack trace of reading it.
  *
- * Requires `hit`, `logMessage`, `createSetChainPropAccessor` and `runAtUboReadyState`,
+ * Requires `hit`, `logMessage`, `createSetChainPropAccessor` and `runAtReadyState`,
  * with their dependencies, in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
@@ -449,5 +449,5 @@ export const setConstantBySettings = (source: Source, setting: ConstantSetting):
         setConstantValue: (v: unknown) => { constantValue = v; },
     });
 
-    runAtUboReadyState(() => setChainPropAccess(window as unknown as ChainBase, property), runAt);
+    runAtReadyState(() => setChainPropAccess(window as unknown as ChainBase, property), runAt);
 };

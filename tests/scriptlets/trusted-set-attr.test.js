@@ -320,3 +320,13 @@ test('uBO rule: quotes escaped by the converter are unescaped', (assert) => {
     assert.strictEqual(elem.getAttribute('title'), "it's", 'Escape removed');
     elem.remove();
 });
+
+test('AdGuard rule with runAt option', (assert) => {
+    // tempmail.ninja#%#//scriptlet('trusted-set-attr', 'ins.adsbygoogle', 'data-ad-status', 'unfilled'),
+    // with `runAt`
+    // The document of the test page is complete, so the attribute is set immediately
+    runScriptlet(name, [context.targetSelector, 'data-ad-status', 'unfilled', 'runAt', 'complete']);
+
+    assert.strictEqual(context.targetElem.getAttribute('data-ad-status'), 'unfilled', 'Attribute set');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});

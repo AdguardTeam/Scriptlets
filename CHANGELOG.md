@@ -116,6 +116,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   As in uBO, the attribute is set again only when nodes are added, not when the page changes an attribute,
   and an attribute of an event handler of the element, e.g. `onclick`, is not set to a non-empty value.
   AdGuard rules set the attribute as before.
+- `runAt` option of `set-attr` and `trusted-set-attr`, which follows the value, as in uBO, e.g.
+  `example.org#%#//scriptlet('set-attr', 'iframe[data-src]', 'src', '[data-src]', 'runAt', 'interactive')`.
+  Without it, the attribute is set immediately, as before.
 
 ### Changed
 
@@ -129,6 +132,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   the whole name, and added nodes are processed until the document is interactive, unless `stay, 1` is set, as in uBO,
   instead of 10 seconds after the scriptlet has run. Unlike uBO, a rule with an invalid regular expression
   is not applied.
+- uBO rules of `set-attr`, i.e. with `ubo-set-attr` and `ubo-set-attr.js` names, are applied with uBO arguments
+  [#586]: a number is set without leading zeros, e.g. `007` as `7`, a value which only starts with a number,
+  e.g. `12abc`, is not applied, an attribute to copy the value from is empty if the element has no such attribute,
+  instead of `null`, and the named option `runAt, value` sets the attribute when the document is `loading`,
+  `interactive` or `complete`, by default when it is `complete`, as in uBO, instead of immediately.
+  As in uBO, the attribute is set again only when nodes are added, not when the page changes an attribute,
+  and an attribute of an event handler of the element, e.g. `onclick`, is not set to a non-empty value,
+  e.g. copied from another attribute. `set-attr` and `trusted-set-attr` share the implementation now.
 
 ### Deprecated
 

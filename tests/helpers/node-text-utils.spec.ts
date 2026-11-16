@@ -14,6 +14,7 @@ import {
     type NodeTextReplacement,
 } from '../../src/helpers/node-text-utils';
 import { type Source } from '../../src/scriptlets';
+import { trackMutationObservers } from '../vitest-helpers';
 
 const adgSource = { name: 'trusted-replace-node-text', args: [] } as unknown as Source;
 const uboSource = { name: 'ubo-rpnt', args: [] } as unknown as Source;
@@ -379,23 +380,16 @@ describe('replaceNodesText', () => {
         ...settings,
     });
 
-    const observers: MutationObserver[] = [];
-    const NativeMutationObserver = window.MutationObserver;
+    let disconnectObservers: () => void;
 
     beforeEach(() => {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
         // observers of `stay` are disconnected after each test
-        window.MutationObserver = class extends NativeMutationObserver {
-            constructor(callback: MutationCallback) {
-                super(callback);
-                observers.push(this);
-            }
-        };
+        disconnectObservers = trackMutationObservers();
     });
 
     afterEach(() => {
-        observers.splice(0).forEach((observer) => observer.disconnect());
-        window.MutationObserver = NativeMutationObserver;
+        disconnectObservers();
         vi.useRealTimers();
         document.body.innerHTML = '';
     });

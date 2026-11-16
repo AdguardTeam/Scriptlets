@@ -692,7 +692,8 @@ Project-specific rules:
     `getUboResponseTextReplacement()` and `replaceResponseText()`, or `getAdgStorageItemSettings()` and
     `getUboStorageItemSettings()` with `setStorageItemBySettings()` of `trusted-set-local-storage-item` and
     `trusted-set-session-storage-item`, or `getAdgAttrSettings()` and `getUboAttrSettings()` with
-    `setAttrBySettings()` of `trusted-set-attr`, instead of keeping a separate implementation for uBO rules.
+    `setAttrBySettings()` of `set-attr` and `trusted-set-attr`, instead of keeping a separate implementation for uBO
+    rules.
     Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
@@ -752,9 +753,11 @@ Project-specific rules:
 
 - Test setup which several test files need, e.g. `useRegexpTestAccessor()` which
   makes `RegExp.prototype.test` an accessor as another rule does, SHOULD be
-  a helper in `tests/helpers.js` instead of a copy in each file. Helpers which
-  call `runScriptlet()` work only in QUnit tests, as it uses the scriptlets
-  bundle of the test page.
+  a helper in `tests/helpers.js` instead of a copy in each file, or in
+  `tests/vitest-helpers.ts` if only Vitest specs need it, e.g.
+  `trackMutationObservers()`, which disconnects the observers started by the
+  tested helpers. Helpers which call `runScriptlet()` work only in QUnit tests,
+  as it uses the scriptlets bundle of the test page.
 
 - HTML which QUnit tests create from a string, e.g. by `createContextualFragment()`,
   MUST NOT contain `</script>` as it is, as the test code is inlined in a script of

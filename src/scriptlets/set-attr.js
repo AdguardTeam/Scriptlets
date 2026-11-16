@@ -2,13 +2,18 @@ import {
     setAttributeBySelector,
     observeDOMChanges,
     nativeIsNaN,
-    convertTypeToString,
     defaultAttributeSetter,
     logMessage,
     isValidSelector,
     isValidAttributeName,
     throttle,
     hit,
+    parseUboOptions,
+    unescapeUboArgument,
+    runAtReadyState,
+    getAdgAttrSettings,
+    getUboAttrSettings,
+    setAttrBySettings,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -25,7 +30,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('set-attr', selector, attr[, value])
+ * example.org#%#//scriptlet('set-attr', selector, attr[, value[, ...options]])
  * ```
  *
  * - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
@@ -34,7 +39,31 @@ import {
  *     - `''` — empty string
  *     - positive decimal integer `<= 32767`
  *     - `true` / `false` in any case variation
- *     - `[attribute-name]` copy the value from attribute `attribute-name` on the same element.
+ *     - `[attribute-name]` copy the value from attribute `attribute-name` on the same element,
+ *       or `null` if the element has no such attribute.
+ * - `options` — optional, pairs of a name and a value which follow `value`:
+ *     - `runAt, value` — set the attribute when the document is `loading`, `interactive` or `complete`,
+ *       instead of immediately, e.g. `'runAt', 'interactive'`
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g.
+ * `example.org##+js(set-attr, iframe[data-src], src, [data-src], runAt, interactive)`:
+ *
+ * ```text
+ * example.org##+js(set-attr, selector, attr[, value[, ...options]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows, as in uBO:
+ *
+ * - `value` is a decimal integer which consists of digits only, and is set without leading zeros,
+ *   e.g. `007` as `7`, and an attribute to copy the value from is empty if the element has no such attribute
+ * - options are pairs of a name and a value which follow `value`:
+ *     - `runAt, value` — the attribute is set when the document is `loading`, `interactive` or `complete`,
+ *       by default when it is `complete`
+ * - the attribute is set again only when nodes are added, not when the page changes an attribute
+ * - an attribute of an event handler of the element, e.g. `onclick`, is not set to a non-empty value,
+ *   e.g. copied from another attribute
  *
  * ### Examples
  *
@@ -114,84 +143,33 @@ import {
  *     <iframe data-cur="good-url.com" href="good-url.com"></iframe>
  *     ```
  *
+ * 1. Copy attribute value when the document is interactive, e.g. if the page sets it while it is loading
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('set-attr', 'iframe[data-cur]', 'href', '[data-cur]', 'runAt', 'interactive')
+ *     ```
+ *
  * @added v1.5.0.
  */
 /* eslint-enable max-len */
-export function setAttr(source, selector, attr, value = '') {
-    if (!selector || !attr) {
+export function setAttr(source, selector, attr, value = '', ...extraArgs) {
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments, i.e. named options
+    const settings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+        ? getUboAttrSettings(
+            source,
+            unescapeUboArgument(selector),
+            unescapeUboArgument(attr),
+            unescapeUboArgument(value),
+            extraArgs.map(unescapeUboArgument),
+            false,
+        )
+        : getAdgAttrSettings(source, selector, attr, value, extraArgs, false);
+
+    if (settings === null) {
         return;
     }
 
-    // Selector and attribute name are validated once, otherwise the error would be logged on each DOM change
-    if (!isValidSelector(selector)) {
-        logMessage(source, `Invalid selector arg: '${selector}'`);
-        return;
-    }
-    if (!isValidAttributeName(attr)) {
-        logMessage(source, `Invalid attribute name: '${attr}'`);
-        return;
-    }
-
-    const allowedValues = ['true', 'false'];
-
-    // Name of the attribute to copy the value from is validated once as well, since `getAttribute()`
-    // returns null for an invalid name, so it would be taken as missing on each matched element
-    const shouldCopyValue = value.startsWith('[')
-        && value.endsWith(']')
-        && isValidAttributeName(value.slice(1, -1));
-
-    const isValidValue = value.length === 0
-        || (!nativeIsNaN(parseInt(value, 10))
-            && parseInt(value, 10) >= 0
-            && parseInt(value, 10) <= 32767)
-        || allowedValues.includes(value.toLowerCase());
-
-    if (!shouldCopyValue && !isValidValue) {
-        logMessage(source, `Invalid attribute value provided: '${convertTypeToString(value)}'`);
-        return;
-    }
-
-    /**
-     * Defining value extraction logic here allows us to remove
-     * excessive `shouldCopyValue` checks in observer callback.
-     * Setting plain value is a default behavior.
-     */
-    let attributeHandler;
-    if (shouldCopyValue) {
-        /**
-         * Elements whose missing attribute to copy the value from has been logged,
-         * so it is not logged on each DOM change, but again only after the attribute has been found.
-         */
-        const loggedMissingSourceElems = new WeakSet();
-        attributeHandler = (elem, attr, value) => {
-            const valueToCopy = elem.getAttribute(value.slice(1, -1));
-            // setAttribute() stringifies the value, e.g. null -> 'null',
-            // so it should be compared as a string to avoid re-setting it on each mutation
-            const isChanged = defaultAttributeSetter(elem, attr, String(valueToCopy));
-            // Logged on missing attribute rather than on actual change,
-            // since the target may already hold 'null', e.g. if the element is a copy of a processed one
-            if (valueToCopy === null) {
-                if (!loggedMissingSourceElems.has(elem)) {
-                    loggedMissingSourceElems.add(elem);
-                    logMessage(source, `No element attribute found to copy value from: ${value}`);
-                }
-            } else {
-                loggedMissingSourceElems.delete(elem);
-            }
-            return isChanged;
-        };
-    }
-
-    /**
-     * Elements whose error has been logged, so it is not logged on each DOM change.
-     */
-    const loggedFailedElems = new WeakSet();
-    const applyAttr = () => {
-        setAttributeBySelector(source, selector, attr, value, attributeHandler, loggedFailedElems);
-    };
-
-    applyAttr();
-    observeDOMChanges(applyAttr, true);
+    setAttrBySettings(source, settings);
 }
 
 export const setAttrNames = [
@@ -209,9 +187,14 @@ setAttr.injections = [
     setAttributeBySelector,
     observeDOMChanges,
     nativeIsNaN,
-    convertTypeToString,
     isValidSelector,
     isValidAttributeName,
+    parseUboOptions,
+    unescapeUboArgument,
+    runAtReadyState,
+    getAdgAttrSettings,
+    getUboAttrSettings,
+    setAttrBySettings,
     // following helpers should be imported and injected
     // because they are used by helpers above
     defaultAttributeSetter,

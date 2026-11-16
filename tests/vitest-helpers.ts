@@ -34,3 +34,25 @@ export const useJsdomStorages = (): JSDOM['window'] => {
     vi.stubGlobal('sessionStorage', window.sessionStorage);
     return window;
 };
+
+/**
+ * Records the mutation observers which are created from now on, e.g. by `observeDOMChanges()` of the tested
+ * helper, which never disconnects them, so they would process the DOM of the next tests, and their throttled
+ * callbacks could run after the jsdom environment of the test file is torn down.
+ *
+ * @returns Function which disconnects the recorded observers and restores `MutationObserver`.
+ */
+export const trackMutationObservers = (): () => void => {
+    const observers: MutationObserver[] = [];
+    const NativeMutationObserver = window.MutationObserver;
+    window.MutationObserver = class extends NativeMutationObserver {
+        constructor(callback: MutationCallback) {
+            super(callback);
+            observers.push(this);
+        }
+    };
+    return () => {
+        observers.splice(0).forEach((observer) => observer.disconnect());
+        window.MutationObserver = NativeMutationObserver;
+    };
+};

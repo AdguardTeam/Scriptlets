@@ -10,7 +10,7 @@ import {
     hit,
     parseUboOptions,
     unescapeUboArgument,
-    runAtUboReadyState,
+    runAtReadyState,
     getAdgAttrSettings,
     getUboAttrSettings,
     setAttrBySettings,
@@ -27,12 +27,15 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('trusted-set-attr', selector, attr[, value])
+ * example.org#%#//scriptlet('trusted-set-attr', selector, attr[, value[, ...options]])
  * ```
  *
  * - `selector` — required, CSS selector, specifies DOM nodes to set attributes on
  * - `attr` — required, attribute to be set
  * - `value` — optional, the value to assign to the attribute, defaults to ''.
+ * - `options` — optional, pairs of a name and a value which follow `value`:
+ *     - `runAt, value` — set the attribute when the document is `loading`, `interactive` or `complete`,
+ *       instead of immediately, e.g. `'runAt', 'interactive'`
  *
  * ### uBO syntax
  *
@@ -101,6 +104,12 @@ import {
  *     <a class="class" test-attribute="MTIzNTY=">Some text</div>
  *     ```
  *
+ * 1. Set attribute when the document is interactive, e.g. if the page sets it while it is loading
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-set-attr', 'a.class', 'test-attribute', 'MTIzNTY=', 'runAt', 'interactive')
+ *     ```
+ *
  * 1. Set attribute value to `{ playback: false }`
  *
  *     ```adblock
@@ -127,8 +136,9 @@ export function trustedSetAttr(source, selector, attr, value = '', ...extraArgs)
             unescapeUboArgument(attr),
             unescapeUboArgument(value),
             extraArgs.map(unescapeUboArgument),
+            true,
         )
-        : getAdgAttrSettings(source, selector, attr, value);
+        : getAdgAttrSettings(source, selector, attr, value, extraArgs, true);
 
     if (settings === null) {
         return;
@@ -156,7 +166,7 @@ trustedSetAttr.injections = [
     isValidAttributeName,
     parseUboOptions,
     unescapeUboArgument,
-    runAtUboReadyState,
+    runAtReadyState,
     getAdgAttrSettings,
     getUboAttrSettings,
     setAttrBySettings,
