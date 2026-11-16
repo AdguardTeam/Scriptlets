@@ -6,6 +6,7 @@ import {
     useThrowingErrorConstructor,
     useUnreadableStackTrace,
     saveStorageMethods,
+    useRegexpTestAccessor,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -617,4 +618,17 @@ test('uBO rule: invalid regular expression, rule is not applied', (assert) => {
 
     assert.strictEqual(atob(btoa('foo')), 'foo', 'Text not replaced');
     assert.strictEqual(window.hit, undefined, 'hit function not fired');
+});
+
+test('uBO rule: condition while RegExp.prototype.test is an accessor defined by another rule before', (assert) => {
+    const restoreRegexpTest = useRegexpTestAccessor();
+    try {
+        // animefire.io##+js(trusted-replace-outbound-text, atob, /.+/, , condition, /www|cloudfront/)
+        runScriptlet('ubo-trusted-replace-outbound-text.js', ['atob', '/.+/', '', 'condition', '/www|cloudfront/']);
+
+        assert.strictEqual(atob(btoa('https://d1abc.cloudfront.net/ads.js')), '', 'Text which matches replaced');
+        assert.strictEqual(atob(btoa('{"player":"main"}')), '{"player":"main"}', 'Other text not replaced');
+    } finally {
+        restoreRegexpTest();
+    }
 });

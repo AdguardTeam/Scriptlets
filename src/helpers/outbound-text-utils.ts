@@ -4,7 +4,7 @@ import { matchStackTrace, addStackTraceMessageLine } from './match-stack';
 import { getPropertyInChain } from './get-property-in-chain';
 import { getMethodOwner, getFunctionProxyProperty } from './object-utils';
 import { toRegExp, isValidStrPattern } from './string-utils';
-import { getNativeRegexpTest } from './regexp-utils';
+import { getRegexpTester } from './regexp-utils';
 import { parseUboOptions, uboPatternToRegExp } from './ubo-utils';
 import { type Source } from '../scriptlets';
 
@@ -226,8 +226,8 @@ export const getUboOutboundTextReplacement = (
  * e.g. of the method which the scriptlet uses itself, is passed through.
  *
  * Requires `hit`, `logMessage`, `matchStackTrace`, `addStackTraceMessageLine`, `getPropertyInChain`,
- * `getMethodOwner`, `getFunctionProxyProperty` and `getNativeRegexpTest` in the injections of the scriptlet,
- * and the helpers they require.
+ * `getMethodOwner`, `getFunctionProxyProperty`, `getRegexpTester` and `getNativeRegexpTest` in the injections
+ * of the scriptlet, and the helpers they require.
  *
  * @param source Scriptlet properties.
  * @param settings Settings of the replacement.
@@ -266,21 +266,27 @@ export const replaceOutboundText = (source: Source, settings: OutboundTextReplac
     }
 
     // `test` is saved when the rule runs, so that a rule which intercepts it later, or the page,
-    // cannot change the matching of the condition, and only if it is needed, as it throws for a replaced `test`
-    const nativeRegexpTest = condition !== null ? getNativeRegexpTest() : null;
+    // cannot change the matching of the condition
+    const testRegexp = getRegexpTester();
 
     /**
      * Checks whether the text, after it is decoded, matches the condition.
      *
      * @param text Text to check.
-     * @returns True if the text is replaced.
+     * @returns True if the text is replaced, false also if testing it throws.
      */
     const isConditionMatched = (text: string): boolean => {
-        if (condition === null || nativeRegexpTest === null) {
+        if (condition === null) {
             return true;
         }
         condition.lastIndex = 0;
-        return nativeRegexpTest.call(condition, text);
+        try {
+            return testRegexp(condition, text);
+        } catch {
+            // `test()` may be the method of the page, if it could not be saved, e.g. an accessor of another rule,
+            // and its error should not replace the result of the call, so the text is not replaced then
+            return false;
+        }
     };
 
     /**

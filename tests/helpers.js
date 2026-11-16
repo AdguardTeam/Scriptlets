@@ -183,6 +183,24 @@ export const runScriptlet = (name, args, verbose = true) => {
 };
 
 /**
+ * Defines `RegExp.prototype.test` as an accessor, as another rule on the page may do it before,
+ * by a real rule:
+ * cricket365.com,football365.com,…#%#//scriptlet('abort-current-inline-script', 'RegExp.prototype.test', '_0x')
+ *
+ * @returns {Function} function which restores the method
+ */
+export const useRegexpTestAccessor = () => {
+    const descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, 'test');
+    runScriptlet('abort-current-inline-script', ['RegExp.prototype.test', '_0x']);
+
+    return () => {
+        // Assigning the method would call the setter of the accessor instead
+        // eslint-disable-next-line no-extend-native
+        Object.defineProperty(RegExp.prototype, 'test', descriptor);
+    };
+};
+
+/**
  * Runs redirect
  *
  * @param {string} name redirect name

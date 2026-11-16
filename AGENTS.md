@@ -698,6 +698,23 @@ Project-specific rules:
     it is, as uBO keeps it, e.g. in a script which is a replacement, so removing its
     escape would change the argument.
 
+25. A native method which a scriptlet saves when it runs, so that the page or another
+    rule cannot change it later, e.g. `RegExp.prototype.test`, MUST NOT stop the rule
+    if it cannot be saved, e.g. if another rule has made it an accessor. Use the
+    current method at the call then, as `getRegexpTester()` does, and do not read it
+    through the accessor when the rule runs. An error of the current method at the
+    call MUST NOT reach the page either, e.g. the condition is not matched then.
+    `matchStackTrace()` does not follow it yet, as it requires a data property of
+    `RegExp.prototype.test` on each call, and SHOULD be moved to `getRegexpTester()`
+    when it is changed.
+
+    **Rationale**: Other rules on the same page may replace such a method before,
+    e.g. `abort-current-inline-script` with `RegExp.prototype.test` defines an
+    accessor, so a rule which requires a data property would not be applied at all,
+    while it worked before the method was saved. The getter of such an accessor may
+    throw while the rule runs, e.g. when `abort-current-inline-script` aborts the
+    inline script in which the rule runs.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,
@@ -723,6 +740,12 @@ Project-specific rules:
   `tests/helpers.js`, as the property which stores the shared spoofed clicks
   is not configurable outside of tests, so the page cannot replace it. It is
   tested without the wrapper in `tests/helpers/spoofed-clicks-property.spec.ts`.
+
+- Test setup which several test files need, e.g. `useRegexpTestAccessor()` which
+  makes `RegExp.prototype.test` an accessor as another rule does, SHOULD be
+  a helper in `tests/helpers.js` instead of a copy in each file. Helpers which
+  call `runScriptlet()` work only in QUnit tests, as it uses the scriptlets
+  bundle of the test page.
 
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.

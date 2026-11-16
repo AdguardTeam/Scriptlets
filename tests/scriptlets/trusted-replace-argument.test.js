@@ -5,6 +5,7 @@ import {
     saveStorageMethods,
     useThrowingErrorConstructor,
     getSyncLogs,
+    useRegexpTestAccessor,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -801,4 +802,47 @@ test.each('uBO names', ['ubo-trusted-replace-argument.js', 'ubo-trusted-replace-
         { adBlockWallEnabled: false },
         'uBO arguments are used',
     );
+});
+
+test('RegExp.prototype.test is an accessor defined by another rule before', (assert) => {
+    // Earlier tests assign the method to `document`, which would hide the method of `Document.prototype`
+    const ownGetElementById = Object.getOwnPropertyDescriptor(document, 'getElementById');
+    const prototypeGetElementById = Document.prototype.getElementById;
+    delete document.getElementById;
+    const restoreRegexpTest = useRegexpTestAccessor();
+    const element = document.createElement('div');
+    element.id = 'dspc-bottomRecommend';
+    document.body.append(element);
+    try {
+        assert.strictEqual(
+            typeof Object.getOwnPropertyDescriptor(RegExp.prototype, 'test').get,
+            'function',
+            'RegExp.prototype.test is an accessor',
+        );
+        // eslint-disable-next-line max-len
+        // daily.co.jp#%#//scriptlet('trusted-replace-argument', 'Document.prototype.getElementById', '0', 'dspc-bottomRecommend', 'dspc-inread')
+        runScriptlet(name, ['Document.prototype.getElementById', '0', 'dspc-bottomRecommend', 'dspc-inread']);
+        // eslint-disable-next-line max-len
+        // enternity.gr##+js(trusted-replace-argument, document.getElementById, 0, json:"header", condition, /^[A-Za-z]{12}$/)
+        runScriptlet('ubo-trusted-replace-argument.js', [
+            'document.getElementById',
+            '0',
+            'json:"dspc-bottomRecommend"',
+            'condition',
+            '/^[A-Za-z]{12}$/',
+        ]);
+
+        assert.strictEqual(document.getElementById('dspc-inread'), element, 'AdGuard rule with pattern is applied');
+        assert.strictEqual(document.getElementById('AbCdEfGhIjKl'), element, 'uBO rule with condition is applied');
+        assert.strictEqual(document.getElementById('other'), null, 'Other argument is not replaced');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    } finally {
+        restoreRegexpTest();
+        delete document.getElementById;
+        Document.prototype.getElementById = prototypeGetElementById;
+        if (ownGetElementById) {
+            Object.defineProperty(document, 'getElementById', ownGetElementById);
+        }
+        element.remove();
+    }
 });

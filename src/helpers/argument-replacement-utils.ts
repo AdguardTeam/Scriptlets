@@ -17,7 +17,7 @@ import { getMethodOwner, getFunctionProxyProperty } from './object-utils';
 import { extractRegexAndReplacement, toRegExp, stringifyWithFunctions } from './string-utils';
 import { getThrownValueMessage } from './get-error-message';
 import { nativeIsNaN } from './number-utils';
-import { getNativeRegexpTest } from './regexp-utils';
+import { getRegexpTester } from './regexp-utils';
 import {
     parseUboOptions,
     uboPatternToRegExp,
@@ -82,9 +82,8 @@ export interface ArgumentReplacement {
  *
  * Requires `logMessage`, `noopArray`, `noopObject`, `noopCallbackFunc`, `noopFunc`, `trueFunc`, `falseFunc`,
  * `throwFunc`, `noopPromiseReject`, `noopPromiseResolve`, `nativeIsNaN`, `extractRegexAndReplacement`,
- * `matchStackTrace`, `toRegExp`, `getNativeRegexpTest`, `stringifyWithFunctions` and `getThrownValueMessage`,
- * with their dependencies,
- * in the injections of the scriptlet.
+ * `matchStackTrace`, `toRegExp`, `getRegexpTester`, `getNativeRegexpTest`, `stringifyWithFunctions`
+ * and `getThrownValueMessage`, with their dependencies, in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param methodPath Path to the method.
@@ -121,7 +120,7 @@ export const getAdgArgumentReplacement = (
 
     // `test` is saved when the rule runs, so that a rule which intercepts it later, or the page,
     // cannot change the matching, e.g. by replacing the tested text
-    const nativeRegexpTest = getNativeRegexpTest();
+    const testRegexp = getRegexpTester();
 
     // Scriptlet should log when "verbose" is set to "true", "methodPath" is set
     // and no other parameters are provided.
@@ -203,7 +202,7 @@ export const getAdgArgumentReplacement = (
                     // If the argument is an object, convert it to a string for pattern matching.
                     try {
                         const argString = stringifyWithFunctions(arg);
-                        return !!argString && nativeRegexpTest.call(toRegExp(pattern), argString);
+                        return !!argString && testRegexp(toRegExp(pattern), argString);
                     } catch (error) {
                         // Neither the argument nor the error is converted to a string to be logged, as it would
                         // call the page again, e.g. its `toString()`, which may throw as well, so the argument
@@ -213,7 +212,7 @@ export const getAdgArgumentReplacement = (
                 }
 
                 const argumentContent = String(arg);
-                return !!argumentContent && nativeRegexpTest.call(toRegExp(pattern), argumentContent);
+                return !!argumentContent && testRegexp(toRegExp(pattern), argumentContent);
             }
             return true;
         },
@@ -248,8 +247,8 @@ export const getAdgArgumentReplacement = (
  * The argument is replaced only if it has changed, and only if the call has it. Unlike uBO, which matches any
  * argument by an invalid regular expression of `condition`, it logs it and the rule is not applied.
  *
- * Requires `logMessage`, `parseUboOptions`, `uboPatternToRegExp`, `parseUboReplaceDirective`, `getUboConstantValue`
- * and `getNativeRegexpTest` in the injections of the scriptlet.
+ * Requires `logMessage`, `parseUboOptions`, `uboPatternToRegExp`, `parseUboReplaceDirective`, `getUboConstantValue`,
+ * `getRegexpTester` and `getNativeRegexpTest` in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param methodPath Path to the method.
@@ -299,7 +298,7 @@ export const getUboArgumentReplacement = (
 
     // `test` is saved when the rule runs, so that a rule which intercepts it later, or the page,
     // cannot change the matching, e.g. by replacing the tested text, as uBO uses the saved one as well
-    const nativeRegexpTest = getNativeRegexpTest();
+    const testRegexp = getRegexpTester();
 
     let condition: RegExp | null = null;
     if (options.condition !== undefined) {
@@ -329,7 +328,7 @@ export const getUboArgumentReplacement = (
             }
             condition.lastIndex = 0;
             // The argument is converted to a string by `test()` itself, as in uBO
-            return nativeRegexpTest.call(condition, arg as string);
+            return testRegexp(condition, arg as string);
         },
         replace,
         isSetUnchanged: false,

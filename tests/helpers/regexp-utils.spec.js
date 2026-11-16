@@ -1,6 +1,7 @@
+/* eslint-disable no-extend-native */
 import { test, expect } from 'vitest';
 
-import { restoreRegExpValues, backupRegExpValues } from '../../src/helpers';
+import { restoreRegExpValues, backupRegExpValues, getRegexpTester } from '../../src/helpers';
 
 test('restoreRegExpValues() check if correct value have been set', async () => {
     restoreRegExpValues(['foo']);
@@ -39,4 +40,42 @@ test('backupRegExpValues() and restoreRegExpValues(), modify values and restore 
 
     expect(RegExp.$1).toBe('div');
     expect(RegExp.$2).toBe('a');
+});
+
+test('getRegexpTester() uses the method saved when it is called', () => {
+    const nativeTest = RegExp.prototype.test;
+    const testRegexp = getRegexpTester();
+    try {
+        // e.g. a rule which intercepts the method later
+        RegExp.prototype.test = () => true;
+
+        expect(testRegexp(/ads/, 'content')).toBe(false);
+        expect(testRegexp(/ads/, 'no ads')).toBe(true);
+    } finally {
+        RegExp.prototype.test = nativeTest;
+    }
+});
+
+test('getRegexpTester() calls the current method if it is an accessor, without reading it before', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, 'test');
+    let isReadAllowed = false;
+    Object.defineProperty(RegExp.prototype, 'test', {
+        configurable: true,
+        get() {
+            // e.g. `abort-current-inline-script` aborting the inline script of the rule
+            if (!isReadAllowed) {
+                throw new ReferenceError('aborted');
+            }
+            return descriptor.value;
+        },
+    });
+    try {
+        const testRegexp = getRegexpTester();
+        isReadAllowed = true;
+
+        expect(testRegexp(/ads/, 'content')).toBe(false);
+        expect(testRegexp(/ads/, 'no ads')).toBe(true);
+    } finally {
+        Object.defineProperty(RegExp.prototype, 'test', descriptor);
+    }
 });
