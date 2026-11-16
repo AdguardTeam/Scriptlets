@@ -26,6 +26,9 @@ import {
     getAdgFetchResponseReplacement,
     getUboFetchResponseReplacement,
     replaceFetchResponses,
+    getAdgResponseTextReplacement,
+    getUboResponseTextReplacement,
+    replaceResponseText,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -238,6 +241,9 @@ trustedReplaceFetchResponse.injections = [
     getAdgFetchResponseReplacement,
     getUboFetchResponseReplacement,
     replaceFetchResponses,
+    getAdgResponseTextReplacement,
+    getUboResponseTextReplacement,
+    replaceResponseText,
     // following helpers are needed for helpers above
     getRegexpTester,
     getNativeRegexpTest,

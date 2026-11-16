@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - uBO aliases of trusted scriptlets whose arguments are the same as in uBO [#586], so that uBO rules with them,
   e.g. `example.org##+js(trusted-set-attr, div, data-ad, none)`, are no longer rejected: `ubo-trusted-click-element`,
-  `ubo-trusted-prevent-xhr`, `ubo-trusted-replace-xhr-response`, `ubo-trusted-set-attr`,
+  `ubo-trusted-prevent-xhr`, `ubo-trusted-set-attr`,
   `ubo-trusted-set-cookie-reload`, `ubo-trusted-set-local-storage-item`
   and `ubo-trusted-set-session-storage-item`, each also with `.js`. As these aliases do not start with `trusted-`,
   filter compilers have to exclude them separately from filters which may not use trusted scriptlets, e.g.
@@ -91,6 +91,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `includes` option of `trusted-replace-fetch-response`, followed by a string or a regular expression after
   `verbose`, which the response text content has to match to be replaced, e.g.
   `example.org#%#//scriptlet('trusted-replace-fetch-response', 'ads', '', 'api', '', 'includes', 'adSlots')`.
+- uBO arguments of `trusted-replace-xhr-response` with its uBO aliases [#586], as in `trusted-replace-fetch-response`,
+  i.e. `propsToMatch` as in uBO, matched against the method and the URL passed to `open()`, and the named option
+  `includes` instead of `verbose`, e.g.
+  `example.org##+js(trusted-replace-xhr-response, "adPlacements", "no_ads", /player/, includes, adSlots)`.
+  As in uBO, an empty `pattern` prepends the replacement to the response text content, `*` is matched as the text
+  `.*`, and only text responses are modified, i.e. with an empty `responseType` or `text`, while other requests
+  are sent as they are. Unlike uBO, a rule with an invalid regular expression is not applied, and the matching
+  of a request object which is opened again is reset.
+- `includes` option of `trusted-replace-xhr-response`, as in `trusted-replace-fetch-response`.
 
 ### Changed
 
@@ -111,6 +120,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `trusted-replace-xhr-response` defining the response as text for any `responseType`, e.g. for `json`,
+  where it is parsed from the replaced text now, and not modifying a response of `document`, sending
+  a synchronous request asynchronously, so its response was not set when `send()` returned, completing
+  a request which the page has aborted, and sending the request of another object opened after the matched one
+  with the URL of that object, as it uses the shared core of `json-prune-xhr-response` now. An error of matching
+  the request is not thrown to the page anymore.
 - Scriptlets with `stack`, e.g. `abort-on-stack-trace`, `json-prune` or `set-constant`, throwing
   `RegExp.prototype.test is not a function` to the page, or aborting the property by it in `abort-on-stack-trace`,
   if another rule has made `RegExp.prototype.test` an accessor, e.g.

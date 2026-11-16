@@ -42,6 +42,9 @@ import { type Source } from '../scriptlets';
  * @param modifyResponse function which returns the content of the response for the object of the page,
  * converted to its `responseType`, for the text of the forged response, the object of the page,
  * and the stack trace of `send()`, which is empty if it is not read
+ * @param shouldForgeRequest optional function which checks the object of the page when it is sent,
+ * e.g. its `responseType`, and returns false to send the object itself instead of a forged request,
+ * so its native response is not modified, e.g. as `trusted-replace-xhr-response.js` of uBO modifies only text
  */
 export function interceptXhrResponses(
     source: Source,
@@ -49,6 +52,7 @@ export function interceptXhrResponses(
     shouldReadStackTrace: boolean,
     isRequestMatched: (xhrData: XMLHttpRequestSharedRequestData<any>) => boolean,
     modifyResponse: (content: any, xhr: XMLHttpRequest, stackTrace: string) => unknown,
+    shouldForgeRequest?: (xhr: XMLHttpRequest) => boolean,
 ): void {
     /**
      * Request of the page which is matched, with the arguments of its `open()`, to open the forged request
@@ -400,6 +404,12 @@ export function interceptXhrResponses(
             return Reflect.apply(target, thisArg, args);
         }
         matchedRequests.delete(thisArg);
+
+        // The object itself is sent, e.g. with a `responseType` whose response is not modified.
+        // The headers have been set on it by the native method, so it is sent with them
+        if (shouldForgeRequest && !shouldForgeRequest(thisArg)) {
+            return Reflect.apply(target, thisArg, args);
+        }
 
         // Stack trace is read only if it is matched or logged.
         // The page may make creating or reading it throw, e.g. by replacing `Error` or by `Error.prepareStackTrace`,

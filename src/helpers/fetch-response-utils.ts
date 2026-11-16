@@ -3,49 +3,29 @@ import { logMessage } from './log-message';
 import { matchRequestProps } from './match-request-props';
 import { getFetchData } from './request-utils';
 import { forgeResponse } from './response-utils';
-import { toRegExp, objectToString } from './string-utils';
+import { objectToString } from './string-utils';
 import { getFunctionProxyProperty } from './object-utils';
 import { getRegexpTester } from './regexp-utils';
 import { getThrownValueMessage } from './get-error-message';
-import { parseUboOptions, uboPatternToRegExp } from './ubo-utils';
 import { parseUboPropsToMatch, matchUboProps, collateUboFetchArguments } from './ubo-request-utils';
+import {
+    getAdgResponseTextReplacement,
+    getUboResponseTextReplacement,
+    replaceResponseText,
+    type ResponseTextReplacement,
+} from './response-text-utils';
 import { type Source } from '../scriptlets';
 
 /**
  * Settings of `replaceFetchResponses()`, which are parsed from the arguments of `trusted-replace-fetch-response`
  * once, by `getAdgFetchResponseReplacement()` or `getUboFetchResponseReplacement()`.
+ * `pattern` is `null` to only log the calls of `fetch()`.
  */
-export interface FetchResponseReplacement {
-    /**
-     * Regular expression of the text to replace, or `null` to only log the calls of `fetch()`.
-     */
-    pattern: RegExp | null;
-
-    /**
-     * Text to replace with, may contain `$1` etc.
-     */
-    replacement: string;
-
-    /**
-     * Regular expression which the text of the response has to match to be replaced, or `null` for any text.
-     */
-    includes: RegExp | null;
-
+export interface FetchResponseReplacement extends ResponseTextReplacement {
     /**
      * Checks whether the response of the `fetch()` call is replaced, by its arguments.
      */
     isRequestMatched: (args: unknown[]) => boolean;
-
-    /**
-     * If true, the original and the modified text of the responses are logged.
-     */
-    shouldLogContent: boolean;
-
-    /**
-     * If true, as in uBO, the original response is returned if the text has not changed,
-     * otherwise, as in AdGuard syntax, the response is forged if the text matches the pattern.
-     */
-    isUnchangedReturned: boolean;
 }
 
 /**
@@ -59,8 +39,8 @@ export interface FetchResponseReplacement {
  * Extra arguments may be the option `includes`, followed by a string or a regular expression, see `toRegExp()`,
  * which the text of the response has to match, e.g. `'includes', 'adPlacements'`.
  *
- * Requires `logMessage`, `toRegExp`, `parseUboOptions`, `matchRequestProps` and `getFetchData`, with their
- * dependencies, in the injections of the scriptlet.
+ * Requires `getAdgResponseTextReplacement`, `logMessage`, `toRegExp`, `parseUboOptions`, `matchRequestProps`
+ * and `getFetchData`, with their dependencies, in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param pattern Text to replace, or a regular expression to match it.
@@ -79,53 +59,25 @@ export const getAdgFetchResponseReplacement = (
     verbose: unknown,
     args: unknown[],
 ): FetchResponseReplacement | null => {
-    // !IMPORTANT: Do not move constants outside of this function
-    const ALL_TEXT_MARKER = '*';
-    const ALL_TEXT_REGEXP = /(\n|.)*/;
-
-    // Only allow pattern as empty string for logging purposes
-    if (pattern === '' && replacement !== '') {
-        logMessage(source, 'Pattern argument should not be empty string');
+    const textReplacement = getAdgResponseTextReplacement(source, pattern, replacement, verbose, args);
+    if (textReplacement === null) {
         return null;
-    }
-
-    let patternRegexp: RegExp | null = null;
-    if (pattern === ALL_TEXT_MARKER) {
-        patternRegexp = ALL_TEXT_REGEXP;
-    } else if (pattern !== '') {
-        try {
-            patternRegexp = toRegExp(pattern);
-        } catch {
-            // Such a rule did not replace any response before either
-            logMessage(source, `Invalid pattern: ${pattern}`);
-            return null;
-        }
-    }
-
-    const options = parseUboOptions(args);
-    let includes: RegExp | null = null;
-    if (options.includes !== undefined) {
-        try {
-            includes = toRegExp(`${options.includes}`);
-        } catch {
-            logMessage(source, `Invalid includes: ${options.includes}`);
-            return null;
-        }
     }
 
     const nativeRequestClone = Request.prototype.clone;
 
     return {
-        pattern: patternRegexp,
-        replacement,
-        includes,
+        // Object spread is not used, as its helper of Babel is not available in the scriptlet runtime
+        pattern: textReplacement.pattern,
+        replacement: textReplacement.replacement,
+        includes: textReplacement.includes,
+        shouldLogContent: textReplacement.shouldLogContent,
+        isUnchangedReturned: textReplacement.isUnchangedReturned,
         isRequestMatched: (fetchArgs: unknown[]): boolean => matchRequestProps(
             source,
             propsToMatch,
             getFetchData(fetchArgs as Parameters<typeof getFetchData>[0], nativeRequestClone),
         ),
-        shouldLogContent: verbose === 'true',
-        isUnchangedReturned: false,
     };
 };
 
@@ -144,8 +96,9 @@ export const getAdgFetchResponseReplacement = (
  * Unlike uBO, which matches any text by an invalid regular expression of `pattern` or `includes`,
  * the rule with such one is not applied, which is logged.
  *
- * Requires `logMessage`, `parseUboOptions`, `uboPatternToRegExp`, `parseUboPropsToMatch`, `matchUboProps`,
- * `collateUboFetchArguments`, `getRegexpTester` and `getNativeRegexpTest` in the injections of the scriptlet.
+ * Requires `getUboResponseTextReplacement`, `logMessage`, `parseUboOptions`, `uboPatternToRegExp`,
+ * `parseUboPropsToMatch`, `matchUboProps`, `collateUboFetchArguments`, `getRegexpTester`
+ * and `getNativeRegexpTest` in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param pattern Text to replace, or a regular expression to match it.
@@ -164,30 +117,12 @@ export const getUboFetchResponseReplacement = (
     args: unknown[],
 ): FetchResponseReplacement | null => {
     // !IMPORTANT: Do not move constants outside of this function
-    const ALL_TEXT_MARKER = '*';
-    const UBO_ALL_TEXT_PATTERN = '.*';
     const IMPLICIT_PROP = 'url';
 
     // As in uBO, a rule without a pattern does nothing
-    if (pattern === '') {
+    const textReplacement = getUboResponseTextReplacement(source, pattern, replacement, args, false);
+    if (textReplacement === null) {
         return null;
-    }
-
-    const patternRegexp = uboPatternToRegExp(pattern === ALL_TEXT_MARKER ? UBO_ALL_TEXT_PATTERN : pattern);
-    if (patternRegexp === null) {
-        logMessage(source, `Invalid regular expression of pattern: ${pattern}`);
-        return null;
-    }
-
-    const options = parseUboOptions(args);
-    let includes: RegExp | null = null;
-    // As in uBO, an empty `includes` or `0` matches any text
-    if (options.includes) {
-        includes = uboPatternToRegExp(`${options.includes}`);
-        if (includes === null) {
-            logMessage(source, `Invalid regular expression of includes: ${options.includes}`);
-            return null;
-        }
     }
 
     const needles = parseUboPropsToMatch(propsToMatch, IMPLICIT_PROP);
@@ -200,16 +135,17 @@ export const getUboFetchResponseReplacement = (
     const testRegexp = getRegexpTester();
 
     return {
-        pattern: patternRegexp,
-        replacement,
-        includes,
+        // Object spread is not used, as its helper of Babel is not available in the scriptlet runtime
+        pattern: textReplacement.pattern,
+        replacement: textReplacement.replacement,
+        includes: textReplacement.includes,
+        shouldLogContent: textReplacement.shouldLogContent,
+        isUnchangedReturned: textReplacement.isUnchangedReturned,
         isRequestMatched: (fetchArgs: unknown[]): boolean => matchUboProps(
             needles,
             collateUboFetchArguments(fetchArgs[0], fetchArgs[1], nativeRequestClone),
             testRegexp,
         ),
-        shouldLogContent: false,
-        isUnchangedReturned: true,
     };
 };
 
@@ -223,21 +159,14 @@ export const getUboFetchResponseReplacement = (
  * through, as native `fetch()` does not throw.
  *
  * Requires `hit`, `logMessage`, `getFetchData`, `objectToString`, `forgeResponse`, `getFunctionProxyProperty`,
- * `getThrownValueMessage`, `getRegexpTester` and `getNativeRegexpTest`, with their dependencies,
- * in the injections of the scriptlet.
+ * `getThrownValueMessage`, `replaceResponseText`, `getRegexpTester` and `getNativeRegexpTest`,
+ * with their dependencies, in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param settings Settings of the replacement.
  */
 export const replaceFetchResponses = (source: Source, settings: FetchResponseReplacement): void => {
-    const {
-        pattern,
-        replacement,
-        includes,
-        isRequestMatched,
-        shouldLogContent,
-        isUnchangedReturned,
-    } = settings;
+    const { pattern, isRequestMatched } = settings;
 
     const nativeRequestClone = Request.prototype.clone;
     const nativeResponseClone = Response.prototype.clone;
@@ -275,29 +204,8 @@ export const replaceFetchResponses = (source: Source, settings: FetchResponseRep
         // has succeeded, so its `fetch()` is not rejected. The original response is returned then
         try {
             const text = await nativeResponseClone.call(response).text();
-
-            if (includes !== null) {
-                includes.lastIndex = 0;
-                if (!testRegexp(includes, text)) {
-                    return response;
-                }
-            }
-
-            regexp.lastIndex = 0;
-            if (!isUnchangedReturned && !testRegexp(regexp, text)) {
-                return response;
-            }
-
-            if (shouldLogContent) {
-                logMessage(source, `Original text content: ${text}`);
-            }
-            regexp.lastIndex = 0;
-            const modifiedText = text.replace(regexp, replacement);
-            if (shouldLogContent) {
-                logMessage(source, `Modified text content: ${modifiedText}`);
-            }
-
-            if (isUnchangedReturned && modifiedText === text) {
+            const modifiedText = replaceResponseText(source, settings, regexp, text, testRegexp);
+            if (modifiedText === null) {
                 return response;
             }
 

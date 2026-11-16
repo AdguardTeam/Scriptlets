@@ -11,6 +11,29 @@ import {
     parseMatchProps,
     isValidStrPattern,
     isEmptyObject,
+    interceptXhrResponses,
+    getFunctionProxyProperty,
+    matchStackTrace,
+    addStackTraceMessageLine,
+    getWildcardPropertyInChain,
+    shouldAbortInlineOrInjectedScript,
+    getNativeRegexpTest,
+    getRegexpTester,
+    backupRegExpValues,
+    restoreRegExpValues,
+    isKeyInObject,
+    getThrownValueMessage,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    parseUboPropsToMatch,
+    matchUboProps,
+    getAdgResponseTextReplacement,
+    getUboResponseTextReplacement,
+    replaceResponseText,
+    getAdgXhrResponseReplacement,
+    getUboXhrResponseReplacement,
+    replaceXhrResponses,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -23,7 +46,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch]])
+ * example.org#%#//scriptlet('trusted-replace-xhr-response'[, pattern, replacement[, propsToMatch[, verbose[, ...options]]]])
  * ```
  *
  * - `pattern` — optional, argument for matching contents of responseText that should be replaced.
@@ -41,11 +64,40 @@ import {
  *         - `value` — string or regular expression for matching the value of the option
  *           passed to `XMLHttpRequest.open()` call
  * - `verbose` — optional, boolean, if set to 'true' will log original and modified text content of XMLHttpRequests.
+ * - `options` — optional, pairs of a name and a value which follow `verbose`, with the same meaning as in uBO:
+ *     - `includes, value` — string or regular expression which the response text content has to match
+ *       to be replaced, e.g. `'includes', '"adPlacements"'`. If it is an invalid regular expression,
+ *       the rule is not applied.
  *
  * > `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * > Usage with no arguments will log XMLHttpRequest objects to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
+ *
+ * > The response text content is replaced for any `responseType` except `document`, and the response
+ * > has the `responseType` of the request, e.g. it is parsed as JSON for `json`.
+ * > A request with `responseType` `document` is not modified.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g.
+ * `example.org##+js(trusted-replace-xhr-response, "adPlacements", "no_ads", /player/, includes, adSlots)`:
+ *
+ * ```text
+ * example.org##+js(trusted-replace-xhr-response, pattern, replacement[, propsToMatch[, ...options]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `pattern` — a regular expression may have only the flags `gimsu`; `*` is matched as the text `.*`, as in uBO;
+ *   if it is empty, the replacement is prepended to the response text content, as in uBO
+ * - `propsToMatch` — the method and the URL passed to `XMLHttpRequest.open()` are matched, properties are
+ *   separated by whitespaces, a property without a name is matched against the URL, and a value which starts
+ *   with `!` must not match, as in uBO
+ * - options are pairs of a name and a value which follow `propsToMatch`:
+ *     - `includes, value` — string or regular expression which the response text content has to match
+ * - only text responses are modified, i.e. with an empty `responseType` or `text`, as in uBO
+ * - a rule with an invalid regular expression is not applied
  *
  * ### Examples
  *
@@ -100,218 +152,52 @@ import {
  *     example.org#%#//scriptlet('trusted-replace-xhr-response', '/noAds=false/g', 'noAds=true', 'example.com', 'true')
  *     ```
  *
+ * 1. Replace `"adPlacements"` with `"no_ads"` in the responses of requests to URLs which contain `player`,
+ *    if they contain `"adSlots"`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-xhr-response', '"adPlacements"', '"no_ads"', 'player', '', 'includes', '"adSlots"')
+ *     ```
+ *
  * @added v1.7.3.
  */
 /* eslint-enable max-len */
-export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch = '', verbose = false) {
+export function trustedReplaceXhrResponse(source, pattern = '', replacement = '', propsToMatch = '', ...extraArgs) {
     // do nothing if browser does not support Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
     if (typeof Proxy === 'undefined') {
         return;
     }
 
-    // Only allow pattern as empty string for logging purposes
-    if (pattern === '' && replacement !== '') {
-        const message = 'Pattern argument should not be empty string.';
-        logMessage(source, message);
+    let replacementSettings;
+
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
+    // and uBO arguments, i.e. named options instead of `verbose`
+    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
+        replacementSettings = getUboXhrResponseReplacement(
+            source,
+            typeof pattern === 'string' ? unescapeUboArgument(pattern) : '',
+            typeof replacement === 'string' ? unescapeUboArgument(replacement) : '',
+            typeof propsToMatch === 'string' ? unescapeUboArgument(propsToMatch) : '',
+            extraArgs.map(unescapeUboArgument),
+        );
+    } else {
+        const verbose = typeof extraArgs[0] !== 'undefined' ? extraArgs[0] : false;
+        replacementSettings = getAdgXhrResponseReplacement(
+            source,
+            pattern,
+            replacement,
+            propsToMatch,
+            verbose,
+            extraArgs.slice(1),
+        );
+    }
+
+    if (replacementSettings === null) {
         return;
     }
 
-    const shouldLog = pattern === '' && replacement === '';
-    const shouldLogContent = verbose === 'true';
-
-    const nativeOpen = window.XMLHttpRequest.prototype.open;
-    const nativeSend = window.XMLHttpRequest.prototype.send;
-
-    // Store matched XHR requests and their data in private structures
-    // to prevent bypass via thisArg property manipulation
-    // https://github.com/AdguardTeam/Scriptlets/issues/386
-    const matchedXhrRequests = new Set();
-    const xhrRequestHeaders = new Map();
-    // Maps a matched XHR object to its forged request, which holds the real
-    // response headers — needed because the original XHR is never sent.
-    // https://github.com/AdguardTeam/Scriptlets/issues/419
-    const forgedRequests = new WeakMap();
-
-    let xhrData;
-
-    const openWrapper = (target, thisArg, args) => {
-        // eslint-disable-next-line prefer-spread
-        xhrData = getXhrData.apply(null, args);
-
-        if (shouldLog) {
-            // Log if no propsToMatch given
-            const message = `xhr( ${objectToString(xhrData)} )`;
-            logMessage(source, message, true);
-            hit(source);
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        if (matchRequestProps(source, propsToMatch, xhrData)) {
-            matchedXhrRequests.add(thisArg);
-        }
-
-        // Trap setRequestHeader of target xhr object to mimic request headers later
-        if (matchedXhrRequests.has(thisArg) && !xhrRequestHeaders.has(thisArg)) {
-            xhrRequestHeaders.set(thisArg, []);
-            const setRequestHeaderWrapper = (target, thisArg, args) => {
-                // Collect headers
-                const headers = xhrRequestHeaders.get(thisArg);
-                if (headers) {
-                    headers.push(args);
-                }
-                return Reflect.apply(target, thisArg, args);
-            };
-
-            const setRequestHeaderHandler = {
-                apply: setRequestHeaderWrapper,
-            };
-
-            // setRequestHeader can only be called on open xhr object,
-            // so we can safely proxy it here
-            thisArg.setRequestHeader = new Proxy(thisArg.setRequestHeader, setRequestHeaderHandler);
-
-            // The original XHR object is never actually sent — the forged request is —
-            // so its response headers would be empty. Proxy the header getters of the
-            // target xhr object to return the real headers from the forged request.
-            // Proxying (instead of reassigning) keeps `toString()` reporting native code.
-            const responseHeaderWrapper = (target, thisArg, args) => {
-                const forgedRequest = forgedRequests.get(thisArg);
-                if (forgedRequest) {
-                    return Reflect.apply(target, forgedRequest, args);
-                }
-                return Reflect.apply(target, thisArg, args);
-            };
-
-            const responseHeaderHandler = {
-                apply: responseHeaderWrapper,
-            };
-
-            thisArg.getResponseHeader = new Proxy(thisArg.getResponseHeader, responseHeaderHandler);
-            thisArg.getAllResponseHeaders = new Proxy(thisArg.getAllResponseHeaders, responseHeaderHandler);
-        }
-
-        return Reflect.apply(target, thisArg, args);
-    };
-
-    const sendWrapper = (target, thisArg, args) => {
-        if (!matchedXhrRequests.has(thisArg)) {
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        /**
-         * Create separate XHR request with original request's input
-         * to be able to collect response data without triggering
-         * listeners on original XHR object
-         */
-        const forgedRequest = new XMLHttpRequest();
-        forgedRequest.withCredentials = thisArg.withCredentials;
-        forgedRequest.addEventListener('readystatechange', () => {
-            if (forgedRequest.readyState !== 4) {
-                return;
-            }
-
-            const {
-                readyState,
-                response,
-                responseText,
-                responseURL,
-                responseXML,
-                status,
-                statusText,
-            } = forgedRequest;
-
-            // Extract content from response
-            const content = responseText || response;
-            if (typeof content !== 'string') {
-                return;
-            }
-
-            const patternRegexp = pattern === '*'
-                ? /(\n|.)*/
-                : toRegExp(pattern);
-
-            const isPatternFound = pattern === '*' || patternRegexp.test(content);
-
-            let responseContent = content;
-            if (isPatternFound) {
-                if (shouldLogContent) {
-                    logMessage(source, `Original text content: ${content}`);
-                }
-                responseContent = content.replace(patternRegexp, replacement);
-                if (shouldLogContent) {
-                    logMessage(source, `Modified text content: ${responseContent}`);
-                }
-            }
-
-            // Manually put required values into target XHR object
-            // as thisArg can't be redefined and XHR objects can't be (re)assigned or copied
-            Object.defineProperties(thisArg, {
-                // original values
-                readyState: { value: readyState, writable: false },
-                responseURL: { value: responseURL, writable: false },
-                responseXML: { value: responseXML, writable: false },
-                status: { value: status, writable: false },
-                statusText: { value: statusText, writable: false },
-                // modified values only if pattern matched, otherwise original
-                response: { value: responseContent, writable: false },
-                responseText: { value: responseContent, writable: false },
-            });
-
-            // The original XHR object is never actually sent — the forged request is —
-            // so its response headers would be empty. Keep a reference to the forged
-            // request so the proxied header getters can return the real headers.
-            forgedRequests.set(thisArg, forgedRequest);
-
-            // Mock events
-            setTimeout(() => {
-                const stateEvent = new Event('readystatechange');
-                thisArg.dispatchEvent(stateEvent);
-
-                const loadEvent = new ProgressEvent('load');
-                thisArg.dispatchEvent(loadEvent);
-
-                const loadEndEvent = new ProgressEvent('loadend');
-                thisArg.dispatchEvent(loadEndEvent);
-            }, 1);
-
-            if (isPatternFound) {
-                hit(source);
-            }
-        });
-
-        nativeOpen.apply(forgedRequest, [xhrData.method, xhrData.url]);
-
-        // Mimic request headers before sending
-        // setRequestHeader can only be called on open request objects
-        const collectedHeaders = xhrRequestHeaders.get(thisArg) || [];
-        collectedHeaders.forEach((header) => {
-            const name = header[0];
-            const value = header[1];
-
-            forgedRequest.setRequestHeader(name, value);
-        });
-        xhrRequestHeaders.delete(thisArg);
-        matchedXhrRequests.delete(thisArg);
-
-        try {
-            Reflect.apply(nativeSend, forgedRequest, args);
-        } catch {
-            return Reflect.apply(target, thisArg, args);
-        }
-        return undefined;
-    };
-
-    const openHandler = {
-        apply: openWrapper,
-    };
-
-    const sendHandler = {
-        apply: sendWrapper,
-    };
-
-    XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, openHandler);
-    XMLHttpRequest.prototype.send = new Proxy(XMLHttpRequest.prototype.send, sendHandler);
+    replaceXhrResponses(source, replacementSettings);
 }
 
 export const trustedReplaceXhrResponseNames = [
@@ -328,14 +214,38 @@ trustedReplaceXhrResponse.primaryName = trustedReplaceXhrResponseNames[0];
 trustedReplaceXhrResponse.injections = [
     hit,
     logMessage,
-    toRegExp,
     objectToString,
     matchRequestProps,
     getXhrData,
+    interceptXhrResponses,
+    getFunctionProxyProperty,
+    getThrownValueMessage,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    parseUboPropsToMatch,
+    matchUboProps,
+    getAdgResponseTextReplacement,
+    getUboResponseTextReplacement,
+    replaceResponseText,
+    getAdgXhrResponseReplacement,
+    getUboXhrResponseReplacement,
+    replaceXhrResponses,
+    // following helpers are needed for helpers above
+    toRegExp,
+    matchStackTrace,
+    addStackTraceMessageLine,
     getMatchPropsData,
     getRequestProps,
     isValidParsedData,
     parseMatchProps,
     isValidStrPattern,
     isEmptyObject,
+    getWildcardPropertyInChain,
+    shouldAbortInlineOrInjectedScript,
+    getNativeRegexpTest,
+    getRegexpTester,
+    backupRegExpValues,
+    restoreRegExpValues,
+    isKeyInObject,
 ];

@@ -282,9 +282,11 @@ Project-specific rules:
 
 1. You MUST NOT use array destructuring in `src/` files. Use indexed access
    instead (e.g., `const first = arr[0];` not `const [first] = arr;`).
+   Object spread MUST NOT be used either, e.g. `{ ...settings, isMatched }`;
+   list the properties instead.
 
-   **Rationale**: Babel's `_slicedToArray` helper is unavailable in the bundled
-   scriptlet runtime, causing `ReferenceError`.
+   **Rationale**: Babel's `_slicedToArray` and `_objectSpread` helpers are
+   unavailable in the bundled scriptlet runtime, causing `ReferenceError`.
 
 2. TypeScript is preferred for new files. Existing `.js` files MAY remain as-is.
 
@@ -553,9 +555,11 @@ Project-specific rules:
 
 19. Scriptlets which send a forged `XMLHttpRequest` instead of the request of
     the page, to modify its response, SHOULD use `interceptXhrResponses()`, and
-    otherwise MUST follow it. `trusted-replace-xhr-response`, `xml-prune` and
-    `m3u-prune` do not follow it yet, and SHOULD be moved to the helper when
-    they are changed. The state of a request, i.e. whether it is matched, its
+    otherwise MUST follow it. `xml-prune` and `m3u-prune` do not follow it yet,
+    and SHOULD be moved to the helper when they are changed. A request whose
+    response is not modified at all, e.g. of a `responseType` which uBO does not
+    modify, SHOULD be sent as it is, by `shouldForgeRequest` of the helper.
+    The state of a request, i.e. whether it is matched, its
     headers and its forged request, is reset when its object is opened again,
     and the forged request of the previous one is aborted, so its events are
     not dispatched, also when the page calls `abort()`, which dispatches the
@@ -682,7 +686,10 @@ Project-specific rules:
     `getUboConstantSetting()` with `setConstantBySettings()` of `trusted-set-constant`, or
     `getAdgOutboundTextReplacement()` and `getUboOutboundTextReplacement()` with `replaceOutboundText()` of
     `trusted-replace-outbound-text`, or `getAdgFetchResponseReplacement()` and `getUboFetchResponseReplacement()`
-    with `replaceFetchResponses()` of `trusted-replace-fetch-response`, instead of keeping a separate
+    with `replaceFetchResponses()` of `trusted-replace-fetch-response`, or `getAdgXhrResponseReplacement()` and
+    `getUboXhrResponseReplacement()` with `replaceXhrResponses()` of `trusted-replace-xhr-response`, which share
+    the parsing and the replacement of the text with the fetch ones, i.e. `getAdgResponseTextReplacement()`,
+    `getUboResponseTextReplacement()` and `replaceResponseText()`, instead of keeping a separate
     implementation for uBO rules. Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
