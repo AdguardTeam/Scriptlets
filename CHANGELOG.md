@@ -16,8 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - uBO aliases of trusted scriptlets whose arguments are the same as in uBO [#586], so that uBO rules with them,
   e.g. `example.org##+js(trusted-set-attr, div, data-ad, none)`, are no longer rejected: `ubo-trusted-click-element`,
-  `ubo-trusted-prevent-xhr`, `ubo-trusted-replace-fetch-response`, `ubo-trusted-replace-xhr-response`,
-  `ubo-trusted-rpfr`, `ubo-trusted-set-attr`, `ubo-trusted-set-cookie-reload`, `ubo-trusted-set-local-storage-item`
+  `ubo-trusted-prevent-xhr`, `ubo-trusted-replace-xhr-response`, `ubo-trusted-set-attr`,
+  `ubo-trusted-set-cookie-reload`, `ubo-trusted-set-local-storage-item`
   and `ubo-trusted-set-session-storage-item`, each also with `.js`. As these aliases do not start with `trusted-`,
   filter compilers have to exclude them separately from filters which may not use trusted scriptlets, e.g.
   FiltersCompiler by the lines `#%#//scriptlet('ubo-trusted-`, `#%#//scriptlet('ubo-rpnt`
@@ -81,6 +81,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `condition` option of `trusted-replace-outbound-text`, followed by a string or a regular expression after
   `logContent`, which the text, after it is decoded, has to match to be replaced, e.g.
   `example.org#%#//scriptlet('trusted-replace-outbound-text', 'atob', '/.+/', '', '', '', '', 'condition', 'ads')`.
+- uBO aliases of `trusted-replace-fetch-response` [#586], `ubo-trusted-replace-fetch-response`, `ubo-trusted-rpfr`
+  and the same with `.js`, with uBO arguments: `propsToMatch` as in uBO, i.e. properties separated by whitespaces,
+  a value which starts with `!` must not match, and a property which the request does not have is ignored,
+  and the named option `includes` instead of `verbose`,
+  e.g. `example.org##+js(trusted-rpfr, "adPlacements", "no_ads", player?, includes, adSlots)`. As in uBO,
+  an empty `pattern` does nothing, `*` is matched as the text `.*`, and the original response is returned if its text
+  has not changed. Unlike uBO, a rule with an invalid regular expression is not applied.
+- `includes` option of `trusted-replace-fetch-response`, followed by a string or a regular expression after
+  `verbose`, which the response text content has to match to be replaced, e.g.
+  `example.org#%#//scriptlet('trusted-replace-fetch-response', 'ads', '', 'api', '', 'includes', 'adSlots')`.
 
 ### Changed
 
@@ -101,6 +111,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `trusted-replace-fetch-response` calling `fetch` again, i.e. sending the request again, if it is rejected,
+  e.g. by a network error, so the page got the result of the second request. The rejection is passed to the page now.
+  An error of matching the request, e.g. of a `Request` whose body has been used, is not thrown by `fetch` anymore,
+  and the call is passed through. `toString()` of the intercepted `fetch` returns the same value as before.
 - `trusted-replace-outbound-text` with `logContent`, without `textToReplace` and with `decodeMethod` other than
   `base64` removing the first character of the text.
 - `trusted-replace-node-text` with `#text` node name not replacing the text of the text nodes which are present

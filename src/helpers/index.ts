@@ -25,6 +25,8 @@ export * from './string-utils';
 export * from './ubo-utils';
 export * from './argument-replacement-utils';
 export * from './outbound-text-utils';
+export * from './fetch-response-utils';
+export * from './ubo-request-utils';
 export * from './url-utils';
 
 export * from './log-message';

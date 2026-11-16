@@ -13,6 +13,19 @@ import {
     parseMatchProps,
     isValidParsedData,
     getMatchPropsData,
+    getFunctionProxyProperty,
+    getThrownValueMessage,
+    getRegexpTester,
+    getNativeRegexpTest,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    parseUboPropsToMatch,
+    matchUboProps,
+    collateUboFetchArguments,
+    getAdgFetchResponseReplacement,
+    getUboFetchResponseReplacement,
+    replaceFetchResponses,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -25,7 +38,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch]])
+ * example.org#%#//scriptlet('trusted-replace-fetch-response'[, pattern, replacement[, propsToMatch[, verbose[, ...options]]]])
  * ```
  *
  * - `pattern` — optional, argument for matching contents of responseText that should be replaced.
@@ -47,12 +60,42 @@ import {
  * <!-- markdownlint-disable-next-line line-length -->
  * - `verbose` — optional, boolean, if set to 'true' will log original and modified text content of fetch responses.
  *
+ * - `options` — optional, pairs of a name and a value which follow `verbose`, with the same meaning as in uBO:
+ *     - `includes, value` — string or regular expression which the response text content has to match
+ *       to be replaced, e.g. `'includes', '"adPlacements"'`. If it is an invalid regular expression,
+ *       the rule is not applied.
+ *
  * > `verbose` may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * > Usage with no arguments will log fetch calls to browser console;
  * > it may be useful for debugging but it is not allowed for prod versions of filter lists.
  *
  * > Scriptlet does nothing if response body can't be converted to text.
+ *
+ * > `fetch` is called once, so if it is rejected, e.g. by a network error, its rejection is passed to the page.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g.
+ * `example.org##+js(trusted-replace-fetch-response, "adPlacements", "no_ads", player?, includes, adSlots)`:
+ *
+ * <!-- markdownlint-disable line-length -->
+ * ```text
+ * example.org##+js(trusted-replace-fetch-response, pattern, replacement[, propsToMatch[, ...options]])
+ * ```
+ * <!-- markdownlint-enable line-length -->
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `pattern` — a regular expression may have only the flags `gimsu`; `*` is matched as the text `.*`, as in uBO;
+ *   if it is empty, the rule does nothing
+ * - `propsToMatch` — properties are separated by whitespaces, a property without a name is matched against
+ *   the URL, a value which starts with `!` must not match, and a property which the request does not have
+ *   is ignored, as in uBO
+ * - options are pairs of a name and a value which follow `propsToMatch`:
+ *     - `includes, value` — string or regular expression which the response text content has to match
+ * - the original response is returned if its text content has not changed
+ * - a rule with an invalid regular expression is not applied
  *
  * ### Examples
  *
@@ -107,6 +150,13 @@ import {
  *     example.org#%#//scriptlet('trusted-replace-fetch-response', '/noAds=false/g', 'noAds=true', 'example.com', 'true')
  *     ```
  *
+ * 1. Replace `"adPlacements"` with `"no_ads"` in the responses of requests to URLs which contain `player?`,
+ *    if they contain `"adSlots"`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-replace-fetch-response', '"adPlacements"', '"no_ads"', 'player?', '', 'includes', '"adSlots"')
+ *     ```
+ *
  * @added v1.7.3.
  */
 /* eslint-enable max-len */
@@ -115,7 +165,7 @@ export function trustedReplaceFetchResponse(
     pattern = '',
     replacement = '',
     propsToMatch = '',
-    verbose = false,
+    ...extraArgs
 ) {
     // do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
@@ -126,78 +176,35 @@ export function trustedReplaceFetchResponse(
         return;
     }
 
-    // Only allow pattern as empty string for logging purposes
-    if (pattern === '' && replacement !== '') {
-        logMessage(source, 'Pattern argument should not be empty string');
+    let replacementSettings;
+
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
+    // and uBO arguments, i.e. named options instead of `verbose`
+    if (typeof source.name === 'string' && source.name.startsWith('ubo-')) {
+        replacementSettings = getUboFetchResponseReplacement(
+            source,
+            typeof pattern === 'string' ? unescapeUboArgument(pattern) : '',
+            typeof replacement === 'string' ? unescapeUboArgument(replacement) : '',
+            typeof propsToMatch === 'string' ? unescapeUboArgument(propsToMatch) : '',
+            extraArgs.map(unescapeUboArgument),
+        );
+    } else {
+        const verbose = typeof extraArgs[0] !== 'undefined' ? extraArgs[0] : false;
+        replacementSettings = getAdgFetchResponseReplacement(
+            source,
+            pattern,
+            replacement,
+            propsToMatch,
+            verbose,
+            extraArgs.slice(1),
+        );
+    }
+
+    if (replacementSettings === null) {
         return;
     }
-    const shouldLog = pattern === '' && replacement === '';
-    const shouldLogContent = verbose === 'true';
 
-    const nativeRequestClone = Request.prototype.clone;
-    const nativeFetch = fetch;
-
-    let shouldReplace = false;
-    let fetchData;
-
-    const handlerWrapper = (target, thisArg, args) => {
-        fetchData = getFetchData(args, nativeRequestClone);
-
-        if (shouldLog) {
-            // log if no propsToMatch given
-            logMessage(source, `fetch( ${objectToString(fetchData)} )`, true);
-            hit(source);
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        shouldReplace = matchRequestProps(source, propsToMatch, fetchData);
-
-        if (!shouldReplace) {
-            return Reflect.apply(target, thisArg, args);
-        }
-
-        // eslint-disable-next-line prefer-spread
-        return nativeFetch.apply(null, args)
-            .then((response) => {
-                return response.clone().text()
-                    .then((bodyText) => {
-                        const patternRegexp = pattern === '*'
-                            ? /(\n|.)*/
-                            : toRegExp(pattern);
-
-                        const isPatternFound = pattern === '*' || patternRegexp.test(bodyText);
-                        if (!isPatternFound) {
-                            return response;
-                        }
-
-                        if (shouldLogContent) {
-                            logMessage(source, `Original text content: ${bodyText}`);
-                        }
-                        const modifiedTextContent = bodyText.replace(patternRegexp, replacement);
-                        if (shouldLogContent) {
-                            logMessage(source, `Modified text content: ${modifiedTextContent}`);
-                        }
-                        const forgedResponse = forgeResponse(response, modifiedTextContent);
-
-                        hit(source);
-                        return forgedResponse;
-                    })
-                    .catch(() => {
-                        // log if response body can't be converted to a string
-                        const fetchDataStr = objectToString(fetchData);
-                        const message = `Response body can't be converted to text: ${fetchDataStr}`;
-                        logMessage(source, message);
-                        return response;
-                    });
-            })
-            .catch(() => Reflect.apply(target, thisArg, args));
-    };
-
-    const fetchHandler = {
-        apply: handlerWrapper,
-    };
-
-    fetch = new Proxy(fetch, fetchHandler); // eslint-disable-line no-global-assign
+    replaceFetchResponses(source, replacementSettings);
 }
 
 export const trustedReplaceFetchResponseNames = [
@@ -220,6 +227,20 @@ trustedReplaceFetchResponse.injections = [
     objectToString,
     matchRequestProps,
     forgeResponse,
+    getFunctionProxyProperty,
+    getThrownValueMessage,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    parseUboPropsToMatch,
+    matchUboProps,
+    collateUboFetchArguments,
+    getAdgFetchResponseReplacement,
+    getUboFetchResponseReplacement,
+    replaceFetchResponses,
+    // following helpers are needed for helpers above
+    getRegexpTester,
+    getNativeRegexpTest,
     toRegExp,
     isValidStrPattern,
     isEmptyObject,

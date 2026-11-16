@@ -681,8 +681,9 @@ Project-specific rules:
     with `replaceArguments()` of `trusted-replace-argument`, or `getAdgConstantSetting()` and
     `getUboConstantSetting()` with `setConstantBySettings()` of `trusted-set-constant`, or
     `getAdgOutboundTextReplacement()` and `getUboOutboundTextReplacement()` with `replaceOutboundText()` of
-    `trusted-replace-outbound-text`, instead of keeping a separate implementation for uBO
-    rules. Positional AdGuard arguments MUST be parsed as before, so that existing rules
+    `trusted-replace-outbound-text`, or `getAdgFetchResponseReplacement()` and `getUboFetchResponseReplacement()`
+    with `replaceFetchResponses()` of `trusted-replace-fetch-response`, instead of keeping a separate
+    implementation for uBO rules. Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
     Arguments of uBO rules which may contain `'` MUST be unescaped with `unescapeUboArgument()`, which removes

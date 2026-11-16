@@ -407,4 +407,234 @@ if (!isSupported) {
         assert.strictEqual(actualTextContent, JSON_CONTENT, 'Content is intact');
         done();
     });
+    /**
+     * Replaces `fetch` with a stub which resolves with a response of the text, or rejects,
+     * so rules of real sites can be tested without requests, and counts its calls.
+     * It has to be called before the scriptlet runs, as the scriptlet saves `fetch` then.
+     *
+     * @param {string} body text of the response
+     * @param {boolean} [shouldReject] if true, the stub rejects, e.g. as `fetch` does on a network error
+     * @returns {{ calls: number, response: Response|null }} state of the stub
+     */
+    const useFetchStub = (body, shouldReject = false) => {
+        const stub = { calls: 0, response: null };
+        // eslint-disable-next-line no-global-assign
+        fetch = function fetch() {
+            stub.calls += 1;
+            if (shouldReject) {
+                return Promise.reject(new TypeError('Failed to fetch'));
+            }
+            stub.response = new Response(body, { headers: { 'content-type': 'application/json' } });
+            return Promise.resolve(stub.response);
+        };
+        return stub;
+    };
+
+    test.each(
+        'uBO rule: replaces the text of a response of the matched URL',
+        ['ubo-trusted-replace-fetch-response.js', 'ubo-trusted-replace-fetch-response', 'ubo-trusted-rpfr'],
+        async (assert, uboName) => {
+            // www.youtube.com##+js(trusted-rpfr, '"adPlacements"', '"no_ads"', player?)
+            const stub = useFetchStub('{"adPlacements":[{"ad":1}],"videoDetails":{}}');
+            runScriptlet(uboName, ['"adPlacements"', '"no_ads"', 'player?']);
+
+            const response = await fetch('/youtubei/v1/player?prettyPrint=false');
+            assert.strictEqual(await response.text(), '{"no_ads":[{"ad":1}],"videoDetails":{}}', 'Text replaced');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+
+            const other = await fetch('/youtubei/v1/next');
+            assert.strictEqual(other, stub.response, 'Response of another URL is the original one');
+        },
+    );
+
+    test('uBO rule: replacement with escaped quotes is used as it is', async (assert) => {
+        // deezer.com##+js(trusted-rpfr, /<VAST version.+VAST>/, <VAST version=\"4.0\"></VAST>, deezer.getAudiobreak)
+        useFetchStub('<VAST version="3.0"><Ad id="1"></Ad></VAST>');
+        runScriptlet('ubo-trusted-rpfr', [
+            '/<VAST version.+VAST>/',
+            '<VAST version=\\"4.0\\"></VAST>',
+            'deezer.getAudiobreak',
+        ]);
+
+        const response = await fetch('/ajax/gw-light.php?method=deezer.getAudiobreak');
+        assert.strictEqual(await response.text(), '<VAST version=\\"4.0\\"></VAST>', 'Escapes are kept, as in uBO');
+    });
+
+    test('uBO rule: URL matched by a regular expression with flags', async (assert) => {
+        // eslint-disable-next-line max-len
+        // tokopedia.com##+js(trusted-rpfr, '/\{"id":\d{9,11}(?:(?!"isTopads":false).)+?"isTopads":true.+?"__typename":"recommendationItem"\},/g', , /\/graphql\/productRecommendation/i)
+        const body = '[{"id":1234567890,"isTopads":true,"__typename":"recommendationItem"},{"id":2}]';
+        useFetchStub(body);
+        runScriptlet('ubo-trusted-rpfr', [
+            '/\\{"id":\\d{9,11}(?:(?!"isTopads":false).)+?"isTopads":true.+?"__typename":"recommendationItem"\\},/g',
+            '',
+            '/\\/graphql\\/productRecommendation/i',
+        ]);
+
+        const response = await fetch('/GraphQL/productRecommendation');
+        assert.strictEqual(await response.text(), '[{"id":2}]', 'Ad item removed');
+    });
+
+    test('uBO rule: includes option', async (assert) => {
+        // www.youtube.com##+js(trusted-rpfr, '"adPlacements"', '"no_ads"', player?), with `includes`
+        const stub = useFetchStub('{"adPlacements":[]}');
+        runScriptlet('ubo-trusted-rpfr', ['"adPlacements"', '"no_ads"', 'player?', 'includes', 'adSlots']);
+
+        const response = await fetch('/youtubei/v1/player');
+        assert.strictEqual(response, stub.response, 'Response which does not include the text is the original one');
+        assert.strictEqual(window.hit, undefined, 'hit function not fired');
+    });
+
+    test('AdGuard rule: includes option', async (assert) => {
+        // eslint-disable-next-line max-len
+        // nytimes.com#%#//scriptlet('trusted-replace-fetch-response', '"show_ads":true', '"show_ads":false', 'statsig/initialize'),
+        // with `includes`
+        useFetchStub('{"show_ads":true,"user":"anonymous"}');
+        runScriptlet(name, [
+            '"show_ads":true',
+            '"show_ads":false',
+            'statsig/initialize',
+            '',
+            'includes',
+            '"user":"anonymous"',
+        ]);
+
+        let response = await fetch('/statsig/initialize');
+        assert.strictEqual(await response.text(), '{"show_ads":false,"user":"anonymous"}', 'Text replaced');
+
+        useFetchStub('{"show_ads":true,"user":"subscriber"}');
+        runScriptlet(name, [
+            '"show_ads":true',
+            '"show_ads":false',
+            'statsig/initialize',
+            '',
+            'includes',
+            '"user":"anonymous"',
+        ]);
+        response = await fetch('/statsig/initialize');
+        assert.strictEqual(await response.text(), '{"show_ads":true,"user":"subscriber"}', 'Other text not replaced');
+    });
+
+    test('uBO rule: * is matched as the text .*, as in uBO', async (assert) => {
+        const stub = useFetchStub('{"ads":1}');
+        runScriptlet('ubo-trusted-rpfr', ['*', '']);
+
+        const response = await fetch('/api');
+        assert.strictEqual(response, stub.response, 'Response without the text .* is the original one');
+    });
+
+    test('uBO rule: empty pattern does nothing', async (assert) => {
+        const logs = [];
+        console.log = (...args) => logs.push(args.join(' '));
+        const stub = useFetchStub('{"ads":1}');
+        runScriptlet('ubo-trusted-rpfr', ['', '']);
+
+        const response = await fetch('/api');
+        assert.strictEqual(response, stub.response, 'Response is the original one');
+        assert.notOk(logs.some((log) => log.includes('fetch(')), 'Calls are not logged');
+    });
+
+    test('uBO rule: negated URL in propsToMatch', async (assert) => {
+        // rooter.gg##+js(trusted-rpfr, /"remainingWatchDuration":\d+/, "remainingWatchDuration":9999999999, /stream),
+        // with a negated URL
+        const stub = useFetchStub('{"remainingWatchDuration":30}');
+        runScriptlet('ubo-trusted-rpfr', [
+            '/"remainingWatchDuration":\\d+/',
+            '"remainingWatchDuration":9999999999',
+            '!/live/',
+        ]);
+
+        let response = await fetch('/api/stream');
+        assert.strictEqual(await response.text(), '{"remainingWatchDuration":9999999999}', 'Other URL replaced');
+        response = await fetch('/api/live/stream');
+        assert.strictEqual(response, stub.response, 'Response of the negated URL is the original one');
+    });
+
+    test('uBO rule: quotes escaped by the converter are unescaped', async (assert) => {
+        // A pattern with `'`, e.g. `it's`, is converted by AGTree to `it\'s`, which CoreLibs passes as it is
+        useFetchStub('{"title":"it\'s an ad"}');
+        runScriptlet('ubo-trusted-rpfr', ["it\\'s an ad", 'content']);
+
+        const response = await fetch('/api');
+        assert.strictEqual(await response.text(), '{"title":"content"}', 'Text replaced');
+    });
+
+    test.each(
+        'rejected fetch is called once and its rejection is passed to the page',
+        [
+            // eslint-disable-next-line max-len
+            // litv.tv#%#//scriptlet('trusted-replace-fetch-response', '"PlayAds":true', '"PlayAds":false', 'api/get-urls')
+            { ruleName: name, args: ['"PlayAds":true', '"PlayAds":false', 'api/get-urls'] },
+            // www.youtube.com##+js(trusted-rpfr, '"adSlots"', '"no_ads"', player?)
+            { ruleName: 'ubo-trusted-rpfr', args: ['"adSlots"', '"no_ads"', 'player?'] },
+        ],
+        async (assert, { ruleName, args }) => {
+            const stub = useFetchStub('', true);
+            runScriptlet(ruleName, args);
+
+            try {
+                await fetch(ruleName === name ? '/api/get-urls' : '/youtubei/v1/player?');
+                assert.ok(false, 'fetch should be rejected');
+            } catch (e) {
+                assert.strictEqual(e.message, 'Failed to fetch', 'Rejection is passed as it is');
+            }
+            assert.strictEqual(stub.calls, 1, 'fetch is called once');
+        },
+    );
+
+    test.each(
+        'error of matching the request is not thrown, and the call is passed through',
+        [
+            // eslint-disable-next-line max-len
+            // litv.tv#%#//scriptlet('trusted-replace-fetch-response', '"PlayAds":true', '"PlayAds":false', 'api/get-urls')
+            { ruleName: name, args: ['"PlayAds":true', '"PlayAds":false', 'api/get-urls'] },
+            // www.youtube.com##+js(trusted-rpfr, '"adSlots"', '"no_ads"', player?)
+            { ruleName: 'ubo-trusted-rpfr', args: ['"adSlots"', '"no_ads"', 'player?'] },
+        ],
+        async (assert, { ruleName, args }) => {
+            const stub = useFetchStub('{"PlayAds":true,"adSlots":[]}');
+            runScriptlet(ruleName, args);
+            // e.g. options of the page with a getter which throws, which native `fetch()` passes as a rejection
+            const options = {
+                get method() {
+                    throw new Error('page error');
+                },
+            };
+
+            let result;
+            try {
+                result = fetch('/api/get-urls/player?', options);
+            } catch (e) {
+                assert.ok(false, `fetch should not throw: ${e.message}`);
+            }
+            assert.strictEqual(await result, stub.response, 'Original response of the call passed through');
+            assert.strictEqual(stub.calls, 1, 'fetch is called once');
+        },
+    );
+
+    test('AdGuard rule: request whose body has been used is passed through', async (assert) => {
+        // eslint-disable-next-line max-len
+        // litv.tv#%#//scriptlet('trusted-replace-fetch-response', '"PlayAds":true', '"PlayAds":false', 'api/get-urls')
+        const stub = useFetchStub('{"PlayAds":true}');
+        runScriptlet(name, ['"PlayAds":true', '"PlayAds":false', 'api/get-urls']);
+        const request = new Request('/api/get-urls', { method: 'POST', body: 'id=1' });
+        // a request whose body has been read cannot be cloned
+        await request.text();
+
+        let result;
+        try {
+            result = fetch(request);
+        } catch (e) {
+            assert.ok(false, `fetch should not throw: ${e.message}`);
+        }
+        assert.strictEqual(await result, stub.response, 'Original response of the call passed through');
+        assert.strictEqual(stub.calls, 1, 'fetch is called once');
+    });
+
+    test('toString() of fetch returns the original value', (assert) => {
+        const expected = fetch.toString();
+        runScriptlet(name, ['"PlayAds":true', '"PlayAds":false', 'api/get-urls']);
+
+        assert.strictEqual(fetch.toString(), expected, 'toString() is not changed');
+    });
 }
