@@ -1,5 +1,5 @@
 /* eslint-disable no-eval, no-underscore-dangle, no-console */
-import { getLogs, getSyncLogs } from '../helpers';
+import { getLogs, getSyncLogs, useRegexpTestAccessor } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'json-prune';
@@ -1340,4 +1340,36 @@ test('JSON with Array and empty Array as first element, should remove', (assert)
         expectedJson,
         'should remove propsToRemove -- wildcard in propsToRemove for array',
     );
+});
+
+test('RegExp.prototype.test is an accessor defined by another rule before', (assert) => {
+    const restoreRegexpTest = useRegexpTestAccessor();
+    try {
+        // eslint-disable-next-line max-len
+        // [$path=/tv]youtube.com#%#//scriptlet('json-prune', 'playerResponse.adPlacements playerResponse.playerAds playerResponse.adSlots adPlacements playerAds adSlots', '', '/https:\/\/www\.youtube\.com\/s\/player\/.*\/(?:tv-player-ias\.vflset\/tv-player-ias\.js|tv-player-ias-tcl\.vflset\/tv-player-ias-tcl\.js):/')
+        runScriptlet(
+            name,
+            // eslint-disable-next-line max-len
+            'playerResponse.adPlacements playerResponse.playerAds playerResponse.adSlots adPlacements playerAds adSlots',
+            '',
+            // eslint-disable-next-line max-len
+            '/https:\\/\\/www\\.youtube\\.com\\/s\\/player\\/.*\\/(?:tv-player-ias\\.vflset\\/tv-player-ias\\.js|tv-player-ias-tcl\\.vflset\\/tv-player-ias-tcl\\.js):/',
+        );
+        assert.deepEqual(
+            JSON.parse('{"adPlacements":[1],"videoDetails":{}}'),
+            { adPlacements: [1], videoDetails: {} },
+            'Not pruned, as the stack trace of the test does not match',
+        );
+
+        // The same rule with `stack` which matches the test page
+        runScriptlet(name, 'adPlacements', '', 'scriptlets-json-prune');
+        assert.deepEqual(
+            JSON.parse('{"adPlacements":[1],"videoDetails":{}}'),
+            { videoDetails: {} },
+            'Pruned, as the stack trace matches',
+        );
+    } finally {
+        restoreRegexpTest();
+        JSON.parse = nativeParse;
+    }
 });

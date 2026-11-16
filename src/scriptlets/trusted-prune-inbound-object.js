@@ -10,6 +10,7 @@ import {
     getPrunePath,
     toRegExp,
     getNativeRegexpTest,
+    getRegexpTester,
     shouldAbortInlineOrInjectedScript,
     isEmptyObject,
     backupRegExpValues,
@@ -273,6 +274,7 @@ trustedPruneInboundObject.injections = [
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
+    getRegexpTester,
     shouldAbortInlineOrInjectedScript,
     isEmptyObject,
     backupRegExpValues,

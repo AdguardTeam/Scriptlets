@@ -673,3 +673,32 @@ test('simple, matches stack with regexp flags', (assert) => {
     );
     assert.strictEqual(window.hit, 'FIRED', 'hit fired');
 });
+
+test('RegExp.prototype.test is an accessor defined by another rule before', (assert) => {
+    const entriesDescriptor = Object.getOwnPropertyDescriptor(Object, 'entries');
+    window.Drupal = { CTools: { Modal: { show() {} } } };
+    // `useRegexpTestAccessor()` of the helpers is not imported, as it would be bundled above the tests,
+    // which would shift the line number matched by 'two scripts abort only second'
+    const testDescriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, 'test');
+    // cricket365.com,football365.com,…#%#//scriptlet('abort-current-inline-script', 'RegExp.prototype.test', '_0x')
+    runScriptlet('abort-current-inline-script', ['RegExp.prototype.test', '_0x']);
+    try {
+        // eslint-disable-next-line max-len
+        // 4umods.com,enmods.com,scriptsrbx.com,3dzip.info#%#//scriptlet('abort-on-stack-trace', 'Object.entries', 'wp-content')
+        runScriptlet(name, ['Object.entries', 'wp-content']);
+        // timeshighereducation.com##+js(aost, Drupal.CTools.Modal.show, /(^(?!.*(injectedScript|makeProxy).*))/)
+        runScriptlet('ubo-aost', ['Drupal.CTools.Modal.show', '/(^(?!.*(injectedScript|makeProxy).*))/']);
+
+        assert.deepEqual(Object.entries({ a: 1 }), [['a', 1]], 'Property is read, as the stack trace does not match');
+        assert.throws(
+            () => window.Drupal.CTools.Modal.show,
+            ReferenceError,
+            'Property is aborted, as the stack trace matches',
+        );
+    } finally {
+        // eslint-disable-next-line no-extend-native
+        Object.defineProperty(RegExp.prototype, 'test', testDescriptor);
+        Object.defineProperty(Object, 'entries', entriesDescriptor);
+        delete window.Drupal;
+    }
+});

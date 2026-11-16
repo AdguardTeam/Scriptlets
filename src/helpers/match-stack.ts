@@ -1,6 +1,6 @@
 import { toRegExp } from './string-utils';
 import { shouldAbortInlineOrInjectedScript } from './script-source-utils';
-import { getNativeRegexpTest, backupRegExpValues, restoreRegExpValues } from './regexp-utils';
+import { getRegexpTester, backupRegExpValues, restoreRegExpValues } from './regexp-utils';
 
 /**
  * Adds the error message line to the stack trace if it has none, i.e. in Firefox and Safari,
@@ -38,6 +38,12 @@ export const addStackTraceMessageLine = (stackTrace: string): string => {
  * Checks if the stackTrace contains stackRegexp
  * https://github.com/AdguardTeam/Scriptlets/issues/82
  *
+ * It throws if `stackMatch` is an invalid regular expression. The stack trace is tested by `getRegexpTester()`,
+ * so it is matched also if `RegExp.prototype.test` is an accessor, e.g. of another rule, and it is not matched
+ * if the current method of such accessor throws, so the error does not reach the page.
+ *
+ * Requires `getRegexpTester` and `getNativeRegexpTest` in the injections of the scriptlet.
+ *
  * @param stackMatch - input stack value to match
  * @param stackTrace - script error stack trace
  * @returns if the stackTrace contains stackRegexp
@@ -66,5 +72,10 @@ export const matchStackTrace = (stackMatch: string | undefined, stackTrace: stri
     if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
         restoreRegExpValues(regExpValues);
     }
-    return getNativeRegexpTest().call(stackRegexp, refinedStackTrace);
+    try {
+        return getRegexpTester()(stackRegexp, refinedStackTrace);
+    } catch {
+        // `test()` is the current method of an accessor which has thrown, so the stack trace is not matched
+        return false;
+    }
 };

@@ -632,3 +632,29 @@ test('uBO rule: condition while RegExp.prototype.test is an accessor defined by 
         restoreRegexpTest();
     }
 });
+
+test('stack while RegExp.prototype.test is an accessor defined by another rule before', (assert) => {
+    const restoreRegexpTest = useRegexpTestAccessor();
+    try {
+        // eslint-disable-next-line max-len
+        // tvgry.pl,gry-online.pl#%#//scriptlet('trusted-replace-outbound-text', 'JSON.stringify', '"event":"pes_viewabilitychange"', '"event":""'),
+        // with `stack`
+        runScriptlet(name, [
+            'JSON.stringify',
+            '"event":"pes_viewabilitychange"',
+            '"event":""',
+            '',
+            'viewabilityTracker',
+        ]);
+        const viewabilityTracker = () => JSON.stringify({ event: 'pes_viewabilitychange' });
+
+        assert.strictEqual(
+            JSON.stringify({ event: 'pes_viewabilitychange' }),
+            '{"event":"pes_viewabilitychange"}',
+            'Not replaced, as the stack trace does not match',
+        );
+        assert.strictEqual(viewabilityTracker(), '{"event":""}', 'Replaced, as the stack trace matches');
+    } finally {
+        restoreRegexpTest();
+    }
+});

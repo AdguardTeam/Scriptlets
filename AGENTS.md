@@ -704,10 +704,8 @@ Project-specific rules:
     if it cannot be saved, e.g. if another rule has made it an accessor. Use the
     current method at the call then, as `getRegexpTester()` does, and do not read it
     through the accessor when the rule runs. An error of the current method at the
-    call MUST NOT reach the page either, e.g. the condition is not matched then.
-    `matchStackTrace()` does not follow it yet, as it requires a data property of
-    `RegExp.prototype.test` on each call, and SHOULD be moved to `getRegexpTester()`
-    when it is changed.
+    call MUST NOT reach the page either, e.g. the condition is not matched then,
+    as `matchStackTrace()` does not match the stack trace then.
 
     **Rationale**: Other rules on the same page may replace such a method before,
     e.g. `abort-current-inline-script` with `RegExp.prototype.test` defines an

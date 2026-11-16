@@ -1,4 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import {
+    afterEach,
+    describe,
+    test,
+    expect,
+} from 'vitest';
 
 import { matchStackTrace, addStackTraceMessageLine, isValidStrPattern } from '../../src/helpers';
 
@@ -89,5 +94,58 @@ describe('isValidStrPattern() for stack', () => {
         } else {
             expect(match).toThrow();
         }
+    });
+});
+
+describe('matchStackTrace() while RegExp.prototype.test is an accessor, e.g. of another rule', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(RegExp.prototype, 'test');
+    const STACK_TRACE = [
+        'Error',
+        '    at Object.objectWrapper [as apply] (https://example.org/scriptlet.js:10:20)',
+        '    at loadAdsConfig (https://example.org/app.js:5:10)',
+    ].join('\n');
+
+    /**
+     * Makes `RegExp.prototype.test` an accessor, whose getter returns the method,
+     * e.g. as `abort-current-inline-script` does.
+     *
+     * @param {Function} method method which the getter returns
+     */
+    const defineAccessor = (method) => {
+        // eslint-disable-next-line no-extend-native
+        Object.defineProperty(RegExp.prototype, 'test', {
+            configurable: true,
+            get: () => method,
+        });
+    };
+
+    afterEach(() => {
+        // eslint-disable-next-line no-extend-native
+        Object.defineProperty(RegExp.prototype, 'test', descriptor);
+    });
+
+    test('stack trace is matched by the current method', () => {
+        defineAccessor(descriptor.value);
+
+        expect(matchStackTrace('loadAdsConfig', STACK_TRACE)).toBe(true);
+        expect(matchStackTrace('not_present', STACK_TRACE)).toBe(false);
+    });
+
+    test('stack trace is not matched if the current method throws, and the error is not thrown', () => {
+        // Only for the pattern of the rule, as other code, e.g. of Vitest, uses the method as well
+        defineAccessor(function test(text) {
+            if (this.source === 'loadAdsConfig') {
+                throw new Error('page error');
+            }
+            return descriptor.value.call(this, text);
+        });
+
+        expect(matchStackTrace('loadAdsConfig', STACK_TRACE)).toBe(false);
+    });
+
+    test('invalid stack still throws, so a rule with it is not applied', () => {
+        defineAccessor(descriptor.value);
+
+        expect(() => matchStackTrace('/[/', STACK_TRACE)).toThrow(SyntaxError);
     });
 });

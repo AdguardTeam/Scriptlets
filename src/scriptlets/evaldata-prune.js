@@ -8,6 +8,7 @@ import {
     jsonPruner,
     getPrunePath,
     getNativeRegexpTest,
+    getRegexpTester,
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
@@ -145,6 +146,7 @@ evalDataPrune.injections = [
     getPrunePath,
     // following helpers are needed for helpers above
     getNativeRegexpTest,
+    getRegexpTester,
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,

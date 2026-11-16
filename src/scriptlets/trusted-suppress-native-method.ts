@@ -12,6 +12,7 @@ import {
     getThrownValueMessage,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
+    getRegexpTester,
     toRegExp,
     nativeIsNaN,
     randomId,
@@ -246,6 +247,7 @@ trustedSuppressNativeMethod.injections = [
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
+    getRegexpTester,
     toRegExp,
     nativeIsNaN,
     randomId,

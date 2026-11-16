@@ -15,6 +15,7 @@ import {
     nativeIsNaN,
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
+    getRegexpTester,
     setPropertyAccess,
     toRegExp,
     backupRegExpValues,
@@ -383,6 +384,7 @@ setConstant.injections = [
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,
     getNativeRegexpTest,
+    getRegexpTester,
     setPropertyAccess,
     toRegExp,
     backupRegExpValues,

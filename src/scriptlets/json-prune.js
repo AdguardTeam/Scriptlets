@@ -11,6 +11,7 @@ import {
     getPrunePath,
     toRegExp,
     getNativeRegexpTest,
+    getRegexpTester,
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,
@@ -520,6 +521,7 @@ jsonPrune.injections = [
     // following helpers are needed for helpers above
     toRegExp,
     getNativeRegexpTest,
+    getRegexpTester,
     shouldAbortInlineOrInjectedScript,
     backupRegExpValues,
     restoreRegExpValues,

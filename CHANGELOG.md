@@ -111,6 +111,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Scriptlets with `stack`, e.g. `abort-on-stack-trace`, `json-prune` or `set-constant`, throwing
+  `RegExp.prototype.test is not a function` to the page, or aborting the property by it in `abort-on-stack-trace`,
+  if another rule has made `RegExp.prototype.test` an accessor, e.g.
+  `example.org#%#//scriptlet('abort-current-inline-script', 'RegExp.prototype.test', '_0x')`.
+  The stack trace is matched by the current method then, and it is not matched if the method throws.
 - `trusted-replace-fetch-response` calling `fetch` again, i.e. sending the request again, if it is rejected,
   e.g. by a network error, so the page got the result of the second request. The rejection is passed to the page now.
   An error of matching the request, e.g. of a `Request` whose body has been used, is not thrown by `fetch` anymore,
