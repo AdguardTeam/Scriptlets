@@ -1,3 +1,4 @@
+import { JSDOM } from 'jsdom';
 import { vi } from 'vitest';
 
 /**
@@ -17,4 +18,19 @@ export const useViewlessMouseEvents = () => {
     if (typeof PointerEvent === 'function') {
         vi.stubGlobal('PointerEvent', withoutView(PointerEvent));
     }
+};
+
+/**
+ * Node.js defines its own `localStorage`, which is `undefined` without the `--localstorage-file` option, e.g. in
+ * Node.js 25 and newer, and it hides the storages of the jsdom window of Vitest, so `localStorage` and
+ * `sessionStorage` are replaced by the ones of a separate jsdom page, which implement `Storage` as browsers do.
+ * Restore them with `vi.unstubAllGlobals()`.
+ *
+ * @returns Window of the jsdom page, e.g. for its `Storage`.
+ */
+export const useJsdomStorages = (): JSDOM['window'] => {
+    const { window } = new JSDOM('', { url: 'https://example.org/' });
+    vi.stubGlobal('localStorage', window.localStorage);
+    vi.stubGlobal('sessionStorage', window.sessionStorage);
+    return window;
 };

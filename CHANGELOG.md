@@ -16,9 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - uBO aliases of trusted scriptlets whose arguments are the same as in uBO [#586], so that uBO rules with them,
   e.g. `example.org##+js(trusted-set-attr, div, data-ad, none)`, are no longer rejected: `ubo-trusted-click-element`,
-  `ubo-trusted-prevent-xhr`, `ubo-trusted-set-attr`,
-  `ubo-trusted-set-cookie-reload`, `ubo-trusted-set-local-storage-item`
-  and `ubo-trusted-set-session-storage-item`, each also with `.js`. As these aliases do not start with `trusted-`,
+  `ubo-trusted-prevent-xhr`, `ubo-trusted-set-attr`
+  and `ubo-trusted-set-cookie-reload`, each also with `.js`. As these aliases do not start with `trusted-`,
   filter compilers have to exclude them separately from filters which may not use trusted scriptlets, e.g.
   FiltersCompiler by the lines `#%#//scriptlet('ubo-trusted-`, `#%#//scriptlet('ubo-rpnt`
   and `#%#//scriptlet('ubo-replace-node-text`, and the same with double quotes, in `exclusions-high.txt`,
@@ -100,6 +99,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   are sent as they are. Unlike uBO, a rule with an invalid regular expression is not applied, and the matching
   of a request object which is opened again is reset.
 - `includes` option of `trusted-replace-xhr-response`, as in `trusted-replace-fetch-response`.
+- uBO aliases of `trusted-set-local-storage-item` and `trusted-set-session-storage-item` [#586],
+  `ubo-trusted-set-local-storage-item`, `ubo-trusted-set-session-storage-item` and the same with `.js`,
+  with uBO values and options: an omitted value is empty, `emptyArr` and `emptyObj` set `[]` and `{}`,
+  `$remove$` removes the items whose keys match the key, as the whole key or as a regular expression,
+  and the named option `reload, value` reloads the page after this number of milliseconds if the storage has been
+  changed, e.g. `example.org##+js(trusted-set-local-storage-item, consent, emptyObj, reload, 1)`.
+  As in uBO, the item is set only if it has another value, and adjacent keywords are replaced in the order of uBO.
+  Unlike uBO, a rule with an invalid regular expression of the key is not applied, a regular expression with `g` flag
+  matches all the keys, and the page is not reloaded again for a value with keywords which the rule has set before,
+  as uBO would reload the page each time. AdGuard rules set their values as before.
 
 ### Changed
 

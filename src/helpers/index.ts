@@ -21,6 +21,7 @@ export * from './response-utils';
 export * from './request-utils';
 export * from './selector-utils';
 export * from './storage-utils';
+export * from './trusted-storage-utils';
 export * from './string-utils';
 export * from './ubo-utils';
 export * from './argument-replacement-utils';

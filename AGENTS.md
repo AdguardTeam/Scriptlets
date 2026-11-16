@@ -689,8 +689,10 @@ Project-specific rules:
     with `replaceFetchResponses()` of `trusted-replace-fetch-response`, or `getAdgXhrResponseReplacement()` and
     `getUboXhrResponseReplacement()` with `replaceXhrResponses()` of `trusted-replace-xhr-response`, which share
     the parsing and the replacement of the text with the fetch ones, i.e. `getAdgResponseTextReplacement()`,
-    `getUboResponseTextReplacement()` and `replaceResponseText()`, instead of keeping a separate
-    implementation for uBO rules. Positional AdGuard arguments MUST be parsed as before, so that existing rules
+    `getUboResponseTextReplacement()` and `replaceResponseText()`, or `getAdgStorageItemSettings()` and
+    `getUboStorageItemSettings()` with `setStorageItemBySettings()` of `trusted-set-local-storage-item` and
+    `trusted-set-session-storage-item`, instead of keeping a separate implementation for uBO rules.
+    Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
     Arguments of uBO rules which may contain `'` MUST be unescaped with `unescapeUboArgument()`, which removes

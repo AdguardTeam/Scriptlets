@@ -249,4 +249,35 @@ if (isSafariBrowser()) {
 
         clearStorageItem(iName);
     });
+    test.each(
+        'uBO rule: sets the item',
+        ['ubo-trusted-set-session-storage-item.js', 'ubo-trusted-set-session-storage-item'],
+        (assert, uboName) => {
+            // start-nrw.de##+js(trusted-set-session-storage-item, _pv_CookieOptInt, closed)
+            runScriptlet(uboName, ['_pv_CookieOptInt', 'closed']);
+
+            assert.strictEqual(window.sessionStorage.getItem('_pv_CookieOptInt'), 'closed', 'Item set');
+            assert.strictEqual(window.localStorage.getItem('_pv_CookieOptInt'), null, 'Local storage not changed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            clearStorageItem('_pv_CookieOptInt');
+        },
+    );
+
+    test('uBO rule: quotes escaped by the converter are unescaped', (assert) => {
+        // A value with `'`, e.g. `it's`, is converted by AGTree to `it\'s`, which CoreLibs passes as it is
+        runScriptlet('ubo-trusted-set-session-storage-item', ['__test-quote', "it\\'s"]);
+
+        assert.strictEqual(window.sessionStorage.getItem('__test-quote'), "it's", 'Escape removed');
+        clearStorageItem('__test-quote');
+    });
+
+    test('uBO rule: $remove$ removes the items whose keys match', (assert) => {
+        window.sessionStorage.setItem('__test-banner', '1');
+        window.sessionStorage.setItem('__test-banner2', '1');
+        // makemytrip.com##+js(trusted-set-session-storage-item, opd, '"1"'), with `$remove$`
+        runScriptlet('ubo-trusted-set-session-storage-item', ['/^__test-banner/', '$remove$']);
+
+        assert.strictEqual(window.sessionStorage.getItem('__test-banner'), null, 'Item removed');
+        assert.strictEqual(window.sessionStorage.getItem('__test-banner2'), null, 'Item removed');
+    });
 }

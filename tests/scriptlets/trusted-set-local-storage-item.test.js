@@ -249,4 +249,115 @@ if (isSafariBrowser()) {
 
         clearStorageItem(iName);
     });
+    test.each(
+        'uBO rule: sets the item with a keyword',
+        ['ubo-trusted-set-local-storage-item.js', 'ubo-trusted-set-local-storage-item'],
+        (assert, uboName) => {
+            // auf1.tv##+js(trusted-set-local-storage-item, trackingAllowedOrDeniedAt, $currentISODate$)
+            runScriptlet(uboName, ['trackingAllowedOrDeniedAt', '$currentISODate$']);
+
+            const value = window.localStorage.getItem('trackingAllowedOrDeniedAt');
+            assert.ok(Date.now() - new Date(value).getTime() < 1000, 'Keyword replaced with the current ISO date');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            clearStorageItem('trackingAllowedOrDeniedAt');
+        },
+    );
+
+    test('uBO rule: value which the converter has split at commas is set as uBO sets it', (assert) => {
+        // eslint-disable-next-line max-len
+        // th.gl##+js(trusted-set-local-storage-item, account-storage, {"state":{"_hasHydrated":true,"userId":null,"decryptedUserId":null,"email":null,"perks":{"adRemoval":true,"comments":false,"premiumFeatures":true,"previewReleaseAccess":true},"showUserDialog":false},"version":2})
+        // The value has commas which are not escaped, so uBO, and AGTree as well, split it into 10 arguments.
+        // uBO itself sets only the first part, which is not valid JSON, so the rule does not work in uBO either,
+        // and it should have its value quoted, e.g. `'{"state":…}'`
+        runScriptlet('ubo-trusted-set-local-storage-item', [
+            'account-storage',
+            '{"state":{"_hasHydrated":true',
+            '"userId":null',
+            '"decryptedUserId":null',
+            '"email":null',
+            '"perks":{"adRemoval":true',
+            '"comments":false',
+            '"premiumFeatures":true',
+            '"previewReleaseAccess":true}',
+            '"showUserDialog":false}',
+            '"version":2}',
+        ]);
+
+        assert.strictEqual(
+            window.localStorage.getItem('account-storage'),
+            '{"state":{"_hasHydrated":true',
+            'Value up to the first comma, as in uBO',
+        );
+        clearStorageItem('account-storage');
+    });
+
+    test('uBO rule: quoted value with commas is set as a whole', (assert) => {
+        // eslint-disable-next-line max-len
+        // th.gl##+js(trusted-set-local-storage-item, account-storage, '{"state":{"_hasHydrated":true,"userId":null,"decryptedUserId":null,"email":null,"perks":{"adRemoval":true,"comments":false,"premiumFeatures":true,"previewReleaseAccess":true},"showUserDialog":false},"version":2}'),
+        // i.e. the rule above with its value quoted, which AGTree converts to a single argument
+        const value = '{"state":{"_hasHydrated":true,"userId":null,"decryptedUserId":null,"email":null,'
+            + '"perks":{"adRemoval":true,"comments":false,"premiumFeatures":true,"previewReleaseAccess":true},'
+            + '"showUserDialog":false},"version":2}';
+        runScriptlet('ubo-trusted-set-local-storage-item', ['account-storage', value]);
+
+        assert.strictEqual(window.localStorage.getItem('account-storage'), value, 'Whole value set');
+        clearStorageItem('account-storage');
+    });
+
+    test('uBO rule: quoted value with commas and a keyword', (assert) => {
+        // eslint-disable-next-line max-len
+        // ~logistics.vr.fi,vr.fi##+js(trusted-set-local-storage-item, cookieConsent, '{"consented":true,"consentId":"1","timestamp":"$now$","levels":{"level1":true,"level2":false,"level3":false,"level4":false}}')
+        runScriptlet('ubo-trusted-set-local-storage-item', [
+            'cookieConsent',
+            '{"consented":true,"consentId":"1","timestamp":"$now$",'
+                + '"levels":{"level1":true,"level2":false,"level3":false,"level4":false}}',
+        ]);
+
+        const consent = JSON.parse(window.localStorage.getItem('cookieConsent'));
+        assert.ok(Date.now() - Number(consent.timestamp) < 1000, 'Keyword replaced with the current time');
+        assert.deepEqual(
+            consent.levels,
+            {
+                level1: true,
+                level2: false,
+                level3: false,
+                level4: false,
+            },
+            'Rest of the value set',
+        );
+        clearStorageItem('cookieConsent');
+    });
+
+    test('uBO rule: special values of uBO', (assert) => {
+        runScriptlet('ubo-trusted-set-local-storage-item', ['__test-emptyObj', 'emptyObj']);
+        runScriptlet('ubo-trusted-set-local-storage-item', ['__test-emptyArr', 'emptyArr']);
+        runScriptlet('ubo-trusted-set-local-storage-item', ['__test-omitted']);
+
+        assert.strictEqual(window.localStorage.getItem('__test-emptyObj'), '{}', 'emptyObj is an empty object');
+        assert.strictEqual(window.localStorage.getItem('__test-emptyArr'), '[]', 'emptyArr is an empty array');
+        assert.strictEqual(window.localStorage.getItem('__test-omitted'), '', 'Omitted value is empty');
+        ['__test-emptyObj', '__test-emptyArr', '__test-omitted'].forEach(clearStorageItem);
+    });
+
+    test('uBO rule: $remove$ removes the items whose keys match', (assert) => {
+        ['__test-ads', '__test-ads2', '__test-ads_last', '__test-other'].forEach((key) => {
+            window.localStorage.setItem(key, '1');
+        });
+
+        runScriptlet('ubo-trusted-set-local-storage-item', ['__test-ads', '$remove$']);
+        assert.strictEqual(window.localStorage.getItem('__test-ads'), null, 'Item of the key removed');
+        assert.strictEqual(window.localStorage.getItem('__test-ads2'), '1', 'Item of a longer key kept');
+
+        runScriptlet('ubo-trusted-set-local-storage-item', ['/^__test-ads/', '$remove$']);
+        assert.strictEqual(window.localStorage.getItem('__test-ads2'), null, 'Item matched by the regexp removed');
+        assert.strictEqual(window.localStorage.getItem('__test-ads_last'), null, 'Item matched by the regexp removed');
+        assert.strictEqual(window.localStorage.getItem('__test-other'), '1', 'Other item kept');
+        clearStorageItem('__test-other');
+    });
+
+    test('AdGuard rule: values of uBO are set as they are, as before', (assert) => {
+        runScriptlet(name, ['__test-emptyObj', 'emptyObj']);
+        assert.strictEqual(window.localStorage.getItem('__test-emptyObj'), 'emptyObj', 'Value set as it is');
+        clearStorageItem('__test-emptyObj');
+    });
 }

@@ -1,9 +1,14 @@
 import {
     hit,
     logMessage,
-    nativeIsNaN,
-    setStorageItem,
     parseKeywordValue,
+    getThrownValueMessage,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    getAdgStorageItemSettings,
+    getUboStorageItemSettings,
+    setStorageItemBySettings,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -31,6 +36,26 @@ import {
  *
  * > Keywords listed above can be used as a part of the value as well,
  * > and more than one keyword can be used in it, e.g `'{"count":1,"firstTime":$now$}'`.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments, e.g.
+ * `example.org##+js(trusted-set-local-storage-item, consent, emptyObj, reload, 1)`:
+ *
+ * ```text
+ * example.org##+js(trusted-set-local-storage-item, key[, value[, ...options]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows, as in uBO:
+ *
+ * - `value` — empty if it is omitted; `emptyArr` and `emptyObj` set `[]` and `{}`; `$remove$` removes the items
+ *   whose keys match `key`, which is matched as the whole key, or as a regular expression, e.g. `/^ads_/`
+ * - options are pairs of a name and a value which follow `value`:
+ *     - `reload, value` — reloads the page after this number of milliseconds if the storage has been changed;
+ *       for a value with keywords only if the item has not existed before, unlike uBO,
+ *       which would reload the page each time
+ * - the item is set only if it has another value
+ * - a rule with an invalid regular expression of `key` is not applied
  *
  * ### Examples
  *
@@ -74,22 +99,22 @@ import {
  */
 /* eslint-enable max-len */
 
-export function trustedSetLocalStorageItem(source, key, value) {
-    if (typeof key === 'undefined') {
-        logMessage(source, 'Item key should be specified');
+export function trustedSetLocalStorageItem(source, key, value, ...extraArgs) {
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments, i.e. named options
+    const settings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+        ? getUboStorageItemSettings(
+            source,
+            unescapeUboArgument(key),
+            unescapeUboArgument(value),
+            extraArgs.map(unescapeUboArgument),
+        )
+        : getAdgStorageItemSettings(source, key, value);
+
+    if (settings === null) {
         return;
     }
 
-    if (typeof value === 'undefined') {
-        logMessage(source, 'Item value should be specified');
-        return;
-    }
-
-    const parsedValue = parseKeywordValue(value);
-
-    const { localStorage } = window;
-    setStorageItem(source, localStorage, key, parsedValue);
-    hit(source);
+    setStorageItemBySettings(source, window.localStorage, settings);
 }
 
 export const trustedSetLocalStorageItemNames = [
@@ -106,7 +131,12 @@ trustedSetLocalStorageItem.primaryName = trustedSetLocalStorageItemNames[0];
 trustedSetLocalStorageItem.injections = [
     hit,
     logMessage,
-    nativeIsNaN,
-    setStorageItem,
     parseKeywordValue,
+    getThrownValueMessage,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    getAdgStorageItemSettings,
+    getUboStorageItemSettings,
+    setStorageItemBySettings,
 ];
