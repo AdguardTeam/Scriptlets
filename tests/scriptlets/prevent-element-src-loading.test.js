@@ -112,7 +112,11 @@ const onErrorTestTag = (assert, url, testPassed, shouldLoad) => {
         }
         done();
     };
-    const html = `<script src="${url}" onload="scriptLoaded()" onerror="scriptBlocked()"><\\/script>`;
+    // The closing tag is split, as the test code is inlined in a script of the test page, which it would close,
+    // while an escaped one, e.g. `<\\/script>`, is not a closing tag, so the script would not be closed,
+    // and browsers which follow the specification do not run it then, e.g. Chrome 157
+    const scriptEndTag = '</' + 'script>'; // eslint-disable-line no-useless-concat
+    const html = `<script src="${url}" onload="scriptLoaded()" onerror="scriptBlocked()">${scriptEndTag}`;
     const scriptEl = document.createRange().createContextualFragment(html);
     document.body.appendChild(scriptEl);
 };

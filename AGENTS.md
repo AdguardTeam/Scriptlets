@@ -746,6 +746,16 @@ Project-specific rules:
   call `runScriptlet()` work only in QUnit tests, as it uses the scriptlets
   bundle of the test page.
 
+- HTML which QUnit tests create from a string, e.g. by `createContextualFragment()`,
+  MUST NOT contain `</script>` as it is, as the test code is inlined in a script of
+  the test page, which it would close, but MUST NOT replace it by an escaped tag
+  either, e.g. `<\/script>` in the string, which is not a closing tag. The closing
+  tag SHOULD be split in the code, e.g. `'</' + 'script>'`.
+
+  **Rationale**: A script which is not closed is not run by browsers which follow the
+  HTML specification, e.g. Chrome 157, while older ones run it, e.g. Chrome 143, so
+  such a test passes in one browser and waits forever in another.
+
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.
 
