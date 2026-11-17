@@ -135,9 +135,28 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   as `responseType`, throws an error, as in browsers. AdGuard rules prevent requests as before.
 - `ubo-prevent-xhr` and `ubo-prevent-xhr.js` aliases of `prevent-xhr`, for uBO rules with `prevent-xhr.js`,
   the name of `no-xhr-if.js` in uBO, e.g. `example.org##+js(prevent-xhr, ads_)`, which were rejected before.
+- uBO aliases of `trusted-suppress-native-method` [#586], `ubo-trusted-suppress-native-method`
+  and `ubo-trusted-suppress-native-method.js`, with uBO arguments,
+  e.g. `example.org##+js(trusted-suppress-native-method, eval, '"adsBlocked"')`: matchers of `signature`
+  are separated by `|` with optional whitespaces around it, `"text"` is contained in the argument converted
+  to a string, or matches it if it is a regular expression, e.g. `"/ads?/i"`, `/regexp/` without flags matches
+  the argument converted to a string, `true`, `false`, `null` and `undefined` are exact values, and any other
+  matcher, e.g. a text without quotes or an object, matches any argument. An empty or omitted `signature` only
+  logs the calls, `how` prevents the call unless it is `abort`, or `debug`, which pauses in the debugger and calls
+  the method, and `stack` may be negated by `!`. As in AdGuard rules, the stack trace is matched by the same
+  function, and the calls of a storage method are processed only on the storage of the rule. Unlike uBO, a rule
+  with an invalid regular expression of `stack` is not applied, instead of throwing an error.
+- `debug` value of `how` of `trusted-suppress-native-method` in AdGuard syntax, as in uBO, which pauses
+  in the debugger, if the developer tools are open, and calls the method, instead of preventing the call,
+  e.g. `example.org#%#//scriptlet('trusted-suppress-native-method', 'eval', '"ads"', 'debug')`.
+- `trusted-suppress-native-method` suppresses calls of a method which is a constructor by `new` too,
+  e.g. `new fn.constructor('debugger')` for `Function.prototype.constructor`, which bypassed it before.
+  A matched `new` throws an error also with `prevent`, as in uBO.
 
 ### Changed
 
+- `trusted-suppress-native-method` with an invalid regular expression of `stack` is not applied, which is logged
+  once, instead of on each call of the method, which is not suppressed either way.
 - `trusted-replace-node-text` writes the text of a node and calls `hit()` only if the text has changed,
   and logs an error of processing a node once, while other nodes are still processed. Its Trusted Types policy
   is created once, only when the text of a script is replaced, and if the page disallows it,

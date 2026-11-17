@@ -23,12 +23,19 @@ const natives = {
     'Node.prototype.appendChild': Node.prototype.appendChild,
     'Document.prototype.querySelectorAll': Document.prototype.querySelectorAll,
     'Document.prototype.querySelector': Document.prototype.querySelector,
+    'Node.prototype.removeChild': Node.prototype.removeChild,
+    'Function.prototype.constructor': Function.prototype.constructor,
+    // eslint-disable-next-line no-eval
+    eval: window.eval,
 };
 
 const restoreNativeMethod = (path) => {
     const pathChunks = path.split('.');
 
     switch (pathChunks.length) {
+        case 1:
+            window[pathChunks[0]] = natives[path];
+            break;
         case 2:
             window[pathChunks[0]][pathChunks[1]] = natives[path];
             break;
@@ -433,6 +440,43 @@ test('toString() of the intercepted method returns the original value', (assert)
     assert.strictEqual(window.testMatching.toString(), testMatching.toString(), 'Source of the function of the page');
 });
 
+test('debug calls the method', (assert) => {
+    runScriptlet(name, ['testMatching', '"test"', 'debug']);
+
+    assert.ok(window.testMatching('test'), 'Matching call is not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+});
+
+test('Constructor called by new is aborted too', (assert) => {
+    runScriptlet(name, ['Function.prototype.constructor', '"debugger"', 'abort']);
+    const fn = function testFunction() {};
+
+    assert.throws(() => fn.constructor('debugger'), ReferenceError, 'Matching call is aborted');
+    assert.throws(() => new fn.constructor('debugger'), ReferenceError, 'Matching new is aborted');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+    assert.strictEqual(fn.constructor('return 1')(), 1, 'Other call is not aborted');
+    assert.strictEqual(new fn.constructor('return 2')(), 2, 'Other new is not aborted');
+});
+
+test('Constructor called by new throws also with prevent', (assert) => {
+    runScriptlet(name, ['Function.prototype.constructor', '"debugger"', 'prevent']);
+    const fn = function testFunction() {};
+
+    assert.strictEqual(fn.constructor('debugger'), undefined, 'Matching call is prevented');
+    // a constructor has to return an object
+    assert.throws(() => new fn.constructor('debugger'), TypeError, 'Matching new throws');
+    assert.strictEqual(new fn.constructor('return 2')(), 2, 'Other new is not prevented');
+});
+
+test('Constructor called by new with matching stack only', (assert) => {
+    runScriptlet(name, ['Function.prototype.constructor', ' ', 'abort', 'testConstructorCaller']);
+    const fn = function testFunction() {};
+    const testConstructorCaller = () => new fn.constructor('return 1');
+
+    assert.throws(testConstructorCaller, ReferenceError, 'New from the matching function is aborted');
+    assert.strictEqual(new fn.constructor('return 2')(), 2, 'Other new is not aborted');
+});
+
 test('Error during matching does not disable the rule', (assert) => {
     runScriptlet(name, ['testMatching', '{"key":"value"}', 'prevent']);
     const throwingArgument = {
@@ -464,4 +508,112 @@ test('Error replaced by the page which throws a primitive - match stack', (asser
     assert.strictEqual(window.hit, undefined, 'hit should not fire');
     assert.strictEqual(testStackFunction(), undefined, 'Next matching call is prevented');
     assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});
+
+module(`${name} with uBO arguments`, { beforeEach, afterEach });
+
+const uboName = 'ubo-trusted-suppress-native-method';
+
+test('omitted how prevents the call', (assert) => {
+    // eslint-disable-next-line max-len
+    // allcelebspics.com,alttyab.net,an1me.*,androjungle.com,…##+js(trusted-suppress-native-method, eval, '"adsBlocked"')
+    runScriptlet(uboName, ['eval', '"adsBlocked"']);
+
+    // eslint-disable-next-line no-eval
+    assert.strictEqual(window.eval('window.adsBlocked = true'), undefined, 'Matching call is prevented');
+    assert.strictEqual(window.adsBlocked, undefined, 'Code is not evaluated');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+    // eslint-disable-next-line no-eval
+    assert.strictEqual(window.eval('1 + 1'), 2, 'Other call is not prevented');
+});
+
+test('quoted text matches the argument converted to a string, also of a constructor called by new', (assert) => {
+    // t.17track.net##+js(trusted-suppress-native-method, Function.prototype.constructor, '"debugger"', abort)
+    runScriptlet(uboName, ['Function.prototype.constructor', '"debugger"', 'abort']);
+    const fn = function testFunction() {};
+
+    assert.throws(() => fn.constructor('debugger'), ReferenceError, 'Matching call is aborted');
+    assert.throws(() => new fn.constructor('while (true) { debugger; }'), ReferenceError, 'Matching new is aborted');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+    assert.strictEqual(fn.constructor('return 1')(), 1, 'Other call is not aborted');
+    // eslint-disable-next-line new-cap
+    assert.strictEqual(new fn.constructor('return 2')(), 2, 'Other new is not aborted');
+});
+
+test('regular expression matches the argument converted to a string', (assert) => {
+    // eslint-disable-next-line max-len
+    // dragontea.ink##+js(trusted-suppress-native-method, Node.prototype.removeChild, /^\[object HTMLImageElement\]$/, prevent, /emojis8\.js:/)
+    // without `stack`, which matches the URL of a script of the site
+    runScriptlet(uboName, ['Node.prototype.removeChild', '/^\\[object HTMLImageElement\\]$/', 'prevent']);
+    const parent = document.createElement('div');
+    const image = parent.appendChild(document.createElement('img'));
+    const div = parent.appendChild(document.createElement('div'));
+
+    assert.strictEqual(parent.removeChild(image), undefined, 'Matching call is prevented');
+    assert.strictEqual(image.parentNode, parent, 'Image is not removed');
+    assert.strictEqual(parent.removeChild(div), div, 'Other call is not prevented');
+    assert.strictEqual(div.parentNode, null, 'Other element is removed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});
+
+test('text without quotes is ignored, as in uBO, so every call is prevented', (assert) => {
+    // shomareh-yab.ir##+js(trusted-suppress-native-method, Storage.prototype.setItem, searchCount)
+    runScriptlet(uboName, ['Storage.prototype.setItem', 'searchCount']);
+
+    localStorage.setItem('searchCount', '1');
+    sessionStorage.setItem('other', '1');
+
+    assert.strictEqual(localStorage.getItem('searchCount'), null, 'Call with the text is prevented');
+    assert.strictEqual(sessionStorage.getItem('other'), null, 'Call without the text is prevented as well');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});
+
+test('exact values', (assert) => {
+    runScriptlet(uboName, ['testMatching', 'true|null|undefined', 'prevent']);
+
+    assert.strictEqual(window.testMatching(true, null), undefined, 'Matching call is prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+    assert.ok(window.testMatching('true', null), 'Call with a string is not prevented');
+    assert.ok(window.testMatching(true, null, 0), 'Call with another value is not prevented');
+});
+
+test('quote escaped by the converter is unescaped', (assert) => {
+    // converted from example.org##+js(trusted-suppress-native-method, testMatching, '"it\'s"', prevent)
+    runScriptlet(uboName, ['testMatching', '"it\\\'s"', 'prevent']);
+
+    assert.strictEqual(window.testMatching("it's"), undefined, 'Matching call is prevented');
+    assert.ok(window.testMatching('its'), 'Other call is not prevented');
+});
+
+test('negated stack', (assert) => {
+    runScriptlet(uboName, ['testMatching', '"test"', 'prevent', '!testStackFunction']);
+    const testStackFunction = () => window.testMatching('test');
+
+    assert.ok(testStackFunction(), 'Call from the function is not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    assert.strictEqual(window.testMatching('test'), undefined, 'Other call is prevented');
+    assert.strictEqual(window.hit, 'FIRED', 'hit func executed');
+});
+
+test('debug calls the method', (assert) => {
+    runScriptlet(uboName, ['testMatching', '"test"', 'debug']);
+
+    assert.ok(window.testMatching('test'), 'Matching call is not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+});
+
+test('empty or omitted signature only logs the calls', (assert) => {
+    runScriptlet(uboName, ['testMatching']);
+    runScriptlet(uboName, ['testMatching', '', 'abort']);
+
+    assert.ok(window.testMatching('test'), 'Call is not prevented');
+    assert.strictEqual(window.hit, undefined, 'hit should not fire');
+});
+
+test('invalid stack is not applied, also in AdGuard syntax', (assert) => {
+    runScriptlet(uboName, ['testMatching', '"test"', 'prevent', '/[/']);
+    runScriptlet(name, ['testMatching', '"test"', 'prevent', '/[/']);
+
+    assert.strictEqual(window.testMatching, testMatching, 'Method is not intercepted');
+    assert.ok(window.testMatching('test'), 'Call is not prevented');
 });

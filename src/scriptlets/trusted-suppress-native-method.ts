@@ -26,6 +26,12 @@ import {
     restoreRegExpValues,
     splitByPipeRespectingRegex,
     getFunctionProxyProperty,
+    isValidStrPattern,
+    uboPatternToRegExp,
+    unescapeUboArgument,
+    getAdgSuppressSettings,
+    getUboSuppressSettings,
+    suppressNativeMethodBySettings,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -60,8 +66,40 @@ import { type Source } from './scriptlets';
  *
  * - `how` – optional, string, one of the following:
  *     - `abort` – default, aborts the call by throwing an error,
- *     - `prevent` – replaces the method call with the call of an empty function.
+ *     - `prevent` – replaces the method call with the call of an empty function,
+ *     - `debug` – pauses in the debugger, if the developer tools are open, and calls the method,
+ *       e.g. to find the code which calls it.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace.
+ *
+ * If the method is a constructor, e.g. `Function.prototype.constructor`, its calls by `new` are suppressed too,
+ * but `new` of a matched call throws an error also with `prevent`, as it has to return an object.
+ * Use `prevent-constructor` to get an object which does nothing instead.
+ *
+ * ### uBO syntax
+ *
+ * uBO rules are supported with uBO arguments,
+ * e.g. `example.org##+js(trusted-suppress-native-method, eval, '"ads"')`:
+ *
+ * ```text
+ * example.org##+js(trusted-suppress-native-method, methodPath[, signature[, how[, stack]]])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * <!-- markdownlint-disable line-length -->
+ *
+ * - `signature` — matchers separated by `|`, which are matched against the arguments in the same positions;
+ *   a signature with quotes has to be wrapped in single quotes, e.g. `'"ads"'`, as uBO removes the outer quotes
+ *   of an argument, so `"ads"` is `ads` without quotes, which matches any argument:
+ *     - `"text"` — the argument converted to a string contains the text, or matches it if it is a regular expression, e.g. `"/ads?/i"`
+ *     - `/regexp/` — the argument converted to a string matches the regular expression, which has no flags
+ *     - `true`, `false`, `null` and `undefined` — the argument is exactly the value
+ *     - any other matcher, e.g. an empty one, a text without quotes, a number or an object, matches any argument
+ * - an empty or omitted `signature` only logs the arguments of each call, without suppressing it
+ * - `how` — an omitted one prevents the call, as any value other than `abort` and `debug`
+ * - `stack` — may start with `!` to match the calls whose stack trace does not match the rest of it
+ *
+ * <!-- markdownlint-enable line-length -->
  *
  * ### Examples
  * <!-- markdownlint-disable-next-line line-length -->
@@ -111,119 +149,35 @@ import { type Source } from './scriptlets';
 export function trustedSuppressNativeMethod(
     source: Source,
     methodPath: string,
-    signatureStr: string,
-    how = 'abort',
-    stack = '',
+    signatureStr?: string,
+    how?: string,
+    stack?: string,
 ) {
-    if (!methodPath || !signatureStr) {
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments,
+    // in which the signature and `how` may be omitted
+    const settings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+        ? getUboSuppressSettings(
+            source,
+            methodPath,
+            unescapeUboArgument(signatureStr) as string | undefined,
+            how,
+            unescapeUboArgument(stack) as string | undefined,
+        )
+        : getAdgSuppressSettings(source, methodPath, signatureStr as string, how, stack);
+
+    if (settings === null) {
         return;
     }
 
-    const IGNORE_ARG_SYMBOL = ' ';
-
-    const suppress = how === 'abort'
-        ? getAbortFunc()
-        : () => {};
-
-    let signatureMatcher: unknown[];
-    try {
-        signatureMatcher = splitByPipeRespectingRegex(signatureStr).map((value) => {
-            return value === IGNORE_ARG_SYMBOL ? value : inferValue(value);
-        });
-    } catch (e) {
-        logMessage(source, `Could not parse the signature matcher: ${getErrorMessage(e)}`);
-        return;
-    }
-
-    /**
-     * getPropertyInChain's return type `ChainBase` only makes sense
-     * while traversing the chain, but not to outside receivers.
-     *
-     * This is done as the least invasive way to make the typings work,
-     * compared to @ts-ignore or scattered assertions.
-     */
-    const getPathParts = getPropertyInChain as unknown as (base: Window, chain: string) => {
-        base: Record<string, unknown>;
-        prop: string;
-        chain?: string;
-    };
-
-    const { base, chain, prop } = getPathParts(window, methodPath);
-
-    // Undefined `chain` indicates successful reaching the end prop.
-    if (typeof chain !== 'undefined') {
-        logMessage(source, `Could not reach the end of the prop chain: ${methodPath}`);
-        return;
-    }
-
-    // Method of a storage is replaced in `Storage.prototype`, so only its calls on `base` are processed
-    const methodOwner = getMethodOwner(base, prop);
-
-    const nativeMethod = methodOwner[prop];
-    if (!nativeMethod || typeof nativeMethod !== 'function') {
-        logMessage(source, `Could not retrieve the method: ${methodPath}`);
-        return;
-    }
-
-    /**
-     * Matches the incoming arguments with the signature matcher.
-     *
-     * @param nativeArguments original arguments of the native method call
-     * @param matchArguments matcher to match against the native argument
-     * @returns true, if each of the signature matchers match their corresponding argument.
-     */
-    function matchMethodCall(
-        nativeArguments: unknown[],
-        matchArguments: unknown[],
-    ): boolean {
-        return matchArguments.every((matcher, i) => {
-            if (matcher === IGNORE_ARG_SYMBOL) {
-                return true;
-            }
-
-            const argument = nativeArguments[i];
-            return isValueMatched(argument, matcher);
-        });
-    }
-
-    // This flag allows to prevent infinite loops when trapping props that are used by scriptlet's own code.
-    let isMatchingSuspended = false;
-
-    function apply(target: Function, thisArg: any, argumentsList: unknown[]) {
-        if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
-            return Reflect.apply(target, thisArg, argumentsList);
-        }
-
-        let isMatching = false;
-        isMatchingSuspended = true;
-        try {
-            // Error message line is added to the stack trace created here, in the wrapper called by the page,
-            // as Firefox and Safari do not have it, so `matchStackTrace()` keeps the frame of the caller
-            isMatching = (!stack || matchStackTrace(stack, addStackTraceMessageLine(String(new Error().stack || ''))))
-                && matchMethodCall(argumentsList, signatureMatcher);
-        } catch (e) {
-            // e.g. a getter of an argument which throws, so the call is not suppressed.
-            // Error is not converted to get its message, as it may call the page again, e.g. its `toJSON()`,
-            // and the error may be a primitive thrown by the page, e.g. by `Error` replaced by it
-            logMessage(source, `Could not match the call: ${getThrownValueMessage(e)}`);
-        } finally {
-            // Matching is resumed on every return path, as the next calls would not be processed otherwise
-            isMatchingSuspended = false;
-        }
-
-        if (isMatching) {
-            hit(source);
-            return suppress();
-        }
-
-        return Reflect.apply(target, thisArg, argumentsList);
-    }
-
-    methodOwner[prop] = new Proxy(nativeMethod, { apply, get: getFunctionProxyProperty });
+    suppressNativeMethodBySettings(source, settings);
 }
 
 export const trustedSuppressNativeMethodNames = [
     'trusted-suppress-native-method',
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-suppress-native-method.js',
+    'ubo-trusted-suppress-native-method',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -243,6 +197,12 @@ trustedSuppressNativeMethod.injections = [
     getThrownValueMessage,
     splitByPipeRespectingRegex,
     getFunctionProxyProperty,
+    isValidStrPattern,
+    uboPatternToRegExp,
+    unescapeUboArgument,
+    getAdgSuppressSettings,
+    getUboSuppressSettings,
+    suppressNativeMethodBySettings,
     // following helpers should be imported and injected
     // because they are used by helpers above
     shouldAbortInlineOrInjectedScript,

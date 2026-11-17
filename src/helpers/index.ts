@@ -16,6 +16,7 @@ export * from './open-shadow-dom-utils';
 export * from './prevent-utils';
 export * from './prevent-window-open-utils';
 export * from './prevent-xhr-utils';
+export * from './suppress-native-method-utils';
 export * from './prune-utils';
 export * from './regexp-utils';
 export * from './response-utils';

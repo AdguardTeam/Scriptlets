@@ -700,7 +700,8 @@ Project-specific rules:
     `trusted-set-session-storage-item`, or `getAdgAttrSettings()` and `getUboAttrSettings()` with
     `setAttrBySettings()` of `set-attr` and `trusted-set-attr`, or `getAdgPreventXhrSettings()` and
     `getUboPreventXhrSettings()` with `preventXhrBySettings()` of `prevent-xhr` and `trusted-prevent-xhr`,
-    instead of keeping a separate implementation for uBO rules.
+    or `getAdgSuppressSettings()` and `getUboSuppressSettings()` with `suppressNativeMethodBySettings()` of
+    `trusted-suppress-native-method`, instead of keeping a separate implementation for uBO rules.
     Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
