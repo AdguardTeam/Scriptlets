@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'vitest';
 
 import {
-    encodeUboCookieValue,
     getAdgCookieSettings,
     getUboCookieDomain,
     getUboCookieSettings,
     isCookieSetWithValue,
     serializeCookie,
+    shouldEncodeUboCookieValue,
 } from '../../src/helpers/cookie-utils';
 import { parseKeywordValue } from '../../src/helpers/parse-keyword-value';
 
@@ -322,22 +322,71 @@ describe('getUboCookieDomain', () => {
     });
 });
 
-describe('encodeUboCookieValue', () => {
+describe('shouldEncodeUboCookieValue', () => {
     test.each([
         // allowed characters are kept as they are
-        { value: 'accept', expected: 'accept' },
-        { value: '{"a":1,"b":[2]}', expected: '{"a":1,"b":[2]}' },
-        { value: 'a b', expected: 'a b' },
-        { value: '$now$', expected: '$now$' },
+        { value: 'accept', expected: false },
+        { value: '{"a":1,"b":[2]}', expected: false },
+        { value: 'a b', expected: false },
+        { value: '50%', expected: false },
+        { value: '$now$', expected: false },
+        { value: '$currentDate$', expected: false },
         // the whole value is encoded if it has a character not allowed in cookies
-        { value: 'a;b', expected: 'a%3Bb' },
-        { value: 'a\\b', expected: 'a%5Cb' },
-        { value: 'zażółć', expected: 'za%C5%BC%C3%B3%C5%82%C4%87' },
-        // keywords are kept for parseKeywordValue() and isCookieSetWithValue()
-        { value: 'a;$now$;b', expected: 'a%3B$now$%3Bb' },
-        { value: '$currentDate$;$currentISODate$', expected: '$currentDate$%3B$currentISODate$' },
+        { value: 'a;b', expected: true },
+        { value: 'a\\b', expected: true },
+        { value: 'zażółć', expected: true },
+        { value: '$currentDate$;x', expected: true },
     ])('$value -> $expected', ({ value, expected }) => {
-        expect(encodeUboCookieValue(value)).toBe(expected);
+        expect(shouldEncodeUboCookieValue(value)).toBe(expected);
+    });
+
+    test.each([
+        '$now$',
+        '$currentDate$',
+        '$currentISODate$',
+    ])('%s is replaced by a value which needs no encoding, so the value of the rule decides', (keyword) => {
+        expect(shouldEncodeUboCookieValue(parseKeywordValue(keyword, true))).toBe(false);
+    });
+});
+
+describe('isCookieSetWithValue with a value encoded as a whole, as for uBO rules', () => {
+    test.each([
+        { value: 'a;b', cookie: 'a%3Bb', expected: true },
+        { value: '50%;x', cookie: '50%25%3Bx', expected: true },
+        // not the encoded value, e.g. set by the page
+        { value: 'a;b', cookie: 'a', expected: false },
+        { value: 'a;b', cookie: 'a%3bb', expected: false },
+        { value: '50%;x', cookie: '50%;x', expected: false },
+        // `%` which is not an escape is not decoded, and does not throw
+        { value: 'a;b', cookie: '%E0%A4%A', expected: false },
+    ])('$value as $cookie -> $expected', ({ value, cookie, expected }) => {
+        expect(isCookieSetWithValue(`name=${cookie}`, 'name', value, true, true)).toBe(expected);
+    });
+
+    test('the encoded value is not decoded by default', () => {
+        expect(isCookieSetWithValue('name=a%3Bb', 'name', 'a;b')).toBe(false);
+        expect(isCookieSetWithValue('name=a%3Bb', 'name', 'a%3Bb')).toBe(true);
+    });
+
+    test.each([
+        '$now$;x',
+        '$currentDate$;x',
+        '$currentISODate$;x',
+        '{"date":"$currentDate$","c":"a;b"}',
+    ])('%s set just now is considered to be set', (value) => {
+        const cookieString = `name=${encodeURIComponent(parseKeywordValue(value, true))}`;
+
+        expect(isCookieSetWithValue(cookieString, 'name', value, true, true)).toBe(true);
+        // keywords are replaced before the value is encoded, so the time is encoded as well
+        expect(isCookieSetWithValue(cookieString, 'name', value, true, false)).toBe(false);
+    });
+
+    test('$currentDate$;x set more than a day ago should be set again', () => {
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+        const outdated = new Date(Date.now() - ONE_DAY_MS - 1000).toUTCString();
+        const cookieString = `name=${encodeURIComponent(`${outdated};x`)}`;
+
+        expect(isCookieSetWithValue(cookieString, 'name', '$currentDate$;x', true, true)).toBe(false);
     });
 });
 
@@ -355,6 +404,7 @@ describe('getAdgCookieSettings', () => {
         expect(getAdgCookieSettings(source, 'consent', '1', '1day', 'none', '', true)).toEqual({
             name: 'consent',
             value: '1',
+            isValueEncoded: false,
             path: 'none',
             domain: '',
             offsetExpiresMs: 24 * 60 * 60 * 1000,
@@ -391,7 +441,9 @@ describe('getUboCookieSettings', () => {
     test('settings of uBO rules', () => {
         expect(getUboCookieSettings(source, 'consent', 'a;b', '0', '', ['reload', '1', 'dontOverwrite', '1'])).toEqual({
             name: 'consent',
-            value: 'a%3Bb',
+            // encoded after the keywords are replaced
+            value: 'a;b',
+            isValueEncoded: true,
             path: '/',
             domain: '',
             offsetExpiresMs: 0,
@@ -402,6 +454,28 @@ describe('getUboCookieSettings', () => {
             isReloadCheckedByValue: true,
         });
         expect(getUboCookieSettings(source, 'consent', '1', '', '', ['domain', hostname])?.domain).toBe(hostname);
+    });
+
+    test('empty name is not applied, as in uBO', () => {
+        expect(getUboCookieSettings(source, '', 'value', '', '', [])).toBeNull();
+    });
+
+    test('omitted value is empty', () => {
+        expect(getUboCookieSettings(source, 'consent', undefined, '', '', [])).toMatchObject({
+            value: '',
+            isValueEncoded: false,
+        });
+    });
+
+    test('value with keywords is kept as it is, and encoded if it has characters not allowed in cookies', () => {
+        expect(getUboCookieSettings(source, 'consent', '$currentDate$;x', '', '', [])).toMatchObject({
+            value: '$currentDate$;x',
+            isValueEncoded: true,
+        });
+        expect(getUboCookieSettings(source, 'consent', '{"t":$now$}', '', '', [])).toMatchObject({
+            value: '{"t":$now$}',
+            isValueEncoded: false,
+        });
     });
 
     test('quotes escaped by the converter are unescaped', () => {

@@ -23,13 +23,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and `#%#//scriptlet('ubo-replace-node-text`, and the same with double quotes, in `exclusions-high.txt`,
   before they use this version.
 - uBO aliases of `trusted-set-cookie`, `ubo-trusted-set-cookie` and `ubo-trusted-set-cookie.js` [#586], with uBO
-  arguments: an empty `path` sets the root path, `offsetExpiresSec` `0` removes the cookie, a value with characters
-  not allowed in cookies, e.g. `;`, is encoded instead of rejected, `$currentDate$` is set in UTC,
-  e.g. `Tue, 08 Nov 2022 10:53:19 GMT`, and the named options `reload, 1`,
-  `domain, value` (also with a leading dot, or a regular expression matched against the hostname)
-  and `dontOverwrite, 1` follow `path` instead of the positional `domain` argument,
-  e.g. `example.org##+js(trusted-set-cookie, consent, accept, , , reload, 1)`. As in uBO, a name with `;` is not
-  rejected, e.g. `example.org##+js(trusted-set-cookie, ad_expire=true;, $now$)`, which sets `ad_expire=true`.
+  arguments: an empty name sets no cookie, an omitted value is empty, an empty `path` sets the root path,
+  `offsetExpiresSec` `0` removes the cookie, a value with characters not allowed in cookies, e.g. `;`, is encoded
+  as a whole after its keywords are replaced, instead of rejected, `$currentDate$` is set in UTC,
+  e.g. `Tue, 08 Nov 2022 10:53:19 GMT`, and the named options `reload, 1`, `domain, value` (also with a leading dot,
+  or a regular expression matched against the hostname) and `dontOverwrite, 1` follow `path` instead of the positional
+  `domain` argument, e.g. `example.org##+js(trusted-set-cookie, consent, accept, , , reload, 1)`. As in uBO, a name
+  with `;` is not rejected, e.g. `example.org##+js(trusted-set-cookie, ad_expire=true;, $now$)`, which sets
+  `ad_expire=true`.
 - uBO arguments in `trusted-set-cookie-reload` with its uBO aliases [#586], as in `trusted-set-cookie`
   with `reload, 1` option, which `reload, 0` overrides,
   e.g. `example.org##+js(trusted-set-cookie-reload, consent, accept, , , domain, example.org)`.

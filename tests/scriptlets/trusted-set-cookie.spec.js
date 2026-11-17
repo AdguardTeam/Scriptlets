@@ -276,6 +276,55 @@ describe('trusted-set-cookie with uBO arguments', () => {
         clearCookie(cName);
     });
 
+    test('keywords are replaced before the whole value is encoded', () => {
+        const cName = '__test-ubo-encoded-keyword';
+        trustedSetCookie(uboSource, cName, '$currentDate$;x', '', '');
+
+        const written = getWrittenCookies();
+        expect(written.length).toBe(1);
+        // the date is encoded as well, as in uBO, e.g. `Tue%2C%2008%20Nov%202022%2010%3A53%3A19%20GMT%3Bx`
+        expect(written[0]).toMatch(new RegExp(
+            `^${cName}=\\w{3}%2C%20\\d{2}%20\\w{3}%20\\d{4}%20\\d{2}%3A\\d{2}%3A\\d{2}%20GMT%3Bx; path=/$`,
+        ));
+        const cookieValue = decodeURIComponent(parseCookieString(document.cookie)[cName]);
+        expect(cookieValue).toMatch(/^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT;x$/);
+        clearCookie(cName);
+    });
+
+    test('reload option with a keyword in an encoded value does not reload again', () => {
+        const cName = '__test-ubo-reload-encoded-keyword';
+        trustedSetCookie(uboSource, cName, '$currentISODate$;x', '', '', 'reload', '1');
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        trustedSetCookie(uboSource, cName, '$currentISODate$;x', '', '', 'reload', '1');
+        expect(getWrittenCookies().length).toBe(1);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        clearCookie(cName);
+    });
+
+    test('omitted value sets an empty cookie', () => {
+        const cName = '__test-ubo-omitted-value';
+        trustedSetCookie(uboSource, cName);
+
+        expect(getWrittenCookies()).toEqual([`${cName}=; path=/`]);
+        expect(window.hit).toBe('FIRED');
+        clearCookie(cName);
+    });
+
+    test('empty name sets no cookie', () => {
+        trustedSetCookie(uboSource, '', 'value');
+
+        expect(getWrittenCookies()).toEqual([]);
+        expect(window.hit).toBeUndefined();
+    });
+
+    test('omitted value is still invalid in AdGuard syntax', () => {
+        trustedSetCookie(adgSource, '__test-adg-omitted-value');
+
+        expect(getWrittenCookies()).toEqual([]);
+        expect(window.hit).toBeUndefined();
+    });
+
     test('$currentDate$ is set in the format of toUTCString()', () => {
         const cName = '__test-ubo-current-date';
         trustedSetCookie(uboSource, cName, '$currentDate$', '', '');
@@ -439,6 +488,20 @@ describe('trusted-set-cookie with rules from filter lists', () => {
         trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, '_pm_datenschutz_cookie', value, '', '', 'reload', '1');
 
         expect(parseCookieString(document.cookie)._pm_datenschutz_cookie).toBe(encodeURIComponent(value));
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+    });
+
+    test('uBO rule with quotes, whose value has characters not allowed in cookies', () => {
+        // originalky.cz##+js(trusted-set-cookie, cookies_confirmed, '1;2,3,4,5', , , reload, 1)
+        openPage('https://www.originalky.cz/');
+        const args = ['cookies_confirmed', '1;2,3,4,5', '', '', 'reload', '1'];
+        trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, ...args);
+
+        expect(parseCookieString(document.cookie).cookies_confirmed).toBe('1%3B2%2C3%2C4%2C5');
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        // not reloaded again after the reload
+        trustedSetCookie({ name: 'ubo-trusted-set-cookie' }, ...args);
         expect(window.location.reload).toHaveBeenCalledTimes(1);
     });
 

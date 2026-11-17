@@ -12,7 +12,7 @@ import {
     parseUboOptions,
     unescapeUboArgument,
     getUboCookieDomain,
-    encodeUboCookieValue,
+    shouldEncodeUboCookieValue,
     getAdgCookieSettings,
     getUboCookieSettings,
     setCookieBySettings,
@@ -63,11 +63,13 @@ import {
  * uBO rules are supported with uBO arguments, e.g. `example.org##+js(trusted-set-cookie, name, value)`:
  *
  * ```text
- * example.org##+js(trusted-set-cookie, name, value[, offsetExpiresSec[, path[, ...options]]])
+ * example.org##+js(trusted-set-cookie, name[, value[, offsetExpiresSec[, path[, ...options]]]])
  * ```
  *
  * They differ from the AdGuard syntax as follows:
  *
+ * - `name` — empty string sets no cookie, instead of a cookie without a name
+ * - `value` — empty string if it is omitted, e.g. `example.org##+js(trusted-set-cookie, consent)`
  * - `offsetExpiresSec` — `0` is allowed, it expires the cookie at once, i.e. removes it
  * - `path` — empty string sets the root path `/`
  * - options are pairs of a name and a value which follow `path`:
@@ -75,7 +77,8 @@ import {
  *     - `domain, value` — cookie domain, the hostname of the page or its parent domain, also with a leading dot,
  *       or a regular expression whose match in the hostname is the domain
  *     - `dontOverwrite, 1` — do not set the cookie if a cookie with the same name exists
- * - a value with characters not allowed in cookies, e.g. `;`, is encoded instead of rejected
+ * - a value with characters not allowed in cookies, e.g. `;`, is encoded instead of rejected, as a whole
+ *   after keywords are replaced, e.g. `$currentDate$;x` as `Tue%2C%2008%20Nov%202022%2010%3A53%3A19%20GMT%3Bx`
  * - a name with `;` is not rejected, as uBO does not check names of trusted cookies,
  *   e.g. `ad_expire=true;` sets the cookie `ad_expire=true`
  * - `$currentDate$` keyword sets current time in UTC, e.g. 'Tue, 08 Nov 2022 10:53:19 GMT'
@@ -141,14 +144,16 @@ export function trustedSetCookie(
         logMessage(source, 'Cookie name should be specified');
         return;
     }
-    if (typeof value === 'undefined') {
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments,
+    // in which the value may be omitted, as it is empty then
+    const isUboRule = typeof source.name === 'string' && source.name.startsWith('ubo-');
+    if (typeof value === 'undefined' && !isUboRule) {
         logMessage(source, 'Cookie value should be specified');
         return;
     }
 
-    // Rules converted from uBO syntax have uBO names with `ubo-` prefix,
-    // and uBO arguments, i.e. named options instead of `domain`
-    const cookieSettings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+    // uBO arguments have named options instead of `domain`
+    const cookieSettings = isUboRule
         ? getUboCookieSettings(source, name, value, offsetExpiresSec, path, [domain].concat(extraArgs))
         : getAdgCookieSettings(source, name, value, offsetExpiresSec, path, domain, false);
 
@@ -184,7 +189,7 @@ trustedSetCookie.injections = [
     parseUboOptions,
     unescapeUboArgument,
     getUboCookieDomain,
-    encodeUboCookieValue,
+    shouldEncodeUboCookieValue,
     getAdgCookieSettings,
     getUboCookieSettings,
     setCookieBySettings,

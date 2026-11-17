@@ -12,7 +12,7 @@ import {
     parseUboOptions,
     unescapeUboArgument,
     getUboCookieDomain,
-    encodeUboCookieValue,
+    shouldEncodeUboCookieValue,
     getAdgCookieSettings,
     getUboCookieSettings,
     setCookieBySettings,
@@ -66,7 +66,7 @@ import {
  * as by [`trusted-set-cookie`](#trusted-set-cookie) with `reload, 1` option:
  *
  * ```text
- * example.org##+js(trusted-set-cookie-reload, name, value[, offsetExpiresSec[, path[, ...options]]])
+ * example.org##+js(trusted-set-cookie-reload, name[, value[, offsetExpiresSec[, path[, ...options]]]])
  * ```
  *
  * The options are the same as in `trusted-set-cookie`, so `reload, 0` sets the cookie without reloading the page.
@@ -132,14 +132,16 @@ export function trustedSetCookieReload(
         logMessage(source, 'Cookie name should be specified');
         return;
     }
-    if (typeof value === 'undefined') {
+    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments,
+    // in which the value may be omitted, as it is empty then
+    const isUboRule = typeof source.name === 'string' && source.name.startsWith('ubo-');
+    if (typeof value === 'undefined' && !isUboRule) {
         logMessage(source, 'Cookie value should be specified');
         return;
     }
 
-    // Rules converted from uBO syntax have uBO names with `ubo-` prefix, and uBO arguments.
-    // As in uBO, it is `trusted-set-cookie` with `reload, 1` option, which the options of the rule may override
-    const cookieSettings = typeof source.name === 'string' && source.name.startsWith('ubo-')
+    // As in uBO, a uBO rule is `trusted-set-cookie` with `reload, 1` option, which the options of the rule may override
+    const cookieSettings = isUboRule
         ? getUboCookieSettings(source, name, value, offsetExpiresSec, path, ['reload', '1', domain].concat(extraArgs))
         : getAdgCookieSettings(source, name, value, offsetExpiresSec, path, domain, true);
 
@@ -175,7 +177,7 @@ trustedSetCookieReload.injections = [
     parseUboOptions,
     unescapeUboArgument,
     getUboCookieDomain,
-    encodeUboCookieValue,
+    shouldEncodeUboCookieValue,
     getAdgCookieSettings,
     getUboCookieSettings,
     setCookieBySettings,

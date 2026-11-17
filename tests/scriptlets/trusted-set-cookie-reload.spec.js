@@ -358,6 +358,47 @@ describe('trusted-set-cookie-reload with uBO arguments', () => {
         clearCookie(cName);
     });
 
+    test('omitted value sets an empty cookie, and is not reloaded again', () => {
+        const cName = '__test-ubo-reload-omitted-value';
+        trustedSetCookieReload(uboSource, cName);
+
+        expect(getWrittenCookies()).toEqual([`${cName}=; path=/`]);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        trustedSetCookieReload(uboSource, cName);
+        expect(getWrittenCookies().length).toBe(1);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        clearCookie(cName);
+    });
+
+    test('empty name sets no cookie and does not reload', () => {
+        trustedSetCookieReload(uboSource, '', 'value');
+
+        expect(getWrittenCookies()).toEqual([]);
+        expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
+    test('omitted value is still invalid in AdGuard syntax', () => {
+        trustedSetCookieReload(adgSource, '__test-adg-reload-omitted-value');
+
+        expect(getWrittenCookies()).toEqual([]);
+        expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
+    test('keywords are replaced before the whole value is encoded, and not reloaded again', () => {
+        const cName = '__test-ubo-reload-encoded-keyword';
+        trustedSetCookieReload(uboSource, cName, '$currentDate$;x');
+
+        const cookieValue = parseCookieString(document.cookie)[cName];
+        expect(cookieValue).toMatch(/^\w{3}%2C%20\d{2}%20\w{3}%20\d{4}%20\d{2}%3A\d{2}%3A\d{2}%20GMT%3Bx$/);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+
+        trustedSetCookieReload(uboSource, cName, '$currentDate$;x');
+        expect(getWrittenCookies().length).toBe(1);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
+        clearCookie(cName);
+    });
+
     test('$currentDate$ is set in the format of toUTCString(), and not reloaded again', () => {
         const cName = '__test-ubo-reload-current-date';
         trustedSetCookieReload(uboSource, cName, '$currentDate$');

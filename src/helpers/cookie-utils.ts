@@ -219,6 +219,9 @@ export const parseCookieString = (cookieString: string): CookieData => {
  * as set by `parseKeywordValue()` for uBO rules, defaults to false;
  * should be set only for uBO rules, i.e. for scriptlets called by `ubo-` names,
  * as AdGuard rules keep the format of `toString()`
+ * @param isValueEncoded if true, the cookie is matched as the value with the keywords replaced,
+ * which has been encoded by `encodeURIComponent()` as a whole, as for uBO rules whose value has characters
+ * not allowed in cookies, see `shouldEncodeUboCookieValue()`, defaults to false
  * @returns if cookie is already set
  */
 export const isCookieSetWithValue = (
@@ -226,6 +229,7 @@ export const isCookieSetWithValue = (
     name: string,
     value: string,
     isUtcDate = false,
+    isValueEncoded = false,
 ): boolean => {
     // !IMPORTANT: Do not move constants outside of this function
     // If required, remember to sync new time keywords with the "parseKeywordValue" function
@@ -308,10 +312,26 @@ export const isCookieSetWithValue = (
                 return false;
             }
             const cookieName = cookieStr.slice(0, pos).trim();
-            const cookieValue = cookieStr.slice(pos + 1).trim();
+            const rawCookieValue = cookieStr.slice(pos + 1).trim();
 
             if (name !== cookieName) {
                 return false;
+            }
+
+            // An encoded value is decoded to be matched as the value with the keywords replaced,
+            // e.g. 'Tue%2C%2008%20Nov%202022%2010%3A53%3A19%20GMT%3Bx' as '$currentDate$;x',
+            // but only if it is exactly the encoded value, as the value set by the rule is,
+            // e.g. not a value which the page has set without encoding, or with '%' which is not an escape
+            let cookieValue = rawCookieValue;
+            if (isValueEncoded) {
+                try {
+                    cookieValue = decodeURIComponent(rawCookieValue);
+                } catch {
+                    return false;
+                }
+                if (encodeURIComponent(cookieValue) !== rawCookieValue) {
+                    return false;
+                }
             }
 
             // Prevent webpage reloading when cookie value contains a time keyword
@@ -412,30 +432,22 @@ export const getUboCookieDomain = (rawDomain: unknown, hostname: string): string
 };
 
 /**
- * Encodes a value of uBO `trusted-set-cookie` which contains characters not allowed in cookies, e.g. `;`,
- * by `encodeURIComponent()`, as uBO does, instead of rejecting it.
- * Keywords of the value, e.g. `$now$`, are kept as they are, so that `parseKeywordValue()`
- * and `isCookieSetWithValue()` still recognize them, as the values they are replaced with need no encoding.
+ * Checks whether a value of uBO `trusted-set-cookie` is encoded by `encodeURIComponent()` as a whole,
+ * i.e. after its keywords, e.g. `$now$`, have been replaced, as uBO `setCookieFn()` does if the value has
+ * a character not allowed in cookies, e.g. `;`, instead of rejecting it.
+ * The value with the keywords is checked, as the values they are replaced with have only allowed characters,
+ * also `$currentDate$` in the format of `toUTCString()`, e.g. `Tue, 08 Nov 2022 10:53:19 GMT`, so the value
+ * set by the rule needs encoding if and only if the value of the rule does.
  *
  * @param value Value of the cookie, possibly with keywords.
  *
- * @returns Value with encoded parts between keywords if any part needs encoding, otherwise the value as is.
+ * @returns True if the value is encoded.
  */
-export const encodeUboCookieValue = (value: string): string => {
-    // !IMPORTANT: keep the keywords in sync with "parseKeywordValue"
-    const KEYWORDS_REGEXP = /(\$(?:currentISODate|currentDate|now)\$)/;
+export const shouldEncodeUboCookieValue = (value: string): boolean => {
+    // !IMPORTANT: Do not move constants outside of this function
     // Characters allowed in cookie values by uBO, i.e. space to `:`, `<` to `[`, and `]` to `~`
     const UNSAFE_CHARS_REGEXP = /[^ -:<-[\]-~]/;
-
-    if (typeof value !== 'string' || !UNSAFE_CHARS_REGEXP.test(value)) {
-        return value;
-    }
-
-    // Keywords are captured by the regexp, so they are at odd indexes after splitting
-    return value
-        .split(KEYWORDS_REGEXP)
-        .map((chunk, index) => (index % 2 === 1 ? chunk : encodeURIComponent(chunk)))
-        .join('');
+    return typeof value === 'string' && UNSAFE_CHARS_REGEXP.test(value);
 };
 
 /**
@@ -452,6 +464,12 @@ export interface CookieSettings {
      * Cookie value, possibly with keywords, e.g. `$now$`.
      */
     value: string;
+
+    /**
+     * If true, the value with the keywords replaced is encoded by `encodeURIComponent()` as a whole, as uBO does
+     * for a value with characters not allowed in cookies, see `shouldEncodeUboCookieValue()`.
+     */
+    isValueEncoded: boolean;
 
     /**
      * Cookie path, `/` or `none`.
@@ -548,6 +566,7 @@ export const getAdgCookieSettings = (
     return {
         name,
         value,
+        isValueEncoded: false,
         path,
         domain,
         offsetExpiresMs,
@@ -569,8 +588,9 @@ export const getAdgCookieSettings = (
  *     - `reload, 1` reloads the page once the cookie is set, unless it is set already;
  *     - `domain, value` is the cookie domain, see `getUboCookieDomain()`;
  *     - `dontOverwrite, 1` does not set the cookie if a cookie with the same name exists;
- * - a value with characters not allowed in cookies, e.g. `;`, is encoded instead of rejected,
- *   see `encodeUboCookieValue()`;
+ * - an empty name sets no cookie, instead of a cookie without a name, and the value is empty if it is omitted;
+ * - a value with characters not allowed in cookies, e.g. `;`, is encoded as a whole, after its keywords have been
+ *   replaced, instead of rejected, see `shouldEncodeUboCookieValue()`;
  * - `$currentDate$` keyword is set in the format of `toUTCString()`;
  * - a name with `;` is not rejected, as uBO does not check names of trusted cookies.
  *
@@ -578,11 +598,11 @@ export const getAdgCookieSettings = (
  * as uBO receives the arguments without the escapes.
  *
  * Requires `logMessage`, `nativeIsNaN`, `isValidCookiePath`, `getTrustedCookieOffsetMs`, `parseUboOptions`,
- * `unescapeUboArgument`, `getUboCookieDomain` and `encodeUboCookieValue` in the injections of the scriptlet.
+ * `unescapeUboArgument`, `getUboCookieDomain` and `shouldEncodeUboCookieValue` in the injections of the scriptlet.
  *
  * @param source Scriptlet properties.
  * @param name Cookie name.
- * @param value Cookie value, possibly with keywords, e.g. `$now$`.
+ * @param value Cookie value, possibly with keywords, e.g. `$now$`, or `undefined` if it is omitted.
  * @param offsetExpiresSec Offset of the expiration time in seconds, `1day` or `1year`, empty for no expiration.
  * @param path Cookie path, `/`, `none`, or empty for `/`.
  * @param args Named options which follow `path`, e.g. `['reload', '1', 'domain', 'example.org']`.
@@ -592,7 +612,7 @@ export const getAdgCookieSettings = (
 export const getUboCookieSettings = (
     source: Source,
     name: string,
-    value: string,
+    value: string | undefined,
     offsetExpiresSec: string,
     path: string,
     args: unknown[],
@@ -600,8 +620,16 @@ export const getUboCookieSettings = (
     // uBO accepts only digits or keywords
     const UBO_OFFSET_EXPIRES_REGEXP = /^(?:\d+|1day|1year)$/;
     const cookieName = unescapeUboArgument(name) as string;
-    const cookieValue = unescapeUboArgument(value) as string;
+    // As in uBO, an omitted value is empty, e.g. `example.org##+js(trusted-set-cookie, consent)`
+    const cookieValue = typeof value === 'undefined' ? '' : unescapeUboArgument(value) as string;
     const options = parseUboOptions(args.map(unescapeUboArgument));
+
+    // As in uBO, e.g. `example.org##+js(trusted-set-cookie, , value)` sets no cookie, as `=value` would be one
+    // without a name
+    if (cookieName === '') {
+        logMessage(source, 'Cookie name should be specified');
+        return null;
+    }
 
     const domain = getUboCookieDomain(options.domain, document.location.hostname);
     if (domain === null) {
@@ -627,7 +655,8 @@ export const getUboCookieSettings = (
 
     return {
         name: cookieName,
-        value: encodeUboCookieValue(cookieValue),
+        value: cookieValue,
+        isValueEncoded: shouldEncodeUboCookieValue(cookieValue),
         path: cookiePath,
         domain,
         offsetExpiresMs,
@@ -654,6 +683,7 @@ export const setCookieBySettings = (source: Source, settings: CookieSettings): v
     const {
         name,
         value,
+        isValueEncoded,
         path,
         domain,
         offsetExpiresMs,
@@ -670,13 +700,16 @@ export const setCookieBySettings = (source: Source, settings: CookieSettings): v
 
     // Prevent infinite reloads if the cookie has been set already or blocked by the browser
     // https://github.com/AdguardTeam/Scriptlets/issues/212
-    if (shouldReload && isCookieSetWithValue(document.cookie, name, value, isUtcDate)) {
+    if (shouldReload && isCookieSetWithValue(document.cookie, name, value, isUtcDate, isValueEncoded)) {
         return;
     }
 
     const parsedValue = parseKeywordValue(value, isUtcDate);
+    // As in uBO, keywords are replaced before the whole value is encoded,
+    // e.g. '$currentDate$;x' is set as 'Tue%2C%2008%20Nov%202022%2010%3A53%3A19%20GMT%3Bx'
+    const valueToSet = isValueEncoded ? encodeURIComponent(parsedValue) : parsedValue;
 
-    let cookieToSet = serializeCookie(name, parsedValue, path, domain, false, shouldValidateName);
+    let cookieToSet = serializeCookie(name, valueToSet, path, domain, false, shouldValidateName);
     if (!cookieToSet) {
         logMessage(source, 'Invalid cookie name or value');
         return;
@@ -699,7 +732,7 @@ export const setCookieBySettings = (source: Source, settings: CookieSettings): v
     // AdGuard rules check the value read back, in case if $now$ or $currentDate$ is used
     // https://github.com/AdguardTeam/Scriptlets/issues/291
     const isSet = isReloadCheckedByValue
-        ? isCookieSetWithValue(document.cookie, name, value, isUtcDate)
+        ? isCookieSetWithValue(document.cookie, name, value, isUtcDate, isValueEncoded)
         : isCookieSetWithValue(document.cookie, name, parseCookieString(document.cookie)[name] as string);
     if (isSet) {
         window.location.reload();
