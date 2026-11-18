@@ -399,4 +399,42 @@ if (!isSupported) {
         assert.deepEqual(actualJson, { a1: 1, b2: 'test', c3: 3 }, 'response should stay intact');
         assert.strictEqual(window.hit, undefined, 'hit function should not fire');
     });
+
+    test('JSONPath: several queries modify the response once', async (assert) => {
+        const done = assert.async();
+        runScriptlet(name, ['$.a1 $.c3=0', '$remove$', '', 'test01']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { b2: 'test', c3: 0 }, 'each query should modify the response');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('JSONPath: `$remove$` as a value of a query removes its nodes, in any order', async (assert) => {
+        const done = assert.async();
+        runScriptlet(name, ['$.c3=0 $.a1=$remove$', '', '', 'test01']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { b2: 'test', c3: 0 }, '`a1` should be removed and `c3` set');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        done();
+    });
+
+    test('JSONPath: documented example with $remove$ and repl() values', async (assert) => {
+        runScriptlet(name, ['$.ads=$remove$ $..title=repl({"pattern":" (Ad)","replacement":""})', '', '', 'api/feed']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/api/feed.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(
+            actualJson,
+            { items: [{ url: 'https://ads.example.org/1', title: 'Ad' }, { url: 'https://example.org/2', title: 'News' }] },
+            'modified',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
 }

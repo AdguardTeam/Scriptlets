@@ -18,6 +18,9 @@ import {
     nativeIsNaN,
     isKeyInObject,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    getJsonPathRegexpEnd,
     resolveJsonSyntaxMode,
     getJsonSetValue,
     parseJsonSetArgumentValue,
@@ -55,7 +58,27 @@ import {
  * ```
  *
  * - `propsToRemove` — optional, string of space-separated properties to remove.
- *   In `jsonpath` mode only single JSONPath prune expression is supported.
+ *   In `jsonpath` mode several JSONPath expressions may be separated by spaces, e.g. `$.ads $..banner`,
+ *   which are applied in order. Each expression after the first one starts with the root `$` followed by a step,
+ *   e.g. `$.ads`, with `v2:`, or with guards followed by the root, e.g. `[?(@.player)]$.player.ads`,
+ *   which apply only to that expression, while an argument with a regular expression which contains a raw quote, e.g. `[?.t=/it's/]`,
+ *   is one expression, as before, so e.g. `[?.t=/it's/]$.ads $.tracking` removes neither property;
+ *   such expressions need separate rules, or the quote written as `\x27` or `\x22`,
+ *   e.g. `[?.t=/it\x27s/]$.ads $.tracking`, and a space before a dot
+ *   or a bracket continues an expression, as before, e.g. `$.a .b` is `$.a.b`. Spaces inside an expression,
+ *   e.g. in a filter `[?(@.a && @.b)]` or a quoted value, do not separate them either,
+ *   and none of them is applied if one of them is invalid, while an error of applying one of them,
+ *   e.g. of a getter of the page, does not stop the other ones.
+ *   Expressions of uBO rules of `json-edit` are not separated, as uBO ignores spaces in them, e.g. `.a $.b`.
+ *   JSONPath expressions may also use `^=` and `$=` filters, e.g. `$.items[?.url^="https://ads."]`,
+ *   regular expressions of property keys after a dot, e.g. `$./^ad_/`, with `\=` and `\s` instead of `=`
+ *   and spaces, as e.g. `$.routes./login=/` is a name with a value, as before, so a key between slashes,
+ *   e.g. `$.routes./pets/`, which was the key `/pets/` before, matches every key which contains `pets` now,
+ *   e.g. `/pets/archive` and `pets`, and an exact key needs brackets, e.g. `$.routes['/pets/']`,
+ *   preconditions before `;$`,
+ *   which have to match at least one node, or a number of nodes in a range `{min,max};$`,
+ *   e.g. `..adSlots;$.ads` or `$.items[?.ad]{2,};$.ads`, and `v2:` prefix, with which a filter tests
+ *   the children of each node, also of an object, e.g. `v2:$.config[?@==true]`.
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur.
  *   In `jsonpath` mode this argument is ignored. Express such preconditions
@@ -378,6 +401,146 @@ import {
  *     }
  *     ```
  *
+ * 1. Removes the items whose `url` starts with `https://ads.` and the videos whose `src` ends with `.mp4`,
+ *    by `^=` and `$=` filters, which compare the start and the end of a value, and by two expressions of one rule
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$.items[?(@.url^="https://ads.")] $.videos[?(@.src$=".mp4")]')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     {
+ *       "items": [{ "url": "https://ads.example.org/1" }, { "url": "https://example.org/2" }],
+ *       "videos": [{ "src": "ad.mp4" }, { "src": "intro.webm" }]
+ *     }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "items": [{ "url": "https://example.org/2" }], "videos": [{ "src": "intro.webm" }] }
+ *     ```
+ *
+ * 1. Removes the properties of `config` whose keys start with `ad_`, by a regular expression of keys after a dot;
+ *    an exact key between slashes needs brackets, e.g. `$.routes['/ads/']`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$.config./^ad_/')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "config": { "ad_banner": 1, "ad_video": 2, "theme": "dark" } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "config": { "theme": "dark" } }
+ *     ```
+ *
+ * 1. Removes `ads` only if the JSON has `adSlots` at any depth, by a precondition before `;$`,
+ *    which has to match at least one node
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$..adSlots;$.ads')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "page": { "adSlots": [1] }, "ads": [1, 2], "title": "News" }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "page": { "adSlots": [1] }, "title": "News" }
+ *     ```
+ *
+ *     `{ "ads": [1, 2], "title": "News" }` is not changed, as it has no `adSlots`.
+ *
+ * 1. Removes `banner` only if at least 2 items are ads, by a precondition with a range of the number
+ *    of nodes `{min,max};$`, in which `max` may be omitted
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '$.items[?(@.ad)]{2,};$.banner')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "items": [{ "ad": true }, { "ad": true }, { "id": 1 }], "banner": { "id": 2 } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "items": [{ "ad": true }, { "ad": true }, { "id": 1 }] }
+ *     ```
+ *
+ *     `{ "items": [{ "ad": true }, { "id": 1 }], "banner": { "id": 2 } }` is not changed.
+ *
+ * 1. Removes the properties of `flags` whose value is `true`, by `v2:` prefix, with which a filter tests
+ *    the children of each node, also of an object, as in uBO; without it, the filter tests `flags` itself,
+ *    so the same expression is `$.flags.*[?(@==true)]`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', 'v2:$.flags[?@==true]')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "flags": { "ads": true, "tracking": true, "darkMode": false } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "flags": { "darkMode": false } }
+ *     ```
+ *
+ * 1. Removes `ads` and `tracking` by one rule in `JSONPath` mode if `title` matches a regular expression
+ *    with a quote; each expression has its own guard, as a guard applies only to the expression it precedes,
+ *    and the quote is written as `\x27`, as a raw quote, e.g. `/it's/`, would make the whole argument
+ *    one expression, which removes neither property
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '[?(@.title=/it\x27s/)]$.ads [?(@.title=/it\x27s/)]$.tracking')
+ *     ```
+ *
+ *     or one expression with both properties, in which the quote may be raw:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '[?(@.title=/it\'s/)]$["ads","tracking"]')
+ *     ```
+ *
+ *     or two rules:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune', '[?(@.title=/it\'s/)]$.ads')
+ *     example.org#%#//scriptlet('json-prune', '[?(@.title=/it\'s/)]$.tracking')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "title": "it's an ad", "ads": [1, 2], "tracking": { "id": 1 } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "title": "it's an ad" }
+ *     ```
+ *
+ *     With another title, e.g. `{ "title": "News", "ads": [1, 2], "tracking": { "id": 1 } }`,
+ *     neither property is removed.
+ *
  * 1. Call with no arguments will log the current hostname and JSON payload at the console
  *
  *     ```adblock
@@ -395,6 +558,10 @@ import {
 /* eslint-enable max-len */
 export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '', mode = '') {
     const syntaxModeDetails = resolveJsonSyntaxMode(propsToRemove, mode);
+    // Queries are split once, not for each processed value
+    const jsonPathQueries = syntaxModeDetails.mode === 'jsonpath' ? getJsonPathQueries(source, propsToRemove) : [];
+    // Queries are parsed once, not for each processed value
+    const jsonPathCache = Object.create(null);
     const prunePaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsToRemove) : [];
     const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(requiredInitialProps) : [];
 
@@ -415,7 +582,16 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
 
     const pruneJsonValue = (root, stackToMatch, stackTraceToLog) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), stackToMatch);
+            return jsonPath(
+                source,
+                root,
+                jsonPathQueries,
+                nativeObjects,
+                () => hit(source),
+                stackToMatch,
+                false,
+                jsonPathCache,
+            );
         }
 
         return jsonPruner(source, root, prunePaths, requiredPaths, stackToMatch, nativeObjects, stackTraceToLog);
@@ -528,6 +704,9 @@ jsonPrune.injections = [
     nativeIsNaN,
     isKeyInObject,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    getJsonPathRegexpEnd,
     resolveJsonSyntaxMode,
     getJsonSetValue,
     parseJsonSetArgumentValue,

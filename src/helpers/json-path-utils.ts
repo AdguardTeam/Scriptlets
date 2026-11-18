@@ -10,6 +10,7 @@ import { type Source } from '../scriptlets';
 type JsonPathMutationMode = 'append' | 'remove' | 'set';
 type JsonPathFilterOperator =
     | 'contains'
+    | 'ends_with'
     | 'equal'
     | 'exists'
     | 'greater_than'
@@ -17,20 +18,73 @@ type JsonPathFilterOperator =
     | 'less_than'
     | 'less_than_or_equal'
     | 'not_equal'
-    | 'regex';
+    | 'regex'
+    | 'starts_with';
 type JsonPathSyntaxMode = 'jsonpath' | 'legacy';
 
 type JsonPathSelector = {
     steps: JsonPathStep[];
 };
 
-type JsonPathCommand = {
+/**
+ * Selector which has to match a number of nodes in the range for the command to be applied,
+ * i.e. the part of the expression before `;$` or `{min,max};$`.
+ */
+type JsonPathPrecondition = {
     guards: JsonPathFilter[];
-    mutation: JsonPathMutation;
+    max: number;
+    min: number;
     selector: JsonPathSelector;
 };
 
+/**
+ * Query to apply to a processed value, with its mutation, which is built from its value when the query is parsed,
+ * so an invalid one rejects all the queries, and otherwise only when the query matches, see `JsonPathCache`.
+ */
+type JsonPathCommand = {
+    mutation: JsonPathMutation | null;
+    query: JsonPathParsedQuery;
+};
+
+/**
+ * Query which is parsed once for a rule, see `JsonPathCache`, without its mutation, which is built from `valuePart`
+ * for each processed value, so e.g. time keywords are resolved, and a JSON value is parsed, for each of them.
+ */
+type JsonPathParsedQuery = {
+    guards: JsonPathFilter[];
+    /**
+     * True once the mutation has been built from the value of the query, which may fail for a reason which
+     * is not of the query, e.g. `Date` of the page which throws for `$now$`, so it is checked until it succeeds.
+     */
+    isValueChecked: boolean;
+    /**
+     * True for a value `call([...])`, for which nodes are visited depth-first, as in uBO.
+     */
+    isCall: boolean;
+    /**
+     * True for an expression with `v2:` prefix, in which a filter tests the children of each node,
+     * also of an object, and leading filters are steps, not guards.
+     */
+    isV2: boolean;
+    mode: JsonPathMutationMode;
+    preconditions: JsonPathPrecondition[];
+    selector: JsonPathSelector;
+    valuePart: string;
+};
+
+/**
+ * Queries of a rule parsed by `jsonPath()`, by their text, which a scriptlet creates once, when it runs,
+ * by `Object.create(null)`, so that they are not parsed again for each processed value,
+ * e.g. on each call of an intercepted method, and passes to `jsonPath()`. A query which cannot be parsed
+ * is `null`, so the rule is rejected without parsing it again.
+ */
+export type JsonPathCache = Record<string, JsonPathParsedQuery | null>;
+
 type JsonPathMutation = {
+    /**
+     * Called for each matched node instead of assigning a value to it, e.g. by `call([...])`.
+     */
+    invoke?: (parent: any, key: number | string) => boolean;
     mode: JsonPathMutationMode;
     updater?: (currentValue: any) => any;
 };
@@ -53,12 +107,16 @@ type JsonPathStep = {
 
 type JsonPathLogicalOperator = 'and' | 'or';
 
+/**
+ * Filter which compares the values selected by its selector, which is parsed with the expression,
+ * so an invalid one, e.g. a regular expression of keys, rejects the expression before any query is applied.
+ */
 type JsonPathComparisonFilter = {
-    comparisonSelectorPath?: string;
+    comparisonSelector?: JsonPathSelector;
     comparisonValue?: any;
     operator: JsonPathFilterOperator;
     resolveComparisonAgainstRoot?: boolean;
-    selectorPath: string;
+    selector: JsonPathSelector;
 };
 
 type JsonPathLogicalFilter = {
@@ -76,7 +134,15 @@ type JsonPathFilter = JsonPathComparisonFilter | JsonPathLogicalFilter | JsonPat
 type JsonPathCandidate = {
     key: number | string | null;
     parent: any;
-    path: string;
+    /**
+     * Candidate of the parent, from which the path is built, or `null` for the root.
+     */
+    parentCandidate: JsonPathCandidate | null;
+    /**
+     * Normalized resolved path, built by `getCandidatePath()` only when it is needed,
+     * as most candidates, e.g. the ones checked by filters, never need it.
+     */
+    path?: string;
     value: any;
 };
 
@@ -114,6 +180,7 @@ export function resolveJsonSyntaxMode(
     const JSONPATH_GUARD = '[?';
     const JSONPATH_ROOT_GUARD = '$';
     const JSONPATH_DOT_GUARD = '.';
+    const JSONPATH_V2_PREFIX = 'v2:';
 
     const normalizedMode = typeof mode === 'string' ? mode.trim().toLowerCase() : '';
     if (normalizedMode === LEGACY_MODE || normalizedMode === JSONPATH_MODE) {
@@ -127,6 +194,7 @@ export function resolveJsonSyntaxMode(
         normalizedExpression.startsWith(JSONPATH_ROOT_GUARD)
         || normalizedExpression.startsWith(JSONPATH_GUARD)
         || normalizedExpression.startsWith(JSONPATH_DOT_GUARD)
+        || normalizedExpression.startsWith(JSONPATH_V2_PREFIX)
     ) {
         return {
             mode: JSONPATH_MODE,
@@ -139,10 +207,662 @@ export function resolveJsonSyntaxMode(
 }
 
 /**
+ * Returns the index of the slash which closes a regular expression of JSONPath syntax, which starts
+ * with the slash at a given index, so that scanners skip it as a whole, and its characters,
+ * e.g. `.`, `=` or `[`, are not delimiters. A slash starts:
+ * - a regular expression of property keys right after a dot, e.g. `./^ad_/`, which is read as a regular
+ *   expression of JavaScript, i.e. with escapes and character classes, e.g. `./^a[/.]b/`, which contains
+ *   neither `=` nor a space, as a name followed by a value or the next query is read as before,
+ *   e.g. `./login=/` or `./login $.b./x/`, and which
+ *   has to be followed by the end, a space, `.`, `[`, `]`, `)`, `=`, `+`, `;`, `{`, or, if filters are allowed,
+ *   an operator of a filter, i.e. `!=`, `*=`, `^=`, `$=`, `&&`, `||`, `<` or `>`, e.g. `[?@./^ad/!=false]`,
+ *   so e.g. `./api/*` or `./api/$metadata` of a selector are names, as before;
+ * - a regular expression in brackets, after `[` or `,`, or at the start of the string, i.e. of the content
+ *   of brackets, e.g. `[/^ad./]` or `/^a/,/^b/`, and one which a filter compares a value with,
+ *   after `=` or `=~`, e.g. `[?.url=/ads[/?#]/]`, if filters are allowed. As before, its operand is read up to
+ *   the next `,`, or `&&` and `||` of a filter, or the closing bracket or parenthesis, with quotes and brackets
+ *   in it, and it is a regular expression only if the operand is one as a whole, e.g. `/ads[/?#]/`,
+ *   while e.g. `/ads` of `[?@.url=/ads && @.b=="/c"]` is a text, which a filter compares with.
+ *
+ * @param str string to check in
+ * @param index index of the slash
+ * @param isFilterAllowed whether a slash after `=` may start a regular expression of a filter,
+ * i.e. not at the top level of a selector, where `=` starts a value
+ * @returns index of the closing slash, or -1 if the slash does not start a regular expression
+ */
+export function getJsonPathRegexpEnd(str: string, index: number, isFilterAllowed: boolean): number {
+    // !IMPORTANT: Do not move constants outside of this function
+    const SLASH = '/';
+    const BACKSLASH = '\\';
+
+    // Most characters are not a slash, so regular expressions below are not created for them
+    if (str[index] !== SLASH) {
+        return -1;
+    }
+
+    const WHITESPACE_REGEXP = /\s/;
+
+    // The same as `parseLiteralValue()` and `parsePropertySelector()` of `jsonPath()` check
+    const REGEXP_OPERAND_REGEXP = /^\/.*\/[a-z]*$/i;
+    // A step, a value or a precondition after a regular expression of keys
+    const KEY_REGEXP_FOLLOWER_REGEXP = /[\s.[\]()=+;{]/;
+    // An operator of a filter after it, e.g. `@./^ad/!=false`, only as a whole, so e.g. `./api/*` or
+    // `./api/$metadata` are names, as before
+    const KEY_REGEXP_OPERATOR_REGEXP = /^(?:[!*^$]=|&&|\|\||[<>])/;
+
+    let previous = index - 1;
+    const isKeyRegexp = str[previous] === '.';
+    while (previous >= 0 && WHITESPACE_REGEXP.test(str[previous])) {
+        previous -= 1;
+    }
+    const isBracketRegexp = previous < 0 || str[previous] === '[' || str[previous] === ',';
+    const isFilterRegexp = isFilterAllowed
+        && (str[previous] === '=' || (str[previous] === '~' && str[previous - 1] === '='));
+
+    if (isKeyRegexp) {
+        let isInClass = false;
+        for (let j = index + 1; j < str.length; j += 1) {
+            const char = str[j];
+            if (char === BACKSLASH) {
+                j += 1;
+            } else if (char === '=' || WHITESPACE_REGEXP.test(char)) {
+                // A name followed by a value or by the next query, as before, e.g. `./login=/` of a selector
+                // with a separate value `/`, `./account=Log in / Sign up`, or `./login $.routes./(ad|promo)/`
+                return -1;
+            } else if (isInClass) {
+                isInClass = char !== ']';
+            } else if (char === '[') {
+                isInClass = true;
+            } else if (char === SLASH) {
+                const next = str[j + 1];
+                const isFollowed = next === undefined
+                    || KEY_REGEXP_FOLLOWER_REGEXP.test(next)
+                    || (isFilterAllowed && KEY_REGEXP_OPERATOR_REGEXP.test(str.slice(j + 1, j + 3)));
+                return isFollowed ? j : -1;
+            }
+        }
+        return -1;
+    }
+
+    if (!isBracketRegexp && !isFilterRegexp) {
+        return -1;
+    }
+
+    /**
+     * Returns the end of the operand which starts at the slash.
+     *
+     * @param isQuoteTracked whether quotes are tracked, so delimiters inside them are a part of the operand
+     * @returns index after the operand, or -1 if a quote is not closed
+     */
+    const findOperandEnd = (isQuoteTracked: boolean): { end: number } => {
+        let end = index;
+        let depth = 0;
+        let quote: string | null = null;
+        for (; end < str.length; end += 1) {
+            const char = str[end];
+            if (quote) {
+                if (char === quote && str[end - 1] !== BACKSLASH) {
+                    quote = null;
+                }
+            } else if (isQuoteTracked && (char === '"' || char === '\'')) {
+                quote = char;
+            } else if (char === '[' || char === '(' || char === '{') {
+                depth += 1;
+            } else if (char === ']' || char === ')' || char === '}') {
+                if (depth === 0) {
+                    break;
+                }
+                depth -= 1;
+            } else if (depth === 0) {
+                if (isFilterRegexp && (str.startsWith('&&', end) || str.startsWith('||', end))) {
+                    break;
+                }
+                if (!isFilterRegexp && char === ',') {
+                    break;
+                }
+            }
+        }
+        return { end: quote ? -1 : end };
+    };
+
+    // An operand is read with quotes, as before, e.g. `/a"&&"b/` or `/a"/]"b/`, but a quote may be a part
+    // of a regular expression, e.g. `[?.title=/it's/]`, and then it is either not closed, or closed by a quote
+    // of another part, e.g. `[?.title=/it's/] $.note=Don't show`, so the operand is read without quotes
+    // if it is not a regular expression with them. A quote closed by a quote of a regular expression
+    // of another query, e.g. `[?.t=/it's/]$.a [?.t=/it's/]$.b`, is read as before, i.e. as one query
+    const quoted = findOperandEnd(true);
+    const unquoted = findOperandEnd(false);
+    const unquotedOperand = str.slice(index, unquoted.end).trimEnd();
+    // The closing slash must not be escaped, e.g. `/a"\/&&"b/` is not `/a"\/`
+    let backslashCount = 0;
+    for (let j = unquotedOperand.lastIndexOf(SLASH) - 1; j >= 0 && unquotedOperand[j] === BACKSLASH; j -= 1) {
+        backslashCount += 1;
+    }
+    const isUnquotedRegexp = REGEXP_OPERAND_REGEXP.test(unquotedOperand) && backslashCount % 2 === 0;
+    const isQuotedRegexp = quoted.end !== -1
+        && REGEXP_OPERAND_REGEXP.test(str.slice(index, quoted.end).trimEnd());
+    const end = isQuotedRegexp || !isUnquotedRegexp ? quoted.end : unquoted.end;
+    if (end === -1) {
+        return -1;
+    }
+
+    const operand = str.slice(index, end).trimEnd();
+    if (!REGEXP_OPERAND_REGEXP.test(operand)) {
+        return -1;
+    }
+
+    return index + operand.lastIndexOf(SLASH);
+}
+
+/**
+ * Splits an argument of JSONPath syntax into its queries, which are separated by spaces,
+ * e.g. `$.ads $..banner=false` into `$.ads` and `$..banner=false`.
+ *
+ * A query after the first one starts with the root `$` followed by a step, e.g. `$.ads` or `$[0]`, so e.g.
+ * `$now$`, `$5`, `$` or `$=1` do not start a query, with `v2:` followed by a selector, e.g. `v2:$.a`,
+ * or with leading guards followed by such a root, e.g. `[?(@.ads)]$.config`, and after a query with a value
+ * also with spaces before the root, e.g. `$.a=1 [?(@.ads)] $.config=2`. A dot or a bracket after a space
+ * continues the selector, e.g. `$.a .b` is `$.a.b`, `$.a [0]` is `$.a[0]`, and `$.a [?(@.x)] $.b` is
+ * `$.a[?(@.x)]` and `$.b`, as in one query, and in uBO, which ignores spaces, so only the first query
+ * may start without the root, e.g. `.a $.b`. A space after `;` before the root continues the query,
+ * e.g. `..adSlots; $.ads`, which is one query, so that `$.ads` is not removed unconditionally, although it is
+ * not a precondition, which is `;$` without a space, e.g. `..adSlots;$.ads`, as in uBO. An argument with
+ * a regular expression in brackets which contains a raw quote, e.g. `[?.t=/it's/]$.a $.b`, is one query,
+ * as before, see `hasQuotedRegexp()`, so its queries need separate rules, or the quote written as `\x27`
+ * or `\x22`. `&&` and `||` outside brackets are a part of a name, e.g. `$.ads $.labels.a || b` is `$.ads`
+ * and `$.labels.a || b`.
+ *
+ * Each query is read as its selector and its value, after a top-level `=` or `+=`:
+ * - in the selector, a space at the top level separates queries, i.e. not inside quotes, brackets,
+ *   braces, parentheses, or a regular expression of a filter, e.g. `[?.t=/a b/]`,
+ *   but only if the selector is complete, i.e. has more than `v2:` and leading guards, e.g. `[?(@.ads)] $.config`;
+ * - a value which starts with `{`, `[`, `json:{`, `json:[`, `replace({`, `repl({` or `call([` ends where its
+ *   brackets are closed, with spaces inside of its JSON strings, and a value which starts with a quote
+ *   ends with the same quote, e.g. `="see $.ads"`, so a space followed by a query start separates queries then;
+ * - any other value is a text, in which quotes, slashes and `=` are a part of it, e.g. `=Don't show`,
+ *   `=/ad.js` or `=YWQ=`, and in which a space followed by a query start separates queries only if that query
+ *   has its own value and selects a node, e.g. `$.t=see $.a=1`, while e.g. `$.t=see $.a`, `$.t=Costs 5 $`
+ *   or `$.t=Total: $ = 5` is one query,
+ *   so a query which takes `argumentValue` has to precede a text value, also a constant, e.g. `$.a=false $.b`
+ *   is one query, as before; only the value `$remove$` after `=` of a trusted scriptlet, which removes
+ *   the matched nodes, see `isRemoveValueSupported`, ends before a query start, e.g. `$.a=$remove$ $.b`
+ *   is `$.a=$remove$` and `$.b`, while e.g. `$.a=$remove$ them` or `$.a+=$remove$ $.b` is one query; the value
+ *   `replace:/regex/replacement/` ends only with the closing slash of its replacement, optionally followed by `g`,
+ *   e.g. `=replace:/a $.b=1/c/` or `=replace:/x/see $.b=1/`, and it is the rest of the argument if the argument
+ *   ends with such a slash, as before, e.g. `=replace:/x/path/ $.b=1/`, so such a value is followed by other queries
+ *   only if the argument does not end with a slash, e.g. `=replace:/x/y/ $.b=1`;
+ * - a value is missing only until its first character, e.g. `$.a= [1]`.
+ *
+ * A value of a separate argument is not split, see `buildJsonPathQueries()`, and neither are uBO rules
+ * of `json-edit` scriptlets, see `jsonPath()`, in which uBO ignores spaces, e.g. `.a $.b` is one query.
+ *
+ * @param expression argument of JSONPath syntax
+ * @param isRemoveValueSupported whether the value `$remove$` after `=` removes the matched nodes,
+ * i.e. for trusted scriptlets, see `buildJsonPathQueries()`, so a query without its own value may follow it,
+ * while it is a text for other ones, as before, as they may not set a value
+ * @returns trimmed queries, a single one if the argument has no separator, none if it is empty
+ */
+export function splitJsonPathQueries(expression: string, isRemoveValueSupported = false): string[] {
+    // !IMPORTANT: Do not move constants outside of this function
+    // Root of a query after another one, followed by a step, e.g. `$.a` or `$[0]`, so e.g. `$`, `$=1`
+    // or `$ = 5` is a part of the previous query, as before
+    const ROOT_PATH_START_REGEXP = /^\$[.[]/;
+    // Start of a selector after `v2:` of a query after another one, so e.g. `v2: mode` of a text is not a query
+    const V2_SELECTOR_STARTS = '$.[*';
+    const SEMICOLON = ';';
+    // The same forms as `jsonPath()` reads, e.g. `call(` without an array is a text, as before
+    const STRUCTURED_VALUE_REGEXP = /^(?:json:)?[[{]|^(?:replace|repl)\(\s*\{|^call\(\s*\[/;
+    const WHITESPACE_REGEXP = /\s/;
+    const V2_PREFIX = 'v2:';
+    const GUARD_START = '[?';
+    const REPLACE_PREFIX = 'replace:/';
+    const REMOVE_VALUE_MARKER = '$remove$';
+    const EQUAL = '=';
+    const PLUS = '+';
+    const SLASH = '/';
+    const BACKSLASH = '\\';
+    const DOUBLE_QUOTE = '"';
+    const SINGLE_QUOTE = '\'';
+    const OPENING_BRACKETS = '[{(';
+    const CLOSING_BRACKETS = ']})';
+
+    if (typeof expression !== 'string') {
+        return [];
+    }
+
+    /**
+     * Checks whether the character at a given index is preceded by an odd number of backslashes.
+     *
+     * @param str string to check in
+     * @param index index of the character
+     * @returns true when the character is escaped
+     */
+    const isEscaped = (str: string, index: number): boolean => {
+        let count = 0;
+        for (let j = index - 1; j >= 0 && str[j] === BACKSLASH; j -= 1) {
+            count += 1;
+        }
+        return count % 2 !== 0;
+    };
+
+    /**
+     * Returns the index of the closing quote of a quoted string.
+     *
+     * @param str string to check in
+     * @param start index of the opening quote
+     * @returns index of the closing one, or the last index if it is not closed
+     */
+    const findClosingQuote = (str: string, start: number): number => {
+        for (let j = start + 1; j < str.length; j += 1) {
+            if (str[j] === str[start] && !isEscaped(str, j)) {
+                return j;
+            }
+        }
+        return str.length - 1;
+    };
+
+    // Results of `getJsonPathRegexpEnd()` for the slashes of the expression, outside and inside brackets
+    const regexpEnds = new Map<number, number>();
+    const filterRegexpEnds = new Map<number, number>();
+
+    /**
+     * Returns the index of the slash which closes a regular expression which starts with the slash
+     * at a given index of the expression, see `getJsonPathRegexpEnd()`. It is read once for each slash,
+     * as it may read the rest of the expression, e.g. for each slash of `[?.a=/f0 [?.a=/f1`, which lookaheads
+     * from each space would read again, so splitting such an argument would be cubic.
+     *
+     * @param index index of the slash
+     * @param isFilterAllowed whether a slash after `=` may start a regular expression of a filter
+     * @returns index of the closing slash, or -1 if the slash does not start a regular expression
+     */
+    const getRegexpEnd = (index: number, isFilterAllowed: boolean): number => {
+        const ends = isFilterAllowed ? filterRegexpEnds : regexpEnds;
+        let end = ends.get(index);
+        if (end === undefined) {
+            end = getJsonPathRegexpEnd(expression, index, isFilterAllowed);
+            ends.set(index, end);
+        }
+        return end;
+    };
+
+    /**
+     * Returns the index of the bracket which closes the opening bracket at a given index of the expression,
+     * skipping quoted strings and regular expressions, see `getRegexpEnd()`.
+     *
+     * @param start index of the opening bracket
+     * @returns index of the closing bracket, or -1 if it is not closed
+     */
+    const findClosingBracket = (start: number): number => {
+        let depth = 0;
+        for (let j = start; j < expression.length; j += 1) {
+            const char = expression[j];
+            // a filter is inside brackets
+            const regexpEnd = char === SLASH ? getRegexpEnd(j, depth > 0) : -1;
+            if (regexpEnd !== -1) {
+                j = regexpEnd;
+            } else if (char === DOUBLE_QUOTE || char === SINGLE_QUOTE) {
+                j = findClosingQuote(expression, j);
+            } else if (OPENING_BRACKETS.includes(char)) {
+                depth += 1;
+            } else if (CLOSING_BRACKETS.includes(char)) {
+                depth -= 1;
+                if (depth === 0) {
+                    return j;
+                }
+            }
+        }
+        return -1;
+    };
+
+    /**
+     * Checks whether the argument has a regular expression in brackets which contains a raw quote,
+     * e.g. `[?.t=/it's/]` or `[?@.x=/a"b/]`. Its end is not certain, as it is read both with and without
+     * regard to quotes, see `getJsonPathRegexpEnd()`, e.g. `/a"/` of `$.items[?@.x=/a"/] $.b=c/]` may also be
+     * `/a"/] $.b=c/`, and splitting there would leave the first part as a broader filter. So such an argument
+     * is one query, as before, and its queries need separate rules, or the quote written as `\x27` or `\x22`.
+     *
+     * @returns true when the argument has such a regular expression
+     */
+    const hasQuotedRegexp = (): boolean => {
+        let depth = 0;
+        for (let i = 0; i < expression.length; i += 1) {
+            const char = expression[i];
+            const regexpEnd = char === SLASH ? getRegexpEnd(i, depth > 0) : -1;
+            if (regexpEnd !== -1) {
+                if (depth > 0) {
+                    for (let j = i + 1; j < regexpEnd; j += 1) {
+                        if (expression[j] === DOUBLE_QUOTE || expression[j] === SINGLE_QUOTE) {
+                            return true;
+                        }
+                    }
+                }
+                i = regexpEnd;
+            } else if (depth > 0 && (char === DOUBLE_QUOTE || char === SINGLE_QUOTE)) {
+                i = findClosingQuote(expression, i);
+            } else if (OPENING_BRACKETS.includes(char)) {
+                depth += 1;
+            } else if (CLOSING_BRACKETS.includes(char) && depth > 0) {
+                // a closing bracket without an opening one, e.g. of a text value `:)`, does not hide the next ones
+                depth -= 1;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Returns the index after a structured value, e.g. `{"a": [1]}`, `json:{...}` or `repl({...})`,
+     * whose brackets are closed, skipping JSON strings.
+     *
+     * @param start index of the value
+     * @returns index after the value, or the length of the expression if its brackets are not closed
+     */
+    const findStructuredValueEnd = (start: number): number => {
+        let depth = 0;
+        let hasOpened = false;
+        for (let j = start; j < expression.length; j += 1) {
+            const char = expression[j];
+            if (char === DOUBLE_QUOTE) {
+                j = findClosingQuote(expression, j);
+            } else if (OPENING_BRACKETS.includes(char)) {
+                depth += 1;
+                hasOpened = true;
+            } else if (CLOSING_BRACKETS.includes(char)) {
+                depth -= 1;
+                if (hasOpened && depth === 0) {
+                    return j + 1;
+                }
+            }
+        }
+        return expression.length;
+    };
+
+    /**
+     * Returns the index of the first character after whitespaces.
+     *
+     * @param start index to start from
+     * @returns index of the next character which is not a whitespace, or the length of the expression
+     */
+    const skipWhitespaces = (start: number): number => {
+        let j = start;
+        while (j < expression.length && WHITESPACE_REGEXP.test(expression[j])) {
+            j += 1;
+        }
+        return j;
+    };
+
+    /**
+     * Checks whether a query after another one starts at a given index, i.e. `v2:` followed by a selector,
+     * e.g. `v2:$.a` or `v2:*[?@.ad]`,
+     * the root `$` followed by a step, e.g. `$.a` or `$[0]`, or leading guards followed by it,
+     * e.g. `[?(@.ads)]$.config`. After a value, there may be spaces before the root, e.g. `[?(@.ads)] $.config`,
+     * while after a selector such guards are its filter, e.g. `$.a [?(@.x)] $.b` is `$.a[?(@.x)]` and `$.b`,
+     * as `$.a` would be removed otherwise. The root alone or with a value, e.g. `$`, `$=1` or `$ = 5`,
+     * and `v2:` without a selector, e.g. `v2: mode`, are a part of the previous query, as before.
+     *
+     * @param start index to check at
+     * @param isAfterValue whether the previous query has a value
+     * @returns true when a query starts there
+     */
+    const isQueryStart = (start: number, isAfterValue: boolean): boolean => {
+        if (expression.startsWith(V2_PREFIX, start)) {
+            const selectorStart = expression[skipWhitespaces(start + V2_PREFIX.length)];
+            return selectorStart !== undefined && V2_SELECTOR_STARTS.includes(selectorStart);
+        }
+        let j = start;
+        while (expression.startsWith(GUARD_START, j)) {
+            const end = findClosingBracket(j);
+            if (end === -1) {
+                return false;
+            }
+            j = isAfterValue ? skipWhitespaces(end + 1) : end + 1;
+        }
+        return expression[j] === '$' && ROOT_PATH_START_REGEXP.test(expression.slice(j, j + 2));
+    };
+
+    /**
+     * Checks whether a selector is complete, i.e. it has more than `v2:` prefix and leading guards,
+     * which are followed by the rest of the same query, e.g. `[?(@.ads)] $.config`, and it does not end
+     * with `;` before the root, e.g. `..adSlots; $.ads`, which would remove `$.ads` unconditionally if it were
+     * split, although it is not a precondition with the space, while `;` before `v2:` or a guard is a part
+     * of a name, e.g. `$.entities.&nbsp; v2:$.ads`.
+     *
+     *
+     * @param start index of the selector
+     * @param end index after the selector
+     * @param isBeforeRoot whether the next query starts with the root `$`
+     * @returns true when the selector is complete
+     */
+    const isSelectorComplete = (start: number, end: number, isBeforeRoot: boolean): boolean => {
+        let last = end - 1;
+        while (last >= start && WHITESPACE_REGEXP.test(expression[last])) {
+            last -= 1;
+        }
+        // `;` before the root is kept with the selector of the same query, e.g. `..adSlots; $.ads`
+        if (isBeforeRoot && last >= start && expression[last] === SEMICOLON) {
+            return false;
+        }
+        let j = skipWhitespaces(start);
+        // With `v2:` prefix leading filters are steps which select the children of the root, not guards
+        if (expression.startsWith(V2_PREFIX, j)) {
+            return skipWhitespaces(j + V2_PREFIX.length) <= last;
+        }
+        while (j <= last && expression.startsWith(GUARD_START, j)) {
+            const guardEnd = findClosingBracket(j);
+            if (guardEnd === -1 || guardEnd > last) {
+                return false;
+            }
+            j = skipWhitespaces(guardEnd + 1);
+        }
+        return j <= last;
+    };
+
+    /**
+     * Scans the selector of a query until its first decision point, i.e. its top-level `=` or `+=`, the end
+     * of the expression, or a top-level space followed by a query start after a complete selector.
+     *
+     * @param start index of the query
+     * @param from index to scan from, i.e. the start of the query, or of the next query, through which
+     * the selector continues, see `findSelectorEnd()`
+     * @returns index of the decision point, whether the selector is well-formed up to it, i.e. its quotes
+     * in brackets are closed and it has no closing bracket without an opening one, and the index
+     * of the next query, or -1 if the selector ends there
+     */
+    const scanToDecision = (start: number, from = start): { end: number; isWellFormed: boolean; next: number } => {
+        let depth = 0;
+        let isWellFormed = true;
+        let i = from;
+        while (i < expression.length) {
+            const char = expression[i];
+            const regexpEnd = char === SLASH ? getRegexpEnd(i, depth > 0) : -1;
+            if (regexpEnd !== -1) {
+                i = regexpEnd + 1;
+            } else if (depth > 0 && (char === DOUBLE_QUOTE || char === SINGLE_QUOTE)) {
+                // A quote outside brackets is a part of a name, e.g. `$.meta.don'tPrompt`, as the selector reads it
+                const closingIndex = findClosingQuote(expression, i);
+                if (closingIndex === i || expression[closingIndex] !== char || isEscaped(expression, closingIndex)) {
+                    isWellFormed = false;
+                }
+                i = closingIndex + 1;
+            } else if (OPENING_BRACKETS.includes(char)) {
+                depth += 1;
+                i += 1;
+            } else if (CLOSING_BRACKETS.includes(char)) {
+                depth -= 1;
+                if (depth < 0) {
+                    isWellFormed = false;
+                }
+                i += 1;
+            } else if (depth === 0 && (char === EQUAL || (char === PLUS && expression[i + 1] === EQUAL))) {
+                return { end: i, isWellFormed, next: -1 };
+            } else if (depth === 0 && WHITESPACE_REGEXP.test(char)) {
+                const next = skipWhitespaces(i);
+                if (isQueryStart(next, false) && isSelectorComplete(start, i, expression[next] === '$')) {
+                    return { end: i, isWellFormed, next };
+                }
+                i = next;
+            } else {
+                i += 1;
+            }
+        }
+        return { end: expression.length, isWellFormed: isWellFormed && depth === 0, next: -1 };
+    };
+
+    /**
+     * Returns the end of the selector of a query, i.e. the index of its top-level `=` or `+=`,
+     * of the space which separates it from the next query, or the length of the expression.
+     * A space separates the next query only if the selector of the next query is well-formed,
+     * see `scanToDecision()`, otherwise the selector continues through it, e.g. `$.a $.b]` is one query.
+     *
+     * @param start index of the query
+     * @returns index of the end of its selector
+     */
+    const findSelectorEnd = (start: number): number => {
+        let decision = scanToDecision(start);
+        while (decision.next !== -1 && !scanToDecision(decision.next).isWellFormed) {
+            decision = scanToDecision(start, decision.next);
+        }
+        return decision.end;
+    };
+
+    /**
+     * Checks whether a query has its own value, i.e. its selector ends with `=` or `+=`.
+     *
+     * @param start index of the query
+     * @returns true when the query has a value
+     */
+    const hasOwnValue = (start: number): boolean => {
+        const end = findSelectorEnd(start);
+        return end < expression.length && !WHITESPACE_REGEXP.test(expression[end]);
+    };
+
+    if (hasQuotedRegexp()) {
+        const trimmedExpression = expression.trim();
+        return trimmedExpression === '' ? [] : [trimmedExpression];
+    }
+
+    const queries: string[] = [];
+    let queryStart = skipWhitespaces(0);
+
+    while (queryStart < expression.length) {
+        const selectorEnd = findSelectorEnd(queryStart);
+        if (selectorEnd === expression.length || WHITESPACE_REGEXP.test(expression[selectorEnd])) {
+            queries.push(expression.slice(queryStart, selectorEnd).trim());
+            queryStart = skipWhitespaces(selectorEnd);
+            continue;
+        }
+
+        const isSetValue = expression[selectorEnd] === EQUAL;
+        let i = skipWhitespaces(selectorEnd + (isSetValue ? 1 : 2));
+        const valueStart = i;
+        let isTextValue = false;
+        // Index after the regular expression of `replace:/regex/replacement/`, or -1 for other values
+        let replacementStart = -1;
+        // The whole rest is tested, as spaces may precede the opening bracket, e.g. `replace( {`
+        if (STRUCTURED_VALUE_REGEXP.test(expression.slice(i))) {
+            i = findStructuredValueEnd(i);
+        } else if (expression[i] === DOUBLE_QUOTE || expression[i] === SINGLE_QUOTE) {
+            i = findClosingQuote(expression, i) + 1;
+        } else {
+            isTextValue = true;
+            if (expression.startsWith(REPLACE_PREFIX, i)) {
+                // The regular expression ends with the first slash which is not escaped
+                i += REPLACE_PREFIX.length;
+                while (i < expression.length && (expression[i] !== SLASH || isEscaped(expression, i))) {
+                    i += 1;
+                }
+                replacementStart = i + 1;
+            }
+        }
+
+        // If the rest of the argument ends with the closing slash of a replacement, it is the value as a whole,
+        // as before, e.g. `replace:/x/path/ $.b=1/`, while e.g. `replace:/x/y/ $.b=1` is followed by a query
+        const restOfArgument = expression.trimEnd();
+        const isReplacementToEnd = replacementStart !== -1
+            && restOfArgument.length > replacementStart
+            && (restOfArgument.endsWith(SLASH) || restOfArgument.endsWith(`${SLASH}g`));
+
+        // The rest of the value, until a space followed by the next query
+        let nextQueryStart = expression.length;
+        while (i < expression.length) {
+            if (!WHITESPACE_REGEXP.test(expression[i])) {
+                // A text after a quoted or a structured value is a part of it, e.g. `"Ads" by $.sponsor`,
+                // so the value is a text, after which only a query with its own value starts
+                isTextValue = true;
+                i += 1;
+                continue;
+            }
+            const next = skipWhitespaces(i);
+            // The replacement of `replace:/regex/replacement/` ends with a slash, optionally followed by `g`,
+            // e.g. `replace:/x/see $.b=1/` is one value
+            const isAfterSlash = expression[i - 1] === SLASH
+                || (expression[i - 1] === 'g' && expression[i - 2] === SLASH);
+            const isReplacementOpen = isReplacementToEnd
+                || (replacementStart !== -1 && (i <= replacementStart || !isAfterSlash));
+            if (
+                next < expression.length
+                && !isReplacementOpen
+                && isQueryStart(next, true)
+                // `$remove$` is not a text which continues, so any query may follow it, e.g. `$.a=$remove$ $.b`
+                && (
+                    !isTextValue
+                    || (isRemoveValueSupported
+                        && isSetValue
+                        && i - valueStart === REMOVE_VALUE_MARKER.length
+                        && expression.startsWith(REMOVE_VALUE_MARKER, valueStart))
+                    || hasOwnValue(next)
+                )
+                && scanToDecision(next).isWellFormed
+            ) {
+                nextQueryStart = next;
+                break;
+            }
+            i = next;
+        }
+
+        queries.push(expression.slice(queryStart, i).trim());
+        queryStart = nextQueryStart;
+    }
+
+    return queries;
+}
+
+/**
+ * Returns the queries of an argument of JSONPath syntax of a rule, which a scriptlet gets once,
+ * when it runs, and passes to `jsonPath()`, so the argument is not split again for each processed value.
+ * uBO rules of `json-edit` scriptlets, e.g. `ubo-json-edit` or `ubo-json-edit-fetch-response.js`,
+ * have one query, in which uBO ignores spaces, e.g. `.a $.b` is one query, so they are not split,
+ * while other ones are split by `splitJsonPathQueries()`.
+ *
+ * @param source source of the scriptlet
+ * @param expression argument of JSONPath syntax
+ * @returns queries to pass to `jsonPath()`, none if the argument is empty
+ */
+export function getJsonPathQueries(source: Source, expression: string): string[] {
+    // Part of names of uBO scriptlets with JSONPath syntax, e.g. `json-edit`, `ubo-json-edit-xhr-response.js`
+    // or `ubo-trusted-json-edit`, while `json-prune` of uBO has no JSONPath syntax
+    const UBO_JSON_EDIT_NAME_PART = 'json-edit';
+    const TRUSTED_SCRIPTLET_PREFIX = 'trusted-';
+
+    if (typeof expression !== 'string' || expression.trim() === '') {
+        return [];
+    }
+
+    if (typeof source.name === 'string' && source.name.includes(UBO_JSON_EDIT_NAME_PART)) {
+        // trimmed as other queries are, e.g. for `v2:` prefix
+        return [expression.trim()];
+    }
+
+    // The value `$remove$` of a query is read as `jsonPath()` reads it, i.e. it removes nodes for trusted scriptlets
+    const isTrusted = typeof source.name === 'string' && source.name.startsWith(TRUSTED_SCRIPTLET_PREFIX);
+    return splitJsonPathQueries(expression, isTrusted);
+}
+
+/**
  * Builds a set-style JSONPath expression from a selector and mutation value.
  * Preserves the selector as-is when it already includes an inline mutation suffix.
  * When `argumentValue` is `$remove$`, preserves the selector so the downstream
  * JSONPath parser treats it as a remove command.
+ * Several queries of one argument are built by `buildJsonPathQueries()`.
  *
  * @param selectorPath JSONPath selector without mutation suffix
  * @param argumentValue value to assign through JSONPath
@@ -187,6 +907,16 @@ export function buildJsonPathExpression(selectorPath: string, argumentValue: any
                     quote = null;
                 }
             }
+            continue;
+        }
+
+        // A regular expression, e.g. of property keys `./^ad=/` or `[/^ad=/]`, is skipped,
+        // so that `=` in it is not a mutation
+        const regexpEnd = currentChar === '/'
+            ? getJsonPathRegexpEnd(normalizedSelectorPath, i, bracketDepth > 0)
+            : -1;
+        if (regexpEnd !== -1) {
+            i = regexpEnd;
             continue;
         }
 
@@ -239,6 +969,30 @@ export function buildJsonPathExpression(selectorPath: string, argumentValue: any
 }
 
 /**
+ * Builds the queries of an argument of JSONPath syntax with a value which is set by each query without
+ * its own value, e.g. `$.a $.b=1` with `false` into `$.a=false` and `$.b=1`, see `buildJsonPathExpression()`.
+ * The value is appended after the argument is split, so it is never split, e.g. `Please wait ...`.
+ * A query may also have `$remove$` as its own value, which removes the nodes it matches, as the same
+ * `argumentValue` does, e.g. `$.a=$remove$ $.b=1`, and any query may follow it, e.g. `$.a=$remove$ $.b`.
+ *
+ * @param selectorPath argument of JSONPath syntax, with queries separated by spaces
+ * @param argumentValue value to assign through JSONPath
+ * @returns queries to pass to `jsonPath()`, or none if a query has no value, so the rule is not applied
+ */
+export function buildJsonPathQueries(selectorPath: string, argumentValue: any): string[] {
+    const queries = splitJsonPathQueries(selectorPath, true);
+    const builtQueries: string[] = [];
+    for (let i = 0; i < queries.length; i += 1) {
+        const builtQuery = buildJsonPathExpression(queries[i], argumentValue);
+        if (builtQuery === '') {
+            return [];
+        }
+        builtQueries.push(builtQuery);
+    }
+    return builtQueries;
+}
+
+/**
  * Removes, sets, or appends values selected by a JSONPath-like expression.
  *
  * Supported behavior is intentionally scoped to mutation use cases: path
@@ -247,21 +1001,27 @@ export function buildJsonPathExpression(selectorPath: string, argumentValue: any
  *
  * @param source source descriptor used for logging and parsing
  * @param root JSON object or array to mutate
- * @param path JSONPath expression with optional mutation suffix; empty path logs the payload
+ * @param path JSONPath expression with optional mutation suffix; empty path logs the payload.
+ * Several queries may be separated by spaces, see `getJsonPathQueries()`, or passed as an array,
+ * which is not split again, e.g. by a scriptlet which gets them once, by `getJsonPathQueries()`
+ * or `buildJsonPathQueries()`
  * @param nativeObjects optional bag of native object references
  * @param onMutation optional callback fired once if any mutation happens
  * @param stack optional stack trace pattern that must match for processing to occur
  * @param matchOnly when true, evaluates guards and selector matches without mutating `root`
+ * @param cache optional queries parsed before for the same rule, to which parsed ones are added,
+ * see `JsonPathCache`
  * @returns mutated root value
  */
 export const jsonPath = (
     source: Source,
     root: Record<string, any>,
-    path: string,
+    path: string | string[],
     nativeObjects: JsonPathNativeObjects,
     onMutation?: JsonPathMutationObserver,
     stack = '',
     matchOnly = false,
+    cache?: JsonPathCache,
 ): any => {
     const ROOT_PATH = '$';
     const DOT = '.';
@@ -285,8 +1045,10 @@ export const jsonPath = (
     const EXPRESSION_OPEN_STRING = '[?';
     const AT_SIGN = '@';
     const TRUSTED_SCRIPTLET_PREFIX = 'trusted-';
+    const REMOVE_VALUE_MARKER = '$remove$';
     const FILTER_OPERATORS = {
         CONTAINS: 'contains',
+        ENDS_WITH: 'ends_with',
         EQUAL: 'equal',
         EXISTS: 'exists',
         GREATER_THAN: 'greater_than',
@@ -295,8 +1057,23 @@ export const jsonPath = (
         LESS_THAN_OR_EQUAL: 'less_than_or_equal',
         NOT_EQUAL: 'not_equal',
         REGEX: 'regex',
+        STARTS_WITH: 'starts_with',
     } as const;
-    const OPERATORS = ['==', '!=', '<=', '>=', '*=', '=~', '<', '>', '='];
+    const OPERATORS = ['==', '!=', '<=', '>=', '*=', '^=', '$=', '=~', '<', '>', '='];
+    const SLASH = '/';
+    const SEMICOLON = ';';
+    const V2_PREFIX = 'v2:';
+    // Range of a count of matches which `;$` requires, i.e. at least one
+    const DEFAULT_MIN_COUNT = 1;
+    const DEFAULT_MAX_COUNT = 1e6;
+    // `{min,max}` before `;$`, either of which may be omitted, e.g. `{2}`, `{1,}` or `{,3}`
+    const QUANTIFIER_REGEXP = /\{(\d+|\d+,\d+|\d+,|,\d+)\}$/;
+    // Placeholders of uBO syntax, which are not template strings
+    /* eslint-disable no-template-curly-in-string */
+    const CALL_OBJECT_PLACEHOLDER = '${obj}';
+    const CALL_KEY_PLACEHOLDER = '${key}';
+    const CALL_VALUE_PLACEHOLDER = '${val}';
+    /* eslint-enable no-template-curly-in-string */
     // Hard ceilings for a single recursive descent. Cycles are detected by
     // object identity, but a non-caching proxy or getter that mints a fresh
     // wrapper on every property read defeats identity checks, so traversal
@@ -308,6 +1085,10 @@ export const jsonPath = (
     // Primitive values (numbers, strings, booleans) can never form a cycle,
     // so counting them would fire the budget on large arrays of primitives.
     const MAX_RECURSIVE_CANDIDATES = 100000;
+    // Value which an updater returns to assign nothing, e.g. `repl({...})` for a value which is not a string
+    const UNCHANGED_VALUE = {};
+    // Items of an array which are removed by `splice()` of each, as before, while more are removed in one pass
+    const MAX_SPLICED_ITEMS = 8;
     const MAX_RECURSIVE_DEPTH = 1000;
 
     // Required for appendPath(): simple property names can be emitted as `.prop`,
@@ -318,6 +1099,15 @@ export const jsonPath = (
     // `foo-bar` -> `$['foo-bar']`.
     const IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
 
+    // True while a command with `v2:` prefix is evaluated, in which a filter tests the children of each node
+    let shouldFilterChildren = false;
+    // True while a `call([...])` command is evaluated, for which a key matched more than once, e.g. by `['a','a']`,
+    // is a match each time, as in uBO, so the method is called for each of them
+    let shouldKeepDuplicateKeys = false;
+    // True while a `call([...])` command is evaluated, for which descendants are visited depth-first, as in uBO,
+    // so the method is called in the same order, while other commands visit them breadth-first, as before
+    let shouldTraverseDepthFirst = false;
+
     /**
      * Checks whether a value is a non-null object.
      *
@@ -326,6 +1116,28 @@ export const jsonPath = (
      */
     function isObjectLike(value: unknown): value is Record<string, any> {
         return value !== null && typeof value === 'object';
+    }
+
+    /**
+     * Checks whether a value is an array, and calls `Array.isArray()` only for a value with a numeric `length`,
+     * as it may be the method intercepted by a rule, e.g. of `trusted-json-set`, which is called very often,
+     * and each rule which intercepts it processes the calls of the other ones.
+     *
+     * @param value value to inspect
+     * @returns true when the value is an array
+     */
+    function isArrayValue(value: unknown): value is any[] {
+        if (!isObjectLike(value)) {
+            return false;
+        }
+        let length;
+        try {
+            length = value.length;
+        } catch {
+            // e.g. a getter of the page which throws
+            return Array.isArray(value);
+        }
+        return typeof length === 'number' && Array.isArray(value);
     }
 
     /**
@@ -368,6 +1180,18 @@ export const jsonPath = (
             j -= 1;
         }
         return count % 2 !== 0;
+    }
+
+    /**
+     * Returns the index of the slash which closes a regular expression, see `getJsonPathRegexpEnd()`,
+     * also of a filter, as `=` at the top level of an expression, which starts its value, is found before it.
+     *
+     * @param str string to check in
+     * @param index index of the character
+     * @returns index of the closing slash, or -1 if the character does not start a regular expression
+     */
+    function getRegexpEnd(str: string, index: number): number {
+        return getJsonPathRegexpEnd(str, index, true);
     }
 
     /**
@@ -470,21 +1294,49 @@ export const jsonPath = (
      * @param value current node value
      * @param parent owner object or array
      * @param key property key or array index inside the parent
-     * @param candidatePath normalized resolved path
+     * @param parentCandidate candidate of the parent, or `null` for the root
      * @returns candidate record
      */
     function createCandidate(
         value: any,
         parent: any,
         key: number | string | null,
-        candidatePath: string,
+        parentCandidate: JsonPathCandidate | null,
     ): JsonPathCandidate {
         return {
             key,
             parent,
-            path: candidatePath,
+            parentCandidate,
             value,
         };
+    }
+
+    /**
+     * Returns the normalized resolved path of a candidate, e.g. `$.items[0].ad`, and stores it,
+     * along with the paths of its ancestors.
+     *
+     * @param candidate traversal candidate
+     * @returns normalized resolved path
+     */
+    function getCandidatePath(candidate: JsonPathCandidate): string {
+        // Ancestors are collected first, so that a deep path does not need deep recursion
+        const chain: JsonPathCandidate[] = [];
+        let current: JsonPathCandidate | null = candidate;
+        while (current !== null && current.path === undefined) {
+            chain.push(current);
+            current = current.parentCandidate;
+        }
+
+        let resolvedPath = current === null ? ROOT_PATH : current.path as string;
+        for (let i = chain.length - 1; i >= 0; i -= 1) {
+            const item = chain[i];
+            resolvedPath = item.parentCandidate === null
+                ? ROOT_PATH
+                : appendPath(resolvedPath, item.key as number | string);
+            item.path = resolvedPath;
+        }
+
+        return resolvedPath;
     }
 
     /**
@@ -514,6 +1366,18 @@ export const jsonPath = (
                 if (callback(i, false)) {
                     return;
                 }
+                continue;
+            }
+
+            // A regular expression is skipped as a whole, as its slashes may be in its character classes
+            const regexpEnd = currentChar === SLASH ? getRegexpEnd(value, i) : -1;
+            if (regexpEnd !== -1) {
+                for (let j = i; j <= regexpEnd; j += 1) {
+                    if (callback(j, false)) {
+                        return;
+                    }
+                }
+                i = regexpEnd;
                 continue;
             }
 
@@ -624,6 +1488,12 @@ export const jsonPath = (
                 continue;
             }
 
+            const regexpEnd = currentChar === SLASH ? getRegexpEnd(value, i) : -1;
+            if (regexpEnd !== -1) {
+                i = regexpEnd;
+                continue;
+            }
+
             if (isQuoteCharacter(currentChar)) {
                 quote = currentChar;
                 continue;
@@ -665,10 +1535,19 @@ export const jsonPath = (
 
             for (let j = 0; j < OPERATORS.length; j += 1) {
                 const operator = OPERATORS[j];
-                if (value.startsWith(operator, index)) {
-                    if (matchedOperator === null || operator.length > matchedOperator.length) {
-                        matchedOperator = operator;
-                    }
+                if (!value.startsWith(operator, index)) {
+                    continue;
+                }
+                // `$==` and `$=` with nothing before it are the root path followed by `==` or `=`,
+                // e.g. `[?$=1]`, not `$=` of a path
+                if (
+                    (operator === '^=' || operator === '$=')
+                    && (value[index + operator.length] === EQUAL || value.slice(0, index).trim() === EMPTY_STRING)
+                ) {
+                    continue;
+                }
+                if (matchedOperator === null || operator.length > matchedOperator.length) {
+                    matchedOperator = operator;
                 }
             }
 
@@ -790,7 +1669,11 @@ export const jsonPath = (
             let matchesEnd = false;
             for (let i = 0; i < expression.length; i += 1) {
                 const currentChar = expression[i];
-                if (innerQuote) {
+                // A regular expression is skipped as a whole, e.g. with a quote `(@.title=/it's/)`
+                const regexpEnd = !innerQuote && currentChar === SLASH ? getRegexpEnd(expression, i) : -1;
+                if (regexpEnd !== -1) {
+                    i = regexpEnd;
+                } else if (innerQuote) {
                     if (currentChar === innerQuote && !isEscaped(expression, i)) {
                         innerQuote = null;
                     }
@@ -834,11 +1717,14 @@ export const jsonPath = (
             };
         }
 
+        // Selectors of a filter are parsed with it, by `parseJsonPathSelector()`, which parses filters
+        // of its steps by this function, e.g. of `$.a[?(@.b[?(@.c)])]`
         const operatorMatch = findTopLevelOperator(expression);
         if (!operatorMatch) {
             return {
                 operator: FILTER_OPERATORS.EXISTS,
-                selectorPath: normalizeFilterPath(expression),
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                selector: parseJsonPathSelector(normalizeFilterPath(expression)),
             };
         }
 
@@ -858,6 +1744,10 @@ export const jsonPath = (
             operator = FILTER_OPERATORS.GREATER_THAN_OR_EQUAL;
         } else if (operatorMatch.operator === '*=') {
             operator = FILTER_OPERATORS.CONTAINS;
+        } else if (operatorMatch.operator === '^=') {
+            operator = FILTER_OPERATORS.STARTS_WITH;
+        } else if (operatorMatch.operator === '$=') {
+            operator = FILTER_OPERATORS.ENDS_WITH;
         } else if (operatorMatch.operator === '=~') {
             operator = FILTER_OPERATORS.REGEX;
         } else if (operatorMatch.operator === EQUAL && /^\/.*\/[a-z]*$/i.test(rightPart)) {
@@ -874,17 +1764,20 @@ export const jsonPath = (
 
         if (isRightRootPath || isRightCurrentPath) {
             return {
-                comparisonSelectorPath: normalizeFilterPath(rightTrimmed),
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                comparisonSelector: parseJsonPathSelector(normalizeFilterPath(rightTrimmed)),
                 operator,
                 resolveComparisonAgainstRoot: isRightRootPath,
-                selectorPath: normalizeFilterPath(leftPart),
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                selector: parseJsonPathSelector(normalizeFilterPath(leftPart)),
             };
         }
 
         return {
             comparisonValue: parseLiteralValue(rightPart),
             operator,
-            selectorPath: normalizeFilterPath(leftPart),
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            selector: parseJsonPathSelector(normalizeFilterPath(leftPart)),
         };
     }
 
@@ -1001,6 +1894,38 @@ export const jsonPath = (
                 });
                 currentIndex += 1;
                 continue;
+            }
+
+            // Regular expression of property keys, e.g. `./^ad_/` or `../^ad_/`, without flags, as in uBO,
+            // in which `\/` is a slash, while other escapes are kept for the regular expression
+            const regexpEnd = selectorPath[currentIndex - 1] === DOT
+                ? getJsonPathRegexpEnd(selectorPath, currentIndex, false)
+                : -1;
+            if (regexpEnd !== -1) {
+                const pattern = selectorPath
+                    .slice(currentIndex + 1, regexpEnd)
+                    .split(`${BACKSLASH}${SLASH}`)
+                    .join(SLASH);
+                const endIndex = regexpEnd;
+
+                // Whitespaces before the next step are ignored, as before other steps, e.g. `./^ad/ .flag`
+                let nextIndex = endIndex + 1;
+                while (nextIndex < selectorPath.length && /\s/.test(selectorPath[nextIndex])) {
+                    nextIndex += 1;
+                }
+                // It is followed by a step or by the end, otherwise it is a part of a name, as before,
+                // e.g. `./api/(id)` or `./api/+x`
+                const nextChar = selectorPath[nextIndex];
+                if (nextChar === undefined || nextChar === DOT || nextChar === SQUARE_BRACKET_OPEN) {
+                    steps.push({
+                        mode: 'property',
+                        // throws for an invalid regular expression, so the expression is not applied
+                        properties: [new RegExp(pattern)],
+                        recursive,
+                    });
+                    currentIndex = nextIndex;
+                    continue;
+                }
             }
 
             let endIndex = currentIndex;
@@ -1157,7 +2082,7 @@ export const jsonPath = (
         }
 
         return (currentValue: any) => {
-            if (Array.isArray(currentValue)) {
+            if (isArrayValue(currentValue)) {
                 return Array.isArray(appendValue)
                     ? currentValue.concat(appendValue)
                     : currentValue.concat([appendValue]);
@@ -1217,6 +2142,71 @@ export const jsonPath = (
     }
 
     /**
+     * Checks whether a value is a payload of uBO syntax in its form, e.g. `repl({...})` or `call([...])`,
+     * while any other value, e.g. `call(me)`, is a text, as before.
+     *
+     * @param value value of an expression
+     * @param prefix name of the payload with the opening parenthesis, e.g. `call(`
+     * @param open opening bracket of the payload
+     * @param close closing bracket of the payload
+     * @returns true when the value is such a payload
+     */
+    function isPayloadValue(value: string, prefix: string, open: string, close: string): boolean {
+        if (!value.startsWith(prefix) || !value.endsWith(ROUND_BRACKET_CLOSE)) {
+            return false;
+        }
+        const payload = value.slice(prefix.length, -1).trim();
+        return payload.startsWith(open) && payload.endsWith(close);
+    }
+
+    /**
+     * Builds the updater of uBO `repl({...})` payloads, which replace a part of a string value:
+     * - `{"regex":"...","flags":"...","replacement":"..."}` — by a regular expression with optional flags;
+     * - `{"pattern":"...","replacement":"..."}` — the first occurrence of a text.
+     *
+     * As in uBO, a value which is not a string is not changed, and neither is any value
+     * if the regular expression is invalid, so nothing is assigned then, see `UNCHANGED_VALUE`.
+     * Unlike `replace({...})`, `regex` is used as is, i.e. slashes in it are a part of it,
+     * and the replacement has no keywords.
+     *
+     * @param rawValue `repl(...)` payload text
+     * @param nativeParse parse function to use
+     * @returns string replacement updater
+     */
+    function buildReplUpdater(
+        rawValue: string,
+        nativeParse: typeof JSON.parse,
+    ): (currentValue: any) => any {
+        const replConfig = nativeParse(rawValue.slice('repl('.length, -1));
+        if (!isPlainObject(replConfig)) {
+            throw new Error(`Invalid repl payload: ${rawValue}`);
+        }
+
+        const { regex, flags, pattern } = replConfig;
+        if (regex === undefined && typeof pattern !== 'string') {
+            throw new Error(`Invalid repl payload, either "regex" or "pattern" is required: ${rawValue}`);
+        }
+
+        let regexp: RegExp | null = null;
+        try {
+            regexp = regex !== undefined
+                ? new RegExp(regex, flags)
+                : new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        } catch {
+            // As in uBO, the expression is valid, but changes nothing
+        }
+
+        return (currentValue: any) => {
+            // As in uBO, nothing is assigned then, e.g. a setter of the page is not called
+            if (regexp === null || typeof currentValue !== 'string') {
+                return UNCHANGED_VALUE;
+            }
+
+            return currentValue.replace(regexp, replConfig.replacement);
+        };
+    }
+
+    /**
      * Builds the updater used for set mutations.
      *
      * @param rawValue set payload text
@@ -1234,6 +2224,10 @@ export const jsonPath = (
             return buildReplaceUpdater(trimmedValue, nativeParse);
         }
 
+        if (isPayloadValue(trimmedValue, 'repl(', CURLY_BRACKET_OPEN, CURLY_BRACKET_CLOSE)) {
+            return buildReplUpdater(trimmedValue, nativeParse);
+        }
+
         const parsedValue = parseArgumentValue(trimmedValue);
         if (!parsedValue) {
             throw new Error(`Invalid set value: ${rawValue}`);
@@ -1243,42 +2237,304 @@ export const jsonPath = (
     }
 
     /**
-     * Parses the full JSONPath command.
+     * Builds the function of uBO `call([...])` payloads, which calls a method for each matched node,
+     * e.g. `call(["${obj}","setAttribute","${key}","1"])`. The first item is the object whose method is called,
+     * `null` for `window`, the second one is the name of the method, or its path from the object, e.g. `console.log`,
+     * which uBO does not support, and the other ones are its arguments.
+     * Items `${obj}`, `${key}` and `${val}` are replaced by the owner of the matched node, its key and its value.
      *
-     * @param expression full JSONPath command
+     * @param rawValue `call(...)` payload text
      * @param nativeParse parse function to use
-     * @param parseArgumentValue parsed trusted-json-set value resolver
-     * @returns parsed command descriptor
+     * @returns function which calls the method for a matched node, and returns true if it has been called
      */
-    function parseJsonPathCommand(
-        expression: string,
+    function buildCallInvoker(
+        rawValue: string,
         nativeParse: typeof JSON.parse,
-        parseArgumentValue: JsonPathArgumentValueParser,
-    ): JsonPathCommand {
-        const mutationParts = splitMutationExpression(expression);
-        const guardParts = extractGuards(mutationParts.selectorPart);
-        const selector = parseJsonPathSelector(normalizeSelectorPart(guardParts.selectorPart));
-        let mutation: JsonPathMutation = {
-            mode: mutationParts.mode,
+    ): (parent: any, key: number | string) => boolean {
+        const entries = nativeParse(rawValue.slice('call('.length, -1));
+        if (!Array.isArray(entries)) {
+            throw new Error(`Invalid call payload: ${rawValue}`);
+        }
+
+        return (parent: any, key: number | string) => {
+            // As in uBO, nothing is called without the name of a method
+            if (entries.length < 2) {
+                return false;
+            }
+
+            const callArgs = entries.map((entry) => {
+                if (entry === CALL_OBJECT_PLACEHOLDER) {
+                    return parent;
+                }
+                if (entry === CALL_KEY_PLACEHOLDER) {
+                    return key;
+                }
+                if (entry === CALL_VALUE_PLACEHOLDER) {
+                    return parent[key];
+                }
+                return entry;
+            });
+
+            let instance = callArgs[0] === null || callArgs[0] === undefined ? window : callArgs[0];
+            let methodName = callArgs[1];
+
+            // A name with dots, e.g. `console.log` or `player.ads.stop`, is a path of the method from the object,
+            // and the method is called on the object which holds it, e.g. `console`. uBO supports only a name
+            // of a property, so a property whose name has dots is still called as it is, as in uBO
+            if (
+                typeof methodName === 'string'
+                && methodName.includes(DOT)
+                && instance[methodName] === undefined
+            ) {
+                const pathParts = methodName.split(DOT);
+                for (let i = 0; i < pathParts.length; i += 1) {
+                    if (pathParts[i] === EMPTY_STRING) {
+                        throw new Error(`Invalid path of the method: ${methodName}`);
+                    }
+                }
+                for (let i = 0; i < pathParts.length - 1; i += 1) {
+                    instance = instance[pathParts[i]];
+                    if (instance === null || instance === undefined) {
+                        throw new Error(`No object at '${pathParts.slice(0, i + 1).join(DOT)}' of ${methodName}`);
+                    }
+                }
+                methodName = pathParts[pathParts.length - 1];
+            }
+
+            Reflect.apply(instance[methodName], instance, callArgs.slice(2));
+            return true;
+        };
+    }
+
+    /**
+     * Splits a selector into the selectors of preconditions, which end with `;$` or `{min,max};$`,
+     * and the selector of the nodes to process, which follows the last of them, e.g. `..ads{1,};$.config.ads`.
+     * `;` which is not followed by `$` is a part of a property name, as before, e.g. `$.a;b`.
+     *
+     * @param selectorPart selector text
+     * @returns selectors of preconditions with their ranges, and the selector of the nodes to process
+     */
+    function splitPreconditionSelectors(selectorPart: string): {
+        preconditions: { max: number; min: number; selectorPart: string }[];
+        selectorPart: string;
+    } {
+        const preconditions: { max: number; min: number; selectorPart: string }[] = [];
+        // Fast path for most expressions, as the selector is parsed on each call
+        if (selectorPart.indexOf(SEMICOLON) === -1) {
+            return { preconditions, selectorPart };
+        }
+
+        let segmentStart = 0;
+
+        walkTopLevelChars(selectorPart, (index, isTopLevel) => {
+            if (!isTopLevel || selectorPart[index] !== SEMICOLON) {
+                return false;
+            }
+
+            // e.g. a property `a;b` of `$.a;b`, as before
+            if (selectorPart[index + 1] !== ROOT_PATH) {
+                return false;
+            }
+
+            let segment = selectorPart.slice(segmentStart, index);
+            let min = DEFAULT_MIN_COUNT;
+            let max = DEFAULT_MAX_COUNT;
+            const quantifierMatch = segment.match(QUANTIFIER_REGEXP);
+            if (quantifierMatch) {
+                const range = quantifierMatch[1];
+                const commaIndex = range.indexOf(COMMA);
+                if (commaIndex === -1) {
+                    min = parseInt(range, 10);
+                    max = min;
+                } else {
+                    // An omitted bound is 0 or unlimited, while an explicit 0 is kept, e.g. `{,0}` or `{0,0}`
+                    const minPart = range.slice(0, commaIndex);
+                    const maxPart = range.slice(commaIndex + 1);
+                    min = minPart === EMPTY_STRING ? 0 : parseInt(minPart, 10);
+                    max = maxPart === EMPTY_STRING ? DEFAULT_MAX_COUNT : parseInt(maxPart, 10);
+                }
+                segment = segment.slice(0, -quantifierMatch[0].length);
+            }
+
+            preconditions.push({ max, min, selectorPart: segment });
+            // `$` is kept, as the next selector starts from the root
+            segmentStart = index + 1;
+            return false;
+        });
+
+        return {
+            preconditions,
+            selectorPart: selectorPart.slice(segmentStart),
+        };
+    }
+
+    /**
+     * Checks whether the current source may perform value mutations.
+     *
+     * Remove operations stay available to non-trusted scriptlets.
+     *
+     * @param mutationMode parsed mutation mode
+     * @returns true when the mutation is allowed
+     */
+    function isMutationAllowed(mutationMode: JsonPathMutationMode): boolean {
+        if (mutationMode === 'remove') {
+            return true;
+        }
+
+        return typeof source.name === 'string'
+            && source.name.startsWith(TRUSTED_SCRIPTLET_PREFIX);
+    }
+
+    /**
+     * Parses the selectors of a JSONPath query, and splits its value, from which its mutation is built
+     * by `buildJsonPathCommand()`.
+     *
+     * @param expression full JSONPath query
+     * @returns parsed query
+     */
+    function parseJsonPathQuery(expression: string): JsonPathParsedQuery {
+        // In uBO `v2:` syntax a filter tests the children of each node, also of an object,
+        // so leading filters are steps which select the children of the root, not guards of the root
+        const isV2 = expression.startsWith(V2_PREFIX);
+        const mutationParts = splitMutationExpression(isV2 ? expression.slice(V2_PREFIX.length) : expression);
+        // The value `$remove$` of a query of a trusted scriptlet removes the nodes which the query matches,
+        // as the same `argumentValue` does, e.g. `$.ads=$remove$ $..banner=false`, while it is a text for `+=`,
+        // in quotes, which are a part of a text value, and after `json:`, e.g. `$.a=json:"$remove$"`.
+        // Other scriptlets may not set a value, so it is not allowed for them, as before
+        if (
+            mutationParts.mode === 'set'
+            && mutationParts.valuePart === REMOVE_VALUE_MARKER
+            && isMutationAllowed('set')
+        ) {
+            mutationParts.mode = 'remove';
+            mutationParts.valuePart = EMPTY_STRING;
+        }
+        const selectorParts = splitPreconditionSelectors(mutationParts.selectorPart);
+
+        const parseSelectorPart = (selectorPart: string) => {
+            const guardParts = isV2
+                ? { guards: [], selectorPart }
+                : extractGuards(selectorPart);
+            return {
+                guards: guardParts.guards,
+                selector: parseJsonPathSelector(normalizeSelectorPart(guardParts.selectorPart)),
+            };
         };
 
-        if (mutationParts.mode === 'append') {
+        const preconditions = selectorParts.preconditions.map((precondition) => {
+            // A precondition which has only leading filters, e.g. `[?.ad]{2,};$`, counts the nodes they match,
+            // e.g. the items of an array root, as in uBO, while a guard would match the root once at most
+            const isOnlyFilters = !isV2 && extractGuards(precondition.selectorPart).selectorPart === EMPTY_STRING;
+            const parsedPart = isOnlyFilters
+                ? {
+                    guards: [],
+                    selector: parseJsonPathSelector(normalizeSelectorPart(precondition.selectorPart)),
+                }
+                : parseSelectorPart(precondition.selectorPart);
+            return {
+                guards: parsedPart.guards,
+                max: precondition.max,
+                min: precondition.min,
+                selector: parsedPart.selector,
+            };
+        });
+        const parsedSelectorPart = parseSelectorPart(selectorParts.selectorPart);
+
+        return {
+            guards: parsedSelectorPart.guards,
+            isCall: mutationParts.mode === 'set'
+                && isPayloadValue(mutationParts.valuePart, 'call(', SQUARE_BRACKET_OPEN, SQUARE_BRACKET_CLOSE),
+            isValueChecked: false,
+            isV2,
+            mode: mutationParts.mode,
+            preconditions,
+            selector: parsedSelectorPart.selector,
+            valuePart: mutationParts.valuePart,
+        };
+    }
+
+    /**
+     * Builds the mutation of a parsed query from its value, for each processed value which it matches,
+     * so e.g. time keywords are resolved, and a JSON value is parsed, for each of them.
+     *
+     * @param query parsed query
+     * @param nativeParse parse function to use
+     * @param parseArgumentValue parsed trusted-json-set value resolver
+     * @returns mutation to apply
+     */
+    function buildJsonPathMutation(
+        query: JsonPathParsedQuery,
+        nativeParse: typeof JSON.parse,
+        parseArgumentValue: JsonPathArgumentValueParser,
+    ): JsonPathMutation {
+        let mutation: JsonPathMutation = {
+            mode: query.mode,
+        };
+
+        if (query.mode === 'append') {
             mutation = {
                 mode: 'append',
-                updater: buildAppendUpdater(mutationParts.valuePart, nativeParse, parseArgumentValue),
+                updater: buildAppendUpdater(query.valuePart, nativeParse, parseArgumentValue),
             };
-        } else if (mutationParts.mode === 'set') {
+        } else if (query.isCall) {
+            mutation = {
+                invoke: buildCallInvoker(query.valuePart, nativeParse),
+                mode: 'set',
+            };
+        } else if (query.mode === 'set') {
             mutation = {
                 mode: 'set',
-                updater: buildSetUpdater(mutationParts.valuePart, nativeParse, parseArgumentValue),
+                updater: buildSetUpdater(query.valuePart, nativeParse, parseArgumentValue),
             };
         }
 
-        return {
-            guards: guardParts.guards,
-            mutation,
-            selector,
-        };
+        return mutation;
+    }
+
+    /**
+     * Checks whether a filter may match a primitive value, i.e. a value without properties.
+     * A comparison of a selector with a step which selects a property or an item, e.g. `@.id=="ad"`, matches
+     * no node of a primitive value, while one of the value itself, e.g. `@==1`, or of a selector with only
+     * filters which may match it, e.g. `@[?(@==2)]`, and a negation, e.g. `!@.ad`, may match it.
+     *
+     * @param filter parsed filter
+     * @returns true when the filter may match a primitive value
+     */
+    function canFilterMatchPrimitive(filter: JsonPathFilter): boolean {
+        if ('conditions' in filter) {
+            return filter.operator === 'and'
+                ? filter.conditions.every((condition) => canFilterMatchPrimitive(condition))
+                : filter.conditions.some((condition) => canFilterMatchPrimitive(condition));
+        }
+        if ('condition' in filter) {
+            return true;
+        }
+        // A filter step tests a primitive value itself, while other steps select nothing of it
+        const { steps } = filter.selector;
+        for (let i = 0; i < steps.length; i += 1) {
+            const stepFilter = steps[i].filter;
+            if (steps[i].mode !== 'filter' || !stepFilter || !canFilterMatchPrimitive(stepFilter)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns the keys of the children of a value, i.e. of an object or an array.
+     *
+     * @param value value to inspect
+     * @returns own enumerable keys, or none for a primitive value
+     */
+    function getChildKeys(value: any): string[] {
+        // Typed arrays (Uint8Array, Float32Array, etc.) expose every element
+        // as a numbered key. A large buffer would exhaust the traversal budget
+        // before reaching any meaningful property, so they are skipped entirely.
+        if (!isObjectLike(value) || ArrayBuffer.isView(value)) {
+            return [];
+        }
+
+        return Object.keys(value);
     }
 
     /**
@@ -1288,30 +2544,25 @@ export const jsonPath = (
      * @returns child candidates
      */
     function getChildCandidates(candidate: JsonPathCandidate): JsonPathCandidate[] {
-        if (!isObjectLike(candidate.value)) {
-            return [];
-        }
-
-        // Typed arrays (Uint8Array, Float32Array, etc.) expose every element
-        // as a numbered key. A large buffer would exhaust the traversal budget
-        // before reaching any meaningful property, so they are skipped entirely.
-        if (ArrayBuffer.isView(candidate.value)) {
-            return [];
-        }
-
-        const keys = Object.keys(candidate.value);
+        const keys = getChildKeys(candidate.value);
         const output: JsonPathCandidate[] = [];
 
         for (let i = 0; i < keys.length; i += 1) {
             const key = keys[i];
-            output.push(createCandidate(candidate.value[key], candidate.value, key, appendPath(candidate.path, key)));
+            output.push(createCandidate(candidate.value[key], candidate.value, key, candidate));
         }
 
         return output;
     }
 
     /**
-     * Returns a candidate plus all of its descendants.
+     * Returns a candidate plus all of its descendants, breadth-first, i.e. by their depth,
+     * so that e.g. the first match of a recursive selector of a comparison, e.g. `@.a < $..max`,
+     * is the shallowest one, or depth-first for `call([...])`, i.e. each node followed by its own descendants
+     * before its next sibling, as in uBO, so that the method is called in the same order, e.g. of `$..id=call(...)`.
+     *
+     * Primitive values may be skipped for a step which matches only children of objects, e.g. `$..ad`,
+     * so that candidates are not created for them, while a filter step tests them as well.
      *
      * Cyclic structures are skipped by object identity. Inputs whose identity
      * changes on every read (non-caching proxies, getters minting fresh
@@ -1320,65 +2571,111 @@ export const jsonPath = (
      * is exhausted the remaining branches are skipped and a message is logged.
      *
      * @param candidate root candidate for recursive descent
+     * @param shouldSkipPrimitives whether descendants which are not objects are skipped
      * @returns recursive candidate list, possibly truncated to the budgets
      */
-    function getRecursiveCandidates(candidate: JsonPathCandidate): JsonPathCandidate[] {
-        const output: JsonPathCandidate[] = [candidate];
-        // Depth of each queued candidate, aligned with `output` by index
-        const candidateDepths: number[] = [0];
+    function getRecursiveCandidates(candidate: JsonPathCandidate, shouldSkipPrimitives: boolean): JsonPathCandidate[] {
+        const output: JsonPathCandidate[] = [];
         const visitedObjects = new WeakSet<object>();
-        if (isObjectLike(candidate.value)) {
-            visitedObjects.add(candidate.value);
-        }
-
         let isBudgetExhausted = false;
         // Counts only object-valued candidates. Primitives can never form a
         // cycle so they are not counted, which avoids false positives on large
         // arrays of numbers or strings.
-        let objectCandidateCount = isObjectLike(candidate.value) ? 1 : 0;
+        let objectCandidateCount = 0;
 
-        const initialChildren = getChildCandidates(candidate);
-        for (let i = 0; i < initialChildren.length; i += 1) {
-            if (isObjectLike(initialChildren[i].value)) {
-                if (visitedObjects.has(initialChildren[i].value)) {
-                    continue;
+        /**
+         * Adds a child of a visited node to the output, unless its object has been visited already,
+         * or it is a skipped primitive value.
+         *
+         * @param parentCandidate candidate of the visited node
+         * @param key key of the child
+         * @returns candidate of the child, or null if it is not added
+         */
+        const addChild = (parentCandidate: JsonPathCandidate, key: string): JsonPathCandidate | null => {
+            const value = parentCandidate.value[key];
+            if (isObjectLike(value)) {
+                if (visitedObjects.has(value)) {
+                    return null;
                 }
-                visitedObjects.add(initialChildren[i].value);
+                visitedObjects.add(value);
                 objectCandidateCount += 1;
                 if (objectCandidateCount >= MAX_RECURSIVE_CANDIDATES) {
                     isBudgetExhausted = true;
+                    return null;
+                }
+            } else if (shouldSkipPrimitives) {
+                return null;
+            }
+
+            const child = createCandidate(value, parentCandidate.value, key, parentCandidate);
+            output.push(child);
+            return child;
+        };
+
+        if (isObjectLike(candidate.value)) {
+            visitedObjects.add(candidate.value);
+            objectCandidateCount += 1;
+        } else if (shouldSkipPrimitives) {
+            return output;
+        }
+        output.push(candidate);
+
+        if (!shouldTraverseDepthFirst) {
+            // Depth of each candidate, aligned with `output` by index, which is the queue of the traversal
+            const candidateDepths: number[] = [0];
+            for (let head = 0; head < output.length && !isBudgetExhausted; head += 1) {
+                const parentCandidate = output[head];
+                const keys = getChildKeys(parentCandidate.value);
+                if (keys.length === 0) {
+                    continue;
+                }
+                const childDepth = candidateDepths[head] + 1;
+                if (childDepth > MAX_RECURSIVE_DEPTH) {
+                    isBudgetExhausted = true;
                     break;
                 }
-            }
-            output.push(initialChildren[i]);
-            candidateDepths.push(1);
-        }
-
-        let head = 1;
-        while (head < output.length && !isBudgetExhausted) {
-            const childDepth = candidateDepths[head] + 1;
-            if (childDepth > MAX_RECURSIVE_DEPTH) {
-                isBudgetExhausted = true;
-                break;
-            }
-
-            const childCandidates = getChildCandidates(output[head]);
-            for (let i = 0; i < childCandidates.length; i += 1) {
-                if (isObjectLike(childCandidates[i].value)) {
-                    if (visitedObjects.has(childCandidates[i].value)) {
-                        continue;
-                    }
-                    visitedObjects.add(childCandidates[i].value);
-                    objectCandidateCount += 1;
-                    if (objectCandidateCount >= MAX_RECURSIVE_CANDIDATES) {
-                        isBudgetExhausted = true;
-                        break;
+                for (let i = 0; i < keys.length && !isBudgetExhausted; i += 1) {
+                    if (addChild(parentCandidate, keys[i])) {
+                        candidateDepths.push(childDepth);
                     }
                 }
-                output.push(childCandidates[i]);
-                candidateDepths.push(childDepth);
             }
-            head += 1;
+        } else {
+            // Keys of each node on the current branch which are not visited yet, with the depth of its children
+            const branchStack: { candidate: JsonPathCandidate; depth: number; index: number; keys: string[] }[] = [{
+                candidate,
+                depth: 1,
+                index: 0,
+                keys: getChildKeys(candidate.value),
+            }];
+            while (branchStack.length > 0 && !isBudgetExhausted) {
+                const level = branchStack[branchStack.length - 1];
+                if (level.index >= level.keys.length) {
+                    branchStack.pop();
+                    continue;
+                }
+
+                const child = addChild(level.candidate, level.keys[level.index]);
+                level.index += 1;
+                if (child === null) {
+                    continue;
+                }
+
+                const childKeys = getChildKeys(child.value);
+                if (childKeys.length === 0) {
+                    continue;
+                }
+                if (level.depth + 1 > MAX_RECURSIVE_DEPTH) {
+                    isBudgetExhausted = true;
+                    break;
+                }
+                branchStack.push({
+                    candidate: child,
+                    depth: level.depth + 1,
+                    index: 0,
+                    keys: childKeys,
+                });
+            }
         }
 
         if (isBudgetExhausted) {
@@ -1481,7 +2778,7 @@ export const jsonPath = (
                         const key = keys[j];
 
                         property.lastIndex = 0;
-                        if (!property.test(key) || seenKeys.has(key)) {
+                        if (!property.test(key) || (seenKeys.has(key) && !shouldKeepDuplicateKeys)) {
                             continue;
                         }
 
@@ -1490,14 +2787,17 @@ export const jsonPath = (
                             candidate.value[key],
                             candidate.value,
                             key,
-                            appendPath(candidate.path, key),
+                            candidate,
                         ));
                     }
 
                     continue;
                 }
 
-                if (seenKeys.has(property) || !Object.prototype.hasOwnProperty.call(candidate.value, property)) {
+                if (
+                    (seenKeys.has(property) && !shouldKeepDuplicateKeys)
+                    || !Object.prototype.hasOwnProperty.call(candidate.value, property)
+                ) {
                     continue;
                 }
 
@@ -1506,7 +2806,7 @@ export const jsonPath = (
                     candidate.value[property],
                     candidate.value,
                     property,
-                    appendPath(candidate.path, property),
+                    candidate,
                 ));
             }
 
@@ -1518,7 +2818,7 @@ export const jsonPath = (
         }
 
         if (step.mode === 'index') {
-            if (!Array.isArray(candidate.value) || !step.indexes) {
+            if (!isArrayValue(candidate.value) || !step.indexes) {
                 return output;
             }
 
@@ -1529,7 +2829,7 @@ export const jsonPath = (
                         candidate.value[resolvedIndex],
                         candidate.value,
                         resolvedIndex,
-                        appendPath(candidate.path, resolvedIndex),
+                        candidate,
                     ));
                 }
             }
@@ -1537,7 +2837,7 @@ export const jsonPath = (
         }
 
         if (step.mode === 'computed-index') {
-            if (!Array.isArray(candidate.value)) {
+            if (!isArrayValue(candidate.value)) {
                 return output;
             }
 
@@ -1547,14 +2847,14 @@ export const jsonPath = (
                     candidate.value[index],
                     candidate.value,
                     index,
-                    appendPath(candidate.path, index),
+                    candidate,
                 ));
             }
             return output;
         }
 
         if (step.mode === 'slice') {
-            if (!Array.isArray(candidate.value) || !step.slice) {
+            if (!isArrayValue(candidate.value) || !step.slice) {
                 return output;
             }
 
@@ -1565,7 +2865,7 @@ export const jsonPath = (
                     candidate.value[index],
                     candidate.value,
                     index,
-                    appendPath(candidate.path, index),
+                    candidate,
                 ));
             }
         }
@@ -1580,7 +2880,11 @@ export const jsonPath = (
      * @param selector parsed selector AST
      * @returns matching mutable candidates
      */
-    function evaluateSelector(selectorRoot: any, selector: JsonPathSelector): JsonPathCandidate[] {
+    function evaluateSelector(
+        selectorRoot: any,
+        selector: JsonPathSelector,
+        isFirstMatchEnough = false,
+    ): JsonPathCandidate[] {
         /**
          * Evaluates a filter against a candidate value.
          *
@@ -1601,28 +2905,74 @@ export const jsonPath = (
                 return !matchesFilterValue(value, filter.condition);
             }
 
-            const matchedCandidates = evaluateSelector(value, parseJsonPathSelector(filter.selectorPath));
+            const matchedCandidates = evaluateSelector(value, filter.selector);
             if (filter.operator === FILTER_OPERATORS.EXISTS) {
                 return matchedCandidates.length > 0;
             }
 
             let comparisonValue = filter.comparisonValue;
-            if (filter.comparisonSelectorPath) {
+            if (filter.comparisonSelector) {
                 const comparisonRoot = filter.resolveComparisonAgainstRoot ? root : value;
-                const comparisonMatches = evaluateSelector(
-                    comparisonRoot,
-                    parseJsonPathSelector(filter.comparisonSelectorPath),
-                );
+                const comparisonMatches = evaluateSelector(comparisonRoot, filter.comparisonSelector);
                 if (comparisonMatches.length === 0) {
                     return false;
                 }
                 comparisonValue = comparisonMatches[0].value;
             }
 
+            // The value which a string is compared with is converted on the first comparison, and only once,
+            // as e.g. `toString()` of an object of the page may be called, and a value which cannot be converted,
+            // e.g. an object without `toString()`, is not matched, as the value to compare
+            let comparisonString: string | null = null;
+            let isComparisonConverted = false;
+            const getComparisonString = (): string | null => {
+                if (!isComparisonConverted) {
+                    isComparisonConverted = true;
+                    try {
+                        comparisonString = String(comparisonValue);
+                    } catch {
+                        comparisonString = null;
+                    }
+                }
+                return comparisonString;
+            };
+
             for (let i = 0; i < matchedCandidates.length; i += 1) {
                 const matchedValue = matchedCandidates[i].value;
                 if (filter.operator === FILTER_OPERATORS.CONTAINS) {
-                    if (typeof matchedValue === 'string' && matchedValue.includes(String(comparisonValue))) {
+                    if (typeof matchedValue !== 'string') {
+                        continue;
+                    }
+                    const containedString = getComparisonString();
+                    if (containedString === null) {
+                        return false;
+                    }
+                    if (matchedValue.includes(containedString)) {
+                        return true;
+                    }
+                    continue;
+                }
+
+                // As in uBO, the value is converted to a string, e.g. `1` starts with `"1"`,
+                // and a value which cannot be converted, e.g. an object without a prototype, is not matched
+                if (
+                    filter.operator === FILTER_OPERATORS.STARTS_WITH
+                    || filter.operator === FILTER_OPERATORS.ENDS_WITH
+                ) {
+                    let stringValue;
+                    try {
+                        stringValue = String(matchedValue);
+                    } catch {
+                        continue;
+                    }
+                    const affixString = getComparisonString();
+                    if (affixString === null) {
+                        return false;
+                    }
+                    const isMatched = filter.operator === FILTER_OPERATORS.STARTS_WITH
+                        ? stringValue.startsWith(affixString)
+                        : stringValue.endsWith(affixString);
+                    if (isMatched) {
                         return true;
                     }
                     continue;
@@ -1671,20 +3021,44 @@ export const jsonPath = (
          * @param filter parsed filter descriptor
          * @returns candidates that satisfy the filter
          */
-        function applyFilterStep(candidates: JsonPathCandidate[], filter: JsonPathFilter): JsonPathCandidate[] {
+        function applyFilterStep(
+            candidates: JsonPathCandidate[],
+            filter: JsonPathFilter,
+            isFirstOutputEnough: boolean,
+        ): JsonPathCandidate[] {
             const output: JsonPathCandidate[] = [];
+            // Whether primitive items of an array are skipped, as the filter cannot match them,
+            // e.g. `[?(@.id=="ad")]`, which is checked for the first array, as most filters are not applied
+            // to an array at all, e.g. a guard of a root which is an object
+            let shouldSkipPrimitiveItems: boolean | null = null;
 
-            for (let i = 0; i < candidates.length; i += 1) {
+            for (let i = 0; i < candidates.length && !(isFirstOutputEnough && output.length > 0); i += 1) {
                 const candidate = candidates[i];
-                if (Array.isArray(candidate.value)) {
-                    for (let j = 0; j < candidate.value.length; j += 1) {
-                        if (matchesFilterValue(candidate.value[j], filter)) {
-                            output.push(createCandidate(
-                                candidate.value[j],
-                                candidate.value,
-                                j,
-                                appendPath(candidate.path, j),
-                            ));
+                if (shouldFilterChildren) {
+                    const keys = getChildKeys(candidate.value);
+                    for (let j = 0; j < keys.length && !(isFirstOutputEnough && output.length > 0); j += 1) {
+                        const childValue = candidate.value[keys[j]];
+                        if (matchesFilterValue(childValue, filter)) {
+                            output.push(createCandidate(childValue, candidate.value, keys[j], candidate));
+                        }
+                    }
+                    continue;
+                }
+
+                if (isArrayValue(candidate.value)) {
+                    const { length } = candidate.value;
+                    if (shouldSkipPrimitiveItems === null) {
+                        shouldSkipPrimitiveItems = !canFilterMatchPrimitive(filter);
+                    }
+                    for (let j = 0; j < length && !(isFirstOutputEnough && output.length > 0); j += 1) {
+                        // An item is read once, as a getter of the page may return another value on each read,
+                        // so the filter tests the value which the next steps process
+                        const item = candidate.value[j];
+                        if (shouldSkipPrimitiveItems && !isObjectLike(item)) {
+                            continue;
+                        }
+                        if (matchesFilterValue(item, filter)) {
+                            output.push(createCandidate(item, candidate.value, j, candidate));
                         }
                     }
                     continue;
@@ -1698,32 +3072,38 @@ export const jsonPath = (
             return output;
         }
 
-        let candidates: JsonPathCandidate[] = [createCandidate(selectorRoot, null, null, ROOT_PATH)];
+        let candidates: JsonPathCandidate[] = [createCandidate(selectorRoot, null, null, null)];
 
         for (let i = 0; i < selector.steps.length; i += 1) {
             const step = selector.steps[i];
+            // e.g. for `matchesJsonPath()`, nodes of the last step are not selected after the first one
+            const isFirstOutputEnough = isFirstMatchEnough && i === selector.steps.length - 1;
             if (step.mode === 'filter' && step.filter) {
                 // `$..[?(...)]` must test every descendant, so recursive
                 // filter steps expand candidates the same way direct steps do
                 let candidatesToFilter = candidates;
                 if (step.recursive) {
+                    // Primitive values are skipped if the filter cannot match them, e.g. `[?(@.id=="ad")]`,
+                    // and with `v2:`, in which it tests the children
+                    const shouldSkipPrimitives = shouldFilterChildren || !canFilterMatchPrimitive(step.filter);
                     candidatesToFilter = [];
                     for (let j = 0; j < candidates.length; j += 1) {
-                        const recursiveCandidates = getRecursiveCandidates(candidates[j]);
+                        const recursiveCandidates = getRecursiveCandidates(candidates[j], shouldSkipPrimitives);
                         for (let k = 0; k < recursiveCandidates.length; k += 1) {
                             candidatesToFilter.push(recursiveCandidates[k]);
                         }
                     }
                 }
-                candidates = applyFilterStep(candidatesToFilter, step.filter);
+                candidates = applyFilterStep(candidatesToFilter, step.filter, isFirstOutputEnough);
                 continue;
             }
 
             const nextCandidates: JsonPathCandidate[] = [];
-            for (let j = 0; j < candidates.length; j += 1) {
+            for (let j = 0; j < candidates.length && !(isFirstOutputEnough && nextCandidates.length > 0); j += 1) {
                 const currentCandidate = candidates[j];
+                // Other steps match only children of objects and arrays, so primitive values are skipped
                 const candidatesToCheck = step.recursive
-                    ? getRecursiveCandidates(currentCandidate)
+                    ? getRecursiveCandidates(currentCandidate, true)
                     : [currentCandidate];
 
                 for (let k = 0; k < candidatesToCheck.length; k += 1) {
@@ -1749,58 +3129,103 @@ export const jsonPath = (
     }
 
     /**
-     * Checks whether the current source may perform value mutations.
-     *
-     * Remove operations stay available to non-trusted scriptlets.
-     *
-     * @param mutationMode parsed mutation mode
-     * @returns true when the mutation is allowed
-     */
-    function isMutationAllowed(mutationMode: JsonPathMutationMode): boolean {
-        if (mutationMode === 'remove') {
-            return true;
-        }
-
-        return typeof source.name === 'string'
-            && source.name.startsWith(TRUSTED_SCRIPTLET_PREFIX);
-    }
-
-    /**
      * Removes all matched properties or array entries.
+     *
+     * A node matched more than once, e.g. by `$..[?(@.ad)]` as an item and as a descendant, is removed once,
+     * and the indexes of an array are collected in a set, so the items of each array are removed in one pass,
+     * which keeps the other ones in the same array.
      *
      * @param matches mutable matches to delete
      */
     function removeMatches(matches: JsonPathCandidate[]): void {
-        const seenPaths = new Set<string>();
-        const arrayGroups = new Map<any, number[]>();
+        const arrayIndexes = new Map<any[], Set<number>>();
+        // A property is deleted once, e.g. one which `$..*..ad` reaches twice, as a deletion is observable,
+        // e.g. by a Proxy of the page, so keys are compared as strings, as in `updateMatches()`
+        const deletedKeys = new Map<any, Set<string>>();
 
         for (let i = 0; i < matches.length; i += 1) {
             const match = matches[i];
-            if (match.parent === null || match.key === null || seenPaths.has(match.path)) {
+            if (match.parent === null || match.key === null) {
                 continue;
             }
 
-            seenPaths.add(match.path);
-
-            if (Array.isArray(match.parent)) {
-                const currentIndexes = arrayGroups.get(match.parent) || [];
-                currentIndexes.push(Number(match.key));
-                arrayGroups.set(match.parent, currentIndexes);
+            if (isArrayValue(match.parent)) {
+                let indexes = arrayIndexes.get(match.parent);
+                if (!indexes) {
+                    indexes = new Set<number>();
+                    arrayIndexes.set(match.parent, indexes);
+                }
+                indexes.add(Number(match.key));
                 continue;
             }
+
+            let keys = deletedKeys.get(match.parent);
+            if (!keys) {
+                keys = new Set<string>();
+                deletedKeys.set(match.parent, keys);
+            }
+            const key = String(match.key);
+            if (keys.has(key)) {
+                continue;
+            }
+            keys.add(key);
 
             delete match.parent[match.key];
             markMutated();
         }
 
-        arrayGroups.forEach((indexes, arrayValue) => {
-            const uniqueIndexes = Array.from(new Set(indexes)).sort((left, right) => right - left);
-            for (let i = 0; i < uniqueIndexes.length; i += 1) {
-                const index = uniqueIndexes[i];
-                if (index >= 0 && index < arrayValue.length) {
-                    arrayValue.splice(index, 1);
-                    markMutated();
+        arrayIndexes.forEach((indexes, arrayValue) => {
+            const { length } = arrayValue;
+            const removedIndexes: number[] = [];
+            indexes.forEach((index) => {
+                if (index >= 0 && index < length) {
+                    removedIndexes.push(index);
                 }
+            });
+            if (removedIndexes.length === 0) {
+                return;
+            }
+            removedIndexes.sort((left, right) => left - right);
+
+            // The last item is removed first by `splice()`, as before, so an array which refuses a change,
+            // e.g. a sealed or a frozen one, a getter without a setter, or a Proxy of the page, throws as before,
+            // and a single item is removed as fast as before
+            const lastIndex = removedIndexes[removedIndexes.length - 1];
+            arrayValue.splice(lastIndex, 1);
+            markMutated();
+            if (removedIndexes.length === 1) {
+                return;
+            }
+
+            // A few other items are removed by `splice()` of each, from the last, as before, so an array which
+            // refuses a later change, e.g. of a read-only item, is changed as before up to it
+            if (removedIndexes.length <= MAX_SPLICED_ITEMS) {
+                for (let i = removedIndexes.length - 2; i >= 0; i -= 1) {
+                    arrayValue.splice(removedIndexes[i], 1);
+                }
+                return;
+            }
+
+            // Many other items are removed in one pass, instead of `splice()` for each, which is quadratic:
+            // the kept ranges between them are moved by `copyWithin()` of arrays, not the one of the array,
+            // which the page may replace, and the array is shortened by its length. If the array refuses a change
+            // of an item in the middle, e.g. a read-only one, it is changed up to it, though not as by `splice()`
+            // of each, and `deleteProperty` of a Proxy is not called for the removed items, which is accepted
+            const currentLength = length - 1;
+            const lastRemaining = removedIndexes.length - 1;
+            let writeIndex = removedIndexes[0];
+            for (let i = 0; i < lastRemaining; i += 1) {
+                const rangeStart = removedIndexes[i] + 1;
+                const rangeEnd = i + 1 < lastRemaining ? removedIndexes[i + 1] : currentLength;
+                if (rangeEnd > rangeStart) {
+                    Reflect.apply(Array.prototype.copyWithin, arrayValue, [writeIndex, rangeStart, rangeEnd]);
+                    writeIndex += rangeEnd - rangeStart;
+                }
+            }
+            // The items after the kept ones are removed by the length, as `splice()` does for an array,
+            // so it stays packed, while deleting them one by one would make it a dictionary, which is slow
+            if (!Reflect.set(arrayValue, 'length', writeIndex)) {
+                throw new TypeError('Cannot set the length of an array');
             }
         });
     }
@@ -1813,20 +3238,24 @@ export const jsonPath = (
      * @param updater value transformer to apply
      */
     function updateMatches(currentRoot: any, matches: JsonPathCandidate[], updater: (currentValue: any) => any): any {
-        const seenPaths = new Set<string>();
+        // A node matched more than once is updated once, e.g. an item matched by `$..[?(@.ad)]` with its index `0`
+        // as an item, and with its key `'0'` as a descendant, so keys are compared as strings
+        const updatedKeys = new Map<any, Set<string>>();
+        let isRootUpdated = false;
         let nextRoot = currentRoot;
 
         for (let i = 0; i < matches.length; i += 1) {
             const match = matches[i];
-            if (seenPaths.has(match.path)) {
-                continue;
-            }
 
-            seenPaths.add(match.path);
-
-            if (match.parent === null && match.key === null && match.path === ROOT_PATH) {
-                nextRoot = updater(nextRoot);
-                markMutated();
+            if (match.parent === null && match.key === null && match.parentCandidate === null) {
+                if (!isRootUpdated) {
+                    isRootUpdated = true;
+                    const nextValue = updater(nextRoot);
+                    if (nextValue !== UNCHANGED_VALUE) {
+                        nextRoot = nextValue;
+                        markMutated();
+                    }
+                }
                 continue;
             }
 
@@ -1834,8 +3263,22 @@ export const jsonPath = (
                 continue;
             }
 
-            match.parent[match.key] = updater(match.parent[match.key]);
-            markMutated();
+            let keys = updatedKeys.get(match.parent);
+            if (!keys) {
+                keys = new Set<string>();
+                updatedKeys.set(match.parent, keys);
+            }
+            const key = String(match.key);
+            if (keys.has(key)) {
+                continue;
+            }
+            keys.add(key);
+
+            const nextValue = updater(match.parent[match.key]);
+            if (nextValue !== UNCHANGED_VALUE) {
+                match.parent[match.key] = nextValue;
+                markMutated();
+            }
         }
 
         return nextRoot;
@@ -1854,7 +3297,11 @@ export const jsonPath = (
     // which should not stop the rules without `stack` from working
     let currentStackTrace = '';
     let isStackTraceRead = false;
-    if (stack || !path) {
+    // `typeof` is used instead of `Array.isArray()`, which may be the method intercepted by the rule itself,
+    // e.g. of `trusted-json-set`, and which may be called very often, so each its call should be avoided
+    const isPathString = typeof path === 'string';
+    const isEmptyPath = isPathString ? !path : path.length === 0;
+    if (stack || isEmptyPath) {
         try {
             currentStackTrace = String(new Error().stack || '');
             isStackTraceRead = true;
@@ -1877,52 +3324,193 @@ export const jsonPath = (
         return root;
     }
 
-    if (!path) {
+    if (isEmptyPath) {
         logJsonContent(source, root, nativeStringify, currentStackTrace);
         return root;
     }
 
-    try {
-        const command = parseJsonPathCommand(path, nativeParse, parseArgumentValue);
-
-        for (let i = 0; i < command.guards.length; i += 1) {
+    /**
+     * Checks whether all guards match the root.
+     *
+     * @param guards guard filters
+     * @returns true when each guard matches the root
+     */
+    function areGuardsMatched(guards: JsonPathFilter[]): boolean {
+        for (let i = 0; i < guards.length; i += 1) {
             const guardMatches = evaluateSelector(root, {
-                steps: [{ filter: command.guards[i], mode: 'filter', recursive: false }],
+                steps: [{ filter: guards[i], mode: 'filter', recursive: false }],
             });
             if (guardMatches.length === 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Calls the method of a `call([...])` payload for each matched node, as uBO does:
+     * - from the last matched node to the first one;
+     * - for a node matched more than once, e.g. by `['a','a']`, as many times;
+     * - for the root, e.g. by `$=call(...)`, with an object which holds the root as `$`, which is its key,
+     *   so `${val}` is the root, and the root is replaced if the method changes it in that object.
+     * An error of the method is logged, and the method is still called for the other nodes.
+     *
+     * @param currentRoot current root value
+     * @param matches matched nodes
+     * @param invoke function which calls the method for a node
+     * @returns root, which the method may have replaced
+     */
+    function invokeMatches(
+        currentRoot: any,
+        matches: JsonPathCandidate[],
+        invoke: (parent: any, key: number | string) => boolean,
+    ): any {
+        const rootHolder: Record<string, any> = { [ROOT_PATH]: currentRoot };
+        for (let i = matches.length - 1; i >= 0; i -= 1) {
+            const match = matches[i];
+            const isRoot = match.parentCandidate === null;
+            if (!isRoot && (match.parent === null || match.key === null)) {
+                continue;
+            }
+
+            try {
+                const isCalled = isRoot
+                    ? invoke(rootHolder, ROOT_PATH)
+                    : invoke(match.parent, match.key as number | string);
+                if (isCalled) {
+                    markMutated();
+                }
+            } catch (error) {
+                const message = `JSONPath call failed for ${getCandidatePath(match)}: ${getThrownValueMessage(error)}`;
+                logMessage(source, message);
+            }
+        }
+
+        // As in uBO, the root is `null` if the method has removed it
+        const nextRoot = rootHolder[ROOT_PATH];
+        return nextRoot === undefined ? null : nextRoot;
+    }
+
+    try {
+        // Several queries separated by spaces are parsed first, so none of them is applied if one is invalid,
+        // and then applied in order, each to the result of the previous ones.
+        // Queries which are passed as an array, e.g. by a scriptlet, which gets them once, are not split again
+        const queries = isPathString ? getJsonPathQueries(source, path) : path;
+        const commands: JsonPathCommand[] = [];
+        for (let i = 0; i < queries.length; i += 1) {
+            // A query is parsed once for a rule with a cache, so an invalid one is rejected once, while its value,
+            // whose building may fail for another reason, e.g. `Date` of the page which throws for `$now$`,
+            // is built for each processed value until it succeeds, so none of the queries is applied if it fails,
+            // and then only for a processed value which the query matches
+            const queryText = queries[i];
+            let query = cache ? cache[queryText] : undefined;
+            if (query === null) {
+                logMessage(source, `JSONPath processing failed for expression '${queryText}': it is invalid`);
                 return root;
             }
-        }
-
-        const matches = evaluateSelector(root, command.selector);
-        if (matchOnly) {
-            if (matches.length > 0 && onMutation) {
-                onMutation();
+            if (!query) {
+                try {
+                    query = parseJsonPathQuery(queryText);
+                } catch (error) {
+                    if (cache) {
+                        cache[queryText] = null;
+                    }
+                    throw error;
+                }
+                if (cache) {
+                    cache[queryText] = query;
+                }
             }
-            return root;
-        }
-
-        if (!isMutationAllowed(command.mutation.mode)) {
-            logMessage(source, 'JSONPath set and append operations are allowed only in trusted scriptlets');
-            return root;
-        }
-
-        if (command.mutation.mode === 'remove') {
-            removeMatches(matches);
-            if (didMutate && onMutation) {
-                onMutation();
+            let mutation: JsonPathMutation | null = null;
+            if (!query.isValueChecked) {
+                mutation = buildJsonPathMutation(query, nativeParse, parseArgumentValue);
             }
-            return root;
+            commands.push({ mutation, query });
         }
 
-        if (command.mutation.updater) {
-            root = updateMatches(root, matches, command.mutation.updater);
-            if (didMutate && onMutation) {
-                onMutation();
+        for (let i = 0; i < commands.length; i += 1) {
+            commands[i].query.isValueChecked = true;
+        }
+
+        for (let i = 0; i < commands.length; i += 1) {
+            const command = commands[i];
+            // e.g. `call([...])` of a previous query has removed the root
+            if (!isObjectLike(root)) {
+                break;
+            }
+
+            // An error of a query, e.g. of a getter of the page, is logged, and the other queries are applied,
+            // as separate rules would be, while an invalid query rejects all of them before, when they are parsed
+            const { query } = command;
+            try {
+                shouldFilterChildren = query.isV2;
+                shouldKeepDuplicateKeys = query.isCall;
+                shouldTraverseDepthFirst = query.isCall;
+
+                // Each precondition, e.g. `..ads{1,};$`, has to match a number of nodes in its range
+                let arePreconditionsMatched = true;
+                for (let j = 0; j < query.preconditions.length; j += 1) {
+                    const precondition = query.preconditions[j];
+                    const count = areGuardsMatched(precondition.guards)
+                        ? evaluateSelector(root, precondition.selector).length
+                        : 0;
+                    if (count < precondition.min || count > precondition.max) {
+                        arePreconditionsMatched = false;
+                        break;
+                    }
+                }
+
+                if (!arePreconditionsMatched || !areGuardsMatched(query.guards)) {
+                    continue;
+                }
+
+                const matches = evaluateSelector(root, query.selector, matchOnly);
+                if (matchOnly) {
+                    // Content matches if any of the queries matches it
+                    if (matches.length > 0) {
+                        if (onMutation) {
+                            onMutation();
+                        }
+                        return root;
+                    }
+                    continue;
+                }
+
+                if (!isMutationAllowed(query.mode)) {
+                    logMessage(source, 'JSONPath set and append operations are allowed only in trusted scriptlets');
+                    continue;
+                }
+
+                if (query.mode === 'remove') {
+                    removeMatches(matches);
+                } else if (matches.length > 0) {
+                    const mutation = command.mutation || buildJsonPathMutation(query, nativeParse, parseArgumentValue);
+                    if (mutation.invoke) {
+                        root = invokeMatches(root, matches, mutation.invoke);
+                    } else if (mutation.updater) {
+                        root = updateMatches(root, matches, mutation.updater);
+                    }
+                }
+            } catch (error) {
+                const errorMessage = getThrownValueMessage(error);
+                logMessage(source, `JSONPath processing failed for expression '${queries[i]}': ${errorMessage}`);
             }
         }
     } catch (error) {
-        logMessage(source, `JSONPath processing failed for expression '${path}': ${getThrownValueMessage(error)}`);
+        const expression = isPathString ? path : path.join(' ');
+        const message = `JSONPath processing failed for expression '${expression}': ${getThrownValueMessage(error)}`;
+        logMessage(source, message);
+    }
+
+    // Called once, also if several queries have changed the content, or one of them has failed after others.
+    // Its error, e.g. of `hit()` of the page, is logged, as the content is modified anyway
+    if (didMutate && onMutation && !matchOnly) {
+        try {
+            onMutation();
+        } catch (error) {
+            logMessage(source, `JSONPath mutation callback failed: ${getThrownValueMessage(error)}`);
+        }
     }
 
     return root;

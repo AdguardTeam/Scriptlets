@@ -4,6 +4,10 @@ import {
     toRegExp,
     jsonPruner,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    type JsonPathCache,
+    getJsonPathRegexpEnd,
     getJsonSetValue,
     parseJsonSetArgumentValue,
     parseKeywordValue,
@@ -65,7 +69,27 @@ import { type Source } from './scriptlets';
  * <!-- markdownlint-enable line-length -->
  *
  * - `propsToRemove` — optional, string of space-separated properties to remove.
- *   In `jsonpath` mode only single JSONPath prune expression is supported.
+ *   In `jsonpath` mode several JSONPath expressions may be separated by spaces, e.g. `$.ads $..banner`,
+ *   which are applied in order. Each expression after the first one starts with the root `$` followed by a step,
+ *   e.g. `$.ads`, with `v2:`, or with guards followed by the root, e.g. `[?(@.player)]$.player.ads`,
+ *   which apply only to that expression, while an argument with a regular expression which contains a raw quote, e.g. `[?.t=/it's/]`,
+ *   is one expression, as before, so e.g. `[?.t=/it's/]$.ads $.tracking` removes neither property;
+ *   such expressions need separate rules, or the quote written as `\x27` or `\x22`,
+ *   e.g. `[?.t=/it\x27s/]$.ads $.tracking`, and a space before a dot
+ *   or a bracket continues an expression, as before, e.g. `$.a .b` is `$.a.b`. Spaces inside an expression,
+ *   e.g. in a filter `[?(@.a && @.b)]` or a quoted value, do not separate them either,
+ *   and none of them is applied if one of them is invalid, while an error of applying one of them,
+ *   e.g. of a getter of the page, does not stop the other ones.
+ *   Expressions of uBO rules of `json-edit` are not separated, as uBO ignores spaces in them, e.g. `.a $.b`.
+ *   JSONPath expressions may also use `^=` and `$=` filters, e.g. `$.items[?.url^="https://ads."]`,
+ *   regular expressions of property keys after a dot, e.g. `$./^ad_/`, with `\=` and `\s` instead of `=`
+ *   and spaces, as e.g. `$.routes./login=/` is a name with a value, as before, so a key between slashes,
+ *   e.g. `$.routes./pets/`, which was the key `/pets/` before, matches every key which contains `pets` now,
+ *   e.g. `/pets/archive` and `pets`, and an exact key needs brackets, e.g. `$.routes['/pets/']`,
+ *   preconditions before `;$`,
+ *   which have to match at least one node, or a number of nodes in a range `{min,max};$`,
+ *   e.g. `..adSlots;$.ads` or `$.items[?.ad]{2,};$.ads`, and `v2:` prefix, with which a filter tests
+ *   the children of each node, also of an object, e.g. `v2:$.config[?@==true]`.
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur.
  * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
@@ -165,7 +189,27 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('json-prune-xhr-response', '$.content.*.media[?(@.ad)].src')
  *     ```
  *
- * 6. Log all JSON responses of a XMLHttpRequest call
+ * 6. Removes `ads` and the items whose `url` starts with `https://ads.` from the responses of requests whose URL
+ *    contains `api/feed`, by two expressions of one rule in `JSONPath` mode and a `^=` filter; see `json-prune`
+ *    for more examples of JSONPath expressions, which are the same here
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('json-prune-xhr-response', '$.ads $.items[?(@.url^="https://ads.")]', '', 'api/feed')
+ *     ```
+ *
+ *     Response JSON:
+ *
+ *     ```json
+ *     { "ads": [1, 2], "items": [{ "url": "https://ads.example.org/1", "title": "Ad" }, { "url": "https://example.org/2", "title": "News (Ad)" }] }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "items": [{ "url": "https://example.org/2", "title": "News (Ad)" }] }
+ *     ```
+ *
+ * 7. Log all JSON responses of a XMLHttpRequest call
  *
  *     ```adblock
  *     example.org#%#//scriptlet('json-prune-xhr-response')
@@ -191,6 +235,10 @@ export function jsonPruneXhrResponse(
     const shouldLog = !propsToRemove && !obligatoryProps;
 
     const syntaxModeDetails = resolveJsonSyntaxMode(propsToRemove, mode);
+    // Queries are split once, not for each processed value
+    const jsonPathQueries = syntaxModeDetails.mode === 'jsonpath' ? getJsonPathQueries(source, propsToRemove) : [];
+    // Queries are parsed once, not for each processed value
+    const jsonPathCache: JsonPathCache = Object.create(null);
     const prunePaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsToRemove) : [];
     const requiredPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(obligatoryProps) : [];
 
@@ -203,7 +251,16 @@ export function jsonPruneXhrResponse(
 
     const pruneJsonValue = (root: any) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, root, propsToRemove, nativeObjects, () => hit(source), '');
+            return jsonPath(
+                source,
+                root,
+                jsonPathQueries,
+                nativeObjects,
+                () => hit(source),
+                '',
+                false,
+                jsonPathCache,
+            );
         }
 
         return jsonPruner(source, root, prunePaths, requiredPaths, '', nativeObjects);
@@ -301,6 +358,9 @@ jsonPruneXhrResponse.injections = [
     toRegExp,
     jsonPruner,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    getJsonPathRegexpEnd,
     getJsonSetValue,
     parseJsonSetArgumentValue,
     parseKeywordValue,

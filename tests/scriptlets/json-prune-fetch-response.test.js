@@ -731,4 +731,14 @@ if (!isSupported) {
 
         assert.deepEqual(JSON.parse(result), { a1: 1, b2: 'test', c3: 3 }, 'Original content returned');
     });
+
+    test('JSONPath: documented example with two expressions and a ^= filter', async (assert) => {
+        runScriptlet(name, ['$.ads $.items[?(@.url^="https://ads.")]', '', 'api/feed']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/api/feed.json`);
+        const actualJson = await response.json();
+
+        assert.deepEqual(actualJson, { items: [{ url: 'https://example.org/2', title: 'News (Ad)' }] }, 'pruned');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
 }

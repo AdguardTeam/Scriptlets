@@ -5,6 +5,10 @@ import {
     matchRequestProps,
     jsonSetter,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    type JsonPathCache,
+    getJsonPathRegexpEnd,
     getPrunePath,
     forgeResponse,
     type FetchResource,
@@ -14,6 +18,7 @@ import {
     getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
+    buildJsonPathQueries,
     toRegExp,
     isValidStrPattern,
     isEmptyObject,
@@ -71,7 +76,42 @@ import { type Source } from './scriptlets';
  *
  * - `propsPath` — required, dot-separated path to the property to set.
  *   Supports wildcards `*` and `[]`, and value filtering with `.[=].value`.
- *   In `jsonpath` mode only single JSONPath prune expression is supported.
+ *   In `jsonpath` mode several JSONPath expressions may be separated by spaces, e.g. `$.ads $..banner=false`,
+ *   which are applied in order, and `argumentValue` is set by each of them without its own value,
+ *   as it is, i.e. it is never split. Each expression after the first one starts with the root `$` followed
+ *   by a step, e.g. `$.ads`, with `v2:`, or with guards followed by the root, e.g. `[?(@.player)]$.player.ads`,
+ *   which apply only to that expression, while an argument with a regular expression which contains a raw quote, e.g. `[?.t=/it's/]`,
+ *   is one expression, as before, so e.g. `[?.t=/it's/]$.a=1 $.b=2` sets `a` to the text `1 $.b=2`;
+ *   such expressions need separate rules, or the quote written as `\x27` or `\x22`,
+ *   e.g. `[?.t=/it\x27s/]$.a=1 $.b=2`, and a space before a dot
+ *   or a bracket continues an expression, as before, e.g. `$.a .b` is `$.a.b`. Spaces inside an expression,
+ *   e.g. in a filter `[?(@.a && @.b)]` or in a value, do not separate them either, and an expression after
+ *   a text value has its own value, e.g. `$.title=Don't show $.ads=false`, while e.g. `$.title=Costs 5 $`
+ *   is one value, so an expression which sets `argumentValue` has to precede a text value,
+ *   which a constant is as well, e.g. `$..banner=false $.ads` sets the text `false $.ads`.
+ *   An expression may have `$remove$` as its own value, which removes the nodes it matches,
+ *   as the same `argumentValue` does, so that properties are removed and set by one rule, in any order,
+ *   e.g. `$.ads=$remove$ $..banner=false` or `$..banner=false $.ads=$remove$`, and any expression may
+ *   follow it, e.g. `$.ads=$remove$ $.premium` with `argumentValue` `true`. It is a text after `+=`,
+ *   in quotes, which are a part of a text value, and after `json:`, e.g. `$.note=json:"$remove$"`.
+ *   A value `replace:/regex/replacement/` is the rest of the argument if the argument ends with `/` or `/g`,
+ *   as before, e.g. `$.a=replace:/x/path/ $.b=1/`, so other expressions may follow it only otherwise.
+ *   None of them is applied if one of them is invalid, while an error of applying one of them,
+ *   e.g. of a getter of the page, does not stop the other ones.
+ *   JSONPath expressions may also use `^=` and `$=` filters, e.g. `$.items[?.url^="https://ads."]`,
+ *   regular expressions of property keys after a dot, e.g. `$./^ad_/`, with `\=` and `\s` instead of `=`
+ *   and spaces, as e.g. `$.routes./login=/` is a name with a value, as before, so a key between slashes,
+ *   e.g. `$.routes./pets/`, which was the key `/pets/` before, matches every key which contains `pets` now,
+ *   e.g. `/pets/archive` and `pets`, and an exact key needs brackets, e.g. `$.routes['/pets/']`,
+ *   preconditions before `;$`,
+ *   which have to match at least one node, or a number of nodes in a range `{min,max};$`,
+ *   e.g. `..adSlots;$.ads` or `$.items[?.ad]{2,};$.ads`, and `v2:` prefix, with which a filter tests
+ *   the children of each node, also of an object, e.g. `v2:$.config[?@==true]`.
+ *   Values of JSONPath expressions may also be `repl({"regex":"...","flags":"...","replacement":"..."})`
+ *   or `repl({"pattern":"...","replacement":"..."})`, which replace a part of a string value,
+ *   and `call([object, method, ...arguments])`, which calls a method for each matched node,
+ *   in which `"${obj}"`, `"${key}"` and `"${val}"` are its owner, key and value, `null` is `window`,
+ *   and the method may be a path from the object, e.g. `[null,"player.ads.stop","${val}"]`.
  * - `argumentValue` — required, value to write at the target path.
  *   Supports the same constants, `json:{...}`, and `replace:/regex/replacement/` syntax
  *   as `trusted-json-set`, including `$now$`, `$currentDate$`, and `$currentISODate$` time keywords
@@ -147,6 +187,26 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.foo=replace({"regex":"advertisement","replacement":"article"})')
  *     ```
  *
+ * 1. Removes `ads` and ` (Ad)` from each `title` in the responses of requests whose URL contains `api/feed`,
+ *    by two expressions of one rule in `JSONPath` mode, with the values `$remove$` and `repl({...})`;
+ *    see `trusted-json-set` for more examples of JSONPath expressions, which are the same here
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set-fetch-response', '$.ads=$remove$ $..title=repl({"pattern":" (Ad)","replacement":""})', '', '', 'api/feed')
+ *     ```
+ *
+ *     Response JSON:
+ *
+ *     ```json
+ *     { "ads": [1, 2], "items": [{ "url": "https://ads.example.org/1", "title": "Ad" }, { "url": "https://example.org/2", "title": "News (Ad)" }] }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "items": [{ "url": "https://ads.example.org/1", "title": "Ad" }, { "url": "https://example.org/2", "title": "News" }] }
+ *     ```
+ *
  * <!-- markdownlint-enable line-length -->
  *
  * @added v2.3.0.
@@ -163,9 +223,12 @@ export function trustedJsonSetFetchResponse(
     verbose = '',
 ) {
     const syntaxModeDetails = resolveJsonSyntaxMode(propsPath, mode);
-    const jsonPathExpression = syntaxModeDetails.mode === 'jsonpath'
-        ? buildJsonPathExpression(propsPath, argumentValue)
-        : '';
+    // Queries are built after `propsPath` is split, so `argumentValue` is never split
+    const jsonPathQueries = syntaxModeDetails.mode === 'jsonpath'
+        ? buildJsonPathQueries(propsPath, argumentValue)
+        : [];
+    // Queries are parsed once, not for each processed value
+    const jsonPathCache: JsonPathCache = Object.create(null);
 
     if (!propsPath) {
         return;
@@ -183,8 +246,8 @@ export function trustedJsonSetFetchResponse(
         return;
     }
 
-    if (syntaxModeDetails.mode === 'jsonpath' && jsonPathExpression === '') {
-        logMessage(source, 'JSONPath mode requires argumentValue unless propsPath already contains an inline mutation');
+    if (syntaxModeDetails.mode === 'jsonpath' && jsonPathQueries.length === 0) {
+        logMessage(source, 'JSONPath mode requires argumentValue for an expression of propsPath without its own value');
         return;
     }
 
@@ -233,7 +296,16 @@ export function trustedJsonSetFetchResponse(
     // when `fetch()` is called, and the response is modified after it is awaited
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
         if (syntaxModeDetails.mode === 'jsonpath') {
-            return jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => hit(source), '');
+            return jsonPath(
+                source,
+                jsonValue,
+                jsonPathQueries,
+                nativeObjects,
+                () => hit(source),
+                '',
+                false,
+                jsonPathCache,
+            );
         }
 
         resolvedArgumentValue = resolveJsonSetTimeKeywords(
@@ -397,6 +469,9 @@ trustedJsonSetFetchResponse.injections = [
     matchRequestProps,
     jsonSetter,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    getJsonPathRegexpEnd,
     getPrunePath,
     forgeResponse,
     isPruningNeeded,
@@ -405,6 +480,7 @@ trustedJsonSetFetchResponse.injections = [
     getFunctionProxyProperty,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
+    buildJsonPathQueries,
     toRegExp,
     isValidStrPattern,
     isEmptyObject,

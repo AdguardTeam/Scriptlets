@@ -18,6 +18,7 @@ const nativeConsole = console.log;
 const nativeResponseJson = Response.prototype.json;
 const nativeResponseText = Response.prototype.text;
 const nativeRequestJson = Request.prototype.json;
+const nativeIsArray = Array.isArray;
 
 // Scriptlets replace methods of storages in Storage.prototype
 const restoreStorage = saveStorageMethods();
@@ -39,6 +40,7 @@ const afterEach = () => {
     Response.prototype.json = nativeResponseJson;
     Response.prototype.text = nativeResponseText;
     Request.prototype.json = nativeRequestJson;
+    Array.isArray = nativeIsArray;
     restoreStorage();
 };
 
@@ -1534,4 +1536,399 @@ test('modifies the value without stack if the page has replaced Error', (assert)
 
     assert.deepEqual(result, { ads: { enabled: false } }, 'should modify the payload');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: the value is set by each of several queries', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads.enabled $..preroll', 'false']);
+
+    const result = JSON.parse('{"ads":{"enabled":true},"player":{"preroll":true,"autoplay":true}}');
+
+    assert.deepEqual(result, {
+        ads: { enabled: false },
+        player: { preroll: false, autoplay: true },
+    }, 'each query should set the value');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: several queries with their own values are applied in order', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.flag=true [?(@.flag==true)]$.count=0 $.title=Hello world']);
+
+    const result = JSON.parse('{"flag":false,"count":5,"title":"x"}');
+
+    assert.deepEqual(result, { flag: true, count: 0, title: 'Hello world' }, 'queries should be applied in order');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: none of several queries is applied if one of them has no value', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.b $.a=1']);
+
+    const result = JSON.parse('{"a":0,"b":0}');
+
+    assert.deepEqual(result, { a: 0, b: 0 }, 'rule should not be applied');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+});
+
+[
+    ['$.ads=$remove$ $..banner=false'],
+    ['$..banner=false $.ads=$remove$'],
+    // an empty value is not set by expressions with their own values
+    ['$.ads=$remove$ $..banner=false', ''],
+    // a value of the separate argument is set by an expression without its own one, also after `$remove$`
+    ['$.ads=$remove$ $..banner', 'false'],
+    ['$..banner $.ads=$remove$', 'false'],
+    ['$.ads $..banner=false', '$remove$'],
+].forEach((args) => {
+    test(`JSONPath: '${args.join("', '")}' removes a property and sets other ones`, (assert) => {
+        runScriptlet(name, ['JSON.parse', ...args]);
+
+        const result = JSON.parse('{"ads":[1],"banner":true,"page":{"banner":true,"title":"t"}}');
+
+        assert.deepEqual(
+            result,
+            { banner: false, page: { banner: false, title: 't' } },
+            '`ads` should be removed and each `banner` set to false',
+        );
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+});
+
+test('JSONPath: `$remove$` as a value of an expression is applied with stack', (assert) => {
+    runScriptlet(
+        name,
+        ['JSON.parse', '$.ads=$remove$ $..banner=false', '', '', 'result', 'removeValueStack'],
+    );
+
+    const removeValueStack = () => JSON.parse('{"ads":[1],"banner":true}');
+    const otherStack = () => JSON.parse('{"ads":[1],"banner":true}');
+
+    assert.deepEqual(otherStack(), { ads: [1], banner: true }, 'should not be applied if stack does not match');
+    assert.strictEqual(window.hit, undefined, 'hit function should not fire');
+    assert.deepEqual(removeValueStack(), { banner: false }, 'should remove `ads` and set `banner` if stack matches');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: text with `$remove$` is set as before, also by `json:` and `+=`', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.a=json:"$remove$" $.b="$remove$" $.c+=$remove$ $.d=$remove$ them']);
+
+    const result = JSON.parse('{"a":1,"b":1,"c":[1],"d":1}');
+
+    assert.deepEqual(result, {
+        a: '$remove$',
+        b: '"$remove$"',
+        c: [1, '$remove$'],
+        d: '$remove$ them',
+    }, 'text values should be set');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: empty value of the separate argument is set, not removed', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads $..banner=false', '']);
+
+    const result = JSON.parse('{"ads":[1],"banner":true}');
+
+    assert.deepEqual(result, { ads: '', banner: false }, 'empty string should be set');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: value of a separate argument is not split into queries', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.title', 'see $.ads ...']);
+
+    const result = JSON.parse('{"title":"x","ads":1}');
+
+    assert.deepEqual(result, { title: 'see $.ads ...', ads: 1 }, 'whole value should be set, and ads kept');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: text value with spaces before a dot or the root is one value', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.title=visit example .com', '']);
+    runScriptlet(name, ['JSON.parse', '$.ad=replace:/Ad .*/none/']);
+
+    const result = JSON.parse('{"title":"x","ad":"Ad here","com":1}');
+
+    assert.deepEqual(result, { title: 'visit example .com', ad: 'none', com: 1 }, 'values should be set as a whole');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+/**
+ * Creates a value like a big payload of a page, with ads in some of its items if `withAds` is set.
+ *
+ * @param {boolean} withAds Whether some items have `adSlot`.
+ * @returns {object} Value with 2000 items.
+ */
+const createBigValue = (withAds) => {
+    const items = [];
+    for (let i = 0; i < 2000; i += 1) {
+        const meta = { n: i, title: `item ${i}` };
+        if (withAds && i % 100 === 0) {
+            meta.adSlot = { id: i };
+        }
+        items.push({ id: i, tags: ['a', i], meta });
+    }
+    return { items, config: { list: [1, 2] } };
+};
+
+test('JSONPath: Array.isArray is called many times with big values, results are not changed', (assert) => {
+    let hitCount = 0;
+    window.__debug = () => {
+        hitCount += 1;
+    };
+    runScriptlet(name, ['Array.isArray', '$..adSlot', '$remove$', '', 'arg']);
+
+    const withAds = createBigValue(true);
+    const withoutAds = createBigValue(false);
+    const values = [withAds, withoutAds, withAds.items, withoutAds.items, 'text', '{"a":[1]}', 1, null, []];
+    const expected = values.map((value) => nativeIsArray(value));
+    const results = [];
+    // `Array.isArray` is restored before assertions, as QUnit calls it, and logs of verbose mode are not printed
+    console.log = () => {};
+    try {
+        for (let i = 0; i < 20; i += 1) {
+            results.push(values.map((value) => Array.isArray(value)));
+        }
+    } finally {
+        Array.isArray = nativeIsArray;
+        console.log = nativeConsole;
+    }
+
+    for (let i = 0; i < results.length; i += 1) {
+        assert.deepEqual(results[i], expected, `results of calls ${i + 1} should not be changed`);
+    }
+    assert.notOk(nativeStringify(withAds).includes('adSlot'), 'ads should be removed from the value');
+    assert.deepEqual(withoutAds, createBigValue(false), 'value without ads should not be changed');
+    assert.strictEqual(hitCount, 1, 'hit function should fire once, when the value with ads is modified');
+});
+
+test('JSONPath: Array.isArray modifies each big value once, on its first call', (assert) => {
+    let hitCount = 0;
+    window.__debug = () => {
+        hitCount += 1;
+    };
+    runScriptlet(name, ['Array.isArray', '$.items[?(@.meta.adSlot)]', '$remove$', '', 'arg']);
+
+    const values = [createBigValue(true), createBigValue(true), createBigValue(true)];
+    const results = [];
+    try {
+        for (let i = 0; i < 3; i += 1) {
+            values.forEach((value) => results.push(Array.isArray(value)));
+        }
+    } finally {
+        Array.isArray = nativeIsArray;
+    }
+
+    assert.ok(results.every((result) => result === false), 'results should not be changed');
+    values.forEach((value) => {
+        assert.strictEqual(value.items.length, 1980, 'items with ads should be removed');
+    });
+    assert.strictEqual(hitCount, 3, 'hit function should fire once for each value');
+});
+
+test('string without { and [ is not parsed as JSON', (assert) => {
+    let parseCount = 0;
+    JSON.parse = (...args) => {
+        parseCount += 1;
+        return nativeParse(...args);
+    };
+    // the scriptlet saves `JSON.parse` of the page, i.e. the counting one
+    runScriptlet(name, ['String', '$.ads', '$remove$', '', 'result']);
+    JSON.parse = nativeParse;
+
+    const text = String('plain text, 5 $');
+    assert.strictEqual(parseCount, 0, 'text should not be parsed');
+    const json = String('{"ads":1,"a":[1]}');
+    assert.ok(parseCount > 0, 'JSON should be parsed');
+
+    assert.strictEqual(text, 'plain text, 5 $', 'text should not be changed');
+    assert.deepEqual(nativeParse(json), { a: [1] }, 'JSON should be modified');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+// Expressions of rules of facebook.com which hook `Array.isArray` and froze the page as separate rules,
+// as each rule processed the calls of the method which the other rules made themselves
+const FACEBOOK_SPONSORED_FILTER = '[?(@.category=="SPONSORED"||@.node.*.__typename=="SponsoredData"'
+    + '||@.__typename=="AdsSideFeedUnit"||@.item_collection.nodes.*.sponsored_data.ad_id=~/.+/)]';
+/* eslint-disable max-len */
+const FACEBOOK_RULES = [
+    `[?(@.data||@.__bbox||@.result||@.*.data)]$..[?(@.data&&!(@.edges&&@.require))].data..[node,edges,nodes]${FACEBOOK_SPONSORED_FILTER}`,
+    '[?(@.data||@.__bbox||@.result||@.*.data)]$..[?(@.data&&!(@.edges&&@.require))].data[?(@.category=="SPONSORED")].node',
+    `$[?(@.data&&!(@.edges&&@.require))].data.viewer[news_feed,auxColumnUnits][edges,nodes]${FACEBOOK_SPONSORED_FILTER}`,
+    '$[?(@.data&&!(@.edges&&@.require))].data[?(@.category=="SPONSORED"||@.node.*.__typename=="SponsoredData")].node',
+    `$[?(@.__bbox)].__bbox.result.data.viewer[news_feed,auxColumnUnits][edges,nodes]${FACEBOOK_SPONSORED_FILTER}`,
+    '$[?(@.__bbox)].__bbox.result[?(!(@.edges&&@.require))].data[?(@.category=="SPONSORED"||@.node.*.__typename=="SponsoredData")].node',
+];
+/* eslint-enable max-len */
+
+/**
+ * Creates a viewer of a response of facebook.com with sponsored items of all kinds the rules match.
+ *
+ * @param {boolean} withAds Whether the sponsored items are included.
+ * @returns {object} Viewer with the feed and the side column.
+ */
+const createFacebookViewer = (withAds) => {
+    const edges = [{ category: 'ORGANIC', node: { __typename: 'Story', id: '1' } }];
+    const nodes = [{ __typename: 'Unit', id: 'c', item_collection: { nodes: [{ sponsored_data: { ad_id: '' } }] } }];
+    if (withAds) {
+        edges.push({ category: 'SPONSORED', node: { __typename: 'Story', id: '2' } });
+        edges.push({
+            category: 'ORGANIC',
+            node: { __typename: 'Story', id: '3', ad: { __typename: 'SponsoredData' } },
+        });
+        nodes.unshift({ __typename: 'AdsSideFeedUnit', id: 'a' });
+        nodes.push({ __typename: 'Unit', id: 'b', item_collection: { nodes: [{ sponsored_data: { ad_id: '9' } }] } });
+    }
+    return { news_feed: { edges }, auxColumnUnits: { nodes } };
+};
+
+/**
+ * Applies rules of `trusted-json-set` which hook `Array.isArray`, and restores it after `callback`,
+ * as QUnit calls it in assertions.
+ *
+ * @param {string[]} paths JSONPath expressions of the rules.
+ * @param {Function} callback Function which calls `Array.isArray`.
+ */
+const withArrayIsArrayRules = (paths, callback) => {
+    paths.forEach((path) => {
+        runScriptlet(name, ['Array.isArray', path, '$remove$', '', 'arg:0', '', 'jsonpath']);
+    });
+    console.log = () => {};
+    try {
+        callback();
+    } finally {
+        Array.isArray = nativeIsArray;
+        console.log = nativeConsole;
+    }
+};
+
+test('JSONPath: one rule with expressions of facebook.com rules on Array.isArray removes ads', (assert) => {
+    const responses = [
+        { data: { viewer: createFacebookViewer(true) }, extensions: {} },
+        { __bbox: { result: { data: { viewer: createFacebookViewer(true) } } } },
+    ];
+    const patches = [
+        { data: { category: 'SPONSORED', node: { id: 'p' } }, label: 'x' },
+        { __bbox: { result: { data: { category: 'SPONSORED', node: { id: 'q' } } } } },
+    ];
+    const results = [];
+    // one rule with several expressions processes each value once
+    withArrayIsArrayRules([FACEBOOK_RULES.join(' ')], () => {
+        responses.concat(patches).forEach((value) => results.push(Array.isArray(value)));
+    });
+
+    assert.deepEqual(results, [false, false, false, false], 'results should not be changed');
+    assert.deepEqual(responses[0].data.viewer, createFacebookViewer(false), 'ads of the response should be removed');
+    assert.deepEqual(
+        responses[1].__bbox.result.data.viewer,
+        createFacebookViewer(false),
+        'ads of the initial response should be removed',
+    );
+    assert.deepEqual(patches[0], { data: { category: 'SPONSORED' }, label: 'x' }, 'node of a patch should be removed');
+    assert.deepEqual(
+        patches[1],
+        { __bbox: { result: { data: { category: 'SPONSORED' } } } },
+        'node of the initial patch should be removed',
+    );
+});
+
+test('JSONPath: one rule with several expressions calls the method linearly', (assert) => {
+    let nativeCallCount = 0;
+    // counts the calls of the native method, which the rule calls
+    Array.isArray = (value) => {
+        nativeCallCount += 1;
+        return nativeIsArray(value);
+    };
+    const counts = [];
+    withArrayIsArrayRules([FACEBOOK_RULES.slice(2).join(' ')], () => {
+        [{ props: { text: 'x' } }, [1, [2]], 'text', undefined].forEach((value) => {
+            nativeCallCount = 0;
+            Array.isArray(value);
+            counts.push(nativeCallCount);
+        });
+    });
+
+    // The call of the page, and one call by the filter of each of 4 expressions at most,
+    // while 4 separate rules process the calls of each other, i.e. 2 ** 4 calls for one call
+    counts.forEach((count) => {
+        assert.ok(count <= 1 + 4, `native method should be called ${count} <= 5 times for one call`);
+    });
+});
+
+test('JSONPath: replacement with a space and a query in it is one value', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.a=replace({"regex":"x","replacement":"see $.b=1"})']);
+    runScriptlet(name, ['JSON.parse', '$.c=replace:/x/see $.b=1/']);
+
+    const result = JSON.parse('{"a":"x","b":7,"c":"x"}');
+
+    assert.deepEqual(result, { a: 'see $.b=1', b: 7, c: 'see $.b=1' }, 'b should not be changed');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('JSONPath: documented rules with a quote in a regular expression of guards', (assert) => {
+    const rules = [
+        // each expression has its own guard, with `\x27` instead of the quote
+        '[?(@.title=/it\\x27s/)]$.ads=false [?(@.title=/it\\x27s/)]$.banner=false',
+        // one expression with both properties, in which the quote may be raw
+        '[?(@.title=/it\'s/)]$["ads","banner"]=false',
+    ];
+    rules.forEach((rule) => {
+        // the hook of the previous rule is removed first
+        JSON.parse = nativeParse;
+        runScriptlet(name, ['JSON.parse', rule]);
+        assert.deepEqual(
+            JSON.parse('{"title":"it\'s an ad","ads":true,"banner":true}'),
+            { title: "it's an ad", ads: false, banner: false },
+            `${rule} should set both`,
+        );
+        assert.deepEqual(
+            JSON.parse('{"title":"News","ads":true,"banner":true}'),
+            { title: 'News', ads: true, banner: true },
+            `${rule} should set neither for News`,
+        );
+    });
+});
+
+test('JSONPath: regular expression with a raw quote makes the argument one expression', (assert) => {
+    runScriptlet(name, ['JSON.parse', "[?(@.title=/it's/)]$.ads=false [?(@.title=/it's/)]$.banner=false"]);
+
+    const result = JSON.parse('{"title":"it\'s an ad","ads":true,"banner":true}');
+
+    assert.deepEqual(result, { title: "it's an ad", ads: true, banner: true }, 'neither property should be set');
+});
+
+test('JSONPath: documented examples of repl() and call() values, and of a regular expression of keys', (assert) => {
+    const examples = [
+        {
+            rule: '$.items.*.title=repl({"regex":"^sponsored: ","flags":"i","replacement":""})',
+            input: '{"items":[{"title":"Sponsored: Shoes"},{"title":"SPONSORED: Bags"},{"title":"News"}]}',
+            output: { items: [{ title: 'Shoes' }, { title: 'Bags' }, { title: 'News' }] },
+        },
+        {
+            rule: '$..title=repl({"pattern":" (Ad)","replacement":""})',
+            input: '{"a":{"title":"News (Ad)"},"b":{"title":"Weather"},"c":{"title":3}}',
+            output: { a: { title: 'News' }, b: { title: 'Weather' }, c: { title: 3 } },
+        },
+        {
+            // eslint-disable-next-line no-template-curly-in-string
+            rule: '$..playlist=call(["${val}","splice",0,1])',
+            input: '{"a":{"playlist":["ad","video1"]},"b":{"playlist":["ad","video2"]}}',
+            output: { a: { playlist: ['video1'] }, b: { playlist: ['video2'] } },
+        },
+        {
+            rule: '$.param_stores.*./^interstitial_/.value.shouldShow=false',
+            input: '{"param_stores":{"store":{"interstitial_a":{"value":{"shouldShow":true}},'
+                + '"banner":{"value":{"shouldShow":true}}}}}',
+            output: {
+                param_stores: {
+                    store: {
+                        interstitial_a: { value: { shouldShow: false } },
+                        banner: { value: { shouldShow: true } },
+                    },
+                },
+            },
+        },
+    ];
+    examples.forEach(({ rule, input, output }) => {
+        // the hook of the previous rule is removed first
+        JSON.parse = nativeParse;
+        runScriptlet(name, ['JSON.parse', rule]);
+        assert.deepEqual(JSON.parse(input), output, rule);
+    });
 });

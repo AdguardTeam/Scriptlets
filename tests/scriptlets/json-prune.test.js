@@ -1373,3 +1373,183 @@ test('RegExp.prototype.test is an accessor defined by another rule before', (ass
         JSON.parse = nativeParse;
     }
 });
+
+test('JSONPath: several queries separated by spaces are applied in order', (assert) => {
+    runScriptlet(name, '$.ads $..banner [?(@.player)]$.player.preroll');
+
+    const result = JSON.parse('{"ads":[1],"page":{"banner":1,"text":"a b"},"player":{"preroll":1,"src":"v"}}');
+
+    assert.deepEqual(result, { page: { text: 'a b' }, player: { src: 'v' } }, 'each query should remove its nodes');
+});
+
+test('JSONPath: spaces inside a filter do not separate queries', (assert) => {
+    runScriptlet(name, '$.items[?(@.ad && @.slot == "top bar")] $.tracking');
+
+    const result = JSON.parse('{"items":[{"ad":1,"slot":"top bar"},{"ad":1,"slot":"side"}],"tracking":1}');
+
+    assert.deepEqual(result, { items: [{ ad: 1, slot: 'side' }] }, 'filter should be one query');
+});
+
+test('json-edit alias: space is ignored in a query, as in uBO, not a separator of queries', (assert) => {
+    runScriptlet('json-edit', '..ads .config');
+
+    const result = JSON.parse('{"a":{"ads":{"config":1,"x":1}},"config":{"adBlock":true}}');
+
+    assert.deepEqual(result, {
+        a: { ads: { x: 1 } },
+        config: { adBlock: true },
+    }, 'query should be `..ads.config`');
+});
+
+test('JSONPath: guard with a quote in its regular expression is not a separate query', (assert) => {
+    runScriptlet(name, "[?.title=/it's/] $.ads");
+
+    const result = JSON.parse('{"title":"news","ads":1}');
+
+    assert.deepEqual(result, { title: 'news', ads: 1 }, 'ads should be kept, as the guard does not match');
+});
+
+test('JSONPath: regular expression of keys in brackets may contain `.` and `=`', (assert) => {
+    runScriptlet(name, '$.obj[/^ad./] $.obj[/^x=/]');
+
+    const result = JSON.parse('{"obj":{"adx":1,"ad":2,"x=":3,"other":4}}');
+
+    assert.deepEqual(result, { obj: { ad: 2, other: 4 } }, 'matching keys should be removed');
+});
+
+test('JSONPath: slash of a text which a filter compares with is a part of it', (assert) => {
+    runScriptlet(name, '$.items[?@.url=/ads]');
+
+    const result = JSON.parse('{"items":[{"url":"/ads"},{"url":"/x"}]}');
+
+    assert.deepEqual(result, { items: [{ url: '/x' }] }, 'item with the URL should be removed');
+});
+
+test('JSONPath: regular expression with a slash in a character class, and a text with a slash', (assert) => {
+    runScriptlet(name, '$.items[?@.url=/ads[/?#]/] $.links[?@.url=/ads && @.fallback=="/content"]');
+
+    const result = JSON.parse(`{
+        "items":[{"url":"ads/banner"},{"url":"news"}],
+        "links":[{"url":"/ads","fallback":"/content"},{"url":"/x","fallback":"/content"}]
+    }`);
+
+    assert.deepEqual(result, {
+        items: [{ url: 'news' }],
+        links: [{ url: '/x', fallback: '/content' }],
+    }, 'matching items should be removed');
+});
+
+test('JSONPath: space before a dot or a bracket continues the selector, as before', (assert) => {
+    // `json-prune` is applied by the last rule only, as `runScriptlet()` restores `JSON.parse` first
+    runScriptlet(name, '$.a [?(@.x)] $.b [0] $.c .d');
+
+    const result = JSON.parse('{"a":[{"x":1},{"y":2}],"b":[1,2],"c":{"d":1,"e":1},"f":1}');
+
+    assert.deepEqual(result, {
+        a: [{ y: 2 }], b: [2], c: { e: 1 }, f: 1,
+    }, 'only the nodes of the selectors should be removed');
+});
+
+test('JSONPath: error of hit() of the page is not thrown, and the value is pruned', (assert) => {
+    window.__debug = () => {
+        throw new Error('page');
+    };
+    runScriptlet(name, '$.ad');
+
+    let result;
+    try {
+        result = JSON.parse('{"ad":1,"a":1}');
+    } finally {
+        delete window.__debug;
+    }
+
+    assert.deepEqual(result, { a: 1 }, 'value should be pruned');
+});
+
+test('JSONPath: documented rules with a quote in a regular expression of guards', (assert) => {
+    const matching = '{"title":"it\'s an ad","ads":[1,2],"tracking":{"id":1}}';
+    const other = '{"title":"News","ads":[1,2],"tracking":{"id":1}}';
+    const rules = [
+        // each expression has its own guard, with `\x27` instead of the quote
+        ['[?(@.title=/it\\x27s/)]$.ads [?(@.title=/it\\x27s/)]$.tracking'],
+        // one expression with both properties, in which the quote may be raw
+        ['[?(@.title=/it\'s/)]$["ads","tracking"]'],
+        // two rules
+        ["[?(@.title=/it's/)]$.ads", "[?(@.title=/it's/)]$.tracking"],
+    ];
+    rules.forEach((args) => {
+        // The output of each rule is decoded by the native `JSON.parse`, not by the hooked one,
+        // which would prune it again
+        const prune = (input) => nativeParse(args.reduce((value, arg) => {
+            // `json-prune` is applied by the last rule only, as `runScriptlet()` restores `JSON.parse` first
+            runScriptlet(name, arg);
+            return JSON.stringify(JSON.parse(value));
+        }, input));
+        assert.deepEqual(prune(matching), { title: "it's an ad" }, `${args} should remove both`);
+        assert.deepEqual(
+            prune(other),
+            { title: 'News', ads: [1, 2], tracking: { id: 1 } },
+            `${args} should remove neither for News`,
+        );
+    });
+
+    // a raw quote makes the argument one expression, which removes neither property
+    runScriptlet(name, "[?(@.title=/it's/)]$.ads [?(@.title=/it's/)]$.tracking");
+    assert.deepEqual(
+        JSON.parse(matching),
+        { title: "it's an ad", ads: [1, 2], tracking: { id: 1 } },
+        'neither property should be removed',
+    );
+});
+
+test('JSONPath: documented examples of uBO options', (assert) => {
+    const examples = [
+        {
+            rule: '$.items[?(@.url^="https://ads.")] $.videos[?(@.src$=".mp4")]',
+            input: '{"items":[{"url":"https://ads.example.org/1"},{"url":"https://example.org/2"}],'
+                + '"videos":[{"src":"ad.mp4"},{"src":"intro.webm"}]}',
+            output: { items: [{ url: 'https://example.org/2' }], videos: [{ src: 'intro.webm' }] },
+        },
+        {
+            rule: '$.config./^ad_/',
+            input: '{"config":{"ad_banner":1,"ad_video":2,"theme":"dark"}}',
+            output: { config: { theme: 'dark' } },
+        },
+        {
+            rule: '$..adSlots;$.ads',
+            input: '{"page":{"adSlots":[1]},"ads":[1,2],"title":"News"}',
+            output: { page: { adSlots: [1] }, title: 'News' },
+        },
+        {
+            rule: '$..adSlots;$.ads',
+            input: '{"ads":[1,2],"title":"News"}',
+            output: { ads: [1, 2], title: 'News' },
+        },
+        {
+            rule: '$.items[?(@.ad)]{2,};$.banner',
+            input: '{"items":[{"ad":true},{"ad":true},{"id":1}],"banner":{"id":2}}',
+            output: { items: [{ ad: true }, { ad: true }, { id: 1 }] },
+        },
+        {
+            rule: '$.items[?(@.ad)]{2,};$.banner',
+            input: '{"items":[{"ad":true},{"id":1}],"banner":{"id":2}}',
+            output: { items: [{ ad: true }, { id: 1 }], banner: { id: 2 } },
+        },
+        {
+            rule: 'v2:$.flags[?@==true]',
+            input: '{"flags":{"ads":true,"tracking":true,"darkMode":false}}',
+            output: { flags: { darkMode: false } },
+        },
+        {
+            // the same without `v2:`
+            rule: '$.flags.*[?(@==true)]',
+            input: '{"flags":{"ads":true,"tracking":true,"darkMode":false}}',
+            output: { flags: { darkMode: false } },
+        },
+    ];
+    examples.forEach(({ rule, input, output }) => {
+        // `runScriptlet()` restores `JSON.parse` first, and the output is compared with a literal value
+        runScriptlet(name, rule);
+        assert.deepEqual(JSON.parse(input), output, `${rule} for ${input}`);
+    });
+});

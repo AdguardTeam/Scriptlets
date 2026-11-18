@@ -152,9 +152,67 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `trusted-suppress-native-method` suppresses calls of a method which is a constructor by `new` too,
   e.g. `new fn.constructor('debugger')` for `Function.prototype.constructor`, which bypassed it before.
   A matched `new` throws an error also with `prevent`, as in uBO.
+- JSONPath options of uBO syntax in `json-prune`, `json-prune-fetch-response`, `json-prune-xhr-response`,
+  `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response` [#586]: `^=` and `$=`
+  filters, which match the start and the end of the value converted to a string, e.g. `$.items[?.url^="https://"]`,
+  regular expressions of property keys after a dot, e.g. `$./^ad_/`, with `\=` and `\s` instead of `=` and spaces,
+  as e.g. `$.routes./login=/` is a name with a value, as before, so a key between slashes, e.g. `$.routes./pets/`,
+  which was the key `/pets/` before, matches every key which contains `pets` now, e.g. `/pets/archive` and `pets`,
+  and an exact key needs brackets, e.g. `$.routes['/pets/']`, preconditions before `;$`, which have to match
+  at least one node, or a number of nodes in a range `{min,max};$`, e.g. `..adSlots{2,};$.ads`, and `v2:` prefix,
+  with which a filter tests the children of each node, also of an object. Values may also be `repl({...})`,
+  which replaces a part of a string value by `regex` with `flags` or by a text in `pattern`, and assigns nothing
+  to a value which is not a string, as in uBO, and `call([...])`,
+  which calls a method for each matched node, with `${obj}`, `${key}` and `${val}` placeholders, also a method
+  of a nested object by its path, e.g. `call([null,"player.ads.stop","${val}"])`, unlike uBO. Other values,
+  e.g. `call(text)`, and `;` which is not followed by `$`, e.g. `$.a;b`, are read as before. A key which ends
+  with `^` or `$` and is compared by `=` has to be in brackets now, e.g. `@['a$']=1`. uBO rules of `json-edit`
+  with `^=`, e.g. `example.org##+js(json-edit, .*[?.linkurl^="http"])`, which did nothing before, are applied now.
+- Several JSONPath expressions separated by spaces in one argument of `json-prune`, `json-prune-fetch-response`,
+  `json-prune-xhr-response`, `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response`,
+  e.g. `example.org#%#//scriptlet('json-prune', '$.ads $..banner')`, which are applied in order, so the content
+  is processed once. Each expression after the first one starts with the root `$` followed by a step,
+  e.g. `$.ads`, with `v2:`, or with guards followed by the root, e.g. `[?(@.player)]$.player.ads`, which apply
+  only to that expression, while an argument with a regular expression which contains a raw quote,
+  e.g. `[?.t=/it's/]`, is one expression, as before, so its expressions need separate rules, or `\x27` or `\x22`
+  instead of the quote, e.g. `[?.t=/it\x27s/]`, and a space before a dot or a bracket continues an expression,
+  as before, e.g. `$.a .b` is `$.a.b`, and spaces inside an expression, e.g. in a filter `[?(@.a && @.b)]`
+  or in a value, do not separate expressions either, so expressions of existing rules are not split.
+  An expression after a text value has its own value, e.g. `$.title=Don't show $.ads=false`,
+  while e.g. `$.title=Costs 5 $` is one value, and a value `replace:/regex/replacement/` is the rest
+  of the argument if it ends with `/` or `/g`, as before. `argumentValue` of `trusted-json-set` scriptlets
+  is never split, e.g. `Please wait ...`. None of the expressions is applied if one of them is invalid,
+  while an error of applying one of them, e.g. of a getter of the page, does not stop the other ones.
+  uBO rules of `json-edit` are not split, as uBO ignores spaces
+  in an expression, e.g. `.a .b` is `.a.b`. Rules of `trusted-json-set` which intercept the same method,
+  e.g. `Array.isArray`, which the scriptlets call themselves, should be one rule with several expressions,
+  as each rule processes the calls which the other rules make, so the time grows exponentially with the number
+  of rules for arrays, e.g. 4 rules of facebook.com take about 7 s for 850,000 calls of the page, and one rule 1.4 s,
+  while 4 rules took about 3 minutes before, and the method is not called for other values, if they have
+  no numeric `length`.
+- `$remove$` as a value of a JSONPath expression of `trusted-json-set`, `trusted-json-set-fetch-response`
+  and `trusted-json-set-xhr-response`, which removes the nodes the expression matches, as the same `argumentValue`
+  does, so that one rule removes some properties and sets other ones, in any order,
+  e.g. `example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads=$remove$ $..banner=false')`
+  or `$..banner=false $.ads=$remove$`. Any expression may follow it, also without its own value,
+  e.g. `$.ads=$remove$ $.premium` with `argumentValue` `true`, while other values without quotes or brackets,
+  also constants, are a text, after which an expression has its own value, as before,
+  e.g. `$..banner=false $.ads` sets the text `false $.ads`. An expression with the value `$remove$` set this text
+  before, which `json:"$remove$"` sets now, while `$remove$` after `+=`, in quotes, or in a longer text,
+  e.g. `$remove$ them`, is a text, as before.
 
 ### Changed
 
+- JSONPath expressions of `json-prune` and `trusted-json-set` scriptlets are evaluated about 2.5 times faster
+  in large JSON, e.g. with recursive filters like `$..[?@.id=="ad"]`, as the paths of nodes are not built,
+  primitive values are skipped by recursive steps which cannot match them, e.g. `$..ads`, and the items of an array
+  are removed in one pass, while a filter of the items of an array skips the primitive items which it cannot match,
+  e.g. `$.items[?@.id=="ad"]`, which is over 100 times faster for an array of numbers.
+  The expressions of a rule are parsed once, instead of for each processed value,
+  e.g. on each call of a method intercepted by `trusted-json-set`, which takes up to 40 times less time
+  for a small value then, e.g. 0.1 s instead of 3.5 s for 100,000 calls of `Array.isArray()` with a rule
+  of facebook.com, and a string without `{` and `[` passed to such a method is not parsed as JSON,
+  which made such a call about 60 times slower than without the rule, and about 2.5 times now.
 - `trusted-suppress-native-method` with an invalid regular expression of `stack` is not applied, which is logged
   once, instead of on each call of the method, which is not suppressed either way.
 - `trusted-replace-node-text` writes the text of a node and calls `hit()` only if the text has changed,
@@ -182,6 +240,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- JSONPath expressions of `json-prune` and `trusted-json-set` scriptlets with a quote in a regular expression
+  of a filter, e.g. `[?(@.title=/it's/)]`, which made the expression invalid, so the rule was not applied.
 - `trusted-replace-xhr-response` defining the response as text for any `responseType`, e.g. for `json`,
   where it is parsed from the replaced text now, and not modifying a response of `document`, sending
   a synchronous request asynchronously, so its response was not set when `send()` returned, completing

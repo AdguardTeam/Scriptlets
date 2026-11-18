@@ -38,9 +38,14 @@ import {
     resolveJsonSetTimeKeywords,
     jsonLineEdit,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    type JsonPathCache,
+    getJsonPathRegexpEnd,
     matchesJsonPath,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
+    buildJsonPathQueries,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -75,6 +80,11 @@ import { type Source } from './scriptlets';
  * - `methodPath` — required, chain of dot-separated properties leading to the target method,
  *   e.g. `JSON.stringify`, `JSON.parse`.
  *   The method may receive a JSON object as its first argument or return one.
+ *   Rules for a method which scriptlets call themselves, e.g. `Array.isArray`, should be one rule
+ *   with several JSONPath expressions, as each rule processes the calls of the method which the other rules make,
+ *   so the time grows exponentially with the number of rules, e.g. 4 rules call it 16 times for one call
+ *   with an array, and one rule with the same 4 expressions 5 times, while it is not called for other values
+ *   which have no numeric `length`.
  * - `propsPath` — optional, dot-separated path to the property to set.
  *   If omitted, the scriptlet logs the original selected content and does not mutate it.
  *   Supports wildcards:
@@ -82,8 +92,42 @@ import { type Source } from './scriptlets';
  *     - `[]` — matches any array element index
  *   Supports value filtering: append `.[=].value` to only modify nodes where the property equals `value`.
  *   In `jsonpath` mode this may also be a full JSONPath mutation expression such as `$..*[?(@.price==8.99)].price=10`.
- *   JSONPath mode accepts only one expression string in `propsPath`; it does not
- *   support combining multiple independent JSONPath expressions in one argument.
+ *   In `jsonpath` mode several JSONPath expressions may be separated by spaces, e.g. `$.ads $..banner=false`,
+ *   which are applied in order, and `argumentValue` is set by each of them without its own value,
+ *   as it is, i.e. it is never split. Each expression after the first one starts with the root `$` followed
+ *   by a step, e.g. `$.ads`, with `v2:`, or with guards followed by the root, e.g. `[?(@.player)]$.player.ads`,
+ *   which apply only to that expression, while an argument with a regular expression which contains a raw quote, e.g. `[?.t=/it's/]`,
+ *   is one expression, as before, so e.g. `[?.t=/it's/]$.a=1 $.b=2` sets `a` to the text `1 $.b=2`;
+ *   such expressions need separate rules, or the quote written as `\x27` or `\x22`,
+ *   e.g. `[?.t=/it\x27s/]$.a=1 $.b=2`, and a space before a dot
+ *   or a bracket continues an expression, as before, e.g. `$.a .b` is `$.a.b`. Spaces inside an expression,
+ *   e.g. in a filter `[?(@.a && @.b)]` or in a value, do not separate them either, and an expression after
+ *   a text value has its own value, e.g. `$.title=Don't show $.ads=false`, while e.g. `$.title=Costs 5 $`
+ *   is one value, so an expression which sets `argumentValue` has to precede a text value,
+ *   which a constant is as well, e.g. `$..banner=false $.ads` sets the text `false $.ads`.
+ *   An expression may have `$remove$` as its own value, which removes the nodes it matches,
+ *   as the same `argumentValue` does, so that properties are removed and set by one rule, in any order,
+ *   e.g. `$.ads=$remove$ $..banner=false` or `$..banner=false $.ads=$remove$`, and any expression may
+ *   follow it, e.g. `$.ads=$remove$ $.premium` with `argumentValue` `true`. It is a text after `+=`,
+ *   in quotes, which are a part of a text value, and after `json:`, e.g. `$.note=json:"$remove$"`.
+ *   A value `replace:/regex/replacement/` is the rest of the argument if the argument ends with `/` or `/g`,
+ *   as before, e.g. `$.a=replace:/x/path/ $.b=1/`, so other expressions may follow it only otherwise.
+ *   None of them is applied if one of them is invalid, while an error of applying one of them,
+ *   e.g. of a getter of the page, does not stop the other ones.
+ *   JSONPath expressions may also use `^=` and `$=` filters, e.g. `$.items[?.url^="https://ads."]`,
+ *   regular expressions of property keys after a dot, e.g. `$./^ad_/`, with `\=` and `\s` instead of `=`
+ *   and spaces, as e.g. `$.routes./login=/` is a name with a value, as before, so a key between slashes,
+ *   e.g. `$.routes./pets/`, which was the key `/pets/` before, matches every key which contains `pets` now,
+ *   e.g. `/pets/archive` and `pets`, and an exact key needs brackets, e.g. `$.routes['/pets/']`,
+ *   preconditions before `;$`,
+ *   which have to match at least one node, or a number of nodes in a range `{min,max};$`,
+ *   e.g. `..adSlots;$.ads` or `$.items[?.ad]{2,};$.ads`, and `v2:` prefix, with which a filter tests
+ *   the children of each node, also of an object, e.g. `v2:$.config[?@==true]`.
+ *   Values of JSONPath expressions may also be `repl({"regex":"...","flags":"...","replacement":"..."})`
+ *   or `repl({"pattern":"...","replacement":"..."})`, which replace a part of a string value,
+ *   and `call([object, method, ...arguments])`, which calls a method for each matched node,
+ *   in which `"${obj}"`, `"${key}"` and `"${val}"` are its owner, key and value, `null` is `window`,
+ *   and the method may be a path from the object, e.g. `[null,"player.ads.stop","${val}"]`.
  * - `argumentValue` — required when `propsPath` is provided, the value to write at the target path.
  *   Ignored in logging-only mode.
  *   Can be one of the predefined constants:
@@ -102,7 +146,8 @@ import { type Source } from './scriptlets';
  *     - `throwFunc` — function throwing an error
  *     - `noopPromiseResolve` — function returning `Promise` resolved with an empty response
  *     - `noopPromiseReject` — function returning `Promise.reject()`
- *     - `$remove$` — in `jsonpath` mode, removes each property or array item matched by `propsPath`
+ *     - `$remove$` — in `jsonpath` mode, removes each property or array item matched by `propsPath`,
+ *       or by an expression of `propsPath` whose own value it is, e.g. `$.ads=$remove$`
  *     - any other string is set as a string literal
  *
  *   Can contain time keywords which are resolved before the value is set:
@@ -407,6 +452,132 @@ import { type Source } from './scriptlets';
  *     { "content": "article" }
  *     ```
  *
+ * 1. Removes `ads` and sets each `banner` to `false` by one rule in `JSONPath` mode
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads=$remove$ $..banner=false')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "ads": [1, 2], "banner": true, "page": { "banner": true, "title": "News" } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "banner": false, "page": { "banner": false, "title": "News" } }
+ *     ```
+ *
+ * 1. Removes `Sponsored: ` from the start of each `title`, in any case, by `repl({...})`, which replaces a part
+ *    of a string value by a regular expression `regex` with `flags`, and does not change other values
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.items.*.title=repl({"regex":"^sponsored: ","flags":"i","replacement":""})')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "items": [{ "title": "Sponsored: Shoes" }, { "title": "SPONSORED: Bags" }, { "title": "News" }] }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "items": [{ "title": "Shoes" }, { "title": "Bags" }, { "title": "News" }] }
+ *     ```
+ *
+ * 1. Removes ` (Ad)` from each `title` at any depth, by `repl({...})` with a text in `pattern`, in which
+ *    no character is special, while a value which is not a string, e.g. a number, is not changed
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$..title=repl({"pattern":" (Ad)","replacement":""})')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "a": { "title": "News (Ad)" }, "b": { "title": "Weather" }, "c": { "title": 3 } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "a": { "title": "News" }, "b": { "title": "Weather" }, "c": { "title": 3 } }
+ *     ```
+ *
+ * 1. Removes the first item of each `playlist`, e.g. a preroll, by `call([...])`, which calls a method for each
+ *    matched node instead of setting a value, here `splice(0, 1)` of the node, `"${val}"`, while `"${obj}"`
+ *    and `"${key}"` are its owner and key, and `null` instead of an object is `window`,
+ *    e.g. `call([null,"player.ads.stop","${val}"])` calls `window.player.ads.stop()` with the node
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$..playlist=call(["${val}","splice",0,1])')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "a": { "playlist": ["ad", "video1"] }, "b": { "playlist": ["ad", "video2"] } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "a": { "playlist": ["video1"] }, "b": { "playlist": ["video2"] } }
+ *     ```
+ *
+ * 1. Sets `shouldShow` to `false` in each store whose key starts with `interstitial_`, by a regular expression
+ *    of keys after a dot, as in the uBO rule
+ *    `www.nytimes.com##+js(trusted-json-edit-fetch-response, v2:$.param_stores.*./^interstitial_/.value.shouldShow=false, propsToMatch, /statsig/initialize?)`
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.param_stores.*./^interstitial_/.value.shouldShow=false')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "param_stores": { "store": { "interstitial_a": { "value": { "shouldShow": true } }, "banner": { "value": { "shouldShow": true } } } } }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "param_stores": { "store": { "interstitial_a": { "value": { "shouldShow": false } }, "banner": { "value": { "shouldShow": true } } } } }
+ *     ```
+ *
+ * 1. Sets `ads` and `banner` to `false` by one rule in `JSONPath` mode if `title` matches a regular expression
+ *    with a quote; each expression has its own guard, as a guard applies only to the expression it precedes,
+ *    and the quote is written as `\x27`, as a raw quote, e.g. `/it's/`, would make the whole argument
+ *    one expression, which sets neither property
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '[?(@.title=/it\x27s/)]$.ads=false [?(@.title=/it\x27s/)]$.banner=false')
+ *     ```
+ *
+ *     or one expression with both properties, in which the quote may be raw:
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '[?(@.title=/it\'s/)]$["ads","banner"]=false')
+ *     ```
+ *
+ *     Input JSON:
+ *
+ *     ```json
+ *     { "title": "it's an ad", "ads": true, "banner": true }
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```json
+ *     { "title": "it's an ad", "ads": false, "banner": false }
+ *     ```
+ *
+ *     With another title, e.g. `{ "title": "News", "ads": true, "banner": true }`, neither property is set.
+ *
  * 1. Modifies the first argument before the target method is called
  *
  *     ```adblock
@@ -502,9 +673,12 @@ export function trustedJsonSet(
     const syntaxModeDetails = isLogOnlyMode
         ? { mode: 'legacy' as const }
         : resolveJsonSyntaxMode(propsPath, mode);
-    const jsonPathExpression = !isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath'
-        ? buildJsonPathExpression(propsPath, argumentValue)
-        : '';
+    // Queries are built after `propsPath` is split, so `argumentValue` is never split
+    const jsonPathQueries = !isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath'
+        ? buildJsonPathQueries(propsPath, argumentValue)
+        : [];
+    // Queries are parsed once, not for each processed value
+    const jsonPathCache: JsonPathCache = Object.create(null);
 
     if (!methodPath) {
         return;
@@ -514,8 +688,8 @@ export function trustedJsonSet(
         return;
     }
 
-    if (!isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath' && jsonPathExpression === '') {
-        logMessage(source, 'JSONPath mode requires argumentValue unless propsPath already contains an inline mutation');
+    if (!isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath' && jsonPathQueries.length === 0) {
+        logMessage(source, 'JSONPath mode requires argumentValue for an expression of propsPath without its own value');
         return;
     }
 
@@ -793,40 +967,31 @@ export function trustedJsonSet(
         : '';
 
     /**
-     * Resolves the list of target argument indexes for `arg` / `arg:N|M` jsonSource values.
-     * Input indexes in the rule are 0-based.
+     * Returns the 0-based indexes of `arg` and `arg:N|M` jsonSource values, which are parsed once,
+     * as the method may be called very often, e.g. `Array.isArray()`.
      *
-     * @param argsLength number of arguments passed to the intercepted method
-     * @returns selected argument indexes
+     * @returns unique indexes of the arguments, in the order of the rule
      */
-    const getSelectedArgumentIndexes = (argsLength: number) => {
+    const parseArgumentIndexes = () => {
         if (normalizedJsonSource === JSON_SOURCES.ARG) {
-            return argsLength > 0 ? [0] : [];
+            return [0];
         }
 
+        const indexes: number[] = [];
         if (normalizedJsonSource.startsWith('arg:')) {
             const rawIndexes = normalizedJsonSource.slice(4).split('|');
-            const indexes: number[] = [];
-
             for (let i = 0; i < rawIndexes.length; i += 1) {
                 const parsedIndex = parseFloat(rawIndexes[i]);
-                if (nativeIsNaN(parsedIndex)) {
-                    continue;
+                if (!nativeIsNaN(parsedIndex) && parsedIndex >= 0 && !indexes.includes(parsedIndex)) {
+                    indexes.push(parsedIndex);
                 }
-
-                const index = parsedIndex;
-                if (index < 0 || index >= argsLength || indexes.includes(index)) {
-                    continue;
-                }
-
-                indexes.push(index);
             }
-
-            return indexes;
         }
 
-        return [];
+        return indexes;
     };
+
+    const argumentIndexes = parseArgumentIndexes();
 
     /**
      * Resolves the value to write for legacy-mode mutations.
@@ -870,10 +1035,10 @@ export function trustedJsonSet(
         let changed = false;
 
         if (syntaxModeDetails.mode === 'jsonpath') {
-            const value = jsonPath(source, jsonValue, jsonPathExpression, nativeObjects, () => {
+            const value = jsonPath(source, jsonValue, jsonPathQueries, nativeObjects, () => {
                 changed = true;
                 hit(source);
-            }, '');
+            }, '', false, jsonPathCache);
 
             return {
                 changed,
@@ -1025,6 +1190,14 @@ export function trustedJsonSet(
         }
 
         if (typeof jsonValue === 'string') {
+            // A string without `{` and `[` is neither a JSON object or array, nor has lines of them,
+            // so it is returned as is without parsing, as a method, e.g. `Array.isArray()`, may be called
+            // with such strings very often, and a parsing error is costly
+            if (jsonValue.indexOf('{') === -1 && jsonValue.indexOf('[') === -1) {
+                logMessage(source, 'Error parsing JSON string: it has neither a JSON object nor an array');
+                return jsonValue;
+            }
+
             let messageError = '';
             let parsedValue;
             try {
@@ -1209,10 +1382,12 @@ export function trustedJsonSet(
                     || (isStackTraceRead && matchStackTrace(stack, addStackTraceMessageLine(currentStackTrace)));
 
                 if (shouldProcess) {
-                    const selectedArgumentIndexes = getSelectedArgumentIndexes(args.length);
-
-                    for (let i = 0; i < selectedArgumentIndexes.length; i += 1) {
-                        const index = selectedArgumentIndexes[i];
+                    for (let i = 0; i < argumentIndexes.length; i += 1) {
+                        const index = argumentIndexes[i];
+                        // Only the arguments which the method is called with
+                        if (index >= args.length) {
+                            continue;
+                        }
                         args[index] = modifyJsonValueSafely(
                             args[index],
                             `Error during setting the argument at index ${index}`,
@@ -1314,7 +1489,11 @@ trustedJsonSet.injections = [
     resolveJsonSetTimeKeywords,
     jsonLineEdit,
     jsonPath,
+    splitJsonPathQueries,
+    getJsonPathQueries,
+    getJsonPathRegexpEnd,
     matchesJsonPath,
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
+    buildJsonPathQueries,
 ];

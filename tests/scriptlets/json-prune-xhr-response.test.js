@@ -1587,6 +1587,25 @@ if (isSupported) {
         assert.notOk(Object.prototype.hasOwnProperty.call(xhr.response, 'a1'), 'Content pruned');
         assert.ok(Array.isArray(xhr.response.nested), 'Other content is kept');
     });
+
+    test('JSONPath: documented example with two expressions and a ^= filter', async (assert) => {
+        runScriptlet(name, ['$.ads $.items[?(@.url^="https://ads.")]', '', 'api/feed']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/api/feed.json`);
+        xhr.onload = () => {
+            assert.deepEqual(
+                xhr.response,
+                { items: [{ url: 'https://example.org/2', title: 'News (Ad)' }] },
+                'pruned',
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

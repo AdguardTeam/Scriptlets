@@ -335,6 +335,26 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('JSONPath: `$remove$` as a value of a query removes its nodes, in any order', async (assert) => {
+        runScriptlet(name, ['$..ads.visibility=hidden $..article.node=$remove$', '', '', 'string-like-json01']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/string-like-json01.txt`);
+        xhr.onload = () => {
+            const { responseText } = xhr;
+
+            assert.ok(
+                responseText.includes('"ads":{"content":"Sponsored","visibility":"hidden"}'),
+                'visibility of ads should be set',
+            );
+            assert.ok(responseText.includes('"article":{"content":"Article"}'), 'node of article should be removed');
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.send();
+    });
+
     test('JSONPath modifies ads.visibility to hidden in json-like response from xhr', async (assert) => {
         runScriptlet(name, ['$..ads.visibility=hidden', '', '', 'string-like-json01']);
 
@@ -944,6 +964,25 @@ if (isSupported) {
 
         assert.deepEqual(xhr.response, { a1: 1, b2: 'test', c3: 3 }, 'response should not be modified');
         assert.strictEqual(window.hit, undefined, 'hit should not fire');
+    });
+
+    test('JSONPath: documented example with $remove$ and repl() values', async (assert) => {
+        runScriptlet(name, ['$.ads=$remove$ $..title=repl({"pattern":" (Ad)","replacement":""})', '', '', 'api/feed']);
+
+        const done = assert.async();
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/api/feed.json`);
+        xhr.onload = () => {
+            assert.deepEqual(
+                xhr.response,
+                { items: [{ url: 'https://ads.example.org/1', title: 'Ad' }, { url: 'https://example.org/2', title: 'News' }] },
+                'modified',
+            );
+            assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+            done();
+        };
+        xhr.responseType = 'json';
+        xhr.send();
     });
 } else {
     test('unsupported', (assert) => {

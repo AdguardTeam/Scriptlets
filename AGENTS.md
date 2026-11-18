@@ -733,6 +733,96 @@ Project-specific rules:
     throw while the rule runs, e.g. when `abort-current-inline-script` aborts the
     inline script in which the rule runs.
 
+26. Helpers which traverse a value of the page, e.g. `jsonPath()`, SHOULD NOT create
+    data for each visited node which only matched or modified nodes need, e.g. the path
+    of a node, which `getCandidatePath()` builds on demand, nor candidates for nodes
+    which a step cannot match, e.g. primitive values for `$..ads`, and SHOULD parse each
+    part of an expression once, e.g. the selector of a filter, not again for each node
+    it is evaluated against. The expressions of a rule SHOULD be parsed once as well,
+    not for each processed value, e.g. by a `JsonPathCache` which the scriptlet creates
+    when it runs, while values which are resolved for each processed value, e.g. time
+    keywords or an object which is appended, are not cached. A query whose selectors cannot be parsed
+    is remembered as invalid, while a value which cannot be built is built again for the next processed value,
+    as building it may run code of the page, e.g. `Date` for `$now$`, which may fail only once.
+    Items of an array SHOULD be removed by `splice()` of each, from the last, as before, and only more than
+    8 items in one pass, by `splice()` of the last one, `copyWithin()` of arrays and setting `length`,
+    without a record of each item, which would allocate memory for each item of a big array, and without
+    deleting the items one by one, which makes the array a dictionary in V8. If an array refuses a change
+    in the middle of such a removal, e.g. of a read-only item, it is left changed differently than
+    by `splice()` of each, and `deleteProperty` of a Proxy is not called, which is accepted, as matching it
+    would make the removal quadratic again. A filter SHOULD skip primitive values which it cannot
+    match, i.e. descendants of a recursive one, e.g. `$..[?(@.id=="ad")]`, and items of an array, e.g.
+    `$.items[?(@.id=="ad")]`, which is checked once for a step, when it gets the first array, not for each guard
+    of a root which is an object, while a filter of a primitive value itself, e.g. `@==2`, also nested,
+    e.g. `@[?(@==2)]`, or a negation may match it. A filter SHOULD read each item of an array once, and pass
+    the value which it has tested to the next steps, as a getter of the page may return another value on each
+    read, so the check whether an item is primitive must not consume the value which the filter tests.
+    `splitJsonPathQueries()`, which runs once, when the rule runs,
+    SHOULD stay one simple pass with local lookaheads, i.e. whether a query starts at a space, whether it has its
+    own value, and whether its own selector is well-formed, without chains of next queries or guesses about what
+    the author meant, and without recursion, which would exceed the call stack for thousands of queries.
+    Only the end of each regular expression is remembered, as `getJsonPathRegexpEnd()` may read up to the end
+    of the argument, e.g. for each slash of `[?.a=/f0 [?.a=/f1`, which would make splitting cubic otherwise,
+    see `json-path-performance.spec.ts`. Splitting is quadratic for artificial arguments of thousands of tokens,
+    e.g. `$.t=x $.a0; $.a1; …` or `$.note=Filters: [?.f0] [?.f1] … $.b`, i.e. up to about 100 ms for 5 KB, which is
+    accepted, as the argument comes from the rule, not from the page, it is split once, when the rule runs,
+    and the longest argument in the AdGuard and uBO lists, of 5 KB, splits in about 0.1 ms; a memo for such
+    shapes is not added.
+    An argument with a regular expression in brackets which contains a raw quote, e.g. `[?.t=/it's/]`,
+    is one query, as before, see `hasQuotedRegexp()`, as the end of such a regular expression is not certain;
+    its queries need separate rules, or the quote written as `\x27` or `\x22`. No rule in the AdGuard and uBO
+    lists has such a regular expression. `&&` and `||` outside brackets are a part of a name, as in one query,
+    e.g. `$.ads $.labels.a || b`.
+    A new option of uBO JSONPath syntax SHOULD be supported in both syntaxes if it changes
+    only expressions which rules do not use, e.g. `^=`, which changes `@.a^=1`,
+    a comparison of the key `a^`, which has to be in brackets then, e.g. `@['a^']=1`,
+    while an option which changes expressions which rules may use, e.g. a JSON value
+    after `=`, or `${now}` in a text value, MUST be limited to uBO rules. An expression
+    without the form of such an option MUST be read as before, e.g. `;` which is not
+    followed by `$` is a part of a name, and `call(text)` is a text value.
+    The value `$remove$` of a query, e.g. `$.ads=$remove$ $..banner=false`, removes the nodes which the query
+    matches, as the same `argumentValue` does, only for trusted scriptlets, as other ones may not set a value,
+    so it is still not allowed for them, and only as the whole value after `=`, so `+=$remove$`, `"$remove$"`,
+    `json:"$remove$"` and `$remove$ them` set a text, as before. It is the only text value which ends before
+    a query without its own value, e.g. `$.ads=$remove$ $.premium`, by `isRemoveValueSupported` of
+    `splitJsonPathQueries()`, which is set as `jsonPath()` reads the value: by `getJsonPathQueries()` for names
+    with `trusted-` prefix, and by `buildJsonPathQueries()` always, as only trusted scriptlets, which have
+    `argumentValue`, call it. Other text values, also constants,
+    e.g. `$..banner=false $.ads`, are one value, as before, so a query which takes `argumentValue` has to precede
+    them, or have `$remove$` as its own value; a constant which ends before a query was not added, as it changes
+    expressions which set a text now, while `$remove$` makes the order of queries free without it.
+    A change of how expressions are split or read MUST be compared with the previous
+    version on generated expressions, e.g. with a space before each kind of step
+    and in text values, and on the expressions of its tests and of real rules.
+
+    **Rationale**: `JSON.parse()` of the page may be called with payloads of hundreds
+    of thousands of nodes, e.g. on YouTube, for each of which a recursive filter is
+    evaluated, so the traversal costs more than parsing the JSON itself, while a method
+    intercepted by `trusted-json-set`, e.g. `Array.isArray()`, may be called millions
+    of times with small values, for which parsing the expression costs the most. Rules
+    in AdGuard filters with `ubo-json-edit` names are mostly written for AdGuard, so the
+    meaning of their expressions must not change. Expressions of real rules and tests
+    rarely have spaces or unusual values, so a change which breaks them, e.g. splitting
+    `$.a [0]` into two queries, which removes all of `$.a`, is found only on generated ones.
+
+27. Helpers which process a value of an intercepted method, e.g. `jsonPath()`, SHOULD NOT call methods
+    of the page which may be intercepted, e.g. `Array.isArray()`, if a cheaper check is enough, e.g. `typeof`
+    for an argument which is a string or an array, and a scriptlet SHOULD parse its arguments once, when it
+    runs, e.g. the queries of JSONPath with `JsonPathCache`, or the indexes of `arg:N|M` of `trusted-json-set`.
+    A string without `{` and `[` SHOULD NOT be parsed as JSON. Rules which intercept the same method, e.g.
+    `Array.isArray`, SHOULD be combined into one rule with several queries, and a helper SHOULD call
+    `Array.isArray()` only for a value with a numeric `length`, e.g. `isArrayValue()` of `jsonPath()`.
+    A state shared between rules SHOULD be avoided, as the page could detect it, e.g. a `Symbol.for()` property, which
+    `Object.getOwnPropertySymbols()` lists, while its key is in the source of the scriptlets, and SHOULD be used
+    only if there is no other way, e.g. the spoofed clicks of `trusted-click-element`, which its hook and
+    `clickElement()` of all injections share.
+
+    **Rationale**: A page may call a method very often, e.g. facebook.com calls `Array.isArray()` hundreds
+    of thousands of times. Each rule which intercepts it processes the calls which the other rules make while
+    they process a value, e.g. of a filter of an array, so the number of calls doubles with each rule,
+    while one rule with several queries processes each value once. A failed `JSON.parse()` throws an error,
+    which costs about 2 µs, while most strings passed to such a method are not JSON.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,
@@ -776,6 +866,26 @@ Project-specific rules:
   **Rationale**: A script which is not closed is not run by browsers which follow the
   HTML specification, e.g. Chrome 157, while older ones run it, e.g. Chrome 143, so
   such a test passes in one browser and waits forever in another.
+
+- Performance tests, e.g. `tests/helpers/json-path-performance.spec.ts`, SHOULD NOT compare a time with
+  a fixed number of ms, but compare two times measured in the same test: of the same operation on a value
+  4 times as big, i.e. about 4 to 6 times as long for a linear operation and 16 times for a quadratic one,
+  or of another operation on the same value, e.g. `JSON.parse()`. Each time SHOULD be the minimum of several
+  runs, with retries of a failed test, and a test SHOULD be checked to fail with the regression it guards
+  and to pass on a busy machine. Counts of calls, e.g. of a native method, are preferred where they show
+  the regression, as they do not depend on time at all, but they do not show work done by a loop over
+  characters which calls no method, e.g. in `getJsonPathRegexpEnd()`, for which times are compared.
+
+  **Rationale**: Tests run on the shared CI builder, where absolute times vary, while ratios of times measured
+  together do not, so such tests catch significant regressions, e.g. a quadratic removal, without flakiness,
+  but not small ones, e.g. of 30%, which benchmarks show.
+
+- Tests of a scriptlet which hooks a method, e.g. `JSON.parse` of `json-prune`, MUST compute expected values,
+  and decode results which they compare, with the native method saved before the scriptlet runs,
+  e.g. `nativeParse`, or with literal values, not with the hooked method.
+
+  **Rationale**: The hooked method processes the expected value as well, e.g. prunes it the same way, so such
+  a test passes for any result, e.g. for a rule which removes a property it should keep.
 
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.
