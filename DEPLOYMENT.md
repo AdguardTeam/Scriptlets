@@ -33,6 +33,8 @@
    PR — and a push failure surfaces as a real red job rather than being
    silently swallowed. Either way it is not a required check on the release
    PR, so it never blocks the merge.)
+   A manual run shows the requested tag in the Actions run list, e.g.
+   `Prepare release v3.0.0-beta.0`.
 2. Merge the release PR. **Publish release**
    (`.github/workflows/publish-release.yml`) runs the shared
    `ext-shared-actions/publish-release.yml`: it tags the commit from the
