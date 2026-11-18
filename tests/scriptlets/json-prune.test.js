@@ -1,5 +1,10 @@
 /* eslint-disable no-eval, no-underscore-dangle, no-console */
-import { getLogs, getSyncLogs, useRegexpTestAccessor } from '../helpers';
+import {
+    getLogs,
+    getSyncLogs,
+    useRegexpTestAccessor,
+    useThrowingMethod,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'json-prune';
@@ -136,7 +141,7 @@ test('json-edit alias works with legacy syntax', (assert) => {
 test('json-edit alias does not support setting values', (assert) => {
     assert.expect(2);
 
-    runScriptlet('json-edit', '$.ads=false', '', '', 'jsonpath');
+    runScriptlet('json-edit', '$.ads=false');
 
     const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';
 
@@ -1596,4 +1601,128 @@ test('JSONPath: no expression is applied if one of them has a value, which trust
         runScriptlet(name, rule);
         assert.deepEqual(JSON.parse('{"keep":42,"ads":"a"}'), { keep: 42, ads: 'a' }, `${rule} should change nothing`);
     });
+});
+
+test('uBO json-edit rules with matches, as in AdGuard and uBO lists, prune only matching texts', async (assert) => {
+    runScriptlet('ubo-json-edit', '..ad_shield_wap', 'matches', '/ad_shield_wap/');
+    assert.deepEqual(JSON.parse('{"a":{"ad_shield_wap":1,"b":2}}'), { a: { b: 2 } }, 'matching text should be pruned');
+
+    // e.g. facebook.com##+js(json-edit, ..nodes.*[?.sponsored_data], matches, '/^.{1000,}/')
+    runScriptlet('ubo-json-edit', '..nodes.*[?.sponsored_data]', 'matches', '/^.{1000,}/');
+    const nodes = [{ id: 1 }, { id: 2, sponsored_data: {} }];
+    const longText = JSON.stringify({ nodes, pad: 'x'.repeat(1000) });
+    assert.deepEqual(JSON.parse(longText).nodes, [{ id: 1 }], 'long text should be pruned');
+    assert.deepEqual(
+        JSON.parse(JSON.stringify({ nodes })).nodes,
+        nodes,
+        'short text should not be pruned',
+    );
+
+    const response = new Response(longText);
+    assert.deepEqual((await response.json()).nodes, nodes, 'Response.json() value has no text, so it is not pruned');
+    assert.strictEqual(Response.prototype.json, nativeResponseJson, 'Response.prototype.json is not intercepted');
+});
+
+test('json-edit rules have uBO arguments, so other ones are not read by position, e.g. as stack', (assert) => {
+    // `matches` and its value would be `obligatoryProps` and `stack` of AdGuard syntax, which never matches
+    ['ubo-json-edit', 'json-edit', 'json-edit.js', 'ubo-json-edit.js'].forEach((scriptletName) => {
+        runScriptlet(scriptletName, '$.ads', 'matches', '/"ads"/');
+        assert.deepEqual(JSON.parse('{"ads":1,"a":2}'), { a: 2 }, `${scriptletName} should prune`);
+        assert.deepEqual(JSON.parse('{"ad":1,"a":2}'), { ad: 1, a: 2 }, `${scriptletName} should not prune`);
+    });
+
+    // other options of uBO rules are ignored, as in uBO
+    runScriptlet('ubo-json-edit', '$.ads', 'propsToMatch', 'x', 'matches', 'ads');
+    assert.deepEqual(JSON.parse('{"ads":1,"a":2}'), { a: 2 }, 'matches should be found after other options');
+});
+
+test('json-prune with matches after the positional arguments', async (assert) => {
+    runScriptlet(name, '$.ads', '', '', '', 'matches', '"adPlacements"');
+    assert.deepEqual(JSON.parse('{"ads":1,"adPlacements":[]}'), { adPlacements: [] }, 'matching text should be pruned');
+    assert.deepEqual(JSON.parse('{"ads":1}'), { ads: 1 }, 'other text should not be pruned');
+    assert.deepEqual(
+        await new Response('{"ads":1,"adPlacements":[]}').json(),
+        { ads: 1, adPlacements: [] },
+        'Response.json() value has no text, so it is not pruned',
+    );
+
+    runScriptlet(name, 'ads', '', '', '', 'matches', '/"ADS":\\s*1/i');
+    assert.deepEqual(JSON.parse('{"ads": 1,"a":2}'), { a: 2 }, 'legacy syntax with a regular expression should prune');
+    assert.deepEqual(JSON.parse('{"ads": 2,"a":2}'), { ads: 2, a: 2 }, 'other text should not be pruned');
+});
+
+test('json-prune with matches which is an invalid regular expression is not applied', (assert) => {
+    const logs = [];
+    console.log = (...args) => {
+        logs.push(args.join(' '));
+    };
+    runScriptlet(name, '$.ads', '', '', '', 'matches', '/[/');
+    console.log = nativeConsole;
+
+    assert.deepEqual(JSON.parse('{"ads":1}'), { ads: 1 }, 'should not prune');
+    assert.ok(logs.some((log) => log.includes('Invalid matches: /[/')), 'should log the pattern');
+});
+
+test('matches does not change RegExp.$1 of the page', (assert) => {
+    [
+        ['ubo-json-edit', '..ad_shield_wap', 'matches', '/ad_shield_wap/'],
+        ['ubo-json-edit', '..ad_shield_wap', 'matches', 'ad_shield_wap'],
+        [name, '..ad_shield_wap', '', '', '', 'matches', '/(ad_shield_wap)/'],
+        [name, '..ad_shield_wap', '', '', '', 'matches', 'ad_shield_wap'],
+    ].forEach((rule) => {
+        // `RegExp.$1` is not updated in the realm of the test page, so the rule runs in a frame
+        const frame = document.createElement('iframe');
+        document.body.appendChild(frame);
+        try {
+            const frameEval = frame.contentWindow.eval;
+            frameEval(window.scriptlets.invoke({ name: rule[0], args: rule.slice(1), verbose: false }));
+            const result = frameEval(`/(42)/.test('x42');
+                [JSON.stringify(JSON.parse('{"ad_shield_wap":1,"a":2}')), RegExp.$1];`);
+            assert.strictEqual(result[0], '{"a":2}', `${rule} should prune`);
+            assert.strictEqual(result[1], '42', `${rule} should keep RegExp.$1`);
+        } finally {
+            frame.remove();
+        }
+    });
+});
+
+test('matches keeps RegExp.$2 after an empty $1, and JSON extracted by a capture, without a log', (assert) => {
+    // `RegExp.$1` is not updated in the realm of the test page, so the rule runs in a frame
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    try {
+        const frameWindow = frame.contentWindow;
+        const logs = [];
+        frameWindow.console.log = (...args) => logs.push(args.join(' '));
+        frameWindow.eval(window.scriptlets.invoke({
+            name: 'ubo-json-edit',
+            args: ['$.ads', 'matches', '/ads/'],
+            verbose: false,
+        }));
+        const result = frameWindow.eval(`(() => {
+            /(sku-)?(\\d+)/.exec('42');
+            JSON.parse('{"ads":1}');
+            const afterEmpty = [RegExp.$1, RegExp.$2];
+            const json = JSON.stringify({ ads: 1, items: Array.from({ length: 5000 }, (_, i) => ({ id: i })) });
+            /<x>(.*)<\\/x>/.exec('<x>' + json + '</x>');
+            const parsed = JSON.parse(RegExp.$1);
+            return [afterEmpty, RegExp.$1 === json, 'ads' in parsed];
+        })()`);
+        assert.deepEqual(result[0], ['', '42'], 'RegExp.$2 should be kept');
+        assert.true(result[1], 'the capture of the JSON should be kept');
+        assert.false(result[2], 'the JSON should be pruned');
+        assert.deepEqual(logs, [], 'nothing should be logged');
+    } finally {
+        frame.remove();
+    }
+});
+
+test('uBO json-edit rules with options are applied if RegExp.prototype.test throws while they run', (assert) => {
+    const restoreRegexpTest = useThrowingMethod(RegExp.prototype, 'test');
+    try {
+        runScriptlet('ubo-json-edit', '$.ads', 'matches', '117');
+    } finally {
+        restoreRegexpTest();
+    }
+    assert.deepEqual(JSON.parse('{"ads":1,"id":117}'), { id: 117 }, 'should prune');
 });

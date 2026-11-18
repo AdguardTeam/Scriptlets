@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle, no-console */
-import { runScriptlet, clearGlobalProps, getLogs } from '../helpers';
+import {
+    runScriptlet,
+    clearGlobalProps,
+    getLogs,
+    useThrowingMethod,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'json-prune-fetch-response';
@@ -107,7 +112,7 @@ if (!isSupported) {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
         const done = assert.async();
 
-        runScriptlet('json-edit-fetch-response', ['$.cc[?(@.src=="example.org")].src', '', 'test03', '', 'jsonpath']);
+        runScriptlet('json-edit-fetch-response', ['$.cc[?(@.src=="example.org")].src', 'propsToMatch', 'test03']);
 
         const response = await fetch(INPUT_JSON_PATH);
         const actualJson = await response.json();
@@ -121,7 +126,7 @@ if (!isSupported) {
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
         const done = assert.async();
 
-        runScriptlet('json-edit-fetch-response', ['.cc.src', '', 'test03']);
+        runScriptlet('json-edit-fetch-response', ['.cc.src', 'propsToMatch', 'test03']);
 
         const response = await fetch(INPUT_JSON_PATH);
         const actualJson = await response.json();
@@ -131,6 +136,32 @@ if (!isSupported) {
         done();
     });
 
+    test('json-edit-fetch-response rules have uBO arguments, i.e. propsToMatch by its name', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+
+        // `matches` and its value would be `obligatoryProps` and `propsToMatch` of AdGuard syntax
+        runScriptlet('ubo-json-edit-fetch-response', ['.cc.src', 'matches', 'x', 'propsToMatch', 'test03']);
+        let actualJson = await (await fetch(INPUT_JSON_PATH)).json();
+        assert.strictEqual(actualJson.cc.src, undefined, '"cc.src" has been removed for a matching URL');
+
+        fetch = nativeFetch; // eslint-disable-line no-global-assign
+        runScriptlet('ubo-json-edit-fetch-response', ['.cc.src', 'propsToMatch', 'other-url']);
+        actualJson = await (await fetch(INPUT_JSON_PATH)).json();
+        assert.strictEqual(actualJson.cc.src, 'example.org', '"cc.src" has been kept for another URL');
+    });
+
+    test('json-edit-fetch-response rules are applied if RegExp.prototype.test throws as they run', async (assert) => {
+        const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
+        const restoreRegexpTest = useThrowingMethod(RegExp.prototype, 'test');
+        try {
+            runScriptlet('ubo-json-edit-fetch-response', ['.cc.src', 'propsToMatch', 'test03']);
+        } finally {
+            restoreRegexpTest();
+        }
+        const actualJson = await (await fetch(INPUT_JSON_PATH)).json();
+        assert.strictEqual(actualJson.cc.src, undefined, '"cc.src" has been removed');
+    });
+
     test('json-edit-fetch-response alias does not support setting values', async (assert) => {
         assert.expect(2);
         const INPUT_JSON_PATH = `${FETCH_OBJECTS_PATH}/test03.json`;
@@ -138,7 +169,7 @@ if (!isSupported) {
 
         runScriptlet(
             'json-edit-fetch-response',
-            ['$.cc[?(@.src=="example.org")].src=test.com', '', 'test03', '', 'jsonpath'],
+            ['$.cc[?(@.src=="example.org")].src=test.com', 'propsToMatch', 'test03'],
         );
 
         const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';

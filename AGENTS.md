@@ -708,7 +708,10 @@ Project-specific rules:
     `setAttrBySettings()` of `set-attr` and `trusted-set-attr`, or `getAdgPreventXhrSettings()` and
     `getUboPreventXhrSettings()` with `preventXhrBySettings()` of `prevent-xhr` and `trusted-prevent-xhr`,
     or `getAdgSuppressSettings()` and `getUboSuppressSettings()` with `suppressNativeMethodBySettings()` of
-    `trusted-suppress-native-method`, instead of keeping a separate implementation for uBO rules.
+    `trusted-suppress-native-method`, or `getAdgJsonTextMatch()` and `getUboJsonTextMatch()` with
+    `isJsonTextMatched()` for `matches` of `json-prune` and `trusted-json-set`, instead of keeping a separate
+    implementation for uBO rules. Rules with uBO names of a scriptlet which have no AdGuard meaning, e.g. `json-edit`
+    and `json-edit.js` of `json-prune`, have uBO arguments as well, i.e. named options instead of positional ones.
     Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
@@ -732,13 +735,30 @@ Project-specific rules:
     through the accessor when the rule runs. An error of the current method at the
     call MUST NOT reach the page either, e.g. the condition is not matched then,
     as `matchStackTrace()` does not match the stack trace then.
+    New parsing of arguments when the rule runs, e.g. of uBO options by `parseUboOptions()`,
+    SHOULD NOT call `RegExp.prototype.test` either, nor other methods which a rule may hook,
+    e.g. `String.prototype.charCodeAt`, so digits are compared as characters, e.g. `char < '0'`.
+    A test of a text of the page on each intercepted call, e.g. `matches` of `json-prune`,
+    SHOULD NOT change `RegExp.$1`, …, `RegExp.$9` of the page: a string is matched by `indexOf()`,
+    and the values are restored after a regular expression has matched the text, see `isJsonTextMatched()`.
+    All nine values are saved by `backupRegExpValues()`, also empty ones, and `restoreRegExpValues()` matches
+    them by their lengths, not by their text, as a value may be a large text, e.g. JSON extracted by a capture,
+    with `*` only for the last value which is not empty, as `*` followed by a count backtracks through the value
+    for each of its characters, e.g. 2.6 s for a script and JSON in it of 65 KB, captured together.
+    The values are not restored if the ones before it are longer than 1,000,000 UTF-16 code units in total,
+    as a count of millions of them exceeds the call stack, which is accepted, as the page observes it only
+    if it reads `RegExp.$1` after the intercepted call.
+    It does not call `String()`, which a rule may intercept, e.g. `log-on-stack-trace`, whose getter restores
+    the values itself.
 
     **Rationale**: Other rules on the same page may replace such a method before,
     e.g. `abort-current-inline-script` with `RegExp.prototype.test` defines an
     accessor, so a rule which requires a data property would not be applied at all,
     while it worked before the method was saved. The getter of such an accessor may
     throw while the rule runs, e.g. when `abort-current-inline-script` aborts the
-    inline script in which the rule runs.
+    inline script in which the rule runs. The page may read `RegExp.$1` after it has
+    called the intercepted method, e.g. after its own regular expression and `JSON.parse()`,
+    see [#384](https://github.com/AdguardTeam/Scriptlets/issues/384).
 
 26. Helpers which traverse a value of the page, e.g. `jsonPath()`, SHOULD NOT create
     data for each visited node which only matched or modified nodes need, e.g. the path

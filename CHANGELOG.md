@@ -202,6 +202,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. `$..banner=false $.ads` sets the text `false $.ads`. An expression with the value `$remove$` set this text
   before, which `json:"$remove$"` sets now, while `$remove$` after `+=`, in quotes, or in a longer text,
   e.g. `$remove$ them`, is a text, as before.
+- `matches` option of `json-prune` and `trusted-json-set` [#586], as of uBO `json-edit`, after the positional
+  arguments, e.g. `example.org#%#//scriptlet('json-prune', '$..adSlots', '', '', '', 'matches', '"adSlots"')`,
+  with a string or a regular expression which the JSON text has to match, i.e. the argument of `JSON.parse`
+  or a string selected by `jsonSource`, so the value is searched only then, which takes a small part of the time
+  of searching it for other texts, e.g. about 1% for 275 KB of JSON. A string with an escaped quote of JSON, i.e. `\"`,
+  has to be a regular expression, e.g. `/\\"ad\\"/`, as escapes of quotes are removed from a string, as of `stack`.
+  Values without a JSON text, i.e. of `Response.prototype.json` and objects, are not processed by a rule with it.
 
 ### Changed
 
@@ -252,6 +259,25 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- uBO rules of `json-edit`, `json-edit-fetch-response` and `json-edit-xhr-response`, whose named options were read
+  by position as arguments of AdGuard syntax [#586], so a rule with `matches`, e.g.
+  `example.org##+js(json-edit, ..ad_shield_wap, matches, /ad_shield_wap/)`, matched its value as `stack`
+  and was not applied. `matches` and `propsToMatch` are read by their names now, as in uBO, and other options
+  are ignored, so these rules have no positional arguments of AdGuard syntax, e.g. `stack`, any more.
+  A rule of these names with positional arguments, e.g.
+  `example.org#%#//scriptlet('json-edit-fetch-response', '$.ads', '', '/api/')`, which pruned only responses
+  of `/api/` before, prunes all responses now, so it has to name the option, e.g.
+  `example.org#%#//scriptlet('json-edit-fetch-response', '$.ads', 'propsToMatch', '/api/')`, or use the name
+  `json-prune-fetch-response`, which keeps the positional arguments. No rule in the filter lists has such arguments.
+- `RegExp.$1`, …, `RegExp.$9` of the page not restored after `stack` of a scriptlet is matched,
+  e.g. of `json-prune` or `set-constant`: values after an empty one, e.g. `$2` of `/(sku-)?(\d+)/` for `42`,
+  values changed by the matching stack trace itself, and values with a character of regular expressions, e.g. `[`,
+  or of a large text, e.g. JSON which the page has extracted by a capture, for which an error with the value
+  was logged to the console instead, also without `verbose`. The values are still not restored if the ones
+  before the last value which is not empty are longer than 1,000,000 characters in total, e.g. a script
+  of more than 1 MB and the JSON in it, captured together, while a single long capture is restored.
+- `trusted-json-set` logging that a string without `{` and `[`, e.g. a text passed to an intercepted method,
+  cannot be parsed as JSON, on each call with `verbose`, while it is not parsed at all.
 - `json-prune`, `json-prune-fetch-response` and `json-prune-xhr-response` with a value of a JSONPath expression,
   e.g. `$.ads=replace:/a/b/`, which logged that a function is not defined, instead of that values may be set only
   by trusted scriptlets, as the value was built before the expression was rejected. The rule is rejected as a whole

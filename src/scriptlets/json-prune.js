@@ -37,6 +37,12 @@ import {
     getThrownValueMessage,
     logJsonContent,
     extractRegexAndReplacement,
+    getAdgJsonTextMatch,
+    getUboJsonTextMatch,
+    isJsonTextMatched,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -55,7 +61,7 @@ import {
  * ### Syntax
  *
  * ```text
- * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack [, mode]]]])
+ * example.org#%#//scriptlet('json-prune'[, propsToRemove [, obligatoryProps [, stack [, mode [, 'matches', pattern]]]]])
  * ```
  *
  * - `propsToRemove` — optional, string of space-separated properties to remove.
@@ -100,6 +106,19 @@ import {
  *     - `jsonpath` — force JSONPath syntax.
  *   If omitted, the scriptlet detects JSONPath automatically only for clearly JSONPath-shaped expressions,
  *   otherwise it falls back to legacy syntax.
+ * - `'matches', pattern` — optional, named option after the positional arguments, as in uBO `json-edit`:
+ *   string or regular expression which the JSON text passed to `JSON.parse` must match for the pruning to occur,
+ *   e.g. `'matches', '"adPlacements"'`. It is tested before the parsed value is searched, so a rule with it costs
+ *   much less for other JSON texts. Escapes of quotes are removed from a string, as of `stack`, so a string
+ *   with an escaped quote of JSON, i.e. `\"`, has to be a regular expression, e.g. `'/\\"ad\\"/'`.
+ *   Values without a JSON text, i.e. of `Response.prototype.json`, and arguments of `JSON.parse` which are not
+ *   strings, are not pruned then, while uBO prunes the latter. If it is an invalid regular expression,
+ *   the rule is not applied.
+ *
+ * Rules with uBO names of `json-edit`, e.g. `ubo-json-edit` or `json-edit.js`, have uBO arguments:
+ * an expression followed by named options, of which `matches` is supported,
+ * e.g. `example.org#%#//scriptlet('ubo-json-edit', '..ad_shield_wap', 'matches', '/ad_shield_wap/')`,
+ * while other ones are ignored, as in uBO.
  *
  * > Note please that you can use wildcard `*` for chain property name,
  * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
@@ -565,7 +584,29 @@ import {
  * @added v1.1.0.
  */
 /* eslint-enable max-len */
-export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '', mode = '') {
+export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '', mode = '', ...extraArgs) {
+    // Rules with uBO names of `json-edit` have uBO arguments, i.e. an expression followed by named options,
+    // of which uBO `json-edit` has only `matches`, so the positional arguments of AdGuard syntax are empty then
+    const isUboJsonEdit = typeof source.name === 'string' && source.name.includes('json-edit');
+    const textMatch = isUboJsonEdit
+        ? getUboJsonTextMatch(parseUboOptions(
+            [requiredInitialProps, stack, mode].concat(extraArgs).map(unescapeUboArgument),
+        ).matches)
+        : getAdgJsonTextMatch(extraArgs);
+    if (isUboJsonEdit) {
+        requiredInitialProps = '';
+        stack = '';
+        mode = '';
+    }
+
+    // An invalid pattern would match no text, or throw on each call, so such rule is not applied
+    if (!textMatch.isValid) {
+        logMessage(source, `Invalid matches: ${textMatch.pattern}`);
+        return;
+    }
+    // Saved when the rule runs, as the page or another rule may replace `RegExp.prototype.test` later
+    const testRegexp = getRegexpTester();
+
     const syntaxModeDetails = resolveJsonSyntaxMode(propsToRemove, mode);
     // Queries are split once, not for each processed value
     const jsonPathQueries = syntaxModeDetails.mode === 'jsonpath' ? getJsonPathQueries(source, propsToRemove) : [];
@@ -610,6 +651,10 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
         // dealing with stringified json in args, which should be parsed.
         // so we call nativeJSONParse as JSON.parse which is bound to JSON object
         const root = nativeObjects.nativeParse.apply(JSON, args);
+        // The text is tested before the parsed value is searched, which costs much more
+        if (textMatch.matcher !== null && !isJsonTextMatched(textMatch.matcher, args[0], testRegexp)) {
+            return root;
+        }
         // `stack` is not matched in logging mode, as it is not checked when the scriptlet runs then,
         // and it changes nothing, as the content is logged regardless of it, and nothing is pruned
         return pruneJsonValue(root, isLoggingMode ? '' : stack);
@@ -621,7 +666,8 @@ export function jsonPrune(source, propsToRemove, requiredInitialProps, stack = '
 
     // do nothing if browser does not support Response (e.g. Internet Explorer)
     // https://developer.mozilla.org/en-US/docs/Web/API/Response
-    if (typeof Response === 'undefined') {
+    // Values of `Response.prototype.json()` have no JSON text which `matches` could test, so they are not pruned then
+    if (typeof Response === 'undefined' || textMatch.matcher !== null) {
         return;
     }
 
@@ -733,4 +779,10 @@ jsonPrune.injections = [
     logJsonContent,
     // used by values of jsonPath(), which only trusted scriptlets may set, but its code refers to them
     extractRegexAndReplacement,
+    getAdgJsonTextMatch,
+    getUboJsonTextMatch,
+    isJsonTextMatched,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
 ];

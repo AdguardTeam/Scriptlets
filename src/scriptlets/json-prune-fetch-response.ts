@@ -49,6 +49,8 @@ import {
     getFunctionProxyProperty,
     extractRegexAndReplacement,
     nativeIsNaN,
+    parseUboOptions,
+    unescapeUboArgument,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -119,6 +121,11 @@ import { type Source } from './scriptlets';
  *     - `legacy` — force the existing legacy path syntax;
  *     - `jsonpath` — force JSONPath syntax.
  *   If omitted, the scriptlet detects JSONPath automatically for clearly JSONPath-shaped expressions.
+ *
+ * Rules with uBO names of `json-edit`, e.g. `ubo-json-edit-fetch-response`, have uBO arguments:
+ * an expression followed by named options, of which `propsToMatch` is supported,
+ * e.g. `example.org#%#//scriptlet('ubo-json-edit-fetch-response', '$.ads', 'propsToMatch', '/api/')`,
+ * while other ones are ignored, as in uBO.
  *
  * > Note please that you can use wildcard `*` for chain property name,
  * > e.g. `ad.*.src` instead of `ad.0.src ad.1.src ad.2.src`.
@@ -242,6 +249,7 @@ export function jsonPruneFetchResponse(
     propsToMatch = '',
     stack = '',
     mode = '',
+    ...extraArgs: string[]
 ) {
     // Do nothing if browser does not support fetch or Proxy (e.g. Internet Explorer):
     // https://developer.mozilla.org/docs/Web/API/Window/fetch
@@ -250,6 +258,19 @@ export function jsonPruneFetchResponse(
         || typeof Proxy === 'undefined'
         || typeof Response === 'undefined') {
         return;
+    }
+
+    // Rules with uBO names of `json-edit` have uBO arguments, i.e. an expression followed by named options,
+    // of which uBO `json-edit-fetch-response` has only `propsToMatch`, so the other positional arguments
+    // of AdGuard syntax are empty then
+    if (typeof source.name === 'string' && source.name.includes('json-edit')) {
+        const uboOptions = parseUboOptions(
+            [obligatoryProps, propsToMatch, stack, mode].concat(extraArgs).map(unescapeUboArgument),
+        );
+        obligatoryProps = '';
+        propsToMatch = typeof uboOptions.propsToMatch !== 'undefined' ? String(uboOptions.propsToMatch) : '';
+        stack = '';
+        mode = '';
     }
 
     const syntaxModeDetails = resolveJsonSyntaxMode(propsToRemove, mode);
@@ -450,4 +471,6 @@ jsonPruneFetchResponse.injections = [
     // used by values of jsonPath(), which only trusted scriptlets may set, but its code refers to them
     extractRegexAndReplacement,
     nativeIsNaN,
+    parseUboOptions,
+    unescapeUboArgument,
 ];

@@ -42,6 +42,7 @@ export * from './get-property-in-chain';
 export * from './get-wildcard-property-in-chain';
 export * from './json-path-utils';
 export * from './json-set-utils';
+export * from './json-text-match-utils';
 export * from './hit';
 export * from './match-request-props';
 export * from './match-stack';

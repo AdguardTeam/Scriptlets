@@ -56,9 +56,7 @@ export const matchStackTrace = (stackMatch: string | undefined, stackTrace: stri
     const regExpValues = backupRegExpValues();
 
     if (shouldAbortInlineOrInjectedScript(stackMatch, stackTrace)) {
-        if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
-            restoreRegExpValues(regExpValues);
-        }
+        restoreRegExpValues(regExpValues);
         return true;
     }
 
@@ -69,13 +67,13 @@ export const matchStackTrace = (stackMatch: string | undefined, stackTrace: stri
         .map((line) => line.trim()) // trim the lines
         .join('\n');
 
-    if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
-        restoreRegExpValues(regExpValues);
-    }
+    let isMatched = false;
     try {
-        return getRegexpTester()(stackRegexp, refinedStackTrace);
+        isMatched = getRegexpTester()(stackRegexp, refinedStackTrace);
     } catch {
         // `test()` is the current method of an accessor which has thrown, so the stack trace is not matched
-        return false;
     }
+    // after the stack trace is matched, which changes the values as well as `toRegExp()` above
+    restoreRegExpValues(regExpValues);
+    return isMatched;
 };

@@ -151,7 +151,7 @@ if (isSupported) {
         const done = assert.async();
         runScriptlet(
             'json-edit-xhr-response',
-            ['$.cc[?(@.src=="example.org")].src', '', `${FETCH_OBJECTS_PATH}/test03.json`, '', 'jsonpath'],
+            ['$.cc[?(@.src=="example.org")].src', 'propsToMatch', `${FETCH_OBJECTS_PATH}/test03.json`],
         );
 
         const xhr = new XMLHttpRequest();
@@ -169,7 +169,7 @@ if (isSupported) {
         const done = assert.async();
         runScriptlet(
             'json-edit-xhr-response',
-            ['.cc.src', '', `${FETCH_OBJECTS_PATH}/test03.json`],
+            ['.cc.src', 'propsToMatch', `${FETCH_OBJECTS_PATH}/test03.json`],
         );
 
         const xhr = new XMLHttpRequest();
@@ -183,12 +183,37 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('json-edit-xhr-response rules have uBO arguments, i.e. propsToMatch by its name', async (assert) => {
+        /**
+         * Sends a request of the test file and returns its response.
+         *
+         * @returns {Promise<object>} Response of the request.
+         */
+        const getResponse = () => new Promise((resolve) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${FETCH_OBJECTS_PATH}/test03.json`);
+            xhr.onload = () => resolve(xhr.response);
+            xhr.responseType = 'json';
+            xhr.send();
+        });
+
+        // `matches` and its value would be `obligatoryProps` and `propsToMatch` of AdGuard syntax
+        runScriptlet('ubo-json-edit-xhr-response', ['.cc.src', 'matches', 'x', 'propsToMatch', 'test03']);
+        let response = await getResponse();
+        assert.strictEqual(response.cc.src, undefined, '"cc.src" has been removed for a matching URL');
+
+        afterEach();
+        runScriptlet('ubo-json-edit-xhr-response', ['.cc.src', 'propsToMatch', 'other-url']);
+        response = await getResponse();
+        assert.strictEqual(response.cc.src, 'example.org', '"cc.src" has been kept for another URL');
+    });
+
     test('json-edit-xhr-response alias does not support setting values', async (assert) => {
         assert.expect(3);
         const done = assert.async();
         runScriptlet(
             'json-edit-xhr-response',
-            ['$.cc[?(@.src=="example.org")].src=test.com', '', `${FETCH_OBJECTS_PATH}/test03.json`, '', 'jsonpath'],
+            ['$.cc[?(@.src=="example.org")].src=test.com', 'propsToMatch', `${FETCH_OBJECTS_PATH}/test03.json`],
         );
 
         const message = 'JSONPath set and append operations are allowed only in trusted scriptlets';

@@ -9,6 +9,7 @@ import {
     cloakUboFunction,
     generateUboContent,
 } from '../../src/helpers/ubo-utils';
+import { useThrowingMethod } from '../helpers';
 
 describe('parseUboOptions', () => {
     test.each([
@@ -33,6 +34,32 @@ describe('parseUboOptions', () => {
         const options = parseUboOptions(['__proto__', 'polluted']);
         expect(Object.getPrototypeOf(options)).toBe(null);
         expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    });
+
+    test('works while RegExp.prototype.test throws, e.g. an accessor of another rule', () => {
+        const restoreRegexpTest = useThrowingMethod(RegExp.prototype, 'test');
+        let options;
+        try {
+            options = parseUboOptions(['matches', '117', 'propsToMatch', '/api']);
+        } finally {
+            restoreRegexpTest();
+        }
+        expect({ ...options }).toEqual({ matches: 117, propsToMatch: '/api' });
+    });
+
+    test('works while String.prototype.charCodeAt throws, e.g. an accessor of another rule', () => {
+        const restoreCharCodeAt = useThrowingMethod(String.prototype, 'charCodeAt');
+        let options;
+        try {
+            options = parseUboOptions(['matches', '117', 'stay', '1s']);
+        } finally {
+            restoreCharCodeAt();
+        }
+        expect({ ...options }).toEqual({ matches: 117, stay: '1s' });
+    });
+
+    test.each(['١٢', '1 ', '+1', '1.5', '٣'])('does not convert %s, which is not ASCII digits only', (value) => {
+        expect(parseUboOptions(['a', value]).a).toBe(value);
     });
 });
 

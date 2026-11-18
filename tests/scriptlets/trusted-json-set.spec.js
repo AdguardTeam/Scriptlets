@@ -546,3 +546,91 @@ describe('Test trusted-json-set stack matching with Firefox stack trace format',
         expect(await loadContent()).toEqual({ ads: { enabled: true } });
     });
 });
+
+describe('Test trusted-json-set with matches', () => {
+    afterEach(() => {
+        clearGlobalProps('getPayload');
+    });
+
+    /**
+     * Runs the rule for `window.getPayload()`, which returns its argument, and returns the results for the values.
+     *
+     * @param {string[]} extraArgs Arguments after `verbose`.
+     * @param {any[]} values Values returned by `window.getPayload()`.
+     * @returns {{ results: any[], logs: string[] }} Results of the calls and logged messages.
+     */
+    const runWithValues = (extraArgs, values) => {
+        window.getPayload = (value) => value;
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((...args) => {
+            logs.push(args.map(String).join(' '));
+        });
+        try {
+            trustedJsonSet(sourceParams, 'window.getPayload', '$.ads', 'false', '', 'result', '', '', '', ...extraArgs);
+            return { results: values.map((value) => window.getPayload(value)), logs };
+        } finally {
+            consoleLog.mockRestore();
+        }
+    };
+
+    test('modifies only a string which the pattern matches, and does not parse other ones', () => {
+        const parse = vi.fn(nativeParse);
+        JSON.parse = parse;
+        const { results } = runWithValues(
+            ['matches', '"adPlacements"'],
+            ['{"ads":true,"adPlacements":[]}', '{"ads":true}'],
+        );
+
+        expect(results).toEqual(['{"ads":false,"adPlacements":[]}', '{"ads":true}']);
+        expect(parse.mock.calls.filter((args) => args[0] === '{"ads":true}')).toHaveLength(0);
+    });
+
+    test('matches a regular expression with its flags', () => {
+        const { results } = runWithValues(['matches', '/"ADS":\\s*true/i'], ['{"ads": true}', '{"ads": 1}']);
+
+        expect(results).toEqual(['{"ads":false}', '{"ads": 1}']);
+    });
+
+    test('does not modify a value which is not a string, as it has no text to test', () => {
+        const value = { ads: true };
+        const { results } = runWithValues(['matches', 'ads'], [value]);
+
+        expect(results[0]).toBe(value);
+        expect(value).toEqual({ ads: true });
+    });
+
+    test('modifies every value with an empty pattern', () => {
+        const { results } = runWithValues(['matches', ''], ['{"ads":true}', { ads: true }]);
+
+        expect(results).toEqual(['{"ads":false}', { ads: false }]);
+    });
+
+    test('is not applied with an invalid regular expression, which is logged', () => {
+        const { results, logs } = runWithValues(['matches', '/[/'], ['{"ads":true}', { ads: true }]);
+
+        expect(results).toEqual(['{"ads":true}', { ads: true }]);
+        expect(logs).toEqual([expect.stringContaining('Invalid matches: /[/')]);
+    });
+});
+
+describe('Test trusted-json-set with a string which is not JSON', () => {
+    afterEach(() => {
+        clearGlobalProps('getPayload');
+    });
+
+    test('returns a string without an object or an array unchanged, without a log', () => {
+        window.getPayload = () => 'Ordinary text';
+        trustedJsonSet(sourceParams, 'window.getPayload', '$.ads', 'false', '', 'result', '', '', 'true');
+
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+        let result;
+        try {
+            result = window.getPayload();
+            expect(consoleLog).not.toHaveBeenCalled();
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(result).toBe('Ordinary text');
+    });
+});

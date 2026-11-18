@@ -709,7 +709,7 @@ test('supports JSONPath guards instead of requiredInitialProps — JSON.parse re
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the matching payload');
 });
 
-test('should log message when input is not valid JSON', (assert) => {
+test('should log message when input looks like JSON but is not valid JSON', (assert) => {
     assert.expect(2);
 
     // Message of the scriptlet, not of the JSON.parse error, as the latter differs between browsers,
@@ -726,10 +726,27 @@ test('should log message when input is not valid JSON', (assert) => {
 
     runScriptlet(name, ['String', '$.ads.enabled', '$remove$', '', 'result', '', 'jsonpath']);
 
-    const input = 'plain-text\r\nplain-text\r\nplain-text';
+    const input = '{plain-text\r\nplain-text';
     const result = String(input);
 
     assert.deepEqual(result, input, 'should leave values unchanged when input is not valid JSON');
+});
+
+test('should not log a string without an object or an array, which is not JSON', (assert) => {
+    const logs = [];
+    console.log = function log(input) {
+        if (!input.includes('trace')) {
+            logs.push(input);
+        }
+    };
+
+    runScriptlet(name, ['String', '$.ads.enabled', '$remove$', '', 'result', '', 'jsonpath', 'true']);
+
+    const input = 'plain-text\r\nplain-text\r\nplain-text';
+    const result = String(input);
+
+    assert.deepEqual(result, input, 'should leave values unchanged');
+    assert.deepEqual(logs, [], 'should log nothing');
 });
 
 test('should remove "ads" properties when using JSONPath syntax — String input', (assert) => {

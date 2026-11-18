@@ -49,17 +49,16 @@ export const getRegexpTester = (): (regexp: RegExp, text: string) => boolean => 
  * so we need to save these values and then change them back.
  * Related issue - https://github.com/AdguardTeam/Scriptlets/issues/384
  *
- * @returns {Array} An array containing the values of the RegExp.$1, …, RegExp.$9 properties.
+ * All nine values are saved, also empty ones, e.g. the empty `$1` of `/(sku-)?(\d+)/` for `42`, whose `$2` is `42`.
+ *
+ * @returns {Array} An array containing the values of the RegExp.$1, …, RegExp.$9 properties,
+ * or an empty array if they cannot be read.
  */
 export const backupRegExpValues = (): Array<any> => {
     try {
         const arrayOfRegexpValues = [];
         for (let index = 1; index < 10; index += 1) {
-            const value = `$${index}`;
-            if (!(RegExp as any)[value]) {
-                break;
-            }
-            arrayOfRegexpValues.push((RegExp as any)[value]);
+            arrayOfRegexpValues.push((RegExp as any)[`$${index}`]);
         }
         return arrayOfRegexpValues;
     } catch (error) {
@@ -68,31 +67,68 @@ export const backupRegExpValues = (): Array<any> => {
 };
 
 /**
- * Sets previous values of the RegExp.$1, …, RegExp.$9 properties.
+ * Sets previous values of the RegExp.$1, …, RegExp.$9 properties, if any of them has changed,
+ * by matching their concatenation by a group for each of them, of the length of the value,
+ * so the values are not a part of the regular expression, which would be invalid or too large otherwise,
+ * e.g. for JSON which the page has extracted by a capture.
+ * The last value which is not empty is matched by `*`, which is followed only by empty groups, so nothing
+ * is backtracked, while `*` followed by a count would backtrack through the value for each of its characters,
+ * e.g. for 2.6 s for a script and JSON in it of 65 KB, captured by the page together.
+ * The values are not restored if the counted ones, i.e. the values before the last one which is not empty,
+ * are longer than 1,000,000 UTF-16 code units in total, as a count of millions of them exceeds the call stack,
+ * e.g. a script of more than 1 MB and JSON in it, captured together, while a single long value, or a long last one,
+ * is restored. The page sees the changed values then, as before, only if it reads them after the intercepted call.
+ * The saved values are strings, which are read as they are, without `String()`, which may be intercepted
+ * by a rule whose getter restores the values itself, e.g. `log-on-stack-trace`, which would call it again.
  *
- * @param {Array} array
+ * @param {Array} array values saved by `backupRegExpValues()`
  * @returns {void}
  */
 export const restoreRegExpValues = (array: Array<any>): void => {
+    // !IMPORTANT: Do not move constants outside of this function
+    const ANY_CHARS_PATTERN = '[\\s\\S]';
+    const MAX_COUNTED_LENGTH = 1000000;
+
     if (!array.length) {
         return;
     }
     try {
-        let stringPattern = '';
-        if (array.length === 1) {
-            stringPattern = `(${array[0]})`;
-        } else {
-            // Create a string pattern with a capturing group from passed array,
-            // e.g. ['foo', 'bar', 'baz'] will create '(foo),(bar),(baz)' string
-            stringPattern = array.reduce((accumulator, currentValue, currentIndex) => {
-                if (currentIndex === 1) {
-                    return `(${accumulator}),(${currentValue})`;
-                }
-                return `${accumulator},(${currentValue})`;
-            });
+        let isChanged = false;
+        let lastValueIndex = -1;
+        for (let i = 0; i < array.length; i += 1) {
+            const value = array[i];
+            if (typeof value !== 'string') {
+                return;
+            }
+            if (value !== (RegExp as any)[`$${i + 1}`]) {
+                isChanged = true;
+            }
+            if (value.length > 0) {
+                lastValueIndex = i;
+            }
         }
-        const regExpGroup = new RegExp(stringPattern);
-        array.toString().replace(regExpGroup, '');
+        if (!isChanged) {
+            return;
+        }
+
+        // e.g. ['foo', 'bazz', ''] creates '^([\s\S]{3})([\s\S]*)([\s\S]{0})$' for 'foobazz'
+        let stringPattern = '';
+        let text = '';
+        let countedLength = 0;
+        for (let i = 0; i < array.length; i += 1) {
+            const value = array[i];
+            if (i === lastValueIndex) {
+                stringPattern += `(${ANY_CHARS_PATTERN}*)`;
+            } else {
+                stringPattern += `(${ANY_CHARS_PATTERN}{${value.length}})`;
+                countedLength += value.length;
+            }
+            text += value;
+        }
+        if (countedLength > MAX_COUNTED_LENGTH) {
+            return;
+        }
+        new RegExp(`^${stringPattern}$`).exec(text);
     } catch (error) {
         const message = `Failed to restore RegExp values: ${error}`;
         // eslint-disable-next-line no-console

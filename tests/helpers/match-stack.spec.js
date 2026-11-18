@@ -149,3 +149,19 @@ describe('matchStackTrace() while RegExp.prototype.test is an accessor, e.g. of 
         expect(() => matchStackTrace('/[/', STACK_TRACE)).toThrow(SyntaxError);
     });
 });
+
+describe('matchStackTrace() keeps RegExp.$1, …, RegExp.$9 of the page', () => {
+    test.each([
+        { label: 'string', stack: 'vitest' },
+        { label: 'regular expression with a group', stack: '/(vitest)/' },
+    ])('after a matching $label', ({ stack }) => {
+        // read before, as Vitest formats it by regular expressions
+        const stackTrace = new Error().stack;
+        // e.g. of the page, with an empty `$1`
+        /(sku-)?(\d+)/.exec('42');
+        const isMatched = matchStackTrace(stack, stackTrace);
+        const values = [RegExp.$1, RegExp.$2];
+        expect(isMatched).toBe(true);
+        expect(values).toEqual(['', '42']);
+    });
+});

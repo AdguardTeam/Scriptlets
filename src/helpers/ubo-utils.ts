@@ -5,6 +5,9 @@ import { wrapConstantValue } from './noop-utils';
  * as key-value pairs, e.g. `reload, 1, domain, example.org` of `trusted-set-cookie`.
  * As in uBO, a value which consists of digits only is converted to a number,
  * so e.g. `reload, 0` disables the option, and a key without a value is ignored.
+ * Digits are checked by comparing characters, without calling a method, e.g. `RegExp.prototype.test`
+ * or `String.prototype.charCodeAt`, which may be an accessor of another rule which throws while the rule runs,
+ * e.g. of `abort-current-inline-script`, which would stop the rule.
  *
  * @param args Arguments of the scriptlet after its positional ones.
  *
@@ -13,13 +16,26 @@ import { wrapConstantValue } from './noop-utils';
 export const parseUboOptions = (args: unknown[]): Record<string, unknown> => {
     const options: Record<string, unknown> = Object.create(null);
 
+    const isDigits = (value: string): boolean => {
+        if (value === '') {
+            return false;
+        }
+        for (let i = 0; i < value.length; i += 1) {
+            const char = value[i];
+            if (char < '0' || char > '9') {
+                return false;
+            }
+        }
+        return true;
+    };
+
     for (let i = 0; i + 1 < args.length; i += 2) {
         const key = args[i];
         const rawValue = args[i + 1];
         if (typeof key !== 'string' || key === '') {
             continue;
         }
-        options[key] = typeof rawValue === 'string' && /^\d+$/.test(rawValue)
+        options[key] = typeof rawValue === 'string' && isDigits(rawValue)
             ? parseInt(rawValue, 10)
             : rawValue;
     }

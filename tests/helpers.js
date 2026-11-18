@@ -201,6 +201,29 @@ export const useRegexpTestAccessor = () => {
 };
 
 /**
+ * Makes a method throw, as an accessor of another rule may do it while a rule runs, e.g. of
+ * `abort-current-inline-script` with `RegExp.prototype.test` or `String.prototype.charCodeAt`,
+ * which aborts the inline script in which the rule runs.
+ *
+ * @param {object} owner object which has the method, e.g. `RegExp.prototype`
+ * @param {string} name name of the method, e.g. `test`
+ * @returns {Function} function which restores the method
+ */
+export const useThrowingMethod = (owner, name) => {
+    const descriptor = Object.getOwnPropertyDescriptor(owner, name);
+    Object.defineProperty(owner, name, {
+        configurable: true,
+        value: () => {
+            throw new Error(`${name} throws`);
+        },
+    });
+
+    return () => {
+        Object.defineProperty(owner, name, descriptor);
+    };
+};
+
+/**
  * Runs redirect
  *
  * @param {string} name redirect name

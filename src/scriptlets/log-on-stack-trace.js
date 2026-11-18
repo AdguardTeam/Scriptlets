@@ -80,9 +80,7 @@ export function logOnStackTrace(source, property) {
             logInfoObject[pair[0]] = pair[1];
         });
 
-        if (regExpValues.length && regExpValues[0] !== RegExp.$1) {
-            restoreRegExpValues(regExpValues);
-        }
+        restoreRegExpValues(regExpValues);
 
         return logInfoObject;
     };

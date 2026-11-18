@@ -46,6 +46,8 @@ import {
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     buildJsonPathQueries,
+    getAdgJsonTextMatch,
+    isJsonTextMatched,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -72,7 +74,7 @@ import { type Source } from './scriptlets';
  * <!-- markdownlint-disable line-length -->
  *
  * ```text
- * example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentValue[, requiredInitialProps[, jsonSource[, stack[, mode[, verbose]]]]]]])
+ * example.org#%#//scriptlet('trusted-json-set', methodPath[, propsPath[, argumentValue[, requiredInitialProps[, jsonSource[, stack[, mode[, verbose[, 'matches', pattern]]]]]]]])
  * ```
  *
  * <!-- markdownlint-enable line-length -->
@@ -205,6 +207,13 @@ import { type Source } from './scriptlets';
  *   In mutation mode, if set to `true`, the scriptlet logs the original and modified JSON content
  *   only when a write actually happens.
  *   In logging-only mode, the original content is logged even without `verbose`.
+ * - `'matches', pattern` — optional, named option after the positional arguments, as in uBO `json-edit`:
+ *   string or regular expression which a JSON string selected by `jsonSource` must match for it to be modified
+ *   or logged, e.g. `'matches', '"adPlacements"'`. It is tested before the string is parsed, so a rule with it
+ *   costs much less for other strings. Escapes of quotes are removed from a string, as of `stack`, so a string
+ *   with an escaped quote of JSON, i.e. `\"`, has to be a regular expression, e.g. `'/\\"ad\\"/'`.
+ *   Values which are not strings, e.g. objects, have no JSON text to test,
+ *   so they are neither modified nor logged then. If it is an invalid regular expression, the rule is not applied.
  *
  * > [!IMPORTANT]
  * > Please note that, if `requiredInitialProps` is not specified, the scriptlet will attempt to set
@@ -674,6 +683,7 @@ export function trustedJsonSet(
     stack = '',
     mode = '',
     verbose = '',
+    ...extraArgs: string[]
 ) {
     const isLogOnlyMode = !propsPath;
     const shouldLogVerboseContent = verbose === 'true' && !isLogOnlyMode;
@@ -690,6 +700,15 @@ export function trustedJsonSet(
     if (!methodPath) {
         return;
     }
+
+    const textMatch = getAdgJsonTextMatch(extraArgs);
+    // An invalid pattern would match no text, so such rule is not applied
+    if (!textMatch.isValid) {
+        logMessage(source, `Invalid matches: ${textMatch.pattern}`);
+        return;
+    }
+    // Saved when the rule runs, as the page or another rule may replace `RegExp.prototype.test` later
+    const testRegexp = getRegexpTester();
 
     if (!isLogOnlyMode && syntaxModeDetails.mode === 'legacy' && argumentValue === undefined) {
         return;
@@ -1166,6 +1185,11 @@ export function trustedJsonSet(
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
     const modifyJsonValue = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
+        // The text is tested before it is parsed, which costs much more, while other values have no text
+        if (textMatch.matcher !== null && !isJsonTextMatched(textMatch.matcher, jsonValue, testRegexp)) {
+            return jsonValue;
+        }
+
         if (isLogOnlyMode) {
             try {
                 logOriginalOnlyContent(jsonValue, currentStackTrace);
@@ -1201,7 +1225,6 @@ export function trustedJsonSet(
             // so it is returned as is without parsing, as a method, e.g. `Array.isArray()`, may be called
             // with such strings very often, and a parsing error is costly
             if (jsonValue.indexOf('{') === -1 && jsonValue.indexOf('[') === -1) {
-                logMessage(source, 'Error parsing JSON string: it has neither a JSON object nor an array');
                 return jsonValue;
             }
 
@@ -1503,4 +1526,6 @@ trustedJsonSet.injections = [
     resolveJsonSyntaxMode,
     buildJsonPathExpression,
     buildJsonPathQueries,
+    getAdgJsonTextMatch,
+    isJsonTextMatched,
 ];
