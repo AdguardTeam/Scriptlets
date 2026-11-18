@@ -78,7 +78,8 @@ scriptlets/
 ## Build and test commands
 
 - `pnpm install` — install dependencies
-- `pnpm build` — clean `dist/` and build all bundles
+- `pnpm build` — clean `dist/` and build all bundles, then check them (`postbuild`), e.g. that built
+  scriptlets use no undefined names
 - `pnpm test` — run all tests (Vitest + smoke + QUnit)
 - `pnpm test:vitest` — run Vitest tests only
 - `pnpm test:qunit scriptlets` — run QUnit tests for all scriptlets
@@ -272,6 +273,12 @@ abortCurrentInlineScript.injections = [
 
 When adding or modifying helpers in a scriptlet's `injections` list, always
 verify that every helper-of-helper dependency is also present in the array.
+A helper MUST be listed even if the scriptlet never calls the code which uses it,
+e.g. `extractRegexAndReplacement` of the values of `jsonPath()` in `json-prune`,
+which may not set values, as the built code refers to it. `pnpm build` fails if
+a built scriptlet uses an undefined name, e.g. a missing injection or a helper
+of Babel, see `scripts/check-built-scriptlets.js`, which `postbuild` runs on
+`dist/scriptlets.corelibs.json`.
 
 A helper which calls itself, e.g. `generateUboContent()` for `join:`, MUST be
 a function declaration (`export function name() {}`), not a function assigned

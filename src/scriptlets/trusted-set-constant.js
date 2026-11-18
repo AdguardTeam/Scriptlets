@@ -33,6 +33,7 @@ import {
     getAdgConstantSetting,
     getUboConstantSetting,
     setConstantBySettings,
+    randomId,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -215,4 +216,5 @@ trustedSetConstant.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     getDescriptorAddon,
+    randomId,
 ];

@@ -3565,8 +3565,16 @@ export const jsonPath = (
                     cache[queryText] = query;
                 }
             }
+            // A query which sets a value rejects all queries of a scriptlet which may not set values,
+            // e.g. `$.keep $.ads=1` of `json-prune`, as an invalid query does, before any of them is applied,
+            // and its value is not built, e.g. `$.ads=replace:/a/b/`, while a query which only matches content
+            // does not set its value
+            if (!matchOnly && !isMutationAllowed(query.mode)) {
+                logMessage(source, 'JSONPath set and append operations are allowed only in trusted scriptlets');
+                return root;
+            }
             let mutation: JsonPathMutation | null = null;
-            if (!query.isValueChecked) {
+            if (!query.isValueChecked && isMutationAllowed(query.mode)) {
                 mutation = buildJsonPathMutation(query, nativeParse, parseArgumentValue);
             }
             commands.push({ mutation, query });
@@ -3621,11 +3629,6 @@ export const jsonPath = (
                         }
                         return root;
                     }
-                    continue;
-                }
-
-                if (!isMutationAllowed(query.mode)) {
-                    logMessage(source, 'JSONPath set and append operations are allowed only in trusted scriptlets');
                     continue;
                 }
 

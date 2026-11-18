@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 
 import { CORELIBS_REDIRECTS_FILE_NAME, CORELIBS_SCRIPTLETS_FILE_NAME, DIST_DIR_NAME } from './constants';
 import { getBuildVersion, verifyBuiltVersions } from './helpers';
+import { findUndefinedNames } from './check-built-scriptlets';
 import packageJson from '../package.json';
 
 const { error: logError, log } = console;
@@ -109,5 +110,25 @@ const runVersionGuard = () => {
     log(`Version guard OK: ${version}`);
 };
 
+/**
+ * Checks that built scriptlets use no undefined names, e.g. a helper which is missing in the injections
+ * of a scriptlet, as it is called by another helper, which would throw `ReferenceError` on a page.
+ *
+ * @throws {Error} if a built scriptlet uses an undefined name
+ */
+const runUndefinedNamesGuard = async () => {
+    const corelibsPath = path.resolve(DIST_DIR_NAME, CORELIBS_SCRIPTLETS_FILE_NAME);
+    const { scriptlets } = JSON.parse(fs.readFileSync(corelibsPath, { encoding: 'utf8' }));
+    const undefinedNames = await findUndefinedNames(scriptlets);
+    const entries = Object.entries(undefinedNames);
+    if (entries.length > 0) {
+        const details = entries.map(([name, names]) => `${name}: ${names.join(', ')}`).join('\n  ');
+        throw new Error(`Built scriptlets use undefined names, e.g. missing injections:\n  ${details}`);
+    }
+
+    log(`Undefined names guard OK: ${scriptlets.length} scriptlets`);
+};
+
 checkScriptletsChanges(isRedirectsFileChanged());
 runVersionGuard();
+await runUndefinedNamesGuard();

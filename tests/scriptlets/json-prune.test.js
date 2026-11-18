@@ -1590,3 +1590,10 @@ test('JSONPath: documented v2: example of a nested filter, as in RFC 9535', (ass
         'the nodes should be removed',
     );
 });
+
+test('JSONPath: no expression is applied if one of them has a value, which trusted scriptlets set', (assert) => {
+    ['$.keep $.ads+={"a":', '$.keep $.ads=5', '$.keep $.ads=replace:/a/b/'].forEach((rule) => {
+        runScriptlet(name, rule);
+        assert.deepEqual(JSON.parse('{"keep":42,"ads":"a"}'), { keep: 42, ads: 'a' }, `${rule} should change nothing`);
+    });
+});

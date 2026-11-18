@@ -24,6 +24,7 @@ import {
     matchStackTrace,
     isEmptyObject,
     getDescriptorAddon,
+    randomId,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -393,4 +394,5 @@ setConstant.injections = [
     matchStackTrace,
     isEmptyObject,
     getDescriptorAddon,
+    randomId,
 ];

@@ -12,6 +12,7 @@ import {
     jsonPath,
     matchesJsonPath,
     splitJsonPathQueries,
+    getJsonPathQueries,
 } from '../../src/helpers';
 import { type Source } from '../../src/scriptlets';
 
@@ -222,11 +223,12 @@ describe('jsonPath with several queries', () => {
         expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('JSONPath processing failed'));
     });
 
-    test('applies only the removals in a non-trusted scriptlet', () => {
+    test('applies none of the queries in a non-trusted scriptlet if one of them sets a value', () => {
+        // as an invalid query, as the scriptlet may not set values
         vi.spyOn(console, 'log').mockImplementation(() => {});
         const root = { ads: 1, a: 1 };
         run('$.ads $.a=2', root, untrustedSource);
-        expect(root).toEqual({ a: 1 });
+        expect(root).toEqual({ ads: 1, a: 1 });
     });
 
     test('applies preconditions and v2: to their own query only', () => {
@@ -565,15 +567,9 @@ describe('value `$remove$` of a query', () => {
         const root = createRoot();
         const { result, mutationCount } = run(path, root, createSource('json-prune', true));
         expect(result).toBe(root);
-        if (path.startsWith('$.premium')) {
-            // other queries are applied, as before
-            const expected: Record<string, unknown> = createRoot();
-            delete expected.premium;
-            expect(root).toEqual(expected);
-        } else {
-            expect(root).toEqual(createRoot());
-            expect(mutationCount).toBe(0);
-        }
+        // none of the queries is applied, also not the ones without a value
+        expect(root).toEqual(createRoot());
+        expect(mutationCount).toBe(0);
         expect(logSpy.mock.calls.flat().join('\n')).toContain('allowed only in trusted scriptlets');
     });
 
@@ -597,5 +593,29 @@ describe('value `$remove$` of a query', () => {
         }
         expect(Object.keys(cache)).toEqual(queries);
         parsedQueries.forEach((parsed) => expect(parsed).toBeTruthy());
+    });
+});
+
+describe('value of a scriptlet which may not set values', () => {
+    test.each([
+        '$.ads=replace:/a/b/',
+        '$.ads=5',
+        '$.ads+={"a":1}',
+        // a value which cannot be built, which would be logged as a failure if it were built
+        '$.ads+={"a":',
+        // with other queries, none of which is applied, as with an invalid query
+        '$.other $.ads+={"a":',
+        '$.other $.ads=5',
+        '$.ads=5 $.other',
+    ])('%s is rejected as not allowed, and its value is not built', (path) => {
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const root = { ads: 'a', other: 1 };
+        const pruneSource = createSource('json-prune', true);
+        const result = jsonPath(pruneSource, root, getJsonPathQueries(pruneSource, path), nativeObjects);
+        expect(result).toEqual({ ads: 'a', other: 1 });
+        const logs = logSpy.mock.calls.flat().join('\n');
+        expect(logs).toContain('allowed only in trusted scriptlets');
+        expect(logs).not.toContain('is not defined');
+        expect(logs).not.toContain('processing failed');
     });
 });

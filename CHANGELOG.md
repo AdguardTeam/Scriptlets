@@ -252,6 +252,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `json-prune`, `json-prune-fetch-response` and `json-prune-xhr-response` with a value of a JSONPath expression,
+  e.g. `$.ads=replace:/a/b/`, which logged that a function is not defined, instead of that values may be set only
+  by trusted scriptlets, as the value was built before the expression was rejected. The rule is rejected as a whole
+  now, also with other expressions, e.g. `$.keep $.ads=1`, as with an invalid expression.
 - JSONPath expressions of `json-prune` and `trusted-json-set` scriptlets with a quote in a regular expression
   of a filter, e.g. `[?(@.title=/it's/)]`, which made the expression invalid, so the rule was not applied.
 - `trusted-replace-xhr-response` defining the response as text for any `responseType`, e.g. for `json`,

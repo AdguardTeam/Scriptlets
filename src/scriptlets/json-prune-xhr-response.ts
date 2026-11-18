@@ -45,6 +45,8 @@ import {
     isKeyInObject,
     getThrownValueMessage,
     logJsonContent,
+    extractRegexAndReplacement,
+    nativeIsNaN,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -78,7 +80,8 @@ import { type Source } from './scriptlets';
  *   e.g. `[?.t=/it\x27s/]$.ads $.tracking`, and a space before a dot
  *   or a bracket continues an expression, as before, e.g. `$.a .b` is `$.a.b`. Spaces inside an expression,
  *   e.g. in a filter `[?(@.a && @.b)]` or a quoted value, do not separate them either,
- *   and none of them is applied if one of them is invalid, while an error of applying one of them,
+ *   and none of them is applied if one of them is invalid, also if one of them has a value, e.g. `$.ads=1`,
+ *   which only trusted scriptlets may set, while an error of applying one of them,
  *   e.g. of a getter of the page, does not stop the other ones.
  *   Expressions of uBO rules of `json-edit` are not separated, as uBO ignores spaces in them, e.g. `.a $.b`.
  *   JSONPath expressions may also use `^=` and `$=` filters, e.g. `$.items[?.url^="https://ads."]`,
@@ -405,4 +408,7 @@ jsonPruneXhrResponse.injections = [
     isKeyInObject,
     getThrownValueMessage,
     logJsonContent,
+    // used by values of jsonPath(), which only trusted scriptlets may set, but its code refers to them
+    extractRegexAndReplacement,
+    nativeIsNaN,
 ];
