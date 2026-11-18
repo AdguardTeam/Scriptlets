@@ -1553,3 +1553,26 @@ test('JSONPath: documented examples of uBO options', (assert) => {
         assert.deepEqual(JSON.parse(input), output, `${rule} for ${input}`);
     });
 });
+
+test('JSONPath: $ in a filter is the root of the document, and @ the tested node', (assert) => {
+    const input = '{"flag":true,"items":[{"a":1,"flag":true},{"a":2}]}';
+
+    // the documented forms, which uBO accepts too, and the same with parentheses
+    ['$.items[?$.flag]', '$.items[?($.flag)]'].forEach((rule) => {
+        runScriptlet(name, rule);
+        assert.deepEqual(JSON.parse(input), { flag: true, items: [] }, `${rule} should remove each item`);
+    });
+
+    // a filter which tests only the root gives the same result as a guard, and both are tested once
+    ['$.items[?$..flag]', '[?$..flag]$.items.*'].forEach((rule) => {
+        runScriptlet(name, rule);
+        assert.deepEqual(JSON.parse(input), { flag: true, items: [] }, `${rule} should remove each item`);
+        runScriptlet(name, rule);
+        assert.deepEqual(JSON.parse('{"items":[{"a":1}]}'), { items: [{ a: 1 }] }, `${rule} should keep the item`);
+    });
+
+    ['$.items[?@.flag]', '$.items[?(@.flag)]'].forEach((rule) => {
+        runScriptlet(name, rule);
+        assert.deepEqual(JSON.parse(input), { flag: true, items: [{ a: 2 }] }, `${rule} should remove one item`);
+    });
+});

@@ -701,19 +701,27 @@ describe('regular expressions of filters', () => {
 
 describe('review fixes', () => {
     test('`$=` with nothing before it is the root followed by `=`, as before', () => {
-        // a root of a filter equals the value
+        // the root of the document, which is not 1, so no item is removed, while an ends-with operator `$=`
+        // would remove the items which end with 1
         const root = { items: [1, 11, 21, 2] };
         run('$.items[?$=1]', root, untrustedSource);
-        expect(root.items).toEqual([11, 21, 2]);
+        expect(root.items).toEqual([1, 11, 21, 2]);
+
+        // the tested item equals the value
+        const itemRoot = { items: [1, 11, 21, 2] };
+        run('$.items[?@=1]', itemRoot, untrustedSource);
+        expect(itemRoot.items).toEqual([11, 21, 2]);
 
         // `$=` of a path ends with the value
         const pathRoot = { items: [{ u: 'a.js' }, { u: 'a.css' }] };
         run('$.items[?@.u$=".js"]', pathRoot, untrustedSource);
         expect(pathRoot.items).toEqual([{ u: 'a.css' }]);
 
-        // `$==` is the root followed by `==`
+        // `$==` is the root followed by `==`, and `@==` the tested item
         const strictRoot = { items: [1, 11] };
         run('$.items[?$==1]', strictRoot, untrustedSource);
+        expect(strictRoot.items).toEqual([1, 11]);
+        run('$.items[?@==1]', strictRoot, untrustedSource);
         expect(strictRoot.items).toEqual([11]);
     });
 
@@ -2182,5 +2190,229 @@ describe('filters of items of live arrays', () => {
         // the ad which the filter has tested is modified, not the article of the next read
         expect(ad).toEqual({ id: 'removed' });
         expect(article).toEqual({ id: 'article' });
+    });
+});
+
+describe('root `$` in a filter', () => {
+    test.each([
+        // the root has the property, so each item matches, as in RFC 9535 and uBO
+        { path: '$.items[?($.flag)]', root: { flag: true, items: [{ a: 1 }, { a: 2 }] }, items: [] },
+        { path: '$.items[?$.flag]', root: { flag: true, items: [{ a: 1 }, { a: 2 }] }, items: [] },
+        // the root has not the property, so no item matches, even if the item has it
+        {
+            path: '$.items[?($.flag)]',
+            root: { items: [{ a: 1, flag: true }, { a: 2 }] },
+            items: [{ a: 1, flag: true }, { a: 2 }],
+        },
+        { path: '$.items[?(!$.flag)]', root: { items: [{ a: 1 }] }, items: [] },
+        // a comparison of a property of the root
+        { path: '$.items[?($.mode=="ads")]', root: { mode: 'ads', items: [{ a: 1 }] }, items: [] },
+        {
+            path: '$.items[?($.mode=="ads")]',
+            root: { mode: 'news', items: [{ mode: 'ads' }] },
+            items: [{ mode: 'ads' }],
+        },
+        { path: '$.items[?($[\'mode\']=="ads")]', root: { mode: 'ads', items: [{ a: 1 }] }, items: [] },
+        // with the tested item in the same filter
+        { path: '$.items[?($.flag && @.ad)]', root: { flag: true, items: [{ ad: 1 }, { a: 2 }] }, items: [{ a: 2 }] },
+        // a primitive item is not skipped, as the root is tested for it
+        { path: '$.items[?($.flag)]', root: { flag: true, items: [1, 'a', null] }, items: [] },
+        // a comparison with a property of the root, as before
+        { path: '$.items[?(@.a==$.limit)]', root: { limit: 2, items: [{ a: 1 }, { a: 2 }] }, items: [{ a: 1 }] },
+    ])('$path is evaluated against the root of the document', ({ path, root, items }) => {
+        run(path, root, untrustedSource);
+        expect(root.items).toEqual(items);
+    });
+
+    test('`@`, a step and a name which starts with `$` are of the tested item, as before', () => {
+        const create = () => ({ flag: true, items: [{ a: 1, flag: true, $id: 1 }, { a: 2 }] });
+        ['$.items[?(@.flag)]', '$.items[?(.flag)]', '$.items[?(flag)]'].forEach((path) => {
+            const root = create();
+            run(path, root, untrustedSource);
+            expect(root.items).toEqual([{ a: 2 }]);
+        });
+        const idRoot = create();
+        run('$.items[?(@.$id)]', idRoot, untrustedSource);
+        expect(idRoot.items).toEqual([{ a: 2 }]);
+    });
+
+    test('root in a recursive filter and in a guard is the root of the document', () => {
+        const root = { flag: true, list: [{ x: 1 }], nested: { list: [{ x: 2 }] } };
+        run('$..list[?($.flag)]', root, untrustedSource);
+        expect(root).toEqual({ flag: true, list: [], nested: { list: [] } });
+
+        const guardRoot = { flag: true, ads: 1 };
+        run('[?($.flag)]$.ads', guardRoot, untrustedSource);
+        expect(guardRoot).toEqual({ flag: true });
+    });
+});
+
+describe('root `$` in a filter, review fixes', () => {
+    test.each([
+        '$.items[?$ .flag]',
+        "$.items[?$ ['flag']]",
+        '$.items[?($ .flag)]',
+        '$.items[?(  $.flag  )]',
+    ])('%s with a space after the root is evaluated against the root', (path) => {
+        // only the item has `flag`, so no item matches
+        const root = { items: [{ a: 1, flag: true }, { a: 2 }] };
+        run(path, root, untrustedSource);
+        expect(root.items).toEqual([{ a: 1, flag: true }, { a: 2 }]);
+    });
+
+    test('value of the root with a space after `$` is compared with', () => {
+        const root = { limit: 2, items: [{ a: 1 }, { a: 2 }] };
+        run('$.items[?@.a==$ .limit]', root, untrustedSource);
+        expect(root.items).toEqual([{ a: 1 }]);
+    });
+
+    test('filter of the root is evaluated again for each expression, as the previous one may change the root', () => {
+        // The same expression is parsed once, with the cache of a rule, so its filter is the same object,
+        // and the root is searched again for it after the expressions between them have removed `flag`
+        const filterExpression = '$.items[?$.flag].a=0';
+        const expression = `${filterExpression} $.flag=$remove$ $.items.*.a=5 ${filterExpression}`;
+        const queries = getJsonPathQueries(source, expression);
+        expect(queries).toEqual([filterExpression, '$.flag=$remove$', '$.items.*.a=5', filterExpression]);
+        const cache: JsonPathCache = Object.create(null);
+        const root = { flag: true, items: [{ a: 1 }] };
+        jsonPath(source, root, queries, nativeObjects, undefined, '', false, cache);
+        expect(root).toEqual({ items: [{ a: 5 }] });
+    });
+
+    test.each([
+        '$.items[?@.a==$.limit]',
+        '$.items[?$.limit==@.a]',
+        '$.items[?@.a==$.settings.limit]',
+    ])('root of %s is searched once for an expression, so a getter of it is read once', (path) => {
+        // a getter of the page which returns another value on each read, which is read once for all items now,
+        // while it was read for each item before, for the right side of a comparison
+        let reads = 0;
+        const next = () => {
+            reads += 1;
+            return reads === 1 ? 1 : 2;
+        };
+        const root: any = { items: [{ a: 1 }, { a: 1 }] };
+        Object.defineProperty(root, 'limit', { configurable: true, enumerable: true, get: next });
+        Object.defineProperty(root, 'settings', {
+            configurable: true,
+            enumerable: true,
+            get: () => ({ limit: next() }),
+        });
+        run(path, root);
+        expect(root.items).toEqual([]);
+        expect(reads).toBe(1);
+    });
+
+    test.each([
+        '$.items[?@.a==$.limit]',
+        '$.items[?@.a==$.settings.limit]',
+        '$.items[?@.a==$..limit]',
+    ])('%s gives the same result for a getter which returns the same value as for plain data', (path) => {
+        // e.g. a getter of a stable value, or one which returns a new object with the same content
+        const plain = { settings: { limit: 2 }, limit: 2, items: [{ a: 1 }, { a: 2 }, { a: 2 }] };
+        run(path, plain, untrustedSource);
+        const live: any = { items: [{ a: 1 }, { a: 2 }, { a: 2 }] };
+        Object.defineProperty(live, 'limit', { configurable: true, enumerable: true, get: () => 2 });
+        Object.defineProperty(live, 'settings', { configurable: true, enumerable: true, get: () => ({ limit: 2 }) });
+        run(path, live, untrustedSource);
+        expect(live.items).toEqual(plain.items);
+        expect(plain.items).toEqual([{ a: 1 }]);
+    });
+
+    test('filter which tests only the root removes an object value of the step as a whole', () => {
+        // the filter tests the object itself, while a guard followed by `.*` would remove its children
+        const root = { disableAds: true, items: { one: 1 } };
+        run('$.items[?$..disableAds]', root, untrustedSource);
+        expect(root).toEqual({ disableAds: true });
+        const otherRoot = { items: { one: 1 } };
+        run('$.items[?$..disableAds]', otherRoot, untrustedSource);
+        expect(otherRoot).toEqual({ items: { one: 1 } });
+    });
+
+    test('filter which tests only the root reads the root once for an expression', () => {
+        let reads = 0;
+        const root: any = { items: [{ a: 1 }, { a: 2 }, { a: 3 }] };
+        Object.defineProperty(root, 'flag', {
+            configurable: true,
+            enumerable: true,
+            get: () => {
+                reads += 1;
+                return true;
+            },
+        });
+        run('$.items[?$.flag]', root, untrustedSource);
+        expect(root.items).toEqual([]);
+        expect(reads).toBe(1);
+    });
+
+    test('guard of an array root which tests only the root matches once', () => {
+        const root: any = [{ id: 1 }, { id: 2 }];
+        (root as any).disableAds = true;
+        run('[?$.disableAds]$[0]', root, untrustedSource);
+        expect(Array.from(root)).toEqual([{ id: 2 }]);
+    });
+
+    test('filter of the items which tests only the root and a guard of the root give the same result', () => {
+        const create = (flag: boolean) => ({ flags: [{ name: flag ? 'disableAds' : 'other' }], items: [{ id: 1 }] });
+        [true, false].forEach((flag) => {
+            const filterRoot = create(flag);
+            run('$.items[?$.flags[*].name^="disableAds"]', filterRoot, untrustedSource);
+            const guardRoot = create(flag);
+            run('[?$.flags[*].name^="disableAds"]$.items.*', guardRoot, untrustedSource);
+            expect(filterRoot).toEqual(guardRoot);
+            expect(filterRoot.items).toEqual(flag ? [] : [{ id: 1 }]);
+        });
+    });
+
+    test('filter of the root is evaluated again for each processed value of a rule', () => {
+        const cache: JsonPathCache = Object.create(null);
+        const queries = ['$.items[?$.flag]'];
+        const matching = { flag: true, items: [{ a: 1 }] };
+        jsonPath(untrustedSource, matching, queries, nativeObjects, undefined, '', false, cache);
+        expect(matching.items).toEqual([]);
+        const other = { items: [{ a: 1 }] };
+        jsonPath(untrustedSource, other, queries, nativeObjects, undefined, '', false, cache);
+        expect(other.items).toEqual([{ a: 1 }]);
+    });
+});
+
+describe('many values of the root compared by == with the tested node', () => {
+    test('are matched as by ===, for each kind of value', () => {
+        const shared = { name: 'shared' };
+        // more than 8 values, which are looked up in a set
+        const values = ['a', 1, 0, null, true, shared, NaN, 'b', 2, 'c'];
+        const ids = ['a', 1, -0, null, true, shared, { name: 'shared' }, NaN, false, '1', undefined, 'd'];
+        const root: any = { values, items: ids.map((id) => ({ id })) };
+        run('$.items[?$.values[*]==@.id]', root, untrustedSource);
+        // the ones which `===` matches remain removed: also `-0` for `0`, an object by its identity, but not `NaN`
+        const expected = ids.filter((id) => !values.some((value) => value === id)).map((id) => ({ id }));
+        expect(root.items).toEqual(expected);
+        expect(root.items.map((item: any) => item.id)).toEqual([{ name: 'shared' }, NaN, false, '1', undefined, 'd']);
+    });
+
+    test('are the same as a few values compared one by one', () => {
+        const create = (size: number) => ({
+            values: Array.from({ length: size }, (_, i) => `v${i * 2}`),
+            items: Array.from({ length: 20 }, (_, i) => ({ id: `v${i}` })),
+        });
+        // 4 values are compared one by one, and 12 looked up in a set
+        [4, 12].forEach((size) => {
+            const root = create(size);
+            run('$.items[?$.values[*]==@.id]', root, untrustedSource);
+            const { values } = create(size);
+            expect(root.items).toEqual(create(size).items.filter((item) => !values.includes(item.id)));
+        });
+    });
+
+    test('are looked up again for each expression, as a previous one may change them', () => {
+        const filterExpression = '$.items[?$.ids[*]==@.id].x=2';
+        const queries = getJsonPathQueries(source, `${filterExpression} $.ids[0]=z $.items.*.x=0 ${filterExpression}`);
+        expect(queries).toHaveLength(4);
+        const root = {
+            ids: Array.from({ length: 10 }, (_, i) => `a${i}`),
+            items: [{ id: 'a0', x: 0 }, { id: 'z', x: 0 }],
+        };
+        jsonPath(source, root, queries, nativeObjects, undefined, '', false, Object.create(null));
+        expect(root.items).toEqual([{ id: 'a0', x: 0 }, { id: 'z', x: 2 }]);
     });
 });

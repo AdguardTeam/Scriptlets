@@ -203,6 +203,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `$` in a filter of a JSONPath expression of `json-prune` and `trusted-json-set` scriptlets is the root
+  of the document, as in RFC 9535 and uBO, e.g. `$.items[?$.flag]` matches each item if the root has `flag`,
+  while it was the tested node before, which is `@`, e.g. `$.items[?@.flag]`, as it already was
+  on the right side of a comparison, e.g. `$.items[?@.a==$.limit]`, which uBO does not support.
+  No rule in the filter lists uses it. The root is searched once for an expression, also for a comparison
+  with the tested node and in a nested filter, e.g. `$.items[?@.id==$..limit]`, which took about 12 s
+  for 3,000 items before, as the root was searched again for each item, and takes a few milliseconds now.
+  So a getter of the root is read once for all items, while it was read for each item before, which differs
+  only for a getter which returns another value on each read, e.g. a counter, as no other code runs while
+  an expression is matched.
 - JSONPath expressions of `json-prune` and `trusted-json-set` scriptlets are evaluated about 2.5 times faster
   in large JSON, e.g. with recursive filters like `$..[?@.id=="ad"]`, as the paths of nodes are not built,
   primitive values are skipped by recursive steps which cannot match them, e.g. `$..ads`, and the items of an array

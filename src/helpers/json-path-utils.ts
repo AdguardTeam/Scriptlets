@@ -110,12 +110,15 @@ type JsonPathLogicalOperator = 'and' | 'or';
 /**
  * Filter which compares the values selected by its selector, which is parsed with the expression,
  * so an invalid one, e.g. a regular expression of keys, rejects the expression before any query is applied.
+ * A selector which starts with `$` is evaluated against the root of the document, as in RFC 9535 and uBO,
+ * e.g. `$.flag` of `$.items[?$.flag]`, and one which starts with `@` or a step against the tested node.
  */
 type JsonPathComparisonFilter = {
     comparisonSelector?: JsonPathSelector;
     comparisonValue?: any;
     operator: JsonPathFilterOperator;
     resolveComparisonAgainstRoot?: boolean;
+    resolveSelectorAgainstRoot?: boolean;
     selector: JsonPathSelector;
 };
 
@@ -1098,6 +1101,9 @@ export const jsonPath = (
     // `ad slot` -> `$['ad slot']`, `123name` -> `$['123name']`,
     // `foo-bar` -> `$['foo-bar']`.
     const IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
+    // Number of values of the root above which `==` with the tested node looks them up in a set, see `rootValueSets`,
+    // as a set is not worth building for a few of them, e.g. one value of `$.limit`
+    const ROOT_VALUE_SET_MIN_SIZE = 8;
 
     // True while a command with `v2:` prefix is evaluated, in which a filter tests the children of each node
     let shouldFilterChildren = false;
@@ -1107,6 +1113,24 @@ export const jsonPath = (
     // True while a `call([...])` command is evaluated, for which descendants are visited depth-first, as in uBO,
     // so the method is called in the same order, while other commands visit them breadth-first, as before
     let shouldTraverseDepthFirst = false;
+    // Nodes which selectors of the root in filters select, e.g. `$..limit` of `$.items[?@.id==$..limit]`,
+    // and results of the filters which test only the root, e.g. `[?$..disableAds]`, for the command which
+    // is evaluated, also in nested selectors, e.g. `$.items[?@.offers[?$..disableAds]]`, so the root is searched
+    // once for a command, not again for each tested node, which would be quadratic, e.g. about 5 s for 3,000 items.
+    // They are reset for each command, as a previous one may have changed the root, while nothing changes it while
+    // a command is matched, as matching is synchronous, so no other code of the page runs, and modifications
+    // are applied after it. So a value of the root which is read once is the same as one read for each node,
+    // e.g. of parsed JSON, which has only own data properties, and of an object of the page, also with a getter
+    // which returns the same value, or a new object with the same content, while only a getter or a Proxy which
+    // returns another value on each read, e.g. a counter or `Date.now()`, is read once for a command instead of
+    // once for each tested node, as before for the right side of a comparison, e.g. `$.limit` of
+    // `[?@.a==$.limit]`. They are created on the first such filter, as a method may be intercepted very often,
+    // e.g. `Array.isArray()`
+    let rootSelections: Map<JsonPathSelector, JsonPathCandidate[]> | null = null;
+    let rootOnlyFilterResults: Map<JsonPathFilter, boolean> | null = null;
+    // Sets of the values which selectors of the root select, for `==` with the tested node, e.g. `$.blockedIds[*]`
+    // of `$.items[?$.blockedIds[*]==@.id]`, which are built once for a command, as the nodes are selected once
+    let rootValueSets: Map<JsonPathSelector, Set<any>> | null = null;
 
     /**
      * Checks whether a value is a non-null object.
@@ -1656,6 +1680,27 @@ export const jsonPath = (
     }
 
     /**
+     * Checks whether a path of a filter starts with the root `$`, i.e. `$` alone, or followed by a step,
+     * e.g. `$.flag` or `$[0]`, which is evaluated against the root of the document, while e.g. `$id`
+     * is a name of the tested node.
+     *
+     * @param rawPath path of a filter
+     * @returns true when the path starts with the root
+     */
+    function isFilterRootPath(rawPath: string): boolean {
+        const filterPath = rawPath.trim();
+        if (!filterPath.startsWith(ROOT_PATH)) {
+            return false;
+        }
+        // A space may follow the root, e.g. `$ .flag` or `$ ['flag']`, as in RFC 9535 and the selector reads it
+        let i = ROOT_PATH.length;
+        while (i < filterPath.length && filterPath[i].trim() === EMPTY_STRING) {
+            i += 1;
+        }
+        return i === filterPath.length || filterPath[i] === DOT || filterPath[i] === SQUARE_BRACKET_OPEN;
+    }
+
+    /**
      * Parses a constrained filter expression.
      *
      * @param rawExpression raw filter expression after question mark
@@ -1723,6 +1768,7 @@ export const jsonPath = (
         if (!operatorMatch) {
             return {
                 operator: FILTER_OPERATORS.EXISTS,
+                resolveSelectorAgainstRoot: isFilterRootPath(expression),
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 selector: parseJsonPathSelector(normalizeFilterPath(expression)),
             };
@@ -1755,9 +1801,8 @@ export const jsonPath = (
         }
 
         const rightTrimmed = rightPart.trim();
-        const isRightRootPath = rightTrimmed === ROOT_PATH
-            || rightTrimmed.startsWith(ROOT_PATH + DOT)
-            || rightTrimmed.startsWith(ROOT_PATH + SQUARE_BRACKET_OPEN);
+        const isRightRootPath = isFilterRootPath(rightTrimmed);
+        const resolveSelectorAgainstRoot = isFilterRootPath(leftPart);
         const isRightCurrentPath = rightTrimmed === AT_SIGN
             || rightTrimmed.startsWith(AT_SIGN + DOT)
             || rightTrimmed.startsWith(AT_SIGN + SQUARE_BRACKET_OPEN);
@@ -1768,6 +1813,7 @@ export const jsonPath = (
                 comparisonSelector: parseJsonPathSelector(normalizeFilterPath(rightTrimmed)),
                 operator,
                 resolveComparisonAgainstRoot: isRightRootPath,
+                resolveSelectorAgainstRoot,
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 selector: parseJsonPathSelector(normalizeFilterPath(leftPart)),
             };
@@ -1776,6 +1822,7 @@ export const jsonPath = (
         return {
             comparisonValue: parseLiteralValue(rightPart),
             operator,
+            resolveSelectorAgainstRoot,
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             selector: parseJsonPathSelector(normalizeFilterPath(leftPart)),
         };
@@ -2509,6 +2556,10 @@ export const jsonPath = (
         if ('condition' in filter) {
             return true;
         }
+        // A selector of the root, e.g. `$.flag` of `[?($.flag)]`, tests the same root for any value
+        if (filter.resolveSelectorAgainstRoot) {
+            return true;
+        }
         // A filter step tests a primitive value itself, while other steps select nothing of it
         const { steps } = filter.selector;
         for (let i = 0; i < steps.length; i += 1) {
@@ -2905,15 +2956,48 @@ export const jsonPath = (
                 return !matchesFilterValue(value, filter.condition);
             }
 
-            const matchedCandidates = evaluateSelector(value, filter.selector);
+            const isRootOnlyFilter = filter.resolveSelectorAgainstRoot === true
+                && (!filter.comparisonSelector || filter.resolveComparisonAgainstRoot === true);
+            if (!isRootOnlyFilter) {
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                return matchesComparisonFilter(value, filter);
+            }
+            if (!rootOnlyFilterResults) {
+                rootOnlyFilterResults = new Map();
+            }
+            let result = rootOnlyFilterResults.get(filter);
+            if (result === undefined) {
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                result = matchesComparisonFilter(value, filter);
+                rootOnlyFilterResults.set(filter, result);
+            }
+            return result;
+        }
+
+        /**
+         * Evaluates a comparison filter against a candidate value.
+         *
+         * @param value candidate value to check
+         * @param filter parsed comparison filter
+         * @returns true when the candidate matches the filter
+         */
+        function matchesComparisonFilter(value: any, filter: JsonPathComparisonFilter): boolean {
+            // `$` is the root of the document, also in a filter, e.g. `$.items[?$.flag]`, as in RFC 9535 and uBO,
+            // which is searched once for a command, see `rootSelections`
+            const matchedCandidates = filter.resolveSelectorAgainstRoot
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                ? selectFromRoot(filter.selector)
+                : evaluateSelector(value, filter.selector);
             if (filter.operator === FILTER_OPERATORS.EXISTS) {
                 return matchedCandidates.length > 0;
             }
 
             let comparisonValue = filter.comparisonValue;
             if (filter.comparisonSelector) {
-                const comparisonRoot = filter.resolveComparisonAgainstRoot ? root : value;
-                const comparisonMatches = evaluateSelector(comparisonRoot, filter.comparisonSelector);
+                const comparisonMatches = filter.resolveComparisonAgainstRoot
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                    ? selectFromRoot(filter.comparisonSelector)
+                    : evaluateSelector(value, filter.comparisonSelector);
                 if (comparisonMatches.length === 0) {
                     return false;
                 }
@@ -2936,6 +3020,23 @@ export const jsonPath = (
                 }
                 return comparisonString;
             };
+
+            // Many values of the root which are compared by `==` with the tested node, e.g. `$.blockedIds[*]`
+            // of `$.items[?$.blockedIds[*]==@.id]`, are looked up in a set, which is built once for a command,
+            // as comparing each of them for each node takes the time of both lists multiplied, e.g. about 330 ms
+            // for 8,000 items and 8,000 values. A set finds the same values as `===`, also `-0` for `0`,
+            // and objects by their identity, except `NaN`, which `===` never matches
+            if (
+                filter.operator === FILTER_OPERATORS.EQUAL
+                && filter.resolveSelectorAgainstRoot
+                && matchedCandidates.length > ROOT_VALUE_SET_MIN_SIZE
+            ) {
+                // `NaN` is the only value not equal to itself, while `Number.isNaN()` may be replaced by the page
+                // eslint-disable-next-line no-self-compare
+                const isNotNaN = comparisonValue === comparisonValue;
+                // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                return isNotNaN && getRootValueSet(filter.selector, matchedCandidates).has(comparisonValue);
+            }
 
             for (let i = 0; i < matchedCandidates.length; i += 1) {
                 const matchedValue = matchedCandidates[i].value;
@@ -3012,6 +3113,48 @@ export const jsonPath = (
             }
 
             return false;
+        }
+
+        /**
+         * Returns the nodes which a selector of the root in a filter selects, e.g. `$..limit`, which are selected
+         * once for the command which is evaluated, see `rootSelections`.
+         *
+         * @param rootSelector selector of the root
+         * @returns selected nodes
+         */
+        function selectFromRoot(rootSelector: JsonPathSelector): JsonPathCandidate[] {
+            if (!rootSelections) {
+                rootSelections = new Map();
+            }
+            let selection = rootSelections.get(rootSelector);
+            if (!selection) {
+                selection = evaluateSelector(root, rootSelector);
+                rootSelections.set(rootSelector, selection);
+            }
+            return selection;
+        }
+
+        /**
+         * Returns the set of the values of the nodes which a selector of the root selects, which is built once
+         * for the command which is evaluated, see `rootValueSets`.
+         *
+         * @param rootSelector selector of the root
+         * @param candidates nodes which it selects
+         * @returns set of their values
+         */
+        function getRootValueSet(rootSelector: JsonPathSelector, candidates: JsonPathCandidate[]): Set<any> {
+            if (!rootValueSets) {
+                rootValueSets = new Map();
+            }
+            let valueSet = rootValueSets.get(rootSelector);
+            if (!valueSet) {
+                valueSet = new Set();
+                for (let i = 0; i < candidates.length; i += 1) {
+                    valueSet.add(candidates[i].value);
+                }
+                rootValueSets.set(rootSelector, valueSet);
+            }
+            return valueSet;
         }
 
         /**
@@ -3447,6 +3590,10 @@ export const jsonPath = (
                 shouldFilterChildren = query.isV2;
                 shouldKeepDuplicateKeys = query.isCall;
                 shouldTraverseDepthFirst = query.isCall;
+                // The root may have been changed by the previous command, see `rootSelections`
+                rootSelections = null;
+                rootOnlyFilterResults = null;
+                rootValueSets = null;
 
                 // Each precondition, e.g. `..ads{1,};$`, has to match a number of nodes in its range
                 let arePreconditionsMatched = true;

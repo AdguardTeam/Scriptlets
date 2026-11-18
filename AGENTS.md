@@ -757,6 +757,21 @@ Project-specific rules:
     e.g. `@[?(@==2)]`, or a negation may match it. A filter SHOULD read each item of an array once, and pass
     the value which it has tested to the next steps, as a getter of the page may return another value on each
     read, so the check whether an item is primitive must not consume the value which the filter tests.
+    A selector of the root in a filter, e.g. `$..limit` of `$.items[?@.id==$..limit]` or `$..disableAds`
+    of `$.items[?$..disableAds]`, SHOULD be evaluated once for an expression, also for a comparison with the tested
+    node, in a nested selector, e.g. `$.items[?@.offers[?$..disableAds]]`, and in a guard of an array root,
+    which tests each item, and the result of a filter which tests only the root once as well, see `rootSelections`,
+    which are reset for each expression, as a previous one may have changed the root. A search for each tested
+    node would be quadratic, e.g. about 12 s for 3,000 items on master. A value read once is the same as a value
+    read for each node, as matching is synchronous, so no other code of the page runs, and modifications are applied
+    after it, i.e. for parsed JSON, which has only own data properties, and for objects of the page, also with
+    a getter which returns the same value, or a new object with the same content. Only a getter or a Proxy which
+    returns another value on each read, e.g. a counter or `Date.now()`, is read once for an expression instead
+    of once for each tested node, as before, which is accepted, as no real object of a page is expected to do it.
+    Many values of the root compared by `==` with the tested node, e.g. `$.blockedIds[*]` of
+    `$.items[?$.blockedIds[*]==@.id]`, SHOULD be looked up in a set built once for an expression, see `rootValueSets`,
+    as comparing each of them for each node takes the time of both lists multiplied; a set matches the same values
+    as `===`, except `NaN`, which is excluded.
     `splitJsonPathQueries()`, which runs once, when the rule runs,
     SHOULD stay one simple pass with local lookaheads, i.e. whether a query starts at a space, whether it has its
     own value, and whether its own selector is well-formed, without chains of next queries or guesses about what

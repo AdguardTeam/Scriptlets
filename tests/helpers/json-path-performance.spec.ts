@@ -233,4 +233,65 @@ describe('JSONPath performance', () => {
         );
         expect(time(240) / time(60)).toBeLessThan(32);
     });
+
+    test('root of a filter is searched once for an expression', () => {
+        // e.g. `$..disableAds` or `$..limit` of the root, which would be searched again for each item,
+        // i.e. quadratically, also by a guard of an array root, which tests each item, and in a nested selector
+        const countCalls = (value: Record<string, any>, path: string): number => {
+            const nativeKeys = Object.keys;
+            const nativeStartsWith = String.prototype.startsWith;
+            let count = 0;
+            // Calls are counted without a spy, which would keep the arguments of each of them
+            Object.keys = (object: object) => {
+                count += 1;
+                return nativeKeys(object);
+            };
+            // eslint-disable-next-line no-extend-native
+            String.prototype.startsWith = function startsWith(...args: [string, number?]) {
+                count += 1;
+                return nativeStartsWith.apply(this, args);
+            };
+            try {
+                jsonPath(source, value, [path], nativeObjects);
+            } finally {
+                Object.keys = nativeKeys;
+                // eslint-disable-next-line no-extend-native
+                String.prototype.startsWith = nativeStartsWith;
+            }
+            return count;
+        };
+        const items = (size: number) => createPayload(size).items;
+        const flags = (size: number) => ({
+            flags: Array.from({ length: size }, (_, i) => ({ name: `f${i}` })),
+            items: items(size),
+        });
+        const offers = (size: number) => ({
+            items: Array.from({ length: size }, (_, i) => ({ id: i, offers: [{ price: i }] })),
+        });
+        const cases: [(size: number) => Record<string, any>, string][] = [
+            [createPayload, '$.items[?$..disableAds]'],
+            [items, '[?$..disableAds]$.*'],
+            [flags, '$.items[?$.flags[*].name^="disableAds"]'],
+            [createPayload, '$.items[?@.id==$..limit]'],
+            [createPayload, '$.items[?$..limit==@.id]'],
+            [offers, '$.items[?@.offers[?$..disableAds]]'],
+        ];
+        cases.forEach(([create, path]) => {
+            // about 2 times as many calls for twice as many items, and 4 times for a quadratic search
+            expect(countCalls(create(1000), path) / countCalls(create(500), path)).toBeLessThan(3);
+        });
+    });
+
+    test('many values of the root compared by == with each item are looked up once', RETRY, () => {
+        // e.g. `$.blockedIds[*]`, whose values would be compared one by one for each item, i.e. 16 times as long
+        // for 4 times as many items and values, while a set of them is linear
+        const time = (size: number) => measure(
+            () => ({
+                blockedIds: Array.from({ length: size }, (_, i) => `b${i}`),
+                items: Array.from({ length: size }, (_, i) => ({ id: `i${i}` })),
+            }),
+            (value) => jsonPath(source, value, ['$.items[?$.blockedIds[*]==@.id]'], nativeObjects),
+        );
+        expect(time(4000) / time(1000)).toBeLessThan(10);
+    });
 });

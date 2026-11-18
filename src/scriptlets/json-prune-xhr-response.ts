@@ -90,6 +90,11 @@ import { type Source } from './scriptlets';
  *   which have to match at least one node, or a number of nodes in a range `{min,max};$`,
  *   e.g. `..adSlots;$.ads` or `$.items[?.ad]{2,};$.ads`, and `v2:` prefix, with which a filter tests
  *   the children of each node, also of an object, e.g. `v2:$.config[?@==true]`.
+ *   In a filter, `@` is the tested node and `$` the root of the document, as in RFC 9535 and uBO,
+ *   e.g. `$.items[?$.flag]` matches each item if the root has `flag`, while `$.items[?@.flag]`
+ *   matches the items which have it. The root is searched once for an expression, also for a comparison
+ *   with the tested node, e.g. `$.items[?@.id==$..limit]`, so a getter of the root is read once for all items,
+ *   which differs from a read for each item only for a getter which returns another value on each read.
  * - `obligatoryProps` — optional, string of space-separated properties
  *   which must be all present for the pruning to occur.
  * - `propsToMatch` — optional, string of space-separated properties to match for extra condition; possible props:
