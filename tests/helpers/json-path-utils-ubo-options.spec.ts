@@ -2416,3 +2416,24 @@ describe('many values of the root compared by == with the tested node', () => {
         expect(root.items).toEqual([{ id: 'a0', x: 0 }, { id: 'z', x: 2 }]);
     });
 });
+
+describe('nested filter in a recursive one', () => {
+    const create = () => ({
+        list: [{ zf: 86, x: 1 }, { zf: 1 }],
+        other: [{ zf: 2 }],
+        obj: { a: { zf: 86 }, b: { zf: 3 } },
+    });
+
+    test('with v2: removes each array or object which contains a matching node, as in RFC 9535 and uBO', () => {
+        const root = create();
+        run('v2:$..[?@[?@.zf==86]]', root, untrustedSource);
+        expect(root).toEqual({ other: [{ zf: 2 }] });
+    });
+
+    test('without v2: removes the matching nodes, as before', () => {
+        // e.g. www.google.*#%#//scriptlet('ubo-json-edit', '$..[?@[?@.zf==86]]')
+        const root = create();
+        run('$..[?@[?@.zf==86]]', root, untrustedSource);
+        expect(root).toEqual({ list: [{ zf: 1 }], other: [{ zf: 2 }], obj: { b: { zf: 3 } } });
+    });
+});

@@ -91,7 +91,9 @@ import { type Source } from './scriptlets';
  *   preconditions before `;$`,
  *   which have to match at least one node, or a number of nodes in a range `{min,max};$`,
  *   e.g. `..adSlots;$.ads` or `$.items[?.ad]{2,};$.ads`, and `v2:` prefix, with which a filter tests
- *   the children of each node, also of an object, e.g. `v2:$.config[?@==true]`.
+ *   the children of each node, also of an object, e.g. `v2:$.config[?@==true]`, as in RFC 9535,
+ *   e.g. `v2:$..[?@[?@.zf==86]]` removes each array or object which contains a node with `zf` 86,
+ *   while `$..[?@[?@.zf==86]]` removes these nodes, as before.
  *   In a filter, `@` is the tested node and `$` the root of the document, as in RFC 9535 and uBO,
  *   e.g. `$.items[?$.flag]` matches each item if the root has `flag`, while `$.items[?@.flag]`
  *   matches the items which have it. The root is searched once for an expression, also for a comparison

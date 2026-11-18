@@ -160,7 +160,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   which was the key `/pets/` before, matches every key which contains `pets` now, e.g. `/pets/archive` and `pets`,
   and an exact key needs brackets, e.g. `$.routes['/pets/']`, preconditions before `;$`, which have to match
   at least one node, or a number of nodes in a range `{min,max};$`, e.g. `..adSlots{2,};$.ads`, and `v2:` prefix,
-  with which a filter tests the children of each node, also of an object. Values may also be `repl({...})`,
+  with which a filter tests the children of each node, also of an object, as in RFC 9535, e.g.
+  `v2:$..[?@[?@.zf==86]]` removes each array or object which contains a node with `zf` 86, while
+  `$..[?@[?@.zf==86]]` removes these nodes, as before. Values may also be `repl({...})`,
   which replaces a part of a string value by `regex` with `flags` or by a text in `pattern`, and assigns nothing
   to a value which is not a string, as in uBO, and `call([...])`,
   which calls a method for each matched node, with `${obj}`, `${key}` and `${val}` placeholders, also a method

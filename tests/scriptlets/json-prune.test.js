@@ -1576,3 +1576,17 @@ test('JSONPath: $ in a filter is the root of the document, and @ the tested node
         assert.deepEqual(JSON.parse(input), { flag: true, items: [{ a: 2 }] }, `${rule} should remove one item`);
     });
 });
+
+test('JSONPath: documented v2: example of a nested filter, as in RFC 9535', (assert) => {
+    const input = '{"list":[{"zf":86,"x":1},{"zf":1}],"other":[{"zf":2}],"obj":{"a":{"zf":86},"b":{"zf":3}}}';
+
+    runScriptlet(name, 'v2:$..[?@[?@.zf==86]]');
+    assert.deepEqual(JSON.parse(input), { other: [{ zf: 2 }] }, 'arrays and objects with the node should be removed');
+
+    runScriptlet(name, '$..[?@[?@.zf==86]]');
+    assert.deepEqual(
+        JSON.parse(input),
+        { list: [{ zf: 1 }], other: [{ zf: 2 }], obj: { b: { zf: 3 } } },
+        'the nodes should be removed',
+    );
+});
