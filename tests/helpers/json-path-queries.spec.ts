@@ -537,17 +537,25 @@ describe('value `$remove$` of a query', () => {
         { path: "$.ads='$remove$'", expected: "'$remove$'" },
         { path: '$.ads=$remove$ them', expected: '$remove$ them' },
         { path: '$.ads=$remove$$', expected: '$remove$$' },
-        { path: '$.ads+=$remove$', expected: [1, 2, '$remove$'] },
+        // `++=` is the previous `+=`, which appends a text
+        { path: '$.ads++=$remove$', expected: [1, 2, '$remove$'] },
     ])('$path sets a text, as before', ({ path, expected }) => {
         const { root, mutationCount } = runWithValue(path, undefined);
         expect(root).toEqual({ ...createRoot(), ads: expected });
         expect(mutationCount).toBe(1);
     });
 
+    test('`+=$remove$` merges a text, which changes nothing, as uBO merges only objects', () => {
+        const { root, mutationCount } = runWithValue('$.ads+=$remove$', undefined);
+        expect(root).toEqual(createRoot());
+        expect(mutationCount).toBe(0);
+    });
+
     test('is read by the splitter only for trusted scriptlets', () => {
         expect(splitJsonPathQueries('$.a=$remove$ $.b')).toEqual(['$.a=$remove$ $.b']);
         expect(splitJsonPathQueries('$.a=$remove$ $.b', true)).toEqual(['$.a=$remove$', '$.b']);
         expect(splitJsonPathQueries('$.a+=$remove$ $.b', true)).toEqual(['$.a+=$remove$ $.b']);
+        expect(splitJsonPathQueries('$.a++=$remove$ $.b', true)).toEqual(['$.a++=$remove$ $.b']);
         expect(splitJsonPathQueries('$.a=false $.b', true)).toEqual(['$.a=false $.b']);
     });
 

@@ -890,7 +890,8 @@ describe('review fixes of round 4', () => {
         const root = { list: [{ s: 'a' }], o: { s: 'b' } };
         run('$..[?(@.s)].s=replace:/(.+)/$1$1/', root);
         expect(root).toEqual({ list: [{ s: 'aa' }], o: { s: 'bb' } });
-        run('$..[?(@.s)].s+=!', root);
+        // `++=` joins strings, as `+=` did before
+        run('$..[?(@.s)].s++=!', root);
         expect(root).toEqual({ list: [{ s: 'aa!' }], o: { s: 'bb!' } });
     });
 
@@ -1056,7 +1057,7 @@ describe('objects referenced more than once', () => {
     test('are updated once by a query', () => {
         // e.g. an argument of a method, which is not parsed from JSON
         const shared = { s: 'x' };
-        run('$.*.s+=!', { a: shared, b: shared });
+        run('$.*.s++=!', { a: shared, b: shared });
         expect(shared.s).toBe('x!');
     });
 });

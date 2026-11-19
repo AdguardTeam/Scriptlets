@@ -3,6 +3,7 @@ import {
     runScriptlet,
     clearGlobalProps,
     useUnreadableStackTrace,
+    useThrowingMethod,
     getLogs,
 } from '../helpers';
 
@@ -449,7 +450,7 @@ if (!isSupported) {
     test('ubo-trusted-json-edit-fetch-response sets a value of a matching response', async (assert) => {
         // e.g. novelgames.com##+js(trusted-json-edit-fetch-response, .adShowPreload=false, propsToMatch, …)
         // `..src` matches in both files, so only `propsToMatch` limits the rule to the first one
-        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..src=changed', 'propsToMatch', 'test02']);
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..src="changed"', 'propsToMatch', 'test02']);
 
         assert.strictEqual((await fetchJson('test02')).src, 'changed', 'matching response is modified');
         assert.strictEqual((await fetchJson('test03')).cc.src, 'example.org', 'other response should not be modified');
@@ -489,7 +490,7 @@ if (!isSupported) {
     });
 
     test('ubo-trusted-json-edit-fetch-response matches negated propsToMatch, as uBO', async (assert) => {
-        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..src=changed', 'propsToMatch', 'url:!test03']);
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..src="changed"', 'propsToMatch', 'url:!test03']);
 
         assert.strictEqual((await fetchJson('test02')).src, 'changed', 'other URL should be modified');
         assert.strictEqual((await fetchJson('test03')).cc.src, 'example.org', 'excluded URL should not be modified');
@@ -501,6 +502,87 @@ if (!isSupported) {
         runScriptlet('ubo-trusted-json-edit-fetch-response', ['..ads']);
 
         assert.strictEqual(await (await fetch(path)).text(), originalText, 'response text should be original');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response with an invalid value reads no response', async (assert) => {
+        const nativeClone = Response.prototype.clone;
+        let clones = 0;
+        // eslint-disable-next-line func-names
+        Response.prototype.clone = function () {
+            clones += 1;
+            return Reflect.apply(nativeClone, this, []);
+        };
+        const logs = [];
+        console.log = (...args) => {
+            logs.push(args.join(' '));
+        };
+        let responses;
+        try {
+            // a value without quotes, and a payload with a trailing comma, which uBO does not apply either
+            runScriptlet('ubo-trusted-json-edit-fetch-response', ['.b2=hidden']);
+            runScriptlet('ubo-trusted-json-edit-fetch-response', ['.b2=repl({"pattern":"test",})']);
+            responses = [await fetchJson('test01'), await fetchJson('test01')];
+        } finally {
+            console.log = nativeConsole;
+            Response.prototype.clone = nativeClone;
+        }
+
+        // so e.g. a streaming response is not held until its end for a rule which is not applied
+        assert.strictEqual(clones, 0, 'the body of a response should not be read');
+        assert.strictEqual(responses[1].b2, 'test', 'response should not be modified');
+        const valueErrors = logs.filter((log) => log.includes('the value is not JSON: hidden'));
+        assert.strictEqual(valueErrors.length, 1, 'the value should be logged once');
+        const payloadErrors = logs.filter((log) => log.includes('the payload is invalid'));
+        assert.strictEqual(payloadErrors.length, 1, 'the payload should be logged once');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response is applied if RegExp test throws in the first fetch', async (assert) => {
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['.cc.arr[0].inner1']);
+        // as by `abort-current-inline-script` with `RegExp.prototype.test` for a request of an inline script,
+        // while the query, whose parsing calls it, e.g. for `[0]`, is parsed once `fetch()` is fulfilled
+        const restoreTest = useThrowingMethod(RegExp.prototype, 'test');
+        let first;
+        try {
+            first = fetch(`${FETCH_OBJECTS_PATH}/test03.json`);
+        } finally {
+            restoreTest();
+        }
+
+        assert.deepEqual((await (await first).json()).cc.arr, [{}, { inner2: 456 }], 'inner1 should be removed');
+        assert.deepEqual((await fetchJson('test03')).cc.arr, [{}, { inner2: 456 }], 'and for the next request');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response does not change RegExp.$1 in the call of fetch', async (assert) => {
+        // `RegExp.$1` is not updated in the realm of the test page, so the rule runs in a frame
+        const frame = document.createElement('iframe');
+        document.body.appendChild(frame);
+        try {
+            const frameEval = frame.contentWindow.eval;
+            const args = ['.cc.arr[0].inner1'];
+            frameEval(window.scriptlets.invoke({ name: 'ubo-trusted-json-edit-fetch-response', args, verbose: false }));
+            const url = new URL(`${FETCH_OBJECTS_PATH}/test03.json`, window.location.href).href;
+            const result = frameEval(`/(42)/.test('x42'); [fetch('${url}'), RegExp.$1];`);
+
+            assert.strictEqual(result[1], '42', 'RegExp.$1 should be kept');
+            // objects of the frame are compared as JSON, as they have its prototypes
+            const json = await (await result[0]).json();
+            assert.strictEqual(JSON.stringify(json.cc.arr), '[{},{"inner2":456}]', 'inner1 should be removed');
+        } finally {
+            frame.remove();
+        }
+    });
+
+    test('ubo-trusted-json-edit-fetch-response is applied if RegExp test throws while it runs', async (assert) => {
+        // as by `abort-current-inline-script` with `RegExp.prototype.test`, while parsing `[0]` calls it
+        const restoreTest = useThrowingMethod(RegExp.prototype, 'test');
+        try {
+            runScriptlet('ubo-trusted-json-edit-fetch-response', ['.cc.arr[0].inner1']);
+        } finally {
+            restoreTest();
+        }
+
+        const json = await fetchJson('test03');
+        assert.deepEqual(json.cc.arr, [{}, { inner2: 456 }], 'inner1 should be removed');
     });
 
     test('ubo-trusted-json-edit-fetch-response with invalid propsToMatch is not applied', async (assert) => {

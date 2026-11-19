@@ -7,7 +7,7 @@ import { parseKeywordValue } from './parse-keyword-value';
 import { toRegExp } from './string-utils';
 import { type Source } from '../scriptlets';
 
-type JsonPathMutationMode = 'append' | 'remove' | 'set';
+type JsonPathMutationMode = 'append' | 'merge' | 'remove' | 'set';
 type JsonPathFilterOperator =
     | 'contains'
     | 'ends_with'
@@ -1037,6 +1037,7 @@ export const jsonPath = (
     const COMMA = ',';
     const EQUAL = '=';
     const PLUS_EQUAL = '+=';
+    const PLUS_PLUS_EQUAL = '++=';
     const SINGLE_QUOTE = '\'';
     const DOUBLE_QUOTE = '"';
     const ROUND_BRACKET_OPEN = '(';
@@ -1092,6 +1093,14 @@ export const jsonPath = (
     const MAX_RECURSIVE_CANDIDATES = 100000;
     // Value which an updater returns to assign nothing, e.g. `repl({...})` for a value which is not a string
     const UNCHANGED_VALUE = {};
+    // Value which an updater returns if it has changed the value itself, e.g. `+=` which merges into an object,
+    // so nothing is assigned, as uBO does, while the value is modified
+    const MUTATED_IN_PLACE = {};
+    // Names of uBO rules whose values are JSON, as in uBO, i.e. of the uBO aliases of trusted scriptlets
+    const UBO_JSON_EDIT_NAME_PREFIX = 'ubo-trusted-json-edit';
+    // a placeholder of uBO in a text, not a template string
+    // eslint-disable-next-line no-template-curly-in-string
+    const NOW_PLACEHOLDER = '${now}';
     // Items of an array which are removed by `splice()` of each, as before, while more are removed in one pass
     const MAX_SPLICED_ITEMS = 8;
     const MAX_RECURSIVE_DEPTH = 1000;
@@ -2019,9 +2028,16 @@ export const jsonPath = (
             if (!isTopLevel) {
                 return false;
             }
-            if (expression.startsWith(PLUS_EQUAL, index)) {
+            // `++=` is the previous `+=`, e.g. which joins strings, while `+=` merges as uBO, see `buildMergeUpdater()`
+            if (expression.startsWith(PLUS_PLUS_EQUAL, index)) {
                 foundIndex = index;
                 foundMode = 'append';
+                tokenLength = PLUS_PLUS_EQUAL.length;
+                return true;
+            }
+            if (expression.startsWith(PLUS_EQUAL, index)) {
+                foundIndex = index;
+                foundMode = 'merge';
                 tokenLength = PLUS_EQUAL.length;
                 return true;
             }
@@ -2102,34 +2118,57 @@ export const jsonPath = (
     }
 
     /**
-     * Builds the updater used for append mutations.
+     * Parses the value of `+=` or `++=` of AdGuard rules: a JSON object or array, in which time keywords are resolved
+     * before it is parsed, e.g. `+=[{"time":$now$}]`, see https://github.com/AdguardTeam/Scriptlets/issues/573,
+     * or a constant of `trusted-json-set`, e.g. `emptyObj`. uBO rules have a JSON value, see `parseUboValue()`.
      *
-     * @param rawValue append payload text
+     * @param rawValue value text
      * @param nativeParse parse function to use
      * @param parseArgumentValue parsed trusted-json-set value resolver
-     * @returns updater function for matched nodes
+     * @returns value to add
      */
-    function buildAppendUpdater(
+    function parseAppendValue(
         rawValue: string,
         nativeParse: typeof JSON.parse,
         parseArgumentValue: JsonPathArgumentValueParser,
-    ): (currentValue: any) => any {
+    ): any {
         const trimmedValue = rawValue.trim();
-        let appendValue: any;
-
         if (trimmedValue.startsWith(CURLY_BRACKET_OPEN) || trimmedValue.startsWith(SQUARE_BRACKET_OPEN)) {
-            // JSON payload is parsed here directly, so time keywords in it
-            // are resolved before parsing, e.g. '+=[{"time":$now$}]'
-            // https://github.com/AdguardTeam/Scriptlets/issues/573
-            appendValue = nativeParse(parseKeywordValue(trimmedValue));
-        } else {
-            const parsedValue = parseArgumentValue(trimmedValue);
-            if (!parsedValue || parsedValue.shouldReplaceArgument) {
-                throw new Error(`Invalid append value: ${rawValue}`);
-            }
-            appendValue = parsedValue.constantValue;
+            return nativeParse(parseKeywordValue(trimmedValue));
         }
 
+        const parsedValue = parseArgumentValue(trimmedValue);
+        if (!parsedValue || parsedValue.shouldReplaceArgument) {
+            throw new Error(`Invalid append value: ${rawValue}`);
+        }
+        return parsedValue.constantValue;
+    }
+
+    /**
+     * Parses a value of uBO rules, as uBO does, i.e. the JSON text after `=`, `+=` or `++=`, e.g. `"hidden"`
+     * is the string `hidden`, and `[]` an array, without time keywords. A value which is not JSON throws,
+     * which is checked when the query is parsed, so the rule is not applied, as in uBO.
+     * `nativeParse` is `JSON.parse` saved when the rule runs, which may be the wrapper of another JSON rule which
+     * has run before, which may then change the value, as for `json:` values of AdGuard rules, which is accepted,
+     * while uBO uses `JSON.parse` saved before any of its rules runs.
+     *
+     * @param rawValue value text
+     * @param nativeParse parse function to use
+     * @returns parsed value
+     */
+    function parseUboValue(rawValue: string, nativeParse: typeof JSON.parse): any {
+        return nativeParse(rawValue.trim());
+    }
+
+    /**
+     * Builds the updater of `++=`, i.e. `+=` of AdGuard rules before uBO `+=` was supported: an array gets the value,
+     * or the items of an array value, as a new array, an object and an object value are merged into a new object,
+     * a string and a string value are joined, and another value is replaced by the value.
+     *
+     * @param appendValue value to add, see `parseAppendValue()` and `parseUboValue()`
+     * @returns updater function for matched nodes
+     */
+    function buildAppendUpdater(appendValue: any): (currentValue: any) => any {
         return (currentValue: any) => {
             if (isArrayValue(currentValue)) {
                 return Array.isArray(appendValue)
@@ -2147,6 +2186,56 @@ export const jsonPath = (
 
             return appendValue;
         };
+    }
+
+    /**
+     * Builds the updater of `+=`, which merges a value into the matched node as uBO does, in place:
+     * an array gets the value, or the items of an array value, and an object gets the properties of the value,
+     * while nothing is changed if the node or the value is not an object, e.g. a string or a number,
+     * so nothing is assigned then. The node itself is modified, so `MUTATED_IN_PLACE` is returned.
+     * Items are added by index, not by `push()`, which a rule may intercept.
+     *
+     * @param mergeValue value to merge, see `parseAppendValue()` and `parseUboValue()`
+     * @returns updater function for matched nodes
+     */
+    function buildMergeUpdater(mergeValue: any): (currentValue: any) => any {
+        const isObjectValue = (value: any): boolean => value !== null
+            && (typeof value === 'object' || typeof value === 'function');
+
+        return (currentValue: any) => {
+            if (!isObjectValue(mergeValue) || !isObjectValue(currentValue)) {
+                return UNCHANGED_VALUE;
+            }
+
+            if (isArrayValue(currentValue)) {
+                if (isArrayValue(mergeValue)) {
+                    for (let i = 0; i < mergeValue.length; i += 1) {
+                        currentValue[currentValue.length] = mergeValue[i];
+                    }
+                } else {
+                    currentValue[currentValue.length] = mergeValue;
+                }
+                return MUTATED_IN_PLACE;
+            }
+
+            const keys = Object.keys(mergeValue);
+            for (let i = 0; i < keys.length; i += 1) {
+                currentValue[keys[i]] = mergeValue[keys[i]];
+            }
+            return MUTATED_IN_PLACE;
+        };
+    }
+
+    /**
+     * Builds the updater of a value of uBO rules after `=`, which is set as it is, i.e. the same value
+     * for each matched node, as in uBO, with the first `${now}` of a string replaced by the current time
+     * when it is set, e.g. `"${now}"` is `"1700000000000"`.
+     *
+     * @param value parsed value, see `parseUboValue()`
+     * @returns updater function for matched nodes
+     */
+    function buildUboSetUpdater(value: any): () => any {
+        return () => (typeof value === 'string' ? value.replace(NOW_PLACEHOLDER, String(Date.now())) : value);
     }
 
     /**
@@ -2190,6 +2279,9 @@ export const jsonPath = (
         };
     }
 
+    // uBO rules, whose values are JSON, as in uBO, while AdGuard rules have text values and keywords, as before
+    const isUboDialect = typeof source.name === 'string' && source.name.startsWith(UBO_JSON_EDIT_NAME_PREFIX);
+
     /**
      * Checks whether a value is a payload of uBO syntax in its form, e.g. `repl({...})` or `call([...])`,
      * while any other value, e.g. `call(me)`, is a text, as before.
@@ -2206,6 +2298,20 @@ export const jsonPath = (
         }
         const payload = value.slice(prefix.length, -1).trim();
         return payload.startsWith(open) && payload.endsWith(close);
+    }
+
+    /**
+     * Checks whether a value is a payload which its builder parses, i.e. `repl({...})`, `call([...])`
+     * or `replace(...)`, so it is not parsed as JSON for uBO rules.
+     *
+     * @param value value of an expression
+     * @returns true when the value is such a payload
+     */
+    function isPayloadExpressionValue(value: string): boolean {
+        const trimmedValue = value.trim();
+        return isPayloadValue(trimmedValue, 'repl(', CURLY_BRACKET_OPEN, CURLY_BRACKET_CLOSE)
+            || isPayloadValue(trimmedValue, 'call(', SQUARE_BRACKET_OPEN, SQUARE_BRACKET_CLOSE)
+            || (trimmedValue.startsWith('replace(') && trimmedValue.endsWith(ROUND_BRACKET_CLOSE));
     }
 
     /**
@@ -2444,9 +2550,10 @@ export const jsonPath = (
      * by `buildJsonPathCommand()`.
      *
      * @param expression full JSONPath query
+     * @param nativeParse parse function to use, for the values of uBO rules, which are checked when they are parsed
      * @returns parsed query
      */
-    function parseJsonPathQuery(expression: string): JsonPathParsedQuery {
+    function parseJsonPathQuery(expression: string, nativeParse: typeof JSON.parse): JsonPathParsedQuery {
         // In uBO `v2:` syntax a filter tests the children of each node, also of an object,
         // so leading filters are steps which select the children of the root, not guards of the root
         const isV2 = expression.startsWith(V2_PREFIX);
@@ -2462,6 +2569,34 @@ export const jsonPath = (
         ) {
             mutationParts.mode = 'remove';
             mutationParts.valuePart = EMPTY_STRING;
+        }
+        // A value of a uBO rule is JSON, as in uBO, so a rule with a value which is not JSON is not applied,
+        // e.g. `=Hello` or `=emptyObj`, and neither is a rule with an invalid payload of uBO after `=`,
+        // e.g. `repl({"pattern":"ads",})`, which is built here only to be checked, as building it depends only
+        // on the payload, while `replace(...)` of AdGuard rules is checked when it is built, as before,
+        // as its keywords, e.g. `$now$`, call `Date` of the page
+        if (isUboDialect && mutationParts.mode !== 'remove') {
+            const { valuePart } = mutationParts;
+            if (mutationParts.mode !== 'set' || !isPayloadExpressionValue(valuePart)) {
+                try {
+                    parseUboValue(valuePart, nativeParse);
+                } catch {
+                    throw new Error(`the value is not JSON: ${valuePart}`);
+                }
+            } else if (
+                isPayloadValue(valuePart, 'repl(', CURLY_BRACKET_OPEN, CURLY_BRACKET_CLOSE)
+                || isPayloadValue(valuePart, 'call(', SQUARE_BRACKET_OPEN, SQUARE_BRACKET_CLOSE)
+            ) {
+                try {
+                    if (valuePart.startsWith('repl(')) {
+                        buildReplUpdater(valuePart, nativeParse);
+                    } else {
+                        buildCallInvoker(valuePart, nativeParse);
+                    }
+                } catch {
+                    throw new Error(`the payload is invalid: ${valuePart}`);
+                }
+            }
         }
         const selectorParts = splitPreconditionSelectors(mutationParts.selectorPart);
 
@@ -2525,10 +2660,13 @@ export const jsonPath = (
             mode: query.mode,
         };
 
-        if (query.mode === 'append') {
+        if (query.mode === 'append' || query.mode === 'merge') {
+            const value = isUboDialect
+                ? parseUboValue(query.valuePart, nativeParse)
+                : parseAppendValue(query.valuePart, nativeParse, parseArgumentValue);
             mutation = {
-                mode: 'append',
-                updater: buildAppendUpdater(query.valuePart, nativeParse, parseArgumentValue),
+                mode: query.mode,
+                updater: query.mode === 'merge' ? buildMergeUpdater(value) : buildAppendUpdater(value),
             };
         } else if (query.isCall) {
             mutation = {
@@ -2538,7 +2676,9 @@ export const jsonPath = (
         } else if (query.mode === 'set') {
             mutation = {
                 mode: 'set',
-                updater: buildSetUpdater(query.valuePart, nativeParse, parseArgumentValue),
+                updater: isUboDialect && !isPayloadExpressionValue(query.valuePart)
+                    ? buildUboSetUpdater(parseUboValue(query.valuePart, nativeParse))
+                    : buildSetUpdater(query.valuePart, nativeParse, parseArgumentValue),
             };
         }
 
@@ -3386,22 +3526,34 @@ export const jsonPath = (
      * @param currentRoot current root value
      * @param matches mutable matches to update
      * @param updater value transformer to apply
+     * @param isFromLast true to update the nodes from the last matched one, as uBO does, for `+=`, which merges
+     * a value in place, so a node is merged before the nodes which contain it, e.g. for `..config+={"config":{}}`,
+     * as merging a node first would put the value into it, which would then be merged into the value itself,
+     * e.g. its `config` into its `config`, which makes it circular
+     * @returns root, which the updater may have replaced
      */
-    function updateMatches(currentRoot: any, matches: JsonPathCandidate[], updater: (currentValue: any) => any): any {
+    function updateMatches(
+        currentRoot: any,
+        matches: JsonPathCandidate[],
+        updater: (currentValue: any) => any,
+        isFromLast: boolean,
+    ): any {
         // A node matched more than once is updated once, e.g. an item matched by `$..[?(@.ad)]` with its index `0`
         // as an item, and with its key `'0'` as a descendant, so keys are compared as strings
         const updatedKeys = new Map<any, Set<string>>();
         let isRootUpdated = false;
         let nextRoot = currentRoot;
 
-        for (let i = 0; i < matches.length; i += 1) {
-            const match = matches[i];
+        for (let n = 0; n < matches.length; n += 1) {
+            const match = matches[isFromLast ? matches.length - 1 - n : n];
 
             if (match.parent === null && match.key === null && match.parentCandidate === null) {
                 if (!isRootUpdated) {
                     isRootUpdated = true;
                     const nextValue = updater(nextRoot);
-                    if (nextValue !== UNCHANGED_VALUE) {
+                    if (nextValue === MUTATED_IN_PLACE) {
+                        markMutated();
+                    } else if (nextValue !== UNCHANGED_VALUE) {
                         nextRoot = nextValue;
                         markMutated();
                     }
@@ -3425,7 +3577,9 @@ export const jsonPath = (
             keys.add(key);
 
             const nextValue = updater(match.parent[match.key]);
-            if (nextValue !== UNCHANGED_VALUE) {
+            if (nextValue === MUTATED_IN_PLACE) {
+                markMutated();
+            } else if (nextValue !== UNCHANGED_VALUE) {
                 match.parent[match.key] = nextValue;
                 markMutated();
             }
@@ -3561,7 +3715,7 @@ export const jsonPath = (
             }
             if (!query) {
                 try {
-                    query = parseJsonPathQuery(queryText);
+                    query = parseJsonPathQuery(queryText, nativeParse);
                 } catch (error) {
                     if (cache) {
                         cache[queryText] = null;
@@ -3646,7 +3800,7 @@ export const jsonPath = (
                     if (mutation.invoke) {
                         root = invokeMatches(root, matches, mutation.invoke);
                     } else if (mutation.updater) {
-                        root = updateMatches(root, matches, mutation.updater);
+                        root = updateMatches(root, matches, mutation.updater, query.mode === 'merge');
                     }
                 }
             } catch (error) {
@@ -3712,4 +3866,51 @@ export const matchesJsonPath = (
     );
 
     return didMatch;
+};
+
+/**
+ * Checks whether all queries of a rule are valid, and parses the ones which are not in its cache yet,
+ * so that a scriptlet which reads a response, e.g. of `fetch()`, does not read it for a rule which is not applied,
+ * e.g. a uBO rule with a value which is not JSON, e.g. `.status=hidden`, or an invalid payload, e.g.
+ * `.title=repl({"pattern":"ads",})`, so e.g. a streaming response is not held until its end.
+ * It is called once the response has arrived, e.g. when `fetch()` is fulfilled, as the queries were parsed before,
+ * neither when the rule runs nor in the call of the page, e.g. of `fetch()`: parsing calls `RegExp.prototype.test`,
+ * which another rule may make an accessor which throws in an inline script, e.g. `abort-current-inline-script`,
+ * so a valid query would be rejected for good, and its regular expressions change `RegExp.$1` of the page, which
+ * may read it after its call. Its error is logged once, when it is parsed. Queries are not applied to any value
+ * of the page, and are not parsed again for the processed values.
+ *
+ * @param source scriptlet properties
+ * @param queries queries of the rule, see `getJsonPathQueries()` and `buildJsonPathQueries()`
+ * @param nativeObjects bag of native object references
+ * @param cache cache of the rule, see `JsonPathCache`
+ * @returns true if all queries are valid
+ */
+export const areJsonPathQueriesValid = (
+    source: Source,
+    queries: string[],
+    nativeObjects: JsonPathNativeObjects,
+    cache: JsonPathCache,
+): boolean => {
+    let isParsed = true;
+    for (let i = 0; i < queries.length; i += 1) {
+        const query = cache[queries[i]];
+        if (query === null) {
+            return false;
+        }
+        if (query === undefined) {
+            isParsed = false;
+        }
+    }
+    if (isParsed) {
+        return true;
+    }
+
+    jsonPath(source, {}, queries, nativeObjects, undefined, '', true, cache);
+    for (let i = 0; i < queries.length; i += 1) {
+        if (cache[queries[i]] === null) {
+            return false;
+        }
+    }
+    return true;
 };

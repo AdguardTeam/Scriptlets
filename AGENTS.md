@@ -754,6 +754,11 @@ Project-specific rules:
     New parsing of arguments when the rule runs, e.g. of uBO options by `parseUboOptions()`,
     SHOULD NOT call `RegExp.prototype.test` either, nor other methods which a rule may hook,
     e.g. `String.prototype.charCodeAt`, so digits are checked by `isDigits()`, which compares characters by operators.
+    JSONPath queries are parsed when the first value is processed, neither when the rule runs nor in a call
+    of the page, e.g. of `fetch()`, as parsing them calls `RegExp.prototype.test`, so a valid query would be
+    rejected for good, e.g. for a request of an inline script, and it changes `RegExp.$1` of the page; a scriptlet
+    which reads a response for a rule, e.g. of `fetch()`, checks them by `areJsonPathQueriesValid()` once
+    the response has arrived, before it reads its body.
     A test of a text of the page on each intercepted call, e.g. `matches` of `json-prune`, runs while matching
     is suspended, e.g. by `isMatchingSuspended` of `trusted-json-set`, as the test itself may call the intercepted
     method, e.g. `String.prototype.indexOf`, and it
@@ -769,6 +774,11 @@ Project-specific rules:
     if it reads `RegExp.$1` after the intercepted call.
     It does not call `String()`, which a rule may intercept, e.g. `log-on-stack-trace`, whose getter restores
     the values itself.
+    JSON values of a rule, e.g. `json:{...}`, an object after `+=`, or any value of a uBO rule, e.g.
+    `.config={"id":"fallback"}`, are parsed by `JSON.parse` saved when the rule runs, which is accepted even though
+    it may be the wrapper of another JSON rule which has run before, e.g. of `json-prune` or `trusted-json-set`,
+    which then changes the value as if it were content of the page, e.g. removes `id` for `.id`; an own parser
+    of such values is not added, as it would call other methods which a rule may intercept.
 
     **Rationale**: Other rules on the same page may replace such a method before,
     e.g. `abort-current-inline-script` with `RegExp.prototype.test` defines an
@@ -838,7 +848,10 @@ Project-specific rules:
     only expressions which rules do not use, e.g. `^=`, which changes `@.a^=1`,
     a comparison of the key `a^`, which has to be in brackets then, e.g. `@['a^']=1`,
     while an option which changes expressions which rules may use, e.g. a JSON value
-    after `=`, or `${now}` in a text value, MUST be limited to uBO rules. An expression
+    after `=`, or `${now}` in a text value, MUST be limited to uBO rules, with one exception, decided for #586:
+    `+=` merges as uBO for all rules, in place, and changes nothing for a value which is not an object or an array,
+    while `++=` is `+=` of previous versions, e.g. which joins texts, as no rule in the filter lists uses `+=`,
+    and a rule which relies on it needs only `++=` instead. An expression
     without the form of such an option MUST be read as before, e.g. `;` which is not
     followed by `$` is a part of a name, and `call(text)` is a text value.
     The value `$remove$` of a query, e.g. `$.ads=$remove$ $..banner=false`, removes the nodes which the query

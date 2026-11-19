@@ -4,6 +4,7 @@ import {
     clearGlobalProps,
     saveStorageMethods,
     useThrowingErrorConstructor,
+    useThrowingMethod,
     useUnreadableStackTrace,
 } from '../helpers';
 
@@ -1624,8 +1625,9 @@ test('JSONPath: `$remove$` as a value of an expression is applied with stack', (
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
 });
 
-test('JSONPath: text with `$remove$` is set as before, also by `json:` and `+=`', (assert) => {
-    runScriptlet(name, ['JSON.parse', '$.a=json:"$remove$" $.b="$remove$" $.c+=$remove$ $.d=$remove$ them']);
+test('JSONPath: text with `$remove$` is set as before, also by `json:` and `++=`', (assert) => {
+    // `++=` is the previous `+=`, which appends a text, while `+=` merges only objects, as uBO
+    runScriptlet(name, ['JSON.parse', '$.a=json:"$remove$" $.b="$remove$" $.c++=$remove$ $.d=$remove$ them']);
 
     const result = JSON.parse('{"a":1,"b":1,"c":[1],"d":1}');
 
@@ -2008,4 +2010,84 @@ test('matches with targets tests the first argument, another one, this, or the r
     assert.strictEqual(matchedText, '{"ads":false,"adSlot":1}', 'value of the promise should be matched');
     assert.strictEqual(await new Response('{"ads":true}').text(), '{"ads":true}', 'other result should not');
     clearGlobalProps('__getPayload', '__parseThis');
+});
+
+test('ubo-trusted-json-edit reads values as JSON, as uBO, and merges by += in place', (assert) => {
+    // chatgpt.com##+js(trusted-json-edit, [?.type=="ads"].visibility.status="hidden")
+    runScriptlet('ubo-trusted-json-edit', ['[?.type=="ads"].visibility.status="hidden"']);
+    assert.deepEqual(
+        JSON.parse('{"type":"ads","visibility":{"status":"shown"}}'),
+        { type: 'ads', visibility: { status: 'hidden' } },
+        'the text "hidden" should be set without its quotes',
+    );
+
+    JSON.parse = nativeParse;
+    runScriptlet('ubo-trusted-json-edit', ['$.config+={"ads":false}']);
+    assert.deepEqual(
+        JSON.parse('{"config":{"id":1},"title":"x"}'),
+        { config: { id: 1, ads: false }, title: 'x' },
+        'the object should be merged',
+    );
+
+    // a value which is not JSON, which uBO does not apply either
+    JSON.parse = nativeParse;
+    runScriptlet('ubo-trusted-json-edit', ['$.status=hidden']);
+    assert.deepEqual(JSON.parse('{"status":"shown"}'), { status: 'shown' }, 'the rule should not be applied');
+});
+
+test('ubo-trusted-json-edit is applied if RegExp.prototype.test throws while it runs', (assert) => {
+    // as by `abort-current-inline-script` with `RegExp.prototype.test`, which aborts the script of the rule,
+    // while the query, whose parsing calls it, e.g. for `[0]`, is parsed for the first value, as before
+    const restoreTest = useThrowingMethod(RegExp.prototype, 'test');
+    try {
+        runScriptlet('ubo-trusted-json-edit', ['.items[0].ad']);
+    } finally {
+        restoreTest();
+    }
+
+    assert.deepEqual(JSON.parse('{"items":[{"ad":1,"id":2}]}'), { items: [{ id: 2 }] }, 'ad should be removed');
+});
+
+test('+= of a recursive query merges a node before the nodes which contain it, as uBO', (assert) => {
+    runScriptlet(name, ['JSON.parse', '..config+={"config":{"active":true}}']);
+    assert.strictEqual(
+        nativeStringify(JSON.parse('{"config":{"config":{"old":1}}}')),
+        '{"config":{"config":{"active":true}}}',
+        'the result should be the one of uBO, not a circular object',
+    );
+});
+
+test('+= merges only objects and arrays, and ++= is the previous +=', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.title+=" (ad)" $.list+=[2]']);
+    assert.deepEqual(
+        JSON.parse('{"title":"News","list":[1]}'),
+        { title: 'News', list: [1, 2] },
+        '+= should not join strings, as uBO',
+    );
+
+    JSON.parse = nativeParse;
+    runScriptlet(name, ['JSON.parse', '$.title++=!']);
+    assert.deepEqual(JSON.parse('{"title":"News"}'), { title: 'News!' }, '++= should join strings, as += did');
+});
+
+test('+= changes an object which the page holds in place, ++= puts a new one', (assert) => {
+    // e.g. a method of the page which gets its config, while the page keeps a reference to its settings
+    const settings = { theme: 'dark' };
+    const config = { settings };
+    window.__applyConfig = (value) => value;
+
+    runScriptlet(name, ['__applyConfig', '$.settings+={"ads":false}', '', '', 'arg:0']);
+    window.__applyConfig(config);
+    assert.deepEqual(settings, { theme: 'dark', ads: false }, '+= should change the object which the page holds');
+    assert.strictEqual(config.settings, settings, 'and keep it at its path');
+
+    const otherSettings = { theme: 'dark' };
+    const otherConfig = { settings: otherSettings };
+    window.__applyConfig = (value) => value;
+    runScriptlet(name, ['__applyConfig', '$.settings++={"ads":false}', '', '', 'arg:0']);
+    window.__applyConfig(otherConfig);
+    assert.deepEqual(otherSettings, { theme: 'dark' }, '++= should not change the object which the page holds');
+    assert.deepEqual(otherConfig.settings, { theme: 'dark', ads: false }, 'but put a new merged one at its path');
+
+    clearGlobalProps('__applyConfig');
 });

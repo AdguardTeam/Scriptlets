@@ -6,6 +6,7 @@ import {
     useFirefoxStackTraceFormat,
     useThrowingErrorConstructor,
     useUnreadableStackTrace,
+    useThrowingMethod,
     sleep,
     getLogs,
 } from '../helpers';
@@ -1001,7 +1002,7 @@ if (isSupported) {
     test('ubo-trusted-json-edit-xhr-response sets a value of a matching response, as uBO', async (assert) => {
         // e.g. busuu.com##+js(trusted-json-edit-xhr-response, .access=true, propsToMatch, /no_ads/config)
         // `..src` matches in both files, so only `propsToMatch` limits the rule to the first one
-        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..src=changed', 'propsToMatch', 'test02']);
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..src="changed"', 'propsToMatch', 'test02']);
 
         assert.strictEqual((await getJson('test02')).src, 'changed', 'matching response is modified');
         assert.strictEqual((await getJson('test03')).cc.src, 'example.org', 'other response should not be modified');
@@ -1037,6 +1038,71 @@ if (isSupported) {
         xhr.send();
     });
 
+    test('ubo-trusted-json-edit-xhr-response with an invalid value returns the original response', async (assert) => {
+        const logs = [];
+        console.log = (...args) => {
+            logs.push(args.join(' '));
+        };
+        let responses;
+        try {
+            // a value without quotes, and a payload with a trailing comma, which uBO does not apply either
+            runScriptlet('ubo-trusted-json-edit-xhr-response', ['.b2=hidden']);
+            runScriptlet('ubo-trusted-json-edit-xhr-response', ['.b2=repl({"pattern":"test",})']);
+            responses = [await getJson('test01'), await getJson('test01')];
+        } finally {
+            console.log = nativeConsole;
+        }
+
+        assert.strictEqual(responses[0].b2, 'test', 'response should not be modified');
+        assert.strictEqual(responses[1].b2, 'test', 'response should not be modified');
+        const valueErrors = logs.filter((log) => log.includes('the value is not JSON: hidden'));
+        assert.strictEqual(valueErrors.length, 1, 'the value should be logged once, when it is parsed');
+        const payloadErrors = logs.filter((log) => log.includes('the payload is invalid'));
+        assert.strictEqual(payloadErrors.length, 1, 'the payload should be logged once, when it is parsed');
+    });
+
+    test('ubo-trusted-json-edit-xhr-response is applied if RegExp test throws in the first request', async (assert) => {
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['.cc.arr[0].inner1']);
+        // as by `abort-current-inline-script` with `RegExp.prototype.test` for a request of an inline script,
+        // while the query, whose parsing calls it, e.g. for `[0]`, is parsed for the response, as before
+        const restoreTest = useThrowingMethod(RegExp.prototype, 'test');
+        let first;
+        try {
+            first = getJson('test03');
+        } finally {
+            restoreTest();
+        }
+
+        assert.deepEqual((await first).cc.arr, [{}, { inner2: 456 }], 'inner1 should be removed');
+        assert.deepEqual((await getJson('test03')).cc.arr, [{}, { inner2: 456 }], 'and for the next request');
+    });
+
+    test('ubo-trusted-json-edit-xhr-response does not change RegExp.$1 in the calls of the page', async (assert) => {
+        // `RegExp.$1` is not updated in the realm of the test page, so the rule runs in a frame
+        const frame = document.createElement('iframe');
+        document.body.appendChild(frame);
+        try {
+            const frameEval = frame.contentWindow.eval;
+            const args = ['.cc.arr[0].inner1'];
+            frameEval(window.scriptlets.invoke({ name: 'ubo-trusted-json-edit-xhr-response', args, verbose: false }));
+            const url = new URL(`${FETCH_OBJECTS_PATH}/test03.json`, window.location.href).href;
+            const result = frameEval(`/(42)/.test('x42');
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', '${url}');
+                xhr.responseType = 'json';
+                const loaded = new Promise((resolve) => { xhr.onload = () => resolve(xhr.response); });
+                xhr.send();
+                [loaded, RegExp.$1];`);
+
+            assert.strictEqual(result[1], '42', 'RegExp.$1 should be kept');
+            // objects of the frame are compared as JSON, as they have its prototypes
+            const json = await result[0];
+            assert.strictEqual(JSON.stringify(json.cc.arr), '[{},{"inner2":456}]', 'inner1 should be removed');
+        } finally {
+            frame.remove();
+        }
+    });
+
     test('ubo-trusted-json-edit-xhr-response keeps a native response without JSON text', async (assert) => {
         const nativeBuffer = await getResponse('manifestM3U8-01.m3u8', 'arraybuffer');
         runScriptlet('ubo-trusted-json-edit-xhr-response', ['..ads']);
@@ -1057,7 +1123,7 @@ if (isSupported) {
     });
 
     test('ubo-trusted-json-edit-xhr-response modifies json, and matches negated propsToMatch', async (assert) => {
-        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..src=changed', 'propsToMatch', 'url:!test03']);
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..src="changed"', 'propsToMatch', 'url:!test03']);
 
         assert.strictEqual((await getResponse('test02.json', 'json')).src, 'changed', 'other URL should be modified');
         assert.strictEqual(

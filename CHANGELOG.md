@@ -224,6 +224,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   with uBO arguments, i.e. one JSONPath expression, which is not split by spaces and removes what it matches
   if it has no value of its own, followed by the options `matches` or `propsToMatch`, while other ones are ignored,
   as in uBO, also a value without its name, e.g. `/player/configuration` of player.pl, which uBO ignores.
+  Their values are JSON, as in uBO, e.g. `="hidden"` is the text `hidden` and `=["a"]` an array, the first `${now}`
+  of a text which `=` sets is replaced by the current time, and a rule with a value which is not JSON, e.g. `=hidden`,
+  or with an invalid `repl({...})` or `call([...])`, is not applied, so e.g. bodies of `fetch` responses are not read
+  for it.
   As in uBO, `propsToMatch` may negate a pattern by `!`, e.g. `url:!private`, a value of digits only, e.g. `12345`,
   is matched as a text, a rule without it reads no property of a `fetch` call, while other ones read only the ones
   which it names, each once, unlike uBO, the result of `JSON.parse` is modified
@@ -233,6 +237,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `+=` of a JSONPath expression of `trusted-json-set`, `trusted-json-set-fetch-response`
+  and `trusted-json-set-xhr-response` merges a value as uBO does [#586], in place: an array gets the value,
+  or the items of an array value, and an object gets the properties of an object value, e.g. `$.config+={"ads":false}`,
+  while nothing is changed if the matched value or the value is not an object or an array, e.g. a text.
+  Before, it put a new merged array or object instead, joined texts and replaced other values, which `++=` does now,
+  so a rule which relies on it, e.g. `$.title+=!`, should use `++=`, e.g. `$.title++=!`.
+  No rule in the filter lists uses `+=`.
 - `$` in a filter of a JSONPath expression of `json-prune` and `trusted-json-set` scriptlets is the root
   of the document, as in RFC 9535 and uBO, e.g. `$.items[?$.flag]` matches each item if the root has `flag`,
   while it was the tested node before, which is `@`, e.g. `$.items[?@.flag]`, as it already was

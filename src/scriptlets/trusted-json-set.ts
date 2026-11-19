@@ -117,7 +117,7 @@ import { type Source } from './scriptlets';
  *   An expression may have `$remove$` as its own value, which removes the nodes it matches,
  *   as the same `argumentValue` does, so that properties are removed and set by one rule, in any order,
  *   e.g. `$.ads=$remove$ $..banner=false` or `$..banner=false $.ads=$remove$`, and any expression may
- *   follow it, e.g. `$.ads=$remove$ $.premium` with `argumentValue` `true`. It is a text after `+=`,
+ *   follow it, e.g. `$.ads=$remove$ $.premium` with `argumentValue` `true`. It is a text after `+=` and `++=`,
  *   in quotes, which are a part of a text value, and after `json:`, e.g. `$.note=json:"$remove$"`.
  *   A value `replace:/regex/replacement/` is the rest of the argument if the argument ends with `/` or `/g`,
  *   as before, e.g. `$.a=replace:/x/path/ $.b=1/`, so other expressions may follow it only otherwise.
@@ -139,6 +139,11 @@ import { type Source } from './scriptlets';
  *   matches the items which have it. The root is searched once for an expression, also for a comparison
  *   with the tested node, e.g. `$.items[?@.id==$..limit]`, so a getter of the root is read once for all items,
  *   which differs from a read for each item only for a getter which returns another value on each read.
+ *   `+=` merges a value into the matched node as uBO does, in place: an array gets the value, or the items
+ *   of an array value, e.g. `$.list+=[{"id":2}]`, and an object gets the properties of an object value,
+ *   e.g. `$.config+={"ads":false}`, while nothing is changed if the node or the value is not an object or an array,
+ *   e.g. a text. `++=` is `+=` of previous versions, which puts a new merged array or object instead,
+ *   joins texts, e.g. `$.title++=!`, and replaces other values, so rules which rely on it should use `++=`.
  *   Values of JSONPath expressions may also be `repl({"regex":"...","flags":"...","replacement":"..."})`
  *   or `repl({"pattern":"...","replacement":"..."})`, which replace a part of a string value,
  *   and `call([object, method, ...arguments])`, which calls a method for each matched node,
@@ -250,6 +255,12 @@ import { type Source } from './scriptlets';
  * - `jsonq` — one JSONPath expression, which is not split by spaces, as uBO ignores them, e.g. `.a $.b` is one
  *   expression; an expression without its own value removes what it matches, e.g. `..ads`;
  *   a rule with an empty expression is not applied
+ * - a value after `=`, `+=` or `++=` is JSON, as in uBO, e.g. `="hidden"` is the text `hidden`, and the first
+ *   `${now}` in a text which `=` sets is replaced by the current time, e.g. `.ts="${now}"`, while `++=` appends it
+ *   as it is; a rule with a value which is not JSON, e.g. `=hidden` or `=emptyObj`, or with an invalid
+ *   `repl({...})` or `call([...])`, is not applied, which is logged, also without the keywords of the AdGuard
+ *   syntax, e.g. `$now$`;
+ *   `repl({...})`, `call([...])` and `$remove$` are read as in the AdGuard syntax
  * - options are pairs of a name and a value which follow `jsonq`:
  *     - `matches, pattern` — string or regular expression which the text passed to `JSON.parse` has to match
  * - other options and arguments are ignored, as in uBO, e.g. `stack`
