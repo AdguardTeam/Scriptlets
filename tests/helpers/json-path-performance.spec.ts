@@ -154,8 +154,8 @@ describe('JSONPath performance', () => {
     });
 
     test('filter of an array skips the primitive items which it cannot match', RETRY, () => {
-        // e.g. an array of ids with a few objects: about 0.1 to 0.2 of the time of a filter which tests each item,
-        // also on a busy machine, and 1.3 to 1.6 of it before, when each primitive item was tested as well
+        // e.g. an array of ids with a few objects: about 0.04 of the time of a filter which tests each item,
+        // and about 3 times of it on master, when each primitive item was tested as well
         const text = JSON.stringify({
             items: Array.from({ length: 60000 }, (_, i) => (i % 1000 === 0 ? { id: 'ad' } : i)),
         });
@@ -185,7 +185,8 @@ describe('JSONPath performance', () => {
     });
 
     test('removal of one item takes about the time of splice() of the array', RETRY, () => {
-        // e.g. with a record of each item which may be moved, it would be 100 times as long
+        // e.g. with a record of each item which may be moved, it was 100 times as long in an earlier version
+        // of this change, which was not released
         const SIZE = 100000;
         const pathTime = measure(
             () => ({ items: Array.from({ length: SIZE }, (_, i) => i) }),
@@ -209,8 +210,9 @@ describe('JSONPath performance', () => {
     });
 
     test('removal of items does not allocate memory for each item of the array', RETRY, () => {
-        // e.g. a record of each of 100,000 items which may be moved takes 10 to 14 MB,
-        // while `splice()` itself may copy the array of numbers, i.e. about 1 MB
+        // e.g. a record of each of 100,000 items which may be moved took 10 to 14 MB in an earlier version
+        // of this change, which was not released, while `splice()` itself may copy the array of numbers,
+        // i.e. about 1 MB
         const SIZE = 100000;
         const MAX_BYTES = 4e6;
         const prepare = () => ({ items: Array.from({ length: SIZE }, (_, i) => i) });
@@ -226,7 +228,7 @@ describe('JSONPath performance', () => {
         // The splitter is quadratic for arguments of thousands of tokens, which is accepted, see AGENTS.md,
         // but without remembering the end of each regular expression, which may be read up to the end
         // of the argument, e.g. of `[?.a=/f0 [?.a=/f1`, it would be cubic, i.e. 64 times as long for an argument
-        // 4 times as big, instead of 16, e.g. 1.5 s instead of 26 ms for 5 KB
+        // 4 times as big, instead of 16, e.g. 1.6 s instead of 30 ms for 5 KB
         const time = (n: number) => measure(
             () => `$.note=x ${Array.from({ length: n }, (_, i) => `[?.a=/f${i}`).join(' ')}`,
             (expression) => splitJsonPathQueries(expression),

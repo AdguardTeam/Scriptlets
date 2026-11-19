@@ -857,13 +857,13 @@ Project-specific rules:
     node, in a nested selector, e.g. `$.items[?@.offers[?$..disableAds]]`, and in a guard of an array root,
     which tests each item, and the result of a filter which tests only the root once as well, see `rootSelections`,
     which are reset for each expression, as a previous one may have changed the root. A search for each tested
-    node would be quadratic, e.g. about 12 s for 3,000 items on master. A value read once is the same as a value
-    read for each node, as matching is synchronous, so no other code of the page runs, and modifications are applied
-    after it, i.e. for parsed JSON, which has only own data properties, and for objects of the page, also with
-    a getter which returns the same value, or a new object with the same content. Only a getter or a Proxy which
-    returns another value on each read, e.g. a counter or `Date.now()`, is read once for an expression instead
-    of once for each tested node, as before, which is accepted, as no real object of a page is expected to do it.
-    Many values of the root compared by `==` with the tested node, e.g. `$.blockedIds[*]` of
+    node would be quadratic, e.g. about 1.8 s in Chrome for 3,000 items of `$.items[?@.id==$..limit]` on master.
+    A value read once is the same as a value read for each node, as matching is synchronous, so no other code
+    of the page runs, and modifications are applied after it, i.e. for parsed JSON, which has only own data properties,
+    and for objects of the page, also with a getter which returns the same value, or a new object with the same content.
+    Only a getter or a Proxy which returns another value on each read, e.g. a counter or `Date.now()`, is read once for
+    an expression instead of once for each tested node, as before, which is accepted, as no real object of a page is
+    expected to do it. Many values of the root compared by `==` with the tested node, e.g. `$.blockedIds[*]` of
     `$.items[?$.blockedIds[*]==@.id]`, SHOULD be looked up in a set built once for an expression, see `rootValueSets`,
     as comparing each of them for each node takes the time of both lists multiplied; a set matches the same values
     as `===`, except `NaN`, which is excluded.
@@ -938,7 +938,7 @@ Project-specific rules:
     of thousands of times. Each rule which intercepts it processes the calls which the other rules make while
     they process a value, e.g. of a filter of an array, so the number of calls doubles with each rule,
     while one rule with several queries processes each value once. A failed `JSON.parse()` throws an error,
-    which costs about 2 µs, while most strings passed to such a method are not JSON.
+    which costs about 1.5 µs, while most strings passed to such a method are not JSON.
 
 ### III. Testing discipline
 

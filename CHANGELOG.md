@@ -193,9 +193,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   in an expression, e.g. `.a .b` is `.a.b`. Rules of `trusted-json-set` which intercept the same method,
   e.g. `Array.isArray`, which the scriptlets call themselves, should be one rule with several expressions,
   as each rule processes the calls which the other rules make, so the time grows exponentially with the number
-  of rules for arrays, e.g. 4 rules of facebook.com take about 7 s for 850,000 calls of the page, and one rule 1.4 s,
-  while 4 rules took about 3 minutes before, and the method is not called for other values, if they have
-  no numeric `length`.
+  of rules for arrays, e.g. 4 rules of facebook.com take about 2.3 s in Chrome for 850,000 calls of the page,
+  and one rule about 0.2 s, while they took about 2.5 minutes and 15 s before, and the method is not called
+  for other values, if they have no numeric `length`.
 - `$remove$` as a value of a JSONPath expression of `trusted-json-set`, `trusted-json-set-fetch-response`
   and `trusted-json-set-xhr-response`, which removes the nodes the expression matches, as the same `argumentValue`
   does, so that one rule removes some properties and sets other ones, in any order,
@@ -210,12 +210,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   arguments, e.g. `example.org#%#//scriptlet('json-prune', '$..adSlots', '', '', '', 'matches', '"adSlots"')`,
   with a string or a regular expression which the JSON text has to match, i.e. the first argument of the call,
   e.g. the text passed to `JSON.parse`, so the value is searched only then, which takes a small part of the time
-  of searching it for other texts, e.g. about 1% for 275 KB of JSON. In `trusted-json-set`, the name of the option
-  may name another text, as `jsonSource` does, i.e. `'matches arg:N'`, `'matches this'` or `'matches result'`,
-  e.g. of `Response.prototype.text`, whose promise is tested on its fulfillment, while the value selected by
-  `jsonSource` is modified, e.g. the result of `JSON.parse`. A string with an escaped quote of JSON, i.e. `\"`,
-  has to be a regular expression, e.g. `/\\"ad\\"/`, as escapes of quotes are removed from a string, as of `stack`.
-  A text which is not a string, e.g. an object or a value of `Response.prototype.json`, is not matched,
+  of searching it for other texts, e.g. about 0.1 ms instead of about 2 ms for 275 KB of JSON in Chrome.
+  In `trusted-json-set`, the name of the option may name another text, as `jsonSource` does, i.e. `'matches arg:N'`,
+  `'matches this'` or `'matches result'`, e.g. of `Response.prototype.text`, whose promise is tested on its fulfillment,
+  while the value selected by `jsonSource` is modified, e.g. the result of `JSON.parse`. A string with an escaped quote
+  of JSON, i.e. `\"`, has to be a regular expression, e.g. `/\\"ad\\"/`, as escapes of quotes are removed from a string,
+  as of `stack`. A text which is not a string, e.g. an object or a value of `Response.prototype.json`, is not matched,
   so the call is not processed by a rule with it.
 - uBO rules of `trusted-json-edit`, `trusted-json-edit-fetch-response` and `trusted-json-edit-xhr-response` [#586],
   which AGTree converts to `ubo-trusted-json-edit` and its fetch and xhr variants, e.g.
@@ -253,21 +253,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   while it was the tested node before, which is `@`, e.g. `$.items[?@.flag]`, as it already was
   on the right side of a comparison, e.g. `$.items[?@.a==$.limit]`, which uBO does not support.
   No rule in the filter lists uses it. The root is searched once for an expression, also for a comparison
-  with the tested node and in a nested filter, e.g. `$.items[?@.id==$..limit]`, which took about 12 s
-  for 3,000 items before, as the root was searched again for each item, and takes a few milliseconds now.
+  with the tested node and in a nested filter, e.g. `$.items[?@.id==$..limit]`, which took about 1.8 s in Chrome
+  for 3,000 items before, as the root was searched again for each item, and takes about 5 ms now.
   So a getter of the root is read once for all items, while it was read for each item before, which differs
   only for a getter which returns another value on each read, e.g. a counter, as no other code runs while
   an expression is matched.
-- JSONPath expressions of `json-prune` and `trusted-json-set` scriptlets are evaluated about 2.5 times faster
+- JSONPath expressions of `json-prune` and `trusted-json-set` scriptlets are evaluated about 2 times faster
   in large JSON, e.g. with recursive filters like `$..[?@.id=="ad"]`, as the paths of nodes are not built,
   primitive values are skipped by recursive steps which cannot match them, e.g. `$..ads`, and the items of an array
   are removed in one pass, while a filter of the items of an array skips the primitive items which it cannot match,
-  e.g. `$.items[?@.id=="ad"]`, which is over 100 times faster for an array of numbers.
+  e.g. `$.items[?@.id=="ad"]`, which is about 3 to 8 times faster in Chrome for an array of 60,000 numbers
+  with a few objects.
   The expressions of a rule are parsed once, instead of for each processed value,
-  e.g. on each call of a method intercepted by `trusted-json-set`, which takes up to 40 times less time
-  for a small value then, e.g. 0.1 s instead of 3.5 s for 100,000 calls of `Array.isArray()` with a rule
-  of facebook.com, and a string without `{` and `[` passed to such a method is not parsed as JSON,
-  which made such a call about 60 times slower than without the rule, and about 2.5 times now.
+  e.g. on each call of a method intercepted by `trusted-json-set`, which takes about 50 times less time
+  for a small value then, e.g. about 55 ms instead of about 2.6 s in Chrome for 100,000 calls of `Array.isArray()`
+  with a rule of facebook.com, and a string without `{` and `[` passed to such a method is not parsed as JSON,
+  which made such a call hundreds of times slower than without the rule, and about 4 to 5 times now.
 - `trusted-suppress-native-method` with an invalid regular expression of `stack` is not applied, which is logged
   once, instead of on each call of the method, which is not suppressed either way.
 - `trusted-replace-node-text` writes the text of a node and calls `hit()` only if the text has changed,

@@ -1132,7 +1132,8 @@ export const jsonPath = (
     // Nodes which selectors of the root in filters select, e.g. `$..limit` of `$.items[?@.id==$..limit]`,
     // and results of the filters which test only the root, e.g. `[?$..disableAds]`, for the command which
     // is evaluated, also in nested selectors, e.g. `$.items[?@.offers[?$..disableAds]]`, so the root is searched
-    // once for a command, not again for each tested node, which would be quadratic, e.g. about 5 s for 3,000 items.
+    // once for a command, not again for each tested node, which would be quadratic, e.g. about 1.8 s in Chrome
+    // for 3,000 items of `$.items[?@.id==$..limit]`.
     // They are reset for each command, as a previous one may have changed the root, while nothing changes it while
     // a command is matched, as matching is synchronous, so no other code of the page runs, and modifications
     // are applied after it. So a value of the root which is read once is the same as one read for each node,
@@ -3431,9 +3432,9 @@ export const jsonPath = (
 
             // Many values of the root which are compared by `==` with the tested node, e.g. `$.blockedIds[*]`
             // of `$.items[?$.blockedIds[*]==@.id]`, are looked up in a set, which is built once for a command,
-            // as comparing each of them for each node takes the time of both lists multiplied, e.g. about 330 ms
-            // for 8,000 items and 8,000 values. A set finds the same values as `===`, also `-0` for `0`,
-            // and objects by their identity, except `NaN`, which `===` never matches
+            // as comparing each of them for each node takes the time of both lists multiplied, e.g. about 210 ms
+            // in Node for 8,000 items and 8,000 values, instead of about 17 ms by the set. A set finds the same values
+            // as `===`, also `-0` for `0`, and objects by their identity, except `NaN`, which `===` never matches
             if (
                 filter.operator === FILTER_OPERATORS.EQUAL
                 && filter.resolveSelectorAgainstRoot
