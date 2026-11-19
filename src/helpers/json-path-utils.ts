@@ -1103,6 +1103,7 @@ export const jsonPath = (
     const MUTATED_IN_PLACE = {};
     // Names of uBO rules whose values are JSON, as in uBO, i.e. of the uBO aliases of trusted scriptlets
     const UBO_JSON_EDIT_NAME_PREFIX = 'ubo-trusted-json-edit';
+    const UBO_EDIT_INBOUND_OBJECT_NAME_PREFIX = 'ubo-trusted-edit-inbound-object';
     // a placeholder of uBO in a text, not a template string
     // eslint-disable-next-line no-template-curly-in-string
     const NOW_PLACEHOLDER = '${now}';
@@ -2286,7 +2287,11 @@ export const jsonPath = (
     }
 
     // uBO rules, whose values are JSON, as in uBO, while AdGuard rules have text values and keywords, as before
-    const isUboDialect = typeof source.name === 'string' && source.name.startsWith(UBO_JSON_EDIT_NAME_PREFIX);
+    const isUboDialect = typeof source.name === 'string'
+        && (
+            source.name.startsWith(UBO_JSON_EDIT_NAME_PREFIX)
+            || source.name.startsWith(UBO_EDIT_INBOUND_OBJECT_NAME_PREFIX)
+        );
 
     /**
      * Checks whether a value is a payload of uBO syntax in its form, e.g. `repl({...})` or `call([...])`,

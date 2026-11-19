@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle, no-console */
+/* eslint-disable no-underscore-dangle, no-console, max-classes-per-file */
 import {
     runScriptlet,
     clearGlobalProps,
@@ -2120,4 +2120,608 @@ test('+= changes an object which the page holds in place, ++= puts a new one', (
     assert.deepEqual(otherConfig.settings, { theme: 'dark', ads: false }, 'but put a new merged one at its path');
 
     clearGlobalProps('__applyConfig');
+});
+
+// uBO `trusted-edit-inbound-object`, which edits a copy of an argument, so the object of the page is not changed
+test('ubo-trusted-edit-inbound-object edits a copy of the argument, which an object of the page shares', (assert) => {
+    // www.youtube.com##+js(trusted-edit-inbound-object, JSON.stringify, 0,
+    //     [?.attestationRequest][?.context.client.userAgent*="adunit"].context.client[?.clientName=="WEB"]+={…})
+    runScriptlet('ubo-trusted-edit-inbound-object', [
+        'JSON.stringify',
+        '0',
+        '[?.attestationRequest][?.context.client.userAgent*="adunit"].context.client[?.clientName=="WEB"]'
+            + '+={"clientScreen":"ADUNIT"}',
+    ]);
+    // one context of the session, which the page passes in each request
+    const context = { client: { clientName: 'WEB', userAgent: 'Mozilla/5.0; adunit' } };
+    const player = JSON.stringify({ context, videoId: 'v', attestationRequest: {} });
+    const next = JSON.stringify({ context, videoId: 'v' });
+
+    assert.strictEqual(
+        nativeParse(player).context.client.clientScreen,
+        'ADUNIT',
+        'the player request is sent with clientScreen',
+    );
+    assert.strictEqual(context.client.clientScreen, undefined, 'the context of the page is not changed');
+    assert.strictEqual(nativeParse(next).context.client.clientScreen, undefined, 'the next request is sent without it');
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('ubo-trusted-edit-inbound-object.js with Object.keys, which gets an emptied copy', (assert) => {
+    const nativeKeys = Object.keys;
+    try {
+        // dobreprogramy.pl##+js(trusted-edit-inbound-object, Object.keys, 0, [?.context.bidRequestId].*)
+        runScriptlet('ubo-trusted-edit-inbound-object.js', ['Object.keys', '0', '[?.context.bidRequestId].*']);
+        const bid = { context: { bidRequestId: 'r1' }, adUnits: [{ code: 'top' }], timeout: 1000 };
+        const other = { context: { auctionId: 'a' }, adUnits: [] };
+
+        assert.deepEqual(Object.keys(bid), [], 'keys of the bid request are hidden');
+        assert.deepEqual(nativeKeys(bid), ['context', 'adUnits', 'timeout'], 'the bid request itself is not emptied');
+        assert.strictEqual(
+            nativeStringify(bid),
+            '{"context":{"bidRequestId":"r1"},"adUnits":[{"code":"top"}],"timeout":1000}',
+            'nor its content',
+        );
+        assert.deepEqual(Object.keys(other), ['context', 'adUnits'], 'another object is not changed');
+    } finally {
+        Object.keys = nativeKeys;
+    }
+});
+
+test('ubo-trusted-edit-inbound-object passes the argument itself if the query does not match it', (assert) => {
+    let received;
+    window.sendPayload = (payload) => {
+        received = payload;
+    };
+    runScriptlet('ubo-trusted-edit-inbound-object', ['window.sendPayload', '0', '.ads']);
+    const payload = { items: [1] };
+    window.sendPayload(payload);
+    assert.strictEqual(received, payload, 'the same object, not a copy');
+    clearGlobalProps('sendPayload');
+});
+
+test('ubo-trusted-edit-inbound-object with a negative position edits the last arguments', (assert) => {
+    const received = [];
+    window.sendPayload = (...args) => {
+        received.push(...args);
+    };
+    runScriptlet('ubo-trusted-edit-inbound-object', ['window.sendPayload', '-1', '.ads']);
+    const first = { ads: 1, a: 1 };
+    const last = { ads: 2, b: 2 };
+    window.sendPayload(first, last);
+    assert.deepEqual(received, [{ ads: 1, a: 1 }, { b: 2 }], 'only the last argument is edited');
+    assert.deepEqual(last, { ads: 2, b: 2 }, 'the last argument of the page is not changed');
+    clearGlobalProps('sendPayload');
+});
+
+test('ubo-trusted-edit-inbound-object does not edit a string, nor a value which cannot be copied', (assert) => {
+    const received = [];
+    window.sendPayload = (payload) => {
+        received.push(payload);
+    };
+    runScriptlet('ubo-trusted-edit-inbound-object', ['window.sendPayload', '0', '.ads']);
+    const withFunction = { ads: 1, run() {} };
+    window.sendPayload('{"ads":1}');
+    window.sendPayload(withFunction);
+    assert.strictEqual(received[0], '{"ads":1}', 'a string is not parsed, as by uBO');
+    assert.strictEqual(received[1], withFunction, 'an object with a function cannot be copied, so it is passed as is');
+    assert.strictEqual(withFunction.ads, 1, 'and it is not edited');
+    clearGlobalProps('sendPayload');
+});
+
+test('ubo-trusted-edit-inbound-object is not applied with an invalid position or an empty query', (assert) => {
+    const logs = [];
+    console.log = (...args) => {
+        logs.push(args.join(' '));
+    };
+    window.sendPayload = (payload) => payload;
+    runScriptlet('ubo-trusted-edit-inbound-object', ['window.sendPayload', 'first', '.ads']);
+    runScriptlet('ubo-trusted-edit-inbound-object', ['window.sendPayload', '0', '']);
+    console.log = nativeConsole;
+    const payload = { ads: 1 };
+    assert.strictEqual(window.sendPayload(payload), payload, 'the method is not intercepted');
+    assert.ok(logs.some((log) => log.includes('Invalid position of the argument: first')), 'invalid position logged');
+    assert.ok(logs.some((log) => log.includes('Bad JSONPath query')), 'empty query logged');
+    clearGlobalProps('sendPayload');
+});
+
+// `copy` modifier of `jsonSource` in AdGuard syntax, for each source
+test('copy arg:0 edits a copy of the argument, and copy arg:-1 the last one', (assert) => {
+    const received = [];
+    window.sendPayload = (...args) => {
+        received.push(args);
+    };
+    runScriptlet(name, ['window.sendPayload', '$.ads', '$remove$', '', 'copy arg:0']);
+    const payload = { ads: 1, a: 1 };
+    window.sendPayload(payload);
+    assert.deepEqual(received[0], [{ a: 1 }], 'the method gets the edited copy');
+    assert.deepEqual(payload, { ads: 1, a: 1 }, 'the object of the page is not changed');
+
+    clearGlobalProps('sendPayload');
+    window.sendPayload = (...args) => {
+        received.push(args);
+    };
+    runScriptlet(name, ['window.sendPayload', '$.ads', '$remove$', '', 'copy arg:-1']);
+    const last = { ads: 2 };
+    window.sendPayload({ ads: 1 }, last);
+    assert.deepEqual(received[1], [{ ads: 1 }, {}], 'only the last argument is edited');
+    assert.deepEqual(last, { ads: 2 }, 'the last argument of the page is not changed');
+    clearGlobalProps('sendPayload');
+});
+
+test('copy result edits a copy of the result, e.g. of a cached object of the page', (assert) => {
+    const cached = { ads: { enabled: true } };
+    window.getConfig = () => cached;
+    runScriptlet(name, ['window.getConfig', 'ads.enabled', 'false', '', 'copy result']);
+    assert.deepEqual(window.getConfig(), { ads: { enabled: false } }, 'the result is edited, also in legacy mode');
+    assert.deepEqual(cached, { ads: { enabled: true } }, 'the cached object is not changed');
+    clearGlobalProps('getConfig');
+});
+
+test('copy alone edits a copy of the result', (assert) => {
+    const cached = { ads: 1 };
+    window.getConfig = () => cached;
+    runScriptlet(name, ['window.getConfig', '$.ads', '$remove$', '', 'copy']);
+    assert.deepEqual(window.getConfig(), {}, 'the result is edited');
+    assert.deepEqual(cached, { ads: 1 }, 'the cached object is not changed');
+    clearGlobalProps('getConfig');
+});
+
+test('copy this calls the method on an edited copy of this', (assert) => {
+    const nativeFind = Array.prototype.find;
+    try {
+        runScriptlet(name, ['Array.prototype.find', '$[?(@.ad)]', '$remove$', '', 'copy this']);
+        const items = [{ id: 1, ad: true }, { id: 2 }];
+        assert.deepEqual(items.find(() => true), { id: 2 }, 'the method runs on the copy without the ad');
+        assert.deepEqual(items, [{ id: 1, ad: true }, { id: 2 }], 'the array of the page is not changed');
+
+        // `this` with a method cannot be copied, so the method runs on it as it is, which is not edited
+        const withMethod = [{ id: 1, ad: true }];
+        withMethod.extra = () => {};
+        assert.deepEqual(withMethod.find(() => true), { id: 1, ad: true }, 'a value which cannot be copied');
+    } finally {
+        // eslint-disable-next-line no-extend-native
+        Array.prototype.find = nativeFind;
+    }
+});
+
+test('copy args edits a copy of each argument, and an argument is processed once for arg:0|-1', (assert) => {
+    const received = [];
+    window.sendPayload = (...args) => {
+        received.push(args);
+    };
+    runScriptlet(name, ['window.sendPayload', '$.n', '$remove$', '', 'copy args']);
+    const first = { n: 1, a: 1 };
+    const second = { n: 2 };
+    window.sendPayload(first, second);
+    assert.deepEqual(received[0], [{ a: 1 }, {}], 'each argument is edited');
+    assert.deepEqual([first, second], [{ n: 1, a: 1 }, { n: 2 }], 'the objects of the page are not changed');
+    clearGlobalProps('sendPayload');
+
+    let count = 0;
+    window.sendPayload = (payload) => payload;
+    window.__debug = () => {
+        count += 1;
+    };
+    runScriptlet(name, ['window.sendPayload', '$.items[*]', '$remove$', '', 'arg:0|-1']);
+    const payload = { items: [1] };
+    window.sendPayload(payload);
+    assert.strictEqual(count, 1, 'one argument is processed once');
+    clearGlobalProps('sendPayload');
+});
+
+test('copy copies a value only if a query matches it, e.g. not on each call of JSON.stringify', (assert) => {
+    const nativeStructuredClone = window.structuredClone;
+    let copies = 0;
+    // a plain wrapper, saved by the scriptlet when it runs
+    window.structuredClone = function structuredClone(...args) {
+        copies += 1;
+        return Reflect.apply(nativeStructuredClone, window, args);
+    };
+    try {
+        runScriptlet('ubo-trusted-edit-inbound-object', [
+            'JSON.stringify',
+            '0',
+            '[?.attestationRequest]+={"params":"x"}',
+        ]);
+        for (let i = 0; i < 10; i += 1) {
+            JSON.stringify({ context: {}, videoId: i });
+        }
+        assert.strictEqual(copies, 0, 'values which the query does not match are not copied');
+        const matched = { attestationRequest: {} };
+        assert.strictEqual(
+            JSON.stringify(matched),
+            '{"attestationRequest":{},"params":"x"}',
+            'the text of a matched value is changed',
+        );
+        assert.strictEqual(copies, 1, 'a matched value is copied once');
+        assert.strictEqual(nativeStringify(matched), '{"attestationRequest":{}}', 'the matched object is not changed');
+    } finally {
+        window.structuredClone = nativeStructuredClone;
+    }
+});
+
+test('copy arg:0 of the JSDoc example sets a property only in the text of a matching request', (assert) => {
+    runScriptlet(name, [
+        'JSON.stringify',
+        '[?(@.attestationRequest)]$.context+=json:{"screen":"ADUNIT"}',
+        '',
+        '',
+        'copy arg:0',
+    ]);
+    const request = { context: { client: 'WEB' }, attestationRequest: {} };
+    assert.strictEqual(
+        JSON.stringify(request),
+        '{"context":{"client":"WEB","screen":"ADUNIT"},"attestationRequest":{}}',
+        'the text of the request has the property',
+    );
+    assert.notOk('screen' in request.context, 'the object of the page is not changed');
+    const next = { context: request.context };
+    assert.strictEqual(JSON.stringify(next), '{"context":{"client":"WEB"}}', 'the next request does not have it');
+});
+
+test('copy all edits copies of the arguments, this and the result, and none of the objects of the page', (assert) => {
+    const config = { ads: { enabled: true }, id: 'config' };
+    const payload = { ads: { enabled: true }, id: 'payload' };
+    const result = { ads: { enabled: true }, id: 'result' };
+    let receivedThis;
+    let receivedPayload;
+    window.api = config;
+    config.send = function send(value) {
+        receivedThis = this;
+        receivedPayload = value;
+        return result;
+    };
+    // `this` with a method cannot be copied, so the method is called on an object without it
+    const target = { ads: { enabled: true }, id: 'this' };
+    runScriptlet(name, ['window.api.send', '$.ads.enabled', 'false', '', 'copy all']);
+    const returned = window.api.send.call(target, payload);
+
+    assert.notStrictEqual(receivedPayload, payload, 'the method gets a copy of the argument');
+    assert.strictEqual(nativeStringify(receivedPayload), '{"ads":{"enabled":false},"id":"payload"}', 'which is edited');
+    assert.notStrictEqual(receivedThis, target, 'the method is called on a copy of this');
+    assert.strictEqual(nativeStringify(receivedThis), '{"ads":{"enabled":false},"id":"this"}', 'which is edited');
+    assert.notStrictEqual(returned, result, 'the page gets a copy of the result');
+    assert.strictEqual(nativeStringify(returned), '{"ads":{"enabled":false},"id":"result"}', 'which is edited');
+
+    assert.strictEqual(nativeStringify(payload), '{"ads":{"enabled":true},"id":"payload"}', 'argument not changed');
+    assert.strictEqual(nativeStringify(target), '{"ads":{"enabled":true},"id":"this"}', 'this is not changed');
+    assert.strictEqual(nativeStringify(result), '{"ads":{"enabled":true},"id":"result"}', 'result is not changed');
+    clearGlobalProps('api');
+});
+
+test('copy result edits a copy of the value of a native promise, not the cached object', async (assert) => {
+    const cached = { ads: { enabled: true }, items: [{ ad: true }, { ad: false }] };
+    window.loadConfig = () => Promise.resolve(cached);
+    runScriptlet(name, ['window.loadConfig', '$.ads.enabled', 'false', '', 'copy result']);
+    const first = await window.loadConfig();
+
+    assert.notStrictEqual(first, cached, 'the page gets a copy');
+    assert.strictEqual(first.ads.enabled, false, 'which is edited');
+    assert.deepEqual(first.items, [{ ad: true }, { ad: false }], 'with the rest of the content');
+    assert.notStrictEqual(first.items, cached.items, 'which does not share nested objects with the cached one');
+    assert.strictEqual(
+        nativeStringify(cached),
+        '{"ads":{"enabled":true},"items":[{"ad":true},{"ad":false}]}',
+        'the cached object is not changed',
+    );
+    const second = await window.loadConfig();
+    assert.notStrictEqual(second, first, 'each call gets its own copy');
+    assert.strictEqual(second.ads.enabled, false, 'which is edited as well');
+    clearGlobalProps('loadConfig');
+});
+
+test('copy returns the object itself if the expression matches it but changes nothing', (assert) => {
+    const cached = { ads: { enabled: false } };
+    window.getConfig = () => cached;
+    // `+=` of a value which is not an object or an array merges nothing
+    runScriptlet(name, ['window.getConfig', '$.ads+=json:5', '', '', 'copy result']);
+    assert.strictEqual(window.getConfig(), cached, 'the same object, not an unchanged copy');
+    assert.strictEqual(nativeStringify(cached), '{"ads":{"enabled":false}}', 'which is not changed');
+    clearGlobalProps('getConfig');
+});
+
+test('arg:N of a uBO rule is read without RegExp.prototype.test, which another rule may make throw', (assert) => {
+    const restoreRegexpTest = useThrowingMethod(RegExp.prototype, 'test');
+    try {
+        // www.youtube.com##+js(trusted-edit-inbound-object, JSON.stringify, 0, …), whose position is read as `arg:0`
+        runScriptlet('ubo-trusted-edit-inbound-object', [
+            'JSON.stringify',
+            '0',
+            '[?.attestationRequest]+={"params":"x"}',
+        ]);
+    } finally {
+        restoreRegexpTest();
+    }
+    assert.strictEqual(
+        JSON.stringify({ attestationRequest: {} }),
+        '{"attestationRequest":{},"params":"x"}',
+        'the uBO rule is applied',
+    );
+});
+
+test('a value of jsonSource which is not arg: followed by indexes is read as result', (assert) => {
+    const invalidSources = ['arg:', 'arg:1|', 'arg:|1', 'arg:-', 'arg:1-2', 'arg:--1', 'arg:1a', 'arg: 1'];
+    for (let i = 0; i < invalidSources.length; i += 1) {
+        const payload = { ads: 1 };
+        const methodName = `__send${i}`;
+        // the result is a new object, so an argument which is processed changes the payload of the page
+        window[methodName] = (value) => ({ ads: value.ads });
+        runScriptlet(name, [`window.${methodName}`, '$.ads', '$remove$', '', invalidSources[i]]);
+        const result = window[methodName](payload);
+        assert.strictEqual(
+            nativeStringify([payload, result]),
+            '[{"ads":1},{}]',
+            `${invalidSources[i]} processes the result, not the argument`,
+        );
+        clearGlobalProps(methodName);
+    }
+});
+
+test('copy gives an equal copy if the expression writes a value which the object already has', (assert) => {
+    window.sendPayload = (payload) => payload;
+    runScriptlet(name, ['window.sendPayload', '$.enabled', 'false', '', 'copy arg:0']);
+    const payload = { enabled: false };
+    const received = window.sendPayload(payload);
+    assert.notStrictEqual(received, payload, 'the expression has written to the copy, so the method gets it');
+    assert.strictEqual(nativeStringify(received), '{"enabled":false}', 'which is equal to the object of the page');
+    clearGlobalProps('sendPayload');
+});
+
+test('copy in legacy mode copies only a value which has requiredInitialProps', (assert) => {
+    const nativeStructuredClone = window.structuredClone;
+    let copies = 0;
+    window.structuredClone = function structuredClone(...args) {
+        copies += 1;
+        return Reflect.apply(nativeStructuredClone, window, args);
+    };
+    try {
+        window.sendPayload = (payload) => payload;
+        runScriptlet(name, ['window.sendPayload', 'ads.enabled', 'false', 'player.config', 'copy arg:0']);
+        let reads = 0;
+        const other = { items: [] };
+        Object.defineProperty(other, 'lazy', {
+            enumerable: true,
+            get() {
+                reads += 1;
+                return 1;
+            },
+        });
+        // the values are read right after the call, as QUnit serializes the objects which an assertion gets
+        const isSame = window.sendPayload(other) === other;
+        const readsOfCall = reads;
+        assert.ok(isSame, 'a value without player.config is passed as it is');
+        assert.strictEqual(copies, 0, 'and it is not copied');
+        assert.strictEqual(readsOfCall, 0, 'so its getters are not read');
+
+        const payload = { player: { config: {} }, ads: { enabled: true } };
+        const received = window.sendPayload(payload);
+        assert.strictEqual(copies, 1, 'a value with player.config is copied');
+        assert.strictEqual(nativeStringify(received.ads), '{"enabled":false}', 'and the copy is edited');
+        assert.strictEqual(payload.ads.enabled, true, 'while the object of the page is not');
+    } finally {
+        window.structuredClone = nativeStructuredClone;
+        clearGlobalProps('sendPayload');
+    }
+});
+
+// Calls of a constructor, by the `construct` trap
+test('ubo-trusted-edit-inbound-object edits a copy of an argument of a constructor, e.g. of CustomEvent', (assert) => {
+    const NativeCustomEvent = window.CustomEvent;
+    try {
+        runScriptlet('ubo-trusted-edit-inbound-object', ['CustomEvent', '1', '.detail.ad']);
+        const options = { detail: { ad: 1, id: 2 } };
+        const event = new CustomEvent('x', options);
+        assert.ok(event instanceof NativeCustomEvent, 'the event is constructed by the native constructor');
+        assert.strictEqual(nativeStringify(event.detail), '{"id":2}', 'its detail is edited');
+        assert.strictEqual(nativeStringify(options), '{"detail":{"ad":1,"id":2}}', 'the options are not changed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    } finally {
+        window.CustomEvent = NativeCustomEvent;
+    }
+});
+
+test('a constructor of the page: arguments, result, and calls of it as a function', (assert) => {
+    window.Widget = function Widget(name, config) {
+        this.name = name;
+        this.config = config;
+        return undefined;
+    };
+    runScriptlet(name, ['window.Widget', '$.ads', '$remove$', '', 'arg:1']);
+    const config = { ads: 1, size: 2 };
+    const widget = new window.Widget('w', config);
+    assert.ok(widget instanceof window.Widget, 'an instance of the constructor');
+    assert.strictEqual(nativeStringify(widget.config), '{"size":2}', 'the argument is edited');
+
+    const holder = {};
+    window.Widget.call(holder, 'w', { ads: 1 });
+    assert.strictEqual(nativeStringify(holder.config), '{}', 'a call as a function is processed, as before');
+    clearGlobalProps('Widget');
+
+    window.Widget = function Widget(name) {
+        this.name = name;
+        this.ads = true;
+    };
+    runScriptlet(name, ['window.Widget', '$.ads', 'false', '', 'result']);
+    const result = new window.Widget('w');
+    assert.ok(result instanceof window.Widget, 'the constructed object is returned');
+    assert.strictEqual(result.ads, false, 'and edited');
+    clearGlobalProps('Widget');
+});
+
+test('a subclass of an intercepted class is constructed as without the rule', (assert) => {
+    let newTargetName = '';
+    window.Base = function Base(config) {
+        newTargetName = new.target.name;
+        this.config = config;
+    };
+    runScriptlet(name, ['window.Base', '$.ads', '$remove$', '', 'arg:0']);
+    class Sub extends window.Base {
+        kind() {
+            return `sub of ${this.config.size}`;
+        }
+    }
+    const sub = new Sub({ ads: 1, size: 2 });
+    assert.ok(sub instanceof Sub, 'an instance of the subclass');
+    assert.ok(sub instanceof window.Base, 'and of the class');
+    assert.strictEqual(newTargetName, 'Sub', 'new.target is the subclass');
+    assert.strictEqual(sub.kind(), 'sub of 2', 'with the methods of the subclass');
+    assert.strictEqual(nativeStringify(sub.config), '{"size":2}', 'the argument is edited');
+    clearGlobalProps('Base');
+});
+
+test('this and matches this select nothing for a constructor, and all its arguments and result', (assert) => {
+    window.Widget = function Widget(config) {
+        this.config = config;
+        this.ads = true;
+    };
+    runScriptlet(name, ['window.Widget', '$.ads', '$remove$', '', 'this']);
+    const first = new window.Widget({ ads: 1 });
+    assert.strictEqual(nativeStringify(first), '{"config":{"ads":1},"ads":true}', 'this selects nothing');
+    clearGlobalProps('Widget');
+
+    window.Widget = function Widget(config) {
+        this.config = config;
+        this.ads = true;
+    };
+    runScriptlet(name, ['window.Widget', '$..ads', '$remove$', '', 'all', '', '', '', 'matches this', 'ads']);
+    const second = new window.Widget({ ads: 1 });
+    assert.strictEqual(nativeStringify(second), '{"config":{"ads":1},"ads":true}', 'matches this does not match');
+    clearGlobalProps('Widget');
+
+    window.Widget = function Widget(config) {
+        this.config = config;
+        this.ads = true;
+    };
+    runScriptlet(name, ['window.Widget', '$..ads', '$remove$', '', 'all']);
+    const third = new window.Widget({ ads: 1 });
+    assert.strictEqual(nativeStringify(third), '{"config":{}}', 'all selects the arguments and the result');
+    clearGlobalProps('Widget');
+});
+
+test('a constructor returns the constructed object if its replacement is not an object', (assert) => {
+    window.Widget = function Widget() {
+        this.ads = true;
+    };
+    runScriptlet(name, ['window.Widget', '$', 'false', '', 'result', '', 'jsonpath']);
+    let widget;
+    try {
+        widget = new window.Widget();
+    } catch (error) {
+        widget = error;
+    }
+    assert.ok(widget instanceof window.Widget, 'new does not throw, and returns the constructed object');
+    clearGlobalProps('Widget');
+});
+
+test('stack is matched for a call of a constructor', (assert) => {
+    window.Widget = function Widget(config) {
+        this.config = config;
+    };
+    runScriptlet(name, ['window.Widget', '$.ads', '$remove$', '', 'arg:0', 'createAdWidget']);
+    function createAdWidget() {
+        return new window.Widget({ ads: 1 });
+    }
+    function createOtherWidget() {
+        return new window.Widget({ ads: 1 });
+    }
+    assert.strictEqual(nativeStringify(createAdWidget().config), '{}', 'a call from the matching function');
+    assert.strictEqual(nativeStringify(createOtherWidget().config), '{"ads":1}', 'not a call from another one');
+    clearGlobalProps('Widget');
+});
+
+test('new of a method which is not a constructor throws as without the rule', (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads', '$remove$']);
+    // eslint-disable-next-line new-cap
+    assert.throws(() => new JSON.parse('{}'), TypeError, 'JSON.parse is not a constructor');
+    assert.strictEqual(nativeStringify(JSON.parse('{"ads":1,"a":2}')), '{"a":2}', 'its calls are processed');
+});
+
+test('copy result of a constructor returns a plain object, as documented', (assert) => {
+    window.Widget = function Widget() {
+        this.ads = true;
+    };
+    window.Widget.prototype.kind = () => 'widget';
+    runScriptlet(name, ['window.Widget', '$.ads', 'false', '', 'copy result']);
+    const widget = new window.Widget();
+    assert.strictEqual(nativeStringify(widget), '{"ads":false}', 'the copy is edited');
+    assert.notOk(widget instanceof window.Widget, 'but it is a plain object, without the prototype');
+    clearGlobalProps('Widget');
+});
+
+test('an argument which two indexes select is processed once, e.g. by ++= of arg:0|-1', (assert) => {
+    window.sendPayload = (...args) => args;
+    runScriptlet(name, ['window.sendPayload', '$.title++=!', '', '', 'arg:0|-1']);
+    assert.strictEqual(
+        nativeStringify(window.sendPayload({ title: 'a' })),
+        '[{"title":"a!"}]',
+        'one argument is appended to once',
+    );
+    assert.strictEqual(
+        nativeStringify(window.sendPayload({ title: 'a' }, { title: 'b' })),
+        '[{"title":"a!"},{"title":"b!"}]',
+        'two arguments are appended to once each',
+    );
+    clearGlobalProps('sendPayload');
+});
+
+test('a constructed promise is returned itself, also of a subclass, and its value is not processed', async (assert) => {
+    // a promise class of the page, so `Promise` of QUnit is not intercepted
+    window.BasePromise = class BasePromise extends Promise {};
+    runScriptlet(name, ['window.BasePromise', '$.ads', '$remove$', '', 'result']);
+    let constructions = 0;
+    class Task extends window.BasePromise {
+        static get [Symbol.species]() {
+            return Promise;
+        }
+
+        constructor(executor) {
+            super(executor);
+            constructions += 1;
+        }
+
+        cancel() {
+            return `cancelled ${this instanceof Task} ${constructions}`;
+        }
+    }
+    const task = new Task((resolve) => resolve({ ads: 1 }));
+    assert.ok(task instanceof Task, 'the page gets the constructed instance of the subclass');
+    assert.strictEqual(task.cancel(), 'cancelled true 1', 'with its methods, constructed once');
+
+    const order = [];
+    const promise = new window.BasePromise((resolve) => resolve({ ads: 1 }));
+    assert.ok(promise instanceof window.BasePromise, 'the page gets the constructed promise');
+    const value = promise.then((fulfilledValue) => {
+        order.push('then');
+        return fulfilledValue;
+    });
+    queueMicrotask(() => order.push('microtask'));
+    assert.strictEqual(nativeStringify(await value), '{"ads":1}', 'its value is not processed');
+    assert.strictEqual(order.join(','), 'then,microtask', 'and its callbacks run as without the rule');
+    clearGlobalProps('BasePromise');
+});
+
+test('a stack trace of a rule has no extra frame of another rule which the call has passed', (assert) => {
+    // 17yoo.cn#%#//scriptlet('trusted-json-set', 'Object.prototype.hasOwnProperty', '$.adData.*', '$remove$', '',
+    //     'this', 'setState'), with another rule on a helper which the page calls between them
+    const nativeStackTraceLimit = Error.stackTraceLimit;
+    // eslint-disable-next-line no-prototype-builtins
+    window.helper = (value) => value.hasOwnProperty('x');
+    runScriptlet(name, ['window.helper', '$.x', '1', '', 'arg:0']);
+    runScriptlet(name, ['Object.prototype.hasOwnProperty', '$.adData.*', '$remove$', '', 'this', 'setState']);
+    const target = { adData: { slot: 1 } };
+    function setState() {
+        return window.helper(target);
+    }
+    try {
+        // Only the frames up to `setState`: the trap of the hook of `hasOwnProperty`, `helper`, the trap of the rule
+        // of `helper` and `setState`, as in a call near the limit of 10 frames of Chromium
+        Error.stackTraceLimit = 4;
+        setState();
+    } finally {
+        // `Object.prototype.hasOwnProperty` is restored by `afterEach()`
+        Error.stackTraceLimit = nativeStackTraceLimit;
+        clearGlobalProps('helper');
+    }
+    assert.strictEqual(nativeStringify(target), '{"adData":{}}', 'setState is in the stack trace of the rule');
 });

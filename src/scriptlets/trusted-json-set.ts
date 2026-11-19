@@ -200,12 +200,30 @@ import { type Source } from './scriptlets';
  * - `jsonSource` — optional, where to read and modify the JSON value from. Defaults to `result`.
  *   Supported values:
  *     - `arg` — only the first argument
- *     - `arg:N` — only argument `N` using 0-based indexing, e.g. `arg:1`
- *     - `arg:N|M|K` — only the listed arguments using 0-based indexing, e.g. `arg:0|1|3`
+ *     - `arg:N` — only argument `N` using 0-based indexing, e.g. `arg:1`, or counted from the last one
+ *       if it is negative, e.g. `arg:-1` for the last argument of each call
+ *     - `arg:N|M|K` — only the listed arguments using 0-based indexing, e.g. `arg:0|1|3`;
+ *       an argument which two indexes select, e.g. `arg:0|-1` of a call with one argument, is processed once
  *     - `args` — all arguments
  *     - `this` — `thisArg` of the intercepted method
  *     - `result` — only the return value
  *     - `all` — all arguments, `thisArg`, and the return value
+ *
+ *   Any of these values may be preceded by `copy` and a space, e.g. `copy arg:0`, and `copy` alone is `copy result`.
+ *   A copy of the selected object or array is modified then, and passed or returned instead of it if the expression
+ *   has written to it, also a value which it already has, e.g. `false` to a property which is `false`, so the object
+ *   of the page is left as it is, e.g. one which the page passes to `JSON.stringify` in each request, which should be
+ *   changed only in the text of one request. The copy is made by `structuredClone()` only for a value which the
+ *   expression may change, so other values are not copied: in `JSONPath` mode if the expression matches it, and in
+ *   legacy mode if it has `requiredInitialProps`, as a missing path is set. The expression is matched against the value
+ *   of the page before it is copied, so a getter of the value is read by both, and a getter which returns another value
+ *   on each read may give the copy another value than the matched one. A value which cannot be copied, e.g. an object
+ *   with a function, or any value in a browser without `structuredClone()`, is not modified, which is logged.
+ *   An instance of a class is copied as a plain object, as by uBO, without its prototype and private fields, also
+ *   if it is in another object, so `copy` is meant for plain data, e.g. a request body: the method of a class with
+ *   `copy this`, or a method which gets such a copy, may throw, e.g. on `this.#id`, or miss a method of the class,
+ *   `JSON.stringify()` does not call `toJSON()` of the class for the copy, so it serializes all own properties,
+ *   and `copy result` of a constructor returns a plain object instead of the constructed one.
  * - `stack` — optional, string or regular expression that must match the current function call stack trace;
  *   if a regular expression is invalid it will be skipped.
  *   It is matched when the method is called, also if the value of a returned `Promise` is modified later.
@@ -240,6 +258,21 @@ import { type Source } from './scriptlets';
  * > the value at the target path even if it does not exist, unless the path includes wildcards (`*`),
  * > array element index (`[]`), or value filters (`.[=].value`).
  *
+ * A call of the method as a constructor is processed as well, e.g. `new CustomEvent('ad', options)` with `arg:1`,
+ * also of a subclass of it, e.g. `class Ad extends CustomEvent {}`, which is constructed as without the rule.
+ * It has no `this` before it, so `this` and `'matches this'` select nothing for it, and `all` selects
+ * the arguments and the result, i.e. the constructed object, which is replaced only by an object, e.g. not by
+ * `false` of `$`, as a constructor has to return one. The constructed object itself is the result, also
+ * a promise, e.g. of `new Promise()` or of its subclass, whose value is not processed, unlike the value of
+ * a promise which a method returns, so the page gets the constructed promise, with the methods of its class.
+ *
+ * > [!NOTE]
+ * > A call of the method which the method itself causes is not processed, e.g. `JSON.parse()` in a reviver
+ * > or `JSON.stringify()` in `toJSON()` of a serialized object, while uBO processes it. The value which
+ * > such a call returns is a part of the value of the outer call though, e.g. of its result, so `$..ads` removes `ads`
+ * > from an object which a reviver returns, while `$.ads` does not, and neither does any query of a text, e.g. which
+ * > `JSON.stringify()` in `toJSON()` returns.
+ *
  * ### uBO syntax
  *
  * uBO rules of `trusted-json-edit` are supported with uBO arguments,
@@ -272,6 +305,24 @@ import { type Source } from './scriptlets';
  * - options are pairs of a name and a value which follow `jsonq`:
  *     - `matches, pattern` — string or regular expression which the text passed to `JSON.parse` has to match
  * - other options and arguments are ignored, as in uBO, e.g. `stack`
+ *
+ * uBO rules of `trusted-edit-inbound-object` are supported with uBO arguments as well,
+ * e.g. `example.org##+js(trusted-edit-inbound-object, JSON.stringify, 0, [?.attestationRequest]+={"params":"x"})`:
+ *
+ * ```text
+ * example.org##+js(trusted-edit-inbound-object, propChain, argPos, jsonq)
+ * ```
+ *
+ * - `propChain` — path of the intercepted method, as `methodPath`, e.g. `JSON.stringify`
+ * - `argPos` — 0-based index of the argument to modify, or counted from the last one if it is negative, e.g. `-1`;
+ *   a rule with another value, e.g. `a`, is not applied, which is logged
+ * - `jsonq` — one JSONPath expression, read as `jsonq` of `trusted-json-edit` above; a rule with an empty one
+ *   is not applied, which is logged
+ *
+ * They modify a copy of the argument if it is an object or an array, as uBO does, i.e. as `jsonSource`
+ * `copy arg:N` of the AdGuard syntax, so the method gets the copy only if the expression has written to it,
+ * and the object of the page is left as it is. As in uBO, an instance of a class is copied as a plain object,
+ * see `copy` above.
  *
  * ### Examples
  *
@@ -671,6 +722,29 @@ import { type Source } from './scriptlets';
  *     example.org#%#//scriptlet('trusted-json-set', 'window.sendPayload', '$.ads.enabled', 'false', '', 'arg:0|2')
  *     ```
  *
+ * 1. Sets `screen` only in the text of a request which `JSON.stringify` serializes, if it has `attestationRequest`,
+ *    and not in the object which the page passes to it, which is modified as a copy
+ *
+ *     ```adblock
+ *     example.org#%#//scriptlet('trusted-json-set', 'JSON.stringify', '[?(@.attestationRequest)]$.context+=json:{"screen":"ADUNIT"}', '', '', 'copy arg:0')
+ *     ```
+ *
+ *     For instance, the following call:
+ *
+ *     ```js
+ *     const request = { context: { client: 'WEB' }, attestationRequest: {} };
+ *     JSON.stringify(request);
+ *     ```
+ *
+ *     Output:
+ *
+ *     ```js
+ *     '{"context":{"client":"WEB","screen":"ADUNIT"},"attestationRequest":{}}'
+ *     ```
+ *
+ *     while `request.context` has no `screen`, so a request which the page sends with the same context later,
+ *     e.g. without `attestationRequest`, does not have it either.
+ *
  * 1. Only applies when the call originates from a script matching the `adManager` stack trace
  *
  *     ```adblock
@@ -740,7 +814,10 @@ export function trustedJsonSet(
 ) {
     // !IMPORTANT: Do not move constants outside of this function
     const UBO_JSON_EDIT_NAME_PREFIX = 'ubo-trusted-json-edit';
+    const UBO_EDIT_INBOUND_OBJECT_NAME_PREFIX = 'ubo-trusted-edit-inbound-object';
     const REMOVE_VALUE = '$remove$';
+    // Modifier of `jsonSource`, e.g. `copy arg:0`, by which a copy of the value is modified and used instead of it
+    const COPY_MODIFIER = 'copy';
 
     // Rules with uBO names of `trusted-json-edit` have uBO arguments, i.e. a query followed by named options,
     // of which `matches` is supported, which are read into the positional arguments of AdGuard syntax,
@@ -749,8 +826,47 @@ export function trustedJsonSet(
     // Other arguments are not read by their position then, e.g. `stack`, and `jsonSource` has no default value
     // in the signature, as it would be read as a value of an option otherwise
     const isUboJsonEdit = typeof source.name === 'string' && source.name.startsWith(UBO_JSON_EDIT_NAME_PREFIX);
+    // Rules with uBO names of `trusted-edit-inbound-object` have its uBO arguments, i.e. the method, the position
+    // of its argument and a query, e.g. `JSON.stringify, 0, [?.ads].params="x"`, which are read into the positional
+    // arguments as well: a copy of the argument at the position is modified, as uBO does, see `copy`, so the object
+    // of the page is not changed, and a negative position counts from the end, e.g. `-1` is the last argument
+    const isUboEditInboundObject = typeof source.name === 'string'
+        && source.name.startsWith(UBO_EDIT_INBOUND_OBJECT_NAME_PREFIX);
+    // Both have the uBO meaning of their queries and values, e.g. a value is JSON, and modify only objects
+    const isUboDialect = isUboJsonEdit || isUboEditInboundObject;
     let textMatch: JsonTextMatch;
-    if (isUboJsonEdit) {
+    if (isUboEditInboundObject) {
+        // The converters escape each `'` of a uBO argument, see `unescapeUboArgument()`
+        const propChain = unescapeUboArgument(methodPath);
+        const argPos = unescapeUboArgument(propsPath);
+        const jsonq = unescapeUboArgument(argumentValue);
+        if (typeof propChain !== 'string' || typeof argPos !== 'string' || typeof jsonq !== 'string') {
+            return;
+        }
+        // uBO does not apply a rule without the method or with a position which is not an integer,
+        // and logs a rule with an empty query, which is invalid
+        if (!propChain) {
+            return;
+        }
+        if (jsonq === '') {
+            logMessage(source, 'Bad JSONPath query');
+            return;
+        }
+        const position = argPos.trim();
+        if (!isDigits(position.startsWith('-') ? position.slice(1) : position)) {
+            logMessage(source, `Invalid position of the argument: ${argPos}`);
+            return;
+        }
+        textMatch = getUboJsonTextMatch('');
+        methodPath = propChain;
+        propsPath = jsonq;
+        argumentValue = REMOVE_VALUE;
+        requiredInitialProps = '';
+        jsonSource = `${COPY_MODIFIER} arg:${position}`;
+        stack = '';
+        mode = 'jsonpath';
+        verbose = '';
+    } else if (isUboJsonEdit) {
         const uboArguments = getUboJsonEditArguments([
             methodPath,
             propsPath,
@@ -778,7 +894,14 @@ export function trustedJsonSet(
     } else {
         textMatch = getAdgJsonTextMatch(extraArgs, true);
     }
-    const jsonSourceValue = typeof jsonSource === 'string' ? jsonSource : 'result';
+    // `copy` before a source, e.g. `copy arg:0`, `copy this` or `copy result`, or alone for the result,
+    // modifies a copy of the value, which is used instead of it, e.g. passed to the method, so the object
+    // of the page is not changed, see `copyValue()`
+    let jsonSourceValue = typeof jsonSource === 'string' ? jsonSource.trim() : 'result';
+    const isCopyModified = jsonSourceValue === COPY_MODIFIER || jsonSourceValue.startsWith(`${COPY_MODIFIER} `);
+    if (isCopyModified) {
+        jsonSourceValue = jsonSourceValue.slice(COPY_MODIFIER.length).trim() || 'result';
+    }
 
     const isLogOnlyMode = !propsPath;
     const shouldLogVerboseContent = verbose === 'true' && !isLogOnlyMode;
@@ -789,7 +912,7 @@ export function trustedJsonSet(
     // while the query of a uBO rule is not split, as uBO ignores spaces in it, e.g. `.a $.b` is one query
     let jsonPathQueries: string[] = [];
     if (!isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath') {
-        jsonPathQueries = isUboJsonEdit
+        jsonPathQueries = isUboDialect
             ? [buildJsonPathExpression(propsPath, argumentValue)]
             : buildJsonPathQueries(propsPath, argumentValue);
     }
@@ -1041,6 +1164,42 @@ export function trustedJsonSet(
     }
 
     /**
+     * Checks whether a value of `jsonSource` is `arg:` followed by indexes separated by `|`, each of them digits
+     * with an optional `-`, e.g. `arg:0|-1`. Characters are compared by operators, not by a regular expression,
+     * as `RegExp.prototype.test` may be an accessor of another rule which throws while the rule runs,
+     * e.g. of `abort-current-inline-script`, and every uBO rule of `trusted-edit-inbound-object` has such a value.
+     *
+     * @param value trimmed value of `jsonSource`, without `copy`
+     * @returns true if the value selects arguments by their indexes
+     */
+    const isArgumentIndexesValue = (value: string): boolean => {
+        const ARG_PREFIX = 'arg:';
+        if (!value.startsWith(ARG_PREFIX)) {
+            return false;
+        }
+        let hasDigits = false;
+        let isIndexStart = true;
+        for (let i = ARG_PREFIX.length; i < value.length; i += 1) {
+            const char = value[i];
+            if (char === '|') {
+                if (!hasDigits) {
+                    return false;
+                }
+                hasDigits = false;
+                isIndexStart = true;
+            } else if (char === '-' && isIndexStart) {
+                isIndexStart = false;
+            } else if (char >= '0' && char <= '9') {
+                hasDigits = true;
+                isIndexStart = false;
+            } else {
+                return false;
+            }
+        }
+        return hasDigits;
+    };
+
+    /**
      * Normalizes supported `jsonSource` aliases and validates the selected source.
      * Falls back to `result` for unsupported values.
      *
@@ -1056,9 +1215,6 @@ export function trustedJsonSet(
         if (jsonSourceValue === 'thisArg') {
             return JSON_SOURCES.THIS;
         }
-        // Other values are checked before the regular expression, which only a value of indexes needs,
-        // as `RegExp.prototype.test` may be an accessor of another rule which throws while the rule runs,
-        // e.g. of `abort-current-inline-script`, while `result` is the default, e.g. of uBO rules
         if (
             jsonSourceValue === JSON_SOURCES.ARG
             || jsonSourceValue === JSON_SOURCES.ARGS
@@ -1068,8 +1224,8 @@ export function trustedJsonSet(
         ) {
             return jsonSourceValue;
         }
-        if (jsonSourceValue.trim().startsWith('arg:') && /^arg:(\d+\|)*\d+$/.test(jsonSourceValue.trim())) {
-            return jsonSourceValue.trim();
+        if (isArgumentIndexesValue(jsonSourceValue)) {
+            return jsonSourceValue;
         }
         return JSON_SOURCES.RESULT;
     };
@@ -1108,8 +1264,9 @@ export function trustedJsonSet(
         if (normalizedJsonSource.startsWith('arg:')) {
             const rawIndexes = normalizedJsonSource.slice(4).split('|');
             for (let i = 0; i < rawIndexes.length; i += 1) {
+                // A negative index counts from the end, e.g. `-1` is the last argument, see `resolveArgumentIndex()`
                 const parsedIndex = parseFloat(rawIndexes[i]);
-                if (!nativeIsNaN(parsedIndex) && parsedIndex >= 0 && !indexes.includes(parsedIndex)) {
+                if (!nativeIsNaN(parsedIndex) && !indexes.includes(parsedIndex)) {
                     indexes.push(parsedIndex);
                 }
             }
@@ -1119,6 +1276,12 @@ export function trustedJsonSet(
     };
 
     const argumentIndexes = parseArgumentIndexes();
+    let hasNegativeArgumentIndex = false;
+    for (let i = 0; i < argumentIndexes.length; i += 1) {
+        if (argumentIndexes[i] < 0) {
+            hasNegativeArgumentIndex = true;
+        }
+    }
 
     /**
      * Resolves the value to write for legacy-mode mutations.
@@ -1271,6 +1434,55 @@ export function trustedJsonSet(
         }
     };
 
+    // Saved when the rule runs, as the page may replace it later
+    const nativeStructuredClone = typeof window.structuredClone === 'function' ? window.structuredClone : null;
+
+    /**
+     * Returns a copy of an object value which a rule with `copy` modifies, by `structuredClone()`, as uBO does
+     * for `trusted-edit-inbound-object`, e.g. which keeps dates, maps and cycles, or null if it is not copied:
+     * if no query of a rule in JSONPath mode matches the value, or the value has no `requiredInitialProps`
+     * in legacy mode, so a value which is not modified is not copied, e.g. on each call of `JSON.stringify()`,
+     * unlike uBO, which copies each value; a getter of the page which returns another value on each read
+     * may give the copy another value than the matched one then. A value is not copied if it cannot be copied,
+     * e.g. a function or a node,
+     * or in a browser without `structuredClone()`, as modifying the value itself would change the object
+     * of the page, which `copy` avoids, so the value is not modified then.
+     *
+     * An instance of a class is copied as a plain object, without its prototype and private fields, as by uBO,
+     * which is documented and accepted for now, as `copy` is meant for plain data, e.g. a request body.
+     *
+     * @param jsonValue object value to copy
+     * @returns copy of the value, or null if it is not modified
+     */
+    const copyValueToModify = (jsonValue: Record<string, any>): Record<string, any> | null => {
+        if (syntaxModeDetails.mode === 'jsonpath') {
+            let isMatched = false;
+            jsonPath(source, jsonValue, jsonPathQueries, nativeObjects, () => {
+                isMatched = true;
+            }, '', true, jsonPathCache);
+            if (!isMatched) {
+                return null;
+            }
+        } else if (
+            requiredPaths.length > 0
+            && !isPruningNeeded(source, jsonValue, [{ path: setPathObj?.path || '' }], requiredPaths, '', nativeObjects)
+        ) {
+            // In legacy mode the path is set also if it is missing, so only `requiredInitialProps` are checked,
+            // e.g. a rule which requires a property that most values do not have copies only the ones with it
+            return null;
+        }
+        if (nativeStructuredClone === null) {
+            logMessage(source, 'The value cannot be copied, as structuredClone() is not supported');
+            return null;
+        }
+        try {
+            return Reflect.apply(nativeStructuredClone, window, [jsonValue]) as Record<string, any>;
+        } catch (error) {
+            logMessage(source, `The value cannot be copied: ${getThrownValueMessage(error)}`);
+            return null;
+        }
+    };
+
     /**
      * Modifies an object value directly by `applyJsonMutation()`, i.e. by `jsonPath` in JSONPath mode
      * or by `jsonSetter` otherwise, or a string value after JSON parsing, which is stringified again then.
@@ -1286,9 +1498,10 @@ export function trustedJsonSet(
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
     const modifyJsonValue = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
-        // uBO rules modify the parsed value only if it is an object, as uBO does, while a string which `JSON.parse()`
-        // returns, e.g. of a JSON text encoded twice, is not parsed again, as it is for AdGuard rules
-        if (isUboJsonEdit && (jsonValue === null || typeof jsonValue !== 'object')) {
+        // uBO rules modify the value only if it is an object, as uBO does, while a string, e.g. which `JSON.parse()`
+        // returns for a JSON text encoded twice, or an argument of `trusted-edit-inbound-object`, is not parsed,
+        // as it is for AdGuard rules
+        if (isUboDialect && (jsonValue === null || typeof jsonValue !== 'object')) {
             return jsonValue;
         }
 
@@ -1303,10 +1516,25 @@ export function trustedJsonSet(
 
         if (jsonValue !== null && typeof jsonValue === 'object') {
             try {
+                // With `copy`, a copy of the value is modified, and used instead of it only if it has changed,
+                // e.g. passed to the method, so the object of the page is not changed, while the value itself
+                // is used if it has not changed, or if it cannot be copied
+                let targetValue = jsonValue;
+                if (isCopyModified) {
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                    const copiedValue = copyValueToModify(jsonValue);
+                    if (copiedValue === null) {
+                        return jsonValue;
+                    }
+                    targetValue = copiedValue;
+                }
                 const originalSnapshot = shouldLogVerboseContent
                     ? captureOriginalStructuredContent(jsonValue)
                     : null;
-                const mutationResult = applyJsonMutation(jsonValue);
+                const mutationResult = applyJsonMutation(targetValue);
+                if (isCopyModified && !mutationResult.changed) {
+                    return jsonValue;
+                }
 
                 if (shouldLogVerboseContent) {
                     if (mutationResult.changed && originalSnapshot) {
@@ -1498,6 +1726,107 @@ export function trustedJsonSet(
         }
     };
 
+    // `matches` of an argument or `this`, which is tested before the call
+    const isTextMatchedBeforeCall = textMatch.matcher !== null && textMatch.target !== 'result';
+
+    /**
+     * Tests the text of `matches`, i.e. an argument or `this`, before the call, if the rule has it,
+     * as the call is passed through if it is not matched, which costs much less than reading the stack trace
+     * or parsing the text. Matching is suspended while it is tested, as the test may call the intercepted method
+     * itself, e.g. `Array.prototype.push` of the helper which saves `RegExp.$1`, …, `RegExp.$9`,
+     * but not while the call is passed through, as other calls.
+     * A call of a constructor has no `this` before it, so `matches this` does not match it, as `undefined`
+     * is not a text.
+     *
+     * @param thisArg `this` of the call, or undefined for a call of a constructor
+     * @param args arguments of the call
+     * @returns true if the call may be processed
+     */
+    const isCallTextMatched = (thisArg: any, args: any[]): boolean => {
+        let isTextMatched = false;
+        isMatchingSuspended = true;
+        try {
+            const text = textMatch.target === 'this' ? thisArg : args[textMatch.argIndex];
+            isTextMatched = isJsonTextMatched(textMatch.matcher as string | RegExp, text, testRegexp);
+        } finally {
+            isMatchingSuspended = false;
+        }
+        return isTextMatched;
+    };
+
+    /**
+     * Prepares a call of the intercepted method, or of a constructor, while matching is suspended:
+     * matches `stack` against the stack trace which the trap has created, and modifies the arguments
+     * selected by `jsonSource` in place. It returns before the trap calls the method, so the page's code
+     * which the method runs, e.g. a function hooked by another rule, does not get a frame of it in its stack trace,
+     * which has a limit, e.g. 10 frames in Chromium, and the frames of its callers are kept, e.g. for `stack`.
+     *
+     * @param args arguments of the call, which are modified in place
+     * @param currentStackTrace stack trace created by the trap, or an empty string if it is not read
+     * @param isStackTraceRead true if the stack trace has been read
+     * @returns true if the call is processed, i.e. `stack` is matched, if the rule has it
+     */
+    const prepareCall = (
+        args: any[],
+        currentStackTrace: string,
+        isStackTraceRead: boolean,
+    ): boolean => {
+        let shouldProcess = false;
+        try {
+            shouldProcess = !stack
+                || (isStackTraceRead && matchStackTrace(stack, addStackTraceMessageLine(currentStackTrace)));
+
+            // With `matches result`, which is known only after the call, only the result is processed
+            if (shouldProcess && !isResultMatchRequired) {
+                // A negative index counts from the end, e.g. `-1` is the last argument of the call,
+                // and only the arguments which the method is called with are processed, each once,
+                // e.g. of `arg:0|-1` for a call with one argument, which only a rule with a negative index
+                // has to check, as the indexes are unique otherwise. No function is created for each call,
+                // as the method may be called very often, e.g. `Array.isArray()`
+                for (let i = 0; i < argumentIndexes.length; i += 1) {
+                    const rawIndex = argumentIndexes[i];
+                    const index = rawIndex < 0 ? args.length + rawIndex : rawIndex;
+                    if (index < 0 || index >= args.length) {
+                        continue;
+                    }
+                    let isProcessed = false;
+                    if (hasNegativeArgumentIndex) {
+                        for (let j = 0; j < i; j += 1) {
+                            const previousIndex = argumentIndexes[j];
+                            if ((previousIndex < 0 ? args.length + previousIndex : previousIndex) === index) {
+                                isProcessed = true;
+                            }
+                        }
+                    }
+                    if (isProcessed) {
+                        continue;
+                    }
+                    args[index] = modifyJsonValueSafely(
+                        args[index],
+                        `Error during setting the argument at index ${index}`,
+                        currentStackTrace,
+                    );
+                }
+
+                if (normalizedJsonSource === JSON_SOURCES.ARGS || normalizedJsonSource === JSON_SOURCES.ALL) {
+                    for (let i = 0; i < args.length; i += 1) {
+                        args[i] = modifyJsonValueSafely(
+                            args[i],
+                            `Error during setting the argument at index ${i}`,
+                            currentStackTrace,
+                        );
+                    }
+                }
+            }
+        } catch (error) {
+            logMessage(source, `Unexpected error during JSON modification: ${getThrownValueMessage(error)}`);
+        }
+        return shouldProcess;
+    };
+
+    const isResultSource = normalizedJsonSource === JSON_SOURCES.RESULT || normalizedJsonSource === JSON_SOURCES.ALL;
+    const isThisSource = normalizedJsonSource === JSON_SOURCES.THIS || normalizedJsonSource === JSON_SOURCES.ALL;
+
     const objectWrapper = (
         target: Function,
         thisArg: any,
@@ -1507,30 +1836,13 @@ export function trustedJsonSet(
             return Reflect.apply(target, thisArg, args);
         }
 
-        // An argument or `this` of `matches` is tested first, as the call is passed through if it is not matched,
-        // which costs much less than reading the stack trace or parsing the text. Matching is suspended while it is
-        // tested, as the test may call the intercepted method itself, e.g. `Array.prototype.push` of the helper
-        // which saves `RegExp.$1`, …, `RegExp.$9`, but not while the call is passed through, as other calls
-        if (textMatch.matcher !== null && textMatch.target !== 'result') {
-            let isTextMatched = false;
-            isMatchingSuspended = true;
-            try {
-                const text = textMatch.target === 'this' ? thisArg : args[textMatch.argIndex];
-                isTextMatched = isJsonTextMatched(textMatch.matcher, text, testRegexp);
-            } finally {
-                isMatchingSuspended = false;
-            }
-            if (!isTextMatched) {
-                return Reflect.apply(target, thisArg, args);
-            }
+        // Checked here first, as the method may be called very often, e.g. `Array.isArray()`
+        if (isTextMatchedBeforeCall && !isCallTextMatched(thisArg, args)) {
+            return Reflect.apply(target, thisArg, args);
         }
 
         isMatchingSuspended = true;
         try {
-            let currentStackTrace = '';
-            let shouldProcess = false;
-            let modifiedThisArg = thisArg;
-
             // Stack trace is matched once, when the method is called, as the value of a returned promise
             // is modified on its fulfillment, when the caller is no longer in the stack.
             // It is created here, in the wrapper called by the page, and gets the error message line
@@ -1541,6 +1853,7 @@ export function trustedJsonSet(
             // or by `Error.prepareStackTrace`, or make it a non-string value,
             // which should not stop the rules without `stack` from working,
             // so the error is created in the same `try` in which the stack trace is read
+            let currentStackTrace = '';
             let isStackTraceRead = false;
             if (stack || isLogOnlyMode || shouldLogVerboseContent) {
                 try {
@@ -1551,54 +1864,16 @@ export function trustedJsonSet(
                 }
             }
 
-            try {
-                shouldProcess = !stack
-                    || (isStackTraceRead && matchStackTrace(stack, addStackTraceMessageLine(currentStackTrace)));
+            const shouldProcess = prepareCall(args, currentStackTrace, isStackTraceRead);
+            const modifiedThisArg = shouldProcess && !isResultMatchRequired && isThisSource
+                ? modifyJsonValueSafely(thisArg, 'Error during setting the thisArg value', currentStackTrace)
+                : thisArg;
 
-                // With `matches result`, which is known only after the call, only the result is processed
-                if (shouldProcess && !isResultMatchRequired) {
-                    for (let i = 0; i < argumentIndexes.length; i += 1) {
-                        const index = argumentIndexes[i];
-                        // Only the arguments which the method is called with
-                        if (index >= args.length) {
-                            continue;
-                        }
-                        args[index] = modifyJsonValueSafely(
-                            args[index],
-                            `Error during setting the argument at index ${index}`,
-                            currentStackTrace,
-                        );
-                    }
-
-                    if (normalizedJsonSource === JSON_SOURCES.ARGS || normalizedJsonSource === JSON_SOURCES.ALL) {
-                        for (let i = 0; i < args.length; i += 1) {
-                            args[i] = modifyJsonValueSafely(
-                                args[i],
-                                `Error during setting the argument at index ${i}`,
-                                currentStackTrace,
-                            );
-                        }
-                    }
-
-                    if (normalizedJsonSource === JSON_SOURCES.THIS || normalizedJsonSource === JSON_SOURCES.ALL) {
-                        modifiedThisArg = modifyJsonValueSafely(
-                            thisArg,
-                            'Error during setting the thisArg value',
-                            currentStackTrace,
-                        );
-                    }
-                }
-            } catch (error) {
-                logMessage(source, `Unexpected error during JSON modification: ${getThrownValueMessage(error)}`);
-            }
-
-            // Errors thrown by the intercepted method are not caught, so it is not called again
+            // Called here, in the trap, see `prepareCall()`. Errors thrown by the intercepted method are not caught,
+            // so it is not called again
             const result = Reflect.apply(target, modifiedThisArg, args);
 
-            if (
-                !shouldProcess
-                || (normalizedJsonSource !== JSON_SOURCES.RESULT && normalizedJsonSource !== JSON_SOURCES.ALL)
-            ) {
+            if (!shouldProcess || !isResultSource) {
                 return result;
             }
 
@@ -1608,8 +1883,83 @@ export function trustedJsonSet(
         }
     };
 
+    /**
+     * Intercepts a call of the method as a constructor, e.g. `new CustomEvent('ad', options)`, as uBO does,
+     * which is processed as a call of a function, except that it has no `this`, and that the constructed object
+     * itself is its result, also a promise, whose value is not processed.
+     * A call of a constructor reached through the prototype of the base object is not processed,
+     * as only the calls whose `this` is the base object are processed then, see `objectWrapper()`.
+     *
+     * @param target intercepted constructor
+     * @param args arguments of the call
+     * @param newTarget constructor which `new` is applied to, e.g. the proxy or a subclass of it
+     * @returns constructed object, modified if it is selected
+     */
+    const constructWrapper = (
+        target: Function,
+        args: any[],
+        newTarget: Function,
+    ) => {
+        if (isMatchingSuspended || methodOwner !== base) {
+            return Reflect.construct(target, args, newTarget);
+        }
+
+        if (isTextMatchedBeforeCall && !isCallTextMatched(undefined, args)) {
+            return Reflect.construct(target, args, newTarget);
+        }
+
+        isMatchingSuspended = true;
+        try {
+            // Created here, in the trap called by the page, as in `objectWrapper()`
+            let currentStackTrace = '';
+            let isStackTraceRead = false;
+            if (stack || isLogOnlyMode || shouldLogVerboseContent) {
+                try {
+                    currentStackTrace = String(new Error().stack || '');
+                    isStackTraceRead = true;
+                } catch {
+                    // Rules with `stack` are not processed, as it cannot be matched
+                }
+            }
+
+            const shouldProcess = prepareCall(args, currentStackTrace, isStackTraceRead);
+
+            // Called here, in the trap, see `prepareCall()`. `newTarget` is passed to the constructor,
+            // so a subclass of it, e.g. `class Ad extends CustomEvent {}`, constructs an instance of the subclass
+            const result = Reflect.construct(target, args, newTarget);
+
+            if (!shouldProcess || !isResultSource) {
+                return result;
+            }
+
+            // The constructed object itself is modified, also a promise, e.g. of `new Promise()` or of its subclass,
+            // whose value is not, as chaining it would return another promise than the constructed one, without
+            // the methods of a subclass, and change when the callbacks of the page run.
+            // A constructor has to return an object, so a value which replaces the constructed object and is not
+            // an object, e.g. of `$` set to `false`, is not returned, as `new` would throw otherwise
+            const modifiedResult = modifyJsonValueSafely(
+                result,
+                'Error during setting the result value',
+                currentStackTrace,
+                true,
+            );
+            if (
+                modifiedResult === null
+                || (typeof modifiedResult !== 'object' && typeof modifiedResult !== 'function')
+            ) {
+                return result;
+            }
+            return modifiedResult;
+        } finally {
+            isMatchingSuspended = false;
+        }
+    };
+
+    // A Proxy has the `construct` trap only if the method is a constructor, so `new` of another method,
+    // e.g. `new JSON.parse()`, still throws as without the rule
     const objectHandler = {
         apply: objectWrapper,
+        construct: constructWrapper,
         get: getFunctionProxyProperty,
     };
 
@@ -1622,6 +1972,8 @@ export const trustedJsonSetNames = [
     // trusted scriptlets support no other aliases
     'ubo-trusted-json-edit.js',
     'ubo-trusted-json-edit',
+    'ubo-trusted-edit-inbound-object.js',
+    'ubo-trusted-edit-inbound-object',
 ];
 
 // eslint-disable-next-line prefer-destructuring

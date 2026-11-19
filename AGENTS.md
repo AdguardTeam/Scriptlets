@@ -460,7 +460,17 @@ Project-specific rules:
     runs, return the promise chained with the saved native
     `Promise.prototype.then`, or the original promise if its value is only
     logged, and keep other results, including promises of polyfills and other
-    thenables, synchronous. `stack` MUST be matched once, when the method is
+    thenables, synchronous. An object constructed by `new` of an intercepted
+    constructor, e.g. `new Promise()` or of a subclass of it, is not such a
+    result: it is processed itself and returned, never chained, as `then()`
+    would return another promise, without the methods of the subclass, and
+    change when the callbacks of the page run. A trap of such a scriptlet,
+    i.e. `apply` or `construct`, MUST call the intercepted method itself,
+    not a helper shared by the traps, as the frame of the helper would be in
+    the stack trace of the page's code which the method runs, e.g. of
+    a function which another rule hooks, which has a limit, e.g. 10 frames in
+    Chromium, so a caller which `stack` matches could fall out of it.
+    `stack` MUST be matched once, when the method is
     called, and the intercepted method MUST NOT be called again if it throws.
     The same applies to scriptlets which process a response after it is
     awaited, e.g. `json-prune-fetch-response` or the `Response.prototype.json`

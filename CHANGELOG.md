@@ -238,6 +238,30 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   only if it is an object, the original response is returned if the expression changes nothing, a response which
   is not one JSON document, e.g. of line-delimited JSON, is not modified, and an `XMLHttpRequest` whose response
   type has no JSON text, e.g. `arraybuffer`, is sent as it is.
+- uBO rules of `trusted-edit-inbound-object` [#586], which AGTree converts to `ubo-trusted-edit-inbound-object`, e.g.
+  `www.youtube.com##+js(trusted-edit-inbound-object, JSON.stringify, 0, [?.attestationRequest]+={"params":"x"})`,
+  as aliases of `trusted-json-set` with uBO arguments, i.e. the path of the method, the position of the argument,
+  also a negative one, counted from the last argument, and one JSONPath expression, read as of `trusted-json-edit`.
+  As in uBO, a copy of the argument is modified, and the method gets it only if the expression has written to it,
+  so an object which the page passes in several calls, e.g. the context of each YouTube request, is not changed.
+  Only an object or an array is modified, and a rule with an invalid position, e.g. `a`, or an empty expression
+  is not applied, which is logged. Unlike uBO, calls which the method itself causes, e.g. `JSON.stringify()`
+  in `toJSON()` of a serialized object, are not processed.
+- `copy` modifier of `jsonSource` of `trusted-json-set` [#586], e.g. `copy arg:0`, `copy this` or `copy` alone for
+  `copy result`, by which a copy of the selected value is modified, and passed or returned instead of it if the
+  expression has written to it, so the object of the page is left as it is. The value is copied by `structuredClone()`
+  only if the expression may change it, i.e. if it matches the value in `JSONPath` mode, or if the value has
+  `requiredInitialProps` in legacy mode, and it is not modified if it cannot be copied, e.g. an object with
+  a function, which is logged. As in uBO, an instance of a class is copied as a plain object, without its prototype
+  and private fields, so `copy` is meant for plain data, e.g. a request body.
+- Calls of a constructor intercepted by `trusted-json-set` [#586], e.g. `new CustomEvent('ad', options)`, as by uBO
+  `trusted-edit-inbound-object`, e.g. `example.org##+js(trusted-edit-inbound-object, CustomEvent, 1, .detail.ad)`,
+  which were passed through before. They have no `this`, so `this` selects nothing for them, the result is
+  the constructed object itself, also a promise, e.g. of `new Promise()`, whose value is not processed,
+  and it is replaced only by an object, while a subclass of the constructor is constructed as without the rule.
+  No rule in the filter lists intercepts a constructor.
+- Negative indexes of `jsonSource` `arg:N` of `trusted-json-set`, e.g. `arg:-1` for the last argument of each call,
+  and an argument which two indexes select, e.g. `arg:0|-1` of a call with one argument, is processed once.
 
 ### Changed
 
