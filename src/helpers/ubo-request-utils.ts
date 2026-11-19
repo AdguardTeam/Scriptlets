@@ -38,17 +38,44 @@ export const parseUboPropsToMatch = (
     // !IMPORTANT: Do not move constants outside of this function
     const SEPARATOR_REGEXP = /\s+/;
     const NAME_DIVIDER = ':';
-    const NOT_NAME_CHARS_REGEXP = /[^$\w -]/;
     const NEGATION_MARKER = '!';
     const REGEXP_LITERAL = /^\/(.+)\/([gimsu]*)$/;
     const SPECIAL_CHARS_REGEXP = /[.*+?^${}()|[\]\\]/g;
 
+    /**
+     * Checks whether a text has other characters than a name may have, i.e. letters, digits, `_`, `$`, ` ` and `-`,
+     * as `/[^$\w -]/` does, but by comparing the characters, without `RegExp.prototype.test`, which another rule
+     * may hook, e.g. `abort-current-inline-script`, so that it throws while the rule runs.
+     *
+     * @param text Text to check.
+     * @returns True if the text is not a name.
+     */
+    const hasNotNameChars = (text: string): boolean => {
+        for (let i = 0; i < text.length; i += 1) {
+            const char = text[i];
+            const isNameChar = (char >= 'a' && char <= 'z')
+                || (char >= 'A' && char <= 'Z')
+                || (char >= '0' && char <= '9')
+                || char === '_'
+                || char === '$'
+                || char === ' '
+                || char === '-';
+            if (!isNameChar) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     const needles: Record<string, UboPropNeedle> = Object.create(null);
-    if (typeof propsToMatch !== 'string' || propsToMatch === '') {
+    // A value which consists of digits only, which `parseUboOptions()` converts to a number, e.g. an id of the URL,
+    // is matched as its text, as uBO splits any value as a text
+    const propsText = typeof propsToMatch === 'number' ? String(propsToMatch) : propsToMatch;
+    if (typeof propsText !== 'string' || propsText === '') {
         return needles;
     }
 
-    const items = propsToMatch.split(SEPARATOR_REGEXP);
+    const items = propsText.split(SEPARATOR_REGEXP);
     for (let i = 0; i < items.length; i += 1) {
         const parts = items[i].split(NAME_DIVIDER);
         let name = parts[0];
@@ -56,7 +83,7 @@ export const parseUboPropsToMatch = (
         if (name === '') {
             continue;
         }
-        if (pattern !== undefined && NOT_NAME_CHARS_REGEXP.test(name)) {
+        if (pattern !== undefined && hasNotNameChars(name)) {
             name = `${name}${NAME_DIVIDER}${pattern}`;
             pattern = undefined;
         }
@@ -150,10 +177,22 @@ export const matchUboProps = (
  * Collects the properties of a `fetch()` call which uBO rules match, as uBO `collateFetchArgumentsFn()` does:
  * `url` of a resource which is not a `Request`, e.g. a string or a `URL`, or the properties of a clone of
  * the `Request`, which are overridden by the ones of the options.
+ * Unlike uBO, which reads each of its properties twice, only the properties which the rule matches are read,
+ * each once, e.g. only `url` for a pattern of the URL, as they may be getters of the page, e.g. of `body`,
+ * which return another value on each read, so native `fetch()` gets the value which it would get otherwise.
+ * A rule without `propsToMatch` collects nothing, as in uBO, so its caller does not call it then, and the URL
+ * of a resource which is not a `Request` is converted to a string only if the rule matches it.
+ * A property which the rule matches is still read before native `fetch()` reads it, which is accepted: a getter
+ * which returns another value on each read, e.g. of `body`, or `toString()` of a custom URL, may give `fetch()`
+ * another value than the one which has been matched, i.e. the request of the page may change. uBO calls `fetch()`
+ * first and reads the properties after it, so its request gets the value of the page, and only the value which
+ * it matches may differ. Passing the values read here to `fetch()` instead of the arguments of the page
+ * would change what it gets in every matched call.
  *
  * @param resource First argument of `fetch()`.
  * @param options Second argument of `fetch()`.
  * @param nativeRequestClone `Request.prototype.clone` saved when the scriptlet runs.
+ * @param names Names of the properties which the rule matches, i.e. of the patterns of `parseUboPropsToMatch()`.
  *
  * @returns Properties of the call, without a prototype.
  */
@@ -161,6 +200,7 @@ export const collateUboFetchArguments = (
     resource: unknown,
     options: unknown,
     nativeRequestClone: (this: Request) => Request,
+    names: string[],
 ): Record<string, unknown> => {
     // !IMPORTANT: Do not move constants outside of this function
     const PROPS = [
@@ -173,14 +213,23 @@ export const collateUboFetchArguments = (
     const collateKnownProps = (src: any) => {
         for (let i = 0; i < PROPS.length; i += 1) {
             const prop = PROPS[i];
-            if (src[prop] !== undefined) {
-                out[prop] = src[prop];
+            if (names.indexOf(prop) === -1) {
+                continue;
+            }
+            // read once, as it may be a getter which returns another value on each read
+            const value = src[prop];
+            if (value !== undefined) {
+                out[prop] = value;
             }
         }
     };
 
     if (typeof resource !== 'object' || Object.prototype.toString.call(resource) !== '[object Request]') {
-        out.url = `${resource}`;
+        // Converted only if the rule matches it, as `toString()` of an object of the page, e.g. of a custom URL,
+        // may return another value on each call, which native `fetch()` converts again
+        if (names.indexOf('url') !== -1) {
+            out.url = `${resource}`;
+        }
     } else {
         let clone;
         try {

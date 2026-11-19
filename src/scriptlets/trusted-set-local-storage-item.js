@@ -9,6 +9,7 @@ import {
     getAdgStorageItemSettings,
     getUboStorageItemSettings,
     setStorageItemBySettings,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -139,4 +140,6 @@ trustedSetLocalStorageItem.injections = [
     getAdgStorageItemSettings,
     getUboStorageItemSettings,
     setStorageItemBySettings,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

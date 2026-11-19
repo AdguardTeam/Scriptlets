@@ -47,7 +47,14 @@ import {
     buildJsonPathExpression,
     buildJsonPathQueries,
     getAdgJsonTextMatch,
+    getUboJsonTextMatch,
     isJsonTextMatched,
+    type JsonTextMatch,
+    getUboJsonEditArguments,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    isDigits,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -208,17 +215,44 @@ import { type Source } from './scriptlets';
  *   only when a write actually happens.
  *   In logging-only mode, the original content is logged even without `verbose`.
  * - `'matches', pattern` — optional, named option after the positional arguments, as in uBO `json-edit`:
- *   string or regular expression which a JSON string selected by `jsonSource` must match for it to be modified
- *   or logged, e.g. `'matches', '"adPlacements"'`. It is tested before the string is parsed, so a rule with it
- *   costs much less for other strings. Escapes of quotes are removed from a string, as of `stack`, so a string
+ *   string or regular expression which a text of the call must match for the call to be processed,
+ *   e.g. `'matches', '"adPlacements"'`. It tests the first argument of the call, e.g. the text passed to `JSON.parse`,
+ *   as uBO does, while the value selected by `jsonSource`, e.g. the result of `JSON.parse`, is modified or logged,
+ *   e.g. `example.org#%#//scriptlet('trusted-json-set', 'JSON.parse', '$.ads', 'false', '', 'result', '', '', '', 'matches', 'adPlacements')`.
+ *   The name of the option may name another text instead, as `jsonSource` does:
+ *     - `'matches arg:N'` — argument `N` using 0-based indexing, e.g. `'matches arg:1'`;
+ *     - `'matches this'` — `thisArg` of the call, e.g. of a method which the page calls on a JSON text;
+ *     - `'matches result'` — the return value, or the value which a returned native `Promise` is fulfilled with,
+ *       e.g. of `Response.prototype.text`; only the return value is processed then, as it is known after the call.
+ *   An argument or `thisArg` is tested when the method is called, before the stack trace is read, so a rule with it
+ *   costs much less for other calls. A text which is not a string, e.g. an object, is not matched,
+ *   so the call is not processed then. Escapes of quotes are removed from a string, as of `stack`, so a string
  *   with an escaped quote of JSON, i.e. `\"`, has to be a regular expression, e.g. `'/\\"ad\\"/'`.
- *   Values which are not strings, e.g. objects, have no JSON text to test,
- *   so they are neither modified nor logged then. If it is an invalid regular expression, the rule is not applied.
+ *   If it is an invalid regular expression, or the name of the option names another text, the rule is not applied.
  *
  * > [!IMPORTANT]
  * > Please note that, if `requiredInitialProps` is not specified, the scriptlet will attempt to set
  * > the value at the target path even if it does not exist, unless the path includes wildcards (`*`),
  * > array element index (`[]`), or value filters (`.[=].value`).
+ *
+ * ### uBO syntax
+ *
+ * uBO rules of `trusted-json-edit` are supported with uBO arguments,
+ * e.g. `example.org##+js(trusted-json-edit, ..ads_audio=false)`:
+ *
+ * ```text
+ * example.org##+js(trusted-json-edit, jsonq[, ...options])
+ * ```
+ *
+ * They modify the result of `JSON.parse` if it is an object, as uBO does, so a string which it returns,
+ * e.g. of a JSON text encoded twice, is not parsed again, and differ from the AdGuard syntax as follows:
+ *
+ * - `jsonq` — one JSONPath expression, which is not split by spaces, as uBO ignores them, e.g. `.a $.b` is one
+ *   expression; an expression without its own value removes what it matches, e.g. `..ads`;
+ *   a rule with an empty expression is not applied
+ * - options are pairs of a name and a value which follow `jsonq`:
+ *     - `matches, pattern` — string or regular expression which the text passed to `JSON.parse` has to match
+ * - other options and arguments are ignored, as in uBO, e.g. `stack`
  *
  * ### Examples
  *
@@ -679,21 +713,67 @@ export function trustedJsonSet(
     propsPath: string,
     argumentValue: any,
     requiredInitialProps: string,
-    jsonSource = 'result',
+    jsonSource?: string,
     stack = '',
     mode = '',
     verbose = '',
     ...extraArgs: string[]
 ) {
+    // !IMPORTANT: Do not move constants outside of this function
+    const UBO_JSON_EDIT_NAME_PREFIX = 'ubo-trusted-json-edit';
+    const REMOVE_VALUE = '$remove$';
+
+    // Rules with uBO names of `trusted-json-edit` have uBO arguments, i.e. a query followed by named options,
+    // of which `matches` is supported, which are read into the positional arguments of AdGuard syntax,
+    // so they are processed by the same implementation: the result of `JSON.parse()` is modified by the query,
+    // which is not split, and which removes the nodes it matches if it has no value of its own, as in uBO.
+    // Other arguments are not read by their position then, e.g. `stack`, and `jsonSource` has no default value
+    // in the signature, as it would be read as a value of an option otherwise
+    const isUboJsonEdit = typeof source.name === 'string' && source.name.startsWith(UBO_JSON_EDIT_NAME_PREFIX);
+    let textMatch: JsonTextMatch;
+    if (isUboJsonEdit) {
+        const uboArguments = getUboJsonEditArguments([
+            methodPath,
+            propsPath,
+            argumentValue,
+            requiredInitialProps,
+            jsonSource,
+            stack,
+            mode,
+            verbose,
+        ].concat(extraArgs));
+        // uBO does not apply a rule with an empty query
+        if (uboArguments.query === '') {
+            logMessage(source, 'Bad JSONPath query');
+            return;
+        }
+        textMatch = getUboJsonTextMatch(uboArguments.options.matches);
+        methodPath = 'JSON.parse';
+        propsPath = uboArguments.query;
+        argumentValue = REMOVE_VALUE;
+        requiredInitialProps = '';
+        jsonSource = 'result';
+        stack = '';
+        mode = 'jsonpath';
+        verbose = '';
+    } else {
+        textMatch = getAdgJsonTextMatch(extraArgs, true);
+    }
+    const jsonSourceValue = typeof jsonSource === 'string' ? jsonSource : 'result';
+
     const isLogOnlyMode = !propsPath;
     const shouldLogVerboseContent = verbose === 'true' && !isLogOnlyMode;
     const syntaxModeDetails = isLogOnlyMode
         ? { mode: 'legacy' as const }
         : resolveJsonSyntaxMode(propsPath, mode);
-    // Queries are built after `propsPath` is split, so `argumentValue` is never split
-    const jsonPathQueries = !isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath'
-        ? buildJsonPathQueries(propsPath, argumentValue)
-        : [];
+    // Queries are built after `propsPath` is split, so `argumentValue` is never split,
+    // while the query of a uBO rule is not split, as uBO ignores spaces in it, e.g. `.a $.b` is one query
+    let jsonPathQueries: string[] = [];
+    if (!isLogOnlyMode && syntaxModeDetails.mode === 'jsonpath') {
+        jsonPathQueries = isUboJsonEdit
+            ? [buildJsonPathExpression(propsPath, argumentValue)]
+            : buildJsonPathQueries(propsPath, argumentValue);
+    }
     // Queries are parsed once, not for each processed value
     const jsonPathCache: JsonPathCache = Object.create(null);
 
@@ -701,7 +781,6 @@ export function trustedJsonSet(
         return;
     }
 
-    const textMatch = getAdgJsonTextMatch(extraArgs);
     // An invalid pattern would match no text, so such rule is not applied
     if (!textMatch.isValid) {
         logMessage(source, `Invalid matches: ${textMatch.pattern}`);
@@ -949,28 +1028,31 @@ export function trustedJsonSet(
      * @returns normalized json source value
      */
     const normalizeJsonSource = () => {
-        if (jsonSource === 'argument') {
+        if (jsonSourceValue === 'argument') {
             return JSON_SOURCES.ARG;
         }
-        if (jsonSource === 'arguments') {
+        if (jsonSourceValue === 'arguments') {
             return JSON_SOURCES.ARGS;
         }
-        if (jsonSource === 'thisArg') {
+        if (jsonSourceValue === 'thisArg') {
             return JSON_SOURCES.THIS;
         }
-        if (/^arg:(\d+\|)*\d+$/.test(jsonSource.trim())) {
-            return jsonSource.trim();
-        }
+        // Other values are checked before the regular expression, which only a value of indexes needs,
+        // as `RegExp.prototype.test` may be an accessor of another rule which throws while the rule runs,
+        // e.g. of `abort-current-inline-script`, while `result` is the default, e.g. of uBO rules
         if (
-            jsonSource !== JSON_SOURCES.ARG
-            && jsonSource !== JSON_SOURCES.ARGS
-            && jsonSource !== JSON_SOURCES.THIS
-            && jsonSource !== JSON_SOURCES.RESULT
-            && jsonSource !== JSON_SOURCES.ALL
+            jsonSourceValue === JSON_SOURCES.ARG
+            || jsonSourceValue === JSON_SOURCES.ARGS
+            || jsonSourceValue === JSON_SOURCES.THIS
+            || jsonSourceValue === JSON_SOURCES.RESULT
+            || jsonSourceValue === JSON_SOURCES.ALL
         ) {
-            return JSON_SOURCES.RESULT;
+            return jsonSourceValue;
         }
-        return jsonSource;
+        if (jsonSourceValue.trim().startsWith('arg:') && /^arg:(\d+\|)*\d+$/.test(jsonSourceValue.trim())) {
+            return jsonSourceValue.trim();
+        }
+        return JSON_SOURCES.RESULT;
     };
 
     const parsedSetPaths = syntaxModeDetails.mode === 'legacy' ? getPrunePath(propsPath) : [];
@@ -1185,8 +1267,9 @@ export function trustedJsonSet(
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
     const modifyJsonValue = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
-        // The text is tested before it is parsed, which costs much more, while other values have no text
-        if (textMatch.matcher !== null && !isJsonTextMatched(textMatch.matcher, jsonValue, testRegexp)) {
+        // uBO rules modify the parsed value only if it is an object, as uBO does, while a string which `JSON.parse()`
+        // returns, e.g. of a JSON text encoded twice, is not parsed again, as it is for AdGuard rules
+        if (isUboJsonEdit && (jsonValue === null || typeof jsonValue !== 'object')) {
             return jsonValue;
         }
 
@@ -1307,6 +1390,18 @@ export function trustedJsonSet(
 
     let isMatchingSuspended = false;
 
+    const isResultMatchRequired = textMatch.matcher !== null && textMatch.target === 'result';
+
+    /**
+     * Checks whether the result of the call, or the value which its promise is fulfilled with,
+     * is matched by `matches result`, if the rule has it.
+     *
+     * @param value result of the call, or the value which its promise is fulfilled with
+     * @returns true if the result may be processed
+     */
+    const isResultMatched = (value: unknown): boolean => !isResultMatchRequired
+        || isJsonTextMatched(textMatch.matcher as string | RegExp, value, testRegexp);
+
     /**
      * Calls `modifyJsonValue()` with matching suspended, so the intercepted method is not processed again
      * if it is called during the modification, e.g. by a helper, also when a promise is fulfilled,
@@ -1317,12 +1412,23 @@ export function trustedJsonSet(
      * @param errorMessage message prefix used for logging unexpected errors
      * @param currentStackTrace stack trace for logs, captured when the intercepted method is called,
      * or an empty string if it is not needed
+     * @param isResult if true, the value is the result of the call, which `matches result` tests first
      * @returns modified JSON-compatible value or the original input if it cannot be processed
      */
-    const modifyJsonValueSafely = (jsonValue: any, errorMessage: string, currentStackTrace: string) => {
+    const modifyJsonValueSafely = (
+        jsonValue: any,
+        errorMessage: string,
+        currentStackTrace: string,
+        isResult = false,
+    ) => {
         const wasMatchingSuspended = isMatchingSuspended;
         isMatchingSuspended = true;
         try {
+            // Tested while matching is suspended, also on the fulfillment of a promise, i.e. after the wrapper
+            // has returned, as the test may call the intercepted method itself
+            if (isResult && !isResultMatched(jsonValue)) {
+                return jsonValue;
+            }
             return modifyJsonValue(jsonValue, errorMessage, currentStackTrace);
         } catch (error) {
             logMessage(source, `${errorMessage}: ${getThrownValueMessage(error)}`);
@@ -1348,10 +1454,11 @@ export function trustedJsonSet(
     const modifyResult = (result: any, currentStackTrace: string) => {
         const errorMessage = 'Error during setting the result value';
         if (!isNativePromise(result, NativePromise)) {
-            return modifyJsonValueSafely(result, errorMessage, currentStackTrace);
+            return modifyJsonValueSafely(result, errorMessage, currentStackTrace, true);
         }
 
-        const onFulfilled = (value: unknown) => modifyJsonValueSafely(value, errorMessage, currentStackTrace);
+        // The value which the promise is fulfilled with is tested by `matches result`, as it is modified
+        const onFulfilled = (value: unknown) => modifyJsonValueSafely(value, errorMessage, currentStackTrace, true);
 
         try {
             // Native method is used, as `then` of the promise may be replaced by the page
@@ -1379,6 +1486,24 @@ export function trustedJsonSet(
     ) => {
         if (isMatchingSuspended || (methodOwner !== base && thisArg !== base)) {
             return Reflect.apply(target, thisArg, args);
+        }
+
+        // An argument or `this` of `matches` is tested first, as the call is passed through if it is not matched,
+        // which costs much less than reading the stack trace or parsing the text. Matching is suspended while it is
+        // tested, as the test may call the intercepted method itself, e.g. `Array.prototype.push` of the helper
+        // which saves `RegExp.$1`, …, `RegExp.$9`, but not while the call is passed through, as other calls
+        if (textMatch.matcher !== null && textMatch.target !== 'result') {
+            let isTextMatched = false;
+            isMatchingSuspended = true;
+            try {
+                const text = textMatch.target === 'this' ? thisArg : args[textMatch.argIndex];
+                isTextMatched = isJsonTextMatched(textMatch.matcher, text, testRegexp);
+            } finally {
+                isMatchingSuspended = false;
+            }
+            if (!isTextMatched) {
+                return Reflect.apply(target, thisArg, args);
+            }
         }
 
         isMatchingSuspended = true;
@@ -1411,7 +1536,8 @@ export function trustedJsonSet(
                 shouldProcess = !stack
                     || (isStackTraceRead && matchStackTrace(stack, addStackTraceMessageLine(currentStackTrace)));
 
-                if (shouldProcess) {
+                // With `matches result`, which is known only after the call, only the result is processed
+                if (shouldProcess && !isResultMatchRequired) {
                     for (let i = 0; i < argumentIndexes.length; i += 1) {
                         const index = argumentIndexes[i];
                         // Only the arguments which the method is called with
@@ -1473,7 +1599,10 @@ export function trustedJsonSet(
 
 export const trustedJsonSetNames = [
     'trusted-json-set',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-json-edit.js',
+    'ubo-trusted-json-edit',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -1527,5 +1656,12 @@ trustedJsonSet.injections = [
     buildJsonPathExpression,
     buildJsonPathQueries,
     getAdgJsonTextMatch,
+    getUboJsonTextMatch,
     isJsonTextMatched,
+    getUboJsonEditArguments,
+    parseUboOptions,
+    unescapeUboArgument,
+    uboPatternToRegExp,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

@@ -404,14 +404,16 @@ export const createResponse = (
 
 /**
  * Create new Response object using original response' properties
- * and given text as body content
+ * and given text as body content.
+ * `bodyUsed` is not copied, so the native getter of the new response tells whether its body is read,
+ * e.g. it is `false` before the page reads it, also if the original body has been read, and `true` after it,
+ * as uBO does, which defines only `ok`, `redirected`, `type` and `url` of its response.
  *
  * @param response original response to copy properties from
  * @param textContent text to set as body content
  */
 export const forgeResponse = (response: Response, textContent: string): Response => {
     const {
-        bodyUsed,
         headers,
         ok,
         redirected,
@@ -432,7 +434,6 @@ export const forgeResponse = (response: Response, textContent: string): Response
         url: { value: url },
         type: { value: type },
         ok: { value: ok },
-        bodyUsed: { value: bodyUsed },
         redirected: { value: redirected },
     });
 

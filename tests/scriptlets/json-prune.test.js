@@ -1663,6 +1663,18 @@ test('json-prune with matches which is an invalid regular expression is not appl
     assert.ok(logs.some((log) => log.includes('Invalid matches: /[/')), 'should log the pattern');
 });
 
+test('json-prune with a target of matches, which only trusted-json-set has, is not applied', (assert) => {
+    const logs = [];
+    console.log = (...args) => {
+        logs.push(args.join(' '));
+    };
+    runScriptlet(name, '$.ads', '', '', '', 'matches this', 'ads');
+    console.log = nativeConsole;
+
+    assert.deepEqual(JSON.parse('{"ads":1}'), { ads: 1 }, 'should not prune');
+    assert.ok(logs.some((log) => log.includes('Invalid matches: matches this')), 'should log the option');
+});
+
 test('matches does not change RegExp.$1 of the page', (assert) => {
     [
         ['ubo-json-edit', '..ad_shield_wap', 'matches', '/ad_shield_wap/'],

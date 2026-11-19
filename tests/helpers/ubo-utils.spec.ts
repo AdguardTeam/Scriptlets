@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
     parseUboOptions,
+    getUboJsonEditArguments,
     uboPatternToRegExp,
     parseUboReplaceDirective,
     getUboConstantValue,
@@ -60,6 +61,35 @@ describe('parseUboOptions', () => {
 
     test.each(['١٢', '1 ', '+1', '1.5', '٣'])('does not convert %s, which is not ASCII digits only', (value) => {
         expect(parseUboOptions(['a', value]).a).toBe(value);
+    });
+});
+
+describe('getUboJsonEditArguments', () => {
+    test('reads the query and the named options, as uBO trusted-json-edit-fetch-response', () => {
+        const { query, options } = getUboJsonEditArguments(['.ads=false', 'propsToMatch', '/api', 'matches', 'ads']);
+        expect(query).toBe('.ads=false');
+        expect({ ...options }).toEqual({ propsToMatch: '/api', matches: 'ads' });
+    });
+
+    test('unescapes quotes which the converters escape, but keeps escapes of double quotes', () => {
+        const { query, options } = getUboJsonEditArguments(["..[?.t==\"it\\'s\"]", 'matches', "it\\'s \\\"x\\\""]);
+        expect(query).toBe('..[?.t=="it\'s"]');
+        expect(options.matches).toBe('it\'s \\"x\\"');
+    });
+
+    test.each([
+        // player.pl: a value without its option, which uBO ignores
+        { args: ['.mandatoryAdvertising=false', '/player/configuration'], expected: {} },
+        // idlixku.com: an empty argument, after which the pairs are shifted, as in uBO
+        { args: ['.preroll.ad', '', 'propsToMatch', '/play'], expected: {} },
+        // positional arguments of AdGuard syntax, which the scriptlet passes with their defaults
+        { args: ['.ads', undefined, '', '', '', '', ''], expected: {} },
+    ])('reads the options of $args as uBO', ({ args, expected }) => {
+        expect({ ...getUboJsonEditArguments(args).options }).toEqual(expected);
+    });
+
+    test('returns an empty query if it is not a string', () => {
+        expect(getUboJsonEditArguments([undefined]).query).toBe('');
     });
 });
 

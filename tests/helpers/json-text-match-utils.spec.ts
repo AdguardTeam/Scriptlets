@@ -43,7 +43,13 @@ describe('getAdgJsonTextMatch', () => {
         { extraArgs: ['matches', ''] },
         { extraArgs: ['verbose', 'true'] },
     ])('matches every value for $extraArgs', ({ extraArgs }) => {
-        expect(getAdgJsonTextMatch(extraArgs)).toEqual({ isValid: true, pattern: '', matcher: null });
+        expect(getAdgJsonTextMatch(extraArgs)).toEqual({
+            isValid: true,
+            pattern: '',
+            matcher: null,
+            target: 'arg',
+            argIndex: 0,
+        });
     });
 
     test('matches a string which the text contains', () => {
@@ -74,13 +80,84 @@ describe('getAdgJsonTextMatch', () => {
     });
 
     test('is invalid for an invalid regular expression', () => {
-        expect(getAdgJsonTextMatch(['matches', '/[/'])).toEqual({ isValid: false, pattern: '/[/', matcher: null });
+        expect(getAdgJsonTextMatch(['matches', '/[/'])).toMatchObject({
+            isValid: false,
+            pattern: '/[/',
+            matcher: null,
+        });
+    });
+});
+
+describe('getAdgJsonTextMatch with targets, as of trusted-json-set', () => {
+    test.each([
+        { option: 'matches', target: 'arg', argIndex: 0 },
+        { option: 'matches arg:0', target: 'arg', argIndex: 0 },
+        { option: 'matches arg:2', target: 'arg', argIndex: 2 },
+        { option: 'matches arg:12', target: 'arg', argIndex: 12 },
+        { option: 'matches this', target: 'this', argIndex: 0 },
+        { option: 'matches result', target: 'result', argIndex: 0 },
+    ])('$option tests $target $argIndex', ({ option, target, argIndex }) => {
+        expect(getAdgJsonTextMatch(['', option, 'ads'], true)).toEqual({
+            isValid: true,
+            pattern: 'ads',
+            matcher: 'ads',
+            target,
+            argIndex,
+        });
+    });
+
+    test.each([
+        'matches args',
+        'matches arg:',
+        'matches arg:-1',
+        'matches arg:1.5',
+        'matches arg:0|1',
+        'matches all',
+        'matches thisArg',
+    ])('%s is an invalid target, also with an empty pattern', (option) => {
+        expect(getAdgJsonTextMatch([option, 'ads'], true)).toMatchObject({ isValid: false, pattern: option });
+        expect(getAdgJsonTextMatch([option, ''], true)).toMatchObject({ isValid: false, pattern: option });
+    });
+
+    test.each(['matches this', 'matches result', 'matches arg:1'])('%s is invalid without targets', (option) => {
+        // e.g. in json-prune, which intercepts only JSON.parse()
+        expect(getAdgJsonTextMatch([option, 'ads'])).toMatchObject({ isValid: false, pattern: option });
+    });
+
+    test('a name which only starts with matches is another option', () => {
+        expect(getAdgJsonTextMatch(['matchesAll', 'ads'], true)).toMatchObject({ isValid: true, matcher: null });
+    });
+
+    test('the last option is used, with its target', () => {
+        expect(getAdgJsonTextMatch(['matches this', 'a', 'matches result', 'b'], true)).toMatchObject({
+            target: 'result',
+            matcher: 'b',
+        });
+    });
+
+    test('digits of a target are read while RegExp.prototype.test and charCodeAt throw', () => {
+        const restoreTest = useThrowingMethod(RegExp.prototype, 'test');
+        const restoreCharCodeAt = useThrowingMethod(String.prototype, 'charCodeAt');
+        let match;
+        try {
+            match = getAdgJsonTextMatch(['matches arg:3', 'ads'], true);
+        } finally {
+            restoreTest();
+            restoreCharCodeAt();
+        }
+        expect(match).toMatchObject({ isValid: true, target: 'arg', argIndex: 3 });
     });
 });
 
 describe('getUboJsonTextMatch', () => {
     test.each([undefined, '', 0])('matches every value for %s, as uBO', (value) => {
-        expect(getUboJsonTextMatch(value)).toEqual({ isValid: true, pattern: '', matcher: null });
+        expect(getUboJsonTextMatch(value)).toEqual({
+            isValid: true,
+            pattern: '',
+            matcher: null,
+            target: 'arg',
+            argIndex: 0,
+        });
     });
 
     test('matches a string which the text contains, with special characters', () => {
@@ -108,7 +185,7 @@ describe('getUboJsonTextMatch', () => {
     });
 
     test('is invalid for an invalid regular expression', () => {
-        expect(getUboJsonTextMatch('/[/')).toEqual({ isValid: false, pattern: '/[/', matcher: null });
+        expect(getUboJsonTextMatch('/[/')).toMatchObject({ isValid: false, pattern: '/[/', matcher: null });
     });
 });
 

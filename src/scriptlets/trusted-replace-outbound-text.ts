@@ -22,6 +22,7 @@ import {
     getAdgOutboundTextReplacement,
     getUboOutboundTextReplacement,
     replaceOutboundText,
+    isDigits,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -236,4 +237,6 @@ trustedReplaceOutboundText.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

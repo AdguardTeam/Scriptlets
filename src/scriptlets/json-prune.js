@@ -43,6 +43,7 @@ import {
     parseUboOptions,
     unescapeUboArgument,
     uboPatternToRegExp,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -785,4 +786,6 @@ jsonPrune.injections = [
     parseUboOptions,
     unescapeUboArgument,
     uboPatternToRegExp,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

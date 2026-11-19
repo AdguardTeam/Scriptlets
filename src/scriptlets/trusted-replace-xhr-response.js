@@ -34,6 +34,7 @@ import {
     getAdgXhrResponseReplacement,
     getUboXhrResponseReplacement,
     replaceXhrResponses,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -248,4 +249,6 @@ trustedReplaceXhrResponse.injections = [
     backupRegExpValues,
     restoreRegExpValues,
     isKeyInObject,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

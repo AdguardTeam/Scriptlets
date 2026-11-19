@@ -34,6 +34,7 @@ import {
     getAdgArgumentReplacement,
     getUboArgumentReplacement,
     replaceArguments,
+    isDigits,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -302,4 +303,6 @@ trustedReplaceArgument.injections = [
     isEmptyObject,
     backupRegExpValues,
     restoreRegExpValues,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

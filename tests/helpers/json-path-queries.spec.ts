@@ -618,4 +618,18 @@ describe('value of a scriptlet which may not set values', () => {
         expect(logs).not.toContain('is not defined');
         expect(logs).not.toContain('processing failed');
     });
+
+    test.each([
+        { name: 'trusted-json-set', isAllowed: true },
+        { name: 'ubo-trusted-json-edit', isAllowed: true },
+        { name: 'ubo-trusted-json-edit-fetch-response.js', isAllowed: true },
+        { name: 'ubo-json-edit', isAllowed: false },
+        { name: 'json-edit', isAllowed: false },
+    ])('a value is set by $name only if it is trusted: $isAllowed', ({ name, isAllowed }) => {
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const scriptletSource = createSource(name, true);
+        const result = jsonPath(scriptletSource, { ads: true }, ['$.ads=false'], nativeObjects);
+        logSpy.mockRestore();
+        expect(result).toEqual({ ads: !isAllowed });
+    });
 });

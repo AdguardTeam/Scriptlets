@@ -10,6 +10,7 @@ import {
     getAdgNodeTextReplacement,
     getUboNodeTextReplacement,
     replaceNodesText,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -215,4 +216,6 @@ trustedReplaceNodeText.injections = [
     getAdgNodeTextReplacement,
     getUboNodeTextReplacement,
     replaceNodesText,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

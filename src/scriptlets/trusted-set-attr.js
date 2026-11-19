@@ -14,6 +14,7 @@ import {
     getAdgAttrSettings,
     getUboAttrSettings,
     setAttrBySettings,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -176,4 +177,6 @@ trustedSetAttr.injections = [
     logMessage,
     throttle,
     hit,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

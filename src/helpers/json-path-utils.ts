@@ -1048,6 +1048,8 @@ export const jsonPath = (
     const EXPRESSION_OPEN_STRING = '[?';
     const AT_SIGN = '@';
     const TRUSTED_SCRIPTLET_PREFIX = 'trusted-';
+    // uBO aliases of trusted scriptlets, e.g. `ubo-trusted-json-edit`, which are trusted as well
+    const UBO_TRUSTED_SCRIPTLET_PREFIX = 'ubo-trusted-';
     const REMOVE_VALUE_MARKER = '$remove$';
     const FILTER_OPERATORS = {
         CONTAINS: 'contains',
@@ -2416,7 +2418,9 @@ export const jsonPath = (
     }
 
     /**
-     * Checks whether the current source may perform value mutations.
+     * Checks whether the current source may perform value mutations, i.e. whether it is a trusted scriptlet,
+     * whose name starts with `trusted-`, or a uBO alias of it, whose name starts with `ubo-trusted-`,
+     * e.g. `ubo-trusted-json-edit`, which filters which may not use trusted scriptlets exclude as well.
      *
      * Remove operations stay available to non-trusted scriptlets.
      *
@@ -2429,7 +2433,10 @@ export const jsonPath = (
         }
 
         return typeof source.name === 'string'
-            && source.name.startsWith(TRUSTED_SCRIPTLET_PREFIX);
+            && (
+                source.name.startsWith(TRUSTED_SCRIPTLET_PREFIX)
+                || source.name.startsWith(UBO_TRUSTED_SCRIPTLET_PREFIX)
+            );
     }
 
     /**

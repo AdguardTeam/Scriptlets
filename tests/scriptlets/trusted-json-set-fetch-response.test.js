@@ -437,4 +437,153 @@ if (!isSupported) {
         );
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     });
+
+    /**
+     * Fetches the test file and returns its parsed response.
+     *
+     * @param {string} file Name of the test file, e.g. `test01`.
+     * @returns {Promise<object>} Parsed response.
+     */
+    const fetchJson = async (file) => (await fetch(`${FETCH_OBJECTS_PATH}/${file}.json`)).json();
+
+    test('ubo-trusted-json-edit-fetch-response sets a value of a matching response', async (assert) => {
+        // e.g. novelgames.com##+js(trusted-json-edit-fetch-response, .adShowPreload=false, propsToMatch, …)
+        // `..src` matches in both files, so only `propsToMatch` limits the rule to the first one
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..src=changed', 'propsToMatch', 'test02']);
+
+        assert.strictEqual((await fetchJson('test02')).src, 'changed', 'matching response is modified');
+        assert.strictEqual((await fetchJson('test03')).cc.src, 'example.org', 'other response should not be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response.js removes what a query without a value matches', async (assert) => {
+        runScriptlet('ubo-trusted-json-edit-fetch-response.js', ['.b2', 'propsToMatch', 'test01']);
+
+        assert.deepEqual(await fetchJson('test01'), { a1: 1, c3: 3 }, 'property should be removed');
+    });
+
+    test('uBO arguments of trusted-json-edit-fetch-response are read as uBO reads them', async (assert) => {
+        // idlixku.com##+js(trusted-json-edit-fetch-response, .preroll.ad, , propsToMatch, /play):
+        // the empty argument shifts the pairs, so uBO has no propsToMatch, and every response is modified
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['.b2', '', 'propsToMatch', 'test03']);
+        assert.deepEqual(await fetchJson('test01'), { a1: 1, c3: 3 }, 'every response should be modified');
+
+        // positional arguments of AdGuard syntax are not read, e.g. `stack`
+        window.fetch = nativeFetch;
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['.b2=false', '', '', '', 'neverMatchedStack']);
+        assert.deepEqual(await fetchJson('test01'), { a1: 1, b2: false, c3: 3 }, 'stack should not be read');
+
+        // the query is not split, as uBO ignores spaces in it, so `$.b2 $.c3` does not remove both properties
+        window.fetch = nativeFetch;
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['$.b2 $.c3']);
+        assert.deepEqual(await fetchJson('test01'), { a1: 1, b2: 'test', c3: 3 }, 'one query should be applied');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response returns the original text if nothing is matched', async (assert) => {
+        const path = `${FETCH_OBJECTS_PATH}/test-big-number.json`;
+        const originalText = await (await nativeFetch(path)).text();
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..ads']);
+
+        // the number would change if the response were parsed and serialized again
+        assert.strictEqual(await (await fetch(path)).text(), originalText, 'response text should be original');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response matches negated propsToMatch, as uBO', async (assert) => {
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..src=changed', 'propsToMatch', 'url:!test03']);
+
+        assert.strictEqual((await fetchJson('test02')).src, 'changed', 'other URL should be modified');
+        assert.strictEqual((await fetchJson('test03')).cc.src, 'example.org', 'excluded URL should not be modified');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response does not modify line-delimited JSON, as uBO', async (assert) => {
+        const path = `${FETCH_OBJECTS_PATH}/string-like-json01.txt`;
+        const originalText = await (await nativeFetch(path)).text();
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..ads']);
+
+        assert.strictEqual(await (await fetch(path)).text(), originalText, 'response text should be original');
+    });
+
+    test('ubo-trusted-json-edit-fetch-response with invalid propsToMatch is not applied', async (assert) => {
+        const logs = [];
+        console.log = (...args) => {
+            logs.push(args.join(' '));
+        };
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['.b2=false', 'propsToMatch', '/[/']);
+        const json = await fetchJson('test01');
+        console.log = nativeConsole;
+
+        assert.strictEqual(json.b2, 'test', 'response should not be modified');
+        assert.ok(logs.some((log) => log.includes('Invalid propsToMatch')), 'should be logged when the rule runs');
+    });
+
+    test('a second uBO rule which matches nothing returns the response of the first one as it is', async (assert) => {
+        const path = `${FETCH_OBJECTS_PATH}/test01.json`;
+        const nativeResponse = await nativeFetch(path);
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['.b2']);
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..sponsors']);
+
+        const response = await fetch(path);
+        assert.strictEqual(response.url, nativeResponse.url, 'url should be kept');
+        assert.strictEqual(response.type, nativeResponse.type, 'type should be kept');
+        assert.deepEqual(await response.json(), { a1: 1, c3: 3 }, 'the first rule should be applied');
+    });
+
+    test('a retry of a request whose body is used reaches the network, as it is not matched', async (assert) => {
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..ads', 'propsToMatch', 'other-url']);
+        const request = new Request(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST', body: 'first' });
+        await request.text();
+
+        // a native fetch() accepts the request with another body, while cloning the used request throws
+        const response = await fetch(request, { body: 'retry' });
+        assert.true(response instanceof Response, 'request should be sent');
+    });
+
+    test('bodyUsed of an edited response tells whether the page has read it', async (assert) => {
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['.b2']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.false(response.bodyUsed, 'body should not be used before it is read');
+        assert.deepEqual(await response.json(), { a1: 1, c3: 3 }, 'response should be modified');
+        assert.true(response.bodyUsed, 'body should be used after it is read');
+    });
+
+    test('a rule without propsToMatch modifies a retry of a request whose body is used', async (assert) => {
+        runScriptlet(name, ['b2', 'changed']);
+        const request = new Request(`${FETCH_OBJECTS_PATH}/test01.json`, { method: 'POST', body: 'first' });
+        await request.text();
+
+        // the data of the request is not needed, so it is not collected, which would throw for the used request
+        const response = await fetch(request, { body: 'retry' });
+        assert.deepEqual(await response.json(), { a1: 1, b2: 'changed', c3: 3 }, 'response should be modified');
+    });
+
+    /**
+     * Sends a POST request whose options have a getter of the body, which returns another value on each read,
+     * e.g. of a sequence number, and returns how many times it has been read.
+     *
+     * @returns {Promise<number>} Count of the reads of the body.
+     */
+    const countBodyReads = async () => {
+        let reads = 0;
+        const options = {
+            method: 'POST',
+            get body() {
+                reads += 1;
+                return `message-${reads}`;
+            },
+        };
+        await fetch(`${FETCH_OBJECTS_PATH}/test01.json`, options);
+        return reads;
+    };
+
+    test('uBO rules do not read the body before native fetch, without propsToMatch or of the URL', async (assert) => {
+        const nativeReads = await countBodyReads();
+
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..ads']);
+        assert.strictEqual(await countBodyReads(), nativeReads, 'body should be read as natively without propsToMatch');
+
+        window.fetch = nativeFetch;
+        runScriptlet('ubo-trusted-json-edit-fetch-response', ['..ads', 'propsToMatch', 'other-url']);
+        assert.strictEqual(await countBodyReads(), nativeReads, 'body should be read as natively for a URL pattern');
+    });
 }

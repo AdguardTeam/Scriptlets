@@ -53,6 +53,14 @@ import {
     resolveJsonSetTimeKeywords,
     getThrownValueMessage,
     logJsonContent,
+    getUboJsonEditArguments,
+    parseUboOptions,
+    unescapeUboArgument,
+    isDigits,
+    parseUboPropsToMatch,
+    matchUboProps,
+    collateUboFetchArguments,
+    type UboPropNeedle,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -142,6 +150,34 @@ import { type Source } from './scriptlets';
  * > Scriptlet does nothing if response body cannot be converted to JSON.
  * > If the response is line-delimited JSON, each JSON line is processed independently.
  *
+ * ### uBO syntax
+ *
+ * uBO rules of `trusted-json-edit-fetch-response` are supported with uBO arguments,
+ * e.g. `example.org##+js(trusted-json-edit-fetch-response, .adShowPreload=false, propsToMatch, /getPreloaderInfo)`:
+ *
+ * ```text
+ * example.org##+js(trusted-json-edit-fetch-response, jsonq[, ...options])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `jsonq` — one JSONPath expression, which is not split by spaces, as uBO ignores them, e.g. `.a $.b` is one
+ *   expression; an expression without its own value removes what it matches, e.g. `.preroll.ad`;
+ *   a rule with an empty expression is not applied
+ * - options are pairs of a name and a value which follow `jsonq`:
+ *     - `propsToMatch, value` — properties of the request, which are matched as by uBO: they are separated
+ *       by whitespaces, a property without a name is matched against the URL, a value which starts with `!`
+ *       must not match, e.g. `url:!private`, and a property which the request does not have is ignored;
+ *       a rule with an invalid regular expression is not applied; only the properties which it names are read,
+ *       each once, before native `fetch` reads them, so a getter of the page which returns another value
+ *       on each read, e.g. of `body`, may give `fetch` another value than the matched one, while uBO calls `fetch`
+ *       first, so only the value which it matches may differ
+ * - the original response is returned if the expression changes nothing, so its text is not serialized again,
+ *   e.g. a number which JSON cannot represent exactly, and a response which is not one JSON document,
+ *   e.g. of line-delimited JSON, is not modified
+ * - other options and arguments are ignored, as in uBO, e.g. a value without its name,
+ *   so `example.org##+js(trusted-json-edit-fetch-response, .ads=false, /api)` modifies every response
+ *
  * ### Examples
  *
  * <!-- markdownlint-disable line-length -->
@@ -228,12 +264,61 @@ export function trustedJsonSetFetchResponse(
     stack = '',
     mode = '',
     verbose = '',
+    ...extraArgs: string[]
 ) {
+    // !IMPORTANT: Do not move constants outside of this function
+    const UBO_JSON_EDIT_NAME_PREFIX = 'ubo-trusted-json-edit';
+    const REMOVE_VALUE = '$remove$';
+    // Property of a pattern of uBO `propsToMatch` without a name
+    const UBO_IMPLICIT_PROP = 'url';
+
+    // Rules with uBO names of `trusted-json-edit-fetch-response` have uBO arguments, i.e. a query followed by named
+    // options, of which `propsToMatch` is supported, which are read into the positional arguments of AdGuard syntax,
+    // so they are processed by the same implementation: the query is not split, and it removes the nodes it matches
+    // if it has no value of its own, as in uBO. Other arguments are not read by their position then, e.g. `stack`
+    const isUboJsonEdit = typeof source.name === 'string' && source.name.startsWith(UBO_JSON_EDIT_NAME_PREFIX);
+    let uboNeedles: Record<string, UboPropNeedle> | null = null;
+    if (isUboJsonEdit) {
+        const uboArguments = getUboJsonEditArguments([
+            propsPath,
+            argumentValue,
+            requiredInitialProps,
+            propsToMatch,
+            stack,
+            mode,
+            verbose,
+        ].concat(extraArgs));
+        // uBO does not apply a rule with an empty query
+        if (uboArguments.query === '') {
+            logMessage(source, 'Bad JSONPath query');
+            return;
+        }
+        // `propsToMatch` is matched as by uBO, e.g. `!` negates a pattern, see `parseUboPropsToMatch()`
+        uboNeedles = parseUboPropsToMatch(uboArguments.options.propsToMatch, UBO_IMPLICIT_PROP);
+        if (uboNeedles === null) {
+            logMessage(source, `Invalid propsToMatch: ${uboArguments.options.propsToMatch}`);
+            return;
+        }
+        propsPath = uboArguments.query;
+        argumentValue = REMOVE_VALUE;
+        requiredInitialProps = '';
+        propsToMatch = '';
+        stack = '';
+        mode = 'jsonpath';
+        verbose = '';
+    }
+    // Saved when the rule runs, as the page or another rule may replace `RegExp.prototype.test` later
+    const testRegexp = getRegexpTester();
+
     const syntaxModeDetails = resolveJsonSyntaxMode(propsPath, mode);
-    // Queries are built after `propsPath` is split, so `argumentValue` is never split
-    const jsonPathQueries = syntaxModeDetails.mode === 'jsonpath'
-        ? buildJsonPathQueries(propsPath, argumentValue)
-        : [];
+    // Queries are built after `propsPath` is split, so `argumentValue` is never split,
+    // while the query of a uBO rule is not split, as uBO ignores spaces in it, e.g. `.a $.b` is one query
+    let jsonPathQueries: string[] = [];
+    if (syntaxModeDetails.mode === 'jsonpath') {
+        jsonPathQueries = isUboJsonEdit
+            ? [buildJsonPathExpression(propsPath, argumentValue)]
+            : buildJsonPathQueries(propsPath, argumentValue);
+    }
     // Queries are parsed once, not for each processed value
     const jsonPathCache: JsonPathCache = Object.create(null);
 
@@ -299,16 +384,24 @@ export function trustedJsonSetFetchResponse(
         return getJsonSetValue(currentValue, resolvedArgumentValue);
     };
 
+    // Whether the last call of `applyJsonMutation()` has modified the value, in JSONPath mode,
+    // as uBO rules return the original response if their query matches nothing
+    let isJsonModified = false;
+
     // Stack trace is not passed to the helpers, as it is already matched by `fetchHandlerWrapper()`
     // when `fetch()` is called, and the response is modified after it is awaited
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
+        isJsonModified = false;
         if (syntaxModeDetails.mode === 'jsonpath') {
             return jsonPath(
                 source,
                 jsonValue,
                 jsonPathQueries,
                 nativeObjects,
-                () => hit(source),
+                () => {
+                    isJsonModified = true;
+                    hit(source);
+                },
                 '',
                 false,
                 jsonPathCache,
@@ -340,10 +433,50 @@ export function trustedJsonSetFetchResponse(
         thisArg: any,
         args: [FetchResource, RequestInit],
     ): Promise<Response> => {
-        const fetchData = getFetchData(args, nativeObjects.nativeRequestClone);
+        // Data of the call, which AdGuard `propsToMatch` and the logs need, is collected only then, in `try`,
+        // as cloning a `Request` throws if its body is used, e.g. of a retry of a request with another body,
+        // which should reach the network as it is, also if the rule does not match it
+        let fetchData: ReturnType<typeof getFetchData> | null = null;
+        const describeFetchCall = (): string => {
+            try {
+                return objectToString(fetchData || getFetchData(args, nativeObjects.nativeRequestClone));
+            } catch {
+                return '';
+            }
+        };
 
-        if (!matchRequestProps(source, propsToMatch, fetchData)) {
-            return Reflect.apply(target, thisArg, args);
+        if (isUboJsonEdit) {
+            // The properties of the call are collected as by uBO, and an error of a method of the page
+            // which they are read by, e.g. a getter of the options, does not reach the page
+            // A rule without `propsToMatch` matches every request without reading it, as in uBO, and other rules
+            // read only the properties which they match, each once, see `collateUboFetchArguments()`
+            const needles = uboNeedles as Record<string, UboPropNeedle>;
+            const neededProps = Object.keys(needles);
+            let isUboRequestMatched = neededProps.length === 0;
+            try {
+                isUboRequestMatched = isUboRequestMatched || matchUboProps(
+                    needles,
+                    collateUboFetchArguments(args[0], args[1], nativeObjects.nativeRequestClone, neededProps),
+                    testRegexp,
+                );
+            } catch (error) {
+                logMessage(source, `Request cannot be matched: ${getThrownValueMessage(error)}`);
+            }
+            if (!isUboRequestMatched) {
+                return Reflect.apply(target, thisArg, args);
+            }
+        } else if (propsToMatch !== '' && propsToMatch !== '*') {
+            // Without properties to match, every request is matched, as by `matchRequestProps()`, so its data is not
+            // collected, which would throw for a request whose body is used, e.g. of a retry with another body
+            try {
+                fetchData = getFetchData(args, nativeObjects.nativeRequestClone);
+            } catch (error) {
+                logMessage(source, `Request cannot be matched: ${getThrownValueMessage(error)}`);
+                return Reflect.apply(target, thisArg, args);
+            }
+            if (!matchRequestProps(source, propsToMatch, fetchData)) {
+                return Reflect.apply(target, thisArg, args);
+            }
         }
 
         // Stack trace is read only if it is matched or logged, before the response is awaited,
@@ -376,17 +509,19 @@ export function trustedJsonSetFetchResponse(
         try {
             clonedResponse = nativeObjects.nativeResponseClone.call(originalResponse);
         } catch {
-            logMessage(source, `Could not clone the response: ${fetchData.url}`);
+            logMessage(source, `Could not clone the response: ${describeFetchCall()}`);
             return originalResponse;
         }
 
+        // The body of the clone is read, so the original response is returned as it is if it is not modified,
+        // with the properties which another rule may have defined on it, e.g. `url` of a forged response
         let textContent;
         try {
-            textContent = await originalResponse.text();
+            textContent = await clonedResponse.text();
         } catch {
-            const message = `Response body can't be converted to text: ${objectToString(fetchData)}`;
+            const message = `Response body can't be converted to text: ${describeFetchCall()}`;
             logMessage(source, message);
-            return clonedResponse;
+            return originalResponse;
         }
 
         let json;
@@ -410,6 +545,12 @@ export function trustedJsonSetFetchResponse(
 
                 const modifiedJson = applyJsonMutation(json);
 
+                // The original response of a uBO rule whose query matches nothing is returned, as in uBO,
+                // so its text, e.g. a number which JSON cannot represent exactly, is not serialized again
+                if (isUboJsonEdit && !isJsonModified) {
+                    return originalResponse;
+                }
+
                 if (shouldLogContent) {
                     logJsonContent(source, modifiedJson, nativeObjects.nativeStringify, stackTrace, 'Modified content');
                 }
@@ -421,8 +562,14 @@ export function trustedJsonSetFetchResponse(
             } catch (error) {
                 // e.g. thrown by serializing a value which is too deeply nested
                 logMessage(source, `Response body can't be modified: ${getThrownValueMessage(error)}`);
-                return clonedResponse;
+                return originalResponse;
             }
+        }
+
+        // A response of a uBO rule which is not a JSON document is returned as is,
+        // as uBO does not process line-delimited JSON
+        if (isUboJsonEdit) {
+            return originalResponse;
         }
 
         try {
@@ -443,13 +590,13 @@ export function trustedJsonSetFetchResponse(
                 return forgeResponse(originalResponse, lineEditResult.text);
             }
 
-            const message = `Response body can't be converted to json: ${objectToString(fetchData)}`;
+            const message = `Response body can't be converted to json: ${describeFetchCall()}`;
             logMessage(source, message);
-            return clonedResponse;
+            return originalResponse;
         } catch (error) {
-            const message = `Response body can't be converted to json: ${objectToString(fetchData)}`;
+            const message = `Response body can't be converted to json: ${describeFetchCall()}`;
             logMessage(source, message);
-            return clonedResponse;
+            return originalResponse;
         }
     };
 
@@ -463,7 +610,10 @@ export function trustedJsonSetFetchResponse(
 
 export const trustedJsonSetFetchResponseNames = [
     'trusted-json-set-fetch-response',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-json-edit-fetch-response.js',
+    'ubo-trusted-json-edit-fetch-response',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -522,4 +672,12 @@ trustedJsonSetFetchResponse.injections = [
     resolveJsonSetTimeKeywords,
     getThrownValueMessage,
     logJsonContent,
+    getUboJsonEditArguments,
+    parseUboOptions,
+    unescapeUboArgument,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
+    parseUboPropsToMatch,
+    matchUboProps,
+    collateUboFetchArguments,
 ];

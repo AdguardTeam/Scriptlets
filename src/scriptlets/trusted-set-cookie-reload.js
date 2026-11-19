@@ -16,6 +16,7 @@ import {
     getAdgCookieSettings,
     getUboCookieSettings,
     setCookieBySettings,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -181,4 +182,6 @@ trustedSetCookieReload.injections = [
     getAdgCookieSettings,
     getUboCookieSettings,
     setCookieBySettings,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

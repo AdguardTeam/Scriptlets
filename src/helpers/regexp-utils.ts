@@ -56,9 +56,11 @@ export const getRegexpTester = (): (regexp: RegExp, text: string) => boolean => 
  */
 export const backupRegExpValues = (): Array<any> => {
     try {
-        const arrayOfRegexpValues = [];
+        // Set by index, not by `push()`, which a rule may intercept, e.g. `trusted-json-set` of `Array.prototype.push`,
+        // whose `matches` saves the values by this helper
+        const arrayOfRegexpValues: unknown[] = [];
         for (let index = 1; index < 10; index += 1) {
-            arrayOfRegexpValues.push((RegExp as any)[`$${index}`]);
+            arrayOfRegexpValues[index - 1] = (RegExp as any)[`$${index}`];
         }
         return arrayOfRegexpValues;
     } catch (error) {

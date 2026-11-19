@@ -51,6 +51,7 @@ import {
     nativeIsNaN,
     parseUboOptions,
     unescapeUboArgument,
+    isDigits,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -473,4 +474,6 @@ jsonPruneFetchResponse.injections = [
     nativeIsNaN,
     parseUboOptions,
     unescapeUboArgument,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

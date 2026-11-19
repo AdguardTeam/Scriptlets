@@ -34,6 +34,7 @@ import {
     getUboConstantSetting,
     setConstantBySettings,
     randomId,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -217,4 +218,6 @@ trustedSetConstant.injections = [
     restoreRegExpValues,
     getDescriptorAddon,
     randomId,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

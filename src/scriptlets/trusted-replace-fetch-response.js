@@ -29,6 +29,7 @@ import {
     getAdgResponseTextReplacement,
     getUboResponseTextReplacement,
     replaceResponseText,
+    isDigits,
 } from '../helpers';
 
 /* eslint-disable max-len */
@@ -94,7 +95,10 @@ import {
  *   if it is empty, the rule does nothing
  * - `propsToMatch` — properties are separated by whitespaces, a property without a name is matched against
  *   the URL, a value which starts with `!` must not match, and a property which the request does not have
- *   is ignored, as in uBO
+ *   is ignored, as in uBO; only the properties which it names are read, each once, before native `fetch`
+ *   reads them, so a getter of the page which returns another value on each read, e.g. of `body`,
+ *   may give `fetch` another value than the matched one, while uBO calls `fetch` first,
+ *   so only the value which it matches may differ
  * - options are pairs of a name and a value which follow `propsToMatch`:
  *     - `includes, value` — string or regular expression which the response text content has to match
  * - the original response is returned if its text content has not changed
@@ -255,4 +259,6 @@ trustedReplaceFetchResponse.injections = [
     parseMatchProps,
     isValidParsedData,
     getMatchPropsData,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

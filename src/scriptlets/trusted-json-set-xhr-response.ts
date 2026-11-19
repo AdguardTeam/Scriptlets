@@ -51,6 +51,14 @@ import {
     buildJsonPathQueries,
     getThrownValueMessage,
     logJsonContent,
+    getUboJsonEditArguments,
+    parseUboOptions,
+    unescapeUboArgument,
+    isDigits,
+    parseUboPropsToMatch,
+    matchUboProps,
+    type UboPropNeedle,
+    type XMLHttpRequestSharedRequestData,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -137,6 +145,33 @@ import { type Source } from './scriptlets';
  * > Scriptlet does nothing if response body cannot be converted to JSON.
  * > If the response is line-delimited JSON, each JSON line is processed independently.
  *
+ * ### uBO syntax
+ *
+ * uBO rules of `trusted-json-edit-xhr-response` are supported with uBO arguments,
+ * e.g. `example.org##+js(trusted-json-edit-xhr-response, .access=true, propsToMatch, /no_ads/config)`:
+ *
+ * ```text
+ * example.org##+js(trusted-json-edit-xhr-response, jsonq[, ...options])
+ * ```
+ *
+ * They differ from the AdGuard syntax as follows:
+ *
+ * - `jsonq` — one JSONPath expression, which is not split by spaces, as uBO ignores them, e.g. `.a $.b` is one
+ *   expression; an expression without its own value removes what it matches, e.g. `.rules.*[?.name=="Ad Blocker"]`;
+ *   a rule with an empty expression is not applied
+ * - options are pairs of a name and a value which follow `jsonq`:
+ *     - `propsToMatch, value` — properties of the request, which are matched as by uBO: they are separated
+ *       by whitespaces, a property without a name is matched against the URL, a value which starts with `!`
+ *       must not match, e.g. `url:!private`, and a property which the request does not have is ignored;
+ *       a rule with an invalid regular expression is not applied
+ * - the original response is returned if the expression changes nothing, so its text is not serialized again,
+ *   e.g. a number which JSON cannot represent exactly, and a response which is not one JSON document,
+ *   e.g. of line-delimited JSON, is not modified,
+ *   while a request whose response type has no JSON text, e.g. `arraybuffer` or `blob`, is sent as it is,
+ *   and a response of `json` type which is not JSON is `null`, as of a native request
+ * - other options and arguments are ignored, as in uBO, e.g. a value without its name,
+ *   so `example.org##+js(trusted-json-edit-xhr-response, .ads=false, /api)` modifies every response
+ *
  * ### Example
  *
  * <!-- markdownlint-disable line-length -->
@@ -211,12 +246,61 @@ export function trustedJsonSetXhrResponse(
     stack = '',
     mode = '',
     verbose = '',
+    ...extraArgs: string[]
 ) {
+    // !IMPORTANT: Do not move constants outside of this function
+    const UBO_JSON_EDIT_NAME_PREFIX = 'ubo-trusted-json-edit';
+    const REMOVE_VALUE = '$remove$';
+    // Property of a pattern of uBO `propsToMatch` without a name
+    const UBO_IMPLICIT_PROP = 'url';
+
+    // Rules with uBO names of `trusted-json-edit-xhr-response` have uBO arguments, i.e. a query followed by named
+    // options, of which `propsToMatch` is supported, which are read into the positional arguments of AdGuard syntax,
+    // so they are processed by the same implementation: the query is not split, and it removes the nodes it matches
+    // if it has no value of its own, as in uBO. Other arguments are not read by their position then, e.g. `stack`
+    const isUboJsonEdit = typeof source.name === 'string' && source.name.startsWith(UBO_JSON_EDIT_NAME_PREFIX);
+    let uboNeedles: Record<string, UboPropNeedle> | null = null;
+    if (isUboJsonEdit) {
+        const uboArguments = getUboJsonEditArguments([
+            propsPath,
+            argumentValue,
+            requiredInitialProps,
+            propsToMatch,
+            stack,
+            mode,
+            verbose,
+        ].concat(extraArgs));
+        // uBO does not apply a rule with an empty query
+        if (uboArguments.query === '') {
+            logMessage(source, 'Bad JSONPath query');
+            return;
+        }
+        // `propsToMatch` is matched as by uBO, e.g. `!` negates a pattern, see `parseUboPropsToMatch()`
+        uboNeedles = parseUboPropsToMatch(uboArguments.options.propsToMatch, UBO_IMPLICIT_PROP);
+        if (uboNeedles === null) {
+            logMessage(source, `Invalid propsToMatch: ${uboArguments.options.propsToMatch}`);
+            return;
+        }
+        propsPath = uboArguments.query;
+        argumentValue = REMOVE_VALUE;
+        requiredInitialProps = '';
+        propsToMatch = '';
+        stack = '';
+        mode = 'jsonpath';
+        verbose = '';
+    }
+    // Saved when the rule runs, as the page or another rule may replace `RegExp.prototype.test` later
+    const testRegexp = getRegexpTester();
+
     const syntaxModeDetails = resolveJsonSyntaxMode(propsPath, mode);
-    // Queries are built after `propsPath` is split, so `argumentValue` is never split
-    const jsonPathQueries = syntaxModeDetails.mode === 'jsonpath'
-        ? buildJsonPathQueries(propsPath, argumentValue)
-        : [];
+    // Queries are built after `propsPath` is split, so `argumentValue` is never split,
+    // while the query of a uBO rule is not split, as uBO ignores spaces in it, e.g. `.a $.b` is one query
+    let jsonPathQueries: string[] = [];
+    if (syntaxModeDetails.mode === 'jsonpath') {
+        jsonPathQueries = isUboJsonEdit
+            ? [buildJsonPathExpression(propsPath, argumentValue)]
+            : buildJsonPathQueries(propsPath, argumentValue);
+    }
     // Queries are parsed once, not for each processed value
     const jsonPathCache: JsonPathCache = Object.create(null);
 
@@ -268,14 +352,22 @@ export function trustedJsonSetXhrResponse(
         return getJsonSetValue(currentValue, resolvedArgumentValue);
     };
 
+    // Whether the last call of `applyJsonMutation()` has modified the value, in JSONPath mode,
+    // as uBO rules return the original response if their query matches nothing
+    let isJsonModified = false;
+
     const applyJsonMutation = (jsonValue: Record<string, any>) => {
+        isJsonModified = false;
         if (syntaxModeDetails.mode === 'jsonpath') {
             return jsonPath(
                 source,
                 jsonValue,
                 jsonPathQueries,
                 nativeObjects,
-                () => hit(source),
+                () => {
+                    isJsonModified = true;
+                    hit(source);
+                },
                 '',
                 false,
                 jsonPathCache,
@@ -311,6 +403,30 @@ export function trustedJsonSetXhrResponse(
      * @returns content of the response
      */
     const modifyResponse = (content: any, xhr: XMLHttpRequest, stackTrace: string) => {
+        // A uBO rule modifies only a JSON document, as uBO does: the original text is returned if it matches nothing,
+        // so it is not serialized again, and a text which is not JSON, also of line-delimited JSON, is returned as is,
+        // or `null` for `json` response type, as by a native request whose response is not JSON
+        if (isUboJsonEdit) {
+            const isJsonType = xhr.responseType === 'json';
+            if (typeof content !== 'string') {
+                return content;
+            }
+            let parsed;
+            try {
+                parsed = nativeObjects.nativeParse(content);
+            } catch {
+                return isJsonType ? null : content;
+            }
+            if (parsed === null || typeof parsed !== 'object') {
+                return isJsonType ? parsed : content;
+            }
+            const modified = applyJsonMutation(parsed);
+            if (!isJsonModified) {
+                return isJsonType ? parsed : content;
+            }
+            return isJsonType ? modified : nativeObjects.nativeStringify(modified);
+        }
+
         let modifiedContent = content;
         if (typeof content === 'string') {
             let jsonContent;
@@ -413,18 +529,54 @@ export function trustedJsonSetXhrResponse(
         return modifiedContent;
     };
 
+    /**
+     * Checks whether a request is matched by `propsToMatch`, which a uBO rule matches as uBO does,
+     * against the method and the URL passed to `open()`, see `parseUboPropsToMatch()`.
+     *
+     * @param xhrData data of `open()` of the request
+     * @returns true if the request is matched
+     */
+    const isRequestMatched = (xhrData: XMLHttpRequestSharedRequestData<any>): boolean => {
+        if (!isUboJsonEdit) {
+            return matchRequestProps(source, propsToMatch, xhrData);
+        }
+        try {
+            return matchUboProps(
+                uboNeedles as Record<string, UboPropNeedle>,
+                { method: xhrData.method, url: xhrData.url },
+                testRegexp,
+            );
+        } catch (error) {
+            logMessage(source, `Request cannot be matched: ${getThrownValueMessage(error)}`);
+            return false;
+        }
+    };
+
+    // A request of a uBO rule is sent as it is, so its native response is kept, if its response type has
+    // no JSON text, e.g. `arraybuffer`, `blob` or `document`, as uBO modifies only a text or a parsed object
+    const shouldForgeRequest = isUboJsonEdit
+        ? (xhr: XMLHttpRequest): boolean => {
+            const { responseType } = xhr;
+            return responseType === '' || responseType === 'text' || responseType === 'json';
+        }
+        : undefined;
+
     interceptXhrResponses(
         source,
         stack,
         shouldLogContent,
-        (xhrData) => matchRequestProps(source, propsToMatch, xhrData),
+        isRequestMatched,
         modifyResponse,
+        shouldForgeRequest,
     );
 }
 
 export const trustedJsonSetXhrResponseNames = [
     'trusted-json-set-xhr-response',
-    // trusted scriptlets support no aliases
+    // aliases are needed for matching the related uBO scriptlet converted into our syntax,
+    // trusted scriptlets support no other aliases
+    'ubo-trusted-json-edit-xhr-response.js',
+    'ubo-trusted-json-edit-xhr-response',
 ];
 
 // eslint-disable-next-line prefer-destructuring
@@ -482,4 +634,11 @@ trustedJsonSetXhrResponse.injections = [
     toRegExp,
     getThrownValueMessage,
     logJsonContent,
+    getUboJsonEditArguments,
+    parseUboOptions,
+    unescapeUboArgument,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
+    parseUboPropsToMatch,
+    matchUboProps,
 ];

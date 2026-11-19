@@ -133,6 +133,8 @@ export const getUboFetchResponseReplacement = (
 
     const nativeRequestClone = Request.prototype.clone;
     const testRegexp = getRegexpTester();
+    // only the properties which the rule matches are read, see `collateUboFetchArguments()`
+    const neededProps = Object.keys(needles);
 
     return {
         // Object spread is not used, as its helper of Babel is not available in the scriptlet runtime
@@ -141,9 +143,10 @@ export const getUboFetchResponseReplacement = (
         includes: textReplacement.includes,
         shouldLogContent: textReplacement.shouldLogContent,
         isUnchangedReturned: textReplacement.isUnchangedReturned,
-        isRequestMatched: (fetchArgs: unknown[]): boolean => matchUboProps(
+        // A rule without `propsToMatch` matches every request without reading it, as in uBO
+        isRequestMatched: (fetchArgs: unknown[]): boolean => neededProps.length === 0 || matchUboProps(
             needles,
-            collateUboFetchArguments(fetchArgs[0], fetchArgs[1], nativeRequestClone),
+            collateUboFetchArguments(fetchArgs[0], fetchArgs[1], nativeRequestClone, neededProps),
             testRegexp,
         ),
     };

@@ -87,7 +87,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and the named option `includes` instead of `verbose`,
   e.g. `example.org##+js(trusted-rpfr, "adPlacements", "no_ads", player?, includes, adSlots)`. As in uBO,
   an empty `pattern` does nothing, `*` is matched as the text `.*`, and the original response is returned if its text
-  has not changed. Unlike uBO, a rule with an invalid regular expression is not applied.
+  has not changed. Unlike uBO, a rule with an invalid regular expression is not applied, and only the properties
+  of the request which `propsToMatch` names are read, each once, e.g. not `body` or the URL for a pattern of the method,
+  as they may be getters of the page which return another value on each read, which native `fetch` reads then.
+  A property which a rule matches is still read before native `fetch` reads it, so such a getter may give `fetch`
+  another value than the matched one, while uBO calls `fetch` first, so only the value which it matches may differ.
 - `includes` option of `trusted-replace-fetch-response`, followed by a string or a regular expression after
   `verbose`, which the response text content has to match to be replaced, e.g.
   `example.org#%#//scriptlet('trusted-replace-fetch-response', 'ads', '', 'api', '', 'includes', 'adSlots')`.
@@ -204,11 +208,28 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   e.g. `$remove$ them`, is a text, as before.
 - `matches` option of `json-prune` and `trusted-json-set` [#586], as of uBO `json-edit`, after the positional
   arguments, e.g. `example.org#%#//scriptlet('json-prune', '$..adSlots', '', '', '', 'matches', '"adSlots"')`,
-  with a string or a regular expression which the JSON text has to match, i.e. the argument of `JSON.parse`
-  or a string selected by `jsonSource`, so the value is searched only then, which takes a small part of the time
-  of searching it for other texts, e.g. about 1% for 275 KB of JSON. A string with an escaped quote of JSON, i.e. `\"`,
+  with a string or a regular expression which the JSON text has to match, i.e. the first argument of the call,
+  e.g. the text passed to `JSON.parse`, so the value is searched only then, which takes a small part of the time
+  of searching it for other texts, e.g. about 1% for 275 KB of JSON. In `trusted-json-set`, the name of the option
+  may name another text, as `jsonSource` does, i.e. `'matches arg:N'`, `'matches this'` or `'matches result'`,
+  e.g. of `Response.prototype.text`, whose promise is tested on its fulfillment, while the value selected by
+  `jsonSource` is modified, e.g. the result of `JSON.parse`. A string with an escaped quote of JSON, i.e. `\"`,
   has to be a regular expression, e.g. `/\\"ad\\"/`, as escapes of quotes are removed from a string, as of `stack`.
-  Values without a JSON text, i.e. of `Response.prototype.json` and objects, are not processed by a rule with it.
+  A text which is not a string, e.g. an object or a value of `Response.prototype.json`, is not matched,
+  so the call is not processed by a rule with it.
+- uBO rules of `trusted-json-edit`, `trusted-json-edit-fetch-response` and `trusted-json-edit-xhr-response` [#586],
+  which AGTree converts to `ubo-trusted-json-edit` and its fetch and xhr variants, e.g.
+  `example.org##+js(trusted-json-edit-fetch-response, .adShowPreload=false, propsToMatch, /getPreloaderInfo)`,
+  as aliases of `trusted-json-set`, `trusted-json-set-fetch-response` and `trusted-json-set-xhr-response`
+  with uBO arguments, i.e. one JSONPath expression, which is not split by spaces and removes what it matches
+  if it has no value of its own, followed by the options `matches` or `propsToMatch`, while other ones are ignored,
+  as in uBO, also a value without its name, e.g. `/player/configuration` of player.pl, which uBO ignores.
+  As in uBO, `propsToMatch` may negate a pattern by `!`, e.g. `url:!private`, a value of digits only, e.g. `12345`,
+  is matched as a text, a rule without it reads no property of a `fetch` call, while other ones read only the ones
+  which it names, each once, unlike uBO, the result of `JSON.parse` is modified
+  only if it is an object, the original response is returned if the expression changes nothing, a response which
+  is not one JSON document, e.g. of line-delimited JSON, is not modified, and an `XMLHttpRequest` whose response
+  type has no JSON text, e.g. `arraybuffer`, is sent as it is.
 
 ### Changed
 
@@ -259,6 +280,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- `trusted-json-set-fetch-response` returning a clone of a response which it has not modified, which lost
+  the properties which another rule had defined on the response, e.g. `url` and `type` of a forged one,
+  and throwing for a call which it could not match, e.g. a retry with another body of a `Request`
+  whose body is used, which reaches the network now, and is modified by a rule without `propsToMatch`.
+- `json-prune-fetch-response`, `trusted-replace-fetch-response` and `trusted-json-set-fetch-response`
+  returning a modified response whose `bodyUsed` was fixed to the value of the original one, e.g. `true`
+  before the page had read it, so a page which checks it before reading the body did not read it.
 - uBO rules of `json-edit`, `json-edit-fetch-response` and `json-edit-xhr-response`, whose named options were read
   by position as arguments of AdGuard syntax [#586], so a rule with `matches`, e.g.
   `example.org##+js(json-edit, ..ad_shield_wap, matches, /ad_shield_wap/)`, matched its value as `stack`

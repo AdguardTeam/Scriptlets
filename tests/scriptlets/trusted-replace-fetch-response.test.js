@@ -588,8 +588,9 @@ if (!isSupported) {
             // eslint-disable-next-line max-len
             // litv.tv#%#//scriptlet('trusted-replace-fetch-response', '"PlayAds":true', '"PlayAds":false', 'api/get-urls')
             { ruleName: name, args: ['"PlayAds":true', '"PlayAds":false', 'api/get-urls'] },
-            // www.youtube.com##+js(trusted-rpfr, '"adSlots"', '"no_ads"', player?)
-            { ruleName: 'ubo-trusted-rpfr', args: ['"adSlots"', '"no_ads"', 'player?'] },
+            // e.g. www.youtube.com##+js(trusted-rpfr, '"adSlots"', '"no_ads"', player?) which matches the method too,
+            // as a uBO rule reads only the properties which it matches, e.g. not `method` for a pattern of the URL
+            { ruleName: 'ubo-trusted-rpfr', args: ['"adSlots"', '"no_ads"', 'player? method:GET'] },
         ],
         async (assert, { ruleName, args }) => {
             const stub = useFetchStub('{"PlayAds":true,"adSlots":[]}');
@@ -636,5 +637,35 @@ if (!isSupported) {
         runScriptlet(name, ['"PlayAds":true', '"PlayAds":false', 'api/get-urls']);
 
         assert.strictEqual(fetch.toString(), expected, 'toString() is not changed');
+    });
+
+    /**
+     * Sends a POST request whose options have a getter of the body, which returns another value on each read,
+     * e.g. of a sequence number, and returns how many times it has been read.
+     *
+     * @returns {Promise<number>} Count of the reads of the body.
+     */
+    const countBodyReads = async () => {
+        let reads = 0;
+        const options = {
+            method: 'POST',
+            get body() {
+                reads += 1;
+                return `message-${reads}`;
+            },
+        };
+        await fetch(`${FETCH_OBJECTS_PATH}/test01.json`, options);
+        return reads;
+    };
+
+    test('uBO rules do not read the body before native fetch, without propsToMatch or of the URL', async (assert) => {
+        const nativeReads = await countBodyReads();
+
+        runScriptlet('ubo-trusted-replace-fetch-response', ['ads', 'no_ads']);
+        assert.strictEqual(await countBodyReads(), nativeReads, 'body should be read as natively without propsToMatch');
+
+        window.fetch = nativeFetch;
+        runScriptlet('ubo-trusted-replace-fetch-response', ['ads', 'no_ads', 'other-url']);
+        assert.strictEqual(await countBodyReads(), nativeReads, 'body should be read as natively for a URL pattern');
     });
 }

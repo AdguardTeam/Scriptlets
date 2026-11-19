@@ -984,6 +984,96 @@ if (isSupported) {
         xhr.responseType = 'json';
         xhr.send();
     });
+    /**
+     * Sends a request of the test file and returns its parsed response.
+     *
+     * @param {string} file Name of the test file, e.g. `test01`.
+     * @returns {Promise<object>} Parsed response.
+     */
+    const getJson = (file) => new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/${file}.json`);
+        xhr.onload = () => resolve(xhr.response);
+        xhr.responseType = 'json';
+        xhr.send();
+    });
+
+    test('ubo-trusted-json-edit-xhr-response sets a value of a matching response, as uBO', async (assert) => {
+        // e.g. busuu.com##+js(trusted-json-edit-xhr-response, .access=true, propsToMatch, /no_ads/config)
+        // `..src` matches in both files, so only `propsToMatch` limits the rule to the first one
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..src=changed', 'propsToMatch', 'test02']);
+
+        assert.strictEqual((await getJson('test02')).src, 'changed', 'matching response is modified');
+        assert.strictEqual((await getJson('test03')).cc.src, 'example.org', 'other response should not be modified');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+    });
+
+    test('ubo-trusted-json-edit-xhr-response.js removes what a query without a value matches', async (assert) => {
+        // e.g. lufkindailynews.com##+js(trusted-json-edit-xhr-response, .rules.*[?.name=="Ad Blocker"], …)
+        runScriptlet('ubo-trusted-json-edit-xhr-response.js', ['.b2', 'propsToMatch', 'test01']);
+
+        assert.deepEqual(await getJson('test01'), { a1: 1, c3: 3 }, 'property should be removed');
+    });
+
+    test('a value without propsToMatch, which uBO ignores, does not limit the requests', async (assert) => {
+        // player.pl##+js(trusted-json-edit-xhr-response, .mandatoryAdvertising=false, /player/configuration)
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['.b2=false', 'test03']);
+
+        assert.deepEqual(await getJson('test01'), { a1: 1, b2: false, c3: 3 }, 'every response should be modified');
+    });
+
+    /**
+     * Sends a request of a test file with a response type, and returns its response.
+     *
+     * @param {string} file Name of the test file with its extension, e.g. `test01.json`.
+     * @param {string} responseType Response type of the request, e.g. `arraybuffer`.
+     * @returns {Promise<any>} Response of the request.
+     */
+    const getResponse = (file, responseType) => new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${FETCH_OBJECTS_PATH}/${file}`);
+        xhr.onloadend = () => resolve(xhr.response);
+        xhr.responseType = responseType;
+        xhr.send();
+    });
+
+    test('ubo-trusted-json-edit-xhr-response keeps a native response without JSON text', async (assert) => {
+        const nativeBuffer = await getResponse('manifestM3U8-01.m3u8', 'arraybuffer');
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..ads']);
+
+        const buffer = await getResponse('manifestM3U8-01.m3u8', 'arraybuffer');
+        assert.true(buffer instanceof ArrayBuffer, 'arraybuffer response should be an ArrayBuffer');
+        assert.strictEqual(buffer.byteLength, nativeBuffer.byteLength, 'with all its bytes');
+        assert.strictEqual(await getResponse('manifestM3U8-01.m3u8', 'json'), null, 'invalid JSON should be null');
+    });
+
+    test('ubo-trusted-json-edit-xhr-response returns the original text if nothing is matched', async (assert) => {
+        const originalText = await getResponse('test-big-number.json', 'text');
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..ads']);
+
+        // the number would change if the response were parsed and serialized again
+        assert.strictEqual(await getResponse('test-big-number.json', 'text'), originalText, 'text should be original');
+        assert.deepEqual(await getResponse('test01.json', 'json'), { a1: 1, b2: 'test', c3: 3 }, 'json is parsed');
+    });
+
+    test('ubo-trusted-json-edit-xhr-response modifies json, and matches negated propsToMatch', async (assert) => {
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..src=changed', 'propsToMatch', 'url:!test03']);
+
+        assert.strictEqual((await getResponse('test02.json', 'json')).src, 'changed', 'other URL should be modified');
+        assert.strictEqual(
+            (await getResponse('test03.json', 'json')).cc.src,
+            'example.org',
+            'excluded URL should not be modified',
+        );
+    });
+
+    test('ubo-trusted-json-edit-xhr-response does not modify line-delimited JSON, as uBO', async (assert) => {
+        const originalText = await getResponse('string-like-json01.txt', 'text');
+        runScriptlet('ubo-trusted-json-edit-xhr-response', ['..ads']);
+
+        const text = await getResponse('string-like-json01.txt', 'text');
+        assert.strictEqual(text, originalText, 'text should be original');
+    });
 } else {
     test('unsupported', (assert) => {
         assert.ok(true, 'Browser does not support it');

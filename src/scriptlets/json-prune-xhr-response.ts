@@ -49,6 +49,7 @@ import {
     nativeIsNaN,
     parseUboOptions,
     unescapeUboArgument,
+    isDigits,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -434,4 +435,6 @@ jsonPruneXhrResponse.injections = [
     nativeIsNaN,
     parseUboOptions,
     unescapeUboArgument,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

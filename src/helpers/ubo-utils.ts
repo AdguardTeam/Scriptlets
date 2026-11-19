@@ -1,4 +1,5 @@
 import { wrapConstantValue } from './noop-utils';
+import { isDigits } from './number-utils';
 
 /**
  * Parses named options of a uBO scriptlet, which follow its positional arguments
@@ -15,19 +16,6 @@ import { wrapConstantValue } from './noop-utils';
  */
 export const parseUboOptions = (args: unknown[]): Record<string, unknown> => {
     const options: Record<string, unknown> = Object.create(null);
-
-    const isDigits = (value: string): boolean => {
-        if (value === '') {
-            return false;
-        }
-        for (let i = 0; i < value.length; i += 1) {
-            const char = value[i];
-            if (char < '0' || char > '9') {
-                return false;
-            }
-        }
-        return true;
-    };
 
     for (let i = 0; i + 1 < args.length; i += 2) {
         const key = args[i];
@@ -330,6 +318,31 @@ export const unescapeUboArgument = (arg: unknown): unknown => {
     // !IMPORTANT: Do not move constants outside of this function
     const ESCAPED_QUOTE_REGEXP = /\\'/g;
     return typeof arg === 'string' ? arg.replace(ESCAPED_QUOTE_REGEXP, "'") : arg;
+};
+
+/**
+ * Parses the arguments of a uBO `json-edit` scriptlet, e.g. `trusted-json-edit-fetch-response`, as uBO does:
+ * a JSONPath query, followed by named options, e.g. `propsToMatch, /api`, see `parseUboOptions()`.
+ * Each argument is unescaped by `unescapeUboArgument()`, as the converters escape each `'` of a uBO argument.
+ * Other arguments of AdGuard syntax are not read by their position then, e.g. `stack`.
+ *
+ * Requires `parseUboOptions` and `unescapeUboArgument` in the injections of the scriptlet.
+ *
+ * @param args Arguments of the rule, the query first.
+ *
+ * @returns The query, an empty string if it is not a string, and the named options.
+ */
+export const getUboJsonEditArguments = (args: unknown[]): { query: string; options: Record<string, unknown> } => {
+    const query = unescapeUboArgument(args[0]);
+    const optionArgs: unknown[] = [];
+    for (let i = 1; i < args.length; i += 1) {
+        optionArgs.push(unescapeUboArgument(args[i]));
+    }
+
+    return {
+        query: typeof query === 'string' ? query : '',
+        options: parseUboOptions(optionArgs),
+    };
 };
 
 /**

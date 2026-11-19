@@ -9,6 +9,7 @@ import {
     getAdgStorageItemSettings,
     getUboStorageItemSettings,
     setStorageItemBySettings,
+    isDigits,
 } from '../helpers';
 import { type Source } from './scriptlets';
 
@@ -149,4 +150,6 @@ trustedSetSessionStorageItem.injections = [
     getAdgStorageItemSettings,
     getUboStorageItemSettings,
     setStorageItemBySettings,
+    // used by parseUboOptions() or getAdgJsonTextMatch()
+    isDigits,
 ];

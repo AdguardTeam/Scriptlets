@@ -1949,3 +1949,63 @@ test('JSONPath: documented examples of repl() and call() values, and of a regula
         assert.deepEqual(JSON.parse(input), output, rule);
     });
 });
+
+test('ubo-trusted-json-edit with real uBO rules sets values of the result of JSON.parse()', (assert) => {
+    [
+        // deezer.com##+js(trusted-json-edit, ..ads_audio=false)
+        ['..ads_audio=false', '{"user":{"ads_audio":true,"id":1}}', { user: { ads_audio: false, id: 1 } }],
+        // kijk.nl##+js(trusted-json-edit, .features.*[?.slug=="adblock-detection"].enabled=false)
+        [
+            '.features.*[?.slug=="adblock-detection"].enabled=false',
+            '{"features":[{"slug":"adblock-detection","enabled":true},{"slug":"other","enabled":true}]}',
+            { features: [{ slug: 'adblock-detection', enabled: false }, { slug: 'other', enabled: true }] },
+        ],
+    ].forEach(([query, input, output]) => {
+        JSON.parse = nativeParse;
+        runScriptlet('ubo-trusted-json-edit', [query]);
+        assert.deepEqual(JSON.parse(input), output, query);
+    });
+    assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+});
+
+test('ubo-trusted-json-edit.js removes what a query without its own value matches', (assert) => {
+    runScriptlet('ubo-trusted-json-edit.js', ['..ads', 'matches', 'ads']);
+
+    assert.deepEqual(JSON.parse('{"a":{"ads":1,"b":2}}'), { a: { b: 2 } }, 'matching text should be modified');
+    assert.deepEqual(JSON.parse('{"a":{"b":2}}'), { a: { b: 2 } }, 'other text should not');
+});
+
+test('matches with targets tests the first argument, another one, this, or the result', async (assert) => {
+    runScriptlet(name, ['JSON.parse', '$.ads', 'false', '', 'result', '', '', '', 'matches', 'adSlot']);
+    assert.deepEqual(JSON.parse('{"ads":true,"adSlot":1}'), { ads: false, adSlot: 1 }, 'text should be matched');
+    assert.deepEqual(JSON.parse('{"ads":true}'), { ads: true }, 'other text should not');
+
+    JSON.parse = nativeParse;
+    window.__getPayload = (text, payload) => payload;
+    runScriptlet(name, ['__getPayload', '$.ads', 'false', '', 'arg:1', '', '', '', 'matches arg:0', 'ads']);
+    assert.strictEqual(window.__getPayload('ads', '{"ads":true}'), '{"ads":false}', 'arg:0 should be matched');
+    assert.strictEqual(window.__getPayload('x', '{"ads":true}'), '{"ads":true}', 'other arg:0 should not');
+
+    // e.g. a method which the page calls on a JSON text
+    window.__parseThis = function parseThis() { return nativeParse(this); };
+    runScriptlet(name, ['__parseThis', '$.ads', 'false', '', 'result', '', '', '', 'matches this', 'adSlot']);
+    assert.deepEqual(window.__parseThis.call('{"ads":true,"adSlot":1}'), { ads: false, adSlot: 1 }, 'this is matched');
+
+    Response.prototype.text = nativeResponseText;
+    runScriptlet(name, [
+        'Response.prototype.text',
+        '$.ads',
+        'false',
+        '',
+        'result',
+        '',
+        '',
+        '',
+        'matches result',
+        'adSlot',
+    ]);
+    const matchedText = await new Response('{"ads":true,"adSlot":1}').text();
+    assert.strictEqual(matchedText, '{"ads":false,"adSlot":1}', 'value of the promise should be matched');
+    assert.strictEqual(await new Response('{"ads":true}').text(), '{"ads":true}', 'other result should not');
+    clearGlobalProps('__getPayload', '__parseThis');
+});

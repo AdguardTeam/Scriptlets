@@ -772,4 +772,13 @@ if (!isSupported) {
         assert.deepEqual(actualJson, { items: [{ url: 'https://example.org/2', title: 'News (Ad)' }] }, 'pruned');
         assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
     });
+
+    test('bodyUsed of a pruned response tells whether the page has read it', async (assert) => {
+        runScriptlet(name, ['b2']);
+
+        const response = await fetch(`${FETCH_OBJECTS_PATH}/test01.json`);
+        assert.false(response.bodyUsed, 'body should not be used before it is read');
+        assert.deepEqual(await response.json(), { a1: 1, c3: 3 }, 'response should be pruned');
+        assert.true(response.bodyUsed, 'body should be used after it is read');
+    });
 }

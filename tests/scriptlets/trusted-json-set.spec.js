@@ -15,6 +15,7 @@ import {
     useFirefoxStackTraceFormat,
     useThrowingErrorConstructor,
     useUnreadableStackTrace,
+    useThrowingMethod,
 } from '../helpers';
 
 const nativeStringify = JSON.stringify;
@@ -632,5 +633,215 @@ describe('Test trusted-json-set with a string which is not JSON', () => {
         }
 
         expect(result).toBe('Ordinary text');
+    });
+});
+
+describe('Test trusted-json-set with targets of matches', () => {
+    afterEach(() => {
+        clearGlobalProps('getPayload');
+    });
+
+    /**
+     * Runs a rule which sets `ads` to `false`, with `matches`.
+     *
+     * @param {string} methodPath Intercepted method.
+     * @param {string} jsonSource Where the value is modified.
+     * @param {string} option Name of the option, e.g. `matches this`.
+     * @param {string} pattern Pattern of the option.
+     * @param {string} [stack] Stack trace which has to match.
+     */
+    const runRule = (methodPath, jsonSource, option, pattern, stack = '') => {
+        trustedJsonSet(sourceParams, methodPath, '$.ads', 'false', '', jsonSource, stack, '', '', option, pattern);
+    };
+
+    test('matches tests the first argument, e.g. the text of JSON.parse(), and modifies the result', () => {
+        runRule('JSON.parse', 'result', 'matches', 'adPlacements');
+
+        expect(JSON.parse('{"ads":true,"adPlacements":[]}')).toEqual({ ads: false, adPlacements: [] });
+        expect(JSON.parse('{"ads":true}')).toEqual({ ads: true });
+    });
+
+    test('matches arg:N tests that argument', () => {
+        window.getPayload = (text, payload) => payload;
+        runRule('window.getPayload', 'arg:1', 'matches arg:0', 'ads');
+
+        expect(window.getPayload('ads', '{"ads":true}')).toBe('{"ads":false}');
+        expect(window.getPayload('other', '{"ads":true}')).toBe('{"ads":true}');
+        // an argument which the call does not have is not matched
+        expect(window.getPayload()).toBeUndefined();
+    });
+
+    test('matches this tests the text which the method is called on', () => {
+        window.getPayload = function getPayload() {
+            return nativeParse(this);
+        };
+        runRule('window.getPayload', 'result', 'matches this', '"ads"');
+
+        // a method of `window` is called with another `this` by call()
+        expect(window.getPayload.call('{"ads":true}')).toEqual({ ads: false });
+        expect(window.getPayload.call('{"other":true}')).toEqual({ other: true });
+    });
+
+    test('matches result tests the result, and the value of a returned promise', async () => {
+        window.getPayload = (value) => value;
+        runRule('window.getPayload', 'result', 'matches result', 'adSlot');
+
+        expect(window.getPayload('{"ads":true,"adSlot":1}')).toBe('{"ads":false,"adSlot":1}');
+        expect(window.getPayload('{"ads":true}')).toBe('{"ads":true}');
+        await expect(window.getPayload(Promise.resolve('{"ads":true,"adSlot":1}')))
+            .resolves.toBe('{"ads":false,"adSlot":1}');
+        await expect(window.getPayload(Promise.resolve('{"ads":true}'))).resolves.toBe('{"ads":true}');
+    });
+
+    test('matches result does not modify the arguments, which are passed before the result is known', () => {
+        window.getPayload = (value) => `${value} result`;
+        runRule('window.getPayload', 'all', 'matches result', 'result');
+
+        expect(window.getPayload('{"ads":true}')).toBe('{"ads":true} result');
+    });
+
+    test('a call whose argument is not matched is passed through without reading the stack trace', () => {
+        runRule('JSON.parse', 'result', 'matches', 'adPlacements', 'stackMatch');
+
+        expect(countCreatedErrors(() => JSON.parse('{"ads":true}'))).toBe(0);
+        expect(countCreatedErrors(() => JSON.parse('{"ads":true,"adPlacements":[]}'))).toBe(1);
+    });
+
+    test.each(['matches args', 'matches arg:x'])('%s is not applied, which is logged', (option) => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((...args) => {
+            logs.push(args.map(String).join(' '));
+        });
+        try {
+            runRule('JSON.parse', 'result', option, 'ads');
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(JSON.parse('{"ads":true}')).toEqual({ ads: true });
+        expect(logs).toEqual([expect.stringContaining(`Invalid matches: ${option}`)]);
+    });
+});
+
+describe('Test trusted-json-set with uBO arguments of trusted-json-edit', () => {
+    const uboSource = { name: 'ubo-trusted-json-edit', verbose: true };
+
+    test.each(['ubo-trusted-json-edit', 'ubo-trusted-json-edit.js'])('%s sets a value of the parsed JSON', (name) => {
+        // e.g. deezer.com##+js(trusted-json-edit, ..ads_audio=false)
+        trustedJsonSet({ name, verbose: true }, '..ads_audio=false');
+
+        expect(JSON.parse('{"user":{"ads_audio":true}}')).toEqual({ user: { ads_audio: false } });
+    });
+
+    test('a query without its own value removes what it matches, as in uBO', () => {
+        trustedJsonSet(uboSource, '.rules.*[?.name=="Ad Blocker"]');
+
+        expect(JSON.parse('{"rules":[{"name":"Ad Blocker"},{"name":"Paywall"}]}'))
+            .toEqual({ rules: [{ name: 'Paywall' }] });
+    });
+
+    test('matches tests the text of JSON.parse()', () => {
+        trustedJsonSet(uboSource, '$.ads=false', 'matches', '/adPlacements/');
+
+        expect(JSON.parse('{"ads":true,"adPlacements":[]}')).toEqual({ ads: false, adPlacements: [] });
+        expect(JSON.parse('{"ads":true}')).toEqual({ ads: true });
+    });
+
+    test('other options and positional arguments of AdGuard syntax are ignored, e.g. stack', () => {
+        trustedJsonSet(uboSource, '$.ads=false', 'propsToMatch', '/api', 'result', 'neverMatchedStack');
+
+        expect(JSON.parse('{"ads":true}')).toEqual({ ads: false });
+    });
+
+    test('an option without its value is ignored, as in uBO, not read as a default of AdGuard syntax', () => {
+        // the 4th argument is at the position of `jsonSource`, whose default `result` would be the value of `matches`
+        trustedJsonSet(uboSource, '$.ads=false', 'matches', 'adSlot', 'matches');
+
+        expect(JSON.parse('{"ads":true}')).toEqual({ ads: false });
+    });
+
+    test('the query is not split, as uBO ignores spaces in it', () => {
+        // `$.ads $.b` would be two queries in AdGuard syntax, which would remove `ads`
+        trustedJsonSet(uboSource, '$.ads $.b');
+
+        expect(JSON.parse('{"ads":1,"b":2}')).toEqual({ ads: 1, b: 2 });
+    });
+
+    test('an empty query is not applied, which is logged', () => {
+        const logs = [];
+        const consoleLog = vi.spyOn(console, 'log').mockImplementation((...args) => {
+            logs.push(args.map(String).join(' '));
+        });
+        const { parse } = JSON;
+        try {
+            trustedJsonSet(uboSource, '', 'matches', 'ads');
+        } finally {
+            consoleLog.mockRestore();
+        }
+
+        expect(JSON.parse).toBe(parse);
+        expect(logs).toEqual([expect.stringContaining('Bad JSONPath query')]);
+    });
+});
+
+describe('Test trusted-json-set with matches which calls the intercepted method', () => {
+    const nativeIndexOf = String.prototype.indexOf;
+    const nativePush = Array.prototype.push;
+
+    afterEach(() => {
+        // eslint-disable-next-line no-extend-native
+        String.prototype.indexOf = nativeIndexOf;
+        // eslint-disable-next-line no-extend-native
+        Array.prototype.push = nativePush;
+    });
+
+    test('the text is tested while matching is suspended, e.g. by indexOf() of the intercepted method', () => {
+        // a string of `matches` is tested by `indexOf()`, which would test it again, until the stack is exceeded
+        const rule = ['String.prototype.indexOf', '$.ads', 'false', '', 'this', '', '', '', 'matches this', 'a'];
+        trustedJsonSet(sourceParams, ...rule);
+
+        // the matched call is processed, i.e. `this` is modified, while a test without the suspension would exceed
+        // the call stack, which is caught as a text which is not matched, so the call would be passed through
+        expect('{"ads":true}'.indexOf('false')).toBe(7);
+        expect('other'.indexOf('t')).toBe(1);
+    });
+
+    test('a regular expression of matches calls no intercepted method, e.g. push() which saves RegExp.$1', () => {
+        let pushCalls = 0;
+        // eslint-disable-next-line no-extend-native
+        Array.prototype.push = function push(...args) {
+            pushCalls += 1;
+            return Reflect.apply(nativePush, this, args);
+        };
+        const rule = ['Array.prototype.push', '$.a', 'false', '', 'arg:0', '', '', '', 'matches', '/(a)/'];
+        trustedJsonSet(sourceParams, ...rule);
+
+        pushCalls = 0;
+        const list = [];
+        list.push('a string');
+        // read before the assertions, which call push() themselves
+        const calls = pushCalls;
+        expect(list).toEqual(['a string']);
+        expect(calls).toBe(1);
+    });
+});
+
+describe('Test trusted-json-set with uBO arguments and values which uBO does not modify', () => {
+    test('a string which JSON.parse() returns is not parsed again', () => {
+        trustedJsonSet({ name: 'ubo-trusted-json-edit', verbose: false }, '..ads');
+
+        // e.g. a JSON text encoded twice, whose outer value is a string without `ads`
+        expect(JSON.parse(nativeStringify('{"ads":true}'))).toBe('{"ads":true}');
+    });
+
+    test('a uBO rule is applied if RegExp.prototype.test throws while it runs, e.g. of another rule', () => {
+        const restoreTest = useThrowingMethod(RegExp.prototype, 'test');
+        try {
+            trustedJsonSet({ name: 'ubo-trusted-json-edit', verbose: false }, '..ads');
+        } finally {
+            restoreTest();
+        }
+
+        expect(JSON.parse('{"a":{"ads":1,"b":2}}')).toEqual({ a: { b: 2 } });
     });
 });

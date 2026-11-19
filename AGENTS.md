@@ -481,6 +481,20 @@ Project-specific rules:
     the page as is, while an error of processing, logging or forging the
     response which it is fulfilled with, e.g. of serializing a too deeply
     nested value, is caught and logged, and the original response is returned.
+    The body is read from a clone of the response, so the original one is returned as it is if it is not
+    modified, with the properties which another rule may have defined on it, e.g. `url` of a forged response,
+    and the data of the call which only some rules need, e.g. of `getFetchData()`, which clones a `Request`
+    and throws if its body is used, is collected in `try`, and only for them, e.g. not without `propsToMatch`,
+    so such a call reaches the network. A forged response gets no fixed `bodyUsed`, so its native getter tells
+    whether the page has read it. The properties of the call which a uBO rule matches are read once, and only
+    the ones which its `propsToMatch` names, see `collateUboFetchArguments()`, as options of the page may be
+    getters which return another value on each read, e.g. of `body`, which native `fetch()` reads after them;
+    the URL of a resource which is not a `Request` is converted only if the rule matches it. A matched property
+    is still read before `fetch()` reads it, so a getter which returns another value on each read may change
+    the request of the page, which is accepted, as passing the values read by the rule to `fetch()` instead of
+    the arguments of the page would change what it gets in every matched call. uBO calls `fetch()` first,
+    so its request is not changed, and only the value which it matches may differ, but AdGuard rules cannot
+    do it, as `getFetchData()` clones a `Request`, which throws after `fetch()` has used its body.
 
     **Rationale**: Path setters create missing properties on the promise
     itself, see [#585](https://github.com/AdguardTeam/Scriptlets/issues/585).
@@ -709,9 +723,11 @@ Project-specific rules:
     `getUboPreventXhrSettings()` with `preventXhrBySettings()` of `prevent-xhr` and `trusted-prevent-xhr`,
     or `getAdgSuppressSettings()` and `getUboSuppressSettings()` with `suppressNativeMethodBySettings()` of
     `trusted-suppress-native-method`, or `getAdgJsonTextMatch()` and `getUboJsonTextMatch()` with
-    `isJsonTextMatched()` for `matches` of `json-prune` and `trusted-json-set`, instead of keeping a separate
-    implementation for uBO rules. Rules with uBO names of a scriptlet which have no AdGuard meaning, e.g. `json-edit`
-    and `json-edit.js` of `json-prune`, have uBO arguments as well, i.e. named options instead of positional ones.
+    `isJsonTextMatched()` for `matches` of `json-prune` and `trusted-json-set`, or `getUboJsonEditArguments()`,
+    which reads the uBO arguments of `trusted-json-edit` and its fetch and xhr variants into the positional ones
+    of `trusted-json-set` and its variants, instead of keeping a separate implementation for uBO rules.
+    Rules with uBO names of a scriptlet which have no AdGuard meaning, e.g. `json-edit` and `json-edit.js`
+    of `json-prune`, have uBO arguments as well, i.e. named options instead of positional ones.
     Positional AdGuard arguments MUST be parsed as before, so that existing rules
     are not affected, and new options SHOULD use the names of the uBO options with the
     same meaning, each followed by its value in the extra arguments.
@@ -737,11 +753,14 @@ Project-specific rules:
     as `matchStackTrace()` does not match the stack trace then.
     New parsing of arguments when the rule runs, e.g. of uBO options by `parseUboOptions()`,
     SHOULD NOT call `RegExp.prototype.test` either, nor other methods which a rule may hook,
-    e.g. `String.prototype.charCodeAt`, so digits are compared as characters, e.g. `char < '0'`.
-    A test of a text of the page on each intercepted call, e.g. `matches` of `json-prune`,
+    e.g. `String.prototype.charCodeAt`, so digits are checked by `isDigits()`, which compares characters by operators.
+    A test of a text of the page on each intercepted call, e.g. `matches` of `json-prune`, runs while matching
+    is suspended, e.g. by `isMatchingSuspended` of `trusted-json-set`, as the test itself may call the intercepted
+    method, e.g. `String.prototype.indexOf`, and it
     SHOULD NOT change `RegExp.$1`, …, `RegExp.$9` of the page: a string is matched by `indexOf()`,
     and the values are restored after a regular expression has matched the text, see `isJsonTextMatched()`.
-    All nine values are saved by `backupRegExpValues()`, also empty ones, and `restoreRegExpValues()` matches
+    All nine values are saved by `backupRegExpValues()`, also empty ones, by index, not by `push()`, which a rule
+    may intercept, and `restoreRegExpValues()` matches
     them by their lengths, not by their text, as a value may be a large text, e.g. JSON extracted by a capture,
     with `*` only for the last value which is not empty, as `*` followed by a count backtracks through the value
     for each of its characters, e.g. 2.6 s for a script and JSON in it of 65 KB, captured together.

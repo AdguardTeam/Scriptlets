@@ -7,6 +7,8 @@ import {
     type UboPropNeedle,
 } from '../../src/helpers/ubo-request-utils';
 import { getRegexpTester } from '../../src/helpers/regexp-utils';
+import { parseUboOptions } from '../../src/helpers/ubo-utils';
+import { useThrowingMethod } from '../helpers';
 
 const testRegexp = getRegexpTester();
 
@@ -91,6 +93,39 @@ describe('parseUboPropsToMatch', () => {
     });
 });
 
+describe('parseUboPropsToMatch with values of parseUboOptions() and methods which throw', () => {
+    test.each([
+        { value: '12345', url: '/api/12345', other: '/unrelated' },
+        { value: '0', url: '/v0/api', other: '/v1/api' },
+    ])('digits $value, converted to a number, are matched as a text, as in uBO', ({ value, url, other }) => {
+        const needles = parseUboPropsToMatch(parseUboOptions(['propsToMatch', value]).propsToMatch, 'url');
+        expect(matchUboProps(needles!, { url }, testRegexp)).toBe(true);
+        expect(matchUboProps(needles!, { url: other }, testRegexp)).toBe(false);
+    });
+
+    test.each([
+        // a name of letters, digits, `_`, `$`, ` ` and `-`
+        { props: 'url:!private', name: 'url' },
+        { props: 'method:POST', name: 'method' },
+        { props: 'a_$-9:x', name: 'a_$-9' },
+        // other characters make the whole text a pattern of the implicit property
+        { props: '/api:x', name: 'url' },
+        { props: 'a.b:x', name: 'url' },
+        { props: 'é:x', name: 'url' },
+    ])('$props is read as /[^$\\w -]/ reads the name, also if RegExp.prototype.test throws', ({ props, name }) => {
+        const restoreTest = useThrowingMethod(RegExp.prototype, 'test');
+        const restoreCharCodeAt = useThrowingMethod(String.prototype, 'charCodeAt');
+        let needles;
+        try {
+            needles = parseUboPropsToMatch(props, 'url');
+        } finally {
+            restoreTest();
+            restoreCharCodeAt();
+        }
+        expect(Object.keys(needles!)).toEqual([name]);
+    });
+});
+
 describe('matchUboProps', () => {
     test('property which the request does not have is skipped', () => {
         expect(isMatched('method:POST', { url: 'https://example.org/' })).toBe(true);
@@ -111,19 +146,62 @@ describe('matchUboProps', () => {
 
 describe('collateUboFetchArguments', () => {
     const nativeRequestClone = Request.prototype.clone;
+    const URL_AND_METHOD = ['url', 'method'];
 
     test('string and URL', () => {
-        expect(collateUboFetchArguments('/api', { method: 'POST' }, nativeRequestClone))
+        expect(collateUboFetchArguments('/api', { method: 'POST' }, nativeRequestClone, URL_AND_METHOD))
             .toEqual({ url: '/api', method: 'POST' });
-        expect(collateUboFetchArguments(new URL('https://example.org/api'), undefined, nativeRequestClone))
+        expect(collateUboFetchArguments(new URL('https://example.org/api'), undefined, nativeRequestClone, ['url']))
             .toEqual({ url: 'https://example.org/api' });
     });
 
     test('Request, with options which override its properties', () => {
         const request = new Request('https://example.org/api', { method: 'POST' });
-        const props = collateUboFetchArguments(request, { method: 'PUT' }, nativeRequestClone);
+        const props = collateUboFetchArguments(request, { method: 'PUT' }, nativeRequestClone, URL_AND_METHOD);
 
         expect(props.url).toBe('https://example.org/api');
         expect(props.method).toBe('PUT');
+    });
+
+    test('reads only the properties which the rule matches, each once', () => {
+        let bodyReads = 0;
+        let methodReads = 0;
+        const options = {
+            get body() {
+                bodyReads += 1;
+                return `message-${bodyReads}`;
+            },
+            get method() {
+                methodReads += 1;
+                return 'POST';
+            },
+        };
+
+        // e.g. a pattern of the URL, so the body which native fetch() reads is not read before it
+        expect(collateUboFetchArguments('/api', options, nativeRequestClone, ['url'])).toEqual({ url: '/api' });
+        expect([bodyReads, methodReads]).toEqual([0, 0]);
+
+        expect(collateUboFetchArguments('/api', options, nativeRequestClone, ['body', 'method']))
+            .toEqual({ body: 'message-1', method: 'POST' });
+        expect([bodyReads, methodReads]).toEqual([1, 1]);
+    });
+
+    test('converts a URL which is not a Request only if the rule matches it', () => {
+        let conversions = 0;
+        // e.g. a custom URL of the page, which is converted to another string on each call
+        const resource = {
+            toString() {
+                conversions += 1;
+                return `/api?seq=${conversions}`;
+            },
+        };
+
+        expect(collateUboFetchArguments(resource, { method: 'POST' }, nativeRequestClone, ['method']))
+            .toEqual({ method: 'POST' });
+        expect(conversions).toBe(0);
+
+        expect(collateUboFetchArguments(resource, undefined, nativeRequestClone, ['url']))
+            .toEqual({ url: '/api?seq=1' });
+        expect(conversions).toBe(1);
     });
 });

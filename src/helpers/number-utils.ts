@@ -11,6 +11,27 @@ export const nativeIsNaN = (num: unknown): boolean => {
     return native(num);
 };
 /**
+ * Checks whether a string consists of ASCII digits only, e.g. `117`, as `/^\d+$/` does, but without
+ * a regular expression or a method of a string, e.g. `RegExp.prototype.test` or `String.prototype.charCodeAt`,
+ * which another rule may hook, e.g. `abort-current-inline-script`, so that it throws while the rule runs.
+ * Characters are compared by operators, which call no method.
+ *
+ * @param value String to check.
+ * @returns True if the string is not empty and has only the digits `0`–`9`.
+ */
+export const isDigits = (value: string): boolean => {
+    if (value === '') {
+        return false;
+    }
+    for (let i = 0; i < value.length; i += 1) {
+        if (value[i] < '0' || value[i] > '9') {
+            return false;
+        }
+    }
+    return true;
+};
+
+/**
  * Determines whether the passed value is a finite number
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
  *
