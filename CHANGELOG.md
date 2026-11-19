@@ -333,6 +333,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   a request which the page has aborted, and sending the request of another object opened after the matched one
   with the URL of that object, as it uses the shared core of `json-prune-xhr-response` now. An error of matching
   the request is not thrown to the page anymore.
+- `json-prune-xhr-response`, `trusted-json-set-xhr-response` and `trusted-replace-xhr-response` delivering a failed
+  request, e.g. of a dropped connection, or one which the browser cancels, e.g. by `window.stop()`, as a successful
+  one, with `load` instead of `error` or `abort`, also with the text
+  which a rule had replaced the empty response with, e.g. a forged response of an ad, decoding a `json` response
+  with its declared charset instead of UTF-8, e.g. `é` as `Ã©`, which is fixed for a request which one rule matches,
+  and returning the content by `responseText` and `responseXML` of a `json` response instead of throwing
+  `InvalidStateError`, as natively. A rule which blocks listeners of `readystatechange`,
+  e.g. `prevent-addEventListener`, no longer stops them from delivering the response.
 - Scriptlets with `stack`, e.g. `abort-on-stack-trace`, `json-prune` or `set-constant`, throwing
   `RegExp.prototype.test is not a function` to the page, or aborting the property by it in `abort-on-stack-trace`,
   if another rule has made `RegExp.prototype.test` an accessor, e.g.

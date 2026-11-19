@@ -34,6 +34,21 @@ import { type Source } from '../scriptlets';
  * without `async` is sent asynchronously, and it is sent once, so its error, e.g. a network error
  * of a synchronous request, is thrown to the page, and the request is not sent again.
  *
+ * A failed request, e.g. of a dropped connection, or one which the browser cancels, e.g. by `window.stop()`,
+ * is done with a network error for the page, which gets `error` or `abort` instead of `load`, as natively.
+ * A `json` response is decoded as UTF-8, as natively, whatever its declared charset, by the response type of the page
+ * when the headers of the forged request have been received, but not yet with two rules which match the request,
+ * see the TODO in `send()`.
+ * `responseText` and `responseXML` are defined only for the response types which have them, i.e. not e.g. for `json`,
+ * for which their native getters throw `InvalidStateError`, as for a native object.
+ *
+ * TODO: the forged request does not get yet `timeout` of the object of the page, so it never times out,
+ * nor the MIME type which the page sets by `overrideMimeType()`, and the page does not get `loadstart`, `progress`,
+ * `readystatechange` of the states `2` and `3`, nor the events of the upload, as natively. A previous attempt,
+ * with the issues which it had, i.e. a preflight request forced by a listener of the upload, a hook of
+ * `addEventListener` of uploads which shadows the hooks of other rules, and changes after `send()`, is described
+ * in AGENTS.md, rule 19.
+ *
  * @param source scriptlet properties
  * @param stack string or regular expression which the stack trace of `send()` must match,
  * or an empty string to match all requests
@@ -92,6 +107,9 @@ export function interceptXhrResponses(
     const nativeGetResponseHeader = window.XMLHttpRequest.prototype.getResponseHeader;
     const nativeGetAllResponseHeaders = window.XMLHttpRequest.prototype.getAllResponseHeaders;
     const nativeAbort = window.XMLHttpRequest.prototype.abort;
+    const nativeOverrideMimeType = window.XMLHttpRequest.prototype.overrideMimeType;
+    // MIME type of a `json` response, which is decoded as UTF-8, as natively, whatever its declared charset
+    const JSON_MIME_TYPE = 'application/json; charset=utf-8';
 
     // Props of the response which are defined on the object of the page, as they are removed
     // when the object is opened again
@@ -111,14 +129,23 @@ export function interceptXhrResponses(
     /**
      * Defines the props of the response on the object of the page, as it is not sent itself,
      * and they cannot be set otherwise. They are configurable, so they can be removed
-     * when the object is opened again.
+     * when the object is opened again. `responseText` and `responseXML` are defined only for the response types
+     * which have them, i.e. `''` and `text`, and `''` and `document`, and removed otherwise, so their native getters
+     * throw `InvalidStateError` for the object of the page, e.g. for `json`, as for a native object.
      *
      * @param xhr object of the page
      * @param values values of the props, by their names
      */
     const defineResponseProps = (xhr: XMLHttpRequest, values: Record<string, unknown>) => {
+        const { responseType } = xhr;
+        const hasText = responseType === '' || responseType === 'text';
+        const hasXml = responseType === '' || responseType === 'document';
         const descriptors: PropertyDescriptorMap = {};
         RESPONSE_PROPS.forEach((prop) => {
+            if ((prop === 'responseText' && !hasText) || (prop === 'responseXML' && !hasXml)) {
+                Reflect.deleteProperty(xhr, prop);
+                return;
+            }
             descriptors[prop] = { value: values[prop], writable: false, configurable: true };
         });
         Object.defineProperties(xhr, descriptors);
@@ -444,16 +471,110 @@ export function interceptXhrResponses(
         const { openArgs } = matchedRequest;
         const isAsync = openArgs.length < 3 || Boolean(openArgs[2]);
 
+        // Events of the forged request are handled both by its handlers, e.g. `onreadystatechange`, and by listeners,
+        // as another rule may hook `addEventListener()` to block listeners of a type, e.g. `error`
+        // of `prevent-addEventListener`, while a wrapper of `open()` or `send()` of the page, which the saved methods
+        // may be, may set a handler of the forged request, e.g. to record its status, which replaces the handler.
+        // Each of them alone would make the page never get the response or its terminal events then,
+        // so both are registered, and both of them may get the same event, while the page gets each event once:
+        // the response and the terminal events are dispatched only by the first of them, and the values
+        // of `progress` are only recorded
+
+        /**
+         * Registers a function of the forged request both as its handler and as its listener of an event.
+         *
+         * @param type type of the event, e.g. `readystatechange`
+         * @param handle function which handles the event, which may get it from both of them
+         */
+        const handleRequestEvent = (type: string, handle: (event: Event) => void) => {
+            (request as any)[`on${type}`] = handle;
+            request.addEventListener(type, handle);
+        };
+
         // Values of the last `progress` event, which an asynchronous request fires right before its response
         // is complete, with the same values as its `load` and `loadend` events
         let progress: ProgressEventInit = { lengthComputable: false, loaded: 0, total: 0 };
-        request.addEventListener('progress', (event) => {
-            const { lengthComputable, loaded, total } = event;
+        handleRequestEvent('progress', (event) => {
+            const { lengthComputable, loaded, total } = (event as ProgressEvent);
             progress = { lengthComputable, loaded, total };
         });
 
-        request.addEventListener('readystatechange', () => {
-            if (forgedRequest.request !== request || request.readyState !== 4) {
+        // Whether `readystatechange` of a failed request has been dispatched, so its terminal event and `loadend`
+        // follow, also if its listener opens the object again or aborts it, as for a response
+        let isFailing = false;
+        // The terminal event of the forged request is dispatched for the page, i.e. `error`, e.g. of a dropped
+        // connection, or `abort` of a request which the browser cancels, e.g. by `window.stop()`, as natively,
+        // while a forged request which the scriptlet aborts, e.g. as the page opens the object again,
+        // is released before, so no `readystatechange` is dispatched for it, and neither are these events
+        // They are dispatched by `loadend` of the forged request, which always follows its terminal event,
+        // which only records its type, so `loadend` is dispatched for the page also if both the handler
+        // and the listener of the terminal event are blocked, e.g. by `prevent-addEventListener` for `error`
+        // on a page with Zone.js, which adds a handler by `addEventListener()`; it is `error` then
+        let failureType = 'error';
+        const recordTerminalEvent = (event: Event) => {
+            if (isFailing) {
+                failureType = event.type;
+            }
+        };
+        handleRequestEvent('error', recordTerminalEvent);
+        handleRequestEvent('abort', recordTerminalEvent);
+        handleRequestEvent('timeout', recordTerminalEvent);
+        handleRequestEvent('loadend', () => {
+            if (!isFailing) {
+                return;
+            }
+            isFailing = false;
+            if (forgedRequest.request === request) {
+                forgedRequest.request = null;
+            }
+            thisArg.dispatchEvent(new ProgressEvent(failureType));
+            thisArg.dispatchEvent(new ProgressEvent('loadend'));
+        });
+
+        // Whether the response has been handled, as `readystatechange` of the state `4` is handled once,
+        // although both the handler and the listener get it, and whether the MIME type has been chosen,
+        // when the headers have been received
+        let isResponseHandled = false;
+        let isMimeTypeChosen = false;
+        handleRequestEvent('readystatechange', () => {
+            if (forgedRequest.request !== request) {
+                return;
+            }
+
+            // A `json` response is decoded as UTF-8, as natively, while the forged request has the response type
+            // of a text, which would be decoded with its declared charset. The response type of the page is read
+            // when the headers have been received, as the page may change it after `send()`, e.g. to `text`,
+            // which is decoded with its declared charset then, and the MIME type may be overridden until then.
+            // A synchronous request, which has no response type, is not decoded as UTF-8 then.
+            // TODO: a change of the response type after the headers have been received, before the response
+            // is loaded, which the page can make only by an asynchronous callback, e.g. of a timer or a promise,
+            // as it does not get the state `2` of the forged request, is not applied. With two rules which match
+            // the request, the forged request of the outer one is a text request for the inner one, which forges it
+            // again without this MIME type, so it is decoded with its declared charset, as on master, until
+            // the MIME type which the page sets by `overrideMimeType()` is applied to the forged request
+            if (request.readyState === 2 && !isMimeTypeChosen) {
+                isMimeTypeChosen = true;
+                if (thisArg.responseType === 'json') {
+                    Reflect.apply(nativeOverrideMimeType, request, [JSON_MIME_TYPE]);
+                }
+                return;
+            }
+
+            if (isResponseHandled || request.readyState !== 4) {
+                return;
+            }
+            isResponseHandled = true;
+
+            // A request which has failed, e.g. of a dropped connection, or which the browser has cancelled,
+            // e.g. by `window.stop()`, is done with a network error for the page, and its `error` or `abort`
+            // and `loadend` follow, as natively, instead of `load` with an empty response,
+            // which a rule could replace, e.g. by a forged response of an ad
+            if (request.status === 0) {
+                forgedRequest.isFinished = true;
+                forgedRequest.responseHeaders = null;
+                isFailing = true;
+                defineNetworkErrorProps(thisArg, 4);
+                thisArg.dispatchEvent(new Event('readystatechange'));
                 return;
             }
 

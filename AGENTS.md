@@ -616,6 +616,45 @@ Project-specific rules:
     it again. If it fails, e.g. a synchronous request with a network error,
     its error is thrown to the page, and the object is done with the network
     error, as a native one, while it would be still opened otherwise.
+    The events of the forged request are handled both by its handlers, e.g.
+    `onreadystatechange` and `onerror`, and by its listeners, which may both get
+    the same event, while the page gets each event once, as another rule may
+    hook `addEventListener()` to block listeners of
+    a type, e.g. `prevent-addEventListener`, while a wrapper of `open()` or
+    `send()` of the page may set a handler of the forged request, so either of
+    them alone would make the page never get the response.
+    A failed asynchronous request, i.e. with status `0`, is done with a network
+    error for the page, with `readystatechange`, the terminal event of the
+    forged request, i.e. `error` or `abort` of a request which the browser
+    cancels, e.g. by `window.stop()`, and `loadend`, not `load`, which are
+    dispatched by `loadend` of the forged request, so also if its terminal
+    event is blocked, e.g. by `prevent-addEventListener` for `error` on a page
+    with Zone.js, which adds handlers by `addEventListener()`, as `error`, a `json`
+    response is decoded as UTF-8, by the response type of the page when the
+    headers of the forged request have been received, as the page may change it
+    after `send()` and the MIME type may be overridden until then, not yet with
+    two rules which match the request, and `responseText` and `responseXML` are
+    defined only for the response types which have them.
+    Not supported yet, see the TODO of the helper: `timeout` and
+    `overrideMimeType()` of the page, and `loadstart`, `progress`,
+    `readystatechange` of the states `2` and `3` and the events of the upload.
+    A fix of them MUST:
+    - attach listeners to the upload of the forged request only if the page
+      listens to its upload when it sends the request, also after a listener
+      has been removed or added with an aborted `signal`, as a listener of the
+      upload makes the browser send a preflight request for a request of
+      another origin, also after a redirect, which may fail;
+    - not shadow hooks of `EventTarget.prototype.addEventListener` which other
+      rules install later, e.g. `prevent-addEventListener`;
+    - apply a change of `timeout` or `overrideMimeType()` after `send()` to the
+      request in flight, and throw where the native object throws, e.g.
+      `overrideMimeType()` while loading or done;
+    - dispatch the terminal events of the upload, i.e. `abort` and `loadend`,
+      as natively when the page aborts the request from any of its events,
+      e.g. from `loadstart` of the request, and not after `load` of the upload;
+    - be compared with native requests, as by `checkAsNative()` of
+      `tests/scriptlets/json-prune-xhr-response.test.js`, each case with its
+      own native baseline.
 
     **Rationale**: The page may reuse the object for the next request, or abort
     it, e.g. on each input of a search, and `open()` and `abort()` of the object

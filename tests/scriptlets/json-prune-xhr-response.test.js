@@ -72,6 +72,82 @@ const sendAndWaitForLoad = (xhr) => {
     return loaded;
 };
 
+/**
+ * Sends a request, and records what the page gets: the events of the object, with its `readyState` and `status`
+ * at each of them, and the values of its response after `loadend`, also an error which reading them throws.
+ * Events which the forged request does not dispatch yet, i.e. `loadstart`, `progress` and `readystatechange`
+ * of the states `2` and `3`, are not recorded, see the TODO of `interceptXhrResponses()`.
+ *
+ * @param {object} options request
+ * @param {string} options.url URL
+ * @param {string} [options.responseType] response type
+ * @param {string} [options.responseTypeAfterSend] response type set right after `send()`
+ * @returns {Promise<object>} events, as a string, and values of the response
+ */
+const recordXhr = (options) => new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    const events = [];
+    const read = (prop) => {
+        try {
+            const value = xhr[prop];
+            return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+        } catch (e) {
+            return `throws ${e.name}`;
+        }
+    };
+    ['readystatechange', 'load', 'error', 'timeout', 'abort', 'loadend'].forEach((type) => {
+        xhr.addEventListener(type, () => {
+            if (type === 'readystatechange' && (xhr.readyState === 2 || xhr.readyState === 3)) {
+                return;
+            }
+            events.push(`${type}(${xhr.readyState},${xhr.status})`);
+        });
+    });
+    xhr.open('GET', options.url);
+    if (options.responseType) {
+        xhr.responseType = options.responseType;
+    }
+    xhr.addEventListener('loadend', () => {
+        setTimeout(() => {
+            resolve({
+                events: events.join(' '),
+                response: read('response'),
+                responseText: read('responseText'),
+                responseXML: read('responseXML'),
+            });
+        }, 20);
+    });
+    // a request without `loadend` would make the page wait for it forever, so the test fails instead of hanging
+    setTimeout(() => {
+        resolve({ events: `${events.join(' ')} without loadend` });
+    }, 3000);
+    xhr.send();
+    if (options.responseTypeAfterSend) {
+        xhr.responseType = options.responseTypeAfterSend;
+    }
+});
+
+/**
+ * Records a request natively, then with a rule of `json-prune-xhr-response` which matches every request
+ * and changes nothing, and checks that the page gets the same with the rule as natively.
+ * Each case is a test of its own, so its native baseline is recorded without the rule.
+ *
+ * @param {object} assert QUnit assert
+ * @param {object} options request, see `recordXhr()`
+ * @param {string} message message of the assertion
+ */
+const checkAsNative = async (assert, options, message) => {
+    const nativeResult = await recordXhr(options);
+    runScriptlet(name, ['zzz']);
+    const ruleResult = await recordXhr(options);
+    assert.strictEqual(JSON.stringify(ruleResult), JSON.stringify(nativeResult), message);
+};
+
+// Port 1 is one of the bad ports of the Fetch specification, which browsers block, so the request fails
+// with a network error
+const FAILED_URL = 'http://127.0.0.1:1/test.json';
+const TEST_ROUTE = '/__test-route';
+
 const isSupported = typeof Proxy !== 'undefined';
 
 if (isSupported) {
@@ -1630,6 +1706,196 @@ if (isSupported) {
         };
         xhr.responseType = 'json';
         xhr.send();
+    });
+
+    // The page gets the response of the forged request as it would get a native one, see `interceptXhrResponses()`.
+    // A compact JSON body is used, as the rule serializes the JSON again, also if it removes nothing
+    test('a failed connection dispatches error, not load, as natively', async (assert) => {
+        await checkAsNative(assert, { url: FAILED_URL }, 'error and loadend, with the state of a network error');
+    });
+
+    test('a failed connection of a json response dispatches error, as natively', async (assert) => {
+        await checkAsNative(assert, { url: FAILED_URL, responseType: 'json' }, 'error, and response null');
+    });
+
+    test('a json response is decoded as UTF-8, as natively, also with another declared charset', async (assert) => {
+        await checkAsNative(assert, { url: `${TEST_ROUTE}/latin1`, responseType: 'json' }, 'é, not Ã©');
+    });
+
+    test('a response type changed from json after send() is decoded with its declared charset, as natively',
+        async (assert) => {
+            const options = { url: `${TEST_ROUTE}/cp1252`, responseType: 'json', responseTypeAfterSend: 'text' };
+            await checkAsNative(assert, options, 'é of Windows-1252, not as UTF-8');
+        });
+
+    test('responseText and responseXML of a json response throw, as natively', async (assert) => {
+        await checkAsNative(assert, { url: `${TEST_ROUTE}/utf8`, responseType: 'json' }, 'InvalidStateError');
+    });
+
+    test('a request cancelled by window.stop() dispatches abort, as natively', async (assert) => {
+        /**
+         * Sends a request in a frame, which is stopped while the request waits for its response,
+         * and returns the events of the request.
+         *
+         * @param {boolean} withRule whether the rule runs in the frame
+         * @returns {Promise<string>} events
+         */
+        const recordStopped = async (withRule) => {
+            const frame = document.createElement('iframe');
+            document.body.appendChild(frame);
+            try {
+                const frameWindow = frame.contentWindow;
+                if (withRule) {
+                    frameWindow.eval(window.scriptlets.invoke({ name, args: ['zzz'], verbose: false }));
+                }
+                return await new Promise((resolve) => {
+                    const xhr = new frameWindow.XMLHttpRequest();
+                    const events = [];
+                    ['readystatechange', 'load', 'error', 'abort', 'loadend'].forEach((type) => {
+                        xhr.addEventListener(type, () => {
+                            events.push(`${type}(${xhr.readyState},${xhr.status})`);
+                            if (type === 'loadend') {
+                                resolve(events.join(' '));
+                            }
+                        });
+                    });
+                    xhr.open('GET', new URL(`${TEST_ROUTE}/slow`, window.location.href).href);
+                    xhr.send();
+                    setTimeout(() => frameWindow.stop(), 100);
+                    // a request without `loadend` would make the page wait for it forever
+                    setTimeout(() => resolve(`${events.join(' ')} without loadend`), 3000);
+                });
+            } finally {
+                frame.remove();
+            }
+        };
+        const nativeEvents = await recordStopped(false);
+        const ruleEvents = await recordStopped(true);
+        assert.ok(nativeEvents.includes('abort'), `native request is aborted: ${nativeEvents}`);
+        assert.strictEqual(ruleEvents, nativeEvents, 'abort and loadend, as natively');
+    });
+
+    /**
+     * Sends a request, and records its events and response by the handlers of the object, e.g. `onerror`,
+     * as another rule may block listeners which are added by `addEventListener()`.
+     *
+     * @param {string} url URL
+     * @returns {Promise<string>} events and the response
+     */
+    const recordByHandlers = (url) => new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        const events = [];
+        const log = (type) => () => {
+            if (type !== 'readystatechange' || xhr.readyState === 4) {
+                events.push(`${type}(${xhr.readyState},${xhr.status})`);
+            }
+        };
+        xhr.onreadystatechange = log('readystatechange');
+        xhr.onload = log('load');
+        xhr.onerror = log('error');
+        xhr.onloadend = () => {
+            log('loadend')();
+            resolve(`${events.join(' ')} ${xhr.responseText}`);
+        };
+        setTimeout(() => resolve(`${events.join(' ')} without loadend`), 3000);
+        xhr.open('GET', url);
+        xhr.send();
+    });
+
+    // e.g. decompiler.com##+js(aeld, error), which blocks the listeners which the helper would add to its request
+    test.each('the forged request is handled when another rule blocks listeners', [
+        ['error', FAILED_URL],
+        ['readystatechange', `${TEST_ROUTE}/utf8`],
+    ], async (assert, [type, url]) => {
+        // `prevent-addEventListener` defines an accessor with a setter which does nothing on the prototype,
+        // `window` and `document`, so their descriptors are restored instead of assigning the method,
+        // and the own ones of `window` and `document` are removed
+        const owners = [EventTarget.prototype, window, document];
+        const descriptors = owners.map((owner) => Object.getOwnPropertyDescriptor(owner, 'addEventListener'));
+        try {
+            runScriptlet('prevent-addEventListener', [type]);
+            const nativeResult = await recordByHandlers(url);
+            runScriptlet(name, ['zzz']);
+            const ruleResult = await recordByHandlers(url);
+            assert.strictEqual(ruleResult, nativeResult, `${type} blocked: ${nativeResult}`);
+        } finally {
+            owners.forEach((owner, i) => {
+                if (descriptors[i]) {
+                    Object.defineProperty(owner, 'addEventListener', descriptors[i]);
+                } else {
+                    delete owner.addEventListener;
+                }
+            });
+        }
+        // the descriptors are the native ones again, and listeners of the blocked type are added again,
+        // e.g. by the next tests, while an `error` event is not dispatched on `window`, which QUnit would report
+        owners.forEach((owner, i) => {
+            const descriptor = Object.getOwnPropertyDescriptor(owner, 'addEventListener');
+            assert.deepEqual(descriptor, descriptors[i], `addEventListener of ${owner} restored`);
+        });
+        [document, new EventTarget()].forEach((target) => {
+            let isCalled = false;
+            target.addEventListener(type, () => {
+                isCalled = true;
+            });
+            target.dispatchEvent(new Event(type));
+            assert.ok(isCalled, `a listener of ${type} added to ${target}`);
+        });
+    });
+
+    // e.g. decompiler.com##+js(aeld, error) on a page with Zone.js, which sets a handler by `addEventListener()`,
+    // so both the handler and the listener of `error` of the forged request are blocked
+    test('loadend of a failed request is delivered when both the handler and the listener of error are blocked',
+        async (assert) => {
+            const owners = [EventTarget.prototype, window, document];
+            const descriptors = owners.map((owner) => Object.getOwnPropertyDescriptor(owner, 'addEventListener'));
+            // as Zone.js, a handler is added by `addEventListener()`
+            const zoneHandlers = new WeakMap();
+            Object.defineProperty(XMLHttpRequest.prototype, 'onerror', {
+                configurable: true,
+                get() {
+                    return zoneHandlers.get(this) || null;
+                },
+                set(handler) {
+                    zoneHandlers.set(this, handler);
+                    this.addEventListener('error', handler);
+                },
+            });
+            try {
+                runScriptlet('prevent-addEventListener', ['error']);
+                const nativeResult = await recordByHandlers(FAILED_URL);
+                runScriptlet(name, ['zzz']);
+                const ruleResult = await recordByHandlers(FAILED_URL);
+                assert.ok(nativeResult.includes('loadend'), `native request ends: ${nativeResult}`);
+                assert.strictEqual(ruleResult, nativeResult, 'loadend, as natively');
+            } finally {
+                delete XMLHttpRequest.prototype.onerror;
+                owners.forEach((owner, i) => {
+                    if (descriptors[i]) {
+                        Object.defineProperty(owner, 'addEventListener', descriptors[i]);
+                    } else {
+                        delete owner.addEventListener;
+                    }
+                });
+            }
+        });
+
+    // A wrapper of `open()` of the page, which the scriptlet saves as the method which opens the forged request,
+    // may set a handler of the request, e.g. to record its status, which replaces the handler of the scriptlet
+    test('the response is delivered when a wrapper of open() of the page sets onreadystatechange', async (assert) => {
+        const pageOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function open(...args) {
+            this.onreadystatechange = function recordStatus() {
+                this.recordedStatus = this.status;
+            };
+            return Reflect.apply(pageOpen, this, args);
+        };
+        // recorded by listeners, as the wrapper replaces the handlers of the objects of the page as well
+        await checkAsNative(assert, { url: `${TEST_ROUTE}/utf8` }, 'load and loadend, as natively');
+    });
+
+    test('responseText of a text response is defined, as natively', async (assert) => {
+        await checkAsNative(assert, { url: `${TEST_ROUTE}/utf8`, responseType: 'text' }, 'text has responseText');
     });
 } else {
     test('unsupported', (assert) => {

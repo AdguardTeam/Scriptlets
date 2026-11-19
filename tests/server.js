@@ -33,6 +33,47 @@ const mimeTypes = {
     '.gif': 'image/gif',
 };
 
+/**
+ * Responses of dynamic test routes, which static files cannot give, by their path:
+ * - `latin1` — a UTF-8 JSON body with a declared Latin-1 charset, which a `json` response decodes as UTF-8 anyway;
+ * - `utf8` — the same body with a declared UTF-8 charset;
+ * - `cp1252` — the same JSON in Windows-1252, i.e. `é` as one byte, with its declared charset;
+ * - `slow` — a JSON response sent after a delay, e.g. for a request which is cancelled while it waits for it.
+ */
+const TEST_ROUTE_PREFIX = '/__test-route/';
+const TEST_ROUTE_DELAY_MS = 1000;
+const TEST_ROUTE_BODY = Buffer.from('{"t":"é"}', 'utf8');
+const TEST_ROUTE_CP1252_BODY = Buffer.from('{"t":"é"}', 'latin1');
+
+/**
+ * Responds to a dynamic test route.
+ *
+ * @param {string} route path after `TEST_ROUTE_PREFIX`, without the query
+ * @param {http.ServerResponse} res response
+ */
+const respondToTestRoute = (route, res) => {
+    if (route === 'slow') {
+        setTimeout(() => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end('{"t":"slow"}');
+        }, TEST_ROUTE_DELAY_MS);
+        return;
+    }
+    if (route === 'cp1252') {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=windows-1252' });
+        res.end(TEST_ROUTE_CP1252_BODY);
+        return;
+    }
+    if (route === 'latin1' || route === 'utf8') {
+        const charset = route === 'latin1' ? 'iso-8859-1' : 'utf-8';
+        res.writeHead(200, { 'Content-Type': `application/json; charset=${charset}` });
+        res.end(TEST_ROUTE_BODY);
+        return;
+    }
+    res.writeHead(404);
+    res.end('Unknown test route');
+};
+
 const getContentType = (filePath) => {
     const extname = path.extname(filePath).toLowerCase();
     return mimeTypes[extname] || 'application/octet-stream';
@@ -41,6 +82,11 @@ const getContentType = (filePath) => {
 const server = {
     init() {
         return http.createServer((req, res) => {
+            if (req.url.startsWith(TEST_ROUTE_PREFIX)) {
+                respondToTestRoute(req.url.slice(TEST_ROUTE_PREFIX.length).split('?')[0], res);
+                return;
+            }
+
             let filename = req.url;
             const queryPosition = filename.indexOf(TEST_QUERY_MARKER);
             if (queryPosition > -1) {
