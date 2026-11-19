@@ -2035,6 +2035,36 @@ test('ubo-trusted-json-edit reads values as JSON, as uBO, and merges by += in pl
     assert.deepEqual(JSON.parse('{"status":"shown"}'), { status: 'shown' }, 'the rule should not be applied');
 });
 
+test('ubo-trusted-json-edit evaluates filters as uBO', (assert) => {
+    // chatgpt.com##+js(trusted-json-edit, [?.type=="ads"].visibility.status="hidden"), on an array root,
+    // whose matching items a leading filter selects, as in uBO
+    runScriptlet('ubo-trusted-json-edit', ['[?.type=="ads"].visibility.status="hidden"']);
+    const text = '[{"type":"ads","visibility":{"status":"shown"}},{"type":"post","visibility":{"status":"shown"}}]';
+    assert.deepEqual(
+        JSON.parse(text),
+        [{ type: 'ads', visibility: { status: 'hidden' } }, { type: 'post', visibility: { status: 'shown' } }],
+        'only the item of ads should be changed',
+    );
+
+    // a recursive filter does not test the root, as in uBO
+    JSON.parse = nativeParse;
+    runScriptlet('ubo-trusted-json-edit', ['..[?.ad]="removed"']);
+    assert.deepEqual(
+        JSON.parse('{"ad":1,"slot":{"ad":2}}'),
+        { ad: 1, slot: 'removed' },
+        'only the descendant should be replaced',
+    );
+
+    // a leading filter of an AdGuard rule is a guard of the root, as before
+    JSON.parse = nativeParse;
+    runScriptlet(name, ['JSON.parse', '[?.type=="ads"].visibility.status=hidden']);
+    assert.deepEqual(
+        JSON.parse(text),
+        [{ type: 'ads', visibility: { status: 'shown' } }, { type: 'post', visibility: { status: 'shown' } }],
+        'an AdGuard rule should not change the items',
+    );
+});
+
 test('ubo-trusted-json-edit is applied if RegExp.prototype.test throws while it runs', (assert) => {
     // as by `abort-current-inline-script` with `RegExp.prototype.test`, which aborts the script of the rule,
     // while the query, whose parsing calls it, e.g. for `[0]`, is parsed for the first value, as before

@@ -117,6 +117,11 @@ type JsonPathComparisonFilter = {
     comparisonSelector?: JsonPathSelector;
     comparisonValue?: any;
     operator: JsonPathFilterOperator;
+    /**
+     * Selector of the parents of the last step of `selector`, which a negation of uBO rules tests,
+     * see `matchesUboNegation()`, built when it is first needed.
+     */
+    parentSelector?: JsonPathSelector;
     resolveComparisonAgainstRoot?: boolean;
     resolveSelectorAgainstRoot?: boolean;
     selector: JsonPathSelector;
@@ -2600,8 +2605,11 @@ export const jsonPath = (
         }
         const selectorParts = splitPreconditionSelectors(mutationParts.selectorPart);
 
+        // Leading filters of uBO rules are steps on the root, as in uBO, e.g. `[?.type=="ads"].visibility` selects
+        // the matching items of an array root, and tests an object root itself, while they are guards of the root
+        // of AdGuard rules, as before
         const parseSelectorPart = (selectorPart: string) => {
-            const guardParts = isV2
+            const guardParts = isV2 || isUboDialect
                 ? { guards: [], selectorPart }
                 : extractGuards(selectorPart);
             return {
@@ -2700,8 +2708,10 @@ export const jsonPath = (
                 ? filter.conditions.every((condition) => canFilterMatchPrimitive(condition))
                 : filter.conditions.some((condition) => canFilterMatchPrimitive(condition));
         }
+        // A negation of uBO rules matches a primitive value only if its condition may, e.g. `!@==1`,
+        // as `!` negates the last step, which selects nothing of a primitive value, see `matchesUboNegation()`
         if ('condition' in filter) {
-            return true;
+            return isUboDialect ? canFilterMatchPrimitive(filter.condition) : true;
         }
         // A selector of the root, e.g. `$.flag` of `[?($.flag)]`, tests the same root for any value
         if (filter.resolveSelectorAgainstRoot) {
@@ -2733,6 +2743,44 @@ export const jsonPath = (
         }
 
         return Object.keys(value);
+    }
+
+    /**
+     * Returns the keys of the children of a value as uBO enumerates them, i.e. the indexes of an array, as numbers,
+     * also of holes, e.g. which a reviver of `JSON.parse()` leaves, and without other properties of the array,
+     * e.g. `metadata`, while the own enumerable keys of another object, as `getChildKeys()` does.
+     *
+     * @param value value to inspect
+     * @returns keys of its children
+     */
+    function getUboChildKeys(value: any): (number | string)[] {
+        if (!isArrayValue(value)) {
+            return getChildKeys(value);
+        }
+        const keys: number[] = [];
+        for (let i = 0; i < value.length; i += 1) {
+            keys[i] = i;
+        }
+        return keys;
+    }
+
+    /**
+     * Checks whether a value is an object with an own enumerable key, without collecting all of them.
+     *
+     * @param value value to inspect
+     * @returns true when the value has a key
+     */
+    function hasChildKey(value: any): boolean {
+        if (!isObjectLike(value)) {
+            return false;
+        }
+        // eslint-disable-next-line no-restricted-syntax
+        for (const key in value) {
+            if (Object.prototype.hasOwnProperty.call(value, key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -2770,11 +2818,21 @@ export const jsonPath = (
      *
      * @param candidate root candidate for recursive descent
      * @param shouldSkipPrimitives whether descendants which are not objects are skipped
+     * @param isEachSlotKept true to keep a candidate for each slot of an object which is visited already, without
+     * its descendants, and to enumerate the items of an array by their indexes, see `getUboChildKeys()`, as uBO
+     * does for a recursive filter, e.g. `..[?.ad]` removes both items of `[o, o]`, and `${key}` of `call([...])`
+     * is `0`, not `'0'`
      * @returns recursive candidate list, possibly truncated to the budgets
      */
-    function getRecursiveCandidates(candidate: JsonPathCandidate, shouldSkipPrimitives: boolean): JsonPathCandidate[] {
+    function getRecursiveCandidates(
+        candidate: JsonPathCandidate,
+        shouldSkipPrimitives: boolean,
+        isEachSlotKept = false,
+    ): JsonPathCandidate[] {
         const output: JsonPathCandidate[] = [];
         const visitedObjects = new WeakSet<object>();
+        // Candidates of slots of objects which are visited already, whose descendants are not visited again
+        const repeatedSlots = new Set<JsonPathCandidate>();
         let isBudgetExhausted = false;
         // Counts only object-valued candidates. Primitives can never form a
         // cycle so they are not counted, which avoids false positives on large
@@ -2786,14 +2844,20 @@ export const jsonPath = (
          * or it is a skipped primitive value.
          *
          * @param parentCandidate candidate of the visited node
-         * @param key key of the child
+         * @param childKey key of the child, an index of an array as a number for `isEachSlotKept`
          * @returns candidate of the child, or null if it is not added
          */
-        const addChild = (parentCandidate: JsonPathCandidate, key: string): JsonPathCandidate | null => {
-            const value = parentCandidate.value[key];
+        const addChild = (parentCandidate: JsonPathCandidate, childKey: number | string): JsonPathCandidate | null => {
+            const value = parentCandidate.value[childKey];
             if (isObjectLike(value)) {
                 if (visitedObjects.has(value)) {
-                    return null;
+                    if (!isEachSlotKept) {
+                        return null;
+                    }
+                    const slot = createCandidate(value, parentCandidate.value, childKey, parentCandidate);
+                    repeatedSlots.add(slot);
+                    output.push(slot);
+                    return slot;
                 }
                 visitedObjects.add(value);
                 objectCandidateCount += 1;
@@ -2805,7 +2869,7 @@ export const jsonPath = (
                 return null;
             }
 
-            const child = createCandidate(value, parentCandidate.value, key, parentCandidate);
+            const child = createCandidate(value, parentCandidate.value, childKey, parentCandidate);
             output.push(child);
             return child;
         };
@@ -2823,7 +2887,12 @@ export const jsonPath = (
             const candidateDepths: number[] = [0];
             for (let head = 0; head < output.length && !isBudgetExhausted; head += 1) {
                 const parentCandidate = output[head];
-                const keys = getChildKeys(parentCandidate.value);
+                if (repeatedSlots.has(parentCandidate)) {
+                    continue;
+                }
+                const keys = isEachSlotKept
+                    ? getUboChildKeys(parentCandidate.value)
+                    : getChildKeys(parentCandidate.value);
                 if (keys.length === 0) {
                     continue;
                 }
@@ -2840,11 +2909,17 @@ export const jsonPath = (
             }
         } else {
             // Keys of each node on the current branch which are not visited yet, with the depth of its children
-            const branchStack: { candidate: JsonPathCandidate; depth: number; index: number; keys: string[] }[] = [{
+            const getKeys = isEachSlotKept ? getUboChildKeys : getChildKeys;
+            const branchStack: {
+                candidate: JsonPathCandidate;
+                depth: number;
+                index: number;
+                keys: (number | string)[];
+            }[] = [{
                 candidate,
                 depth: 1,
                 index: 0,
-                keys: getChildKeys(candidate.value),
+                keys: getKeys(candidate.value),
             }];
             while (branchStack.length > 0 && !isBudgetExhausted) {
                 const level = branchStack[branchStack.length - 1];
@@ -2855,11 +2930,11 @@ export const jsonPath = (
 
                 const child = addChild(level.candidate, level.keys[level.index]);
                 level.index += 1;
-                if (child === null) {
+                if (child === null || repeatedSlots.has(child)) {
                     continue;
                 }
 
-                const childKeys = getChildKeys(child.value);
+                const childKeys = getKeys(child.value);
                 if (childKeys.length === 0) {
                     continue;
                 }
@@ -3100,7 +3175,12 @@ export const jsonPath = (
             }
 
             if ('condition' in filter) {
-                return !matchesFilterValue(value, filter.condition);
+                const { condition } = filter;
+                if (isUboDialect && 'selector' in condition) {
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                    return matchesUboNegation(value, condition, filter);
+                }
+                return !matchesFilterValue(value, condition);
             }
 
             const isRootOnlyFilter = filter.resolveSelectorAgainstRoot === true
@@ -3135,6 +3215,187 @@ export const jsonPath = (
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 ? selectFromRoot(filter.selector)
                 : evaluateSelector(value, filter.selector);
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            return matchesCandidates(value, matchedCandidates, filter);
+        }
+
+        /**
+         * Checks whether the values of a uBO rule which a negated filter tests match it, as in uBO, in which `!`
+         * negates the last step of its selector, e.g. `.x` of `!.a.x`, for each parent which the previous steps
+         * select, e.g. `.a`, so a parent which does not exist or is not an object, e.g. a primitive value, does not
+         * match, and with a comparison, e.g. `!.x=="a"`, a missing property does not match either:
+         * - `!.x` matches an object without `x`;
+         * - `!.x=="a"` matches an object with `x` which is not `"a"`;
+         * - a recursive last step is negated for the parent and each object below it, as in uBO, e.g. `!..ad==true`
+         *   matches if one of them has `ad` which is not `true`, and `!..ad` if one of them has no `ad`,
+         *   while AdGuard rules negate the whole test, as RFC 9535 does.
+         * A selector of the root, e.g. `!$..ad==true`, is negated in the same way from the root, as in uBO,
+         * whose result is the same for each tested node, so it is evaluated once for a command,
+         * see `rootOnlyFilterResults`.
+         * Other negations, e.g. of `@==1`, or of a nested filter, e.g. `!.offers[?.ad]`, are negated as a whole,
+         * as for AdGuard rules, while uBO ignores `!` before a nested filter, as before a regular expression,
+         * which is not mirrored, also for a primitive value, which matches only if the condition may match it,
+         * see `canFilterMatchPrimitive()`.
+         *
+         * @param value candidate value to check
+         * @param filter negated comparison filter
+         * @param negation negation filter, by which the result of a selector of the root is reused
+         * @returns true when the candidate matches the negation
+         */
+        function matchesUboNegation(
+            value: any,
+            filter: JsonPathComparisonFilter,
+            negation: JsonPathFilter,
+        ): boolean {
+            const { steps } = filter.selector;
+            const lastStep = steps[steps.length - 1];
+            if (
+                filter.comparisonSelector
+                || !lastStep
+                || (lastStep.mode !== 'property' && lastStep.mode !== 'index' && lastStep.mode !== 'wildcard')
+            ) {
+                if (!canFilterMatchPrimitive(filter) && !isObjectLike(value)) {
+                    return false;
+                }
+                return !matchesFilterValue(value, filter);
+            }
+
+            if (filter.resolveSelectorAgainstRoot) {
+                if (!rootOnlyFilterResults) {
+                    rootOnlyFilterResults = new Map();
+                }
+                let result = rootOnlyFilterResults.get(negation);
+                if (result === undefined) {
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                    result = matchesUboNegationFrom(root, filter, lastStep, true);
+                    rootOnlyFilterResults.set(negation, result);
+                }
+                return result;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            return matchesUboNegationFrom(value, filter, lastStep, false);
+        }
+
+        /**
+         * Tests the last step of a negated filter of uBO rules on the parents which the previous steps select,
+         * see `matchesUboNegation()`.
+         *
+         * @param value value from which the selector starts, i.e. the tested node or the root
+         * @param filter negated comparison filter
+         * @param lastStep last step of its selector, which selects a property, an index or all children
+         * @param isFromRoot true if the selector starts at the root, whose parents are selected once for a command,
+         * see `selectFromRoot()`
+         * @returns true when the negation matches
+         */
+        function matchesUboNegationFrom(
+            value: any,
+            filter: JsonPathComparisonFilter,
+            lastStep: JsonPathStep,
+            isFromRoot: boolean,
+        ): boolean {
+            const { steps } = filter.selector;
+            let selectedParents: JsonPathCandidate[];
+            if (steps.length === 1) {
+                selectedParents = [createCandidate(value, null, null, null)];
+            } else {
+                if (!filter.parentSelector) {
+                    filter.parentSelector = { steps: steps.slice(0, -1) };
+                }
+                selectedParents = isFromRoot
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                    ? selectFromRoot(filter.parentSelector)
+                    : evaluateSelector(value, filter.parentSelector);
+            }
+            // A recursive last step, e.g. `..ad`, is tested on each selected parent and on each object below it,
+            // which are visited as by uBO, e.g. not through a property of an array which is not an index
+            let parents = selectedParents;
+            if (lastStep.recursive) {
+                parents = [];
+                for (let i = 0; i < selectedParents.length; i += 1) {
+                    const objects = getRecursiveCandidates(selectedParents[i], true, true);
+                    for (let j = 0; j < objects.length; j += 1) {
+                        parents[parents.length] = objects[j];
+                    }
+                }
+            }
+
+            for (let i = 0; i < parents.length; i += 1) {
+                const parent = parents[i];
+                const owner = parent.value;
+                if (!isObjectLike(owner)) {
+                    continue;
+                }
+                // Keys which the last step tests: its names, also of missing properties, or the existing ones
+                // of a regular expression or a wildcard, as in uBO
+                const keys: (number | string)[] = [];
+                if (lastStep.mode === 'wildcard') {
+                    const childKeys = getUboChildKeys(owner);
+                    for (let j = 0; j < childKeys.length; j += 1) {
+                        keys[keys.length] = childKeys[j];
+                    }
+                } else if (lastStep.mode === 'index') {
+                    if (!isArrayValue(owner) || !lastStep.indexes) {
+                        continue;
+                    }
+                    for (let j = 0; j < lastStep.indexes.length; j += 1) {
+                        keys[keys.length] = resolveIndex(owner.length, lastStep.indexes[j]);
+                    }
+                } else if (lastStep.properties) {
+                    for (let j = 0; j < lastStep.properties.length; j += 1) {
+                        const property = lastStep.properties[j];
+                        if (!(property instanceof RegExp)) {
+                            keys[keys.length] = property;
+                            continue;
+                        }
+                        const childKeys = Object.keys(owner);
+                        for (let k = 0; k < childKeys.length; k += 1) {
+                            property.lastIndex = 0;
+                            if (property.test(childKeys[k])) {
+                                keys[keys.length] = childKeys[k];
+                            }
+                        }
+                    }
+                }
+
+                for (let j = 0; j < keys.length; j += 1) {
+                    const key = keys[j];
+                    // A hole of an array, e.g. which a reviver of `JSON.parse()` leaves, is missing, as in uBO
+                    const isPresent = (typeof key !== 'number' || (key >= 0 && key < owner.length))
+                        && Object.prototype.hasOwnProperty.call(owner, key);
+                    if (filter.operator === FILTER_OPERATORS.EXISTS) {
+                        if (!isPresent) {
+                            return true;
+                        }
+                        continue;
+                    }
+                    if (!isPresent) {
+                        continue;
+                    }
+                    const candidate = createCandidate((owner as any)[key], owner, key, parent);
+                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+                    if (!matchesCandidates(value, [candidate], filter)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /**
+         * Checks whether the values which the selector of a comparison filter has selected match it.
+         *
+         * @param value candidate value which the filter tests, for a selector of its comparison,
+         * e.g. `@.b` of `@.a==@.b`
+         * @param matchedCandidates nodes which the selector of the filter has selected
+         * @param filter parsed comparison filter
+         * @returns true when any of them matches the filter
+         */
+        function matchesCandidates(
+            value: any,
+            matchedCandidates: JsonPathCandidate[],
+            filter: JsonPathComparisonFilter,
+        ): boolean {
             if (filter.operator === FILTER_OPERATORS.EXISTS) {
                 return matchedCandidates.length > 0;
             }
@@ -3187,15 +3448,30 @@ export const jsonPath = (
 
             for (let i = 0; i < matchedCandidates.length; i += 1) {
                 const matchedValue = matchedCandidates[i].value;
+                // A value of uBO rules which is not a string is converted to a string, as by uBO, e.g. `12`
+                // contains `"1"`, and `true` matches `/^tr/`, while AdGuard rules match only strings, as before
+                let textValue: string | null = typeof matchedValue === 'string' ? matchedValue : null;
+                if (
+                    textValue === null
+                    && isUboDialect
+                    && (filter.operator === FILTER_OPERATORS.CONTAINS || filter.operator === FILTER_OPERATORS.REGEX)
+                ) {
+                    try {
+                        textValue = String(matchedValue);
+                    } catch {
+                        // e.g. an object without a prototype, which is not matched
+                    }
+                }
+
                 if (filter.operator === FILTER_OPERATORS.CONTAINS) {
-                    if (typeof matchedValue !== 'string') {
+                    if (textValue === null) {
                         continue;
                     }
                     const containedString = getComparisonString();
                     if (containedString === null) {
                         return false;
                     }
-                    if (matchedValue.includes(containedString)) {
+                    if (textValue.includes(containedString)) {
                         return true;
                     }
                     continue;
@@ -3227,9 +3503,9 @@ export const jsonPath = (
                 }
 
                 if (filter.operator === FILTER_OPERATORS.REGEX) {
-                    if (typeof matchedValue === 'string' && comparisonValue instanceof RegExp) {
+                    if (textValue !== null && comparisonValue instanceof RegExp) {
                         comparisonValue.lastIndex = 0;
-                        if (comparisonValue.test(matchedValue)) {
+                        if (comparisonValue.test(textValue)) {
                             return true;
                         }
                     }
@@ -3354,6 +3630,13 @@ export const jsonPath = (
                     continue;
                 }
 
+                // A filter of uBO rules on an object tests it only if it has a key, as uBO tests it for each key,
+                // e.g. `.c[?!.ad]` does not match `{}`, as in RFC 9535, in which a filter selects children,
+                // and it does not test a primitive value at all, e.g. `.a[?@==1]`
+                if (isUboDialect && !hasChildKey(candidate.value)) {
+                    continue;
+                }
+
                 if (matchesFilterValue(candidate.value, filter)) {
                     output.push(candidate);
                 }
@@ -3371,6 +3654,28 @@ export const jsonPath = (
             if (step.mode === 'filter' && step.filter) {
                 // `$..[?(...)]` must test every descendant, so recursive
                 // filter steps expand candidates the same way direct steps do
+                // A recursive filter of uBO rules tests each descendant as a whole, as uBO does, also an array,
+                // e.g. `..[?!.x]` matches an array, and not the node from which it starts, e.g. the root,
+                // while one of AdGuard rules tests the node as well, and the items of an array instead of it
+                if (step.recursive && isUboDialect && !shouldFilterChildren) {
+                    const shouldSkipPrimitives = !canFilterMatchPrimitive(step.filter);
+                    const output: JsonPathCandidate[] = [];
+                    for (let j = 0; j < candidates.length && !(isFirstOutputEnough && output.length > 0); j += 1) {
+                        const recursiveCandidates = getRecursiveCandidates(candidates[j], shouldSkipPrimitives, true);
+                        const firstIndex = recursiveCandidates[0] === candidates[j] ? 1 : 0;
+                        for (
+                            let k = firstIndex;
+                            k < recursiveCandidates.length && !(isFirstOutputEnough && output.length > 0);
+                            k += 1
+                        ) {
+                            if (matchesFilterValue(recursiveCandidates[k].value, step.filter)) {
+                                output.push(recursiveCandidates[k]);
+                            }
+                        }
+                    }
+                    candidates = output;
+                    continue;
+                }
                 let candidatesToFilter = candidates;
                 if (step.recursive) {
                     // Primitive values are skipped if the filter cannot match them, e.g. `[?(@.id=="ad")]`,

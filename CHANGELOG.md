@@ -228,6 +228,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   of a text which `=` sets is replaced by the current time, and a rule with a value which is not JSON, e.g. `=hidden`,
   or with an invalid `repl({...})` or `call([...])`, is not applied, so e.g. bodies of `fetch` responses are not read
   for it.
+  Their filters are evaluated as by uBO, e.g. a leading filter selects the matching items of an array root,
+  e.g. `[?.type=="ads"].visibility` of chatgpt.com, a recursive filter does not test the node from which it starts,
+  `!` negates only the last step, e.g. `[?!.x=="a"]` requires `x`, and `*=` converts a value which is not a string.
+  As in uBO, a recursive filter tests each object which is set to several slots, e.g. of an array, in each of them.
   As in uBO, `propsToMatch` may negate a pattern by `!`, e.g. `url:!private`, a value of digits only, e.g. `12345`,
   is matched as a text, a rule without it reads no property of a `fetch` call, while other ones read only the ones
   which it names, each once, unlike uBO, the result of `JSON.parse` is modified

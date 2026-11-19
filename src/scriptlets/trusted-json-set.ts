@@ -261,6 +261,14 @@ import { type Source } from './scriptlets';
  *   `repl({...})` or `call([...])`, is not applied, which is logged, also without the keywords of the AdGuard
  *   syntax, e.g. `$now$`;
  *   `repl({...})`, `call([...])` and `$remove$` are read as in the AdGuard syntax
+ * - filters are evaluated as by uBO: a leading filter selects the matching items of an array root,
+ *   e.g. `[?.type=="ads"].visibility`, and tests an object root itself, a filter on an object tests it only
+ *   if it has a key, a recursive filter, e.g. `..[?.ad]`, tests each descendant, also an array, but not the node
+ *   from which it starts, `!` negates only the last step, so `[?!.x]` matches no primitive value and `[?!.x=="a"]`
+ *   requires `x`, also a recursive one, for each object, e.g. `[?!..ad==true]` requires `ad` which is not `true`,
+ *   and `*=` and `=/.../` convert a value which is not a string, e.g. `[?.id*="1"]` matches `12`;
+ *   a rule which would remove the root, e.g. `$`, leaves it, while uBO makes it `null`, and `!` before a regular
+ *   expression or a nested filter negates it, e.g. `[?!.type=/^ad/]` or `[?!.offers[?.ad]]`, while uBO ignores it
  * - options are pairs of a name and a value which follow `jsonq`:
  *     - `matches, pattern` — string or regular expression which the text passed to `JSON.parse` has to match
  * - other options and arguments are ignored, as in uBO, e.g. `stack`

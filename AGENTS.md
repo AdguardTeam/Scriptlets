@@ -865,6 +865,10 @@ Project-specific rules:
     e.g. `$..banner=false $.ads`, are one value, as before, so a query which takes `argumentValue` has to precede
     them, or have `$remove$` as its own value; a constant which ends before a query was not added, as it changes
     expressions which set a text now, while `$remove$` makes the order of queries free without it.
+    Filters of uBO rules are evaluated as by `#getMatchesFromExpr()` of uBO, not as with `v2:`, which differs
+    for objects: a filter on an array tests its items, on an object the object itself, only if it has a key,
+    as RFC 9535 selects children, and a recursive one each descendant, but not the node from which it starts.
+    A change of their evaluation MUST be compared with the results of uBO's own JSONPath class.
     A change of how expressions are split or read MUST be compared with the previous
     version on generated expressions, e.g. with a space before each kind of step
     and in text values, and on the expressions of its tests and of real rules.
