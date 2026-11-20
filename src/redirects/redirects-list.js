@@ -27,3 +27,4 @@ export { NaverWcslog } from './naver-wcslog';
 export { FreewheelAdManager } from './freewheel-admanager';
 export { Optimizely } from './optimizely';
 export { KameleoonEngine } from './kameleoon';
+export { Vwo } from './vwo';

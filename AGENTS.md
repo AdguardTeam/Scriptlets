@@ -642,6 +642,19 @@ Project-specific rules:
     serialize, even though `JSON.parse()` has parsed it. Logging should not
     change the behavior of the page.
 
+23. Redirect resources and scriptlets which call callbacks of the page, e.g.
+    ones registered with a mocked API or queued in a command queue of the mocked
+    library, SHOULD call them with the `runProtected()` helper, instead of a
+    local copy of it or a `try`/`catch` at each call site, and list it in
+    `injections`.
+
+    **Rationale**: The helper calls the callback without a receiver, as the
+    mocked libraries do, so `this` is not an internal array or object of the
+    resource, and catches its errors, so that one failing callback does not
+    stop the resource or the other callbacks. It calls the callback with
+    `apply()`, as a spread call would need a Babel helper which is not in the
+    built resource.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,

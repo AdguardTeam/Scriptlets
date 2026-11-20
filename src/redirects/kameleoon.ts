@@ -4,6 +4,7 @@ import {
     noopArray,
     noopFunc,
     noopNull,
+    runProtected,
 } from '../helpers';
 import { type Source } from '../scriptlets';
 
@@ -62,25 +63,6 @@ export function KameleoonEngine(source: Source) {
     const POLLING_INTERVAL = 200;
     const SHADOW_POLLING_INTERVAL = 150;
     const loadTime = Date.now();
-
-    /**
-     * Calls a page callback, catching its errors, as the engine does.
-     *
-     * @param callback Page callback.
-     * @param args Arguments for the callback.
-     */
-    const runProtected = (callback: unknown, args: unknown[]) => {
-        if (typeof callback !== 'function') {
-            return;
-        }
-        try {
-            // a spread call would need a Babel helper which is not in the built resource
-            // eslint-disable-next-line prefer-spread
-            callback.apply(null, args);
-        } catch (e) {
-            // ignore errors of the page callback
-        }
-    };
 
     /**
      * Returns the site code from the URL of the engine, e.g. `abc123` of `abc123.kameleoon.io/engine.js`.
@@ -705,4 +687,5 @@ KameleoonEngine.injections = [
     noopArray,
     noopFunc,
     noopNull,
+    runProtected,
 ];

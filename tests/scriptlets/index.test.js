@@ -82,3 +82,4 @@ import './trusted-json-set-fetch-response.test';
 import './trusted-json-set-xhr-response.test';
 import './optimizely.test';
 import './kameleoon.test';
+import './vwo.test';

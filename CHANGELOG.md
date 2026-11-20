@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   compatible with `optimizely.js` of uBO [#588].
 - `kameleoon` redirect resource and scriptlet which mock the Kameleoon Web Experimentation engine
   and show the page hidden by its anti-flicker snippet at once [#588].
+- `vwo` redirect resource and scriptlet which mock the library of VWO (Visual Website Optimizer)
+  and show the page hidden by its SmartCode at once [#588].
 
 ### Changed
 

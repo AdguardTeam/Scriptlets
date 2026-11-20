@@ -253,6 +253,9 @@
             "adg": "scorecardresearch-beacon"
         },
         {
+            "adg": "vwo"
+        },
+        {
             "adg": "set-attr",
             "ubo": "set-attr.js (set-attr)"
         },
@@ -625,6 +628,9 @@
         {
             "adg": "set-popads-dummy",
             "ubo": "popads-dummy.js"
+        },
+        {
+            "adg": "vwo"
         },
         {
             "ubo": "amazon_ads.js"
