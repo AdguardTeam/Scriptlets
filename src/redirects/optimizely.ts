@@ -109,6 +109,13 @@ export function Optimizely(source: Source) {
     const CLIENT_VERSION = '0.261.0';
     const POLL_INTERVAL = 20;
 
+    /**
+     * Checks whether an object has an own property, also if the object has no `hasOwnProperty()` of its own.
+     *
+     * @param obj Object to check.
+     * @param key Property name.
+     * @returns `true` if `obj` has the own property `key`.
+     */
     const hasOwn = (obj: unknown, key: unknown): boolean => {
         return Object.prototype.hasOwnProperty.call(obj, key as PropertyKey);
     };
@@ -192,8 +199,10 @@ export function Optimizely(source: Source) {
     const observers: ObserverEntry[] = [];
     let mutationObserver: MutationObserver | null = null;
 
-    // The observer is disconnected when nothing is left to watch,
-    // and created again by the next `observeSelector()` call.
+    /**
+     * Disconnects the mutation observer of `observeSelector()` when no entry is left to watch;
+     * the next `observeSelector()` call creates it again.
+     */
     const releaseObserver = () => {
         if (observers.length !== 0 || mutationObserver === null) {
             return;
@@ -202,7 +211,12 @@ export function Optimizely(source: Source) {
         mutationObserver = null;
     };
 
-    // Entries are removed by identity, as a callback may register or remove other entries.
+    /**
+     * Removes an entry of `observeSelector()`. Entries are removed by identity, not by index,
+     * as a callback may register or remove other entries meanwhile.
+     *
+     * @param entry Observer entry.
+     */
     const drop = (entry: ObserverEntry) => {
         const index = observers.indexOf(entry);
         if (index !== -1) {
@@ -241,6 +255,10 @@ export function Optimizely(source: Source) {
         return true;
     };
 
+    /**
+     * Scans the document for all entries of `observeSelector()` on DOM changes, removes the spent ones,
+     * and disconnects the observer if none is left.
+     */
     const scanObservers = () => {
         const entries = observers.slice();
         for (let i = 0; i < entries.length; i += 1) {
@@ -251,6 +269,17 @@ export function Optimizely(source: Source) {
         releaseObserver();
     };
 
+    /**
+     * Calls the callback once for each element matching the selector, for the existing elements at once,
+     * and for elements added later on DOM changes, as `utils.observeSelector()` of the real client.
+     *
+     * @param selector CSS selector.
+     * @param callback Page callback, called with each matching element.
+     * @param options Options; `{ once: true }` stops after the first element.
+     * @returns Function which stops observing.
+     * @throws Error, as the real client, for an invalid selector, a non-function callback,
+     * or options which are not an object.
+     */
     const observeSelector = (selector: unknown, callback: unknown, options?: unknown) => {
         let valid = typeof selector === 'string';
         if (valid) {
@@ -302,6 +331,14 @@ export function Optimizely(source: Source) {
     // Callbacks are keyed by a token, so the same callback can be registered twice and cancelled once.
     const pollGroups = new Map<number, PollGroup>();
 
+    /**
+     * Calls the callback every `interval` ms until it is cancelled, as `utils.poll()` of the real client.
+     * Callbacks of the same interval share one timer, which is cleared when the last one is cancelled.
+     *
+     * @param callback Page callback.
+     * @param interval Interval in ms, 20 by default.
+     * @returns Function which cancels the callback; calling it again does nothing.
+     */
     const poll = (callback: unknown, interval?: unknown) => {
         const period = typeof interval === 'number' ? interval : POLL_INTERVAL;
         let group = pollGroups.get(period);
@@ -337,8 +374,14 @@ export function Optimizely(source: Source) {
         };
     };
 
-    // The condition is not checked: the real client calls it immediately,
-    // so the promise is rejected if it is not callable.
+    /**
+     * Returns a promise resolved once the condition is true, checked at once and then every 20 ms,
+     * as `utils.waitUntil()` of the real client.
+     * The condition is not checked: the real client calls it immediately,
+     * so the promise is rejected if it is not callable.
+     *
+     * @param condition Page function returning whether to resolve.
+     */
     const waitUntil = (condition: unknown) => new Promise<void>((resolve) => {
         if ((condition as Callback)()) {
             resolve();
@@ -352,6 +395,13 @@ export function Optimizely(source: Source) {
         });
     });
 
+    /**
+     * Returns a promise resolved with the first element matching the selector,
+     * as `utils.waitForElement()` of the real client.
+     *
+     * @param selector CSS selector.
+     * @returns Promise resolved with the element, or rejected for an invalid selector.
+     */
     const waitForElement = (selector: unknown) => new Promise((resolve) => {
         observeSelector(selector, resolve, { once: true });
     });
@@ -366,6 +416,9 @@ export function Optimizely(source: Source) {
     let ownPushState: History['pushState'] | null = null;
     let ownReplaceState: History['replaceState'] | null = null;
 
+    /**
+     * Calls the handlers of `onUrlChange()` with the current URL; their errors are caught.
+     */
     const notifyUrlChange = () => {
         const handlers = Array.from(urlChangeHandlers.values());
         for (let i = 0; i < handlers.length; i += 1) {
@@ -379,6 +432,15 @@ export function Optimizely(source: Source) {
         }
     };
 
+    /**
+     * Calls the handler with the URL on each URL change, as `utils.onUrlChange()` of the real client:
+     * on `popstate`, `hashchange`, `history.pushState()` and `history.replaceState()`.
+     * The history methods are wrapped while there is a handler, and restored after the last one is removed,
+     * unless the page has wrapped them again meanwhile.
+     *
+     * @param handler Page handler, called with `location.href`.
+     * @returns Function which removes the handler; a no-op function for a non-function handler.
+     */
     const onUrlChange = (handler: unknown) => {
         if (typeof handler !== 'function') {
             return noopFunc;
@@ -443,8 +505,18 @@ export function Optimizely(source: Source) {
         last_child: 'beforeend',
     };
 
-    // The real client inserts the markup again if the page removes it.
-    // It is inserted once here, as no variation code is run.
+    /**
+     * Inserts the HTML next to the element matching the selector, as `utils.persistHtml()` of the real client.
+     * The real client inserts the markup again if the page removes it.
+     * It is inserted once here, as no variation code is run.
+     *
+     * @param html Markup to insert.
+     * @param selector CSS selector of the element.
+     * @param placement `before` (default), `after`, `first_child` or `last_child`.
+     * @returns No-op function.
+     * @throws Error, as the real client, for an empty markup, an invalid selector or placement,
+     * or no matching element.
+     */
     const persistHtml = (html: unknown, selector: unknown, placement?: unknown) => {
         if (typeof html !== 'string' || html === '') {
             throw new Error('persistHtml: html must be a non-empty string');
@@ -481,6 +553,12 @@ export function Optimizely(source: Source) {
     };
     let logLevel: number | null = null;
 
+    /**
+     * Sets the level of the logs of the real client, enabled by the page, e.g. by the `log` command.
+     * An unknown level is reported to the console, as by the real client.
+     *
+     * @param level Name, e.g. `WARN`, or number of the level.
+     */
     const setLogLevel = (level: unknown) => {
         const resolved = typeof level === 'string'
             ? LOG_LEVELS[level.toUpperCase()]
@@ -496,6 +574,12 @@ export function Optimizely(source: Source) {
         logLevel = resolved;
     };
 
+    /**
+     * Logs a warning of the real client, only if the page has enabled the `WARN` level or a higher one.
+     *
+     * @param message Warning message.
+     * @param detail Optional value logged after the message.
+     */
     const warn = (message: string, detail?: unknown) => {
         if (logLevel === null || logLevel < LOG_LEVELS.WARN) {
             return;
@@ -596,6 +680,13 @@ export function Optimizely(source: Source) {
     const RECENCY_FILTERS = ['most_recent', 'least_recent'];
     const FREQUENCY_FILTERS = ['most_frequent', 'least_frequent'];
 
+    /**
+     * Validates a query descriptor of `get('behavior')` as the real client does.
+     *
+     * @param descriptor Query descriptor of the page.
+     * @param allowed Allowed `pick` modifiers.
+     * @returns Messages of the problems, or `undefined` if there is none.
+     */
     const descriptorProblems = (descriptor: BehaviorDescriptor, allowed: string[]): string[] | undefined => {
         if (!descriptor) {
             return ['Descriptor not defined'];
@@ -664,6 +755,13 @@ export function Optimizely(source: Source) {
         originsSynced: true,
     };
 
+    /**
+     * Checks whether an event matches the filter of a listener: its `type` and `name`, if they are set.
+     *
+     * @param filter Filter of the listener; no filter matches all events.
+     * @param event Event.
+     * @returns `true` if the listener should be called.
+     */
     const eventMatches = (filter: OptimizelyEvent | null | undefined, event: OptimizelyEvent): boolean => {
         if (filter === undefined || filter === null) {
             return true;
@@ -677,6 +775,12 @@ export function Optimizely(source: Source) {
         return true;
     };
 
+    /**
+     * Calls the listeners matching the event, catching their errors; lifecycle events are remembered
+     * for `replaySticky()`. A copy of the listeners is iterated, as a listener may add or remove others.
+     *
+     * @param event Event, e.g. `{ type: 'lifecycle', name: 'initialized' }`.
+     */
     const emit = (event: OptimizelyEvent) => {
         if (event.type === 'lifecycle') {
             fired[event.name as string] = true;
@@ -695,6 +799,11 @@ export function Optimizely(source: Source) {
         }
     };
 
+    /**
+     * Removes all listeners registered with the token.
+     *
+     * @param token Token of `addListener()` or `event_emitter.on()`.
+     */
     const dropByToken = (token: unknown) => {
         for (let i = listeners.length - 1; i >= 0; i -= 1) {
             if (listeners[i].token === token) {
@@ -703,8 +812,13 @@ export function Optimizely(source: Source) {
         }
     };
 
-    // As the real client, a token is set on the spec of the page if it has none,
-    // and returned, as it is needed for `removeListener`.
+    /**
+     * Registers a listener. As the real client, a token is set on the spec of the page if it has none,
+     * and returned, as it is needed for `removeListener`.
+     *
+     * @param spec Listener spec of the page: `filter`, `handler` and an optional `token`.
+     * @returns Token of the listener.
+     */
     const register = (spec: ListenerSpec) => {
         if (!spec.token) {
             spec.token = uuid();
@@ -717,7 +831,12 @@ export function Optimizely(source: Source) {
         return spec.token;
     };
 
-    // Lifecycle events which have already fired are delivered to late listeners.
+    /**
+     * Delivers a sticky lifecycle event which has already fired, i.e. `initialized`, `originsSynced`
+     * or `activated`, to a listener added later, as the real client does.
+     *
+     * @param spec Listener spec of the page.
+     */
     const replaySticky = (spec: ListenerSpec) => {
         const { filter } = spec;
         if (!filter || filter.type !== 'lifecycle') {
@@ -734,6 +853,13 @@ export function Optimizely(source: Source) {
         }
     };
 
+    /**
+     * Command `addListener` of the real client: registers a listener and replays sticky lifecycle events.
+     *
+     * @param spec Listener spec of the page.
+     * @returns Token of the listener.
+     * @throws Error, as the real client, if there is no handler function.
+     */
     const addListener = (spec: unknown) => {
         if (spec === null || typeof spec !== 'object' || typeof (spec as ListenerSpec).handler !== 'function') {
             throw new Error('A handler function must be supplied');
@@ -743,6 +869,12 @@ export function Optimizely(source: Source) {
         return token;
     };
 
+    /**
+     * Command `removeListener` of the real client: removes the listeners of the token of the spec.
+     *
+     * @param spec Spec with the `token` of the listener.
+     * @throws Error, as the real client, if there is no token.
+     */
     const removeListener = (spec: unknown) => {
         if (spec === null || typeof spec !== 'object' || !(spec as ListenerSpec).token) {
             throw new Error('Must supply a token to removeListener');
@@ -780,6 +912,13 @@ export function Optimizely(source: Source) {
         visitor_id: { randomId: uuid() },
     };
 
+    /**
+     * `optimizely.get()`: returns a module of the real client, e.g. `state`, `data` or `utils`.
+     * An unknown module is `undefined`, and a warning is logged if the page has enabled it.
+     *
+     * @param name Module name.
+     * @returns Module, `window.$` for `jquery`, or `undefined`.
+     */
     const get = (name: unknown) => {
         // The real client does not bundle jQuery, it uses `window.$` of the page,
         // and never `window.jQuery`.
@@ -854,6 +993,13 @@ export function Optimizely(source: Source) {
 
     const commandTables: CommandTable[] = [commandsV0, commandsV1, {}];
 
+    /**
+     * `optimizely.push()`: runs a command of the real client, looked up by its version: arrays and strings
+     * are version 0, objects have their own version or version 1. Errors of the command are caught.
+     *
+     * @param command Command, e.g. `['trackEvent', 'name']`, `'disable'` or `{ type: 'addListener', ... }`.
+     * @returns `true` if the command is known for its version, `false` otherwise.
+     */
     const push = (command: unknown): boolean => {
         let version: unknown;
         let name: unknown;
@@ -904,6 +1050,10 @@ export function Optimizely(source: Source) {
 
     hit(source);
 
+    /**
+     * Emits the lifecycle events of the real client in its order:
+     * `initialized`, `originsSynced`, `activate` and `activated`.
+     */
     const fireLifecycle = () => {
         emit({ type: 'lifecycle', name: 'initialized' });
         emit({ type: 'lifecycle', name: 'originsSynced' });
