@@ -28,3 +28,4 @@ export { FreewheelAdManagerNames } from './freewheel-admanager';
 export { OptimizelyNames } from './optimizely';
 export { KameleoonEngineNames } from './kameleoon';
 export { VwoNames } from './vwo';
+export { AdobeTargetNames } from './adobe-target';

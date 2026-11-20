@@ -24,3 +24,4 @@ import './freewheel-admanager.test';
 import './optimizely.test';
 import './kameleoon.test';
 import './vwo.test';
+import './adobe-target.test';

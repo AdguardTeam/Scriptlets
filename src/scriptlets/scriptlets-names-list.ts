@@ -85,6 +85,7 @@ export { trustedJsonSetFetchResponseNames } from './trusted-json-set-fetch-respo
 export { trustedJsonSetXhrResponseNames } from './trusted-json-set-xhr-response';
 // redirects as scriptlets
 // https://github.com/AdguardTeam/Scriptlets/issues/300
+export { AdobeTargetNames } from './adobe-target';
 export { AmazonApstagNames } from './amazon-apstag';
 export { DidomiLoaderNames } from './didomi-loader';
 export { Fingerprintjs2Names } from './fingerprintjs2';
