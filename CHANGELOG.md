@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `optimizely` redirect resource and scriptlet which mock the Optimizely Web Experimentation snippet,
+  compatible with `optimizely.js` of uBO [#588].
+
 ### Changed
 
 ### Deprecated
@@ -23,6 +26,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Fixed
 
 ### Security
+
+[#588]: https://github.com/AdguardTeam/Scriptlets/issues/588
 
 ## [2.6.0] - 2026-11-13
 

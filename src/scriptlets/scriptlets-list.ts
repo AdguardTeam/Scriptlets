@@ -101,6 +101,7 @@ export { Matomo } from './matomo';
 export { metrikaYandexTag } from './metrika-yandex-tag';
 export { metrikaYandexWatch } from './metrika-yandex-watch';
 export { NaverWcslog } from './naver-wcslog';
+export { Optimizely } from './optimizely';
 export { Pardot } from './pardot-1.0';
 export { Prebid } from './prebid';
 export { ScoreCardResearchBeacon } from './scorecardresearch-beacon';
