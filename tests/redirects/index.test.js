@@ -22,3 +22,4 @@ import './pardot-1.0.test';
 import './noeval.test';
 import './freewheel-admanager.test';
 import './optimizely.test';
+import './kameleoon.test';

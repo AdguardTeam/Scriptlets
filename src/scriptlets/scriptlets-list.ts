@@ -97,6 +97,7 @@ export { GoogleIma3 } from './google-ima3';
 export { GoogleIma3Dai } from './google-ima3-dai';
 export { GoogleSyndicationAdsByGoogle } from './googlesyndication-adsbygoogle';
 export { GoogleTagServicesGpt } from './googletagservices-gpt';
+export { KameleoonEngine } from './kameleoon';
 export { Matomo } from './matomo';
 export { metrikaYandexTag } from './metrika-yandex-tag';
 export { metrikaYandexWatch } from './metrika-yandex-watch';

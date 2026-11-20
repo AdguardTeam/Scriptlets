@@ -26,3 +26,4 @@ export { prebidAdsNames } from './prebid-ads';
 export { NaverWcslogNames } from './naver-wcslog';
 export { FreewheelAdManagerNames } from './freewheel-admanager';
 export { OptimizelyNames } from './optimizely';
+export { KameleoonEngineNames } from './kameleoon';

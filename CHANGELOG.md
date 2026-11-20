@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `optimizely` redirect resource and scriptlet which mock the Optimizely Web Experimentation snippet,
   compatible with `optimizely.js` of uBO [#588].
+- `kameleoon` redirect resource and scriptlet which mock the Kameleoon Web Experimentation engine
+  and show the page hidden by its anti-flicker snippet at once [#588].
 
 ### Changed
 
