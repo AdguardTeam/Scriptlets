@@ -29,3 +29,4 @@ export { OptimizelyNames } from './optimizely';
 export { KameleoonEngineNames } from './kameleoon';
 export { VwoNames } from './vwo';
 export { AdobeTargetNames } from './adobe-target';
+export { AdobeAnalyticsNames } from './adobe-analytics';

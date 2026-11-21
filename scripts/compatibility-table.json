@@ -45,6 +45,9 @@
             "adg": "debug-on-property-write"
         },
         {
+            "adg": "adobe-analytics"
+        },
+        {
             "adg": "adobe-target"
         },
         {
@@ -473,6 +476,9 @@
             "adg": "32x32-transparent.png",
             "ubo": "32x32.png",
             "abp": "32x32-transparent-png"
+        },
+        {
+            "adg": "adobe-analytics"
         },
         {
             "adg": "adobe-target"

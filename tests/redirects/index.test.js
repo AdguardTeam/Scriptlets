@@ -25,3 +25,4 @@ import './optimizely.test';
 import './kameleoon.test';
 import './vwo.test';
 import './adobe-target.test';
+import './adobe-analytics.test';
