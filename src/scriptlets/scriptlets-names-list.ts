@@ -88,6 +88,7 @@ export { trustedJsonSetXhrResponseNames } from './trusted-json-set-xhr-response'
 export { AdobeTargetNames } from './adobe-target';
 export { AdobeAnalyticsNames } from './adobe-analytics';
 export { AdobeVisitorNames } from './adobe-visitor';
+export { AdobeTagsNames } from './adobe-tags';
 export { AmazonApstagNames } from './amazon-apstag';
 export { DidomiLoaderNames } from './didomi-loader';
 export { Fingerprintjs2Names } from './fingerprintjs2';

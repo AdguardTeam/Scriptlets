@@ -48,6 +48,9 @@
             "adg": "adobe-analytics"
         },
         {
+            "adg": "adobe-tags"
+        },
+        {
             "adg": "adobe-target"
         },
         {
@@ -482,6 +485,9 @@
         },
         {
             "adg": "adobe-analytics"
+        },
+        {
+            "adg": "adobe-tags"
         },
         {
             "adg": "adobe-target"

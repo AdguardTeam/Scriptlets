@@ -1,4 +1,5 @@
 import {
+    createAdobeVisitorInstance,
     hit,
     mockAdobeVisitor,
     noopFunc,
@@ -70,5 +71,6 @@ AdobeVisitor.injections = [
     hit,
     noopFunc,
     runProtected,
+    createAdobeVisitorInstance,
     mockAdobeVisitor,
 ];

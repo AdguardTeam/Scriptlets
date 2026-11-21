@@ -31,3 +31,4 @@ export { Vwo } from './vwo';
 export { AdobeTarget } from './adobe-target';
 export { AdobeAnalytics } from './adobe-analytics';
 export { AdobeVisitor } from './adobe-visitor';
+export { AdobeTags } from './adobe-tags';

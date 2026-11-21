@@ -86,3 +86,4 @@ import './vwo.test';
 import './adobe-target.test';
 import './adobe-analytics.test';
 import './adobe-visitor.test';
+import './adobe-tags.test';

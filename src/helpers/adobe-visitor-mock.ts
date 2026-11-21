@@ -6,6 +6,165 @@ import { runProtected } from './run-protected';
 type AnyRecord = Record<string, unknown>;
 
 /**
+ * Creates an instance of the mock of `Visitor` of the Experience Cloud Identity Service of Adobe,
+ * as `Visitor.getInstance()` of `mockAdobeVisitor()` returns it, but not registered in `s_c_il`,
+ * and without the cookie of the organization, e.g. for `_satellite.getVisitorId()` of a mock of Adobe Tags,
+ * whose organization is not known.
+ * Ids are empty strings, also in the callbacks, which are called asynchronously, as the library does
+ * once its requests have failed, and URLs are returned unchanged.
+ *
+ * Requires `noopFunc()` and `runProtected()` to be injected as well.
+ *
+ * @param orgId Organization id, e.g. `ABC@AdobeOrg`.
+ * @param config Configuration of the page, copied to the instance.
+ * @returns Visitor instance.
+ */
+export function createAdobeVisitorInstance(orgId: string, config?: unknown): AnyRecord {
+    const FIELDS = ['MCMID', 'MCOPTOUT', 'MCAID', 'MCAAMLH', 'MCAAMB'];
+
+    /**
+     * Calls a callback of the page with a receiver, and catches its errors.
+     *
+     * @param receiver Receiver of the call.
+     * @param callback Callback of the page.
+     * @param args Arguments of the callback.
+     */
+    const callWith = (receiver: unknown, callback: unknown, args: unknown[]) => {
+        if (typeof callback !== 'function') {
+            return;
+        }
+        try {
+            callback.apply(receiver, args);
+        } catch (e) {
+            // ignore errors of the page callback
+        }
+    };
+
+    /**
+     * Calls a callback of the page asynchronously, as the library does once its requests have failed.
+     * As the library, the callback may be a function or a `[receiver, function]` pair.
+     *
+     * @param callback Callback of the page.
+     * @param args Arguments of the callback.
+     */
+    const callLater = (callback: unknown, args: unknown[]) => {
+        if (typeof callback === 'function') {
+            window.setTimeout(() => runProtected(callback, args), 0);
+        } else if (Array.isArray(callback) && typeof callback[1] === 'function') {
+            const receiver = callback[0];
+            const fn = callback[1];
+            window.setTimeout(() => callWith(receiver, fn, args), 0);
+        }
+    };
+
+    /**
+     * Returns an empty id as the getters of the library, and passes it to their optional callback.
+     *
+     * @param callback Optional callback of the page.
+     * @returns Empty id.
+     */
+    const emptyId = (callback?: unknown): string => {
+        callLater(callback, ['']);
+        return '';
+    };
+
+    const visitor: AnyRecord = {};
+    if (config && typeof config === 'object') {
+        Object.keys(config).forEach((key) => {
+            visitor[key] = (config as AnyRecord)[key];
+        });
+        visitor.configs = config;
+    }
+    visitor._c = 'Visitor';
+    visitor.version = '5.5.0';
+    visitor.marketingCloudOrgID = orgId;
+    visitor.cookieName = `AMCV_${orgId}`;
+    visitor.sessionCookieName = `AMCVS_${orgId}`;
+    visitor.loadTimeout = 30000;
+    visitor.FIELDS = {};
+    FIELDS.forEach((field) => {
+        (visitor.FIELDS as AnyRecord)[field] = field;
+    });
+    const customerIds: AnyRecord = {};
+
+    visitor.getMarketingCloudVisitorID = emptyId;
+    visitor.getAnalyticsVisitorID = emptyId;
+    visitor.getAudienceManagerLocationHint = emptyId;
+    visitor.getAudienceManagerBlob = emptyId;
+    visitor.getLocationHint = emptyId;
+    visitor.getOptOut = emptyId;
+    // no supplemental data id is generated
+    visitor.getSupplementalDataID = () => '';
+    visitor.getVisitorValues = (callback: unknown, fields?: unknown) => {
+        const values: AnyRecord = {};
+        (Array.isArray(fields) ? fields : FIELDS).forEach((field) => {
+            values[String(field)] = '';
+        });
+        callLater(callback, [values]);
+    };
+    visitor.isOptedOut = (callback?: unknown) => {
+        callLater(callback, [false]);
+        return null;
+    };
+    visitor.isAllowed = () => true;
+    visitor.isClientSideMarketingCloudVisitorID = () => null;
+    visitor.getCustomerIDs = () => {
+        const copy: AnyRecord = {};
+        Object.keys(customerIds).forEach((key) => {
+            const entry = customerIds[key] as AnyRecord;
+            copy[key] = { id: entry.id, authState: entry.authState };
+        });
+        return copy;
+    };
+    // As the library, ids are added to the previous ones, as `{ id, authState }`,
+    // and a string is an id with the unknown authentication state.
+    visitor.setCustomerIDs = (ids: unknown) => {
+        if (!ids || typeof ids !== 'object') {
+            return;
+        }
+        Object.keys(ids).forEach((key) => {
+            const value = (ids as AnyRecord)[key];
+            if (value && typeof value === 'object') {
+                const { authState } = value as AnyRecord;
+                customerIds[key] = {
+                    id: (value as AnyRecord).id,
+                    authState: authState === undefined ? 0 : authState,
+                };
+            } else if (value !== undefined && value !== null) {
+                customerIds[key] = { id: value, authState: 0 };
+            }
+        });
+    };
+    // no ids are appended
+    visitor.appendVisitorIDsTo = (url: unknown) => url;
+    visitor.appendSupplementalDataIDTo = (url: unknown) => url;
+    visitor.cookieRead = () => '';
+    visitor.cookieWrite = () => false;
+    [
+        'init',
+        'resetState',
+        'removeCookie',
+        'idSyncByURL',
+        'idSyncByDataSource',
+        'idSyncGetOnPageSyncInfo',
+        'publishDestinations',
+        'setAsCoopSafe',
+        'setAsCoopUnsafe',
+        'setMarketingCloudVisitorID',
+        'setAnalyticsVisitorID',
+        'syncIdentity',
+        'onReceiveEcid',
+        'MCIDCallTimedOut',
+        'AnalyticsIDCallTimedOut',
+        'AAMIDCallTimedOut',
+    ].forEach((name) => {
+        visitor[name] = noopFunc;
+    });
+
+    return visitor;
+}
+
+/**
  * Installs a mock of the Experience Cloud Identity Service of Adobe, `VisitorAPI.js`, as version 5.5 behaves
  * when its requests are blocked, but without any visitor id: the `Visitor` global with `Visitor.getInstance()`
  * and `adobe.OptInCategories`, each only if it is missing; `adobe.optIn` is created by the first
@@ -16,7 +175,7 @@ type AnyRecord = Record<string, unknown>;
  * id, the same for every visitor, if the organization has no such cookie, as some sites read the id from it
  * directly and do not work without it, e.g. the video player of `play.history.com`, see `setDummyIdCookie()`.
  *
- * Requires `noopFunc()` and `runProtected()` to be injected as well.
+ * Requires `createAdobeVisitorInstance()`, `noopFunc()` and `runProtected()` to be injected as well.
  *
  * @returns `true` if anything was installed.
  */
@@ -34,7 +193,6 @@ export function mockAdobeVisitor(): boolean {
         TARGET: 'target',
         MEDIA_ANALYTICS: 'mediaaa',
     };
-    const FIELDS = ['MCMID', 'MCOPTOUT', 'MCAID', 'MCAAMLH', 'MCAAMB'];
     // a constant id in the format of the library, so it does not identify a visitor
     const DUMMY_ID = '00000000000000000000000000000000000000';
 
@@ -86,34 +244,6 @@ export function mockAdobeVisitor(): boolean {
         } catch (e) {
             // ignore errors of the page callback
         }
-    };
-
-    /**
-     * Calls a callback of the page asynchronously, as the library does once its requests have failed.
-     * As the library, the callback may be a function or a `[receiver, function]` pair.
-     *
-     * @param callback Callback of the page.
-     * @param args Arguments of the callback.
-     */
-    const callLater = (callback: unknown, args: unknown[]) => {
-        if (typeof callback === 'function') {
-            window.setTimeout(() => runProtected(callback, args), 0);
-        } else if (Array.isArray(callback) && typeof callback[1] === 'function') {
-            const receiver = callback[0];
-            const fn = callback[1];
-            window.setTimeout(() => callWith(receiver, fn, args), 0);
-        }
-    };
-
-    /**
-     * Returns an empty id as the getters of the library, and passes it to their optional callback.
-     *
-     * @param callback Optional callback of the page.
-     * @returns Empty id.
-     */
-    const emptyId = (callback?: unknown): string => {
-        callLater(callback, ['']);
-        return '';
     };
 
     /**
@@ -264,99 +394,7 @@ export function mockAdobeVisitor(): boolean {
      * @returns Visitor instance.
      */
     const createInstance = (orgId: string, config: unknown): AnyRecord => {
-        const visitor: AnyRecord = {};
-        if (config && typeof config === 'object') {
-            Object.keys(config).forEach((key) => {
-                visitor[key] = (config as AnyRecord)[key];
-            });
-            visitor.configs = config;
-        }
-        visitor._c = 'Visitor';
-        visitor.version = '5.5.0';
-        visitor.marketingCloudOrgID = orgId;
-        visitor.cookieName = `AMCV_${orgId}`;
-        visitor.sessionCookieName = `AMCVS_${orgId}`;
-        visitor.loadTimeout = 30000;
-        visitor.FIELDS = {};
-        FIELDS.forEach((field) => {
-            (visitor.FIELDS as AnyRecord)[field] = field;
-        });
-        const customerIds: AnyRecord = {};
-
-        visitor.getMarketingCloudVisitorID = emptyId;
-        visitor.getAnalyticsVisitorID = emptyId;
-        visitor.getAudienceManagerLocationHint = emptyId;
-        visitor.getAudienceManagerBlob = emptyId;
-        visitor.getLocationHint = emptyId;
-        visitor.getOptOut = emptyId;
-        // no supplemental data id is generated
-        visitor.getSupplementalDataID = () => '';
-        visitor.getVisitorValues = (callback: unknown, fields?: unknown) => {
-            const values: AnyRecord = {};
-            (Array.isArray(fields) ? fields : FIELDS).forEach((field) => {
-                values[String(field)] = '';
-            });
-            callLater(callback, [values]);
-        };
-        visitor.isOptedOut = (callback?: unknown) => {
-            callLater(callback, [false]);
-            return null;
-        };
-        visitor.isAllowed = () => true;
-        visitor.isClientSideMarketingCloudVisitorID = () => null;
-        visitor.getCustomerIDs = () => {
-            const copy: AnyRecord = {};
-            Object.keys(customerIds).forEach((key) => {
-                const entry = customerIds[key] as AnyRecord;
-                copy[key] = { id: entry.id, authState: entry.authState };
-            });
-            return copy;
-        };
-        // As the library, ids are added to the previous ones, as `{ id, authState }`,
-        // and a string is an id with the unknown authentication state.
-        visitor.setCustomerIDs = (ids: unknown) => {
-            if (!ids || typeof ids !== 'object') {
-                return;
-            }
-            Object.keys(ids).forEach((key) => {
-                const value = (ids as AnyRecord)[key];
-                if (value && typeof value === 'object') {
-                    const { authState } = value as AnyRecord;
-                    customerIds[key] = {
-                        id: (value as AnyRecord).id,
-                        authState: authState === undefined ? 0 : authState,
-                    };
-                } else if (value !== undefined && value !== null) {
-                    customerIds[key] = { id: value, authState: 0 };
-                }
-            });
-        };
-        // no ids are appended
-        visitor.appendVisitorIDsTo = (url: unknown) => url;
-        visitor.appendSupplementalDataIDTo = (url: unknown) => url;
-        visitor.cookieRead = () => '';
-        visitor.cookieWrite = () => false;
-        [
-            'init',
-            'resetState',
-            'removeCookie',
-            'idSyncByURL',
-            'idSyncByDataSource',
-            'idSyncGetOnPageSyncInfo',
-            'publishDestinations',
-            'setAsCoopSafe',
-            'setAsCoopUnsafe',
-            'setMarketingCloudVisitorID',
-            'setAnalyticsVisitorID',
-            'syncIdentity',
-            'onReceiveEcid',
-            'MCIDCallTimedOut',
-            'AnalyticsIDCallTimedOut',
-            'AAMIDCallTimedOut',
-        ].forEach((name) => {
-            visitor[name] = noopFunc;
-        });
-
+        const visitor = createAdobeVisitorInstance(orgId, config);
         if (!w.s_c_in) {
             w.s_c_il = [];
             w.s_c_in = 0;

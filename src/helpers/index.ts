@@ -43,6 +43,8 @@ export * from './run-protected';
 export * from './app-measurement-utils';
 export * from './adobe-analytics-mock';
 export * from './adobe-visitor-mock';
+export * from './adobe-target-mock';
+export * from './adobe-tags-mock';
 export * from './throttle';
 export * from './shadow-dom-utils';
 export * from './node-text-utils';
