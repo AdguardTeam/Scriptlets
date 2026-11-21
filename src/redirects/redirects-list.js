@@ -30,3 +30,4 @@ export { KameleoonEngine } from './kameleoon';
 export { Vwo } from './vwo';
 export { AdobeTarget } from './adobe-target';
 export { AdobeAnalytics } from './adobe-analytics';
+export { AdobeVisitor } from './adobe-visitor';

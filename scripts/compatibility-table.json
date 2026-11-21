@@ -51,6 +51,9 @@
             "adg": "adobe-target"
         },
         {
+            "adg": "adobe-visitor"
+        },
+        {
             "adg": "amazon-apstag",
             "ubo": "amazon-apstag.js (amazon-apstag)"
         },
@@ -482,6 +485,9 @@
         },
         {
             "adg": "adobe-target"
+        },
+        {
+            "adg": "adobe-visitor"
         },
         {
             "adg": "amazon-apstag",

@@ -42,6 +42,7 @@ export * from './random-id';
 export * from './run-protected';
 export * from './app-measurement-utils';
 export * from './adobe-analytics-mock';
+export * from './adobe-visitor-mock';
 export * from './throttle';
 export * from './shadow-dom-utils';
 export * from './node-text-utils';

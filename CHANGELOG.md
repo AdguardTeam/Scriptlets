@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `adobe-target` redirect resource and scriptlet which mock at.js of Adobe Target
   and show the page hidden by the prehiding snippet of Adobe Target or of the Adobe Web SDK at once [#588].
 - `adobe-analytics` redirect resource and scriptlet which mock AppMeasurement of Adobe Analytics [#588].
+- `adobe-visitor` redirect resource and scriptlet which mock the Experience Cloud Identity Service of Adobe [#588].
 
 ### Changed
 
