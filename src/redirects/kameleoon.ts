@@ -4,6 +4,7 @@ import {
     noopArray,
     noopFunc,
     noopNull,
+    queryKameleoonSelector,
     runProtected,
 } from '../helpers';
 import { type Source } from '../scriptlets';
@@ -20,6 +21,8 @@ import { type Source } from '../scriptlets';
  * Commands queued in `window.kameleoonQueue` are run, and the ones pushed later are run at once.
  * The callbacks of `Kameleoon.API.Core.runWhenConditionTrue()`, `runWhenElementPresent()`
  * and `runWhenShadowRootElementPresent()` are called, as page code may depend on them.
+ * Their selectors and the ones of `Kameleoon.API.Utils.querySelectorAll()` may contain `:eq(<index>)`
+ * and `:contains("<text>")`, which are handled as by the engine.
  * No experiments or personalizations are applied, no data is sent and no cookies or storage items are set.
  *
  * Limitation: `Kameleoon.API.Utils.createHash(value, useSha256)` ignores `useSha256`, so with it
@@ -102,22 +105,14 @@ export function KameleoonEngine(source: Source) {
     };
 
     /**
-     * Returns the elements matching the selector as an array, or an empty array for an invalid selector.
+     * Returns the elements matching the selector as an array, as `Utils.querySelectorAll()` of the engine,
+     * also for `:eq()` and `:contains()`, or an empty array for an invalid selector.
      *
      * @param selector CSS selector.
      * @param root Root to query, document by default.
      * @returns Matching elements.
      */
-    const queryAll = (selector: unknown, root?: unknown): Element[] => {
-        const base = root && typeof (root as ParentNode).querySelectorAll === 'function'
-            ? root as ParentNode
-            : doc;
-        try {
-            return Array.from(base.querySelectorAll(selector as string));
-        } catch (e) {
-            return [];
-        }
-    };
+    const queryAll = (selector: unknown, root?: unknown): Element[] => queryKameleoonSelector(selector, root);
 
     /**
      * Calls the callback once the condition is true: at once if it is true already,
@@ -200,8 +195,14 @@ export function KameleoonEngine(source: Source) {
             }
         });
         stop = () => observer.disconnect();
-        // As the engine, attribute changes are observed as well, e.g. a class added to an existing element.
-        observer.observe(doc.documentElement || doc, { attributes: true, childList: true, subtree: true });
+        // As the engine, changes of attributes and text are observed as well, e.g. a class added
+        // to an existing element, or a text changed for `:contains()`.
+        observer.observe(doc.documentElement || doc, {
+            attributes: true,
+            characterData: true,
+            childList: true,
+            subtree: true,
+        });
     };
 
     /**
@@ -687,5 +688,6 @@ KameleoonEngine.injections = [
     noopArray,
     noopFunc,
     noopNull,
+    queryKameleoonSelector,
     runProtected,
 ];

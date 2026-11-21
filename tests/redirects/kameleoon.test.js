@@ -574,6 +574,65 @@ test('Core.runWhenShadowRootElementPresent()', async (assert) => {
     assert.deepEqual(later, [1, 1], 'dynamic: elements added later in the shadow root are polled');
 });
 
+test('Selectors with :eq() and :contains() are handled as by the engine', async (assert) => {
+    runRedirect();
+    const { Core, Utils } = window.Kameleoon.API;
+    addToContainer('<span>first</span><span>second</span><span>third</span>');
+    addToContainer('<h2>a</h2><h2>b</h2><h2>c</h2>');
+    addToContainer('<div id="1kameleoon"><b>bold</b></div><div data-name="a b"></div>');
+    const spans = document.querySelectorAll(`#${CONTAINER_ID} span`);
+    const headings = document.querySelectorAll(`#${CONTAINER_ID} h2`);
+
+    // results of the real engine for the same document
+    assert.deepEqual(Utils.querySelectorAll(`#${CONTAINER_ID} span:eq(1)`), [spans[1]], ':eq()');
+    assert.deepEqual(Utils.querySelectorAll(`#${CONTAINER_ID} span:contains("second")`), [spans[1]], ':contains()');
+    assert.deepEqual(Utils.querySelectorAll('span:eq(0)', spans[0].parentNode), [spans[0]], ':eq() with a root');
+    assert.deepEqual(
+        Utils.querySelectorAll(`#${CONTAINER_ID} h2:eq(0)`),
+        [headings[2]],
+        'all numbers of the selector are indexes, as in the engine',
+    );
+    assert.deepEqual(
+        Utils.querySelectorAll('#1kameleoon b'),
+        [document.querySelector('#\\31 kameleoon b')],
+        'id which starts with a digit',
+    );
+    assert.strictEqual(Utils.querySelectorAll('[data-name=a b]').length, 1, 'unquoted attribute value');
+    assert.deepEqual(Utils.querySelectorAll('span:contains(third)'), [], 'unquoted text, the engine throws');
+    assert.deepEqual(Utils.querySelectorAll('[title=":eq"]'), [], 'the engine recurses infinitely');
+
+    // No assertion until the changes are observed, as an assertion changes the document.
+    const calls = [];
+    Core.runWhenElementPresent(`#${CONTAINER_ID} span:eq(3)`, (elements) => calls.push(['eq', elements]));
+    Core.runWhenElementPresent(`#${CONTAINER_ID} span:contains("later")`, (elements) => calls.push(['text', elements]));
+    Core.runWhenElementPresent('span:contains(later)', () => calls.push('never'));
+    const callsBefore = calls.length;
+    const added = addToContainer('<span>later</span>');
+    await Promise.resolve();
+    const callsAfter = calls.slice();
+    assert.strictEqual(callsBefore, 0, 'not called before an element matches');
+    assert.deepEqual(callsAfter, [['eq', [added]], ['text', [added]]], 'runWhenElementPresent()');
+
+    // as the engine, a change of the text only is observed as well
+    const textCalls = [];
+    Core.runWhenElementPresent(`#${CONTAINER_ID} span:contains("changed")`, (elements) => textCalls.push(elements));
+    spans[0].firstChild.data = 'changed';
+    await Promise.resolve();
+    const textCallsAfter = textCalls.slice();
+    assert.deepEqual(textCallsAfter, [[spans[0]]], 'runWhenElementPresent() after a change of the text');
+
+    const host = addToContainer('<div class="shadow-host"></div>');
+    const root = host.attachShadow({ mode: 'open' });
+    root.innerHTML = '<span>one</span><span>two</span>';
+    const shadowCalls = [];
+    Core.runWhenShadowRootElementPresent(
+        `#${CONTAINER_ID} .shadow-host:eq(0)`,
+        'span:contains("two")',
+        (elements) => shadowCalls.push(elements),
+    );
+    assert.deepEqual(shadowCalls, [[root.lastElementChild]], 'runWhenShadowRootElementPresent()');
+});
+
 test('Utils.getURLParameters() reads the query and the hash as the engine', (assert) => {
     window.history.replaceState(null, '', '?plain=ok&a=1%202&b=x=y&flag#route?tab=details&plain=hash');
     runRedirect();

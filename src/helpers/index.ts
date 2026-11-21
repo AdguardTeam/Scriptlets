@@ -45,6 +45,7 @@ export * from './adobe-analytics-mock';
 export * from './adobe-visitor-mock';
 export * from './adobe-target-mock';
 export * from './adobe-tags-mock';
+export * from './kameleoon-selector';
 export * from './throttle';
 export * from './shadow-dom-utils';
 export * from './node-text-utils';
