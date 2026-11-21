@@ -259,6 +259,55 @@ test('Commands pushed later run at once', (assert) => {
     assert.strictEqual(window.Wingify.visitor({}), undefined, 'Wingify.visitor()');
 });
 
+test('Direct APIs of the library', async (assert) => {
+    const calls = [];
+    window.Wingify = [
+        // documented example, queued before the library
+        ['onCampaignsLoaded', () => {
+            calls.push(window.Wingify.visitorConfig.destroySession());
+        }, { count: 1 }],
+    ];
+    runRedirect();
+    assert.strictEqual(calls.length, 1, 'queued callback can call destroySession()');
+    assert.ok(calls[0] instanceof Promise, 'destroySession() returns a promise');
+    assert.strictEqual(await calls[0], undefined, 'promise is resolved with undefined');
+
+    window.Wingify.push(['onCampaignsLoaded', () => {
+        calls.push(window.Wingify.visitorConfig.destroySession());
+    }, { count: 1 }]);
+    assert.strictEqual(calls.length, 2, 'pushed callback can call destroySession()');
+    assert.strictEqual(await calls[1], undefined, 'pushed: promise is resolved with undefined');
+
+    ['VWO', 'Wingify'].forEach((queueName) => {
+        const queue = window[queueName];
+        // documented usage for links to other domains
+        const info = queue.getCrossDomainInfo();
+        assert.deepEqual(info, { q: 'vwo_q', d: '' }, `${queueName}.getCrossDomainInfo() without a visitor id`);
+        assert.strictEqual(`?${info.q}=${info.d}`, '?vwo_q=', `${queueName}: link query as without the module`);
+        assert.notStrictEqual(queue.getCrossDomainInfo(), info, `${queueName}: a new object on each call`);
+        assert.deepEqual(queue.visitorConfig.getInfo(), { loc: {} }, `${queueName}.visitorConfig.getInfo()`);
+        assert.strictEqual(queue.getInfo, undefined, `${queueName}: getInfo() is a method of visitorConfig only`);
+    });
+});
+
+test('Direct APIs keep the ones of the page and its storage key prefix', (assert) => {
+    const pageInfo = () => 'page';
+    const pageGetInfo = () => 'page';
+    const pageConfig = { getInfo: pageGetInfo };
+    window.VWO = [];
+    window.VWO._ = { sKP: 'wingify' };
+    window.VWO.visitorConfig = pageConfig;
+    window.Wingify = [];
+    window.Wingify.getCrossDomainInfo = pageInfo;
+    runRedirect();
+
+    assert.deepEqual(window.VWO.getCrossDomainInfo(), { q: 'wingify_q', d: '' }, 'prefix set by the SmartCode');
+    assert.strictEqual(window.Wingify.getCrossDomainInfo, pageInfo, 'getCrossDomainInfo() of the page is kept');
+    assert.strictEqual(window.VWO.visitorConfig, pageConfig, 'visitorConfig of the page is completed in place');
+    assert.strictEqual(pageConfig.getInfo, pageGetInfo, 'getInfo() of the page is kept');
+    assert.strictEqual(typeof pageConfig.destroySession, 'function', 'missing destroySession() is added');
+});
+
 test('Runs functions of the legacy queue', (assert) => {
     const calls = [];
     const pageReadCookie = () => 'page';
@@ -326,6 +375,9 @@ test('No requests, cookies or storage items', async (assert) => {
         runRedirect();
         window.Wingify.event('click', {});
         window.VWO.push(['setVisitorId', 'id']);
+        window.VWO.getCrossDomainInfo();
+        window.Wingify.visitorConfig.getInfo();
+        await window.Wingify.visitorConfig.destroySession();
         await sleep(20);
 
         assert.deepEqual(calls, [], 'no request, cookie, storage or element creation');

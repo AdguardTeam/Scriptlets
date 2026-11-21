@@ -47,6 +47,8 @@ test('Installs the library globals', (assert) => {
     window.VWO = window.VWO || [];
     window.VWO.push(['onLibLoaded', (data) => calls.push(data)]);
     assert.deepEqual(calls, [[{}, []]], 'callbacks pushed by the page are called at once');
+    assert.deepEqual(window.Wingify.getCrossDomainInfo(), { q: 'vwo_q', d: '' }, 'getCrossDomainInfo()');
+    assert.ok(window.Wingify.visitorConfig.destroySession() instanceof Promise, 'visitorConfig.destroySession()');
 });
 
 test('Asynchronous SmartCode which runs after the scriptlet is skipped', (assert) => {

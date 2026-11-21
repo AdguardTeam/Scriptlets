@@ -19,6 +19,9 @@ import { type Source } from '../scriptlets';
  * Commands queued in `window.VWO` and `window.Wingify` are run, and the ones pushed later are run at once:
  * `onLibLoaded` and `onCampaignsLoaded` callbacks are called without campaigns,
  * other commands, e.g. `onVariationApplied` or `event`, do nothing.
+ * `getCrossDomainInfo()` of both returns the query parameter for links to other domains without a visitor id,
+ * e.g. `{ q: 'vwo_q', d: '' }`, `visitorConfig.destroySession()` returns a promise resolved at once,
+ * and `visitorConfig.getInfo()` returns no location, `{ loc: {} }`.
  * No campaigns or variations are applied, no data is sent and no cookies or storage items are set.
  *
  * ### Examples
@@ -48,8 +51,11 @@ interface SmartCode {
 }
 
 type Queue = unknown[] & {
+    _?: unknown;
     event?: unknown;
     visitor?: unknown;
+    getCrossDomainInfo?: unknown;
+    visitorConfig?: unknown;
 };
 
 /* eslint-disable no-underscore-dangle */
@@ -133,6 +139,20 @@ export function Vwo(source: Source) {
     };
 
     /**
+     * Returns the query parameter which carries the visitor to another domain, as `getCrossDomainInfo()`
+     * of the library without the cross-domain module: its name, `vwo_q` unless the SmartCode has set
+     * another prefix, and an empty value, as no visitor id is passed.
+     *
+     * @returns Name and value of the parameter, e.g. `{ q: 'vwo_q', d: '' }`.
+     */
+    const getCrossDomainInfo = (): Record<string, string> => {
+        const queue = w.VWO as Queue | undefined;
+        const internal = queue && queue._ as Record<string, unknown> | undefined;
+        const prefix = internal && typeof internal.sKP === 'string' && internal.sKP ? internal.sKP : 'vwo';
+        return { q: `${prefix}_q`, d: '' };
+    };
+
+    /**
      * Makes `push()` of a queue run commands at once, and returns its queued commands, which are run later,
      * once all queues and globals of the library are installed, as queued callbacks may use them.
      * The library returns the length from `push()`, so does this one.
@@ -158,6 +178,22 @@ export function Vwo(source: Source) {
         if (typeof queue.visitor !== 'function') {
             queue.visitor = noopFunc;
         }
+        if (typeof queue.getCrossDomainInfo !== 'function') {
+            queue.getCrossDomainInfo = getCrossDomainInfo;
+        }
+        // An object of the page is completed in place.
+        const config = queue.visitorConfig && typeof queue.visitorConfig === 'object'
+            ? queue.visitorConfig as Record<string, unknown>
+            : {};
+        if (typeof config.destroySession !== 'function') {
+            // there is no session to clear; the library returns a promise, which pages may await
+            config.destroySession = () => Promise.resolve();
+        }
+        if (typeof config.getInfo !== 'function') {
+            // as the library without location data
+            config.getInfo = () => ({ loc: {} });
+        }
+        queue.visitorConfig = config;
         w[queueName] = queue;
         return queued;
     };
