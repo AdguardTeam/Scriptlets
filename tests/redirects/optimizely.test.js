@@ -137,10 +137,10 @@ test('Installs the API', (assert) => {
     assert.strictEqual(typeof api.push, 'function', 'push is a function');
     assert.strictEqual(typeof api.get, 'function', 'get is a function');
     assert.strictEqual(api.initialized, true, 'initialized is set synchronously');
-    assert.deepEqual(
-        api.data,
-        { note: "Obsolete, use optimizely.get('data') instead" },
-        'legacy data is the obsolete note',
+    assert.strictEqual(
+        api.data.note,
+        "Obsolete, use optimizely.get('data') instead",
+        'legacy data has the obsolete note',
     );
     assert.deepEqual(api.state, {}, 'legacy state is an empty object');
 });
@@ -231,6 +231,109 @@ test('push() return values', (assert) => {
     assert.strictEqual(push(() => {}), false, 'function');
 });
 
+test('push() with highPriorityOnly runs only the high-priority commands, as the real client', (assert) => {
+    runRedirect();
+    const { push } = window.optimizely;
+    const HIGH_PRIORITY = ['clientMetadata', 'cookieDomain', 'disable', 'load', 'optOut', 'rum'];
+    HIGH_PRIORITY.forEach((command) => {
+        assert.strictEqual(push({ type: command }, true), true, `high-priority v1 command "${command}"`);
+    });
+    assert.strictEqual(push(['disable'], true), true, 'high-priority v0 command');
+    assert.strictEqual(push({ type: 'event' }, true), false, 'other v1 command is refused');
+    assert.strictEqual(push(['trackEvent'], true), false, 'other v0 command is refused');
+    assert.strictEqual(push({ type: 'event' }, false), true, 'without the flag it is run');
+
+    const calls = [];
+    const queue = [
+        { type: 'addListener', filter: { type: 'custom' }, handler: () => calls.push('first') },
+        { type: 'addListener', filter: { type: 'custom' }, handler: () => calls.push('second') },
+    ];
+    // `forEach()` passes the index as the second argument, as to the real client
+    queue.forEach(push);
+    window.optimizely.get('event_emitter').emit({ type: 'custom' });
+    assert.deepEqual(calls, ['first'], 'forEach(push) runs only the first command, as the real client');
+
+    const nativeWarn = console.warn;
+    const warnings = [];
+    console.warn = (...args) => warnings.push(args.join(' '));
+    try {
+        push({ type: 'log', level: 'WARN' });
+        assert.strictEqual(push('unknownCommand', true), false, 'unknown command with the flag');
+        assert.deepEqual(warnings, [], 'is refused without a warning');
+        push('unknownCommand');
+        assert.strictEqual(warnings.length, 1, 'without the flag it is warned about');
+    } finally {
+        console.warn = nativeWarn;
+    }
+});
+
+test('Optimizely Classic API', (assert) => {
+    const CLASSIC_METHODS = [
+        'activate', 'activateGeoDelayedExperiments', 'activateSiteCatalyst', 'activateUniversalAnalytics',
+        'addOAuthClientId', 'addToAudience', 'addToSegment', 'bindTrackElement', 'bucketUser', 'bucketVisitor',
+        'clickTalePlayback', 'clickTaleRecord', 'customTag', 'delayDomReadyEval', 'delayPageviewTracking',
+        'disable', 'googleAnalyticsCustomVariableScope', 'integrationPrefix', 'log', 'optOut',
+        'optOutThirdPartyCookies', 'overrideUrl', 'removeFromAllAudiences', 'removeFromAllSegments',
+        'removeFromAudience', 'removeFromReportableAudiences', 'removeFromSegment', 'sc_activate', 'sc_svar',
+        'setDimensionValue', 'setUserId', 'skipPageTracking', 'storeThirdPartyData', 'timeout', 'trackEvent',
+        'verbose', 'getAccountId', 'getProjectId', 'getElementsByClassName',
+    ];
+    runRedirectFromScript('https://cdn.optimizely.com/js/1234567890.js');
+    const api = window.optimizely;
+    CLASSIC_METHODS.forEach((method) => {
+        assert.strictEqual(typeof api[method], 'function', `optimizely.${method}()`);
+    });
+    assert.strictEqual(api.trackEvent('event', { revenue: 1 }), undefined, 'trackEvent() does nothing');
+    assert.strictEqual(api.getProjectId(), 1234567890, 'getProjectId() from the URL, a number as in Classic');
+    assert.strictEqual(api.getAccountId(), null, 'getAccountId() is not known');
+    assert.strictEqual(api.revision, null, 'revision is not known');
+    assert.strictEqual(api.get('data').projectId, '1234567890', 'get("data").projectId stays a string');
+
+    assert.deepEqual(api.activeExperiments, [], 'activeExperiments');
+    ['allExperiments', 'all_experiments', 'allVariations', 'variationIdsMap', 'variationMap',
+        'variationNamesMap', 'variation_map'].forEach((map) => {
+        assert.deepEqual(api[map], {}, `${map} is empty`);
+    });
+    assert.deepEqual(api.data.state, {
+        activeExperiments: [],
+        enabled: true,
+        integrations: { activeOAuthClientIds: [] },
+        redirectExperiment: undefined,
+        variationIdsMap: {},
+        variationMap: {},
+        variationNamesMap: {},
+    }, 'data.state of a project without running experiments');
+    assert.strictEqual(Object.keys(api.data.visitor).length, 17, 'data.visitor has the seventeen keys of Classic');
+    assert.strictEqual(api.data.visitor.referrer, '', 'data.visitor.referrer is empty');
+    assert.deepEqual(api.data.visitor.location, {}, 'data.visitor.location is an object');
+    assert.deepEqual(api.data.visitor.platform, { id: '', version: '' }, 'data.visitor.platform is an object');
+    ['audiences', 'customTags', 'experiments', 'sections', 'segments', 'thirdParty', 'variations']
+        .forEach((key) => {
+            assert.deepEqual(api.data[key], {}, `data.${key} is empty`);
+        });
+
+    // unguarded page code of Classic, which threw with the previous version of the resource
+    const pageCode = 'window.optimizelyTestAfter = window.optimizely.data.state.activeExperiments.length'
+        + ' + Object.keys(window.optimizely.variationMap).length;';
+    evalWrapper(pageCode);
+    assert.strictEqual(window.optimizelyTestAfter, 0, 'unguarded Classic page code runs');
+
+    addToContainer('<span class="optimizely-test-class"></span>');
+    assert.strictEqual(api.getElementsByClassName('optimizely-test-class').length, 1, 'getElementsByClassName()');
+
+    assert.strictEqual(api.$, undefined, '$ without jQuery of the page, unlike a snippet which bundles jQuery');
+    window.$ = () => {};
+    assert.strictEqual(api.$, window.$, '$ is window.$ when it is read');
+    window.jQuery = () => {};
+    assert.strictEqual(api.$, window.jQuery, '$ is window.jQuery, also if window.$ is another library');
+    assert.strictEqual(api.get('jquery'), window.$, 'get("jquery") of the current client stays window.$');
+
+    clearGlobalProps('optimizely');
+    runRedirectFromScript('https://cdn.optimizely.com/public/111222/333444/5555_abcdef_edge_helper.js');
+    assert.strictEqual(window.optimizely.getAccountId(), 111222, 'getAccountId() of Performance Edge');
+    assert.strictEqual(window.optimizely.revision, 5555, 'revision of Performance Edge');
+});
+
 test('Errors of commands and listeners are not thrown', (assert) => {
     runRedirect();
     const { push } = window.optimizely;
@@ -304,7 +407,8 @@ test('get() modules', (assert) => {
     assert.strictEqual(visitor.source_type, 'direct', 'visitor.source_type');
     assert.strictEqual(visitor.visitorId, null, 'visitor.visitorId');
     assert.deepEqual(visitor.customBehavior, [], 'visitor.customBehavior');
-    assert.strictEqual(Object.keys(visitor).length, 21, 'twenty-one visitor keys');
+    assert.deepEqual(visitor.dcpData, {}, 'visitor.dcpData of Dynamic Customer Profile');
+    assert.strictEqual(Object.keys(visitor).length, 22, 'twenty-two visitor keys');
     const timestamp = visitor.currentTimestamp;
     assert.ok(Math.abs(timestamp - Date.now()) < 1000, 'visitor.currentTimestamp is the current time');
 
@@ -478,6 +582,11 @@ test('Logging is silent unless enabled by the page', (assert) => {
         push(['log']);
         push('unknownCommand');
         assert.strictEqual(warnings.length, 3, 'legacy log command enables INFO');
+
+        push({ type: 'log', level: 'ERROR' });
+        window.optimizely.log();
+        push('unknownCommand');
+        assert.strictEqual(warnings.length, 4, 'Classic log() is the legacy log command');
 
         push({ type: 'log', level: 'bogus' });
         assert.deepEqual(errors, ['Unknown log level: bogus'], 'unknown level is reported');

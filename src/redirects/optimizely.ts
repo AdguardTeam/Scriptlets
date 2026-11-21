@@ -6,12 +6,16 @@ import { type Source } from '../scriptlets';
  * @redirect optimizely
  *
  * @description
- * Mocks the Optimizely Web Experimentation snippet.
+ * Mocks the Optimizely Web Experimentation snippet, and the API of Optimizely Classic, which the same URL
+ * still serves for projects last saved before the migration to Web Experimentation.
  *
  * It answers the `window.optimizely` API for a project without experiments, so that
  * the page code which uses it without a check, e.g. `optimizely.get('state')`, does not throw,
  * and the code which waits for the client to be initialized, e.g. anti-flicker snippets, proceeds.
  * Commands queued in the `window.optimizely` array before the redirect is loaded are applied.
+ * The API of Classic is on the same object, e.g. `optimizely.trackEvent()` or `optimizely.data.state`.
+ * Its `optimizely.$` is jQuery of the page, if the page has one, as jQuery which a Classic snippet may bundle
+ * is not included.
  * No experiments or variations are applied, no data is sent and no cookies or storage items are set,
  * and the custom JavaScript of the project is not run.
  *
@@ -21,8 +25,8 @@ import { type Source } from '../scriptlets';
  * and not other files under `/public/`, e.g. the datafile `/public/<id>.json/tag.js` of Optimizely Full Stack.
  *
  * Based on the uBO redirect resource `optimizely.js`
- * (https://github.com/gorhill/uBlock/commit/e68e05cde0, originally from https://github.com/ryanbr/consent-rr,
- * GPL-3.0-or-later).
+ * (https://github.com/gorhill/uBlock/commit/e68e05cde0 and https://github.com/gorhill/uBlock/commit/ec0d053416,
+ * originally from https://github.com/ryanbr/consent-rr, GPL-3.0-or-later).
  *
  * Related UBO redirect resource:
  * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/optimizely.js
@@ -43,6 +47,7 @@ type Callback = (...args: unknown[]) => unknown;
 type OptimizelyWindow = typeof window & {
     optimizely?: unknown;
     $?: unknown;
+    jQuery?: unknown;
 };
 
 interface ProjectIdentity {
@@ -638,6 +643,9 @@ export function Optimizely(source: Source) {
         cookies: {},
         custom: {},
         customBehavior: [],
+        // Dynamic Customer Profile, fetched by the real client, so an empty object,
+        // as its audience matcher reads properties of it.
+        dcpData: {},
         device: '',
         device_type: '',
         events: [],
@@ -993,14 +1001,22 @@ export function Optimizely(source: Source) {
 
     const commandTables: CommandTable[] = [commandsV0, commandsV1, {}];
 
+    // Commands which the real client runs from its queue before the others while it starts,
+    // by `push(command, true)`.
+    const HIGH_PRIORITY_COMMANDS = ['clientMetadata', 'cookieDomain', 'disable', 'load', 'optOut', 'rum'];
+
     /**
      * `optimizely.push()`: runs a command of the real client, looked up by its version: arrays and strings
      * are version 0, objects have their own version or version 1. Errors of the command are caught.
+     * As the real client, with `highPriorityOnly`, only the commands which it runs first while it starts
+     * are run, and other ones are refused without a warning, also if they are unknown,
+     * e.g. for `commands.forEach(optimizely.push)`, as `forEach()` passes the index as the second argument.
      *
      * @param command Command, e.g. `['trackEvent', 'name']`, `'disable'` or `{ type: 'addListener', ... }`.
+     * @param highPriorityOnly Whether only a high-priority command is run.
      * @returns `true` if the command is known for its version, `false` otherwise.
      */
-    const push = (command: unknown): boolean => {
+    const push = (command: unknown, highPriorityOnly?: unknown): boolean => {
         let version: unknown;
         let name: unknown;
         let args: unknown[];
@@ -1021,6 +1037,9 @@ export function Optimizely(source: Source) {
             warn('API / Ignoring non-array/object/string argument:', command);
             return false;
         }
+        if (highPriorityOnly && HIGH_PRIORITY_COMMANDS.indexOf(name as string) === -1) {
+            return false;
+        }
         const table = commandTables[version as number];
         if (table === undefined || hasOwn(table, name) === false) {
             warn(`API / No function found for "${name}" (v${version}) with arguments:`, args);
@@ -1034,13 +1053,137 @@ export function Optimizely(source: Source) {
         return true;
     };
 
-    const api = {
+    // Optimizely Classic, the product before Web Experimentation, is still served for projects
+    // last saved before the migration, from the same `/js/<projectId>.js` path, with its API on the object itself,
+    // e.g. `optimizely.trackEvent()`, `optimizely.activeExperiments` and `optimizely.data.state`.
+    // It is mocked as a project without running experiments; the `referrer` of the visitor is empty,
+    // as in `get('visitor')`.
+    const classicData = {
+        note: "Obsolete, use optimizely.get('data') instead",
+        audiences: {},
+        customTags: {},
+        experiments: {},
+        sections: {},
+        segments: {},
+        thirdParty: {},
+        variations: {},
+        state: {
+            activeExperiments: [],
+            enabled: true,
+            integrations: { activeOAuthClientIds: [] },
+            redirectExperiment: undefined,
+            variationIdsMap: {},
+            variationMap: {},
+            variationNamesMap: {},
+        },
+        visitor: {
+            audiences: {},
+            browser: '',
+            browserVersion: '',
+            device: '',
+            deviceType: '',
+            dimensions: {},
+            ip: '',
+            lists: {},
+            location: {},
+            matchingRules: {},
+            mobile: false,
+            mobileId: '',
+            os: '',
+            params: {},
+            // an object in Classic, e.g. `{ id: 'linux', version: 'x86_64' }`, from the user agent
+            platform: { id: '', version: '' },
+            referrer: '',
+            segments: {},
+        },
+    };
+
+    const CLASSIC_METHODS = [
+        'activate',
+        'activateGeoDelayedExperiments',
+        'activateSiteCatalyst',
+        'activateUniversalAnalytics',
+        'addOAuthClientId',
+        'addToAudience',
+        'addToSegment',
+        'bindTrackElement',
+        'bucketUser',
+        'bucketVisitor',
+        'clickTalePlayback',
+        'clickTaleRecord',
+        'customTag',
+        'delayDomReadyEval',
+        'delayPageviewTracking',
+        'disable',
+        'googleAnalyticsCustomVariableScope',
+        'integrationPrefix',
+        'log',
+        'optOut',
+        'optOutThirdPartyCookies',
+        'overrideUrl',
+        'removeFromAllAudiences',
+        'removeFromAllSegments',
+        'removeFromAudience',
+        'removeFromReportableAudiences',
+        'removeFromSegment',
+        'sc_activate',
+        'sc_svar',
+        'setDimensionValue',
+        'setUserId',
+        'skipPageTracking',
+        'storeThirdPartyData',
+        'timeout',
+        'trackEvent',
+        'verbose',
+    ];
+
+    /**
+     * Returns an id of the project identity as a number, as Classic returns its ids, e.g. `getProjectId()`,
+     * while the current client returns them as strings, e.g. `get('data').projectId`.
+     *
+     * @param id Id from the URL of the snippet.
+     * @returns The id as a number, or `null` if it is not known.
+     */
+    const toClassicId = (id: string | null): number | null => (id === null ? null : Number(id));
+
+    const api: Record<string, unknown> = {
         push,
         get,
         initialized: true,
-        data: { note: "Obsolete, use optimizely.get('data') instead" },
+        data: classicData,
         state: {},
+        activeExperiments: [],
+        allExperiments: {},
+        all_experiments: {},
+        allVariations: {},
+        getElementsByClassName: (className: unknown) => doc.getElementsByClassName(String(className)),
+        revision: toClassicId(identity.revision),
+        variationIdsMap: {},
+        variationMap: {},
+        variationNamesMap: {},
+        variation_map: {},
+        getAccountId: () => toClassicId(identity.accountId),
+        getProjectId: () => toClassicId(identity.projectId),
     };
+    // In Classic, a method which is also a version 0 command is the same function,
+    // e.g. `optimizely.log()` enables logging as `push(['log'])` does; other methods do nothing.
+    CLASSIC_METHODS.forEach((method) => {
+        api[method] = hasOwn(commandsV0, method) ? commandsV0[method] : noopFunc;
+    });
+    // `optimizely.$` of Classic is the jQuery which the snippet bundles, if the project includes it,
+    // otherwise jQuery of the page, `window.jQuery`, or `window.$` in older versions.
+    // As jQuery is not bundled here, it is jQuery of the page when it is read, so that `optimizely.$('.x')` works
+    // if the page has one, also if `window.$` is another library; it is `undefined` if the page has none,
+    // unlike in a snippet which bundles jQuery.
+    try {
+        Object.defineProperty(api, '$', {
+            configurable: true,
+            enumerable: true,
+            get: () => (w.jQuery !== undefined && w.jQuery !== null ? w.jQuery : w.$),
+        });
+    } catch (e) {
+        // ignore
+    }
 
     const queued: unknown[] = Array.isArray(existing) ? existing.slice() : [];
     w.optimizely = api;

@@ -4,7 +4,8 @@ import { Optimizely, OptimizelyNames } from '../redirects/optimizely';
  * @scriptlet optimizely
  *
  * @description
- * Mocks the Optimizely Web Experimentation snippet.
+ * Mocks the Optimizely Web Experimentation snippet, and the API of Optimizely Classic,
+ * see the `optimizely` redirect resource.
  *
  * Should be used together with a rule which blocks the snippet, e.g. if redirects are not supported.
  * The identity of the project, e.g. `optimizely.get('data').projectId`, is not known then and is `null`.
