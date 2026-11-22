@@ -111,4 +111,5 @@ export { OptimizelyNames } from './optimizely';
 export { PardotNames } from './pardot-1.0';
 export { PrebidNames } from './prebid';
 export { ScoreCardResearchBeaconNames } from './scorecardresearch-beacon';
+export { SensorsAnalyticsNames } from './sensors-analytics';
 export { VwoNames } from './vwo';

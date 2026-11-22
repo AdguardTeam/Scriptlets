@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `cxense` redirect resource and scriptlet which mock `cx.js` and `cx.cce.js` of Cxense (Piano),
   so that pages which use them work without them, including the Cxense site search, and widgets
   of recommended pages, which are shown as a plain list of links with their images [#588].
+- `sensors-analytics` redirect resource and scriptlet which mock the JavaScript SDK of Sensors Analytics,
+  so that pages which call it without a check work without it [#588].
 
 ### Changed
 

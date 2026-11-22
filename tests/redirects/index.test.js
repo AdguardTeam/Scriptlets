@@ -29,3 +29,4 @@ import './adobe-analytics.test';
 import './adobe-visitor.test';
 import './adobe-tags.test';
 import './cxense.test';
+import './sensors-analytics.test';

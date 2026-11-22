@@ -33,3 +33,4 @@ export { AdobeAnalyticsNames } from './adobe-analytics';
 export { AdobeVisitorNames } from './adobe-visitor';
 export { AdobeTagsNames } from './adobe-tags';
 export { CxenseNames } from './cxense';
+export { SensorsAnalyticsNames } from './sensors-analytics';

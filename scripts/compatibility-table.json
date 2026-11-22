@@ -268,6 +268,9 @@
             "adg": "scorecardresearch-beacon"
         },
         {
+            "adg": "sensors-analytics"
+        },
+        {
             "adg": "vwo"
         },
         {
@@ -656,6 +659,10 @@
             "ubo": "scorecardresearch_beacon.js"
         },
         {
+            "adg": "sensors-analytics",
+            "ubo": "sensors-analytics.js"
+        },
+        {
             "adg": "set-popads-dummy",
             "ubo": "popads-dummy.js"
         },
@@ -695,9 +702,6 @@
         },
         {
             "ubo": "noop-0.5s.mp3"
-        },
-        {
-            "ubo": "sensors-analytics.js"
         },
         {
             "ubo": "nitropay_ads.js"

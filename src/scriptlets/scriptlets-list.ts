@@ -111,4 +111,5 @@ export { Optimizely } from './optimizely';
 export { Pardot } from './pardot-1.0';
 export { Prebid } from './prebid';
 export { ScoreCardResearchBeacon } from './scorecardresearch-beacon';
+export { SensorsAnalytics } from './sensors-analytics';
 export { Vwo } from './vwo';
