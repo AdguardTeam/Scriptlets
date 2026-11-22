@@ -655,6 +655,31 @@ Project-specific rules:
     `apply()`, as a spread call would need a Babel helper which is not in the
     built resource.
 
+24. Redirect resources and scriptlets which send a request instead of the mocked library, to keep
+    a function of the page, e.g. the site search and the widgets of `cxense`, MUST send it with
+    `fetch()` and `credentials: 'omit'`, to a fixed host and path, with nothing which identifies
+    the visitor or the page unless the page itself has put it in the request, and MUST use only
+    data of the response: no code or markup of it is run or inserted, e.g. no JSONP script,
+    no template, no `innerHTML`. Text is set with `textContent`, and URLs of the response are parsed
+    and limited, e.g. to the site of the page, in a helper covered by a Vitest spec, see rule 14.
+    A host is of the site of the page only if it is the host of the page, without `www.`, or its
+    subdomain: the registrable domain MUST NOT be guessed, e.g. from the number or the length of
+    labels. Resources named by the response, e.g. images, MUST be requested the same way, with
+    `redirect: 'error'`, and shown from the fetched data, e.g. a blob, not by an element which
+    requests the URL itself, e.g. `img`.
+    A request which the page has not made itself, e.g. of a widget, MUST have a fixed URL format
+    which is documented in the JSDoc with an exception rule for it, limited to its request type
+    if the library sends another one, e.g. `$xmlhttprequest` instead of a script, and it MUST be
+    sent once: a failed or empty response is not requested again, and nothing is changed for it.
+
+    **Rationale**: The mocked library is blocked because it tracks the visitor, so its mock must
+    not send an id, cookies or the URL of the page, and must not run code which the blocked
+    service sends. A documented request lets filter lists allow the request of the mock while
+    the requests of the real library stay blocked. Without a list of public suffixes, a guess takes
+    unrelated sites of one suffix for the same site, e.g. `a.github.io` and `b.github.io`.
+    An `img` element follows a redirect of an allowed URL to any host, and sends the cookies
+    of that host.
+
 ### III. Testing discipline
 
 - **QUnit tests** (`tests/scriptlets/`, `tests/redirects/`,

@@ -26,6 +26,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `adobe-visitor` redirect resource and scriptlet which mock the Experience Cloud Identity Service of Adobe [#588].
 - `adobe-tags` redirect resource and scriptlet which mock the library of Adobe Tags, `_satellite`,
   with the Adobe libraries which it usually contains [#588].
+- `cxense` redirect resource and scriptlet which mock `cx.js` and `cx.cce.js` of Cxense (Piano),
+  so that pages which use them work without them, including the Cxense site search, and widgets
+  of recommended pages, which are shown as a plain list of links with their images [#588].
 
 ### Changed
 

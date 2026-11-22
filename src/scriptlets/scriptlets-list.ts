@@ -90,6 +90,7 @@ export { AdobeAnalytics } from './adobe-analytics';
 export { AdobeVisitor } from './adobe-visitor';
 export { AdobeTags } from './adobe-tags';
 export { AmazonApstag } from './amazon-apstag';
+export { Cxense } from './cxense';
 export { DidomiLoader } from './didomi-loader';
 export { Fingerprintjs2 } from './fingerprintjs2';
 export { Fingerprintjs3 } from './fingerprintjs3';

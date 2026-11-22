@@ -61,6 +61,9 @@
             "ubo": "amazon-apstag.js (amazon-apstag)"
         },
         {
+            "adg": "cxense"
+        },
+        {
             "adg": "didomi-loader"
         },
         {
@@ -505,6 +508,9 @@
         {
             "adg": "click2load.html",
             "ubo": "click2load.html"
+        },
+        {
+            "adg": "cxense"
         },
         {
             "adg": "didomi-loader"

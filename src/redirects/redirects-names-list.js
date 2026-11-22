@@ -32,3 +32,4 @@ export { AdobeTargetNames } from './adobe-target';
 export { AdobeAnalyticsNames } from './adobe-analytics';
 export { AdobeVisitorNames } from './adobe-visitor';
 export { AdobeTagsNames } from './adobe-tags';
+export { CxenseNames } from './cxense';
