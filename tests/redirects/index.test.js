@@ -18,6 +18,7 @@ import './prebid.test';
 import './didomi-loader.test';
 import './prebid-ads.test';
 import './naver-wcslog.test';
+import './optimizely.test';
 import './pardot-1.0.test';
 import './noeval.test';
 import './freewheel-admanager.test';

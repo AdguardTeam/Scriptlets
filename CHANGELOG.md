@@ -14,6 +14,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- `optimizely` redirect resource and scriptlet [#589].
+
+[#589]: https://github.com/AdguardTeam/Scriptlets/pull/589
+
 ### Changed
 
 ### Deprecated

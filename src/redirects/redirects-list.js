@@ -25,3 +25,4 @@ export { Prebid } from './prebid';
 export { prebidAds } from './prebid-ads';
 export { NaverWcslog } from './naver-wcslog';
 export { FreewheelAdManager } from './freewheel-admanager';
+export { Optimizely } from './optimizely';

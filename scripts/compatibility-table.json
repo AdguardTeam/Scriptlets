@@ -150,6 +150,9 @@
             "adg": "no-topics"
         },
         {
+            "adg": "optimizely"
+        },
+        {
             "adg": "pardot-1.0"
         },
         {
@@ -579,6 +582,10 @@
         {
             "adg": "noopvast-4.0",
             "ubo": "noop-vast4.xml"
+        },
+        {
+            "adg": "optimizely",
+            "ubo": "optimizely.js"
         },
         {
             "adg": "pardot-1.0"
