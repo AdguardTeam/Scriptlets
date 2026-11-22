@@ -929,13 +929,14 @@ test('Project identity from the URL of the snippet', (assert) => {
             message: 'snippet with query and hash',
         },
         {
+            // as uBO, the whole URL is matched
             src: 'https://example.org/loader.js?url=https://cdn.optimizely.com/js/1234567890.js',
-            expected: { accountId: null, projectId: null, revision: null },
+            expected: { accountId: null, projectId: '1234567890', revision: null },
             message: 'snippet URL in a query parameter',
         },
         {
             src: 'https://example.org/loader.js#https://cdn.optimizely.com/public/111222/333444/5555_x_edge_helper.js',
-            expected: { accountId: null, projectId: null, revision: null },
+            expected: { accountId: '111222', projectId: '333444', revision: '5555' },
             message: 'Performance Edge URL in the hash',
         },
     ];

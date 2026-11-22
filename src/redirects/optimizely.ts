@@ -143,12 +143,8 @@ export function Optimizely(source: Source) {
         try {
             const el = doc.currentScript as HTMLScriptElement | null;
             const src = (el && el.src) || '';
-            if (src === '') {
-                return blank;
-            }
-            // Only the path is matched, so that a URL in a parameter, e.g. of a loader script, is not taken
-            const path = new URL(src, doc.baseURI).pathname;
-            const direct = /\/(\d{6,})\.js/.exec(path);
+            // As uBO, the whole URL is matched, e.g. also a snippet URL in a parameter of a loader script
+            const direct = /\/(\d{6,})\.js/.exec(src);
             if (direct !== null) {
                 return {
                     accountId: null,
@@ -156,7 +152,7 @@ export function Optimizely(source: Source) {
                     revision: null,
                 };
             }
-            const nested = /\/public\/(\d+)\/(\d+)\/(?:(\d+)_)?/.exec(path);
+            const nested = /\/public\/(\d+)\/(\d+)\/(?:(\d+)_)?/.exec(src);
             if (nested !== null) {
                 return {
                     accountId: nested[1],
