@@ -34,6 +34,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `chartbeat` redirect resource and scriptlet which mock `chartbeat.js` and `chartbeat_mab.js` of Chartbeat,
   and remove the styles and classes of its flicker control, which hide the page, its headlines or images
   until the script is loaded [#588].
+- `wurfl` redirect resource and scriptlet which mock WURFL.js Lite of ScientiaMobile, with the device detected
+  locally, so that pages which read `WURFL` work without it [#588].
 
 ### Changed
 

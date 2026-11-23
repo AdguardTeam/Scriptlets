@@ -114,3 +114,4 @@ export { Prebid } from './prebid';
 export { ScoreCardResearchBeacon } from './scorecardresearch-beacon';
 export { SensorsAnalytics } from './sensors-analytics';
 export { Vwo } from './vwo';
+export { Wurfl } from './wurfl';

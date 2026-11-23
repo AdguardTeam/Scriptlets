@@ -277,6 +277,9 @@
             "adg": "vwo"
         },
         {
+            "adg": "wurfl"
+        },
+        {
             "adg": "set-attr",
             "ubo": "set-attr.js (set-attr)"
         },
@@ -675,6 +678,9 @@
         },
         {
             "adg": "vwo"
+        },
+        {
+            "adg": "wurfl"
         },
         {
             "ubo": "amazon_ads.js"

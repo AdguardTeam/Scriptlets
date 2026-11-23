@@ -114,3 +114,4 @@ export { PrebidNames } from './prebid';
 export { ScoreCardResearchBeaconNames } from './scorecardresearch-beacon';
 export { SensorsAnalyticsNames } from './sensors-analytics';
 export { VwoNames } from './vwo';
+export { WurflNames } from './wurfl';
