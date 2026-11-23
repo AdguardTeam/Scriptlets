@@ -43,14 +43,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `googlesyndication-adsbygoogle` redirect resource and scriptlet call `google_ad_loaded_callback`
+  of the `params` of a rewarded ad, i.e. `google_ad_format: 'rewarded'`, without an ad, so that pages which wait
+  for it, e.g. for a download, continue [#588].
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
+- `googlesyndication-adsbygoogle` redirect resource and scriptlet not filling ad placeholders which the page adds
+  after it is run, e.g. if run as a scriptlet [#525].
+
 ### Security
 
+[#525]: https://github.com/AdguardTeam/Scriptlets/issues/525
 [#588]: https://github.com/AdguardTeam/Scriptlets/issues/588
 
 ## [2.6.0] - 2026-11-13
