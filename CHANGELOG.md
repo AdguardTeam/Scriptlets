@@ -46,6 +46,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet call `google_ad_loaded_callback`
   of the `params` of a rewarded ad, i.e. `google_ad_format: 'rewarded'`, without an ad, so that pages which wait
   for it, e.g. for a download, continue [#588].
+- `prebid` redirect resource and scriptlet mock `pbjs.rp` of the Prebid wrapper of Magnite, whose
+  `requestVideoBids()` calls its callback without an ad, so that video players which wait for it are started [#588].
 
 ### Deprecated
 
