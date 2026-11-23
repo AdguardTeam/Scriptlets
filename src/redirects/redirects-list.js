@@ -36,3 +36,4 @@ export { Cxense } from './cxense';
 export { SensorsAnalytics } from './sensors-analytics';
 export { Chartbeat } from './chartbeat';
 export { Wurfl } from './wurfl';
+export { PianoAnalytics } from './piano-analytics';

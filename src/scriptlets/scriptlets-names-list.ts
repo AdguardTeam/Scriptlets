@@ -110,6 +110,7 @@ export { metrikaYandexWatchNames } from './metrika-yandex-watch';
 export { NaverWcslogNames } from './naver-wcslog';
 export { OptimizelyNames } from './optimizely';
 export { PardotNames } from './pardot-1.0';
+export { PianoAnalyticsNames } from './piano-analytics';
 export { PrebidNames } from './prebid';
 export { ScoreCardResearchBeaconNames } from './scorecardresearch-beacon';
 export { SensorsAnalyticsNames } from './sensors-analytics';

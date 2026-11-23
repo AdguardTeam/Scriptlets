@@ -177,6 +177,9 @@
             "adg": "pardot-1.0"
         },
         {
+            "adg": "piano-analytics"
+        },
+        {
             "adg": "prebid"
         },
         {
@@ -643,6 +646,10 @@
             "adg": "pardot-1.0"
         },
         {
+            "adg": "piano-analytics",
+            "ubo": "piano-analytics.js"
+        },
+        {
             "adg": "prebid"
         },
         {
@@ -718,9 +725,6 @@
         },
         {
             "ubo": "adthrive_abd.js"
-        },
-        {
-            "ubo": "piano-analytics.js"
         },
         {
             "ubo": "freestar_pubfig.js"

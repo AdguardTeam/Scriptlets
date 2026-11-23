@@ -91,3 +91,4 @@ import './cxense.test';
 import './sensors-analytics.test';
 import './chartbeat.test';
 import './wurfl.test';
+import './piano-analytics.test';

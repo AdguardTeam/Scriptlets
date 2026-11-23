@@ -36,3 +36,4 @@ export { CxenseNames } from './cxense';
 export { SensorsAnalyticsNames } from './sensors-analytics';
 export { ChartbeatNames } from './chartbeat';
 export { WurflNames } from './wurfl';
+export { PianoAnalyticsNames } from './piano-analytics';
