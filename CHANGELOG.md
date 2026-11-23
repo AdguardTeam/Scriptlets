@@ -31,6 +31,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   of recommended pages, which are shown as a plain list of links with their images [#588].
 - `sensors-analytics` redirect resource and scriptlet which mock the JavaScript SDK of Sensors Analytics,
   so that pages which call it without a check work without it [#588].
+- `chartbeat` redirect resource and scriptlet which mock `chartbeat.js` and `chartbeat_mab.js` of Chartbeat,
+  and remove the styles and classes of its flicker control, which hide the page, its headlines or images
+  until the script is loaded [#588].
 
 ### Changed
 

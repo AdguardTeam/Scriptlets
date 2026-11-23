@@ -61,6 +61,9 @@
             "ubo": "amazon-apstag.js (amazon-apstag)"
         },
         {
+            "adg": "chartbeat"
+        },
+        {
             "adg": "cxense"
         },
         {
@@ -509,6 +512,10 @@
             "adg": "ati-smarttag"
         },
         {
+            "adg": "chartbeat",
+            "ubo": "chartbeat.js"
+        },
+        {
             "adg": "click2load.html",
             "ubo": "click2load.html"
         },
@@ -674,9 +681,6 @@
         },
         {
             "ubo": "ampproject_v0.js"
-        },
-        {
-            "ubo": "chartbeat.js"
         },
         {
             "ubo": "doubleclick_instream_ad_status.js"

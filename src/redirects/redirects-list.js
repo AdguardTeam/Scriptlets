@@ -34,3 +34,4 @@ export { AdobeVisitor } from './adobe-visitor';
 export { AdobeTags } from './adobe-tags';
 export { Cxense } from './cxense';
 export { SensorsAnalytics } from './sensors-analytics';
+export { Chartbeat } from './chartbeat';

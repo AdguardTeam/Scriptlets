@@ -89,3 +89,4 @@ import './adobe-visitor.test';
 import './adobe-tags.test';
 import './cxense.test';
 import './sensors-analytics.test';
+import './chartbeat.test';
