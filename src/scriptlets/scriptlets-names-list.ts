@@ -103,6 +103,7 @@ export { GoogleIma3Names } from './google-ima3';
 export { GoogleIma3DaiNames } from './google-ima3-dai';
 export { GoogleSyndicationAdsByGoogleNames } from './googlesyndication-adsbygoogle';
 export { GoogleTagServicesGptNames } from './googletagservices-gpt';
+export { JadNames } from './jad';
 export { KameleoonEngineNames } from './kameleoon';
 export { MatomoNames } from './matomo';
 export { metrikaYandexTagNames } from './metrika-yandex-tag';

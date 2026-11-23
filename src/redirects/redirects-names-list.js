@@ -37,3 +37,4 @@ export { SensorsAnalyticsNames } from './sensors-analytics';
 export { ChartbeatNames } from './chartbeat';
 export { WurflNames } from './wurfl';
 export { PianoAnalyticsNames } from './piano-analytics';
+export { JadNames } from './jad';

@@ -33,3 +33,4 @@ import './sensors-analytics.test';
 import './chartbeat.test';
 import './wurfl.test';
 import './piano-analytics.test';
+import './jad.test';

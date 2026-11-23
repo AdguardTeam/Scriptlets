@@ -38,6 +38,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   locally, so that pages which read `WURFL` work without it [#588].
 - `piano-analytics` redirect resource and scriptlet which mock the JavaScript SDK of Piano Analytics,
   so that pages which call it without a check work without it [#588].
+- `jad` redirect resource and scriptlet which mock JAD, the ad library of Webedia, as with ads disabled,
+  so that the Dailymotion videos of pages which wait for it are started without it [#588].
 
 ### Changed
 
