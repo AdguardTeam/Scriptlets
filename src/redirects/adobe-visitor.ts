@@ -21,7 +21,10 @@ import { type Source } from '../scriptlets';
  *
  * `Visitor.getInstance()` returns an instance whose ids are empty strings, also in the callbacks, e.g. of
  * `getMarketingCloudVisitorID()` or `getVisitorValues()`, `appendVisitorIDsTo()` returns the URL unchanged,
- * and `adobe.optIn` approves all categories, as when opt-in does not apply.
+ * and `adobe.optIn`, created by the first `getInstance()` call, follows its configuration, as the library:
+ * with `doesOptInApply`, only the categories of `preOptInApprovals` and of `previousPermissions`, i.e. of the saved
+ * decision of the visitor, are approved until the page approves the other ones, e.g. by its consent manager,
+ * otherwise all categories are approved.
  * No visitor id is generated, no data is sent and no storage items are set, except a cookie with a dummy id,
  * see below.
  *

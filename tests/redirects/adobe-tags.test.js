@@ -304,3 +304,60 @@ test('No requests, cookies or storage items', async (assert) => {
         delete document.cookie;
     }
 });
+
+test('Creates adobe.optIn at once, as the Experience Cloud ID extension of the library', (assert) => {
+    run();
+    const { optIn, OptInCategories } = window.adobe;
+    assert.strictEqual(typeof optIn, 'object', 'adobe.optIn before Visitor.getInstance()');
+    // the configuration of the site is not known, so no consent is assumed
+    assert.true(optIn.doesOptInApply, 'opt-in applies');
+    assert.strictEqual(optIn.status, 'pending', 'pending');
+    assert.false(optIn.isApproved(OptInCategories.ANALYTICS), 'not approved');
+    assert.false(optIn.isApproved(OptInCategories.ECID), 'no category is approved');
+    // as the library, a callback waits for the decision of the visitor
+    const fetched = [];
+    optIn.fetchPermissions((permissions) => fetched.push(permissions.aa));
+    assert.deepEqual(fetched, [], 'permissions are not passed before the decision');
+    // e.g. a consent manager of the page
+    optIn.approve([OptInCategories.ANALYTICS, OptInCategories.TARGET], true);
+    optIn.complete();
+    assert.true(optIn.isApproved(OptInCategories.ANALYTICS), 'approved by the page');
+    assert.false(optIn.isApproved(OptInCategories.AAM), 'other categories not approved');
+    assert.deepEqual(fetched, [true], 'permissions are passed once the decision is completed');
+    optIn.deny(OptInCategories.ANALYTICS);
+    assert.deepEqual(fetched, [true], 'only once');
+    window.Visitor.getInstance('ABC@AdobeOrg');
+    assert.strictEqual(window.adobe.optIn, optIn, 'kept by getInstance()');
+
+    // the Visitor API of the page creates its own adobe.optIn
+    clearGlobalProps(...GLOBALS);
+    removeTestCookies();
+    const pageVisitor = function Visitor() {};
+    pageVisitor.getInstance = () => ({});
+    window.Visitor = pageVisitor;
+    run();
+    assert.strictEqual(window.Visitor, pageVisitor, 'Visitor of the page is kept');
+    assert.strictEqual(window.adobe.optIn, undefined, 'no adobe.optIn of the mock with the Visitor of the page');
+
+    // the adobe-visitor resource alone creates it by getInstance(), as VisitorAPI.js
+    clearGlobalProps(...GLOBALS);
+    run('adobe-visitor');
+    assert.strictEqual(window.adobe.optIn, undefined, 'adobe-visitor: not before getInstance()');
+});
+
+test('Mocks _satellite also if another library cannot be mocked', (assert) => {
+    // e.g. a global of the page which cannot be changed
+    Object.defineProperty(window, 'adobe', {
+        configurable: true,
+        get: () => {
+            throw new Error('error of the page');
+        },
+    });
+    try {
+        run();
+        assert.strictEqual(typeof window._satellite.track, 'function', '_satellite is mocked');
+        assert.strictEqual(typeof window.AppMeasurement, 'function', 'AppMeasurement is mocked');
+    } finally {
+        delete window.adobe;
+    }
+});

@@ -164,6 +164,161 @@ test('adobe.optIn when opt-in does not apply', (assert) => {
     assert.deepEqual(fetched, [true, true, false], 'subscribed callback called on each completion');
 });
 
+test('adobe.optIn follows the configuration of getInstance(), as the library', (assert) => {
+    run();
+    // e.g. a site which needs the consent of the visitor
+    window.Visitor.getInstance('ABC@AdobeOrg', {
+        doesOptInApply: true,
+        preOptInApprovals: { ecid: true },
+    });
+    const { optIn } = window.adobe;
+    assert.true(optIn.doesOptInApply, 'doesOptInApply');
+    assert.strictEqual(optIn.status, 'pending', 'pending');
+    assert.true(optIn.isApproved('ecid'), 'pre-approved category');
+    assert.false(optIn.isApproved('aa'), 'other category not approved');
+    assert.false(optIn.isApproved(['ecid', 'aa']), 'list with a category not approved');
+    optIn.approve('aa');
+    assert.true(optIn.isApproved('aa'), 'approved by the page');
+
+    // the first call creates it, as by the library
+    window.Visitor.getInstance('DEF@AdobeOrg', { doesOptInApply: false });
+    assert.strictEqual(window.adobe.optIn, optIn, 'kept by the next call');
+    assert.false(optIn.isApproved('target'), 'configuration of the first call');
+
+    // the saved decision of the visitor overrides the pre-approved categories, and completes the opt-in
+    const create = (config) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        run();
+        window.Visitor.getInstance('ABC@AdobeOrg', config);
+        return window.adobe.optIn;
+    };
+    let saved = create({
+        doesOptInApply: true,
+        preOptInApprovals: { aa: true },
+        previousPermissions: { aa: false, target: true },
+    });
+    assert.false(saved.isApproved('aa'), 'category denied by the visitor before');
+    assert.true(saved.isApproved('target'), 'category approved by the visitor before');
+    assert.true(saved.isPreApproved('aa'), 'isPreApproved() of the configuration');
+    assert.false(saved.isPreApproved('target'), 'isPreApproved() of another category');
+    assert.strictEqual(saved.status, 'complete', 'complete with a saved decision');
+    const completed = [];
+    saved.fetchPermissions((permissions) => completed.push(permissions.aa));
+    assert.deepEqual(completed, [false], 'permissions are passed at once when they are complete');
+
+    // permissions as JSON, and as a function
+    saved = create({
+        doesOptInApply: true,
+        preOptInApprovals: '{"ecid":true}',
+        previousPermissions: () => '{"aa":true}',
+    });
+    assert.deepEqual(
+        [saved.isApproved('ecid'), saved.isPreApproved('ecid'), saved.isApproved('aa'), saved.status],
+        [true, true, true, 'complete'],
+        'JSON of the permissions',
+    );
+    const invalid = create({ doesOptInApply: true, previousPermissions: { other: true } });
+    assert.strictEqual(invalid.status, 'pending', 'invalid saved decision does not complete the opt-in');
+
+    // `doesOptInApply` as a function or a string
+    let calls = 0;
+    const applied = create({
+        doesOptInApply: () => {
+            calls += 1;
+            return true;
+        },
+    });
+    assert.deepEqual(
+        [calls, applied.doesOptInApply, applied.isApproved('aa')],
+        [1, true, false],
+        'function is called once',
+    );
+    assert.true(create({ doesOptInApply: 'true' }).doesOptInApply, 'string true');
+    assert.false(create({ doesOptInApply: 'false' }).doesOptInApply, 'string false');
+
+    // a callback waits for the decision if nothing is pre-approved
+    const pending = create({ doesOptInApply: true });
+    const waiting = [];
+    pending.fetchPermissions((permissions) => waiting.push(permissions.aa));
+    pending.approve('aa', true);
+    assert.deepEqual(waiting, [], 'not called before the decision is completed');
+    pending.complete();
+    pending.deny('aa');
+    assert.deepEqual(waiting, [true], 'called once');
+    const preApproved = [];
+    create({ doesOptInApply: true, preOptInApprovals: {} }).fetchPermissions((p) => preApproved.push(p.aa));
+    assert.deepEqual(preApproved, [false], 'called at once with pre-approved categories');
+
+    // checks without categories, and listeners, as the library
+    const service = create({ doesOptInApply: true, preOptInApprovals: { aa: true } });
+    assert.false(service.isApproved(), 'not all categories are approved');
+    assert.true(service.isPreApproved(), 'all pre-approved categories');
+    service.approveAll();
+    assert.true(service.isApproved(), 'all categories are approved');
+    const listened = [];
+    const listener = (permissions) => listened.push(permissions.aa);
+    service.on('complete', listener);
+    service.off('complete');
+    service.deny('aa');
+    service.off('complete', listener);
+    service.approve('aa');
+    assert.deepEqual(listened, [false], 'off() removes only the listener which is passed');
+    assert.throws(() => service.on('complete', 'not a function'), /Callback should be a function/, 'on() throws');
+
+    // `"false"` is no pre-approvals, and `approveAll(true)` is deferred, as the library
+    const notPreApproved = create({ doesOptInApply: true, preOptInApprovals: 'false' });
+    const deferred = [];
+    notPreApproved.fetchPermissions((permissions) => deferred.push(permissions.aa));
+    assert.deepEqual(deferred, [], 'callback waits for the decision');
+    notPreApproved.approveAll(true);
+    assert.deepEqual([notPreApproved.status, notPreApproved.isApproved('aa')], ['changed', false], 'approveAll(true)');
+    notPreApproved.deny('aa', true);
+    notPreApproved.complete();
+    assert.deepEqual(deferred, [false], 'decision completed after the batch');
+    assert.true(notPreApproved.isApproved('target'), 'other categories are approved');
+    notPreApproved.denyAll(true);
+    assert.strictEqual(notPreApproved.status, 'changed', 'denyAll(true)');
+
+    // a provider of the page which throws: the decision of the visitor is not known, so nothing is approved,
+    // while the library throws
+    const failing = () => {
+        throw new Error('error of the page');
+    };
+    let failed = create({ doesOptInApply: failing, preOptInApprovals: { aa: true } });
+    assert.deepEqual(
+        [failed.doesOptInApply, failed.isApproved('aa'), failed.isApproved('ecid'), failed.status],
+        [true, false, false, 'pending'],
+        'doesOptInApply() which throws',
+    );
+    failed = create({ doesOptInApply: true, preOptInApprovals: { aa: true }, previousPermissions: failing });
+    assert.deepEqual(
+        [failed.doesOptInApply, failed.isApproved('aa'), failed.status],
+        [true, false, 'pending'],
+        'previousPermissions() which throws, also for a pre-approved category',
+    );
+    // as the library, which then throws as well: the getter is read again for the instance
+    const config = {};
+    Object.defineProperty(config, 'doesOptInApply', { enumerable: true, get: failing });
+    assert.throws(() => create(config), /error of the page/, 'getter of the configuration which throws');
+    assert.false(window.adobe.optIn.isApproved('aa'), 'nothing is approved then');
+
+    // as the library, only own enumerable properties of the configuration are read
+    class Config {
+        // eslint-disable-next-line class-methods-use-this
+        previousPermissions() {
+            return { aa: true };
+        }
+    }
+    const instance = new Config();
+    instance.doesOptInApply = true;
+    const inherited = create(instance);
+    assert.deepEqual([inherited.isApproved('aa'), inherited.status], [false, 'pending'], 'method of the prototype');
+    assert.false(create(Object.create({ doesOptInApply: true })).doesOptInApply, 'inherited property');
+    const hidden = {};
+    Object.defineProperty(hidden, 'doesOptInApply', { value: true });
+    assert.false(create(hidden).doesOptInApply, 'property which is not enumerable');
+});
+
 test('adobe.optIn: deferred changes, listeners', (assert) => {
     run();
     window.Visitor.getInstance(ORG);
@@ -175,7 +330,8 @@ test('adobe.optIn: deferred changes, listeners', (assert) => {
     optIn.complete();
     assert.deepEqual(state(), [false, 'complete', false, true], 'applied by complete()');
     optIn.approve('aa', true);
-    assert.deepEqual(state(), [false, 'changed', false, false], 'another deferred change is not complete');
+    // as the library, whose permissions are the changed ones after the first completion
+    assert.deepEqual(state(), [true, 'changed', false, false], 'another deferred change is not complete');
     optIn.complete();
     assert.deepEqual(state(), [true, 'complete', false, true], 'applied by complete()');
 

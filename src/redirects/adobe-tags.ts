@@ -35,7 +35,16 @@ import { type Source } from '../scriptlets';
  * without the `AMCV_<orgId>` cookie, as the organization of the site is not known.
  * The other libraries are mocked as by the `adobe-target`, `adobe-visitor` and `adobe-analytics` redirect resources,
  * each only if it is not on the page yet, so it removes the prehiding styles of Adobe Target and of the Web SDK,
- * i.e. `at-body-style` and `alloy-prehiding`, at once.
+ * i.e. `at-body-style` and `alloy-prehiding`, at once. As by the library, whose Experience Cloud ID extension
+ * calls `Visitor.getInstance()` when it is loaded, `adobe.optIn` is created at once with the mock of the Visitor API,
+ * e.g. for the consent manager of the page, which calls `adobe.optIn.approve()`. As the opt-in configuration
+ * of the site is not known, opt-in applies and no category is approved until the page approves it, so that
+ * the page is not told that the visitor has consented, also on sites which do not use opt-in, where the library
+ * approves all categories. As by the library, a callback of `adobe.optIn.fetchPermissions()` is called then
+ * once the page has completed the decision of the visitor.
+ * Limitation: `adobe.optIn` is not created at once if the mock of the Visitor API is already on the page,
+ * e.g. as the `adobe-visitor` resource has run before, as it cannot be told from a Visitor API of the page;
+ * it is then created by the first `Visitor.getInstance()` call, as by the `adobe-visitor` resource.
  * The Adobe Web SDK (`alloy`) is not mocked.
  *
  * No rules and no custom code of the site are run, so the other tags which the library loads are not loaded,
@@ -73,12 +82,25 @@ import { type Source } from '../scriptlets';
  * @added unknown.
  */
 export function AdobeTags(source: Source) {
-    // all of them are called, so that each library is mocked
-    const isVisitorMocked = mockAdobeVisitor();
-    const isAnalyticsMocked = mockAdobeAnalytics();
-    const isTargetMocked = mockAdobeTarget();
-    const isSatelliteMocked = mockAdobeSatellite();
-    if (isVisitorMocked || isAnalyticsMocked || isTargetMocked || isSatelliteMocked) {
+    // all of them are called, so that each library is mocked, also if another one fails, e.g. for a global
+    // of the page which cannot be changed
+    const mocks = [
+        () => mockAdobeVisitor(true),
+        mockAdobeAnalytics,
+        mockAdobeTarget,
+        mockAdobeSatellite,
+    ];
+    let isMocked = false;
+    for (let i = 0; i < mocks.length; i += 1) {
+        try {
+            if (mocks[i]()) {
+                isMocked = true;
+            }
+        } catch (e) {
+            // continue with the other libraries
+        }
+    }
+    if (isMocked) {
         hit(source);
     }
 }
