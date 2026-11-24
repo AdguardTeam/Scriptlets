@@ -838,3 +838,167 @@ test('Unguarded page code runs and the page is shown', (assert) => {
     }
     assert.notOk(document.getElementById(STYLE_ID), 'page is shown');
 });
+
+test('Data.retrieveDataFromRemoteSource() returns as the engine when its request fails', async (assert) => {
+    runRedirect();
+    const { Data } = window.Kameleoon.API;
+    const calls = [];
+    const callback = (data) => {
+        calls.push(data);
+        return 'result of the callback';
+    };
+
+    // a key: a promise of the result of the callback, which gets an empty object
+    const promise = Data.retrieveDataFromRemoteSource('key', callback);
+    assert.deepEqual(calls, [], 'callback is called later');
+    assert.strictEqual(await promise, 'result of the callback', 'promise of the result of the callback');
+    assert.deepEqual(calls, [{}], 'callback gets an empty object');
+    assert.strictEqual(await Data.retrieveDataFromRemoteSource('key'), undefined, 'without a callback');
+
+    // an empty array: the callback is called at once, and its result is returned
+    assert.strictEqual(Data.retrieveDataFromRemoteSource([], callback), 'result of the callback', 'empty array');
+    assert.strictEqual(calls.length, 2, 'called at once');
+    assert.strictEqual(Data.retrieveDataFromRemoteSource([]), undefined, 'empty array without a callback');
+
+    // keys: nothing is returned, the callback is called later
+    assert.strictEqual(Data.retrieveDataFromRemoteSource(['a', 'b'], callback), undefined, 'keys');
+    assert.strictEqual(calls.length, 2, 'not called at once');
+    await sleep(0);
+    assert.deepEqual(calls[2], {}, 'callback of keys gets an empty object');
+
+    const failing = () => {
+        throw new Error('error of the page');
+    };
+    assert.strictEqual(await Data.retrieveDataFromRemoteSource('key', failing), undefined, 'error is caught');
+    assert.strictEqual(Data.retrieveDataFromRemoteSource([], failing), undefined, 'error is caught at once');
+});
+
+test('Core.runWhen*() do not watch for an invalid selector or a callback which is not a function', async (assert) => {
+    runRedirect();
+    const { Core } = window.Kameleoon.API;
+    const NativeObserver = window.MutationObserver;
+    const nativeSetInterval = window.setInterval;
+    let observers = 0;
+    let intervals = 0;
+    window.MutationObserver = function (...args) {
+        observers += 1;
+        return new NativeObserver(...args);
+    };
+    window.setInterval = (...args) => {
+        intervals += 1;
+        return nativeSetInterval(...args);
+    };
+    try {
+        // as the engine, which stops for them
+        Core.runWhenElementPresent('div[', () => {});
+        Core.runWhenElementPresent('div[', () => {}, 100);
+        Core.runWhenElementPresent('span:contains(unquoted)', () => {}, undefined, true);
+        Core.runWhenShadowRootElementPresent('div[', 'span', () => {});
+        // nothing would be called
+        Core.runWhenElementPresent('.not-there-yet', 'not a function');
+        Core.runWhenShadowRootElementPresent('.not-there-yet', 'span', null);
+        Core.runWhenConditionTrue(() => false, 'not a function');
+        assert.strictEqual(observers, 0, 'no observer');
+        assert.strictEqual(intervals, 0, 'no polling');
+
+        // a valid selector which matches nothing yet is watched
+        Core.runWhenElementPresent('.not-there-yet', () => {});
+        assert.strictEqual(observers, 1, 'observer for a valid selector');
+        Core.runWhenElementPresent('.not-there-yet', () => {}, 100);
+        Core.runWhenShadowRootElementPresent('.not-there-yet', 'span', () => {});
+        assert.strictEqual(intervals, 2, 'polling for a valid selector, also of a shadow host');
+    } finally {
+        window.MutationObserver = NativeObserver;
+        window.setInterval = nativeSetInterval;
+    }
+    // as the engine, the selector, or the one of the shadow hosts, is queried once when the callback is registered
+    addToContainer('<div class="probe"></div>');
+    addToContainer('<div class="probe-host"></div>').attachShadow({ mode: 'open' }).innerHTML = '<i></i>';
+    const nativeQuerySelectorAll = document.querySelectorAll;
+    let queries = 0;
+    document.querySelectorAll = function (...args) {
+        queries += 1;
+        return nativeQuerySelectorAll.apply(this, args);
+    };
+    const found = [];
+    let hostQueries;
+    try {
+        Core.runWhenElementPresent('.probe', (elements) => found.push(elements.length));
+        hostQueries = queries;
+        Core.runWhenShadowRootElementPresent('.probe-host', 'i', (elements) => found.push(elements.length));
+    } finally {
+        document.querySelectorAll = nativeQuerySelectorAll;
+    }
+    assert.deepEqual(found, [1, 1], 'callbacks are called with the elements');
+    assert.strictEqual(hostQueries, 1, 'selector is queried once');
+    assert.strictEqual(queries - hostQueries, 1, 'selector of the shadow hosts is queried once');
+
+    // the elements appear, so that the watchers stop
+    const host = addToContainer('<div class="not-there-yet"></div>');
+    host.attachShadow({ mode: 'open' }).innerHTML = '<span></span>';
+    await sleep(250);
+});
+
+test('Dispatches Kameleoon::Loaded and Kameleoon::Started once the document is parsed', async (assert) => {
+    const events = [];
+    const listener = (event) => events.push(event.type);
+    let loadTime;
+    const loadedListener = (event) => {
+        loadTime = event.detail.loadTime;
+    };
+    // events of the resources run by the previous tests
+    await sleep(20);
+    const nativeAddEventListener = document.addEventListener;
+    const contentLoaded = [];
+    document.addEventListener = function (type, callback, ...rest) {
+        if (type === 'DOMContentLoaded') {
+            contentLoaded.push(callback);
+            return undefined;
+        }
+        return nativeAddEventListener.call(this, type, callback, ...rest);
+    };
+    Object.defineProperty(document, 'readyState', { configurable: true, get: () => 'loading' });
+    window.kameleoonStartLoadTime = Date.now() - 100;
+    try {
+        runRedirect();
+    } finally {
+        delete document.readyState;
+        document.addEventListener = nativeAddEventListener;
+    }
+    // as the page, after the scriptlet
+    window.addEventListener('Kameleoon::Loaded', listener);
+    window.addEventListener('Kameleoon::Loaded', loadedListener);
+    window.addEventListener('Kameleoon::Started', listener);
+    try {
+        // e.g. other scripts of the page
+        await sleep(300);
+        assert.deepEqual(events, [], 'not dispatched while the document is parsed');
+        assert.strictEqual(contentLoaded.length, 1, 'DOMContentLoaded is awaited');
+        contentLoaded[0]();
+        assert.deepEqual(events, ['Kameleoon::Loaded', 'Kameleoon::Started'], 'dispatched once it is parsed');
+        assert.ok(loadTime >= 100 && loadTime < 300, `load time until the resource has run: ${loadTime}`);
+    } finally {
+        window.removeEventListener('Kameleoon::Loaded', loadedListener);
+        window.removeEventListener('Kameleoon::Loaded', listener);
+        window.removeEventListener('Kameleoon::Started', listener);
+    }
+});
+
+test('Kameleoon::Loaded has no load time if the page sets its start time later', async (assert) => {
+    let loadTime;
+    const listener = (event) => {
+        loadTime = event.detail.loadTime;
+    };
+    // events of the resources run by the previous tests
+    await sleep(20);
+    window.addEventListener('Kameleoon::Loaded', listener);
+    try {
+        // as the scriptlet, before the snippet of the page sets the start time
+        runRedirect();
+        window.kameleoonStartLoadTime = Date.now() + 5;
+        await sleep(20);
+        assert.strictEqual(loadTime, 0, 'load time is not negative');
+    } finally {
+        window.removeEventListener('Kameleoon::Loaded', listener);
+    }
+});

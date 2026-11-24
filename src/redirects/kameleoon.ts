@@ -124,7 +124,8 @@ export function KameleoonEngine(source: Source) {
      * @param pollingInterval Interval of the checks in ms, 200 by default.
      */
     const runWhenConditionTrue = (condition: unknown, callback: unknown, pollingInterval?: unknown) => {
-        if (typeof condition !== 'function') {
+        // nothing would be called, so the condition is not polled
+        if (typeof condition !== 'function' || typeof callback !== 'function') {
             return;
         }
         const check = (): boolean => {
@@ -155,18 +156,20 @@ export function KameleoonEngine(source: Source) {
      * @param callback Page callback.
      * @param pollingInterval Interval for polling; DOM changes are observed if it is not a number.
      * @param isDynamic Whether new elements are passed as well.
+     * @param initial Elements already found by the caller, so that they are not queried again.
      */
     const watchElements = (
         find: () => Element[],
         callback: unknown,
         pollingInterval: unknown,
         isDynamic: unknown,
+        initial?: Element[],
     ) => {
         const passed = new WeakSet<Element>();
         let stop: () => void = noopFunc;
         // Returns `true` if watching should stop.
-        const process = (): boolean => {
-            const elements = find().filter((element) => !passed.has(element));
+        const process = (found?: Element[]): boolean => {
+            const elements = (found || find()).filter((element) => !passed.has(element));
             if (elements.length === 0) {
                 return false;
             }
@@ -174,7 +177,7 @@ export function KameleoonEngine(source: Source) {
             runProtected(callback, [elements]);
             return !isDynamic;
         };
-        if (process()) {
+        if (process(initial)) {
             return;
         }
         if (typeof pollingInterval === 'number') {
@@ -220,7 +223,19 @@ export function KameleoonEngine(source: Source) {
         pollingInterval?: unknown,
         isDynamicElement?: unknown,
     ) => {
-        watchElements(() => queryAll(selector), callback, pollingInterval, isDynamicElement);
+        // nothing would be called, so nothing is watched
+        if (typeof callback !== 'function') {
+            return;
+        }
+        // as the engine, the selector is queried once, and an invalid one is not watched
+        let hasError = false;
+        const initial = queryKameleoonSelector(selector, undefined, () => {
+            hasError = true;
+        });
+        if (hasError) {
+            return;
+        }
+        watchElements(() => queryAll(selector), callback, pollingInterval, isDynamicElement, initial);
     };
 
     /**
@@ -239,17 +254,36 @@ export function KameleoonEngine(source: Source) {
         callback: unknown,
         isDynamicElement?: unknown,
     ) => {
-        const find = (): Element[] => {
+        // nothing would be called, so nothing is watched
+        if (typeof callback !== 'function') {
+            return;
+        }
+        // as the engine, which watches the shadow hosts by `runWhenElementPresent()`, the hosts are queried once
+        // when the callback is registered, and an invalid selector of them is not watched
+        let hasError = false;
+        const initialHosts = queryKameleoonSelector(parentSelector, undefined, () => {
+            hasError = true;
+        });
+        if (hasError) {
+            return;
+        }
+        const findIn = (hosts: Element[]): Element[] => {
             let elements: Element[] = [];
-            queryAll(parentSelector).forEach((parent) => {
-                if (parent.shadowRoot) {
-                    elements = elements.concat(queryAll(shadowRootElementSelector, parent.shadowRoot));
+            hosts.forEach((host) => {
+                if (host.shadowRoot) {
+                    elements = elements.concat(queryAll(shadowRootElementSelector, host.shadowRoot));
                 }
             });
             return elements;
         };
         // Changes inside shadow roots are not observed by an observer of the document.
-        watchElements(find, callback, SHADOW_POLLING_INTERVAL, isDynamicElement);
+        watchElements(
+            () => findIn(queryAll(parentSelector)),
+            callback,
+            SHADOW_POLLING_INTERVAL,
+            isDynamicElement,
+            findIn(initialHosts),
+        );
     };
 
     /**
@@ -381,6 +415,39 @@ export function KameleoonEngine(source: Source) {
         },
     };
 
+    /**
+     * Calls the callback with the data of keys as `Data.retrieveDataFromRemoteSource()` of the engine
+     * when its request fails, i.e. with an empty object, as no request is sent here, and returns as the engine:
+     * - for a key, a promise resolved with the result of the callback, i.e. not with the data,
+     * - for an empty array of keys, the result of the callback, which is called at once,
+     * - for other keys, nothing, as the callback is called later.
+     *
+     * @param key Key, or an array of keys.
+     * @param callback Page callback.
+     * @returns Promise, result of the callback, or `undefined`.
+     */
+    const retrieveDataFromRemoteSource = (key: unknown, callback?: unknown): unknown => {
+        const call = (): unknown => {
+            if (typeof callback !== 'function') {
+                return undefined;
+            }
+            let result;
+            // errors of the page callback are caught, but its result is kept
+            runProtected(() => {
+                result = callback({});
+            }, []);
+            return result;
+        };
+        if (!Array.isArray(key)) {
+            return Promise.resolve().then(call);
+        }
+        if (key.length === 0) {
+            return call();
+        }
+        Promise.resolve().then(call);
+        return undefined;
+    };
+
     const triggered: unknown[] = [];
 
     const getters = {
@@ -415,10 +482,7 @@ export function KameleoonEngine(source: Source) {
             performRemoteSynchronization: noopFunc,
             readLocalData: noopNull,
             resetCustomData: noopFunc,
-            // The engine resolves an empty object if the request fails; no request is sent here.
-            retrieveDataFromRemoteSource: (key: unknown, callback?: unknown) => Promise.resolve().then(() => {
-                runProtected(callback, [{}]);
-            }),
+            retrieveDataFromRemoteSource,
             setCustomData: noopFunc,
             writeLocalData: noopFunc,
         },
@@ -652,18 +716,24 @@ export function KameleoonEngine(source: Source) {
         && (item as QueueCommand).level === 'IMMEDIATE';
     queued.filter(isImmediate).forEach(runCommand);
     queued.filter((item) => !isImmediate(item)).forEach(runCommand);
-    w.kameleoonEndLoadTime = Date.now();
+    // as the engine, the load time of `Kameleoon::Loaded` is measured until here, also if it is dispatched later;
+    // the start time is set by the snippet of the page, so it is not known yet if the scriptlet runs before it
+    const endLoadTime = Date.now();
+    w.kameleoonEndLoadTime = endLoadTime;
+    const startLoadTime = w.kameleoonStartLoadTime;
+    const engineLoadTime = typeof startLoadTime === 'number' && startLoadTime <= endLoadTime
+        ? endLoadTime - startLoadTime
+        : 0;
 
     hit(source);
 
-    w.setTimeout(() => {
+    const dispatchEvents = () => {
         const time = Date.now();
-        const startTime = w.kameleoonStartLoadTime;
         try {
             w.dispatchEvent(new CustomEvent('Kameleoon::Loaded', {
                 detail: {
                     timeout: false,
-                    loadTime: typeof startTime === 'number' ? time - startTime : 0,
+                    loadTime: engineLoadTime,
                     time,
                 },
             }));
@@ -673,7 +743,14 @@ export function KameleoonEngine(source: Source) {
         } catch (e) {
             // ignore errors of page listeners
         }
-    }, 0);
+    };
+    // As the engine, which is loaded asynchronously, after the page has added its listeners;
+    // the scriptlet runs before the scripts of the page, so the events are dispatched once it is parsed.
+    if (doc.readyState === 'loading') {
+        doc.addEventListener('DOMContentLoaded', dispatchEvents, { once: true });
+    } else {
+        w.setTimeout(dispatchEvents, 0);
+    }
 }
 
 export const KameleoonEngineNames = [

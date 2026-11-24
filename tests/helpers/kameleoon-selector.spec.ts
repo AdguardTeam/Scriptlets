@@ -162,6 +162,29 @@ describe('queryKameleoonSelector', () => {
         }
     });
 
+    test('onError is called for a selector which the engine does not watch', () => {
+        const errors = (selector: unknown): number => {
+            let count = 0;
+            queryKameleoonSelector(selector, undefined, () => {
+                count += 1;
+            });
+            return count;
+        };
+        // invalid, or not supported by the engine, which throws for them
+        expect(errors('div[')).toBe(1);
+        expect(errors('span:contains(first)')).toBe(1);
+        expect(errors('[title=":eq"]')).toBe(1);
+        expect(errors('span:eq(0)[')).toBe(1);
+        expect(errors(1)).toBe(1);
+        // valid, also if nothing matches
+        expect(errors('span')).toBe(0);
+        expect(errors('.missing')).toBe(0);
+        expect(errors('span:eq(1)')).toBe(0);
+        expect(errors('span:contains("first")')).toBe(0);
+        expect(errors('[data-name=a b]')).toBe(0);
+        expect(() => queryKameleoonSelector('div[', undefined, 'not a function' as never)).not.toThrow();
+    });
+
     test(':contains() alone matches all elements which contain the text, as the engine', () => {
         const names = ['fx', 'ulA', 'liAa', 'ulB', 'liBa'];
         expect(queryKameleoonSelector(':contains("nested")')).toEqual([
