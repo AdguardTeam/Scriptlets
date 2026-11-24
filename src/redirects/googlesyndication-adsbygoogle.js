@@ -10,6 +10,22 @@ import { hit, runProtected } from '../helpers';
  * `adsbygoogle.push()` calls the functions of the pushed object, and the `google_ad_loaded_callback` of its `params`,
  * which the page passes for a rewarded ad, i.e. `google_ad_format: 'rewarded'`; it is called without an argument,
  * i.e. without an ad to show, so that the page continues as when the ad is not shown.
+ *
+ * Calls of the Ad Placement API of H5 games, i.e. `adBreak()` and `adConfig()`, which the page passes
+ * to `adsbygoogle.push()`, are answered without an ad and without waiting, as by AdSense:
+ * - `adConfig()` calls `onReady()` after the call returns,
+ * - a break of the `reward` type calls `beforeReward(showAdFn)` before the call returns, so that the game offers
+ *   the reward; once the player accepts it, i.e. the game calls `showAdFn()`, `beforeAd()`, `adViewed()`, which
+ *   grants the reward, `afterAd()` and `adBreakDone()` with the `viewed` status are called, as for a watched ad;
+ *   if the game requests the next break before, `adBreakDone()` of the offered one is called with the `ignored`
+ *   status after that call returns,
+ * - a break of another type, e.g. `preroll` or `next`, only calls `adBreakDone()` after the call returns,
+ *   with the `frequencyCapped` status, as for an ad which is not shown, or `invalid` for a second `preroll`.
+ *
+ * As by AdSense, an `adsbygoogle` object which is already loaded, e.g. of this resource run as a scriptlet,
+ * is kept, so that its state, e.g. an offered reward, is kept as well; an array of the page is replaced.
+ *
+ * As by AdSense, at most 20 objects which the page has pushed before the resource has run are handled as well.
  * Ad placeholders, i.e. `.adsbygoogle` elements, are filled with empty frames, as by AdSense, also the ones which the
  * page adds later: on each `adsbygoogle.push()`, and once the document is parsed.
  *
@@ -33,6 +49,16 @@ export function GoogleSyndicationAdsByGoogle(source) {
     let isHitCalled = false;
 
     /**
+     * Calls `hit()` once, when the resource has done something, i.e. filled a placeholder or answered a call.
+     */
+    const callHit = () => {
+        if (!isHitCalled) {
+            isHitCalled = true;
+            hit(source);
+        }
+    };
+
+    /**
      * Returns an id for a new frame which no element of the page has, e.g. `aswift_0`.
      *
      * @param {string} marker Prefix of the id.
@@ -47,26 +73,48 @@ export function GoogleSyndicationAdsByGoogle(source) {
     };
 
     /**
-     * Checks whether the placeholder has the frames of this resource as its children.
+     * Checks whether the placeholder has a frame of this resource as its child, also if it has already been run,
+     * e.g. as a scriptlet and as a redirect, and the placeholder has other content, e.g. whitespace,
+     * so that it is not filled again on each push.
      *
      * @param {Element} adElem Placeholder, i.e. `.adsbygoogle` element.
-     * @returns {boolean} True if both frames are its children.
+     * @param {string} marker Prefix of the id of the frame.
+     * @returns {boolean} True if the frame is its child.
      */
-    const hasOwnFrames = (adElem) => {
-        let hasAswiftIframe = false;
-        let hasGoogleAdsIframe = false;
+    const hasOwnFrame = (adElem, marker) => {
         const { children } = adElem;
         for (let i = 0; i < children.length; i += 1) {
             const child = children[i];
-            if (child.nodeName.toLowerCase() === 'iframe') {
-                if (child.id.startsWith(ASWIFT_IFRAME_MARKER)) {
-                    hasAswiftIframe = true;
-                } else if (child.id.startsWith(GOOGLE_ADS_IFRAME_MARKER)) {
-                    hasGoogleAdsIframe = true;
-                }
+            if (child.nodeName.toLowerCase() === 'iframe' && child.id.startsWith(marker)) {
+                return true;
             }
         }
-        return hasAswiftIframe && hasGoogleAdsIframe;
+        return false;
+    };
+
+    /**
+     * Appends an empty frame with an empty frame inside to the placeholder.
+     *
+     * @param {Element} adElem Placeholder, i.e. `.adsbygoogle` element.
+     * @param {string} marker Prefix of the id of the frame.
+     */
+    const appendFrame = (adElem, marker) => {
+        const frame = document.createElement('iframe');
+        frame.id = getFreeId(marker);
+        frame.style = css;
+        adElem.appendChild(frame);
+        // the frame inside is optional: a frame has no window above the limit of frames of a page,
+        // e.g. 1000 in Chromium, i.e. 250 placeholders with two frames, each with a frame inside,
+        // and its document cannot be accessed in a frame sandboxed without `allow-same-origin`
+        try {
+            const frameWindow = frame.contentWindow;
+            const frameBody = frameWindow && frameWindow.document && frameWindow.document.body;
+            if (frameBody) {
+                frameBody.appendChild(document.createElement('iframe'));
+            }
+        } catch (e) {
+            // the frame is kept without a frame inside
+        }
     };
 
     /**
@@ -77,39 +125,174 @@ export function GoogleSyndicationAdsByGoogle(source) {
         const adElems = document.querySelectorAll('.adsbygoogle');
         let executed = false;
         for (let i = 0; i < adElems.length; i += 1) {
-            // the frames of this resource, also if it has already been run, e.g. as a scriptlet and as a redirect,
-            // and the placeholder has other content, e.g. whitespace, so that it is not filled again on each push
-            const areIframesDefined = hasOwnFrames(adElems[i]);
-
-            if (!areIframesDefined) {
-                // here we do the job if scriptlet has not been executed earlier
-                adElems[i].setAttribute(statusAttrName, 'done');
-
-                const aswiftIframe = document.createElement('iframe');
-                aswiftIframe.id = getFreeId(ASWIFT_IFRAME_MARKER);
-                aswiftIframe.style = css;
-                adElems[i].appendChild(aswiftIframe);
-                const innerAswiftIframe = document.createElement('iframe');
-                aswiftIframe.contentWindow.document.body.appendChild(innerAswiftIframe);
-
-                const googleadsIframe = document.createElement('iframe');
-                googleadsIframe.id = getFreeId(GOOGLE_ADS_IFRAME_MARKER);
-                googleadsIframe.style = css;
-                adElems[i].appendChild(googleadsIframe);
-                const innerGoogleadsIframe = document.createElement('iframe');
-                googleadsIframe.contentWindow.document.body.appendChild(innerGoogleadsIframe);
-
-                executed = true;
+            const adElem = adElems[i];
+            // an error for one placeholder, e.g. caused by the page, does not stop the other ones,
+            // nor is thrown out of `adsbygoogle.push()` to the page; only a missing frame is appended,
+            // so that a placeholder is not filled again if appending the other one fails
+            try {
+                const hasAswiftIframe = hasOwnFrame(adElem, ASWIFT_IFRAME_MARKER);
+                const hasGoogleAdsIframe = hasOwnFrame(adElem, GOOGLE_ADS_IFRAME_MARKER);
+                if (!hasAswiftIframe || !hasGoogleAdsIframe) {
+                    adElem.setAttribute(statusAttrName, 'done');
+                    if (!hasAswiftIframe) {
+                        appendFrame(adElem, ASWIFT_IFRAME_MARKER);
+                    }
+                    if (!hasGoogleAdsIframe) {
+                        appendFrame(adElem, GOOGLE_ADS_IFRAME_MARKER);
+                    }
+                    executed = true;
+                }
+            } catch (e) {
+                // continue with the other placeholders
             }
         }
 
-        if (executed && !isHitCalled) {
-            isHitCalled = true;
-            hit(source);
+        if (executed) {
+            callHit();
         }
     };
 
-    window.adsbygoogle = {
+    let isPrerollRequested = false;
+    // a break of the `reward` type whose reward is offered, until the player accepts it or the next break
+    let offeredReward = null;
+
+    /**
+     * Calls a function after the call of the page returns, as AdSense answers most calls asynchronously.
+     *
+     * @param {Function} callback Function to call.
+     */
+    const callLater = (callback) => {
+        setTimeout(callback, 0);
+    };
+
+    /**
+     * Calls `adBreakDone()` of a break with the placement info of the Ad Placement API.
+     *
+     * @param {object} adBreak Break read by `handleAdBreak()`.
+     * @param {string} breakStatus Status of the break, e.g. `viewed`.
+     */
+    const finishAdBreak = (adBreak, breakStatus) => {
+        let breakFormat = 'interstitial';
+        if (adBreak.type === 'reward' || adBreak.type === 'preroll') {
+            breakFormat = adBreak.type;
+        }
+        runProtected(adBreak.adBreakDone, [{
+            breakType: adBreak.type,
+            breakName: adBreak.name,
+            breakFormat,
+            breakStatus,
+        }]);
+    };
+
+    /**
+     * Answers `adBreak()` of the Ad Placement API without an ad, see the description.
+     * Callbacks are read once, when the break is requested.
+     *
+     * @param {object} arg Object passed to `adBreak()`, with a string `type`.
+     */
+    const handleAdBreak = (arg) => {
+        const adBreak = {
+            type: arg.type,
+            name: arg.name,
+            beforeReward: arg.beforeReward,
+            beforeAd: arg.beforeAd,
+            afterAd: arg.afterAd,
+            adViewed: arg.adViewed,
+            adBreakDone: arg.adBreakDone,
+        };
+        if (offeredReward) {
+            const ignored = offeredReward;
+            offeredReward = null;
+            callLater(() => finishAdBreak(ignored, 'ignored'));
+        }
+        if (adBreak.type === 'reward' && typeof adBreak.beforeReward === 'function') {
+            offeredReward = adBreak;
+            const showAdFn = () => {
+                // once, and only while the reward is offered
+                if (offeredReward !== adBreak) {
+                    return;
+                }
+                offeredReward = null;
+                callLater(() => {
+                    runProtected(adBreak.beforeAd, []);
+                    runProtected(adBreak.adViewed, []);
+                    runProtected(adBreak.afterAd, []);
+                    finishAdBreak(adBreak, 'viewed');
+                });
+            };
+            // as AdSense, before the call returns, e.g. so that the game can enable its reward button at once
+            runProtected(adBreak.beforeReward, [showAdFn]);
+            return;
+        }
+        // as the Ad Placement API, there is only one preroll per page load
+        let breakStatus = 'frequencyCapped';
+        if (adBreak.type === 'preroll') {
+            breakStatus = isPrerollRequested ? 'invalid' : 'frequencyCapped';
+            isPrerollRequested = true;
+        }
+        callLater(() => finishAdBreak(adBreak, breakStatus));
+    };
+
+    /**
+     * Checks whether the value is an object of `Object`, also of another frame, e.g. `{ adBreakDone() {} }`,
+     * or with a prototype of default options, e.g. `Object.create(defaults)`.
+     *
+     * @param {any} value Value pushed by the page.
+     * @returns {boolean} True if its constructor is `Object` of any frame.
+     */
+    const isPlainObject = (value) => {
+        if (value === null || typeof value !== 'object') {
+            return false;
+        }
+        const ctor = value.constructor;
+        return typeof ctor === 'function' && ctor.name === 'Object';
+    };
+
+    /**
+     * Handles an object pushed by the page, also one pushed before the resource has run.
+     *
+     * @param {object} adsbygoogle Mocked `adsbygoogle` object.
+     * @param {any} arg Pushed value.
+     */
+    const handlePush = (adsbygoogle, arg) => {
+        const isObject = arg !== null && typeof arg === 'object';
+        // calls of the Ad Placement API, recognized as by AdSense
+        if (isObject && typeof arg.type === 'string') {
+            handleAdBreak(arg);
+            callHit();
+        } else if (isObject && (typeof arg.sound === 'string' || typeof arg.preloadAdBreaks === 'string'
+            || (arg.h5AdsConfig !== null && typeof arg.h5AdsConfig === 'object'))) {
+            const { onReady } = arg;
+            callLater(() => runProtected(onReady, []));
+            callHit();
+        } else if (isPlainObject(arg)) {
+            // eslint-disable-next-line no-restricted-syntax
+            for (const key of Object.keys(arg)) {
+                if (typeof arg[key] === 'function') {
+                    try {
+                        // https://github.com/AdguardTeam/Scriptlets/issues/252
+                        // argument "{}" is needed to fix issue with undefined argument
+                        arg[key].call(adsbygoogle, {});
+                    } catch {
+                        /* empty */
+                    }
+                }
+            }
+        }
+        // a rewarded ad, e.g. of ssstik.io, is shown by the page in this callback, if AdSense passes it one,
+        // so it is called without an ad, as the page would not handle an object without `show()`;
+        // as AdSense, it is an own property of `params` of any pushed object, e.g. of another frame
+        const params = isObject ? arg.params : undefined;
+        if (params !== null && typeof params === 'object'
+            && Object.prototype.hasOwnProperty.call(params, 'google_ad_loaded_callback')) {
+            runProtected(params.google_ad_loaded_callback, []);
+        }
+        // as AdSense, a placeholder which the page adds is filled when the page pushes its ad
+        // https://github.com/AdguardTeam/Scriptlets/issues/525
+        fillPlaceholders();
+    };
+
+    const mock = {
         // https://github.com/AdguardTeam/Scriptlets/issues/113
         // length: 0,
         loaded: true,
@@ -119,33 +302,43 @@ export function GoogleSyndicationAdsByGoogle(source) {
                 this.length = 0;
                 this.length += 1;
             }
-            if (arg !== null && arg instanceof Object && arg.constructor.name === 'Object') {
-                // eslint-disable-next-line no-restricted-syntax
-                for (const key of Object.keys(arg)) {
-                    if (typeof arg[key] === 'function') {
-                        try {
-                            // https://github.com/AdguardTeam/Scriptlets/issues/252
-                            // argument "{}" is needed to fix issue with undefined argument
-                            arg[key].call(this, {});
-                        } catch {
-                            /* empty */
-                        }
-                    }
-                }
-                // a rewarded ad, e.g. of ssstik.io, is shown by the page in this callback, if AdSense passes it one,
-                // so it is called without an ad, as the page would not handle an object without `show()`
-                const { params } = arg;
-                if (params !== null && typeof params === 'object') {
-                    runProtected(params.google_ad_loaded_callback, []);
-                }
-            }
-            // as AdSense, a placeholder which the page adds is filled when the page pushes its ad
-            // https://github.com/AdguardTeam/Scriptlets/issues/525
-            fillPlaceholders();
+            handlePush(this, arg);
         },
     };
 
     fillPlaceholders();
+
+    const queue = window.adsbygoogle;
+    // as AdSense, an object which is already loaded is kept, e.g. of this resource run before as a scriptlet,
+    // so that the state of its breaks is kept, but unlike by AdSense, not an array, which is the queue of the page,
+    // e.g. with `loaded` set by another rule
+    const isLoaded = !!queue && !!queue.loaded && typeof queue.push === 'function' && typeof queue.shift !== 'function';
+    if (!isLoaded) {
+        // as AdSense, at most 20 objects which the page has pushed before, e.g. `(adsbygoogle = window.adsbygoogle
+        // || []).push({})` before the script is loaded, are removed from its array and handled, before the array
+        // is replaced, so that objects which they push to it are handled as well
+        if (queue && typeof queue.shift === 'function') {
+            for (let count = 0; count < 20; count += 1) {
+                let arg;
+                try {
+                    if (!(queue.length > 0)) {
+                        break;
+                    }
+                    arg = queue.shift();
+                } catch (e) {
+                    // e.g. a frozen array of the page
+                    break;
+                }
+                // as AdSense, an error of one object, e.g. of a getter of the page, does not stop the next ones
+                try {
+                    handlePush(mock, arg);
+                } catch (e) {
+                    // continue with the next object
+                }
+            }
+        }
+        window.adsbygoogle = mock;
+    }
     // placeholders after the script, e.g. if it is run as a scriptlet, before the page
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', fillPlaceholders, { once: true });

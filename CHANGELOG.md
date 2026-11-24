@@ -46,6 +46,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet call `google_ad_loaded_callback`
   of the `params` of a rewarded ad, i.e. `google_ad_format: 'rewarded'`, without an ad, so that pages which wait
   for it, e.g. for a download, continue [#588].
+- `googlesyndication-adsbygoogle` redirect resource and scriptlet answer `adBreak()` and `adConfig()`
+  of the Ad Placement API of H5 games without an ad and without waiting: `onReady()` and `adBreakDone()`
+  are called, and the reward of a rewarded break is granted once the player accepts it in the game [#588].
 - `prebid` redirect resource and scriptlet mock `pbjs.rp` of the Prebid wrapper of Magnite, whose
   `requestVideoBids()` calls its callback without an ad, so that video players which wait for it are started [#588].
 
@@ -57,6 +60,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet not filling ad placeholders which the page adds
   after it is run, e.g. if run as a scriptlet [#525].
+- `googlesyndication-adsbygoogle` redirect resource and scriptlet dropping objects which the page has pushed
+  before it is run, ignoring objects of another frame, and throwing out of `adsbygoogle.push()` on a page
+  with more frames than the browser allows [#588].
 
 ### Security
 
