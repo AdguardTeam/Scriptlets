@@ -8,7 +8,7 @@ export type WurflDevice = {
     complete_device_name: string;
 
     /**
-     * Form factor, e.g. `Desktop`, `Smartphone`, `Tablet`, `Smart-TV` or `Robot`.
+     * Form factor, e.g. `Desktop`, `Smartphone`, `Tablet`, `Other Mobile`, i.e. an iPod touch, `Smart-TV` or `Robot`.
      */
     form_factor: string;
 
@@ -33,10 +33,16 @@ export type WurflDevice = {
  */
 export function getWurflDevice(userAgent: unknown, maxTouchPoints?: unknown, isMobileHint?: unknown): WurflDevice {
     const ROBOT_REGEXP = /bot\b|bot\/|crawl|spider|slurp|mediapartners|headless|lighthouse|pingdom|curl\/|wget\//i;
+    // phones of the CUBOT brand, which are not robots, e.g. `CUBOT KINGKONG 9`
+    const NOT_ROBOT_REGEXP = /\bcubot\b/gi;
+    // Sharp AQUOS TVs, i.e. their models, e.g. `AQUOS-TVE19A`, their browser `AQUOSBrowser`, `AQUOS-AS`
+    // and `AQUOS-DMP`, but not Sharp AQUOS phones, e.g. `AQUOS sense7`, which the service detects as phones
     const SMART_TV_REGEXP = new RegExp([
-        'smart-?tv', '\\btv\\b.*safari', 'hbbtv', 'netcast', 'web0s', 'webos.*tv', 'tizen.*tv', 'bravia', 'aquos',
-        'viera', '\\baft[a-z]{1,4}\\b', 'crkey', 'roku', 'apple ?tv', 'googletv', 'android tv',
+        'smart-?tv', '\\btv\\b.*safari', 'hbbtv', 'netcast', 'web0s', 'webos.*tv', 'tizen.*tv', 'bravia',
+        'aquos[-_ ]?(tv|browser|as\\b|dmp)', 'viera', 'crkey', 'roku', 'apple ?tv', 'googletv', 'android tv',
     ].join('|'), 'i');
+    // models of Amazon Fire TV, in upper case, e.g. `AFTMM` or `AFTKA`, so not words like `after`
+    const FIRE_TV_REGEXP = /\bAFT[A-Z0-9]{1,8}\b/;
     const TABLET_REGEXP = /ipad|tablet|kindle|silk\/|playbook|nexus (7|9|10)\b|sm-[tpx]\d/i;
     const PHONE_REGEXP = /iphone|ipod|windows phone|iemobile|blackberry|bb10|opera mini|mobile|mobi\b/i;
 
@@ -45,18 +51,24 @@ export function getWurflDevice(userAgent: unknown, maxTouchPoints?: unknown, isM
 
     const device: WurflDevice = { complete_device_name: '', form_factor: 'Desktop', is_mobile: false };
 
-    if (ROBOT_REGEXP.test(ua)) {
+    if (ROBOT_REGEXP.test(ua.replace(NOT_ROBOT_REGEXP, ''))) {
         device.form_factor = 'Robot';
         return device;
     }
-    if (SMART_TV_REGEXP.test(ua)) {
+    if (SMART_TV_REGEXP.test(ua) || FIRE_TV_REGEXP.test(ua)) {
         device.form_factor = 'Smart-TV';
         return device;
     }
 
     const isIpad = /ipad/i.test(ua) || (/macintosh/i.test(ua) && touchPoints > 1);
+    // its User-Agent has `iPhone OS`, e.g. `(iPod touch; CPU iPhone OS 15_7 like Mac OS X)`
+    const isIpod = !isIpad && /ipod/i.test(ua);
     const isAndroid = /android/i.test(ua);
-    if (isIpad || TABLET_REGEXP.test(ua) || (isAndroid && !/mobile/i.test(ua))) {
+    if (isIpod) {
+        // as the service
+        device.form_factor = 'Other Mobile';
+        device.is_mobile = true;
+    } else if (isIpad || TABLET_REGEXP.test(ua) || (isAndroid && !/mobile/i.test(ua))) {
         device.form_factor = 'Tablet';
         device.is_mobile = true;
     } else if (PHONE_REGEXP.test(ua) || isMobileHint === true) {
@@ -66,10 +78,10 @@ export function getWurflDevice(userAgent: unknown, maxTouchPoints?: unknown, isM
 
     if (isIpad) {
         device.complete_device_name = 'Apple iPad';
+    } else if (isIpod) {
+        device.complete_device_name = 'Apple iPod Touch';
     } else if (/iphone/i.test(ua)) {
         device.complete_device_name = 'Apple iPhone';
-    } else if (/ipod/i.test(ua)) {
-        device.complete_device_name = 'Apple iPod Touch';
     } else if (device.form_factor === 'Desktop') {
         // the order matters, as e.g. Edge and Opera are named Chrome, and Chrome Safari, in the User-Agent
         if (/edg\//i.test(ua)) {

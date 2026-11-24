@@ -14,7 +14,7 @@ import { type Source } from '../scriptlets';
  *
  * `WURFL` has the properties of WURFL.js Lite, detected locally from the User-Agent, `navigator.maxTouchPoints`
  * and `navigator.userAgentData.mobile`, without the device database of the service:
- * - `form_factor` — `Desktop`, `Smartphone`, `Tablet`, `Smart-TV` or `Robot`,
+ * - `form_factor` — `Desktop`, `Smartphone`, `Tablet`, `Other Mobile`, i.e. an iPod touch, `Smart-TV` or `Robot`,
  * - `is_mobile` — `true` for a smartphone or a tablet,
  * - `complete_device_name` — the name of a desktop browser, e.g. `Google Chrome`, or of an Apple device,
  *   e.g. `Apple iPhone`, as named by the service, and an empty string for other devices.
