@@ -42,3 +42,36 @@ test('Fires hit only if something is changed', (assert) => {
     assert.false(style.isConnected, 'style is removed');
     assert.strictEqual(window.hit, 'FIRED', 'hit function fired for the removed style');
 });
+
+test('Fires hit for styles which the page adds later, also for the real script', (assert) => {
+    // e.g. the real chartbeat.js, and the scriptlet for chartbeat_mab.js, before the snippet of the page
+    window.pSUPERFLY = { virtualPage: () => {} };
+    const nativeAddEventListener = window.addEventListener;
+    const loadListeners = [];
+    window.addEventListener = function addEventListener(type, listener, ...rest) {
+        if (type === 'load') {
+            loadListeners.push(listener);
+            return undefined;
+        }
+        return nativeAddEventListener.call(this, type, listener, ...rest);
+    };
+    Object.defineProperty(document, 'readyState', { configurable: true, get: () => 'loading' });
+    const done = assert.async();
+    try {
+        runScriptlet(name);
+    } finally {
+        delete document.readyState;
+        window.addEventListener = nativeAddEventListener;
+    }
+    assert.strictEqual(window.hit, undefined, 'hit function not fired without styles');
+    const style = document.createElement('style');
+    style.id = 'chartbeat-flicker-control-style';
+    style.className = 'chartbeat-test';
+    document.head.appendChild(style);
+    setTimeout(() => {
+        assert.false(style.isConnected, 'style added later is removed');
+        assert.strictEqual(window.hit, 'FIRED', 'hit function fired');
+        loadListeners.forEach((listener) => listener());
+        done();
+    }, 20);
+});

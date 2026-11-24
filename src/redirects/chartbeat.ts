@@ -20,9 +20,10 @@ import { type Source } from '../scriptlets';
  * and also if the page adds them later, until the page is loaded.
  *
  * `pSUPERFLY` is defined, as by `chartbeat.js`, with `virtualPage()`, `activity()` and `endTracking()`,
- * which do nothing, and so is `pSUPERFLY_mab`. As by `chartbeat.js`, the functions queued in `_cba`
- * are called, and the ones pushed later are called at once, while the commands of `_cbq`, e.g. the account
- * of the page, are ignored. No requests are sent, and no cookies or storage items are set.
+ * which do nothing, and so is `pSUPERFLY_mab`. The functions queued in `_cba` are called, and the ones pushed
+ * later are called at once, as by `chartbeat.js` with the publisher module of Chartbeat, i.e. `pSUPERFLY_pub`,
+ * while the commands of `_cbq`, e.g. the account of the page, are ignored. No requests are sent, and no cookies
+ * or storage items are set.
  * If `pSUPERFLY` is already on the page, e.g. as the real `chartbeat.js` is loaded, it is kept,
  * and only the styles of the flicker control are removed.
  *
@@ -77,19 +78,28 @@ export function Chartbeat(source: Source) {
 
     /**
      * Calls the functions queued in a global queue of the page, and replaces the queue with an object
-     * whose `push()` handles each item at once, as `chartbeat.js` does.
+     * whose `push()` handles each item at once, i.e. only its first argument, as `Xb()` of `chartbeat.js` does.
+     * `chartbeat.js` does it for `_cbq` always, but for `_cba` only with its publisher module, i.e. if
+     * `pSUPERFLY_pub` is defined, while the functions of `_cba` are always called here, as they only wait
+     * for Chartbeat.
+     * An error of the queue of the page, e.g. a frozen array, does not stop the resource, so that the styles
+     * of the flicker control are still removed.
      *
      * @param name Name of the queue, e.g. `_cba`.
      * @param handle Function which handles an item of the queue.
      */
     const takeOverQueue = (name: string, handle: (item: unknown) => void) => {
-        const queue = w[name];
-        if (queue && typeof queue.length === 'number' && typeof queue.shift === 'function') {
-            while (queue.length > 0) {
-                handle(queue.shift());
+        try {
+            const queue = w[name];
+            if (queue && typeof queue.length === 'number' && typeof queue.shift === 'function') {
+                while (queue.length > 0) {
+                    handle(queue.shift());
+                }
             }
+            w[name] = { push: handle };
+        } catch (e) {
+            // e.g. a frozen array or a non-writable property of the page
         }
-        w[name] = { push: handle };
     };
 
     // `pSUPERFLY` of the real script, e.g. if only `chartbeat_mab.js` is redirected, or of the mock
@@ -110,13 +120,24 @@ export function Chartbeat(source: Source) {
         takeOverQueue('_cbq', noopFunc);
     }
 
+    let isHitCalled = false;
+    const callHit = () => {
+        if (!isHitCalled) {
+            isHitCalled = true;
+            hit(source);
+        }
+    };
+
     // as by `chartbeat_mab.js`, also if `pSUPERFLY` is of the real script
     const isRemoved = removeHiders();
     // the scriptlet is run before the styles are in the page, and the redirect resource may be run
     // before the class is added to images
     if (doc.readyState !== 'complete' && typeof w.MutationObserver === 'function') {
+        // also counted if `pSUPERFLY` is of the real script and the styles are added later
         const observer = new w.MutationObserver(() => {
-            removeHiders();
+            if (removeHiders()) {
+                callHit();
+            }
         });
         observer.observe(doc, {
             childList: true,
@@ -126,12 +147,14 @@ export function Chartbeat(source: Source) {
         });
         w.addEventListener('load', () => {
             observer.disconnect();
-            removeHiders();
+            if (removeHiders()) {
+                callHit();
+            }
         }, { once: true });
     }
 
     if (isInstalled || isRemoved) {
-        hit(source);
+        callHit();
     }
 }
 

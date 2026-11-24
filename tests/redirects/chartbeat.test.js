@@ -192,7 +192,27 @@ test('Keeps pSUPERFLY of the real script, but removes the styles', (assert) => {
     assert.strictEqual(window._cba, cba, 'queue is not taken over again');
 });
 
-test('Keeps pSUPERFLY_mab of the real headline testing script', (assert) => {
+test('Removes the styles also if a queue of the page throws', (assert) => {
+    // e.g. a frozen array of the page
+    window._cba = Object.freeze([() => {}]);
+    const queue = window._cba;
+    addHider('chartbeat-flicker-control-style');
+    runRedirect();
+    assert.strictEqual(document.getElementById('chartbeat-flicker-control-style'), null, 'style is removed');
+    assert.strictEqual(window._cba, queue, 'frozen queue is kept');
+    assert.strictEqual(typeof window.pSUPERFLY.virtualPage, 'function', 'pSUPERFLY is defined');
+    assert.strictEqual(typeof window._cbq.push, 'function', 'other queue is taken over');
+
+    // only the first argument of push() is called, as by chartbeat.js with its publisher module, i.e. `pSUPERFLY_pub`,
+    // which takes over `_cba` (without it, chartbeat.js leaves `_cba` as it is)
+    const calls = [];
+    clearGlobalProps('pSUPERFLY', 'pSUPERFLY_mab', '_cba', '_cbq');
+    runRedirect();
+    window._cba.push(() => calls.push('first'), () => calls.push('second'));
+    assert.deepEqual(calls, ['first'], 'only the first function is called, as by chartbeat.js with pSUPERFLY_pub');
+});
+
+test('Keeps pSUPERFLY_mab of the page, e.g. of chartbeat.js', (assert) => {
     const realMab = { evps: () => 'real', svps: () => 'real' };
     window.pSUPERFLY_mab = realMab;
     runRedirect();
