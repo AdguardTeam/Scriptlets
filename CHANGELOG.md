@@ -63,6 +63,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet dropping objects which the page has pushed
   before it is run, ignoring objects of another frame, and throwing out of `adsbygoogle.push()` on a page
   with more frames than the browser allows [#588].
+- `prebid` redirect resource and scriptlet replacing the `pbjs` object of the page and dropping the commands
+  which the page has queued before it is run, not calling `bidsBackHandler` of an object of another frame,
+  and `requestBids()` not returning a promise, nor empty bids of an auction with ad units [#588].
 
 ### Security
 
