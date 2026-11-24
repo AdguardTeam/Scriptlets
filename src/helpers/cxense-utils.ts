@@ -96,7 +96,9 @@ export type CxenseWidgetItem = {
  * - has no `title` or `recs-rawtitle`, as banners,
  * - has no `url` of the same site as the page, with the `http:` or `https:` protocol and no credentials.
  *
- * A host is of the same site only if it is the host of the page, without `www.`, or its subdomain.
+ * A host is of the same site only if it is the host of the page, without `www.`, or its subdomain;
+ * `www.` is not removed from a host with one more label only, e.g. `www.com`, and a host with a trailing dot,
+ * i.e. a fully qualified domain name, e.g. `www.com.`, is the same host as without it.
  * There is no list of public suffixes here, and guessing the registrable domain of a host would take
  * unrelated sites of one suffix for the same site, e.g. `a.github.io` and `b.github.io`, so hosts
  * with another subdomain of the same domain, or with its parent domain, are not of the same site.
@@ -118,7 +120,8 @@ export function getCxenseWidgetItems(
     // types of `cX.CCE._isEmptyType()` of cx.cce.js, and the control variant of a test
     const SKIPPED_TYPES = ['noImpact', 'noVisual', 'free', 'abTest', 'piano', 'ctrl'];
     const IMAGE_FIELDS = ['og-image', 'dominantimage'];
-    const CXENSE_HOST_REGEXP = /(^|\.)(cxense|cxpublic)\.com$/;
+    // also as a fully qualified domain name, i.e. with a trailing dot
+    const CXENSE_HOST_REGEXP = /(^|\.)(cxense|cxpublic)\.com\.?$/;
 
     const result: CxenseWidgetItem[] = [];
     let page: URL;
@@ -133,18 +136,27 @@ export function getCxenseWidgetItems(
     }
 
     const hasOwn = (obj: unknown, key: string): boolean => Object.prototype.hasOwnProperty.call(obj, key);
-    const withoutWww = (hostname: string): string => {
-        return hostname.indexOf('www.') === 0 ? hostname.slice(4) : hostname;
+    // a host written as a fully qualified domain name, i.e. with a trailing dot, is the same host,
+    // e.g. `www.com.`, which would be `com.` without `www.` otherwise
+    const withoutTrailingDot = (hostname: string): string => {
+        return hostname.slice(-1) === '.' ? hostname.slice(0, -1) : hostname;
     };
-    const pageHost = withoutWww(page.hostname);
+    // `www.` is kept if the rest is a single label, e.g. `www.com`, as otherwise each host
+    // with that suffix would be of the same site
+    const withoutWww = (hostname: string): string => {
+        return hostname.indexOf('www.') === 0 && hostname.indexOf('.', 4) !== -1 ? hostname.slice(4) : hostname;
+    };
+    const pageHost = withoutWww(withoutTrailingDot(page.hostname));
+    const pageImageHosts = imageHosts.map(withoutTrailingDot);
     // `www.` of the host is its subdomain, so only the one of the page is removed
     const isSameSite = (hostname: string): boolean => {
+        const host = withoutTrailingDot(hostname);
         return pageHost !== ''
-            && (hostname === pageHost || hostname.slice(-pageHost.length - 1) === `.${pageHost}`);
+            && (host === pageHost || host.slice(-pageHost.length - 1) === `.${pageHost}`);
     };
     const isImageHost = (hostname: string): boolean => {
         return !CXENSE_HOST_REGEXP.test(hostname)
-            && (isSameSite(hostname) || imageHosts.indexOf(hostname) !== -1);
+            && (isSameSite(hostname) || pageImageHosts.indexOf(withoutTrailingDot(hostname)) !== -1);
     };
 
     /**

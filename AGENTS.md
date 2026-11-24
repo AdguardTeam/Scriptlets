@@ -289,10 +289,14 @@ Project-specific rules:
 2. TypeScript is preferred for new files. Existing `.js` files MAY remain as-is.
 
 3. All scriptlet and redirect source files MUST include JSDoc with `@scriptlet`
-   (or `@trustedScriptlet` / `@redirect`) and `@description` tags.
+   (or `@trustedScriptlet` / `@redirect`), `@description` and `@added` tags, in
+   this order and without other tags. No other line of this comment may start
+   with `@`, also inside a code block: e.g. an exception rule MUST be written
+   inside a line, as `` `@@||example.org^` ``.
 
    **Rationale**: The `wiki:build-docs` script generates documentation from
-   these tags.
+   these tags, and its parser starts a new tag at each line which starts with
+   `@`, which would cut the description there.
 
 4. Imports MUST use `type` qualifier for type-only imports
    (`import { type Foo }`).

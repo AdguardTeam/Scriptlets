@@ -212,6 +212,14 @@ const getWidgetLinks = (target) => {
 };
 
 /**
+ * Returns the number of links of the widget which the resource has shown before the element.
+ *
+ * @param {Element} element element before which the widget is shown
+ * @returns {number} number of links
+ */
+const countLinksBefore = (element) => element.previousElementSibling.shadowRoot.querySelectorAll('a').length;
+
+/**
  * Waits until the resource has searched for widget elements and the mocked responses are processed.
  */
 const waitForWidgets = () => sleep(120);
@@ -277,6 +285,71 @@ test('Installs the API', (assert) => {
     assert.deepEqual(cX.Object.keys({ x: 1, y: 2 }), ['x', 'y'], 'Object.keys()');
     assert.true(cX.isArray([]), 'isArray()');
     assert.strictEqual(cX.isPageViewReported(), false, 'isPageViewReported()');
+});
+
+test('Utilities return their results as the library', (assert) => {
+    runRedirect();
+    const { cX } = window;
+    assert.deepEqual(cX.parseUrlArgs('?a=1&b=x%20y&a=2&c&d=%E0'), { a: ['1', '2'], b: 'x y' }, 'parseUrlArgs()');
+    assert.deepEqual(cX.parseUrlArgs(), {}, 'parseUrlArgs() of the page');
+    assert.deepEqual(cX.parseHashArgs('https://example.org/#a=1&b=2'), { a: '1', b: '2' }, 'parseHashArgs()');
+    assert.deepEqual(cX.decodeUrlEncodedNameValuePairs('a=1'), { a: '1' }, 'decodeUrlEncodedNameValuePairs()');
+    assert.strictEqual(cX.getHashFragment('https://example.org/#a=1'), 'a=1', 'getHashFragment()');
+    assert.strictEqual(cX.getHashFragment('https://example.org/'), '', 'getHashFragment() without a hash');
+    assert.strictEqual(cX.trim('  a '), 'a', 'trim()');
+    assert.strictEqual(cX.trim(null), '', 'trim() of not a string');
+
+    const target = { value: 'this' };
+    const calls = [];
+    const delegate = cX.createDelegate(target, function delegated(...args) {
+        calls.push([this.value, ...args]);
+        return 'result';
+    }, 'bound');
+    assert.strictEqual(delegate('call'), 'result', 'createDelegate() returns the result');
+    assert.deepEqual(calls, [['this', 'call', 'bound']], 'with this and the bound arguments after the call ones');
+    assert.strictEqual(cX.createDelegate(target, null)(), undefined, 'createDelegate() of not a function');
+
+    assert.deepEqual(cX.combineArgs({ a: 1 }, null, { b: 2, a: 3 }), { a: 3, b: 2 }, 'combineArgs()');
+    // as the library: objects are merged, arrays are joined, and the arguments are not changed
+    const defaults = { context: { topic: 'news' }, k: ['news'] };
+    const combined = cX.combineArgs(defaults, { context: { lang: 'en' }, k: ['local'] });
+    assert.deepEqual(combined, { context: { topic: 'news', lang: 'en' }, k: ['news', 'local'] }, 'nested options');
+    assert.deepEqual(defaults, { context: { topic: 'news' }, k: ['news'] }, 'arguments are not changed');
+    const reserved = cX.combineArgs(JSON.parse('{"__proto__":{"polluted":true},"constructor":1,"prototype":2,"a":1}'));
+    assert.strictEqual(Object.getPrototypeOf(reserved), Object.prototype, 'prototype is not changed');
+    assert.deepEqual(Object.keys(reserved), ['a'], 'reserved keys are not copied');
+    assert.strictEqual(reserved.polluted, undefined, 'no inherited fields');
+    assert.deepEqual(cX.combineKeywordsIntoArray('a', ['b', 'a', 1], 'c'), ['a', 'b', 'c'], 'combineKeywords…()');
+    assert.strictEqual(cX.getAllText({ a: 'x', b: { c: 'y', d: 1 } }), 'xy', 'getAllText()');
+    assert.strictEqual(cX.getAllText({ tags: ['hello', 'world'], label: 'article' }), 'article', 'without arrays');
+    assert.strictEqual(cX.CCE.getDivId('cxense-test-class'), null, 'CCE.getDivId()');
+    assert.true(cX.isObject({}), 'isObject()');
+    assert.false(cX.isObject([]), 'isObject() of an array');
+    assert.false(cX.isArray({}), 'isArray() of an object');
+    assert.strictEqual(cX.isTopWindow(), window.top === window, 'isTopWindow()');
+    // rounded, as the library
+    const nativeNow = Date.now;
+    try {
+        Date.now = () => 1700000000750;
+        assert.strictEqual(cX.getNowSeconds(), 1700000001, 'getNowSeconds() is rounded');
+        Date.now = () => 1700000000250;
+        assert.strictEqual(cX.getNowSeconds(), 1700000000, 'getNowSeconds() is rounded down');
+    } finally {
+        Date.now = nativeNow;
+    }
+    assert.strictEqual(cX.getTimezoneOffset(), new Date().getTimezoneOffset(), 'getTimezoneOffset()');
+    assert.deepEqual(cX.getWindowSize(), { width: window.innerWidth, height: window.innerHeight }, 'getWindowSize()');
+    const size = cX.getDocumentSize();
+    assert.true(size.width > 0 && size.height > 0, 'getDocumentSize()');
+    assert.deepEqual(cX.getScrollPos(), { left: window.scrollX, top: window.scrollY }, 'getScrollPos()');
+    const element = addElement('cxenseTestPosition');
+    const position = cX.getElementPosition(element);
+    // offsets are rounded
+    const top = element.getBoundingClientRect().top + window.scrollY;
+    assert.true(position.top > 0 && Math.abs(position.top - top) < 1, 'getElementPosition()');
+    assert.deepEqual(cX.getElementPosition(null), { left: 0, top: 0 }, 'getElementPosition() of no element');
+    assert.strictEqual(cX.getPageContext().location, window.location.href, 'getPageContext()');
+    assert.true(cX.getLocalStats().currSessionStartTime instanceof Date, 'getLocalStats()');
 });
 
 test('Processes queued commands, but does not run invoke callbacks', (assert) => {
@@ -363,7 +436,7 @@ test('jsonpRequest() sends only search requests, as JSON requests without cookie
         );
         assert.deepEqual(
             fetchMock.calls[0].init,
-            { credentials: 'omit', referrerPolicy: 'no-referrer' },
+            { credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error' },
             'without cookies and referrer',
         );
         assert.deepEqual(responses, [], 'callback is called asynchronously');
@@ -439,6 +512,26 @@ test('jsonpRequest() behaves as a failed request for other requests and failed r
         cX.jsonpRequest(SEARCH_URL, (...args) => calls.push(args.length), { timeout: 10 });
         await sleep(80);
         assert.deepEqual(calls, [0], 'timeout calls the callback without data, the late response is ignored');
+
+        // as by the library, a falsy timeout is no timeout: the response is passed
+        calls.length = 0;
+        respond = () => jsonResponse({ totalCount: 0 }, 20);
+        cX.jsonpRequest(SEARCH_URL, (...args) => calls.push(args), { timeout: 0 });
+        cX.jsonpRequest(SEARCH_URL, (...args) => calls.push(args), { timeout: NaN });
+        await sleep(10);
+        assert.deepEqual(calls, [], 'callback is not called at once');
+        await sleep(80);
+        const response = { httpStatus: 200, response: { totalCount: 0 } };
+        assert.deepEqual(calls, [[response], [response]], 'response is passed without a timeout');
+
+        // `fetch()` of the page which throws
+        calls.length = 0;
+        respond = () => {
+            throw new Error('fetch of the page');
+        };
+        cX.jsonpRequest(SEARCH_URL, (...args) => calls.push(args.length), { timeout: 10 });
+        await sleep(40);
+        assert.deepEqual(calls, [0], 'an error of fetch() is as a failed request');
     } finally {
         fetchMock.restore();
     }
@@ -760,6 +853,542 @@ test('Shows widgets of empty elements named after them, also of the ones added l
         addElement('cxenseTestUnrelated');
         await waitForWidgets();
         assert.strictEqual(fetchMock.calls.length, 5, 'each widget is requested once');
+        assert.strictEqual(first.childNodes.length, 0, 'widget which the page has removed is not shown again');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('Does not show widgets in elements which are not containers', async (assert) => {
+    // e.g. a script or a field named as a widget
+    const script = addElement(`cx_${WIDGET_1}`, 'script');
+    script.type = 'text/plain';
+    script.textContent = 'text of the page';
+    const textarea = addElement(`cxense-${WIDGET_2}`, 'textarea');
+    textarea.textContent = 'text of the page';
+    const input = addElement(`cx_${WIDGET_3}`, 'input');
+    const container = addElement(`cx_${WIDGET_4}`);
+    // an element of an SVG image, and an element of the head
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('cxense-test');
+    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.id = `cx_${'a'.repeat(40)}`;
+    svg.appendChild(group);
+    document.body.appendChild(svg);
+    const inHead = document.createElement('div');
+    inHead.id = `cx_${'b'.repeat(40)}`;
+    inHead.className = 'cxense-test';
+    document.head.appendChild(inHead);
+    // an element of the root element, out of the body
+    const inRoot = document.createElement('div');
+    inRoot.id = `cx_${'2'.repeat(40)}`;
+    inRoot.className = 'cxense-test';
+    document.documentElement.appendChild(inRoot);
+    const rootChildren = document.documentElement.children.length;
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(1)])));
+    try {
+        runRedirect();
+        await waitForWidgets();
+        // also when the page requests them
+        window.cX.insertWidget({ widgetId: 'c'.repeat(40), targetElementId: script.id });
+        window.cX.CCE.run({ widgetId: 'd'.repeat(40), targetElementId: inHead.id });
+        window.cX.insertWidget({ widgetId: 'e'.repeat(40), appendToElementId: group.id, renderTemplateUrl: 'auto' });
+        // the body is not inserted before, i.e. into the root element
+        document.body.id = 'cxenseTestBody';
+        window.cX.insertWidget({
+            widgetId: '1'.repeat(40),
+            insertBeforeElementId: 'cxenseTestBody',
+            renderTemplateUrl: 'auto',
+        });
+        await waitForWidgets();
+        assert.deepEqual(
+            fetchMock.calls.map((call) => call.url),
+            [getWidgetUrl(WIDGET_4)],
+            'only the widget of the container is requested',
+        );
+        assert.strictEqual(getWidgetLinks(container).length, 1, 'widget in the container');
+        assert.strictEqual(script.textContent, 'text of the page', 'script is not changed');
+        assert.strictEqual(textarea.textContent, 'text of the page', 'textarea is not changed');
+        assert.strictEqual(input.childNodes.length, 0, 'input is not changed');
+        assert.strictEqual(group.childNodes.length, 0, 'SVG element is not changed');
+        assert.strictEqual(inHead.childNodes.length, 0, 'element of the head is not changed');
+        assert.strictEqual(inRoot.childNodes.length, 0, 'element out of the body is not changed');
+        assert.strictEqual(document.documentElement.children.length, rootChildren, 'nothing is added before the body');
+    } finally {
+        document.body.removeAttribute('id');
+        fetchMock.restore();
+    }
+});
+
+test('insertWidget() with a template shows the widget before its element or in appendToElementId', async (assert) => {
+    // the snippet of the library: a hidden element, before which the widget is inserted
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = `<p>Article</p><div id="cx_${WIDGET_1}" style="display:none"></div>`;
+    const marker = section.lastElementChild;
+    const appendTo = addElement('cxenseTestAppend');
+    appendTo.innerHTML = '<h2>Recommended</h2>';
+    const list = addElement('cxenseTestList', 'ul');
+    list.innerHTML = '<li id="cxenseTestListMarker"></li>';
+    // targetElementId of a widget with a template is the element before which it is inserted
+    const target = addElement('cxenseTestTemplateTarget');
+    target.textContent = 'text of the page';
+    // without a template, the widget is shown in targetElementId, and the other elements are not used
+    const content = addElement('cxenseTestContent');
+    content.textContent = 'Loading';
+    const unused = addElement('cxenseTestUnused');
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(fetchMock.calls.length)])));
+    try {
+        window.cX = { callQueue: [] };
+        window.cX.callQueue.push(['insertWidget', {
+            widgetId: WIDGET_1,
+            insertBeforeElementId: marker.id,
+            renderTemplateUrl: 'auto',
+            width: 300,
+            height: 400,
+        }]);
+        runRedirect();
+        // appendToElementId is used before insertBeforeElementId, as in the library
+        window.cX.insertWidget({
+            widgetId: WIDGET_2,
+            appendToElementId: appendTo.id,
+            insertBeforeElementId: marker.id,
+            renderTemplateUrl: 'auto',
+        });
+        window.cX.insertWidget({
+            widgetId: WIDGET_3,
+            insertBeforeElementId: 'cxenseTestListMarker',
+            useMappedRenderTemplate: true,
+        });
+        window.cX.insertWidget({ widgetId: WIDGET_4, targetElementId: target.id, renderTemplateUrl: 'auto' });
+        const other = 'f'.repeat(40);
+        window.cX.insertWidget({
+            widgetId: other,
+            targetElementId: content.id,
+            insertBeforeElementId: unused.id,
+            appendToElementId: unused.id,
+            renderFunction: () => {},
+        });
+        // an element which is added later
+        const later = 'e'.repeat(40);
+        window.cX.insertWidget({
+            widgetId: later,
+            insertBeforeElementId: 'cxenseTestLater',
+            renderTemplateUrl: 'auto',
+        });
+        const laterElement = addElement('cxenseTestLater');
+        await waitForWidgets();
+
+        assert.deepEqual(
+            fetchMock.calls.map((call) => call.url),
+            [WIDGET_1, WIDGET_2, WIDGET_3, WIDGET_4, other, later].map(getWidgetUrl),
+            'each widget is requested once, and the hidden element is not taken for an empty one',
+        );
+        const widget = marker.previousElementSibling;
+        assert.strictEqual(widget.shadowRoot.querySelectorAll('a').length, 1, 'widget is before the hidden element');
+        assert.strictEqual(widget.previousElementSibling.tagName, 'P', 'content of the page is kept');
+        assert.strictEqual(marker.childNodes.length, 0, 'hidden element is not changed');
+        assert.strictEqual(marker.style.display, 'none', 'hidden element stays hidden');
+
+        assert.strictEqual(appendTo.children.length, 2, 'content of appendToElementId is kept');
+        assert.strictEqual(appendTo.firstElementChild.tagName, 'H2', 'widget is after the content');
+        assert.strictEqual(getWidgetLinks(appendTo).length, 1, 'widget in appendToElementId');
+
+        assert.strictEqual(list.children.length, 2, 'widget is added to the list');
+        assert.strictEqual(list.firstElementChild.tagName, 'LI', 'as an item of the list');
+        assert.strictEqual(list.lastElementChild.id, 'cxenseTestListMarker', 'before the element');
+        assert.strictEqual(getWidgetLinks(list).length, 1, 'widget in the list');
+
+        assert.strictEqual(target.textContent, 'text of the page', 'targetElementId with a template is not changed');
+        assert.strictEqual(countLinksBefore(target), 1, 'widget before it');
+
+        assert.strictEqual(getWidgetLinks(content).length, 1, 'widget without a template in targetElementId');
+        assert.strictEqual(content.children.length, 1, 'instead of its content');
+        assert.strictEqual(unused.childNodes.length, 0, 'other elements of a widget without a template are not used');
+        assert.strictEqual(unused.previousElementSibling, content, 'nothing is inserted before them');
+
+        assert.strictEqual(countLinksBefore(laterElement), 1, 'added later');
+        assert.strictEqual(laterElement.childNodes.length, 0, 'element added later is not changed');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('A widget found in an empty element is moved to the place which the page requests later', async (assert) => {
+    // the snippet of the library, whose script is run later than the hidden element is found
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = `<p>Article</p><div id="cx_${WIDGET_1}" style="display:none">text</div>`
+        + `<div id="cx_${WIDGET_2}" style="display:none"></div>`;
+    const marker = section.children[1];
+    const pendingMarker = section.children[2];
+    // the response of the second widget is received after the page has requested it
+    const fetchMock = mockFetch((url) => jsonResponse(
+        widgetData([widgetItem(1)]),
+        getWidgetIdOfUrl(url) === WIDGET_2 ? 300 : 0,
+    ));
+    try {
+        runRedirect();
+        await waitForWidgets();
+        assert.strictEqual(getWidgetLinks(marker).length, 1, 'widget is shown in the empty element first');
+        assert.strictEqual(marker.textContent, '', 'instead of its text');
+
+        window.cX.insertWidget({ widgetId: WIDGET_1, insertBeforeElementId: marker.id, renderTemplateUrl: 'auto' });
+        window.cX.insertWidget({
+            widgetId: WIDGET_2,
+            insertBeforeElementId: pendingMarker.id,
+            renderTemplateUrl: 'auto',
+        });
+        // requested again with the same place, or found again
+        window.cX.insertWidget({ widgetId: WIDGET_1, insertBeforeElementId: marker.id, renderTemplateUrl: 'auto' });
+        await sleep(400);
+
+        assert.deepEqual(
+            fetchMock.calls.map((call) => call.url),
+            [getWidgetUrl(WIDGET_1), getWidgetUrl(WIDGET_2)],
+            'each widget is requested once',
+        );
+        const widget = marker.previousElementSibling;
+        assert.strictEqual(widget.shadowRoot.querySelectorAll('a').length, 1, 'widget is moved before the element');
+        assert.strictEqual(widget.previousElementSibling.tagName, 'P', 'after the content of the page');
+        assert.strictEqual(marker.textContent, 'text', 'text of the element is restored');
+        assert.strictEqual(marker.children.length, 0, 'no widget in the hidden element');
+        assert.strictEqual(
+            pendingMarker.previousElementSibling.shadowRoot.querySelectorAll('a').length,
+            1,
+            'widget whose items are received later is shown at the requested place',
+        );
+        assert.strictEqual(pendingMarker.childNodes.length, 0, 'not in the hidden element');
+        assert.strictEqual(section.children.length, 5, 'no other widgets');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('Content which the page has changed is kept when a found widget is moved', async (assert) => {
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = `<div id="cx_${WIDGET_1}">Old placeholder</div><div id="cx_${WIDGET_2}">Old placeholder</div>`;
+    const replacedByPage = section.children[0];
+    const addedByPage = section.children[1];
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(1)])));
+    try {
+        runRedirect();
+        await waitForWidgets();
+        assert.strictEqual(getWidgetLinks(replacedByPage).length, 1, 'first widget is shown in the empty element');
+        assert.strictEqual(getWidgetLinks(addedByPage).length, 1, 'second widget is shown in the empty element');
+
+        // the page replaces the content of one element, and adds content to the other one
+        replacedByPage.textContent = 'New content';
+        const added = document.createElement('p');
+        added.textContent = 'New content';
+        addedByPage.appendChild(added);
+        window.cX.insertWidget({
+            widgetId: WIDGET_1,
+            insertBeforeElementId: replacedByPage.id,
+            renderTemplateUrl: 'auto',
+        });
+        window.cX.insertWidget({
+            widgetId: WIDGET_2,
+            insertBeforeElementId: addedByPage.id,
+            renderTemplateUrl: 'auto',
+        });
+        await waitForWidgets();
+
+        assert.strictEqual(fetchMock.calls.length, 2, 'each widget is requested once');
+        assert.strictEqual(replacedByPage.textContent, 'New content', 'old content is not restored');
+        assert.strictEqual(countLinksBefore(replacedByPage), 1, 'widget is moved before the element');
+        assert.strictEqual(addedByPage.textContent, 'New content', 'content added by the page is kept');
+        assert.strictEqual(addedByPage.children.length, 1, 'widget is removed from the element');
+        assert.strictEqual(countLinksBefore(addedByPage), 1, 'widget is moved before the other element');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('A widget is shown in an element which is out of the page when it is received', async (assert) => {
+    // e.g. the page renders the elements again while their widgets are requested
+    const target = addElement('cxenseTestDetached');
+    target.textContent = 'Loading';
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = `<div id="cx_${WIDGET_2}">Loading</div>`;
+    const found = section.firstElementChild;
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(1)]), 200));
+    try {
+        runRedirect();
+        window.cX.CCE.run({ widgetId: WIDGET_1, targetElementId: target.id });
+        await sleep(100);
+        target.remove();
+        found.remove();
+        await sleep(300);
+        document.body.appendChild(target);
+        section.appendChild(found);
+        assert.strictEqual(getWidgetLinks(target).length, 1, 'requested widget is in the element when it is back');
+        assert.strictEqual(target.children.length, 1, 'instead of its content');
+        assert.strictEqual(getWidgetLinks(found).length, 1, 'found widget is in the element when it is back');
+        assert.strictEqual(found.textContent, '', 'instead of its text');
+
+        window.cX.CCE.run({ widgetId: WIDGET_1, targetElementId: target.id });
+        addElement('cxenseTestOther');
+        await waitForWidgets();
+        assert.strictEqual(target.children.length, 1, 'requested widget is shown once');
+        assert.strictEqual(found.children.length, 1, 'found widget is shown once');
+        assert.strictEqual(fetchMock.calls.length, 2, 'each widget is requested once');
+    } finally {
+        target.remove();
+        fetchMock.restore();
+    }
+});
+
+test('A widget received while it cannot be inserted is shown when it is requested again', async (assert) => {
+    // an element out of the page has no parent, so nothing can be inserted before it
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = '<div id="cxenseTestMarker" style="display:none"></div>';
+    const marker = section.firstElementChild;
+    const params = { widgetId: WIDGET_1, insertBeforeElementId: marker.id, renderTemplateUrl: 'auto' };
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(1)]), 200));
+    try {
+        runRedirect();
+        window.cX.insertWidget(params);
+        await sleep(100);
+        marker.remove();
+        await sleep(300);
+        section.appendChild(marker);
+        await waitForWidgets();
+        assert.strictEqual(section.children.length, 1, 'not shown until it is requested again');
+
+        window.cX.insertWidget(params);
+        assert.strictEqual(countLinksBefore(marker), 1, 'widget is shown when it is requested again');
+        window.cX.insertWidget(params);
+        assert.strictEqual(section.children.length, 2, 'widget is shown once');
+        assert.strictEqual(marker.childNodes.length, 0, 'element is not changed');
+        assert.strictEqual(fetchMock.calls.length, 1, 'widget is requested once');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('A found widget does not replace content which the page has set meanwhile', async (assert) => {
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = `<div id="cx_${WIDGET_1}"></div><div id="cx_${WIDGET_2}"></div>`
+        + `<div id="cx_${WIDGET_3}">Loading</div><div id="cx_${WIDGET_4}">Loading</div>`
+        + `<div id="cx_${'c'.repeat(40)}">Loading</div>`;
+    const textBefore = section.children[0];
+    const textAfter = section.children[1];
+    const sameText = section.children[2];
+    const unchanged = section.children[3];
+    const editedText = section.children[4];
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(1)]), 200));
+    try {
+        runRedirect();
+        await sleep(100);
+        // while the widgets are requested: a message of the page, and the same text set again
+        textBefore.textContent = 'Recommendations unavailable';
+        sameText.textContent = 'Loading';
+        // the text node itself is changed
+        editedText.firstChild.data = 'Recommendations unavailable';
+        // out of the page: the widget is shown in the element, and the page replaces it
+        textAfter.remove();
+        await sleep(300);
+        textAfter.textContent = 'Recommendations unavailable';
+        section.appendChild(textAfter);
+        await waitForWidgets();
+
+        assert.strictEqual(textBefore.textContent, 'Recommendations unavailable', 'text set before the response');
+        assert.strictEqual(getWidgetLinks(textBefore), null, 'no widget instead of it');
+        assert.strictEqual(textAfter.textContent, 'Recommendations unavailable', 'text set after the response');
+        assert.strictEqual(getWidgetLinks(textAfter), null, 'no widget instead of it when the element is back');
+        assert.strictEqual(sameText.textContent, 'Loading', 'text which the page has set again');
+        assert.strictEqual(getWidgetLinks(unchanged).length, 1, 'text which the page has not changed is replaced');
+        assert.strictEqual(editedText.textContent, 'Recommendations unavailable', 'text changed in its node');
+        assert.strictEqual(getWidgetLinks(editedText), null, 'no widget instead of it');
+
+        // the page then requests the widget itself: it is shown as the library does, without a new request
+        window.cX.CCE.run({ widgetId: WIDGET_1, targetElementId: textBefore.id });
+        assert.strictEqual(getWidgetLinks(textBefore).length, 1, 'widget is shown when the page requests it');
+        assert.strictEqual(textBefore.textContent, '', 'instead of the text');
+        addElement('cxenseTestOther');
+        await waitForWidgets();
+        assert.strictEqual(fetchMock.calls.length, 5, 'each widget is requested once');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('A found widget is shown only in the element which is still named after it', async (assert) => {
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = `<div id="cx_${WIDGET_1}"></div><div id="cx_${WIDGET_2}"></div>`
+        + `<div id="cx_${WIDGET_3}"></div>`;
+    const renamedBefore = section.children[0];
+    const renamedAfter = section.children[1];
+    const renamedBack = section.children[2];
+    const fetchMock = mockFetch((url) => jsonResponse(widgetData([widgetItem(getWidgetIdOfUrl(url)[0])]), 200));
+    try {
+        runRedirect();
+        await sleep(100);
+        // the page uses the elements for other widgets, without other changes of the page;
+        // the third one is named after its widget again after the widget is received for the other name,
+        // and before the widget of the other name is received
+        renamedBefore.id = `cx_${'a'.repeat(40)}`;
+        renamedBack.id = `cx_${'c'.repeat(40)}`;
+        await sleep(160);
+        assert.strictEqual(getWidgetLinks(renamedBack), null, 'widget is not shown for another name');
+        renamedBack.id = `cx_${WIDGET_3}`;
+        await sleep(300);
+        assert.strictEqual(getWidgetLinks(renamedAfter).length, 1, 'widget is shown in the second element');
+        renamedAfter.textContent = '';
+        renamedAfter.id = `cx_${'b'.repeat(40)}`;
+        await sleep(400);
+
+        assert.deepEqual(
+            fetchMock.calls.map((call) => getWidgetIdOfUrl(call.url)),
+            [WIDGET_1, WIDGET_2, WIDGET_3, 'a'.repeat(40), 'c'.repeat(40), 'b'.repeat(40)],
+            'widget of the new name is requested, once',
+        );
+        const getTitles = (element) => (getWidgetLinks(element) || []).map((link) => link.text);
+        assert.deepEqual(getTitles(renamedBefore), ['Article a'], 'widget of the new name, not of the old one');
+        assert.deepEqual(getTitles(renamedAfter), ['Article b'], 'widget of the new name in the emptied element');
+        assert.deepEqual(getTitles(renamedBack), ['Article 5'], 'widget of the name which the element has again');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('No widget is found in an element for which the page requests another widget', async (assert) => {
+    const section = addElement('cxenseTestSection');
+    section.innerHTML = '<p>Article</p>';
+    const fetchMock = mockFetch((url) => jsonResponse(widgetData(
+        // the widget which the page requests has no items to show
+        getWidgetIdOfUrl(url) === WIDGET_2 ? [] : [widgetItem(1)],
+    )));
+    try {
+        runRedirect();
+        const target = document.createElement('div');
+        target.id = `cx_${WIDGET_1}`;
+        const marker = document.createElement('div');
+        marker.id = `cx_${WIDGET_3}`;
+        marker.style.display = 'none';
+        section.appendChild(target);
+        section.appendChild(marker);
+        window.cX.CCE.run({ widgetId: WIDGET_2, targetElementId: target.id });
+        window.cX.insertWidget({ widgetId: WIDGET_4, insertBeforeElementId: marker.id, renderTemplateUrl: 'auto' });
+        await waitForWidgets();
+        addElement('cxenseTestOther');
+        await waitForWidgets();
+
+        assert.deepEqual(
+            fetchMock.calls.map((call) => getWidgetIdOfUrl(call.url)),
+            [WIDGET_2, WIDGET_4],
+            'only the widgets which the page requests',
+        );
+        assert.strictEqual(target.childNodes.length, 0, 'element of a widget without items is not changed');
+        assert.strictEqual(marker.childNodes.length, 0, 'element before which a widget is shown is not changed');
+        assert.strictEqual(countLinksBefore(marker), 1, 'requested widget is shown before it');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('A found widget which the page has removed is shown again only when the page requests it', async (assert) => {
+    const target = addElement(`cx_${WIDGET_1}`);
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(1)])));
+    try {
+        runRedirect();
+        await waitForWidgets();
+        assert.strictEqual(getWidgetLinks(target).length, 1, 'widget is shown in the empty element');
+
+        target.textContent = '';
+        addElement('cxenseTestOther');
+        await waitForWidgets();
+        assert.strictEqual(target.childNodes.length, 0, 'widget is not shown again in the emptied element');
+
+        window.cX.CCE.run({ widgetId: WIDGET_1, targetElementId: target.id });
+        assert.strictEqual(getWidgetLinks(target).length, 1, 'widget is shown when the page requests it');
+        assert.strictEqual(fetchMock.calls.length, 1, 'widget is requested once');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('Shows no widget for a failed response', async (assert) => {
+    addElement(`cx_${WIDGET_1}`);
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(1)]), 0, 500));
+    try {
+        runRedirect();
+        await waitForWidgets();
+        assert.strictEqual(fetchMock.calls.length, 1, 'widget is requested');
+        assert.strictEqual(getWidgetLinks(document.getElementById(`cx_${WIDGET_1}`)), null, 'no widget is shown');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('Queued commands of cX can use cX.CCE, as when cx.cce.js loads cx.js', async (assert) => {
+    const target = addElement('cxenseTestSegments');
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(fetchMock.calls.length)])));
+    try {
+        const calls = [];
+        window.cX = {
+            callQueue: [['getUserSegmentIds', {
+                persistedQueryId: 'abcdef',
+                callback: () => {
+                    // cx.cce.js defines its methods before it loads cx.js, which runs this queue
+                    calls.push(typeof window.cX.CCE.run);
+                    calls.push(`requests of the CCE queue: ${fetchMock.calls.length}`);
+                    window.cX.CCE.run({ widgetId: WIDGET_1, targetElementId: 'cxenseTestSegments' });
+                    // commands pushed while the queued ones are run are run after them, in their order
+                    window.cX.CCE.callQueue.push(['run', {
+                        widgetId: WIDGET_3,
+                        targetElementId: 'cxenseTestSegments',
+                    }]);
+                    window.cX.callQueue.push(['getUserSegmentIds', {
+                        persistedQueryId: 'abcdef',
+                        callback: () => calls.push(`pushed command, requests: ${fetchMock.calls.length}`),
+                    }]);
+                    calls.push('end of the queued callback');
+                },
+            }]],
+            CCE: { callQueue: [['run', { widgetId: WIDGET_2, targetElementId: 'cxenseTestSegments' }]] },
+        };
+        runRedirect();
+        assert.deepEqual(
+            calls,
+            [
+                'function',
+                'requests of the CCE queue: 0',
+                'end of the queued callback',
+                'pushed command, requests: 1',
+            ],
+            'cX.CCE is installed when the queue of cX is run, before the queue of cX.CCE',
+        );
+        assert.deepEqual(
+            fetchMock.calls.map((call) => call.url),
+            [getWidgetUrl(WIDGET_1), getWidgetUrl(WIDGET_2), getWidgetUrl(WIDGET_3)],
+            'widget of the queued callback is requested, then the ones of the CCE queue in their order',
+        );
+        await waitForWidgets();
+        assert.strictEqual(getWidgetLinks(target).length, 1, 'widget is shown');
+    } finally {
+        fetchMock.restore();
+    }
+});
+
+test('A widget requested many times for a missing element does not use up the pending widgets', async (assert) => {
+    const fetchMock = mockFetch(() => jsonResponse(widgetData([widgetItem(fetchMock.calls.length)])));
+    try {
+        runRedirect();
+        // e.g. on each render of a page, more often than the limit of pending widgets
+        for (let i = 0; i < 60; i += 1) {
+            window.cX.CCE.run({ widgetId: WIDGET_1, targetElementId: 'cxenseTestRepeated' });
+        }
+        window.cX.CCE.run({ widgetId: WIDGET_2, targetElementId: 'cxenseTestOther' });
+        const repeated = addElement('cxenseTestRepeated');
+        const other = addElement('cxenseTestOther');
+        await waitForWidgets();
+        assert.deepEqual(
+            fetchMock.calls.map((call) => call.url).sort(),
+            [getWidgetUrl(WIDGET_1), getWidgetUrl(WIDGET_2)].sort(),
+            'each widget is requested once',
+        );
+        assert.strictEqual(getWidgetLinks(repeated).length, 1, 'widget requested many times is shown');
+        assert.strictEqual(getWidgetLinks(other).length, 1, 'widget requested after them is shown');
     } finally {
         fetchMock.restore();
     }

@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 const SCRIPTLET_TYPE = 'scriptlet';
 const TRUSTED_SCRIPTLET_TYPE = 'trustedScriptlet';
 const REDIRECT_TYPE = 'redirect';
+const DESCRIPTION_TYPE = 'description';
+const ADDED_TYPE = 'added';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,6 +92,7 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
  * 'scriptlet' for '@scriptlet', 'redirect' for '@redirect'
  * @property {string} name name of instance which goes after the instance tag
  * @property {string} description description, goes after `@description` tag
+ * @property {string} versionAdded version in which the instance was added, goes after `@added` tag
  * @property {string} source relative path to source of scriptlet or redirect from wiki/about page
  */
 
@@ -100,12 +103,21 @@ Please add one OR edit the list of NON_SCRIPTLETS_FILES / NON_REDIRECTS_FILES.`)
  * @param {string} source relative path to file
  *
  * @returns {DescribingCommentData} JSDoc comment data.
- * @throws {Error} If `@added` tag is missing
+ * @throws {Error} If `@added` tag is missing, or the comment has other tags than the instance tag,
+ * `@description` and `@added`
  */
 const prepareCommentsData = (commentTags, source) => {
     const [typeTag, descriptionTag, addedTag] = commentTags;
     const name = typeTag.string;
-    const versionAdded = addedTag?.string;
+    // dox starts a new tag at each line which starts with `@`, also inside a code block,
+    // e.g. at an exception rule `@@||example.org^`, which would cut the description
+    if (commentTags.length !== 3 || descriptionTag?.type !== DESCRIPTION_TYPE || addedTag?.type !== ADDED_TYPE) {
+        const types = commentTags.map(({ type }) => `@${type}`).join(', ');
+        throw new Error(`Unexpected tags for ${name}: ${types}.
+The comment should have '@${typeTag.type}', '@description' and '@added' tags only, in this order,
+and no other line which starts with '@', e.g. an exception rule in an example.`);
+    }
+    const versionAdded = addedTag.string;
     if (!versionAdded) {
         throw new Error(`No @added tag for ${name}`);
     }
@@ -124,7 +136,7 @@ const prepareCommentsData = (commentTags, source) => {
  * @param {string[]} filesList list of files in directory
  * @param {string} relativeDirPath relative path to directory
  *
- * @returns {DescribingCommentData}
+ * @returns {DescribingCommentData[]}
  * @throws {Error} if {@link getDescribingCommentTags} or {@link prepareCommentsData} throws an error.
  */
 const getDataFromFiles = (filesList, relativeDirPath) => {

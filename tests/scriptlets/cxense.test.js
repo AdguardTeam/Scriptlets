@@ -4,13 +4,29 @@ import { clearGlobalProps, runScriptlet, sleep } from '../helpers';
 const { test, module } = QUnit;
 const name = 'cxense';
 
+const WIDGET_WATCH_AFTER_LOAD_MS = 10000;
+const nativeSetTimeout = window.setTimeout;
+// functions which stop watching for widget elements, 10 seconds after the page is loaded
+let stopWatching = [];
+
 const beforeEach = () => {
     window.__debug = () => {
         window.hit = 'FIRED';
     };
+    // the timers which stop watching are kept, so that a scriptlet does not show widgets in the next tests
+    window.setTimeout = (callback, delay, ...args) => {
+        if (delay === WIDGET_WATCH_AFTER_LOAD_MS) {
+            stopWatching.push(callback);
+            return 0;
+        }
+        return nativeSetTimeout(callback, delay, ...args);
+    };
 };
 
 const afterEach = () => {
+    stopWatching.forEach((stop) => stop());
+    stopWatching = [];
+    window.setTimeout = nativeSetTimeout;
     clearGlobalProps('hit', '__debug', 'cX');
 };
 

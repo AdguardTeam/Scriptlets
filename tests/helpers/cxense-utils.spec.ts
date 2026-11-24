@@ -218,6 +218,21 @@ describe('getCxenseWidgetItems', () => {
         ['127.0.0.1', '127.0.0.2', false],
         ['10.0.0.1', '11.0.0.1', false],
         ['example.org', 'localhost', false],
+        // `www.` of a host with one more label is not removed, as each host of the suffix would match
+        ['www.com', 'www.com', true],
+        ['www.com', 'a.www.com', true],
+        ['www.com', 'evil.com', false],
+        ['www.com', 'com', false],
+        ['www.localhost', 'localhost', false],
+        // a trailing dot, i.e. a fully qualified domain name, is the same host
+        ['www.com.', 'publisher.com.', false],
+        ['www.com.', 'publisher.com', false],
+        ['www.com.', 'com.', false],
+        ['www.com.', 'www.com', true],
+        ['www.example.org.', 'example.org', true],
+        ['www.example.org.', 'news.example.org.', true],
+        ['example.org', 'example.org.', true],
+        ['example.org.', 'other.org.', false],
     ])('page %s, item %s: same site %s', (pageHost, itemHost, expected) => {
         const data = { items: [article({ url: `https://${itemHost}/a`, 'og-image': `https://${itemHost}/a.jpg` })] };
         const items = getCxenseWidgetItems(data, `https://${pageHost}/`);
@@ -243,6 +258,16 @@ describe('getCxenseWidgetItems', () => {
             null,
         ],
         [{ dominantimage: 'https://cdn.cxense.com/1.jpg' }, ['cdn.cxense.com'], null],
+        // also with a trailing dot, i.e. as a fully qualified domain name
+        [
+            { 'og-image': 'https://content-thumbnail.cxpublic.com./content/dominantthumbnail/1.jpg' },
+            ['content-thumbnail.cxpublic.com.'],
+            null,
+        ],
+        [{ dominantimage: 'https://cdn.cxense.com./1.jpg' }, ['cdn.cxense.com.'], null],
+        // a host of the images of the page, with or without a trailing dot
+        [{ 'og-image': 'https://cdn.example.net./og.jpg' }, ['cdn.example.net'], 'https://cdn.example.net./og.jpg'],
+        [{ 'og-image': 'https://cdn.example.net/og.jpg' }, ['cdn.example.net.'], 'https://cdn.example.net/og.jpg'],
         // other fields are not used
         [{ dominantthumbnail: 'https://www.example.org/t.jpg', 'pst-square-image': 'https://www.example.org/s.jpg' }, [], null],
         // not an HTTPS URL without credentials

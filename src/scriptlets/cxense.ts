@@ -19,11 +19,8 @@ import { Cxense, CxenseNames } from '../redirects/cxense';
  * example.org#%#//scriptlet('cxense')
  * ```
  *
- * Allow the widget request of the scriptlet:
- *
- * ```adblock
- * @@||api.cxense.com/public/widget/data?json=$xmlhttprequest,domain=example.org
- * ```
+ * The widget request of the scriptlet is allowed by the exception rule
+ * `@@||api.cxense.com/public/widget/data?json=$xmlhttprequest,domain=example.org`.
  *
  * @added unknown.
  */
