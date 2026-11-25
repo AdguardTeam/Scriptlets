@@ -1,5 +1,5 @@
 /* eslint-disable func-names */
-import { hit, noopFunc } from '../helpers';
+import { hit, noopFunc, runProtected } from '../helpers';
 import { type Source } from '../scriptlets';
 
 /**
@@ -13,6 +13,11 @@ import { type Source } from '../scriptlets';
  * the page code which uses it without a check, e.g. `optimizely.get('state')`, does not throw,
  * and the code which waits for the client to be initialized, e.g. anti-flicker snippets, proceeds.
  * Commands queued in the `window.optimizely` array before the redirect is loaded are applied.
+ * As by the real client, the lifecycle events, e.g. `initialized`, are emitted at once, so an anti-flicker
+ * snippet which waits for them shows the page at once. Unlike by the real client, a listener which the page
+ * adds later while it is loading gets the ones which have been emitted, as the scriptlet runs before
+ * the page adds its listeners, and a listener of `initialized`, `originsSynced` or `activated` gets it
+ * at any time.
  * The API of Classic is on the same object, e.g. `optimizely.trackEvent()` or `optimizely.data.state`.
  * Its `optimizely.$` is jQuery of the page, if the page has one, as jQuery which a Classic snippet may bundle
  * is not included.
@@ -61,6 +66,12 @@ interface ObserverEntry {
     callback: Callback;
     once: boolean;
     seen: WeakSet<Element>;
+    // time of `observeSelector()`, and a copy of its options, as the page has set them, e.g. `timeout`
+    // and `onTimeout`, which is called as a method of this copy, as by the real client
+    start: number;
+    options: Record<string, unknown>;
+    // number of elements passed to the callback
+    matched: number;
 }
 
 interface PollGroup {
@@ -71,6 +82,7 @@ interface PollGroup {
 interface OptimizelyEvent {
     type?: unknown;
     name?: unknown;
+    data?: unknown;
 }
 
 interface ListenerSpec {
@@ -83,6 +95,9 @@ interface ListenerEntry {
     filter?: OptimizelyEvent | null;
     handler: unknown;
     token: unknown;
+    // whether `this` of the handler is an object, as for `event_emitter.on()` in the real client,
+    // and not `undefined`, as for `addListener`
+    hasReceiver: boolean;
 }
 
 interface BehaviorDescriptor {
@@ -226,12 +241,62 @@ export function Optimizely(source: Source) {
     };
 
     /**
-     * Calls the callback of the entry for matching nodes which it has not seen yet.
+     * Checks whether the `timeout` of an entry has expired, as the real client: a number of ms is compared
+     * with the time since `observeSelector()`, and other values are converted, e.g. `false` or a negative
+     * number expires at once and `NaN` never, `null` means no timeout, and a function is called,
+     * without a receiver, and stops the entry if it returns a truthy value.
+     *
+     * @param entry Observer entry.
+     * @returns `true` if it has expired.
+     */
+    const isTimedOut = (entry: ObserverEntry): boolean => {
+        const { timeout } = entry.options;
+        if (timeout === undefined || timeout === null) {
+            return false;
+        }
+        if (typeof timeout === 'function') {
+            try {
+                return !!timeout();
+            } catch (e) {
+                return false;
+            }
+        }
+        return Date.now() - entry.start > Number(timeout);
+    };
+
+    /**
+     * Stops an entry whose `timeout` has expired, as the real client: its `onTimeout` is called,
+     * as a method of the copy of the options, only if no element has been passed to its callback.
+     *
+     * @param entry Observer entry.
+     * @returns `false`, as the entry is spent.
+     */
+    const stopByTimeout = (entry: ObserverEntry): false => {
+        if (entry.matched === 0 && typeof entry.options.onTimeout === 'function') {
+            try {
+                (entry.options as { onTimeout: Callback }).onTimeout();
+            } catch (e) {
+                // ignore errors of the page callback
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Calls the callback of the entry for matching nodes which it has not seen yet, and stops,
+     * as the real client, once the callback has removed the entry, e.g. by the function returned
+     * by `observeSelector()`.
+     * As the real client, the `timeout` is checked only then, before the elements are passed: at the first
+     * check, of the existing elements, e.g. if the page has been busy since `observeSelector()`,
+     * and on each DOM change, so an entry is stopped by the first DOM change after its timeout has expired.
      *
      * @param entry Observer entry.
      * @returns `false` if the entry is spent and should be removed.
      */
     const scanEntry = (entry: ObserverEntry): boolean => {
+        if (isTimedOut(entry)) {
+            return stopByTimeout(entry);
+        }
         let nodes: NodeListOf<Element>;
         try {
             nodes = doc.querySelectorAll(entry.selector);
@@ -244,12 +309,13 @@ export function Optimizely(source: Source) {
                 continue;
             }
             entry.seen.add(node);
+            entry.matched += 1;
             try {
                 entry.callback(node);
             } catch (e) {
                 // ignore errors of the page callback
             }
-            if (entry.once) {
+            if (entry.once || observers.indexOf(entry) === -1) {
                 return false;
             }
         }
@@ -263,7 +329,8 @@ export function Optimizely(source: Source) {
     const scanObservers = () => {
         const entries = observers.slice();
         for (let i = 0; i < entries.length; i += 1) {
-            if (scanEntry(entries[i]) === false) {
+            // an entry which a callback of another one has removed meanwhile is skipped
+            if (observers.indexOf(entries[i]) !== -1 && scanEntry(entries[i]) === false) {
                 drop(entries[i]);
             }
         }
@@ -271,12 +338,16 @@ export function Optimizely(source: Source) {
     };
 
     /**
-     * Calls the callback once for each element matching the selector, for the existing elements at once,
-     * and for elements added later on DOM changes, as `utils.observeSelector()` of the real client.
+     * Calls the callback once for each element matching the selector, for the existing elements in the next task,
+     * and for elements which match later on DOM changes, as `utils.observeSelector()` of the real client:
+     * elements added later, and elements which match after a change of an attribute, e.g. of their class
+     * or of a class of their parent.
      *
      * @param selector CSS selector.
      * @param callback Page callback, called with each matching element.
-     * @param options Options; `{ once: true }` stops after the first element.
+     * @param options Options: `once: true` stops after the first element, `timeout` in ms, or a function
+     * which returns whether to stop, stops observing, and `onTimeout` is called then if no element
+     * has been passed.
      * @returns Function which stops observing.
      * @throws Error, as the real client, for an invalid selector, a non-function callback,
      * or options which are not an object.
@@ -301,11 +372,15 @@ export function Optimizely(source: Source) {
                 throw new Error('observeSelector expects an object as its third argument');
             }
         }
+        const entryOptions = Object.assign({}, options) as Record<string, unknown>;
         const entry: ObserverEntry = {
             selector: selector as string,
             callback: callback as Callback,
-            once: options ? (options as { once?: unknown }).once === true : false,
+            once: entryOptions.once === true,
             seen: new WeakSet(),
+            start: Date.now(),
+            options: entryOptions,
+            matched: 0,
         };
         observers.push(entry);
         if (mutationObserver === null && typeof w.MutationObserver === 'function') {
@@ -313,15 +388,20 @@ export function Optimizely(source: Source) {
             const newObserver = new w.MutationObserver(scanObservers);
             mutationObserver = newObserver;
             try {
-                newObserver.observe(root, { childList: true, subtree: true });
+                newObserver.observe(root, { attributes: true, childList: true, subtree: true });
             } catch (e) {
                 mutationObserver = null;
             }
         }
-        if (scanEntry(entry) === false) {
-            drop(entry);
-            releaseObserver();
-        }
+        // As the real client, the elements which match already are passed in a later task, not at once,
+        // so that the callback can use the function returned by `observeSelector()`,
+        // e.g. `const stop = observeSelector(selector, () => stop())`.
+        w.setTimeout(() => {
+            if (observers.indexOf(entry) !== -1 && scanEntry(entry) === false) {
+                drop(entry);
+                releaseObserver();
+            }
+        }, 0);
         return () => {
             drop(entry);
             releaseObserver();
@@ -348,13 +428,8 @@ export function Optimizely(source: Source) {
             newGroup.id = w.setInterval(() => {
                 const callbacks = Array.from(newGroup.callbacks.values());
                 for (let i = 0; i < callbacks.length; i += 1) {
-                    // called without a receiver, as in the real client
-                    const pollCallback = callbacks[i];
-                    try {
-                        pollCallback();
-                    } catch (e) {
-                        // ignore errors of the page callback
-                    }
+                    // `this` is `null`, as in the real client
+                    runProtected(callbacks[i], []);
                 }
             }, period);
             pollGroups.set(period, newGroup);
@@ -752,12 +827,28 @@ export function Optimizely(source: Source) {
     };
 
     const listeners: ListenerEntry[] = [];
-    const fired: Record<string, boolean> = Object.create(null);
-    const STICKY: Record<string, boolean> = {
-        activated: true,
-        initialized: true,
-        originsSynced: true,
+    // Names of the lifecycle events which have been emitted at the start, in their order, see `STARTUP_NAMES`.
+    // The ones which page code emits itself are not recorded, so they are not delivered again.
+    const emittedAtStart: string[] = [];
+
+    /**
+     * Creates a lifecycle event of the start. As in the real client, only `campaignsDecided` has data,
+     * the ids of the active pages. An event is created for each emission and each replay, as a handler
+     * of the page may change the object which it gets.
+     *
+     * @param name Name of the event, e.g. `initialized`.
+     * @returns Event.
+     */
+    const createStartupEvent = (name: string): OptimizelyEvent => {
+        const event: OptimizelyEvent = { type: 'lifecycle', name };
+        if (name === 'campaignsDecided') {
+            event.data = { pageIds: [] };
+        }
+        return event;
     };
+    // Whether the page is still starting: until the document is parsed, or until the next task if it is
+    // parsed already. Listeners added until then get the lifecycle events emitted before, see `replayLifecycle()`.
+    let isStarting = true;
 
     /**
      * Checks whether an event matches the filter of a listener: its `type` and `name`, if they are set.
@@ -780,25 +871,35 @@ export function Optimizely(source: Source) {
     };
 
     /**
-     * Calls the listeners matching the event, catching their errors; lifecycle events are remembered
-     * for `replaySticky()`. A copy of the listeners is iterated, as a listener may add or remove others.
+     * Calls the handler of a listener with an event, catching its errors.
+     * As the real client, a handler of `addListener` is called without a receiver, so `this` in strict code
+     * is `undefined`, rather than by `runProtected()`, which calls it with `null`, and a handler
+     * of `event_emitter.on()` with an object of its own for each call.
+     *
+     * @param entry Listener.
+     * @param event Event.
+     */
+    const callListener = (entry: ListenerEntry, event: OptimizelyEvent) => {
+        try {
+            (entry.handler as Callback).call(entry.hasReceiver ? {} : undefined, event);
+        } catch (e) {
+            // ignore errors of the page handler
+        }
+    };
+
+    /**
+     * Calls the listeners matching the event. As the real client, they get the same object,
+     * and they are matched with the event as it has been emitted, also if a handler changes it,
+     * e.g. its name. A copy of the listeners is iterated, as a listener may add or remove others.
      *
      * @param event Event, e.g. `{ type: 'lifecycle', name: 'initialized' }`.
      */
     const emit = (event: OptimizelyEvent) => {
-        if (event.type === 'lifecycle') {
-            fired[event.name as string] = true;
-        }
+        const emitted: OptimizelyEvent = { type: event.type, name: event.name };
         const entries = listeners.slice();
         for (let i = 0; i < entries.length; i += 1) {
-            const entry = entries[i];
-            if (eventMatches(entry.filter, event) === false) {
-                continue;
-            }
-            try {
-                (entry.handler as Callback)(event);
-            } catch (e) {
-                // ignore errors of the page handler
+            if (eventMatches(entries[i].filter, emitted)) {
+                callListener(entries[i], event);
             }
         }
     };
@@ -818,47 +919,65 @@ export function Optimizely(source: Source) {
 
     /**
      * Registers a listener. As the real client, a token is set on the spec of the page if it has none,
-     * and returned, as it is needed for `removeListener`.
+     * as it is needed for `removeListener`.
      *
      * @param spec Listener spec of the page: `filter`, `handler` and an optional `token`.
-     * @returns Token of the listener.
+     * @param hasReceiver Whether `this` of the handler is an object.
+     * @returns The listener.
      */
-    const register = (spec: ListenerSpec) => {
+    const register = (spec: ListenerSpec, hasReceiver: boolean): ListenerEntry => {
         if (!spec.token) {
             spec.token = uuid();
         }
-        listeners.push({
+        const entry: ListenerEntry = {
             filter: spec.filter,
             handler: spec.handler,
             token: spec.token,
-        });
-        return spec.token;
+            hasReceiver,
+        };
+        listeners.push(entry);
+        return entry;
     };
 
+    // lifecycle events which are delivered to the listeners of their name which are added at any time later
+    const STICKY = ['initialized', 'originsSynced', 'activated'];
+
     /**
-     * Delivers a sticky lifecycle event which has already fired, i.e. `initialized`, `originsSynced`
-     * or `activated`, to a listener added later, as the real client does.
+     * Delivers the lifecycle events which have been emitted before to a listener which has just been added.
+     * The real client does not do it, but it emits them while the snippet is run, to the listeners
+     * which the page has queued, while the scriptlet runs before the page adds its listeners.
+     * - While the page is starting, the listener gets all the events which match its filter, in their order,
+     *   also if it has only the type `lifecycle` or no filter, until it is removed, e.g. by itself.
+     * - Later, only a listener of the name of a sticky event, i.e. `initialized`, `originsSynced`
+     *   or `activated`, gets this event, so that e.g. a listener without a filter which page code adds
+     *   for the next event does not get the lifecycle events instead.
      *
-     * @param spec Listener spec of the page.
+     * @param entry Listener which has just been added.
      */
-    const replaySticky = (spec: ListenerSpec) => {
-        const { filter } = spec;
-        if (!filter || filter.type !== 'lifecycle') {
+    const replayLifecycle = (entry: ListenerEntry) => {
+        if (isStarting === false) {
+            const { filter } = entry;
+            const name = filter && filter.type === 'lifecycle' ? filter.name as string : '';
+            if (STICKY.indexOf(name) !== -1 && emittedAtStart.indexOf(name) !== -1) {
+                callListener(entry, createStartupEvent(name));
+            }
             return;
         }
-        const name = filter.name as string;
-        if (STICKY[name] !== true || fired[name] !== true) {
-            return;
-        }
-        try {
-            (spec.handler as Callback)({ type: 'lifecycle', name });
-        } catch (e) {
-            // ignore errors of the page handler
+        const names = emittedAtStart.slice();
+        for (let i = 0; i < names.length; i += 1) {
+            if (listeners.indexOf(entry) === -1) {
+                return;
+            }
+            const event = createStartupEvent(names[i]);
+            if (eventMatches(entry.filter, event)) {
+                callListener(entry, event);
+            }
         }
     };
 
     /**
-     * Command `addListener` of the real client: registers a listener and replays sticky lifecycle events.
+     * Command `addListener` of the real client: registers a listener, and delivers the lifecycle events
+     * emitted before to it, see `replayLifecycle()`.
      *
      * @param spec Listener spec of the page.
      * @returns Token of the listener.
@@ -868,9 +987,9 @@ export function Optimizely(source: Source) {
         if (spec === null || typeof spec !== 'object' || typeof (spec as ListenerSpec).handler !== 'function') {
             throw new Error('A handler function must be supplied');
         }
-        const token = register(spec as ListenerSpec);
-        replaySticky(spec as ListenerSpec);
-        return token;
+        const entry = register(spec as ListenerSpec, false);
+        replayLifecycle(entry);
+        return entry.token;
     };
 
     /**
@@ -887,14 +1006,15 @@ export function Optimizely(source: Source) {
     };
 
     // `on()` takes the spec and returns its token, `off()` takes the token.
+    // Its handlers are called with an object as `this`, as by the real client.
     const eventEmitter = {
         on: (spec: unknown) => {
             if (spec === null || typeof spec !== 'object') {
                 return undefined;
             }
-            const token = register(spec as ListenerSpec);
-            replaySticky(spec as ListenerSpec);
-            return token;
+            const entry = register(spec as ListenerSpec, true);
+            replayLifecycle(entry);
+            return entry.token;
         },
         off: (token: unknown) => {
             dropByToken(token);
@@ -1189,21 +1309,32 @@ export function Optimizely(source: Source) {
 
     hit(source);
 
-    /**
-     * Emits the lifecycle events of the real client in its order:
-     * `initialized`, `originsSynced`, `activate` and `activated`.
-     */
-    const fireLifecycle = () => {
-        emit({ type: 'lifecycle', name: 'initialized' });
-        emit({ type: 'lifecycle', name: 'originsSynced' });
-        emit({ type: 'lifecycle', name: 'activate' });
-        emit({ type: 'lifecycle', name: 'activated' });
-    };
+    // The lifecycle events are emitted at once, after the queued commands, as the real client emits them
+    // while the snippet is run, e.g. for an anti-flicker snippet of the page which shows the page
+    // on `initialized`. The real client emits `initialized`, `campaignsDecided`, with the ids of the active
+    // pages, `activated` and `activateDeferredDone`, e.g. page code waits for the last one to know
+    // that no campaign has run; `originsSynced` and `activate` are emitted as well, for page code
+    // which waits for them. Listeners added later get them as `replayLifecycle()` describes.
+    const STARTUP_NAMES = [
+        'initialized',
+        'originsSynced',
+        'campaignsDecided',
+        'activate',
+        'activated',
+        'activateDeferredDone',
+    ];
+    STARTUP_NAMES.forEach((lifecycleName) => {
+        emittedAtStart.push(lifecycleName);
+        emit(createStartupEvent(lifecycleName));
+    });
 
+    const endStarting = () => {
+        isStarting = false;
+    };
     if (doc.readyState === 'loading') {
-        doc.addEventListener('DOMContentLoaded', fireLifecycle, { once: true });
+        doc.addEventListener('DOMContentLoaded', endStarting, { once: true });
     } else {
-        w.setTimeout(fireLifecycle, 0);
+        w.setTimeout(endStarting, 0);
     }
 }
 
@@ -1221,4 +1352,5 @@ Optimizely.primaryName = OptimizelyNames[0];
 Optimizely.injections = [
     hit,
     noopFunc,
+    runProtected,
 ];

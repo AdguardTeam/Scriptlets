@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { clearGlobalProps, runScriptlet, sleep } from '../helpers';
+import { clearGlobalProps, runScriptlet } from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'optimizely';
@@ -27,7 +27,7 @@ test('Checking if alias names work', (assert) => {
     assert.strictEqual(getCode('optimizely.js'), code, 'ubo name - ok');
 });
 
-test('Installs the API without project identity', async (assert) => {
+test('Installs the API without project identity', (assert) => {
     const initialized = [];
     window.optimizely = [{
         type: 'addListener',
@@ -46,8 +46,42 @@ test('Installs the API without project identity', async (assert) => {
     assert.strictEqual(data.projectId, null, 'project id is not known');
     assert.strictEqual(data.accountId, null, 'account id is not known');
 
-    await sleep(20);
-    assert.deepEqual(initialized, ['initialized'], 'queued listener is called');
+    assert.deepEqual(initialized, ['initialized'], 'queued listener is called at once');
+
+    // the scriptlet runs before the page adds its listeners, which get the events emitted before
+    window.optimizely.push({
+        type: 'addListener',
+        filter: { type: 'lifecycle', name: 'activated' },
+        handler: (event) => initialized.push(event.name),
+    });
+    assert.deepEqual(initialized, ['initialized', 'activated'], 'listener added later is called');
+
+    // an anti-flicker snippet which filters by the type only, and checks the name in its handler
+    const html = document.documentElement;
+    html.classList.add('optimizely-hide');
+    window.optimizely.push({
+        type: 'addListener',
+        filter: { type: 'lifecycle' },
+        handler: (event) => {
+            if (event.name === 'initialized') {
+                html.classList.remove('optimizely-hide');
+            }
+        },
+    });
+    assert.notOk(html.classList.contains('optimizely-hide'), 'page is shown by a listener of the type only');
+
+    // a listener of the type which removes itself on `initialized` is not called for the next events
+    const names = [];
+    const spec = {
+        type: 'addListener',
+        filter: { type: 'lifecycle' },
+        handler: (event) => {
+            names.push(event.name);
+            window.optimizely.push({ type: 'removeListener', token: spec.token });
+        },
+    };
+    window.optimizely.push(spec);
+    assert.deepEqual(names, ['initialized'], 'listener which removes itself is called once');
 });
 
 const getScriptletCode = () => window.scriptlets.invoke({ name, args: [], verbose: false });

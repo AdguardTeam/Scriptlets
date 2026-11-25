@@ -11,8 +11,7 @@ const name = 'optimizely';
 
 const CONTAINER_ID = 'optimizely-test';
 
-// Lifecycle events are emitted in a timeout if the document has been parsed,
-// as it has when the tests run.
+// Lifecycle events are emitted at once; a delay is used to check that nothing else is called later.
 const LIFECYCLE_DELAY_MS = 20;
 
 const V0_COMMANDS = [
@@ -197,11 +196,9 @@ test('Replays queued commands in order', async (assert) => {
     assert.notStrictEqual(window.optimizely, queue, 'queue is replaced by the API');
     assert.strictEqual(typeof window.optimizely.get, 'function', 'API is installed');
 
+    assert.deepEqual(calls, ['initialized'], 'queued lifecycle listener is called at once');
     window.optimizely.get('event_emitter').emit({ type: 'custom', name: 'first' });
-    assert.deepEqual(calls, ['first', 'second'], 'queued listeners are registered in order');
-
-    await sleep(LIFECYCLE_DELAY_MS);
-    assert.deepEqual(calls, ['first', 'second', 'initialized'], 'queued lifecycle listener is called');
+    assert.deepEqual(calls, ['initialized', 'first', 'second'], 'queued listeners are registered in order');
 });
 
 test('push() return values', (assert) => {
@@ -474,22 +471,179 @@ test('get("behavior") validates descriptors', (assert) => {
     assert.strictEqual(behavior.query({ reduce: { aggregator: 'count' } }), undefined, 'reduced query()');
 });
 
-test('Lifecycle events are emitted in order', async (assert) => {
+const LIFECYCLE_NAMES = [
+    'initialized',
+    'originsSynced',
+    'campaignsDecided',
+    'activate',
+    'activated',
+    'activateDeferredDone',
+];
+
+// events of the start; as in the real client, only `campaignsDecided` has data, the ids of the active pages
+const LIFECYCLE_EVENTS = LIFECYCLE_NAMES.map((lifecycleName) => {
+    const event = { type: 'lifecycle', name: lifecycleName };
+    if (lifecycleName === 'campaignsDecided') {
+        event.data = { pageIds: [] };
+    }
+    return event;
+});
+
+test('Lifecycle events are emitted at once, in order, as the real client', (assert) => {
+    const events = [];
+    const receivers = [];
+    window.optimizely = [{
+        type: 'addListener',
+        // strict code, as the test is a module
+        handler(event) {
+            events.push(event);
+            receivers.push(this);
+        },
+    }];
     runRedirect();
-    const names = [];
+    assert.deepEqual(events, LIFECYCLE_EVENTS, 'lifecycle order and data, while the snippet runs');
+    assert.deepEqual(receivers, LIFECYCLE_NAMES.map(() => undefined), 'handlers have no receiver');
+});
+
+test('A handler which changes the event does not change it for the next listeners', async (assert) => {
+    const calls = [];
+    window.optimizely = [
+        {
+            type: 'addListener',
+            filter: { type: 'lifecycle', name: 'initialized' },
+            handler: (event) => {
+                calls.push(`first:${event.name}`);
+                event.name = 'renamed';
+            },
+        },
+        {
+            type: 'addListener',
+            filter: { type: 'lifecycle', name: 'initialized' },
+            // as the real client: listeners of one event get the same object, and are matched with the event
+            // as it has been emitted
+            handler: (event) => calls.push(`second:${event.name}`),
+        },
+        {
+            type: 'addListener',
+            filter: { type: 'lifecycle', name: 'campaignsDecided' },
+            handler: (event) => event.data.pageIds.push('changed'),
+        },
+    ];
+    runRedirect();
+    assert.deepEqual(calls, ['first:initialized', 'second:renamed'], 'the second listener is called as well');
+
+    // listeners added later get new events, with the names and the data of the start
+    const replayed = [];
     window.optimizely.push({
         type: 'addListener',
-        handler: (event) => names.push(`${event.type}:${event.name}`),
+        filter: { type: 'lifecycle' },
+        handler: (event) => {
+            replayed.push(JSON.parse(JSON.stringify(event)));
+            event.name = 'renamed again';
+        },
     });
-    assert.deepEqual(names, [], 'nothing is emitted synchronously');
+    assert.deepEqual(replayed, LIFECYCLE_EVENTS, 'while the page is starting');
 
     await sleep(LIFECYCLE_DELAY_MS);
-    assert.deepEqual(names, [
-        'lifecycle:initialized',
-        'lifecycle:originsSynced',
-        'lifecycle:activate',
-        'lifecycle:activated',
-    ], 'lifecycle order');
+    const late = [];
+    window.optimizely.push({
+        type: 'addListener',
+        filter: { type: 'lifecycle', name: 'initialized' },
+        handler: (event) => late.push(event),
+    });
+    assert.deepEqual(late, [{ type: 'lifecycle', name: 'initialized' }], 'and a listener of initialized later');
+});
+
+test('A listener added in the handler of initialized gets the next events, as the real client', (assert) => {
+    // as page code which waits for `activateDeferredDone` to know that no campaign has run
+    const calls = [];
+    window.optimizely = [{
+        type: 'addListener',
+        filter: { type: 'lifecycle', name: 'initialized' },
+        handler: () => {
+            calls.push('initialized');
+            window.optimizely.push({
+                type: 'addListener',
+                filter: { type: 'lifecycle', name: 'activateDeferredDone' },
+                handler: () => calls.push('activateDeferredDone'),
+            });
+        },
+    }];
+    runRedirect();
+    assert.deepEqual(calls, ['initialized', 'activateDeferredDone'], 'each handler is called once');
+});
+
+test('Listeners added while the page is starting get the lifecycle events emitted before', async (assert) => {
+    // the scriptlet runs before the page adds its listeners, unlike the real client
+    runRedirect();
+    const names = [];
+    ['typeOnly', 'noFilter'].forEach((kind) => {
+        const events = [];
+        window.optimizely.push({
+            type: 'addListener',
+            filter: kind === 'typeOnly' ? { type: 'lifecycle' } : undefined,
+            handler: (event) => events.push(event),
+        });
+        assert.deepEqual(events, LIFECYCLE_EVENTS, `listener ${kind} gets the events in order, with their data`);
+    });
+
+    // a lifecycle event which page code emits itself is not delivered again to a listener added later
+    const emitter = window.optimizely.get('event_emitter');
+    const pages = [];
+    let pageCalls = 0;
+    emitter.emit({ type: 'lifecycle', name: 'pageActivated', data: { page: 1 } });
+    emitter.on({
+        filter: { type: 'lifecycle', name: 'pageActivated' },
+        handler: (event) => {
+            // counted before the data is read, as an event without data would throw, which is caught
+            pageCalls += 1;
+            pages.push(event.data.page);
+        },
+    });
+    emitter.emit({ type: 'lifecycle', name: 'pageActivated', data: { page: 2 } });
+    assert.strictEqual(pageCalls, 1, 'the handler is called once');
+    assert.deepEqual(pages, [2], 'only the next event of the page is delivered');
+
+    names.length = 0;
+    window.optimizely.push({
+        type: 'addListener',
+        filter: { type: 'custom' },
+        handler: (event) => names.push(event.name),
+    });
+    assert.deepEqual(names, [], 'a listener of another type gets nothing');
+
+    // a listener which removes itself in its handler is not called again
+    const spec = {
+        type: 'addListener',
+        filter: { type: 'lifecycle' },
+        handler: (event) => {
+            names.push(event.name);
+            window.optimizely.push({ type: 'removeListener', token: spec.token });
+        },
+    };
+    window.optimizely.push(spec);
+    assert.deepEqual(names, ['initialized'], 'a listener which removes itself gets one event');
+
+    // once the page has started, listeners get the next events, as with the real client
+    await sleep(LIFECYCLE_DELAY_MS);
+    const later = [];
+    const next = {
+        type: 'addListener',
+        handler: (event) => {
+            later.push(event.name);
+            window.optimizely.push({ type: 'removeListener', token: next.token });
+        },
+    };
+    window.optimizely.push(next);
+    window.optimizely.push({
+        type: 'addListener',
+        filter: { type: 'lifecycle' },
+        handler: (event) => later.push(event.name),
+    });
+    assert.deepEqual(later, [], 'listeners added later get no lifecycle events');
+    window.optimizely.get('event_emitter').emit({ type: 'custom', name: 'user-action' });
+    window.optimizely.get('event_emitter').emit({ type: 'custom', name: 'second-action' });
+    assert.deepEqual(later, ['user-action'], 'a listener which removes itself on its first event gets the next one');
 });
 
 test('Late listeners receive sticky lifecycle events', async (assert) => {
@@ -497,25 +651,54 @@ test('Late listeners receive sticky lifecycle events', async (assert) => {
     await sleep(LIFECYCLE_DELAY_MS);
 
     const received = [];
-    ['initialized', 'originsSynced', 'activate', 'activated'].forEach((eventName) => {
+    const receivers = [];
+    LIFECYCLE_NAMES.forEach((eventName) => {
         window.optimizely.push({
             type: 'addListener',
             filter: { type: 'lifecycle', name: eventName },
-            handler: (event) => received.push(event),
+            handler(event) {
+                received.push(event);
+                receivers.push(this);
+            },
         });
     });
+    assert.deepEqual(receivers, [undefined, undefined, undefined], 'replayed without a receiver');
     assert.deepEqual(received, [
         { type: 'lifecycle', name: 'initialized' },
         { type: 'lifecycle', name: 'originsSynced' },
         { type: 'lifecycle', name: 'activated' },
-    ], 'sticky events are delivered synchronously, activate is not sticky');
+    ], 'sticky events are delivered synchronously, the other ones are not sticky');
 
     received.length = 0;
-    window.optimizely.get('event_emitter').on({
+    receivers.length = 0;
+    const emitter = window.optimizely.get('event_emitter');
+    emitter.on({
         filter: { type: 'lifecycle', name: 'initialized' },
-        handler: (event) => received.push(event.name),
+        handler(event) {
+            received.push(event.name);
+            receivers.push(this);
+            this.mark = 'first';
+        },
     });
     assert.deepEqual(received, ['initialized'], 'event_emitter.on() replays sticky events');
+
+    const marks = [];
+    emitter.on({
+        filter: { type: 'custom' },
+        handler() {
+            receivers.push(this);
+            marks.push(this.mark);
+            this.mark = 'custom';
+        },
+    });
+    emitter.emit({ type: 'custom' });
+    emitter.emit({ type: 'custom' });
+    assert.strictEqual(receivers.length, 3, 'handlers are called');
+    receivers.forEach((receiver) => {
+        assert.strictEqual(typeof receiver, 'object', 'handler of event_emitter.on() gets an object as this');
+        assert.notStrictEqual(receiver, emitter, 'which is not the emitter');
+    });
+    assert.deepEqual(marks, [undefined, undefined], 'the object is not shared between handlers or calls');
 });
 
 test('Listener tokens and removal', (assert) => {
@@ -603,7 +786,9 @@ test('utils.observeSelector()', async (assert) => {
     const seen = [];
 
     const unsubscribe = observeSelector(`#${CONTAINER_ID} .target`, (node) => seen.push(node));
-    assert.deepEqual(seen, [existing], 'existing node is passed synchronously');
+    assert.deepEqual(seen, [], 'existing node is not passed at once, as by the real client');
+    await sleep(0);
+    assert.deepEqual(seen, [existing], 'existing node is passed in the next task');
 
     const added = addToContainer('<p class="target">added</p>');
     await sleep(0);
@@ -623,6 +808,48 @@ test('utils.observeSelector()', async (assert) => {
     addToContainer('<p class="target">another</p>');
     await sleep(0);
     assert.strictEqual(once.length, 1, 'once option stops after the first node');
+
+    let calledAfterStop = false;
+    observeSelector(`#${CONTAINER_ID} .target`, () => {
+        calledAfterStop = true;
+    })();
+    await sleep(0);
+    assert.false(calledAfterStop, 'not called if stopped before the existing elements are passed');
+
+    // elements which match after a change of an attribute, also of a parent, as the real client;
+    // checked after the microtask of the mutation observer, with no assertion between,
+    // as the assertions change the page, which makes the elements be checked again anyway
+    const byAttribute = [];
+    const plain = addToContainer('<p id="plain-node"><b id="child-node"></b></p>');
+    const stopAttributes = observeSelector(`#${CONTAINER_ID} .late, .parent-class #child-node`, (node) => {
+        byAttribute.push(node.id);
+    });
+    await sleep(0);
+    plain.className = 'late';
+    await Promise.resolve();
+    const afterClass = byAttribute.slice();
+    plain.setAttribute('data-other', '1');
+    await Promise.resolve();
+    const afterOther = byAttribute.slice();
+    plain.classList.add('parent-class');
+    await Promise.resolve();
+    const afterParent = byAttribute.slice();
+    stopAttributes();
+    assert.deepEqual(afterClass, ['plain-node'], 'element is passed once it has the class');
+    assert.deepEqual(afterOther, ['plain-node'], 'not passed again on another change');
+    assert.deepEqual(afterParent, ['plain-node', 'child-node'], 'element matches by a class of its parent');
+
+    // a callback which stops observing is not called again, also for other matching elements
+    const stopped = [];
+    const stopInside = observeSelector(`#${CONTAINER_ID} .target`, (node) => {
+        stopped.push(node);
+        stopInside();
+    });
+    await sleep(0);
+    assert.strictEqual(stopped.length, 1, 'stopped inside the callback, which uses the returned function');
+    addToContainer('<p class="target">after the stop</p>');
+    await sleep(0);
+    assert.strictEqual(stopped.length, 1, 'not called for elements added later');
 
     assert.throws(
         () => observeSelector('##invalid', () => {}),
@@ -647,6 +874,120 @@ test('utils.observeSelector()', async (assert) => {
     const unsubscribeNull = observeSelector('#missing-node', () => {}, null);
     assert.strictEqual(typeof unsubscribeNull, 'function', 'null options are accepted');
     unsubscribeNull();
+});
+
+test('utils.observeSelector() skips an entry which another callback has stopped', async (assert) => {
+    runRedirect();
+    const { observeSelector } = window.optimizely.get('utils');
+    const calls = [];
+    let stopSecond = null;
+    observeSelector(`#${CONTAINER_ID} .cancel-target`, () => {
+        calls.push('first');
+        stopSecond();
+    });
+    stopSecond = observeSelector(`#${CONTAINER_ID} .cancel-target`, () => calls.push('second'));
+    await sleep(0);
+    addToContainer('<p class="cancel-target"></p>');
+    await sleep(0);
+    assert.deepEqual(calls, ['first'], 'the stopped entry is not called in the same check');
+});
+
+test('utils.observeSelector() timeout at the first check, as the real client', async (assert) => {
+    runRedirect();
+    const { observeSelector } = window.optimizely.get('utils');
+    const log = [];
+    const timeoutCalls = [];
+    const observe = (label, selector, timeout) => observeSelector(selector, () => log.push(`${label}:match`), {
+        timeout,
+        onTimeout() {
+            log.push(`${label}:onTimeout:${arguments.length}:${typeof this}`);
+        },
+    });
+    addToContainer('<p id="timeout-existing"></p>');
+    const existing = `#${CONTAINER_ID} #timeout-existing`;
+    const missing = `#${CONTAINER_ID} .never`;
+    observe('expired', existing, 25);
+    observe('inTime', existing, 5000);
+    observe('exact', existing, 60000);
+    observe('negative', missing, -1);
+    observe('false', missing, false);
+    observe('string', existing, '25');
+    observe('null', existing, null);
+    observe('nan', existing, NaN);
+    // strict code, as the test is a module: the function is called without a receiver, as by the real client
+    observe('fnTrue', existing, function () {
+        timeoutCalls.push(`${arguments.length}:${typeof this}`);
+        return this === undefined;
+    });
+    observe('fnFalse', existing, () => false);
+    observe('fnThrows', existing, () => {
+        throw new Error('error of the page');
+    });
+    // The page is busy until the timeout of 25 ms has expired, before the existing elements are checked.
+    // The loop counts, and the count is asserted, as the build of the tests removes a loop without effects.
+    const start = Date.now();
+    let spins = 0;
+    while (Date.now() - start < 60) {
+        spins += 1;
+    }
+    assert.ok(spins > 0 && Date.now() - start >= 60, 'the page has been busy');
+    await sleep(0);
+    assert.deepEqual(log.sort(), [
+        'exact:match',
+        'expired:onTimeout:0:object',
+        'false:onTimeout:0:object',
+        'fnFalse:match',
+        'fnThrows:match',
+        'fnTrue:onTimeout:0:object',
+        'inTime:match',
+        'nan:match',
+        'negative:onTimeout:0:object',
+        'null:match',
+        'string:onTimeout:0:object',
+    ], 'an expired timeout stops the entry before the existing elements are passed');
+    assert.deepEqual(timeoutCalls, ['0:undefined'], 'a timeout function is called without arguments or a receiver');
+
+    // onTimeout is called as a method of a copy of the options of the page
+    let receiver = null;
+    const options = {
+        custom: 'of the page',
+        timeout: -1,
+        onTimeout() {
+            receiver = this;
+        },
+    };
+    observeSelector(missing, () => {}, options);
+    await sleep(0);
+    assert.strictEqual(receiver.custom, 'of the page', 'onTimeout gets the options of the page as this');
+    assert.notStrictEqual(receiver, options, 'as a copy of the object of the page');
+});
+
+test('utils.observeSelector() timeout on a later DOM change, as the real client', async (assert) => {
+    runRedirect();
+    const { observeSelector } = window.optimizely.get('utils');
+    const log = [];
+    const observe = (label, selector, timeout) => observeSelector(selector, () => log.push(`${label}:match`), {
+        timeout,
+        onTimeout: () => log.push(`${label}:onTimeout`),
+    });
+    const late = addToContainer('<p id="timeout-late"></p>');
+    observe('late', `#${CONTAINER_ID} .late-match`, 30);
+    observe('null', `#${CONTAINER_ID} .null-match`, null);
+    observe('matched', `#${CONTAINER_ID} #timeout-late, #${CONTAINER_ID} .matched-late`, 30);
+    observeSelector(`#${CONTAINER_ID} .silent-match`, () => log.push('silent:match'), { timeout: 30 });
+    await sleep(0);
+    assert.deepEqual(log, ['matched:match'], 'existing element is passed before the timeout');
+
+    log.length = 0;
+    await sleep(60);
+    assert.deepEqual(log, [], 'nothing is called without a DOM change after the timeout');
+    late.className = 'late-match null-match matched-late silent-match';
+    await sleep(0);
+    assert.deepEqual(
+        log.sort(),
+        ['late:onTimeout', 'null:match'],
+        'on a DOM change after the timeout, onTimeout is called if nothing has matched, and no element is passed',
+    );
 });
 
 test('utils.observeSelector() disconnects the observer when nothing is observed', (assert) => {
@@ -848,13 +1189,14 @@ test('utils.poll() and utils.onUrlChange() call callbacks without a receiver', a
     // `undefined` in strict code, `window` in sloppy code, as for any call without a receiver
     const isNoReceiver = (receiver) => receiver === undefined || receiver === window;
 
-    let pollReceiver = null;
+    let pollReceiver = 'not called';
     const cancel = poll(function () {
         pollReceiver = this;
     });
     await sleep(50);
     cancel();
-    assert.ok(isNoReceiver(pollReceiver), 'poll() callback');
+    // `null` in strict code, as the test is a module, as in the real client
+    assert.strictEqual(pollReceiver, null, 'poll() callback');
 
     let urlReceiver = null;
     const unsubscribe = onUrlChange(function () {
@@ -1084,8 +1426,7 @@ test('Unguarded page code runs and an anti-flicker snippet shows the page', asyn
     script.textContent = pageCode;
     document.body.appendChild(script);
     script.remove();
+    assert.notOk(html.classList.contains('optimizely-hide'), 'page is shown at once, as by the real client');
     assert.deepEqual(window.optimizelyTestMap, {}, 'unguarded page code gets an empty variation map');
     assert.strictEqual(window.optimizelyTestAfter, true, 'next page code runs');
-    await sleep(LIFECYCLE_DELAY_MS);
-    assert.notOk(html.classList.contains('optimizely-hide'), 'page is shown before the anti-flicker timeout');
 });
