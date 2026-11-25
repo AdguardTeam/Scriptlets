@@ -130,8 +130,29 @@ test('Ignores invalid commands and errors of the page', (assert) => {
         ],
     };
     runRedirect();
-    window.jad.cmd.push(null, () => calls.push('pushed'));
+    window.jad.cmd.push(null, () => {
+        throw new Error('error of the page');
+    }, () => calls.push('pushed'));
     assert.deepEqual(calls, ['queued', 'pushed'], 'other commands are run');
+});
+
+test('Calls commands directly, as the library', (assert) => {
+    const receivers = [];
+    // strict code, as the test is a module: `this` is `undefined` in a call without a receiver
+    const command = function command() {
+        receivers.push(this);
+    };
+    // the command is run also if its own `apply` is replaced
+    const withoutApply = () => receivers.push('without apply');
+    Object.defineProperty(withoutApply, 'apply', { value: undefined });
+    window.jad = { cmd: [command, withoutApply] };
+    runRedirect();
+    window.jad.cmd.push(command, withoutApply);
+    assert.deepEqual(
+        receivers,
+        [undefined, 'without apply', undefined, 'without apply'],
+        'commands are called without a receiver',
+    );
 });
 
 test('Keeps the library which is already on the page', (assert) => {

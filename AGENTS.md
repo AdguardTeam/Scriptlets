@@ -650,7 +650,10 @@ Project-specific rules:
     ones registered with a mocked API or queued in a command queue of the mocked
     library, SHOULD call them with the `runProtected()` helper, instead of a
     local copy of it or a `try`/`catch` at each call site, and list it in
-    `injections`.
+    `injections`. A resource whose library calls them directly, e.g.
+    `command()` of the command queue of `jad`, MAY call them so in a `try`,
+    with a comment, as the helper calls them by `apply(null, args)`, as e.g.
+    the Visitor API does, which gives them `this === null` in strict code.
 
     **Rationale**: The helper calls the callback without a receiver, as the
     mocked libraries do, so `this` is not an internal array or object of the
