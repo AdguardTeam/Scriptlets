@@ -93,3 +93,4 @@ import './chartbeat.test';
 import './wurfl.test';
 import './piano-analytics.test';
 import './jad.test';
+import './googlesyndication-adsbygoogle.test';

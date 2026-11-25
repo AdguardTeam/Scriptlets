@@ -1,4 +1,9 @@
-import { clearGlobalProps, getRedirectsInstance, evalWrapper } from '../helpers';
+import {
+    clearGlobalProps,
+    getRedirectsInstance,
+    evalWrapper,
+    sleep,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'googlesyndication-adsbygoogle';
@@ -121,6 +126,99 @@ test('Fills placeholders which the page adds later', (assert) => {
 
     removeBodyElement(first);
     removeBodyElement(second);
+});
+
+test('Sets the status attributes of a filled placeholder, as AdSense', async (assert) => {
+    const filled = createAdElement();
+    // a status which the page or another rule has set is kept
+    const preset = createAdElement();
+    preset.setAttribute('data-ad-status', 'unfilled');
+    evalWrapper(redirects.getRedirect(name).content);
+
+    assert.strictEqual(filled.getAttribute('data-adsbygoogle-status'), 'done', 'processing status is set at once');
+    assert.false(filled.hasAttribute('data-ad-status'), 'ad status is not set at once');
+    const frame = filled.querySelector('iframe[id^="aswift_"]');
+    assert.strictEqual(frame.getAttribute('data-load-complete'), 'true', 'frame is loaded');
+    assert.false(
+        filled.querySelector('iframe[id^="google_ads_iframe_"]').hasAttribute('data-load-complete'),
+        'only the frame of AdSense gets data-load-complete',
+    );
+
+    // as page code which observes the placeholder, and then pushes it, e.g. on tempmail.ninja
+    const observed = createAdElement();
+    // the order of the changes, as by AdSense: processed, frame loaded, ad loaded
+    const order = [];
+    const orderObserver = new MutationObserver((records) => {
+        records.forEach((record) => order.push(record.attributeName));
+    });
+    orderObserver.observe(observed, {
+        attributeFilter: ['data-adsbygoogle-status', 'data-load-complete', 'data-ad-status'],
+        subtree: true,
+    });
+    let statusAtLoad = 'not loaded';
+    observed.addEventListener('load', (event) => {
+        if (event.target.id.startsWith('aswift_')) {
+            statusAtLoad = observed.getAttribute('data-adsbygoogle-status');
+        }
+    }, true);
+    const statuses = [];
+    const loaded = [];
+    const observer = new MutationObserver((records) => {
+        records.forEach((record) => {
+            if (record.attributeName === 'data-ad-status') {
+                statuses.push(observed.getAttribute('data-ad-status'));
+            } else {
+                loaded.push(`${record.target.id}:${record.target.getAttribute('data-load-complete')}`);
+            }
+        });
+    });
+    observer.observe(observed, {
+        attributeFilter: ['data-ad-status', 'data-load-complete'],
+        subtree: true,
+    });
+    // placeholders which AdSense itself has taken, e.g. if the resource runs as a scriptlet after it:
+    // with its host element, and without it, e.g. for a placeholder without a size
+    const taken = createAdElement();
+    taken.setAttribute('data-adsbygoogle-status', 'done');
+    const host = document.createElement('div');
+    host.id = 'aswift_7_host';
+    taken.appendChild(host);
+    const takenWithoutHost = createAdElement();
+    takenWithoutHost.setAttribute('data-adsbygoogle-status', 'done');
+    const takenLoaded = [];
+    const takenObserver = new MutationObserver((records) => {
+        records.forEach((record) => takenLoaded.push(record.target.id));
+    });
+    [taken, takenWithoutHost].forEach((element) => {
+        takenObserver.observe(element, { attributeFilter: ['data-load-complete'], subtree: true });
+    });
+    window.adsbygoogle.push({});
+
+    await sleep(20);
+    observer.disconnect();
+    assert.strictEqual(filled.getAttribute('data-ad-status'), 'filled', 'ad status is set later');
+    assert.strictEqual(preset.getAttribute('data-ad-status'), 'unfilled', 'existing ad status is kept');
+    assert.deepEqual(statuses, ['filled'], 'the observer of the page sees the ad status');
+    assert.strictEqual(loaded.length, 1, 'the observer of the page sees the loaded frame');
+    assert.ok(/^aswift_\d+:true$/.test(loaded[0]), 'of AdSense');
+    takenObserver.disconnect();
+    orderObserver.disconnect();
+    assert.deepEqual(
+        order,
+        ['data-adsbygoogle-status', 'data-load-complete', 'data-ad-status'],
+        'processed, frame loaded, ad loaded',
+    );
+    assert.strictEqual(statusAtLoad, 'done', 'the placeholder is processed when its frame is loaded');
+    assert.false(taken.hasAttribute('data-ad-status'), 'no ad status for a placeholder which AdSense has taken');
+    assert.false(takenWithoutHost.hasAttribute('data-ad-status'), 'also without its host element');
+    assert.deepEqual(takenLoaded, [], 'and their frames are not marked as loaded');
+    assert.strictEqual(takenWithoutHost.querySelectorAll('iframe').length, 2, 'they are filled, as before');
+
+    removeBodyElement(filled);
+    removeBodyElement(preset);
+    removeBodyElement(observed);
+    removeBodyElement(taken);
+    removeBodyElement(takenWithoutHost);
 });
 
 test('Fills placeholders once the document is parsed, e.g. as a scriptlet', (assert) => {
@@ -313,7 +411,61 @@ test('Fills placeholders once in a frame sandboxed without allow-same-origin', (
     removeBodyElement(ad);
 });
 
-test('Appends only the missing frame to a placeholder', (assert) => {
+/**
+ * Runs the redirect in a frame with an ad placeholder which is pushed, and returns the attributes
+ * of the placeholder and of its frame, which the frame posts once the ad status may be set.
+ *
+ * @param {string} content Code of the redirect.
+ * @param {string|null} sandbox Value of the `sandbox` attribute of the frame, or `null` for a same-origin frame.
+ * @returns {Promise<object>} Attributes.
+ */
+const runInFrame = (content, sandbox) => new Promise((resolve) => {
+    const frame = document.createElement('iframe');
+    if (sandbox !== null) {
+        frame.setAttribute('sandbox', sandbox);
+    }
+    const id = `frame-${Math.random()}`;
+    const onMessage = (event) => {
+        if (event.data && event.data.id === id) {
+            window.removeEventListener('message', onMessage);
+            frame.remove();
+            resolve(event.data);
+        }
+    };
+    window.addEventListener('message', onMessage);
+    // built at run time, as the tests are inlined into the test page in a script element
+    const scriptEnd = ['<', '/script>'].join('');
+    frame.srcdoc = `<ins class="adsbygoogle"></ins><script>${content}${scriptEnd}<script>
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        setTimeout(() => {
+            const ad = document.querySelector('ins');
+            const adFrame = ad.querySelector('iframe[id^="aswift_"]');
+            window.parent.postMessage({
+                id: ${JSON.stringify(id)},
+                status: ad.getAttribute('data-adsbygoogle-status'),
+                adStatus: ad.getAttribute('data-ad-status'),
+                loadComplete: adFrame && adFrame.getAttribute('data-load-complete'),
+            }, '*');
+        }, 50);
+    ${scriptEnd}`;
+    document.body.appendChild(frame);
+});
+
+test('Sets the ad status only in a frame which can access the top document, as AdSense', async (assert) => {
+    const { content } = redirects.getRedirect(name);
+    // a frame sandboxed without allow-same-origin cannot access the top document, as a cross-origin one
+    const crossOrigin = await runInFrame(content, 'allow-scripts');
+    assert.strictEqual(crossOrigin.status, 'done', 'cross-origin: processed');
+    assert.strictEqual(crossOrigin.loadComplete, 'true', 'cross-origin: frame loaded');
+    assert.strictEqual(crossOrigin.adStatus, null, 'cross-origin: no ad status');
+
+    const sameOrigin = await runInFrame(content, null);
+    assert.strictEqual(sameOrigin.status, 'done', 'same-origin: processed');
+    assert.strictEqual(sameOrigin.loadComplete, 'true', 'same-origin: frame loaded');
+    assert.strictEqual(sameOrigin.adStatus, 'filled', 'same-origin: ad status');
+});
+
+test('Appends only the missing frame to a placeholder', async (assert) => {
     evalWrapper(redirects.getRedirect(name).content);
     const ad = createAdElement();
     // e.g. a placeholder of the page which fails once to append the second frame
@@ -325,6 +477,11 @@ test('Appends only the missing frame to a placeholder', (assert) => {
         }
         return Node.prototype.appendChild.call(this, node);
     };
+    const statusWrites = [];
+    const observer = new MutationObserver((records) => {
+        records.forEach((record) => statusWrites.push(record.attributeName));
+    });
+    observer.observe(ad, { attributeFilter: ['data-adsbygoogle-status'] });
     window.adsbygoogle.push({});
     assert.strictEqual(ad.querySelectorAll(':scope > iframe').length, 1, 'first frame is appended');
     window.adsbygoogle.push({});
@@ -333,8 +490,87 @@ test('Appends only the missing frame to a placeholder', (assert) => {
     assert.strictEqual(aswiftFrames.length, 1, 'first frame is not appended again');
     const googleAdsFrames = ad.querySelectorAll(':scope > iframe[id^="google_ads_iframe_"]');
     assert.strictEqual(googleAdsFrames.length, 1, 'missing frame is appended');
+    await sleep(20);
+    observer.disconnect();
+    assert.deepEqual(statusWrites, ['data-adsbygoogle-status'], 'not marked as processed again');
+    // the placeholder is not taken for one of AdSense, as it has a frame of this resource
+    assert.strictEqual(ad.getAttribute('data-ad-status'), 'filled', 'ad status is set once it is filled');
 
     removeBodyElement(ad);
+});
+
+test('Fills a placeholder whose first frame fails to be appended as its own', async (assert) => {
+    evalWrapper(redirects.getRedirect(name).content);
+    const ad = createAdElement();
+    let isFailing = true;
+    ad.appendChild = function appendChild(node) {
+        if (isFailing && node.id.startsWith('aswift_')) {
+            isFailing = false;
+            throw new Error('error of the page');
+        }
+        return Node.prototype.appendChild.call(this, node);
+    };
+    const statusChanges = [];
+    const observer = new MutationObserver((records) => {
+        records.forEach((record) => statusChanges.push(record.attributeName));
+    });
+    observer.observe(ad, { attributeFilter: ['data-adsbygoogle-status'] });
+    window.adsbygoogle.push({});
+    assert.false(ad.hasAttribute('data-adsbygoogle-status'), 'not marked as processed if no frame is appended');
+    await sleep(0);
+    statusChanges.length = 0;
+    window.adsbygoogle.push({});
+    window.adsbygoogle.push({});
+    await sleep(20);
+    observer.disconnect();
+    assert.strictEqual(ad.querySelectorAll(':scope > iframe').length, 2, 'both frames are appended on the next push');
+    assert.strictEqual(ad.getAttribute('data-ad-status'), 'filled', 'it gets the ad status');
+    const frame = ad.querySelector(':scope > iframe[id^="aswift_"]');
+    assert.strictEqual(frame.getAttribute('data-load-complete'), 'true', 'its frame is marked as loaded');
+    assert.deepEqual(statusChanges, ['data-adsbygoogle-status'], 'marked as processed once when it is filled');
+
+    // a placeholder which AdSense has marked as processed keeps its status if the frame fails to be appended
+    const taken = createAdElement();
+    taken.setAttribute('data-adsbygoogle-status', 'done');
+    taken.appendChild = () => {
+        throw new Error('error of the page');
+    };
+    // a placeholder which AdSense has reserved for itself, e.g. of Auto ads, and one with another status,
+    // e.g. set by another rule, keep their status as well
+    const reserved = createAdElement();
+    reserved.setAttribute('data-adsbygoogle-status', 'reserved');
+    reserved.appendChild = taken.appendChild;
+    const other = createAdElement();
+    other.setAttribute('data-adsbygoogle-status', 'other');
+    other.appendChild = taken.appendChild;
+    window.adsbygoogle.push({});
+    assert.strictEqual(taken.getAttribute('data-adsbygoogle-status'), 'done', 'status of AdSense is kept');
+    assert.strictEqual(reserved.getAttribute('data-adsbygoogle-status'), 'reserved', 'reserved status is kept');
+    assert.strictEqual(other.getAttribute('data-adsbygoogle-status'), 'other', 'other status is restored');
+
+    removeBodyElement(ad);
+    removeBodyElement(taken);
+    removeBodyElement(reserved);
+    removeBodyElement(other);
+});
+
+test('Does not take a placeholder which AdSense has reserved for itself', async (assert) => {
+    evalWrapper(redirects.getRedirect(name).content);
+    const reserved = createAdElement();
+    reserved.setAttribute('data-adsbygoogle-status', 'reserved');
+    const loaded = [];
+    const observer = new MutationObserver((records) => {
+        records.forEach((record) => loaded.push(record.attributeName));
+    });
+    observer.observe(reserved, { attributeFilter: ['data-load-complete', 'data-adsbygoogle-status'], subtree: true });
+    window.adsbygoogle.push({});
+    await sleep(20);
+    observer.disconnect();
+    assert.strictEqual(reserved.getAttribute('data-adsbygoogle-status'), 'reserved', 'it stays reserved for AdSense');
+    assert.false(reserved.hasAttribute('data-ad-status'), 'it gets no ad status');
+    assert.deepEqual(loaded, [], 'its frame is not marked as loaded, nor its status changed');
+
+    removeBodyElement(reserved);
 });
 
 // callbacks of the Ad Placement API are called after the call of the page returns

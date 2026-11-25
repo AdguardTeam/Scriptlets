@@ -49,6 +49,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet answer `adBreak()` and `adConfig()`
   of the Ad Placement API of H5 games without an ad and without waiting: `onReady()` and `adBreakDone()`
   are called, and the reward of a rewarded break is granted once the player accepts it in the game [#588].
+- `googlesyndication-adsbygoogle` redirect resource and scriptlet set `data-ad-status="filled"` on the filled
+  ad placeholders, as AdSense, unless it is already set, and `data-load-complete` on their frames, as pages
+  detect ad blockers by them [#588].
 - `prebid` redirect resource and scriptlet mock `pbjs.rp` of the Prebid wrapper of Magnite, whose
   `requestVideoBids()` calls its callback without an ad, so that video players which wait for it are started [#588].
 

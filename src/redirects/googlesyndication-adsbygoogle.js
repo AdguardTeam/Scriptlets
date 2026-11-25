@@ -27,7 +27,12 @@ import { hit, runProtected } from '../helpers';
  *
  * As by AdSense, at most 20 objects which the page has pushed before the resource has run are handled as well.
  * Ad placeholders, i.e. `.adsbygoogle` elements, are filled with empty frames, as by AdSense, also the ones which the
- * page adds later: on each `adsbygoogle.push()`, and once the document is parsed.
+ * page adds later: on each `adsbygoogle.push()`, and once the document is parsed. As by AdSense, a filled placeholder
+ * gets `data-adsbygoogle-status="done"` at once, and `data-ad-status="filled"` later, unless it already has
+ * `data-ad-status`, e.g. set by the page or another rule, and the frame gets `data-load-complete="true"`,
+ * as pages check them to detect whether the ad has been blocked; as by AdSense, `data-ad-status` is not set
+ * in a frame which cannot access the top document, e.g. a cross-origin one. A placeholder which AdSense itself
+ * has taken, i.e. marked as processed, gets neither, as AdSense sets the result of its ad request itself.
  *
  * Related UBO redirect resource:
  * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/googlesyndication_adsbygoogle.js
@@ -44,6 +49,7 @@ import { hit, runProtected } from '../helpers';
 export function GoogleSyndicationAdsByGoogle(source) {
     const css = 'height:1px!important;max-height:1px!important;max-width:1px!important;width:1px!important;';
     const statusAttrName = 'data-adsbygoogle-status';
+    const adStatusAttrName = 'data-ad-status';
     const ASWIFT_IFRAME_MARKER = 'aswift_';
     const GOOGLE_ADS_IFRAME_MARKER = 'google_ads_iframe_';
     let isHitCalled = false;
@@ -97,12 +103,19 @@ export function GoogleSyndicationAdsByGoogle(source) {
      *
      * @param {Element} adElem Placeholder, i.e. `.adsbygoogle` element.
      * @param {string} marker Prefix of the id of the frame.
+     * @param {boolean} isOwned Whether the placeholder is filled by this resource, not by AdSense,
+     * so that the frame is marked as loaded, as AdSense marks its frame.
      */
-    const appendFrame = (adElem, marker) => {
+    const appendFrame = (adElem, marker, isOwned) => {
         const frame = document.createElement('iframe');
         frame.id = getFreeId(marker);
         frame.style = css;
         adElem.appendChild(frame);
+        if (isOwned && marker === ASWIFT_IFRAME_MARKER) {
+            // as AdSense sets on the load of its frame, which is empty here, so it is loaded at once;
+            // set after the frame is inserted, so that an observer of the placeholder sees the change
+            frame.setAttribute('data-load-complete', 'true');
+        }
         // the frame inside is optional: a frame has no window above the limit of frames of a page,
         // e.g. 1000 in Chromium, i.e. 250 placeholders with two frames, each with a frame inside,
         // and its document cannot be accessed in a frame sandboxed without `allow-same-origin`
@@ -115,6 +128,72 @@ export function GoogleSyndicationAdsByGoogle(source) {
         } catch (e) {
             // the frame is kept without a frame inside
         }
+    };
+
+    /**
+     * Checks whether AdSense itself has taken the placeholder, e.g. if this resource is run as a scriptlet after
+     * the script of AdSense, which is not blocked: AdSense has added its `aswift_<index>_host` element to it,
+     * or it has marked it as processed, i.e. `data-adsbygoogle-status="done"`, before this resource has filled it,
+     * e.g. for a placeholder without a size, to which AdSense adds no element, or as reserved for itself,
+     * i.e. `data-adsbygoogle-status="reserved"`. AdSense then sets the result of its ad request,
+     * i.e. `data-ad-status`, itself, or none.
+     *
+     * @param {Element} adElem Placeholder, i.e. `.adsbygoogle` element.
+     * @param {boolean} hasOwnFrames Whether the placeholder has a frame of this resource.
+     * @returns {boolean} True if AdSense has taken it.
+     */
+    const isTakenByAdSense = (adElem, hasOwnFrames) => {
+        const status = adElem.getAttribute(statusAttrName);
+        // `reserved` is set by AdSense on a placeholder which it creates itself, e.g. of Auto ads, before it pushes it
+        if (status === 'reserved' || (!hasOwnFrames && status === 'done')) {
+            return true;
+        }
+        const { children } = adElem;
+        for (let i = 0; i < children.length; i += 1) {
+            if (/^aswift_\d+_host$/.test(children[i].id)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Checks whether the document can access the top document, i.e. it is not in a cross-origin frame,
+     * nor in a sandboxed one, as AdSense sets `data-ad-status` only then.
+     *
+     * @returns {boolean} True if the top document can be accessed.
+     */
+    const canAccessTopDocument = () => {
+        try {
+            return !!window.top && !!window.top.document;
+        } catch (e) {
+            return false;
+        }
+    };
+    const isAdStatusSet = canAccessTopDocument();
+
+    /**
+     * Sets `data-ad-status="filled"` on a placeholder in a later task, as AdSense sets it once the ad has been
+     * loaded, so that page code which observes the attribute after it pushes the placeholder sees the change.
+     * A value which is already set, e.g. by the page or by another rule, is kept, and an error, e.g. caused
+     * by the page, is not thrown to it. As by AdSense, it is not set in a frame which cannot access the top
+     * document, e.g. a cross-origin one.
+     *
+     * @param {Element} adElem Placeholder, i.e. `.adsbygoogle` element.
+     */
+    const setAdStatusLater = (adElem) => {
+        if (!isAdStatusSet) {
+            return;
+        }
+        setTimeout(() => {
+            try {
+                if (!adElem.hasAttribute(adStatusAttrName)) {
+                    adElem.setAttribute(adStatusAttrName, 'filled');
+                }
+            } catch (e) {
+                // the placeholder is kept without the status
+            }
+        }, 0);
     };
 
     /**
@@ -133,12 +212,38 @@ export function GoogleSyndicationAdsByGoogle(source) {
                 const hasAswiftIframe = hasOwnFrame(adElem, ASWIFT_IFRAME_MARKER);
                 const hasGoogleAdsIframe = hasOwnFrame(adElem, GOOGLE_ADS_IFRAME_MARKER);
                 if (!hasAswiftIframe || !hasGoogleAdsIframe) {
-                    adElem.setAttribute(statusAttrName, 'done');
+                    // checked before the placeholder is marked as processed
+                    const isOwned = !isTakenByAdSense(adElem, hasAswiftIframe || hasGoogleAdsIframe);
+                    // Marked as processed before the frame is appended, as by AdSense, so that the frame is loaded,
+                    // and marked as loaded, in a processed placeholder; not marked again with the same value,
+                    // which would wake up observers of the page. A placeholder which AdSense has reserved for itself
+                    // is not marked, as AdSense processes only a placeholder which is not marked yet.
+                    const previousStatus = adElem.getAttribute(statusAttrName);
+                    const isMarked = previousStatus !== 'done' && previousStatus !== 'reserved';
+                    if (isMarked) {
+                        adElem.setAttribute(statusAttrName, 'done');
+                    }
                     if (!hasAswiftIframe) {
-                        appendFrame(adElem, ASWIFT_IFRAME_MARKER);
+                        try {
+                            appendFrame(adElem, ASWIFT_IFRAME_MARKER, isOwned);
+                        } catch (e) {
+                            // a placeholder whose first frame fails to be appended, e.g. by an error of the page,
+                            // is left as it was, so that it is not taken for one of AdSense when it is filled again
+                            if (isMarked) {
+                                if (previousStatus === null) {
+                                    adElem.removeAttribute(statusAttrName);
+                                } else {
+                                    adElem.setAttribute(statusAttrName, previousStatus);
+                                }
+                            }
+                            throw e;
+                        }
                     }
                     if (!hasGoogleAdsIframe) {
-                        appendFrame(adElem, GOOGLE_ADS_IFRAME_MARKER);
+                        appendFrame(adElem, GOOGLE_ADS_IFRAME_MARKER, isOwned);
+                    }
+                    if (isOwned) {
+                        setAdStatusLater(adElem);
                     }
                     executed = true;
                 }
