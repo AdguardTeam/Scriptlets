@@ -713,6 +713,13 @@ Project-specific rules:
   is not configurable outside of tests, so the page cannot replace it. It is
   tested without the wrapper in `tests/helpers/spoofed-clicks-property.spec.ts`.
 
+- Tests MUST NOT leave observers or timers running after they end, as all
+  tests of a suite run in one page. Tests of resources which keep watching the
+  page without an API to stop it, as the mocked library does, e.g. the dynamic
+  watchers of `kameleoon` or `observeSelector()` of `optimizely`, SHOULD call
+  `trackPageWatchers()` from `tests/helpers.js` in `beforeEach` and the function
+  which it returns in `afterEach`.
+
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.
 

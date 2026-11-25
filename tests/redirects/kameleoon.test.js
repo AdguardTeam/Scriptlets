@@ -4,6 +4,7 @@ import {
     evalWrapper,
     getRedirectsInstance,
     sleep,
+    trackPageWatchers,
 } from '../helpers';
 
 const { test, module } = QUnit;
@@ -103,12 +104,15 @@ const API_METHODS = {
 
 let redirects;
 let initialUrl;
+// stops what a test leaves watching the page, e.g. a dynamic watcher of elements, which has no API to stop it
+let stopPageWatchers = () => {};
 
 const before = async () => {
     redirects = await getRedirectsInstance();
 };
 
 const beforeEach = () => {
+    stopPageWatchers = trackPageWatchers();
     initialUrl = window.location.href;
     const container = document.createElement('div');
     container.id = CONTAINER_ID;
@@ -116,6 +120,7 @@ const beforeEach = () => {
 };
 
 const afterEach = () => {
+    stopPageWatchers();
     if (typeof window.kameleoonDisplayPageTimeOut === 'number') {
         clearTimeout(window.kameleoonDisplayPageTimeOut);
     }

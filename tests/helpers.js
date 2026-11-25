@@ -290,6 +290,48 @@ export const ATTR_SETTLE_DELAY_MS = 100;
 export const ATTR_IDLE_WINDOW_MS = 300;
 
 /**
+ * Records the mutation observers, intervals and timeouts which are created while a test runs, e.g. by a redirect
+ * resource which keeps watching the page as the mocked library does, without an API to stop it,
+ * and returns a function which stops them and restores the native functions, e.g. in `afterEach`,
+ * so that they do not run during the next tests of the page.
+ * Timers which QUnit itself has saved before are not affected.
+ *
+ * @returns {Function} Function which stops the recorded observers and timers.
+ */
+export const trackPageWatchers = () => {
+    const NativeMutationObserver = window.MutationObserver;
+    const nativeSetInterval = window.setInterval;
+    const nativeSetTimeout = window.setTimeout;
+    const observers = [];
+    const intervals = [];
+    const timeouts = [];
+    window.MutationObserver = class extends NativeMutationObserver {
+        constructor(callback) {
+            super(callback);
+            observers.push(this);
+        }
+    };
+    window.setInterval = function setInterval(...args) {
+        const id = nativeSetInterval.apply(window, args);
+        intervals.push(id);
+        return id;
+    };
+    window.setTimeout = function setTimeout(...args) {
+        const id = nativeSetTimeout.apply(window, args);
+        timeouts.push(id);
+        return id;
+    };
+    return () => {
+        window.MutationObserver = NativeMutationObserver;
+        window.setInterval = nativeSetInterval;
+        window.setTimeout = nativeSetTimeout;
+        observers.forEach((observer) => observer.disconnect());
+        intervals.forEach((id) => clearInterval(id));
+        timeouts.forEach((id) => clearTimeout(id));
+    };
+};
+
+/**
  * Returns a promise which resolves after given delay.
  *
  * @param {number} ms delay in milliseconds
