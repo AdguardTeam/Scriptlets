@@ -75,13 +75,18 @@ export function mockAdobeTarget(): boolean {
     const sessionId = randomSessionId();
 
     /**
-     * Removes the prehiding styles of Adobe Target and of the Web SDK, if they are in the document.
+     * Removes the prehiding styles of Adobe Target and of the Web SDK, if they are in the document,
+     * all of them, e.g. if the snippet of the page has run twice, while at.js removes only the first one.
+     * Only `style` elements, which the snippets create, so that an element of the page with the same id is kept.
      */
     const removePrehiding = () => {
         PREHIDING_IDS.forEach((id) => {
-            const style = doc.getElementById(id);
-            if (style && style.parentNode) {
-                style.parentNode.removeChild(style);
+            const styles = doc.querySelectorAll(`style[id="${id}"]`);
+            for (let i = 0; i < styles.length; i += 1) {
+                const style = styles[i];
+                if (style.parentNode) {
+                    style.parentNode.removeChild(style);
+                }
             }
         });
     };

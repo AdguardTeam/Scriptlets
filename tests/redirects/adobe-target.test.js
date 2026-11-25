@@ -435,6 +435,27 @@ test('Removes the prehiding styles', (assert) => {
     PREHIDING_IDS.forEach((id) => assert.notOk(document.getElementById(id), `${id} is removed`));
 });
 
+test('Removes all prehiding styles of an id, e.g. of a snippet run twice', (assert) => {
+    // the page is loaded, so the styles are not removed again by an observer
+    const content = PREHIDING_IDS.map((id) => {
+        addPrehidingStyle(id);
+        addPrehidingStyle(id);
+        // an element of the page which reuses the id
+        const element = document.createElement('main');
+        element.id = id;
+        document.body.appendChild(element);
+        return element;
+    });
+    runRedirect();
+    PREHIDING_IDS.forEach((id) => {
+        assert.strictEqual(document.querySelectorAll(`style[id="${id}"]`).length, 0, `all ${id} styles are removed`);
+    });
+    content.forEach((element) => {
+        assert.true(element.isConnected, `element ${element.id} of the page is kept`);
+        element.remove();
+    });
+});
+
 test('Removes prehiding styles added later, until the page has loaded', async (assert) => {
     // as at document start, when the scriptlet runs before the prehiding snippet
     Object.defineProperty(document, 'readyState', { configurable: true, get: () => 'loading' });
