@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
+- `engines` in `package.json`: added the `node` requirement `>=22.23.5`,
+  because Node.js 22.23.4 is the first version with the fix for
+  CVE-2026-111497. This drops Node.js < 22.23.5 for package consumers and needs
+  a major release.
+
 ### Deprecated
 
 ### Removed
