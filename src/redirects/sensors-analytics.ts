@@ -16,10 +16,12 @@ import { type Source } from '../scriptlets';
  * The public methods of the SDK do nothing, and no data is sent, so `track()` and `quick('autoTrack')`
  * send no events and `login()` stores no id. Callbacks of the page are called as by the SDK when its request
  * is done, i.e. without arguments: the ones of `track()`, `trackSignup()`, `login()`, the profile methods,
- * e.g. `setProfile()`, and of `quick('autoTrack')` asynchronously, and the one of `quick('isReady')` at once,
+ * e.g. `setProfile()`, of `quick('autoTrack')`, and of `quick('trackHeatMap')` and `quick('trackAllHeatMap')`
+ * for the elements whose click they send, asynchronously, and the one of `quick('isReady')` at once,
  * while `trackLink()` and `trackLinks()` do not change links, so they are followed at once.
  * Ids are empty, e.g. of `quick('getAnonymousID')` and `store.getDistinctId()`, and `getPresetProperties()`
- * returns no properties of the visitor.
+ * returns no properties of the visitor. As by the SDK, callbacks of the calls made while it is disabled
+ * by `disableSDK()` are not called.
  *
  * If the SDK is loaded by the snippet of the SDK, i.e. `sensorsDataAnalytic201505` is the name of the global
  * which it has defined, e.g. `sensors`, it is replaced and the commands which it has queued are run,
@@ -43,6 +45,11 @@ export function SensorsAnalytics(source: Source) {
     const GLOBAL_NAME = 'sensorsDataAnalytic201505';
     const isObject = (value: unknown): value is AnyRecord => !!value && typeof value === 'object';
     const hasOwn = (obj: unknown, key: string): boolean => Object.prototype.hasOwnProperty.call(obj, key);
+    const isPlainObject = (value: unknown): value is AnyRecord => {
+        return Object.prototype.toString.call(value) === '[object Object]';
+    };
+    // attribute of the elements whose clicks the click listener of the SDK sends
+    const DEFAULT_TRACK_ATTRIBUTE = 'data-sensors-click';
 
     const existing = w[GLOBAL_NAME];
     // the SDK, e.g. one bundled in the page code, or the mock is already on the page
@@ -129,6 +136,14 @@ export function SensorsAnalytics(source: Source) {
         if (isObject(para)) {
             sd.para = para;
         }
+        // As the SDK, which keeps only the names in an array of `track_attr`, and always adds its own one.
+        const { heatmap } = sd.para;
+        if (isPlainObject(heatmap)) {
+            const isName = (attributeName: unknown) => !!attributeName && typeof attributeName === 'string';
+            const attributes = Array.isArray(heatmap.track_attr) ? heatmap.track_attr.filter(isName) : [];
+            attributes.push(DEFAULT_TRACK_ATTRIBUTE);
+            heatmap.track_attr = attributes;
+        }
         readyState.setState(2);
         readyState.setState(3);
     };
@@ -136,9 +151,75 @@ export function SensorsAnalytics(source: Source) {
     // as the SDK without the bridge of an app: the status is not known, and the function is not called
     sd.getAppStatus = () => null;
     sd.getCurrentDomain = () => w.location.hostname;
-    sd.getDisabled = () => false;
     sd.isNewUser = () => false;
     sd.getPresetProperties = () => ({ identities: {} });
+
+    /**
+     * Calls the callback of a click on an element as `heatmap.start()` of the SDK, which sends `$WebClick`
+     * by `track()`, which calls the callback, unless `para.heatmap.collect_element()` of the page excludes
+     * the element, or a link is sent by `trackLink()`, which has no callback, as `para.heatmap.isTrackLink`
+     * is set. As by the SDK, the callback may be passed instead of the properties.
+     *
+     * @param element Clicked element.
+     * @param tagName Tag name of the element, in lower case.
+     * @param props Properties of the event, or the callback.
+     * @param callback Callback of the page.
+     */
+    const trackClick = (element: AnyRecord, tagName: string, props: unknown, callback: unknown) => {
+        const { heatmap } = sd.para;
+        const isCollected = isPlainObject(heatmap) && typeof heatmap.collect_element === 'function'
+            ? heatmap.collect_element(element)
+            : true;
+        if (!isCollected) {
+            return;
+        }
+        if (tagName === 'a' && heatmap && heatmap.isTrackLink === true) {
+            return;
+        }
+        let clickCallback;
+        if (typeof callback === 'function') {
+            clickCallback = callback;
+        } else if (typeof props === 'function') {
+            clickCallback = props;
+        }
+        // The SDK creates the properties of the event, so the object of the page is not passed.
+        // As by the SDK, properties which are `undefined` are not copied. They are defined, not assigned,
+        // so that a `__proto__` property of the page does not change the prototype of the object.
+        const clickProps: AnyRecord = {};
+        if (isPlainObject(props)) {
+            Object.keys(props).forEach((key) => {
+                if (props[key] !== undefined) {
+                    Object.defineProperty(clickProps, key, {
+                        value: props[key],
+                        writable: true,
+                        enumerable: true,
+                        configurable: true,
+                    });
+                }
+            });
+        }
+        // By `track()` of the SDK object, as the SDK, so nothing is called if the SDK is disabled,
+        // e.g. by `collect_element()`, or if this is called as a method of `commonWays` then.
+        sd.track('$WebClick', clickProps, clickCallback);
+    };
+
+    /**
+     * Checks whether an element has one of the attributes which mark it for the click listener of the SDK,
+     * so that `trackHeatMap()` does not send its click, as the SDK.
+     *
+     * @param element Element.
+     * @param names Names of the attributes, or one name, which the page may set after `init()`.
+     * @returns `true` if the element has one of them.
+     */
+    const hasTrackAttribute = (element: AnyRecord, names: unknown): boolean => {
+        const list = typeof names === 'string' ? [names] : names;
+        if (!Array.isArray(list) || typeof element.hasAttribute !== 'function') {
+            return false;
+        }
+        return list.some((attributeName) => element.hasAttribute(attributeName));
+    };
+
+    const CLICKABLE_TAGS = ['button', 'a', 'input', 'textarea'];
 
     const loadTime = Date.now();
     // commands of `quick()`
@@ -151,8 +232,36 @@ export function SensorsAnalytics(source: Source) {
         setInitReferrer: noopFunc,
         setSessionReferrer: noopFunc,
         setDefaultAttr: noopFunc,
-        trackHeatMap: noopFunc,
-        trackAllHeatMap: noopFunc,
+        // As the SDK, which sends the click only on an element which its own click listener does not send,
+        // i.e. not on a button, an input, a text area or a link, an element in a link or a button,
+        // or an element with `data-sensors-click` or another attribute of `para.heatmap.track_attr`.
+        trackHeatMap: (element: unknown, props: unknown, callback: unknown) => {
+            if (!isObject(element) || !element.tagName) {
+                return;
+            }
+            const parent = element.parentNode;
+            if (!parent || parent.nodeType !== 1) {
+                return;
+            }
+            const tagName = String(element.tagName).toLowerCase();
+            const parentTagName = String(parent.tagName).toLowerCase();
+            const { heatmap } = sd.para;
+            const attributes = heatmap && heatmap.track_attr ? heatmap.track_attr : [DEFAULT_TRACK_ATTRIBUTE];
+            if (
+                CLICKABLE_TAGS.indexOf(tagName) === -1
+                && parentTagName !== 'a'
+                && parentTagName !== 'button'
+                && !hasTrackAttribute(element, attributes)
+            ) {
+                trackClick(element, tagName, props, callback);
+            }
+        },
+        // as the SDK, which sends a click on any element
+        trackAllHeatMap: (element: unknown, props: unknown, callback: unknown) => {
+            if (isObject(element) && element.tagName) {
+                trackClick(element, String(element.tagName).toLowerCase(), props, callback);
+            }
+        },
         autoTrack: (para: unknown, callback: unknown) => callLater(callback),
         autoTrackSinglePage: (para: unknown, callback: unknown) => callLater(callback),
         autoTrackWithoutProfile: (para: unknown, callback: unknown) => callLater(callback),
@@ -216,6 +325,33 @@ export function SensorsAnalytics(source: Source) {
     sd.modules = {};
     sd.lib_version = '1.28.2';
     sd.DEFAULT_SEND_TYPE = 'image';
+
+    // As the SDK, whose methods which send or store data do nothing while it is disabled by `disableSDK()`,
+    // so that no callback or function of the page, e.g. `para.heatmap.collect_element()`, is called then.
+    let isDisabled = false;
+    sd.disableSDK = () => {
+        isDisabled = true;
+    };
+    sd.enableSDK = () => {
+        isDisabled = false;
+    };
+    sd.getDisabled = () => isDisabled;
+    const DISABLED_METHODS = [
+        'appendProfile', 'bind', 'clearAllRegister', 'clearPageRegister', 'deleteItem', 'deleteProfile',
+        'getAppStatus', 'identify', 'incrementProfile', 'login', 'loginWithKey', 'logout', 'quick', 'register',
+        'registerOnce', 'registerPage', 'resetAnonymousIdentity', 'setItem', 'setOnceProfile', 'setProfile',
+        'track', 'trackLink', 'trackSignup', 'unbind', 'unsetProfile',
+    ];
+    DISABLED_METHODS.forEach((name) => {
+        const method = sd[name];
+        sd[name] = function disabledMethod() {
+            if (isDisabled) {
+                return undefined;
+            }
+            // eslint-disable-next-line prefer-rest-params
+            return method.apply(sd, arguments);
+        };
+    });
 
     w[GLOBAL_NAME] = sd;
 
