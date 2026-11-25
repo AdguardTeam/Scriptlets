@@ -278,6 +278,26 @@ export function mockAdobeAnalytics(): boolean {
     };
 
     /**
+     * Calls a method of a tracker as a method, i.e. with the tracker as its receiver, as AppMeasurement does,
+     * e.g. of a tracker of the page in `s_c_il`, and catches its errors.
+     *
+     * @param tracker Tracker.
+     * @param name Name of the method.
+     * @param args Arguments.
+     */
+    const callMethod = (tracker: unknown, name: string, args: unknown[]) => {
+        const method = tracker ? (tracker as AnyRecord)[name] : undefined;
+        if (typeof method !== 'function') {
+            return;
+        }
+        try {
+            method.apply(tracker, args);
+        } catch (e) {
+            // ignore errors of a tracker of the page
+        }
+    };
+
+    /**
      * Returns the instance for the report suites as `s_gi()` of AppMeasurement:
      * an existing instance with the same account or a common report suite, otherwise a new one.
      *
@@ -298,7 +318,7 @@ export function mockAdobeAnalytics(): boolean {
                     matches = wanted.some((suite) => own.indexOf(suite) >= 0);
                 }
                 if (matches) {
-                    runProtected(instance.setAccount, [account]);
+                    callMethod(instance, 'setAccount', [account]);
                     return instance;
                 }
             }
@@ -323,8 +343,8 @@ export function mockAdobeAnalytics(): boolean {
             if (Array.isArray(queue)) {
                 queue.forEach((item: AnyRecord) => {
                     const tracker = (w.s_gi as (account: unknown) => AnyRecord)(item && item.oun);
-                    runProtected(tracker.setAccount, [item && item.un]);
-                    runProtected(tracker.setTagContainer, [item && item.tagContainerName]);
+                    callMethod(tracker, 'setAccount', [item && item.un]);
+                    callMethod(tracker, 'setTagContainer', [item && item.tagContainerName]);
                 });
             }
             w.s_giq = 0;

@@ -234,6 +234,38 @@ test('Runs the queue of the legacy H code', (assert) => {
     assert.deepEqual(window.s_c_il.length, 1, 'one instance');
 });
 
+test('s_gi() and s_pgicq() call the methods of a tracker of the page as methods, as the real one', (assert) => {
+    // e.g. a tracker of another implementation, whose methods use `this`
+    const calls = [];
+    const tracker = {
+        _c: 's_c',
+        account: 'rsid',
+        setAccount(account) {
+            calls.push(['setAccount', this === tracker, account]);
+            this.account = account;
+        },
+        setTagContainer(name) {
+            calls.push(['setTagContainer', this === tracker, name]);
+        },
+    };
+    window.s_c_il = [tracker];
+    window.s_c_in = 1;
+    window.s_giq = [{ oun: 'rsid', un: 'rsid,rollup', tagContainerName: 'tc' }];
+    runRedirect();
+    assert.deepEqual(calls, [
+        ['setAccount', true, 'rsid'],
+        ['setAccount', true, 'rsid,rollup'],
+        ['setTagContainer', true, 'tc'],
+    ], 'queue of the legacy H code');
+    assert.strictEqual(window.s_gi('rsid,rollup'), tracker, 's_gi() returns the tracker');
+    assert.deepEqual(calls[3], ['setAccount', true, 'rsid,rollup'], 'with the tracker as the receiver');
+
+    tracker.setAccount = () => {
+        throw new Error('error of the page');
+    };
+    assert.strictEqual(window.s_gi('rsid,rollup'), tracker, 'error of the tracker is caught');
+});
+
 test('Keeps the real library and installs only the missing parts', (assert) => {
     const RealAppMeasurement = function () {};
     window.AppMeasurement = RealAppMeasurement;
