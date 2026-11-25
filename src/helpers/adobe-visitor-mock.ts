@@ -12,14 +12,18 @@ type AnyRecord = Record<string, unknown>;
  * whose organization is not known.
  * Ids are empty strings, also in the callbacks, which are called asynchronously, as the library does
  * once its requests have failed, and URLs are returned unchanged.
+ * As the library, the opt-out of the visitor saved in the `AMCV_<orgId>` cookie of the organization, e.g. by
+ * the library on a previous visit, is honored, also if it is saved after the instance is created,
+ * see `readSavedOptOut()`; otherwise the opt-out is `NONE`, as the library when the visitor has not opted out.
  *
  * Requires `noopFunc()` and `runProtected()` to be injected as well.
  *
  * @param orgId Organization id, e.g. `ABC@AdobeOrg`.
- * @param config Configuration of the page, copied to the instance.
+ * @param config Configuration of the page, copied to the instance, e.g. its `loadTimeout`.
+ * @param prototype Prototype of the instance, e.g. of `Visitor`, so that it is an instance of it.
  * @returns Visitor instance.
  */
-export function createAdobeVisitorInstance(orgId: string, config?: unknown): AnyRecord {
+export function createAdobeVisitorInstance(orgId: string, config?: unknown, prototype?: object): AnyRecord {
     const FIELDS = ['MCMID', 'MCOPTOUT', 'MCAID', 'MCAAMLH', 'MCAAMB'];
 
     /**
@@ -68,7 +72,77 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown): Any
         return '';
     };
 
-    const visitor: AnyRecord = {};
+    /**
+     * Returns the opt-out saved in the `AMCV_<orgId>` cookie, as `_readVisitor()` of the library reads it:
+     * the cookie, whose name is encoded, has `key|value` pairs, possibly after a number, i.e. a digest
+     * of the settings, and a key may have an expiry, `<key>-<seconds>`, or `<key>-<seconds>s` which also
+     * expires with the session, i.e. without the `AMCVS_<orgId>` cookie. An expired value is ignored.
+     * As the library, the names of the configuration are used, i.e. `cookieName` and `sessionCookieName`,
+     * and with `useLocalStorage` the values are read from `localStorage` and `sessionStorage` instead.
+     * Unlike the library, the digest is not checked, as the settings of the site are not known,
+     * so that a saved opt-out is honored. Nothing is written.
+     *
+     * @param cookieName Name of the cookie of the organization.
+     * @param sessionCookieName Name of its session cookie.
+     * @param useLocalStorage Whether the values are in the storages instead of cookies.
+     * @returns Saved opt-out, e.g. `global` or a list of scopes, or `null` if there is none.
+     */
+    const readSavedOptOut = (
+        cookieName: string,
+        sessionCookieName: string,
+        useLocalStorage: boolean,
+    ): string | null => {
+        const getCookie = (name: string): string | null => {
+            const prefix = `${encodeURIComponent(name)}=`;
+            const cookies = window.document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i += 1) {
+                const cookie = cookies[i].trim();
+                if (cookie.indexOf(prefix) === 0) {
+                    return decodeURIComponent(cookie.slice(prefix.length));
+                }
+            }
+            return null;
+        };
+        // as `cookieRead()` of the library
+        const read = (name: string): string | null => {
+            if (!useLocalStorage) {
+                return getCookie(name);
+            }
+            return name === sessionCookieName ? window.sessionStorage.getItem(name) : window.localStorage.getItem(name);
+        };
+        try {
+            const value = read(cookieName);
+            if (!value) {
+                return null;
+            }
+            const parts = value.split('|');
+            if (/^[-0-9]+$/.test(parts[0])) {
+                parts.shift();
+            }
+            for (let i = 0; i + 1 < parts.length; i += 2) {
+                const key = parts[i].split('-');
+                if (key[0] === 'MCOPTOUT' && parts[i + 1]) {
+                    if (key.length > 1) {
+                        const expiry = parseInt(key[1], 10);
+                        const isSession = key[1].indexOf('s') > 0;
+                        if (Date.now() >= expiry * 1000 || (isSession && !read(sessionCookieName))) {
+                            return null;
+                        }
+                    }
+                    return parts[i + 1];
+                }
+            }
+        } catch (e) {
+            // cookies or storages may not be available, e.g. in a sandboxed frame, or the cookie cannot be decoded
+        }
+        return null;
+    };
+
+    const visitor: AnyRecord = prototype ? Object.create(prototype) : {};
+    // defaults, which the configuration may change, as in the library
+    visitor.loadTimeout = 30000;
+    visitor.cookieName = `AMCV_${orgId}`;
+    visitor.sessionCookieName = `AMCVS_${orgId}`;
     if (config && typeof config === 'object') {
         Object.keys(config).forEach((key) => {
             visitor[key] = (config as AnyRecord)[key];
@@ -78,9 +152,77 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown): Any
     visitor._c = 'Visitor';
     visitor.version = '5.5.0';
     visitor.marketingCloudOrgID = orgId;
-    visitor.cookieName = `AMCV_${orgId}`;
-    visitor.sessionCookieName = `AMCVS_${orgId}`;
-    visitor.loadTimeout = 30000;
+    // the names of the configuration, if they are strings, otherwise the default ones
+    const cookieName = typeof visitor.cookieName === 'string' && visitor.cookieName !== ''
+        ? visitor.cookieName
+        : `AMCV_${orgId}`;
+    const sessionCookieName = typeof visitor.sessionCookieName === 'string' && visitor.sessionCookieName !== ''
+        ? visitor.sessionCookieName
+        : `AMCVS_${orgId}`;
+    visitor.cookieName = cookieName;
+    visitor.sessionCookieName = sessionCookieName;
+    // as the library reads a boolean setting: a function is called, and the strings `true` and `false`
+    // are booleans; any other value which is truthy enables it, e.g. `1`
+    let useLocalStorageValue = visitor.useLocalStorage;
+    if (typeof useLocalStorageValue === 'function') {
+        try {
+            useLocalStorageValue = useLocalStorageValue();
+        } catch (e) {
+            useLocalStorageValue = false;
+        }
+    }
+    if (useLocalStorageValue === 'true') {
+        useLocalStorageValue = true;
+    } else if (useLocalStorageValue === 'false') {
+        useLocalStorageValue = false;
+    }
+    if (visitor.useLocalStorage !== undefined) {
+        visitor.useLocalStorage = useLocalStorageValue;
+    }
+    const useLocalStorage = !!useLocalStorageValue;
+    // the opt-out which has been read, kept as the library keeps it once it is read
+    let knownOptOut = 'NONE';
+    /**
+     * Returns the opt-out of the visitor: the saved one, otherwise `NONE`.
+     * It is read when the instance is created, as by the library, and on each call, while the library reads it
+     * once, so that an opt-out saved later on the page is honored as well, e.g. by another copy of the library,
+     * or before the consent of the visitor is given, which is when the library reads it if opt-in applies.
+     * As in the library, an opt-out which has been read is kept while the page is open, also if its cookie
+     * expires, is removed or is replaced by a narrower one: scopes are only added, each of them once.
+     *
+     * @returns Opt-out, e.g. `global`, a list of scopes or `NONE`.
+     */
+    const getSavedOptOut = (): string => {
+        const saved = readSavedOptOut(cookieName, sessionCookieName, useLocalStorage);
+        if (saved && saved !== 'NONE' && knownOptOut !== 'global') {
+            if (saved === 'global' || knownOptOut === 'NONE') {
+                knownOptOut = saved;
+            } else {
+                const scopes = knownOptOut.split(',');
+                saved.split(',').forEach((scope) => {
+                    if (scopes.indexOf(scope) === -1) {
+                        scopes.push(scope);
+                    }
+                });
+                knownOptOut = scopes.join(',');
+            }
+        }
+        return knownOptOut;
+    };
+    // as the library, which reads it when the instance is created, unless the consent of the visitor is pending
+    getSavedOptOut();
+
+    /**
+     * Checks whether the visitor has opted out of a scope, as `isOptedOut()` of the library.
+     *
+     * @param scope Scope, `global` by default.
+     * @returns `true` if the visitor has opted out.
+     */
+    const isOptedOutOf = (scope?: unknown): boolean => {
+        const name = scope ? String(scope) : 'global';
+        const optOut = getSavedOptOut();
+        return optOut === 'global' || optOut.indexOf(name) >= 0;
+    };
     visitor.FIELDS = {};
     FIELDS.forEach((field) => {
         (visitor.FIELDS as AnyRecord)[field] = field;
@@ -92,19 +234,25 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown): Any
     visitor.getAudienceManagerLocationHint = emptyId;
     visitor.getAudienceManagerBlob = emptyId;
     visitor.getLocationHint = emptyId;
-    visitor.getOptOut = emptyId;
+    visitor.getOptOut = (callback?: unknown): string => {
+        const optOut = getSavedOptOut();
+        callLater(callback, [optOut]);
+        return optOut;
+    };
     // no supplemental data id is generated
     visitor.getSupplementalDataID = () => '';
     visitor.getVisitorValues = (callback: unknown, fields?: unknown) => {
         const values: AnyRecord = {};
         (Array.isArray(fields) ? fields : FIELDS).forEach((field) => {
-            values[String(field)] = '';
+            // as the library, the opt-out is a boolean, of the global scope
+            values[String(field)] = field === 'MCOPTOUT' ? isOptedOutOf() : '';
         });
         callLater(callback, [values]);
     };
-    visitor.isOptedOut = (callback?: unknown) => {
-        callLater(callback, [false]);
-        return null;
+    visitor.isOptedOut = (callback?: unknown, scope?: unknown) => {
+        const isOptedOut = isOptedOutOf(scope);
+        callLater(callback, [isOptedOut]);
+        return isOptedOut;
     };
     visitor.isAllowed = () => true;
     visitor.isClientSideMarketingCloudVisitorID = () => null;
@@ -479,6 +627,9 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         return w.adobe as AnyRecord;
     };
 
+    // prototype of `Visitor` of this mock, set when it is installed
+    let visitorPrototype: object | undefined;
+
     /**
      * Creates a visitor instance for an organization, registered in `s_c_il` as by the library.
      *
@@ -487,7 +638,8 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * @returns Visitor instance.
      */
     const createInstance = (orgId: string, config: unknown): AnyRecord => {
-        const visitor = createAdobeVisitorInstance(orgId, config);
+        // as the library, an instance of `Visitor` of this mock
+        const visitor = createAdobeVisitorInstance(orgId, config, visitorPrototype);
         if (!w.s_c_in) {
             w.s_c_il = [];
             w.s_c_in = 0;
@@ -605,6 +757,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         Visitor.version = '5.5.0';
         Visitor.windowLoaded = false;
         Visitor.codeLoadEnd = Date.now();
+        visitorPrototype = Visitor.prototype as object;
         w.Visitor = Visitor;
         installed = true;
         if (isOptInCreated) {

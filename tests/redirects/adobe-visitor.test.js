@@ -37,7 +37,7 @@ const before = async () => {
  */
 const removeAmcvCookies = () => {
     document.cookie.split(';').map((cookie) => cookie.split('=')[0].trim())
-        .filter((cookieName) => cookieName.startsWith('AMCV_'))
+        .filter((cookieName) => cookieName.startsWith('AMCV_') || cookieName.startsWith('AMCVS_'))
         .forEach((cookieName) => {
             document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         });
@@ -79,6 +79,11 @@ test('getInstance() as the library', (assert) => {
     assert.strictEqual(window.s_c_il[1], visitor, 'registered in s_c_il');
     assert.strictEqual(visitor._c, 'Visitor', '_c');
     assert.strictEqual(visitor.trackingServer, 'metrics.example.org', 'configuration copied');
+    assert.true(visitor instanceof window.Visitor, 'instance of Visitor, as the library');
+    assert.strictEqual(visitor.loadTimeout, 30000, 'default loadTimeout');
+    const configured = window.Visitor.getInstance('DEF@AdobeOrg', { loadTimeout: 500, _c: 'other' });
+    assert.strictEqual(configured.loadTimeout, 500, 'loadTimeout of the configuration, as the library');
+    assert.strictEqual(configured._c, 'Visitor', 'not other properties of the instance');
     assert.deepEqual(Object.keys(visitor.FIELDS), ['MCMID', 'MCOPTOUT', 'MCAID', 'MCAAMLH', 'MCAAMB'], 'FIELDS');
     assert.throws(() => window.Visitor.getInstance(), /Org ID/, 'throws without an organization, as the library');
 });
@@ -92,11 +97,13 @@ test('Empty ids, also in asynchronous callbacks; URLs unchanged', async (assert)
         'getAudienceManagerLocationHint',
         'getAudienceManagerBlob',
         'getLocationHint',
-        'getOptOut',
         'getSupplementalDataID',
     ].forEach((method) => {
         assert.strictEqual(visitor[method](), '', `${method}() returns an empty id`);
     });
+    assert.strictEqual(visitor.getOptOut(), 'NONE', 'getOptOut(), as the library without an opt-out');
+    assert.strictEqual(visitor.isOptedOut(), false, 'isOptedOut(), as the library without an opt-out');
+    assert.strictEqual(visitor.isOptedOut(null, window.Visitor.OptOut.GLOBAL), false, 'isOptedOut() of a scope');
     assert.strictEqual(visitor.isClientSideMarketingCloudVisitorID(), null, 'isClientSideMarketingCloudVisitorID()');
     assert.strictEqual(visitor.isAllowed(), true, 'isAllowed()');
     assert.strictEqual(visitor.appendVisitorIDsTo('https://x.org/p?a=1'), 'https://x.org/p?a=1', 'no adobe_mc');
@@ -107,7 +114,8 @@ test('Empty ids, also in asynchronous callbacks; URLs unchanged', async (assert)
     visitor.getAnalyticsVisitorID((id) => calls.push(['aid', id]));
     visitor.getVisitorValues((values) => calls.push(['values', values]));
     visitor.getVisitorValues((values) => calls.push(['mcmid', values]), [visitor.FIELDS.MCMID]);
-    assert.strictEqual(visitor.isOptedOut((optedOut) => calls.push(['optedOut', optedOut])), null, 'isOptedOut()');
+    visitor.isOptedOut((optedOut) => calls.push(['optedOut', optedOut]));
+    visitor.getOptOut((optOut) => calls.push(['optOut', optOut]));
     visitor.getMarketingCloudVisitorID(() => {
         throw new Error('page callback');
     });
@@ -122,13 +130,14 @@ test('Empty ids, also in asynchronous callbacks; URLs unchanged', async (assert)
         ['aid', ''],
         ['values', {
             MCMID: '',
-            MCOPTOUT: '',
+            MCOPTOUT: false,
             MCAID: '',
             MCAAMLH: '',
             MCAAMB: '',
         }],
         ['mcmid', { MCMID: '' }],
         ['optedOut', false],
+        ['optOut', 'NONE'],
         ['pair', true, ''],
     ], 'empty values, errors of callbacks caught, [receiver, callback] pair as the library');
 
@@ -456,5 +465,172 @@ test('No requests, cookies or storage items, except the dummy AMCV cookie', asyn
         Storage.prototype.setItem = nativeSetItem;
         delete document.createElement;
         delete document.cookie;
+    }
+});
+
+test('Honors the opt-out of the visitor saved in the cookie of the organization, as the library', async (assert) => {
+    const future = Math.floor(Date.now() / 1000) + 86400;
+    const past = Math.floor(Date.now() / 1000) - 86400;
+    // as the library writes it: the name and the value are encoded
+    const saveCookie = (orgId, value) => {
+        document.cookie = `AMCV_${encodeURIComponent(orgId)}=${encodeURIComponent(value)}; path=/`;
+    };
+    const check = (orgId, config) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        run();
+        const visitor = window.Visitor.getInstance(orgId, config);
+        const values = [];
+        visitor.getVisitorValues((fields) => values.push(fields.MCOPTOUT));
+        return {
+            visitor,
+            values,
+            state: [visitor.getOptOut(), visitor.isOptedOut(), visitor.isOptedOut(null, 'target')],
+        };
+    };
+
+    saveCookie('OUT@AdobeOrg', `-1124106680|MCMID|123|MCOPTOUT-${future}s|global|vVersion|5.5.0`);
+    document.cookie = `AMCVS_${encodeURIComponent('OUT@AdobeOrg')}=1; path=/`;
+    const optedOut = check('OUT@AdobeOrg');
+    assert.deepEqual(optedOut.state, ['global', true, true], 'global opt-out');
+    const calls = [];
+    optedOut.visitor.isOptedOut((value) => calls.push(value));
+    optedOut.visitor.getOptOut((value) => calls.push(value));
+    await sleep(10);
+    assert.deepEqual(optedOut.values, [true], 'MCOPTOUT of getVisitorValues()');
+    assert.deepEqual(calls, [true, 'global'], 'callbacks');
+
+    saveCookie('SCOPE@AdobeOrg', `MCOPTOUT-${future}|aam,target|vVersion|5.5.0`);
+    assert.deepEqual(check('SCOPE@AdobeOrg').state, ['aam,target', false, true], 'opt-out of some scopes');
+
+    saveCookie('NOEXPIRY@AdobeOrg', 'MCOPTOUT|global');
+    assert.deepEqual(check('NOEXPIRY@AdobeOrg').state, ['global', true, true], 'without an expiry');
+
+    // ignored, as by the library
+    saveCookie('EXPIRED@AdobeOrg', `MCOPTOUT-${past}|global`);
+    assert.deepEqual(check('EXPIRED@AdobeOrg').state, ['NONE', false, false], 'expired');
+    saveCookie('SESSION@AdobeOrg', `MCOPTOUT-${future}s|global`);
+    assert.deepEqual(check('SESSION@AdobeOrg').state, ['NONE', false, false], 'expired with the session');
+    saveCookie('NONE@AdobeOrg', `MCOPTOUT-${future}|NONE`);
+    const notOptedOut = check('NONE@AdobeOrg');
+    await sleep(10);
+    assert.deepEqual([notOptedOut.state, notOptedOut.values], [['NONE', false, false], [false]], 'NONE');
+    assert.deepEqual(check('OTHER@AdobeOrg').state, ['NONE', false, false], 'cookie of another organization');
+    document.cookie = 'AMCV_RAW@AdobeOrg=MCOPTOUT|global; path=/';
+    assert.deepEqual(check('RAW@AdobeOrg').state, ['NONE', false, false], 'name which is not encoded');
+
+    // an opt-out saved after the instance is created, e.g. while the consent of the visitor is pending
+    const late = check('LATE@AdobeOrg', { doesOptInApply: true });
+    assert.deepEqual(late.state, ['NONE', false, false], 'no opt-out yet');
+    saveCookie('LATE@AdobeOrg', `MCOPTOUT-${future}|global`);
+    window.adobe.optIn.approveAll();
+    assert.deepEqual(
+        [late.visitor.getOptOut(), late.visitor.isOptedOut()],
+        ['global', true],
+        'opt-out saved later is honored',
+    );
+    const lateValues = [];
+    late.visitor.getVisitorValues((fields) => lateValues.push(fields.MCOPTOUT));
+    await sleep(10);
+    assert.deepEqual(lateValues, [true], 'MCOPTOUT of an opt-out saved later');
+
+    // as in the library, an opt-out which has been read is kept while the page is open
+    const removeCookie = (orgId) => {
+        document.cookie = `AMCV_${encodeURIComponent(orgId)}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    };
+    const stateOf = (visitor) => [visitor.getOptOut(), visitor.isOptedOut(), visitor.isOptedOut(null, 'target')];
+    saveCookie('KEPT@AdobeOrg', `MCOPTOUT-${future}|global`);
+    const kept = check('KEPT@AdobeOrg');
+    removeCookie('KEPT@AdobeOrg');
+    assert.deepEqual(stateOf(kept.visitor), ['global', true, true], 'kept after its cookie is removed');
+    saveCookie('KEPT@AdobeOrg', `MCOPTOUT-${future}|NONE`);
+    assert.deepEqual(stateOf(kept.visitor), ['global', true, true], 'kept after it is replaced by NONE');
+    saveCookie('KEPT@AdobeOrg', `MCOPTOUT-${future}|aam`);
+    assert.deepEqual(stateOf(kept.visitor), ['global', true, true], 'not narrowed');
+    // as the library, the opt-out is read when the instance is created, not only when the page asks for it
+    saveCookie('CREATED@AdobeOrg', `MCOPTOUT-${future}|global`);
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    run();
+    const created = window.Visitor.getInstance('CREATED@AdobeOrg');
+    removeCookie('CREATED@AdobeOrg');
+    assert.deepEqual(stateOf(created), ['global', true, true], 'read before its cookie is removed');
+
+    saveCookie('WIDER@AdobeOrg', `MCOPTOUT-${future}|aam`);
+    const wider = check('WIDER@AdobeOrg');
+    assert.deepEqual(stateOf(wider.visitor), ['aam', false, false], 'opt-out of a scope');
+    saveCookie('WIDER@AdobeOrg', `MCOPTOUT-${future}|target`);
+    assert.deepEqual(stateOf(wider.visitor), ['aam,target', false, true], 'scopes are added');
+    assert.deepEqual(
+        [wider.visitor.getOptOut(), wider.visitor.getOptOut()],
+        ['aam,target', 'aam,target'],
+        'each scope is added once',
+    );
+    saveCookie('WIDER@AdobeOrg', `MCOPTOUT-${future}|target,aam,campaign`);
+    assert.strictEqual(wider.visitor.getOptOut(), 'aam,target,campaign', 'only new scopes of a list are added');
+    saveCookie('WIDER@AdobeOrg', `MCOPTOUT-${future}|global`);
+    assert.deepEqual(stateOf(wider.visitor), ['global', true, true], 'widened to the global one');
+
+    // names of the configuration, as the library
+    document.cookie = `AMCV_test_visitor=${encodeURIComponent(`MCOPTOUT-${future}s|global`)}; path=/`;
+    document.cookie = 'AMCVS_test_session=1; path=/';
+    const names = { cookieName: 'AMCV_test_visitor', sessionCookieName: 'AMCVS_test_session' };
+    const named = check('NAMED@AdobeOrg', names);
+    assert.deepEqual(named.state, ['global', true, true], 'cookieName and sessionCookieName of the configuration');
+    assert.deepEqual(
+        [named.visitor.cookieName, named.visitor.sessionCookieName],
+        ['AMCV_test_visitor', 'AMCVS_test_session'],
+        'names of the instance',
+    );
+    assert.deepEqual(
+        check('NAMED@AdobeOrg', { cookieName: 'AMCV_test_visitor' }).state,
+        ['NONE', false, false],
+        'expired without the session cookie of the default name',
+    );
+    assert.strictEqual(check('NAMED@AdobeOrg', { cookieName: 5 }).visitor.cookieName, 'AMCV_NAMED@AdobeOrg', 'default');
+
+    // `useLocalStorage`: the storages instead of cookies, as the library
+    const storedName = 'AMCV_STORED@AdobeOrg';
+    const storedSessionName = 'AMCVS_STORED@AdobeOrg';
+    try {
+        window.localStorage.setItem(storedName, `MCOPTOUT-${future}s|global|vVersion|5.5.0`);
+        assert.deepEqual(
+            check('STORED@AdobeOrg', { useLocalStorage: true }).state,
+            ['NONE', false, false],
+            'expired without the item of the session',
+        );
+        window.sessionStorage.setItem(storedSessionName, '1');
+        assert.deepEqual(check('STORED@AdobeOrg', { useLocalStorage: true }).state, ['global', true, true], 'storages');
+        assert.deepEqual(check('STORED@AdobeOrg', { useLocalStorage: 'true' }).state, ['global', true, true], 'string');
+        let calls = 0;
+        const fromFunction = check('STORED@AdobeOrg', {
+            useLocalStorage: () => {
+                calls += 1;
+                return true;
+            },
+        });
+        assert.deepEqual(fromFunction.state, ['global', true, true], 'function, as the library');
+        assert.deepEqual([calls, fromFunction.visitor.useLocalStorage], [1, true], 'called once, result kept');
+        assert.deepEqual(check('STORED@AdobeOrg', { useLocalStorage: 1 }).state, ['global', true, true], 'truthy');
+        assert.deepEqual(
+            check('STORED@AdobeOrg', { useLocalStorage: 'false' }).state,
+            ['NONE', false, false],
+            'string false is cookies',
+        );
+        const failing = check('STORED@AdobeOrg', {
+            useLocalStorage: () => {
+                throw new Error('error of the page');
+            },
+        });
+        assert.deepEqual(failing.state, ['NONE', false, false], 'function which throws is cookies');
+        assert.deepEqual(check('STORED@AdobeOrg').state, ['NONE', false, false], 'storages are not read otherwise');
+        saveCookie('COOKIE@AdobeOrg', `MCOPTOUT-${future}|global`);
+        assert.deepEqual(
+            check('COOKIE@AdobeOrg', { useLocalStorage: true }).state,
+            ['NONE', false, false],
+            'cookies are not read with useLocalStorage',
+        );
+        assert.strictEqual(window.localStorage.length, 1, 'nothing is written to the storage');
+    } finally {
+        window.localStorage.removeItem(storedName);
+        window.sessionStorage.removeItem(storedSessionName);
     }
 });
