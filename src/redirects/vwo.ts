@@ -78,8 +78,16 @@ export function Vwo(source: Source) {
         if (typeof w._vwo_library_timer === 'number') {
             w.clearTimeout(w._vwo_library_timer);
         }
-        // without an argument, as with one the SmartCode sends an error beacon
-        runProtected(existingCode.finish, []);
+        // Called as a method, as by the SmartCode and the library, e.g. `window._vwo_code.finish()`,
+        // rather than by `runProtected()`, which calls it without its receiver;
+        // without an argument, as with one the SmartCode sends an error beacon.
+        if (typeof existingCode.finish === 'function') {
+            try {
+                existingCode.finish();
+            } catch (e) {
+                // an error of the SmartCode does not stop the resource
+            }
+        }
     } else {
         // The synchronous SmartCode is the library itself, and an asynchronous one which runs later,
         // e.g. after the scriptlet, is skipped if `_vwo_code` exists, so it does not hide the page then.

@@ -58,10 +58,11 @@ const runRedirect = () => {
  * by `finish()` or after the settings timeout.
  *
  * @param {number} timeout settings timeout in ms
- * @returns {object[]} calls of `finish()`
+ * @returns {object[]} calls of `finish()`, and `receivers` with `this` of each call
  */
 const runSmartCode = (timeout) => {
     const calls = [];
+    calls.receivers = [];
     const style = document.createElement('style');
     style.id = HIDING_ID;
     style.textContent = 'body{opacity:0 !important}';
@@ -70,6 +71,7 @@ const runSmartCode = (timeout) => {
     window._vwo_code = {
         finish(...args) {
             calls.push(args);
+            calls.receivers.push(this);
             if (!finished) {
                 finished = true;
                 style.remove();
@@ -143,6 +145,7 @@ test('Shows the page hidden by the SmartCode at once', async (assert) => {
     runRedirect();
     assert.notOk(document.getElementById(HIDING_ID), 'page is shown at once');
     assert.deepEqual(calls, [[]], 'finish() is called once without arguments');
+    assert.strictEqual(calls.receivers[0], window._vwo_code, 'finish() is called as a method of _vwo_code');
     assert.strictEqual(window._vwo_code.libExecuted, true, 'libExecuted stops the SmartCode from hiding it again');
 
     await sleep(150);
