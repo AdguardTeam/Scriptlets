@@ -54,6 +54,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   detect ad blockers by them [#588].
 - `prebid` redirect resource and scriptlet mock `pbjs.rp` of the Prebid wrapper of Magnite, whose
   `requestVideoBids()` calls its callback without an ad, so that video players which wait for it are started [#588].
+- `engines` in `package.json`: added the `node` requirement `>=22.23.5`,
+  because Node.js 22.23.4 is the first version with the fix for
+  CVE-2026-111497. This drops Node.js < 22.23.5 for package consumers and needs
+  a major release.
 
 ### Deprecated
 

@@ -10,7 +10,7 @@ Redirect Resources library.
 
 | Tool      | Version           | Notes                        |
 | --------- | ----------------- | ---------------------------- |
-| [Node.js] | 22                | Use [nvm] to manage versions |
+| [Node.js] | 22.23.5           | Use [nvm] to manage versions |
 | [pnpm]    | >=10.33.4 and <11 | Package manager              |
 | [Git]     | Latest            | Version control              |
 
