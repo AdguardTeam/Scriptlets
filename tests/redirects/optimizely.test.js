@@ -1344,6 +1344,26 @@ test('utils.persistHtml()', (assert) => {
         /no element found for selector "#missing-node"/,
         'no element',
     );
+    assert.throws(
+        () => persistHtml('<i></i>', '#missing-node', 'inside'),
+        /placement must be one of/,
+        'an invalid placement is reported before a missing element, as by the real client',
+    );
+
+    // the selector is queried once, also to check that it is valid
+    const nativeQuerySelector = Document.prototype.querySelector;
+    let queries = 0;
+    Document.prototype.querySelector = function (...args) {
+        queries += 1;
+        return nativeQuerySelector.apply(this, args);
+    };
+    try {
+        persistHtml('<i id="once"></i>', '#optimizely-anchor');
+    } finally {
+        Document.prototype.querySelector = nativeQuerySelector;
+    }
+    assert.strictEqual(queries, 1, 'selector is queried once');
+    assert.ok(document.getElementById('once'), 'and the markup is inserted');
 });
 
 test('Project identity from the URL of the snippet', (assert) => {

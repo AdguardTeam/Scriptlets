@@ -609,8 +609,9 @@ export function Optimizely(source: Source) {
         if (typeof html !== 'string' || html === '') {
             throw new Error('persistHtml: html must be a non-empty string');
         }
+        let target: Element | null;
         try {
-            doc.querySelector(selector as string);
+            target = doc.querySelector(selector as string);
         } catch (e) {
             throw new Error(`persistHtml: invalid CSS selector: ${selector}`);
         }
@@ -618,7 +619,7 @@ export function Optimizely(source: Source) {
         if (hasOwn(PLACEMENTS, position) === false) {
             throw new Error(`persistHtml: placement must be one of: ${Object.keys(PLACEMENTS).join(', ')}`);
         }
-        const target = doc.querySelector(selector as string);
+        // checked after the placement, as by the real client
         if (target === null) {
             throw new Error(`persistHtml: no element found for selector "${selector}"`);
         }
