@@ -1212,6 +1212,32 @@ test('utils.poll() and utils.onUrlChange() call callbacks without a receiver', a
     assert.ok(isNoReceiver(urlReceiver), 'onUrlChange() handler');
 });
 
+test('Calls callbacks whose own apply is replaced, as the real client calls them directly', async (assert) => {
+    runRedirect();
+    const calls = [];
+    // a function stays callable with an own `apply` which is not a function, but `apply()` of it throws
+    const withoutApply = (label) => Object.assign(() => calls.push(label), { apply: null });
+
+    const { observeSelector, onUrlChange } = window.optimizely.get('utils');
+    const unsubscribe = onUrlChange(withoutApply('onUrlChange'));
+    window.history.pushState(null, '', '#own-apply');
+    unsubscribe();
+
+    window.optimizely.push({
+        type: 'addListener',
+        filter: { type: 'custom', name: 'own-apply' },
+        handler: withoutApply('addListener'),
+    });
+    window.optimizely.get('event_emitter').emit({ type: 'custom', name: 'own-apply' });
+
+    observeSelector(`#${CONTAINER_ID} .never`, () => calls.push('match'), {
+        timeout: -1,
+        onTimeout: withoutApply('onTimeout'),
+    });
+    await sleep(50);
+    assert.deepEqual(calls, ['onUrlChange', 'addListener', 'onTimeout'], 'all callbacks are called');
+});
+
 test('utils.persistHtml()', (assert) => {
     runRedirect();
     const { persistHtml } = window.optimizely.get('utils');

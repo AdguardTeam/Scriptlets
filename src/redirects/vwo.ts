@@ -78,15 +78,10 @@ export function Vwo(source: Source) {
         if (typeof w._vwo_library_timer === 'number') {
             w.clearTimeout(w._vwo_library_timer);
         }
-        // Called as a method, as by the SmartCode and the library, e.g. `window._vwo_code.finish()`,
-        // rather than by `runProtected()`, which calls it without its receiver;
+        // Called as a method, as by the SmartCode and the library, e.g. `window._vwo_code.finish()`;
         // without an argument, as with one the SmartCode sends an error beacon.
         if (typeof existingCode.finish === 'function') {
-            try {
-                existingCode.finish();
-            } catch (e) {
-                // an error of the SmartCode does not stop the resource
-            }
+            runProtected(() => (existingCode as { finish: () => void }).finish(), []);
         }
     } else {
         // The synchronous SmartCode is the library itself, and an asynchronous one which runs later,

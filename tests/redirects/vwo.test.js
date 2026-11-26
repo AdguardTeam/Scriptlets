@@ -162,6 +162,15 @@ test('Errors of finish() are not thrown', (assert) => {
     assert.strictEqual(window.vwo_libExecuted, true, 'library globals are installed');
 });
 
+test('Calls finish() whose own apply is replaced, as the SmartCode calls it directly', (assert) => {
+    const calls = runSmartCode(100);
+    // a function stays callable with an own `apply` which is not a function, but `apply()` of it throws
+    window._vwo_code.finish.apply = null;
+    runRedirect();
+    assert.notOk(document.getElementById(HIDING_ID), 'page is shown at once');
+    assert.deepEqual(calls, [[]], 'finish() is called once');
+});
+
 test('Removes a remaining hiding element', (assert) => {
     const overlay = document.createElement('div');
     overlay.id = HIDING_ID;

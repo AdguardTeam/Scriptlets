@@ -137,9 +137,8 @@ export function Jad(source: Source) {
         if (typeof command !== 'function') {
             return;
         }
-        // Called directly, as by `jad.scheduler.runCmd()` of the library, rather than by `runProtected()`,
-        // which calls it by `apply(null, [])`: `this` of a command in strict code is `undefined` then,
-        // and a command whose own `apply` is replaced is run as well.
+        // Called directly, as by `jad.scheduler.runCmd()` of the library, so `this` of a command
+        // in strict code is `undefined`, and a command whose own `apply` is replaced is run as well.
         try {
             command();
         } catch (e) {

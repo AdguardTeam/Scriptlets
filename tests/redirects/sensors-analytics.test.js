@@ -139,6 +139,14 @@ test('Calls the callbacks of the page as the SDK', async (assert) => {
     assert.deepEqual(calls, ['isReady:0'], 'isReady callback is called at once');
     assert.deepEqual(thisArgs, [sensors, 1, 2], 'function is called with the SDK and the arguments');
 
+    // as the SDK, i.e. `command.apply(sd, args)`, an own `apply` of the function is used
+    const ownApplyCalls = [];
+    const withOwnApply = Object.assign(() => ownApplyCalls.push('function'), {
+        apply: (thisArg, args) => ownApplyCalls.push('own apply', thisArg, args),
+    });
+    sensors.quick(withOwnApply, 3);
+    assert.deepEqual(ownApplyCalls, ['own apply', sensors, [3]], 'own apply of a function is used, as by the SDK');
+
     let appStatusCalled = false;
     assert.strictEqual(sensors.getAppStatus(() => {
         appStatusCalled = true;

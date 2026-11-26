@@ -273,11 +273,8 @@ export function Optimizely(source: Source) {
      */
     const stopByTimeout = (entry: ObserverEntry): false => {
         if (entry.matched === 0 && typeof entry.options.onTimeout === 'function') {
-            try {
-                (entry.options as { onTimeout: Callback }).onTimeout();
-            } catch (e) {
-                // ignore errors of the page callback
-            }
+            // called directly, as a method of the options, as by the real client
+            runProtected(() => (entry.options as { onTimeout: Callback }).onTimeout(), []);
         }
         return false;
     };
@@ -498,13 +495,9 @@ export function Optimizely(source: Source) {
     const notifyUrlChange = () => {
         const handlers = Array.from(urlChangeHandlers.values());
         for (let i = 0; i < handlers.length; i += 1) {
-            // called without a receiver, as in the real client
+            // called directly, without a receiver, as by the real client, so `this` in strict code is `undefined`
             const handler = handlers[i];
-            try {
-                handler(w.location.href);
-            } catch (e) {
-                // ignore errors of the page callback
-            }
+            runProtected(() => handler(w.location.href), []);
         }
     };
 
@@ -873,18 +866,14 @@ export function Optimizely(source: Source) {
     /**
      * Calls the handler of a listener with an event, catching its errors.
      * As the real client, a handler of `addListener` is called without a receiver, so `this` in strict code
-     * is `undefined`, rather than by `runProtected()`, which calls it with `null`, and a handler
-     * of `event_emitter.on()` with an object of its own for each call.
+     * is `undefined`, not `null`, and a handler of `event_emitter.on()` with an object of its own for each call.
      *
      * @param entry Listener.
      * @param event Event.
      */
     const callListener = (entry: ListenerEntry, event: OptimizelyEvent) => {
-        try {
-            (entry.handler as Callback).call(entry.hasReceiver ? {} : undefined, event);
-        } catch (e) {
-            // ignore errors of the page handler
-        }
+        const handler = entry.handler as Callback;
+        runProtected(() => handler.call(entry.hasReceiver ? {} : undefined, event), []);
     };
 
     /**

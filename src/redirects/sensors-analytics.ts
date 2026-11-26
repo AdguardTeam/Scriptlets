@@ -286,13 +286,8 @@ export function SensorsAnalytics(source: Source) {
             // eslint-disable-next-line prefer-spread
             return commonWays[command].apply(commonWays, args);
         }
-        if (typeof command === 'function') {
-            try {
-                command.apply(sd, args);
-            } catch (e) {
-                // ignore errors of the page function
-            }
-        }
+        // as the SDK, a function is called as a method of `sd`
+        runProtected(command, args, sd);
         return undefined;
     };
 

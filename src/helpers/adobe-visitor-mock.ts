@@ -27,24 +27,6 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
     const FIELDS = ['MCMID', 'MCOPTOUT', 'MCAID', 'MCAAMLH', 'MCAAMB'];
 
     /**
-     * Calls a callback of the page with a receiver, and catches its errors.
-     *
-     * @param receiver Receiver of the call.
-     * @param callback Callback of the page.
-     * @param args Arguments of the callback.
-     */
-    const callWith = (receiver: unknown, callback: unknown, args: unknown[]) => {
-        if (typeof callback !== 'function') {
-            return;
-        }
-        try {
-            callback.apply(receiver, args);
-        } catch (e) {
-            // ignore errors of the page callback
-        }
-    };
-
-    /**
      * Calls a callback of the page asynchronously, as the library does once its requests have failed.
      * As the library, the callback may be a function or a `[receiver, function]` pair.
      *
@@ -57,7 +39,7 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
         } else if (Array.isArray(callback) && typeof callback[1] === 'function') {
             const receiver = callback[0];
             const fn = callback[1];
-            window.setTimeout(() => callWith(receiver, fn, args), 0);
+            window.setTimeout(() => runProtected(fn, args, receiver), 0);
         }
     };
 
@@ -386,24 +368,6 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
     };
 
     /**
-     * Calls a callback of the page with a receiver, and catches its errors.
-     *
-     * @param receiver Receiver of the call.
-     * @param callback Callback of the page.
-     * @param args Arguments of the callback.
-     */
-    const callWith = (receiver: unknown, callback: unknown, args: unknown[]) => {
-        if (typeof callback !== 'function') {
-            return;
-        }
-        try {
-            callback.apply(receiver, args);
-        } catch (e) {
-            // ignore errors of the page callback
-        }
-    };
-
-    /**
      * Creates `adobe.optIn` as `OptIn` of the library, version 5.5.0, but without its storage, i.e. as with
      * `isOptInStorageEnabled: false`, and without the IAB plugin:
      * - if opt-in does not apply, all categories are approved; otherwise none is, except the ones
@@ -531,7 +495,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             // a copy, as a listener may remove itself
             listeners.slice().forEach((listener) => {
                 if (listener.event === 'complete') {
-                    callWith(listener.context, listener.callback, [permissions]);
+                    runProtected(listener.callback, [permissions], listener.context);
                 }
             });
             const callbacks = waitingCallbacks;

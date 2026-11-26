@@ -650,17 +650,34 @@ Project-specific rules:
     ones registered with a mocked API or queued in a command queue of the mocked
     library, SHOULD call them with the `runProtected()` helper, instead of a
     local copy of it or a `try`/`catch` at each call site, and list it in
-    `injections`. A resource whose library calls them directly, e.g.
-    `command()` of the command queue of `jad`, MAY call them so in a `try`,
-    with a comment, as the helper calls them by `apply(null, args)`, as e.g.
-    the Visitor API does, which gives them `this === null` in strict code.
+    `injections`. If the library calls a callback with a receiver, e.g. a method
+    of a tracker of the page, a `[receiver, callback]` pair or a handler with
+    `this === undefined`, the receiver is passed as the third argument, which
+    is passed to the callback as it is, also `undefined`. If the library calls
+    a callback directly, not by its `apply()`, e.g. `handler(event)` or
+    `code.finish()`, the resource SHOULD call it in the same way in an arrow
+    function passed to the helper, e.g. `runProtected(() => code.finish(), [])`,
+    or MAY call it so in a `try` at the call site, with a comment, e.g. the
+    commands of `jad` and `prebid`. A callback whose return value is needed,
+    e.g. `register()` in `adobe-target`, MAY be called in a `try` at the call
+    site, with a comment, as the helper returns nothing.
 
-    **Rationale**: The helper calls the callback without a receiver, as the
-    mocked libraries do, so `this` is not an internal array or object of the
-    resource, and catches its errors, so that one failing callback does not
-    stop the resource or the other callbacks. It calls the callback with
-    `apply()`, as a spread call would need a Babel helper which is not in the
-    built resource.
+    **Rationale**: The helper calls the callback as the mocked libraries do,
+    by default without a receiver, i.e. with `null`, as `apply(null, args)` of
+    e.g. the Visitor API, which gives it `this === null` in strict code, so `this`
+    is not an internal array or object of the resource, and catches its errors,
+    so that one failing callback does not stop the resource or the other
+    callbacks. An omitted receiver is told from a given `undefined` by the
+    number of arguments, as a default parameter would replace `undefined` with
+    `null`. It calls the callback by its own `apply()`, as e.g. the Visitor API,
+    AppMeasurement and the SDK of Sensors Analytics do, so an `apply` which the
+    page has set on the callback is used, and the callback is not called if it
+    is not a function, while a library which calls the callback directly does
+    neither, and a spread call would need a Babel helper which is not in the
+    built resource. It returns nothing, as
+    mocked methods return its result, e.g.
+    `getUser: (callback) => runProtected(callback, [null])`, which would return
+    the value of the callback of the page otherwise.
 
 24. Redirect resources and scriptlets which send a request instead of the mocked library, to keep
     a function of the page, e.g. the site search and the widgets of `cxense`, MUST send it with

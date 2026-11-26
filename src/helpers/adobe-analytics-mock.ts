@@ -176,13 +176,7 @@ export function mockAdobeAnalytics(): boolean {
             if (typeof callback !== 'function') {
                 return;
             }
-            window.setTimeout(() => {
-                try {
-                    callback.apply(receiver, Array.isArray(args) ? args : []);
-                } catch (e) {
-                    // ignore errors of the page callback
-                }
-            }, 0);
+            window.setTimeout(() => runProtected(callback, Array.isArray(args) ? args : [], receiver), 0);
         };
         s.t = () => undefined;
         s.track = s.t;
@@ -286,15 +280,7 @@ export function mockAdobeAnalytics(): boolean {
      * @param args Arguments.
      */
     const callMethod = (tracker: unknown, name: string, args: unknown[]) => {
-        const method = tracker ? (tracker as AnyRecord)[name] : undefined;
-        if (typeof method !== 'function') {
-            return;
-        }
-        try {
-            method.apply(tracker, args);
-        } catch (e) {
-            // ignore errors of a tracker of the page
-        }
+        runProtected(tracker ? (tracker as AnyRecord)[name] : undefined, args, tracker);
     };
 
     /**
