@@ -59,6 +59,22 @@ export function mockAdobeTarget(): boolean {
 
     const NativePromise = w.Promise;
     const PREHIDING_IDS = ['at-body-style', 'alloy-prehiding'];
+    // events of at.js; `adobe.target.event` is a copy, so that the page cannot change the events
+    // which the mock dispatches, as at.js dispatches its events by their names, not by that object
+    const EVENTS = {
+        LIBRARY_LOADED: 'at-library-loaded',
+        REQUEST_START: 'at-request-start',
+        REQUEST_SUCCEEDED: 'at-request-succeeded',
+        REQUEST_FAILED: 'at-request-failed',
+        CONTENT_RENDERING_START: 'at-content-rendering-start',
+        CONTENT_RENDERING_SUCCEEDED: 'at-content-rendering-succeeded',
+        CONTENT_RENDERING_FAILED: 'at-content-rendering-failed',
+        CONTENT_RENDERING_NO_OFFERS: 'at-content-rendering-no-offers',
+        CONTENT_RENDERING_REDIRECT: 'at-content-rendering-redirect',
+        ARTIFACT_DOWNLOAD_SUCCEEDED: 'artifactDownloadSucceeded',
+        ARTIFACT_DOWNLOAD_FAILED: 'artifactDownloadFailed',
+        GEO_LOCATION_UPDATED: 'geoLocationUpdated',
+    };
 
     /**
      * Returns a random session id in the format of at.js: 32 hexadecimal characters.
@@ -140,9 +156,9 @@ export function mockAdobeTarget(): boolean {
      */
     const dispatchRequestWithoutOffers = (mbox?: unknown) => {
         const extra: Record<string, unknown> = mbox === undefined ? {} : { mbox };
-        dispatch('at-request-start', extra);
-        dispatch('at-request-succeeded', Object.assign({ redirect: false }, extra));
-        dispatch('at-content-rendering-no-offers', extra);
+        dispatch(EVENTS.REQUEST_START, extra);
+        dispatch(EVENTS.REQUEST_SUCCEEDED, Object.assign({ redirect: false }, extra));
+        dispatch(EVENTS.CONTENT_RENDERING_NO_OFFERS, extra);
     };
 
     /**
@@ -257,20 +273,7 @@ export function mockAdobeTarget(): boolean {
 
     const target = {
         VERSION: '2.11.8',
-        event: {
-            LIBRARY_LOADED: 'at-library-loaded',
-            REQUEST_START: 'at-request-start',
-            REQUEST_SUCCEEDED: 'at-request-succeeded',
-            REQUEST_FAILED: 'at-request-failed',
-            CONTENT_RENDERING_START: 'at-content-rendering-start',
-            CONTENT_RENDERING_SUCCEEDED: 'at-content-rendering-succeeded',
-            CONTENT_RENDERING_FAILED: 'at-content-rendering-failed',
-            CONTENT_RENDERING_NO_OFFERS: 'at-content-rendering-no-offers',
-            CONTENT_RENDERING_REDIRECT: 'at-content-rendering-redirect',
-            ARTIFACT_DOWNLOAD_SUCCEEDED: 'artifactDownloadSucceeded',
-            ARTIFACT_DOWNLOAD_FAILED: 'artifactDownloadFailed',
-            GEO_LOCATION_UPDATED: 'geoLocationUpdated',
-        },
+        event: Object.assign({}, EVENTS),
         init: noopFunc,
         // As at.js for an mbox without offers: the success callback is called with no actions.
         getOffer: (options: unknown) => {
@@ -295,7 +298,7 @@ export function mockAdobeTarget(): boolean {
                 }
             });
             const extra = opts.mbox === undefined ? {} : { mbox: opts.mbox };
-            whenStarted(() => dispatch('at-content-rendering-no-offers', extra));
+            whenStarted(() => dispatch(EVENTS.CONTENT_RENDERING_NO_OFFERS, extra));
         },
         applyOffers: () => resolveWhenStarted(undefined),
         triggerView: noopFunc,
@@ -400,7 +403,7 @@ export function mockAdobeTarget(): boolean {
             // e.g. a getter of the page which throws
         }
         if (!isReplaced) {
-            dispatch('at-library-loaded');
+            dispatch(EVENTS.LIBRARY_LOADED);
             dispatchRequestWithoutOffers();
         }
         isStarted = true;

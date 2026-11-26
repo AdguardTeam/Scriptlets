@@ -165,6 +165,9 @@ test('getOffer() calls success with no offers asynchronously', async (assert) =>
     const recorder = recordEvents();
     await sleep(10);
     recorder.events.length = 0;
+    // as at.js, the events are not changed by the page, which changes the constants of `adobe.target.event`
+    target.event.REQUEST_START = 'changed-request-start';
+    target.event.CONTENT_RENDERING_NO_OFFERS = 'changed-no-offers';
     try {
         const calls = [];
         const result = target.getOffer({
