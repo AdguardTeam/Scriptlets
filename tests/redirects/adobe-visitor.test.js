@@ -1025,6 +1025,73 @@ test('Honors the opt-out of the visitor saved in the cookie of the organization,
     );
     assert.strictEqual(check('NAMED@AdobeOrg', { cookieName: 5 }).visitor.cookieName, 'AMCV_NAMED@AdobeOrg', 'default');
 
+    // names inherited from the prototype, e.g. set by the page, are not used, as by the library
+    const checkInherited = (setting, value) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        run();
+        window.Visitor.prototype[setting] = value;
+        try {
+            const visitor = window.Visitor.getInstance('OUT@AdobeOrg');
+            return [visitor.getOptOut(), visitor.isOptedOut(), visitor[setting]];
+        } finally {
+            delete window.Visitor.prototype[setting];
+        }
+    };
+    assert.deepEqual(
+        checkInherited('cookieName', 'AMCV_inherited'),
+        ['global', true, 'AMCV_OUT@AdobeOrg'],
+        'cookieName of the prototype',
+    );
+    assert.deepEqual(
+        checkInherited('sessionCookieName', 'AMCVS_inherited'),
+        ['global', true, 'AMCVS_OUT@AdobeOrg'],
+        'sessionCookieName of the prototype, i.e. a session opt-out',
+    );
+
+    // names of the configuration, also if a setter of the prototype stores them elsewhere
+    const checkSetter = (setting, change = (value) => value) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        run();
+        Object.defineProperty(window.Visitor.prototype, setting, {
+            configurable: true,
+            get() {
+                return this[`stored_${setting}`];
+            },
+            set(value) {
+                this[`stored_${setting}`] = change(value);
+            },
+        });
+        try {
+            const visitor = window.Visitor.getInstance('NAMED@AdobeOrg', names);
+            return [visitor.getOptOut(), visitor.isOptedOut()];
+        } finally {
+            delete window.Visitor.prototype[setting];
+        }
+    };
+    assert.deepEqual(checkSetter('cookieName'), ['global', true], 'cookieName of a setter of the prototype');
+    assert.deepEqual(checkSetter('sessionCookieName'), ['global', true], 'sessionCookieName of a setter');
+    // a setter which changes the name, e.g. to lower case: the name of the instance is read, as by the library,
+    // so the opt-out is found only in the cookie of the changed name
+    document.cookie = 'AMCV_test_visitor=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = `amcv_test_visitor=${encodeURIComponent(`MCOPTOUT-${future}s|global`)}; path=/`;
+    document.cookie = 'amcvs_test_session=1; path=/';
+    assert.deepEqual(
+        checkSetter('cookieName', (value) => value.toLowerCase()),
+        ['global', true],
+        'cookieName changed by a setter',
+    );
+    // the session cookie of the default name is missing, so the opt-out is found only with the changed one
+    document.cookie = `AMCV_test_visitor=${encodeURIComponent(`MCOPTOUT-${future}s|global`)}; path=/`;
+    document.cookie = 'AMCVS_test_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    assert.deepEqual(
+        checkSetter('sessionCookieName', (value) => value.toLowerCase()),
+        ['global', true],
+        'sessionCookieName changed by a setter',
+    );
+    ['amcv_test_visitor', 'amcvs_test_session'].forEach((cookieName) => {
+        document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    });
+
     // `useLocalStorage`: the storages instead of cookies, as the library
     const storedName = 'AMCV_STORED@AdobeOrg';
     const storedSessionName = 'AMCVS_STORED@AdobeOrg';

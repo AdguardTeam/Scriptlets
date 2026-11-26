@@ -121,10 +121,10 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
     };
 
     const visitor: AnyRecord = prototype ? Object.create(prototype) : {};
-    // defaults, which the configuration may change, as in the library
+    // default, which the configuration may change, as in the library; the names of the cookies are set below
     visitor.loadTimeout = 30000;
-    visitor.cookieName = `AMCV_${orgId}`;
-    visitor.sessionCookieName = `AMCVS_${orgId}`;
+    // the values of the configuration, each read once
+    let configValues: AnyRecord = {};
     if (config && typeof config === 'object') {
         // as the library, a copy, whose settings may be changed by the page, see `getInstance()` of the mock;
         // each value is read once here, as a getter of the page may fail on the next read
@@ -135,19 +135,43 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
             configs[key] = value;
         });
         visitor.configs = configs;
+        configValues = configs;
     }
     visitor._c = 'Visitor';
     visitor.version = '5.5.0';
     visitor.marketingCloudOrgID = orgId;
-    // the names of the configuration, if they are strings, otherwise the default ones
-    const cookieName = typeof visitor.cookieName === 'string' && visitor.cookieName !== ''
-        ? visitor.cookieName
-        : `AMCV_${orgId}`;
-    const sessionCookieName = typeof visitor.sessionCookieName === 'string' && visitor.sessionCookieName !== ''
-        ? visitor.sessionCookieName
-        : `AMCVS_${orgId}`;
-    visitor.cookieName = cookieName;
-    visitor.sessionCookieName = sessionCookieName;
+    /**
+     * Returns a name of a cookie of the configuration, as it has been read, if it is a non-empty string,
+     * otherwise the default one, as the library, so neither a name inherited from the prototype of the instance,
+     * nor a setter of the prototype which stores the name of the configuration elsewhere, e.g. set by the page,
+     * changes the cookie which is read.
+     *
+     * @param name Name of the setting, e.g. `cookieName`.
+     * @param defaultValue Default name.
+     * @returns Name of the cookie.
+     */
+    const getCookieName = (name: string, defaultValue: string): string => {
+        const value = Object.prototype.hasOwnProperty.call(configValues, name) ? configValues[name] : undefined;
+        return typeof value === 'string' && value !== '' ? value : defaultValue;
+    };
+    /**
+     * Sets the name of a cookie on the instance and returns the name which the instance has then, as the library
+     * reads it from the instance, e.g. after a setter of `Visitor.prototype`, set by the page, has changed it.
+     *
+     * @param name Name of the setting, e.g. `cookieName`.
+     * @param value Name of the cookie.
+     * @returns Name of the cookie of the instance, or `value` if it is not a non-empty string.
+     */
+    const setCookieName = (name: string, value: string): string => {
+        visitor[name] = value;
+        const current = visitor[name];
+        return typeof current === 'string' && current !== '' ? current : value;
+    };
+    const cookieName = setCookieName('cookieName', getCookieName('cookieName', `AMCV_${orgId}`));
+    const sessionCookieName = setCookieName(
+        'sessionCookieName',
+        getCookieName('sessionCookieName', `AMCVS_${orgId}`),
+    );
     // as the library reads a boolean setting: a function is called, and the strings `true` and `false`
     // are booleans; any other value which is truthy enables it, e.g. `1`
     let useLocalStorageValue = visitor.useLocalStorage;
