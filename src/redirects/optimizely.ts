@@ -328,11 +328,9 @@ export function Optimizely(source: Source) {
             }
             entry.seen.add(node);
             entry.matched += 1;
-            try {
-                entry.callback(node);
-            } catch (e) {
-                // ignore errors of the page callback
-            }
+            // called directly, as a method of the entry, as the real client calls it as a method of its own
+            // entry, i.e. `h[t].callback(n)`, so `this` is not `null`, as by `runProtected(entry.callback, [node])`
+            runProtected(() => entry.callback(node), []);
             if (entry.once || observers.indexOf(entry) === -1) {
                 return false;
             }

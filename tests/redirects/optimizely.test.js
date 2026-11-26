@@ -940,6 +940,24 @@ test('utils.observeSelector()', async (assert) => {
     unsubscribeNull();
 });
 
+test('utils.observeSelector() calls the callback as a method of its entry, as the real client', async (assert) => {
+    runRedirect();
+    const { observeSelector } = window.optimizely.get('utils');
+    addToContainer('<p class="receiver-target"></p>');
+    const receivers = [];
+    const callback = function (node) {
+        receivers.push(this, node);
+    };
+    const unsubscribe = observeSelector(`#${CONTAINER_ID} .receiver-target`, callback);
+    await sleep(20);
+    unsubscribe();
+    assert.strictEqual(receivers.length, 2, 'called once');
+    // the real client calls `h[t].callback(n)`, so `this` is its entry, which holds the callback
+    assert.strictEqual(typeof receivers[0], 'object', 'receiver is an object');
+    assert.ok(receivers[0] !== null && receivers[0].callback === callback, 'receiver is the entry of the callback');
+    assert.ok(receivers[1].classList.contains('receiver-target'), 'with the element');
+});
+
 test('utils.observeSelector() skips an entry which another callback has stopped', async (assert) => {
     runRedirect();
     const { observeSelector } = window.optimizely.get('utils');
