@@ -51,9 +51,10 @@ import { type Source } from '../scriptlets';
  * before: `doesOptInApply`, e.g. all categories are approved if it is `false`, `preOptInApprovals`,
  * `previousPermissions` and, with `isOptInStorageEnabled`, the decision of the visitor in the `adobeujs-optin`
  * cookie, in which it is stored then as well, as by the `adobe-visitor` resource.
- * Limitation: `adobe.optIn` is not created at once if the mock of the Visitor API is already on the page,
- * e.g. as the `adobe-visitor` resource has run before, as it cannot be told from a Visitor API of the page;
- * it is then created by the first `Visitor.getInstance()` call, as by the `adobe-visitor` resource.
+ * Limitation: `adobe.optIn` is not created at once if a Visitor API is already on the page, e.g. the mock
+ * of the `adobe-visitor` resource which has run before: that one creates the opt-in service itself, from
+ * the configuration of the first `Visitor.getInstance()` call, as the library, and would not apply it to a service
+ * created here. So `adobe.optIn` exists only after that call then, as with the library loaded without Adobe Tags.
  * The Adobe Web SDK (`alloy`) is not mocked.
  *
  * No rules and no custom code of the site are run, so the other tags which the library loads are not loaded,
