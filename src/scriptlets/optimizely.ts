@@ -20,7 +20,7 @@ import { Optimizely, OptimizelyNames } from '../redirects/optimizely';
  * ### Examples
  *
  * ```adblock
- * ||cdn.optimizely.com/js/*.js$script
+ * ||cdn.optimizely.com/js/*.js$script,domain=example.org
  * example.org#%#//scriptlet('optimizely')
  * ```
  *
