@@ -292,11 +292,16 @@ Project-specific rules:
    (or `@trustedScriptlet` / `@redirect`), `@description` and `@added` tags, in
    this order and without other tags. No other line of this comment may start
    with `@`, also inside a code block: e.g. an exception rule MUST be written
-   inside a line, as `` `@@||example.org^` ``.
+   inside a line, as `` `@@||example.org^` ``. The first line of the
+   description of a redirect MUST be a short sentence which ends on that line,
+   e.g. `Mocks the IMA SDK of Google.`
 
    **Rationale**: The `wiki:build-docs` script generates documentation from
    these tags, and its parser starts a new tag at each line which starts with
-   `@`, which would cut the description there.
+   `@`, which would cut the description there. The first line of the
+   description of a redirect is its `comment` in `dist/redirects.yml`, see
+   `getComment()` in `scripts/build-redirects.js`, so a sentence which goes on
+   to the next line is cut there.
 
 4. Imports MUST use `type` qualifier for type-only imports
    (`import { type Foo }`).

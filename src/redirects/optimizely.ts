@@ -6,8 +6,8 @@ import { type Source } from '../scriptlets';
  * @redirect optimizely
  *
  * @description
- * Mocks the Optimizely Web Experimentation snippet, and the API of Optimizely Classic, which the same URL
- * still serves for projects last saved before the migration to Web Experimentation.
+ * Mocks the Optimizely Web Experimentation snippet and the API of Optimizely Classic.
+ * The same URL still serves Classic for projects last saved before the migration to Web Experimentation.
  *
  * It answers the `window.optimizely` API for a project without experiments, so that
  * the page code which uses it without a check, e.g. `optimizely.get('state')`, does not throw,

@@ -5,8 +5,8 @@ import { type Source } from '../scriptlets';
  * @redirect sensors-analytics
  *
  * @description
- * Mocks the JavaScript SDK of Sensors Analytics (Sensors Data, 神策数据), e.g. `sensorsdata.min.js`
- * of `sa-sdk-javascript`, i.e. the `sensorsDataAnalytic201505` global.
+ * Mocks the JavaScript SDK of Sensors Analytics (Sensors Data, 神策数据), i.e. the `sensorsDataAnalytic201505` global.
+ * The SDK is e.g. `sensorsdata.min.js` of `sa-sdk-javascript`.
  * See the SDK: https://github.com/sensorsdata/sa-sdk-javascript
  *
  * Should be used if a rule blocks the SDK and the page breaks without it, as page code usually calls it

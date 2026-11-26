@@ -27,6 +27,16 @@ describe('JSDoc comments of scriptlets and redirects for the wiki', () => {
         ['redirects', redirectsFilenames, REDIRECTS_SRC_RELATIVE_DIR_PATH],
     ];
 
+    it('start the description of each redirect with a sentence on its first line', () => {
+        // the first line of the description is the `comment` of the redirect in `dist/redirects.yml`,
+        // see `getComment()` in `scripts/build-redirects.js`
+        const data = getDataFromFiles(redirectsFilenames, REDIRECTS_SRC_RELATIVE_DIR_PATH);
+        data.forEach(({ name, description }) => {
+            const firstLine = description.split('\n').find((line: string) => line !== '');
+            expect(firstLine, `first line of @description of ${name}`).toMatch(/[.:]$/);
+        });
+    });
+
     it.each(lists)('are parsed for all %s', (title, filenames, relativeDirPath) => {
         expect(filenames.length).toBeGreaterThan(0);
         // the parser throws for a comment with other tags, e.g. made of a line which starts with `@`

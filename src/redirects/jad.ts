@@ -5,8 +5,9 @@ import { type Source } from '../scriptlets';
  * @redirect jad
  *
  * @description
- * Mocks JAD, the ad library of Webedia, i.e. `cdn.lib.getjad.io/library/…`, which is used e.g. by jeuxvideo.com,
- * allocine.fr, purepeople.com, ozap.com, xataka.com, 3djuegos.com, sensacine.com, moviepilot.de and filmstarts.de.
+ * Mocks JAD, the ad library of Webedia, i.e. `cdn.lib.getjad.io/library/…`.
+ * It is used e.g. by jeuxvideo.com, allocine.fr, purepeople.com, ozap.com, xataka.com, 3djuegos.com, sensacine.com,
+ * moviepilot.de and filmstarts.de.
  *
  * Should be used if a rule blocks the library and the page breaks without it, as pages queue commands
  * in `jad.cmd` and start their Dailymotion videos only in the callback of

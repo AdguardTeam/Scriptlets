@@ -5,7 +5,7 @@ import { hit, noopStr } from '../helpers';
  * @redirect fingerprintjs3
  *
  * @description
- * Mocks FingerprintJS v3
+ * Mocks FingerprintJS v3.
  * https://github.com/fingerprintjs
  *
  * Related UBO redirect resource:

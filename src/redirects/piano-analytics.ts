@@ -5,8 +5,8 @@ import { type Source } from '../scriptlets';
  * @redirect piano-analytics
  *
  * @description
- * Mocks the JavaScript SDK of Piano Analytics (formerly AT Internet), e.g. `tag.aticdn.net/piano-analytics.js`,
- * i.e. the `pa` global, and `pianoAnalytics`, the module of the SDK, whose `pianoAnalytics` is the same object
+ * Mocks the JavaScript SDK of Piano Analytics (formerly AT Internet), e.g. `tag.aticdn.net/piano-analytics.js`.
+ * It defines the `pa` global, and `pianoAnalytics`, the module of the SDK, whose `pianoAnalytics` is the same object
  * as `pa`. As by the SDK, the configuration of the page in `_pac` and in the `data-config` attribute
  * of the script is applied, so the names of the global and of the queue may be changed by `globalVarName`
  * and `queueVarName`.

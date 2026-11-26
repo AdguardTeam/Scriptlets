@@ -16,10 +16,10 @@ import { type Source } from '../scriptlets';
  * @redirect adobe-tags
  *
  * @description
- * Mocks the library of Adobe Tags (formerly Adobe Launch), e.g. `assets.adobedtm.com/<id>/<id>/launch-<id>.min.js`,
- * i.e. the `_satellite` global, and the Adobe libraries which such a library usually contains or loads:
- * at.js of Adobe Target, the Experience Cloud Identity Service (`VisitorAPI.js`)
- * and AppMeasurement of Adobe Analytics.
+ * Mocks the library of Adobe Tags (formerly Adobe Launch), i.e. the `_satellite` global.
+ * The library is e.g. `assets.adobedtm.com/<id>/<id>/launch-<id>.min.js`. The Adobe libraries which such a library
+ * usually contains or loads are mocked as well: at.js of Adobe Target, the Experience Cloud Identity Service
+ * (`VisitorAPI.js`) and AppMeasurement of Adobe Analytics.
  * See the `_satellite` API: https://experienceleague.adobe.com/en/docs/experience-platform/collection/tags/overview
  *
  * Should be used if a rule blocks the library of Adobe Tags and the page breaks without it:

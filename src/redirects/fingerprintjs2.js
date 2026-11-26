@@ -5,7 +5,7 @@ import { hit } from '../helpers';
  * @redirect fingerprintjs2
  *
  * @description
- * Mocks FingerprintJS v2
+ * Mocks FingerprintJS v2.
  * https://github.com/fingerprintjs
  *
  * Related UBO redirect resource:

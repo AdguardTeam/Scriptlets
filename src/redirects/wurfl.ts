@@ -5,8 +5,8 @@ import { type Source } from '../scriptlets';
  * @redirect wurfl
  *
  * @description
- * Mocks WURFL.js Lite of ScientiaMobile, i.e. `wurfl.io/wurfl.js`, which defines the `WURFL` object
- * with the device of the visitor, detected by the service from the request.
+ * Mocks WURFL.js Lite of ScientiaMobile, i.e. `wurfl.io/wurfl.js`.
+ * The script defines the `WURFL` object with the device of the visitor, detected by the service from the request.
  * See the API: https://docs.scientiamobile.com/documentation/wurfl-js/wurflDotjs-lite-getting-started-guide
  *
  * Should be used if a rule blocks WURFL.js and the page breaks without it, as page code usually reads

@@ -4,7 +4,7 @@ import { hit, noopFunc } from '../helpers';
  * @redirect amazon-apstag
  *
  * @description
- * Mocks Amazon's apstag.js
+ * Mocks Amazon's apstag.js.
  *
  * Related UBO redirect resource:
  * https://github.com/gorhill/uBlock/blob/master/src/web_accessible_resources/amazon_apstag.js

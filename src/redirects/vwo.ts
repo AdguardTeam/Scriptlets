@@ -10,8 +10,8 @@ import { type Source } from '../scriptlets';
  * @redirect vwo
  *
  * @description
- * Mocks the library of VWO (Visual Website Optimizer, Wingify), loaded by the VWO SmartCode,
- * e.g. `dev.visualwebsiteoptimizer.com/tag/<accountId>.js`.
+ * Mocks the library of VWO (Visual Website Optimizer, Wingify), which the VWO SmartCode loads.
+ * The library is e.g. `dev.visualwebsiteoptimizer.com/tag/<accountId>.js`.
  *
  * It shows the page hidden by the SmartCode at once, instead of after its settings timeout:
  * the asynchronous SmartCode 3.0 hides the page until the library has loaded or the timeout,

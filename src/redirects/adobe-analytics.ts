@@ -12,8 +12,8 @@ import { type Source } from '../scriptlets';
  * @redirect adobe-analytics
  *
  * @description
- * Mocks AppMeasurement, the library of Adobe Analytics, e.g. `AppMeasurement.min.js`,
- * and its ActivityMap module, `AppMeasurement_Module_ActivityMap.min.js`.
+ * Mocks AppMeasurement, the library of Adobe Analytics, e.g. `AppMeasurement.min.js`.
+ * Its ActivityMap module, `AppMeasurement_Module_ActivityMap.min.js`, is mocked as well.
  * See the AppMeasurement documentation: https://experienceleague.adobe.com/en/docs/analytics/implementation/vars/functions/s-gi
  *
  * Should be used if a rule blocks the library and page code which uses it without a check throws,
