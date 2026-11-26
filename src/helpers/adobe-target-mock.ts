@@ -112,6 +112,27 @@ export function mockAdobeTarget(): boolean {
         }
     };
 
+    // Whether the startup events, e.g. `at-library-loaded`, have been dispatched, and the work which waits
+    // for them, see `whenStarted()`.
+    let isStarted = false;
+    let waitingForStart: Array<() => void> = [];
+
+    /**
+     * Runs work which completes a call of the page, i.e. dispatches its events, calls its callback or resolves
+     * its promise, e.g. of `getOffer()`, after the startup events, as at.js dispatches `at-library-loaded` before
+     * any of its functions can be called, while the mock may dispatch the startup events later, once the document
+     * is parsed, see below.
+     *
+     * @param work Work to run.
+     */
+    const whenStarted = (work: () => void) => {
+        if (isStarted) {
+            work();
+        } else {
+            waitingForStart.push(work);
+        }
+    };
+
     /**
      * Dispatches the events of a request without offers, as at.js does.
      *
@@ -161,8 +182,18 @@ export function mockAdobeTarget(): boolean {
      */
     const callSuccess = (success: unknown) => {
         if (typeof success === 'function') {
-            w.setTimeout(() => runProtected(success, []), 0);
+            whenStarted(() => w.setTimeout(() => runProtected(success, []), 0));
         }
+    };
+
+    /**
+     * Returns a native promise resolved with a value after the startup events, see `whenStarted()`.
+     *
+     * @param value Value of the promise.
+     * @returns Promise.
+     */
+    const resolveWhenStarted = (value: unknown): Promise<unknown> => {
+        return new NativePromise((resolve) => whenStarted(() => resolve(value)));
     };
 
     // modules which at.js 1.x passes to extensions
@@ -244,14 +275,16 @@ export function mockAdobeTarget(): boolean {
         // As at.js for an mbox without offers: the success callback is called with no actions.
         getOffer: (options: unknown) => {
             const opts = (options && typeof options === 'object' ? options : {}) as OfferOptions;
-            w.setTimeout(() => {
-                dispatchRequestWithoutOffers(opts.mbox);
+            // as at.js, the mbox is read when the request is made, and the callback when it is completed
+            const { mbox } = opts;
+            whenStarted(() => w.setTimeout(() => {
+                dispatchRequestWithoutOffers(mbox);
                 runProtected(opts.success, [[]]);
-            }, 0);
+            }, 0));
         },
         getOffers: (options: unknown) => {
             const opts = (options && typeof options === 'object' ? options : {}) as OfferOptions;
-            return NativePromise.resolve(createDeliveryResponse(opts.request));
+            return resolveWhenStarted(createDeliveryResponse(opts.request));
         },
         // As at.js 1.x without an offer: the default content of the mbox is shown.
         applyOffer: (options: unknown) => {
@@ -261,9 +294,10 @@ export function mockAdobeTarget(): boolean {
                     element.classList.remove('mboxDefault');
                 }
             });
-            dispatch('at-content-rendering-no-offers', opts.mbox === undefined ? {} : { mbox: opts.mbox });
+            const extra = opts.mbox === undefined ? {} : { mbox: opts.mbox };
+            whenStarted(() => dispatch('at-content-rendering-no-offers', extra));
         },
-        applyOffers: () => NativePromise.resolve(undefined),
+        applyOffers: () => resolveWhenStarted(undefined),
         triggerView: noopFunc,
         // The real one calls `success` after the notification has been sent,
         // with `type` and `selector` after each event of this type on the selected elements.
@@ -351,10 +385,33 @@ export function mockAdobeTarget(): boolean {
         }, { once: true });
     }
 
-    // as at.js on a page load without offers
-    w.setTimeout(() => {
-        dispatch('at-library-loaded');
-        dispatchRequestWithoutOffers();
-    }, 0);
+    // As at.js on a page load without offers. At.js dispatches them while its script runs, so after the listeners
+    // which inline scripts before it have added, while the mock may run earlier, e.g. as a scriptlet at document
+    // start: so while the document is loading, they are dispatched once it is parsed, otherwise in the next task.
+    const dispatchStartupEvents = () => {
+        // Not if at.js of the page has replaced the mock meanwhile, e.g. as it is not blocked: it has dispatched
+        // its own events, and a listener which waits for one of them would get the ones of the mock instead.
+        // The calls which the page has made to the mock are completed in any case.
+        let isReplaced = true;
+        try {
+            const current = w.adobe as unknown as Record<string, unknown> | undefined;
+            isReplaced = !current || current.target !== target;
+        } catch (e) {
+            // e.g. a getter of the page which throws
+        }
+        if (!isReplaced) {
+            dispatch('at-library-loaded');
+            dispatchRequestWithoutOffers();
+        }
+        isStarted = true;
+        const works = waitingForStart;
+        waitingForStart = [];
+        works.forEach((work) => work());
+    };
+    if (doc.readyState === 'loading') {
+        doc.addEventListener('DOMContentLoaded', dispatchStartupEvents, { once: true });
+    } else {
+        w.setTimeout(dispatchStartupEvents, 0);
+    }
     return true;
 }

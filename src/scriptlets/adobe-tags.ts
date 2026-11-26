@@ -12,8 +12,11 @@ import { AdobeTags, AdobeTagsNames } from '../redirects/adobe-tags';
  * and page code which uses `_satellite` without a check, e.g. `_satellite.track('event')`, does not throw.
  *
  * The scriptlet defines `_satellite` and `adobe.target`, and sets `__satelliteLoaded`, as the library does,
- * so a library of Adobe Tags or at.js which is not blocked does not run either,
- * i.e. Adobe Tags and Adobe Target are disabled on the site.
+ * so a library of Adobe Tags which is not blocked does not run either, nor at.js which it contains,
+ * i.e. Adobe Tags is disabled on the site. Block a separate at.js file as well to keep Adobe Target disabled:
+ * an at.js which is not blocked can replace `adobe.target` and send its own requests. If it does so before
+ * the scriptlet dispatches its startup events, the scriptlet skips them, and still completes the calls
+ * which it has received already.
  * Functions which the library of a site defines in its custom code, e.g. `digitalView()` of BBVA, are not defined,
  * see the redirect resource.
  * As the `adobe-visitor` scriptlet, `Visitor.getInstance()` called by the page sets the `AMCV_<orgId>` cookie

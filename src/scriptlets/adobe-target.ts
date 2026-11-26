@@ -13,8 +13,9 @@ import { AdobeTarget, AdobeTargetNames } from '../redirects/adobe-target';
  * `alloy-prehiding`, as soon as they are added.
  * See the prehiding snippet: https://experienceleague.adobe.com/en/docs/target-dev/developer/client-side/at-js-implementation/at-js/manage-flicker-with-atjs
  *
- * The scriptlet defines `adobe.target`, so a real at.js which is not blocked does not run either,
- * i.e. Adobe Target is disabled on the site.
+ * Block the separate at.js file to keep Adobe Target disabled: an at.js which is not blocked can replace
+ * `adobe.target` and send its own requests. If it does so before the scriptlet dispatches its startup events,
+ * the scriptlet skips them, and still completes the calls which it has received already.
  *
  * ### Examples
  *

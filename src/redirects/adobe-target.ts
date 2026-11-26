@@ -29,7 +29,10 @@ import { type Source } from '../scriptlets';
  * It answers the `window.adobe.target` API without offers, i.e. content which Adobe Target shows
  * instead of the default content of the page, so that page code which uses it without a check
  * does not throw, e.g. `adobe.target.getOffer()` calls its `success` callback with no offers,
- * and dispatches the at.js events of a page load without offers, e.g. `at-library-loaded`.
+ * and dispatches the at.js events of a page load without offers, e.g. `at-library-loaded`, once the document
+ * is parsed if it is loading, e.g. for listeners which inline scripts add after the scriptlet has run,
+ * otherwise in the next task, unless at.js which is not blocked has replaced `adobe.target` meanwhile,
+ * as it dispatches its own events; calls which the page has made to the mock are completed in any case.
  * See the at.js API: https://experienceleague.adobe.com/en/docs/target-dev/developer/client-side/at-js-implementation/functions-overview/atjs-functions
  *
  * As at.js, `trackEvent()` with `selector` and `type` calls `success` after each such event of the selected elements.

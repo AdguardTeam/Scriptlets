@@ -429,6 +429,117 @@ test('Dispatches the events of a page load without offers', async (assert) => {
     }
 });
 
+test('Dispatches the events of a page load once the document is parsed, if it is loading', async (assert) => {
+    const recorder = recordEvents();
+    // events of the resources run by the previous tests
+    await sleep(20);
+    recorder.events.length = 0;
+    try {
+        // as at document start, when the scriptlet runs before the inline scripts of the page
+        Object.defineProperty(document, 'readyState', { configurable: true, get: () => 'loading' });
+        runRedirect();
+        delete document.readyState;
+        await sleep(20);
+        const beforeParsed = recorder.events.map((event) => event.type);
+        // e.g. a listener of an inline script, added after the scriptlet
+        const inline = [];
+        document.addEventListener('at-library-loaded', () => inline.push('at-library-loaded'), { once: true });
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+        const afterParsed = recorder.events.map((event) => event.type);
+        assert.deepEqual(beforeParsed, [], 'not before the document is parsed');
+        assert.deepEqual(afterParsed, [
+            'at-library-loaded',
+            'at-request-start',
+            'at-request-succeeded',
+            'at-content-rendering-no-offers',
+        ], 'when it is parsed');
+        assert.deepEqual(inline, ['at-library-loaded'], 'also to a listener added after the resource has run');
+    } finally {
+        recorder.stop();
+    }
+});
+
+test('Calls before the startup events are completed after them, as at.js runs before them', async (assert) => {
+    const recorder = recordEvents();
+    await sleep(20);
+    recorder.events.length = 0;
+    const calls = [];
+    try {
+        Object.defineProperty(document, 'readyState', { configurable: true, get: () => 'loading' });
+        runRedirect();
+        delete document.readyState;
+        // e.g. a page which adds its listener of the request results in the listener of `at-library-loaded`
+        document.addEventListener('at-library-loaded', () => {
+            document.addEventListener('at-request-succeeded', (event) => {
+                calls.push(`succeeded:${event.detail.mbox || 'page load'}`);
+            });
+        }, { once: true });
+        window.adobe.target.getOffer({ mbox: 'header', success: () => calls.push('success:header') });
+        // options which the page reuses are read when the call is made
+        const applyOptions = { mbox: 'header', offer: [] };
+        window.adobe.target.applyOffer(applyOptions);
+        applyOptions.mbox = 'second';
+        window.adobe.target.applyOffer(applyOptions);
+        window.adobe.target.getOffers({ request: { execute: { mboxes: [{ index: 0, name: 'x' }] } } })
+            .then(() => calls.push('getOffers'));
+        window.adobe.target.applyOffers({ response: {} }).then(() => calls.push('applyOffers'));
+        window.adobe.target.trackEvent({ mbox: 'header', success: () => calls.push('trackEvent') });
+        await sleep(20);
+        const beforeParsed = recorder.events.map((event) => event.type);
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+        await sleep(20);
+        assert.deepEqual(beforeParsed, [], 'nothing before the startup events');
+        const withMbox = (event) => `${event.type}${event.detail.mbox ? `:${event.detail.mbox}` : ''}`;
+        assert.deepEqual(recorder.events.map(withMbox), [
+            'at-library-loaded',
+            'at-request-start',
+            'at-request-succeeded',
+            'at-content-rendering-no-offers',
+            'at-content-rendering-no-offers:header',
+            'at-content-rendering-no-offers:second',
+            'at-request-start:header',
+            'at-request-succeeded:header',
+            'at-content-rendering-no-offers:header',
+        ], 'the events of the calls follow the startup events');
+        assert.deepEqual(
+            calls,
+            ['succeeded:page load', 'getOffers', 'applyOffers', 'succeeded:header', 'success:header', 'trackEvent'],
+            'a listener added in the one of at-library-loaded gets the results of the early calls',
+        );
+    } finally {
+        recorder.stop();
+    }
+});
+
+test('No startup events if at.js of the page replaces the mock before they are dispatched', async (assert) => {
+    const recorder = recordEvents();
+    await sleep(20);
+    recorder.events.length = 0;
+    const calls = [];
+    try {
+        Object.defineProperty(document, 'readyState', { configurable: true, get: () => 'loading' });
+        runRedirect();
+        delete document.readyState;
+        // a call of the page to the mock, and its options changed before the result, as at.js reads the callback then
+        const options = { mbox: 'early', success: () => calls.push('replaced success') };
+        window.adobe.target.getOffer(options);
+        options.success = () => calls.push('success');
+        // at.js of the page, e.g. as it is not blocked, which dispatches its own events
+        window.adobe.target = { VERSION: 'page' };
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+        await sleep(20);
+        const withMbox = (event) => `${event.type}${event.detail.mbox ? `:${event.detail.mbox}` : ''}`;
+        assert.deepEqual(
+            recorder.events.map(withMbox),
+            ['at-request-start:early', 'at-request-succeeded:early', 'at-content-rendering-no-offers:early'],
+            'no startup events of the mock, but the call made to it is completed',
+        );
+        assert.deepEqual(calls, ['success'], 'with the callback of the options when the request is completed');
+    } finally {
+        recorder.stop();
+    }
+});
+
 test('Removes the prehiding styles', (assert) => {
     PREHIDING_IDS.forEach(addPrehidingStyle);
     runRedirect();
