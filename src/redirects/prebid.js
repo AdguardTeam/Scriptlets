@@ -5,6 +5,7 @@ import {
     noopStr,
     noopArray,
     runProtected,
+    randomUuid,
 } from '../helpers';
 
 /**
@@ -61,28 +62,6 @@ export function Prebid(source) {
     const cmd = Array.isArray(pbjsWrapper.cmd) ? pbjsWrapper.cmd : [];
     const adUnits = Array.isArray(pbjsWrapper.adUnits) ? pbjsWrapper.adUnits : [];
 
-    /**
-     * Returns an id of an auction as `generateUUID()` of Prebid.js, i.e. a random UUID of version 4,
-     * e.g. `3b241101-e2bb-4255-8caf-4136c566a962`, so that a page which uses the id of an auction,
-     * e.g. checks its format, gets the same kind of value as from Prebid.js.
-     *
-     * As Prebid.js, `crypto.randomUUID()` is used if it is available, i.e. in a secure context,
-     * and otherwise the template, in which `x` is replaced with a random hexadecimal digit, `4` is the version
-     * of the UUID, and `y` is replaced with `8`, `9`, `a` or `b`, as its two highest bits are always `10`,
-     * i.e. its variant. `Math.random()` is enough for the template, as the id is not secret.
-     *
-     * @returns {string} Random UUID.
-     */
-    const generateAuctionId = () => {
-        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-            return window.crypto.randomUUID();
-        }
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
-            const random = Math.floor(Math.random() * 16);
-            return (char === 'x' ? random : ((random % 4) + 8)).toString(16);
-        });
-    };
-
     const api = {
         // https://docs.prebid.org/dev-docs/publisher-api-reference/addAdUnits.html
         addAdUnits(units) {
@@ -125,7 +104,7 @@ export function Prebid(source) {
             // as Prebid.js, the id of the auction which the page passes is kept
             let auctionId;
             if (hasAdUnits) {
-                auctionId = options.auctionId || generateAuctionId();
+                auctionId = options.auctionId || randomUuid();
             }
             runProtected(options.bidsBackHandler, [bids, timedOut, auctionId]);
             return Promise.resolve({ bids, timedOut, auctionId });
@@ -204,4 +183,11 @@ export const PrebidNames = ['prebid'];
 // eslint-disable-next-line prefer-destructuring
 Prebid.primaryName = PrebidNames[0];
 
-Prebid.injections = [hit, noopFunc, noopStr, noopArray, runProtected];
+Prebid.injections = [
+    hit,
+    noopFunc,
+    noopStr,
+    noopArray,
+    runProtected,
+    randomUuid,
+];

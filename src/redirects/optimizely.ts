@@ -1,5 +1,10 @@
 /* eslint-disable func-names */
-import { hit, noopFunc, runProtected } from '../helpers';
+import {
+    hit,
+    noopFunc,
+    randomUuid,
+    runProtected,
+} from '../helpers';
 import { type Source } from '../scriptlets';
 
 /**
@@ -200,37 +205,6 @@ export function Optimizely(source: Source) {
         } catch (e) {
             return blank;
         }
-    };
-
-    /**
-     * Returns a random UUID v4.
-     *
-     * @returns UUID string.
-     */
-    const uuid = (): string => {
-        const bytes = new Uint8Array(16);
-        try {
-            w.crypto.getRandomValues(bytes);
-        } catch (e) {
-            for (let i = 0; i < 16; i += 1) {
-                bytes[i] = Math.floor(Math.random() * 256);
-            }
-        }
-        // eslint-disable-next-line no-bitwise
-        bytes[6] = (bytes[6] & 15) | 64;
-        // eslint-disable-next-line no-bitwise
-        bytes[8] = (bytes[8] & 63) | 128;
-        let hex = '';
-        for (let i = 0; i < 16; i += 1) {
-            hex += (bytes[i] + 256).toString(16).slice(-2);
-        }
-        return [
-            hex.slice(0, 8),
-            hex.slice(8, 12),
-            hex.slice(12, 16),
-            hex.slice(16, 20),
-            hex.slice(20),
-        ].join('-');
     };
 
     const observers: ObserverEntry[] = [];
@@ -533,7 +507,7 @@ export function Optimizely(source: Source) {
         if (typeof handler !== 'function') {
             return noopFunc;
         }
-        const token = uuid();
+        const token = randomUuid();
         const first = urlChangeHandlers.size === 0;
         urlChangeHandlers.set(token, handler as Callback);
         if (first) {
@@ -936,7 +910,7 @@ export function Optimizely(source: Source) {
      */
     const register = (spec: ListenerSpec, hasReceiver: boolean): ListenerEntry => {
         if (!spec.token) {
-            spec.token = uuid();
+            spec.token = randomUuid();
         }
         const entry: ListenerEntry = {
             filter: spec.filter,
@@ -1043,7 +1017,7 @@ export function Optimizely(source: Source) {
         state,
         utils,
         visitor,
-        visitor_id: { randomId: uuid() },
+        visitor_id: { randomId: randomUuid() },
     };
 
     /**
@@ -1363,4 +1337,5 @@ Optimizely.injections = [
     hit,
     noopFunc,
     runProtected,
+    randomUuid,
 ];
