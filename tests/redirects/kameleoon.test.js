@@ -523,6 +523,108 @@ test('Core.runWhenElementPresent()', async (assert) => {
     assert.deepEqual(polled, [1], 'invalid selector and callback errors are ignored');
 });
 
+test('Core.runWhenElementPresent() in dynamic mode passes elements which the first callback adds', async (assert) => {
+    runRedirect();
+    const { Core } = window.Kameleoon.API;
+    const existing = addToContainer('<p class="self-added"></p>');
+
+    // No assertion until the changes are observed, see the test of attribute changes.
+    // The callback adds another matching element each time, at most 10, so that a loop does not hang the page.
+    const calls = [];
+    const added = [];
+    Core.runWhenElementPresent(`#${CONTAINER_ID} .self-added`, (elements) => {
+        calls.push(elements);
+        if (added.length < 10) {
+            added.push(addToContainer('<p class="self-added"></p>'));
+        }
+    }, undefined, true);
+    const callsBefore = calls.slice();
+    // Mutation observer callbacks run before a microtask continues.
+    for (let i = 0; i < 5; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.resolve();
+    }
+    const callsAfter = calls.slice();
+    // another change of the page
+    addToContainer('<i></i>');
+    await Promise.resolve();
+    const callsAfterChange = calls.slice();
+
+    assert.deepEqual(callsBefore, [[existing]], 'existing element is passed at once');
+    // as the engine, which observes changes while it calls the callback with the elements found at once,
+    // but not while it calls it for a change
+    assert.deepEqual(callsAfter, [[existing], [added[0]]], 'element added by the first callback is passed next');
+    assert.deepEqual(
+        callsAfterChange,
+        [[existing], [added[0]], [added[1]]],
+        'element added by a later callback is passed on the next change of the page',
+    );
+});
+
+test('Core.runWhenElementPresent() dynamic: elements added by a late first callback are passed', async (assert) => {
+    runRedirect();
+    const { Core } = window.Kameleoon.API;
+
+    // No assertion until the changes are observed, see the test of attribute changes.
+    // The callback adds another matching element each time, at most 10, so that a loop does not hang the page.
+    const calls = [];
+    const added = [];
+    Core.runWhenElementPresent(`#${CONTAINER_ID} .late-first`, (elements) => {
+        calls.push(elements);
+        if (added.length < 10) {
+            added.push(addToContainer('<p class="late-first"></p>'));
+        }
+    }, undefined, true);
+    const callsBefore = calls.slice();
+    // e.g. content rendered by the page later
+    const first = addToContainer('<p class="late-first"></p>');
+    for (let i = 0; i < 5; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.resolve();
+    }
+    const callsAfter = calls.slice();
+    addToContainer('<i></i>');
+    await Promise.resolve();
+    const callsAfterChange = calls.slice();
+
+    assert.deepEqual(callsBefore, [], 'nothing is passed before the element exists');
+    assert.deepEqual(callsAfter, [[first], [added[0]]], 'element added by the first callback is passed next');
+    assert.deepEqual(
+        callsAfterChange,
+        [[first], [added[0]], [added[1]]],
+        'element added by a later callback is passed on the next change of the page',
+    );
+});
+
+test('Core.runWhenElementPresent() creates no observer if the element is found at once and not dynamic', (assert) => {
+    runRedirect();
+    const { Core } = window.Kameleoon.API;
+    addToContainer('<p class="one-shot"></p>');
+    const NativeMutationObserver = window.MutationObserver;
+    let created = 0;
+    window.MutationObserver = class extends NativeMutationObserver {
+        constructor(callback) {
+            super(callback);
+            created += 1;
+        }
+    };
+    const calls = [];
+    try {
+        Core.runWhenElementPresent(`#${CONTAINER_ID} .one-shot`, (elements) => {
+            calls.push(elements.length);
+            addToContainer('<p class="one-shot"></p>');
+        });
+        assert.strictEqual(created, 0, 'no observer for an element found at once');
+        Core.runWhenElementPresent(`#${CONTAINER_ID} .one-shot`, () => {}, undefined, true);
+        assert.strictEqual(created, 1, 'an observer in dynamic mode');
+        Core.runWhenElementPresent(`#${CONTAINER_ID} .missing-one-shot`, () => {});
+        assert.strictEqual(created, 2, 'an observer for an element which is not found yet');
+    } finally {
+        window.MutationObserver = NativeMutationObserver;
+    }
+    assert.deepEqual(calls, [1], 'called once');
+});
+
 test('Core.runWhenElementPresent() reacts to attribute changes', async (assert) => {
     runRedirect();
     const { Core } = window.Kameleoon.API;

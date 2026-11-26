@@ -166,6 +166,8 @@ export function KameleoonEngine(source: Source) {
         initial?: Element[],
     ) => {
         const passed = new WeakSet<Element>();
+        // whether the callback has been called, i.e. the next call is not the first one
+        let isCalled = false;
         let stop: () => void = noopFunc;
         // Returns `true` if watching should stop.
         const process = (found?: Element[]): boolean => {
@@ -174,13 +176,14 @@ export function KameleoonEngine(source: Source) {
                 return false;
             }
             elements.forEach((element) => passed.add(element));
+            isCalled = true;
             runProtected(callback, [elements]);
             return !isDynamic;
         };
-        if (process(initial)) {
-            return;
-        }
         if (typeof pollingInterval === 'number') {
+            if (process(initial)) {
+                return;
+            }
             const id = w.setInterval(() => {
                 if (process()) {
                     stop();
@@ -190,22 +193,49 @@ export function KameleoonEngine(source: Source) {
             return;
         }
         if (typeof w.MutationObserver !== 'function') {
+            process(initial);
             return;
         }
-        const observer = new w.MutationObserver(() => {
-            if (process()) {
-                stop();
-            }
-        });
-        stop = () => observer.disconnect();
+        // As the engine, elements found at once are passed without an observer, if no more are expected.
+        if (!isDynamic && process(initial)) {
+            return;
+        }
+        const target = doc.documentElement || doc;
         // As the engine, changes of attributes and text are observed as well, e.g. a class added
         // to an existing element, or a text changed for `:contains()`.
-        observer.observe(doc.documentElement || doc, {
+        const options = {
             attributes: true,
             characterData: true,
             childList: true,
             subtree: true,
+        };
+        // As the engine, the changes are observed while the callback is called for the first time, either with
+        // the elements found at once or with the first ones found later, as the engine starts its observer before
+        // it calls the callback then, so elements which the first callback adds itself are passed next, without
+        // another change of the page. Later, the observer is disconnected while the callback is called
+        // for a change, and connected again after it, as by the observer of the engine, so changes made
+        // by the callback itself are not observed, and a callback which adds another matching element each time
+        // does not run again and again. `disconnect()` drops the changes which are not delivered yet as well.
+        const observer = new w.MutationObserver(() => {
+            const isPaused = isCalled;
+            if (isPaused) {
+                observer.disconnect();
+            }
+            let isDone = false;
+            try {
+                isDone = process();
+            } finally {
+                if (isDone) {
+                    observer.disconnect();
+                } else if (isPaused) {
+                    observer.observe(target, options);
+                }
+            }
         });
+        observer.observe(target, options);
+        if (isDynamic) {
+            process(initial);
+        }
     };
 
     /**
