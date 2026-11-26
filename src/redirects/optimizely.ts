@@ -966,7 +966,8 @@ export function Optimizely(source: Source) {
         if (isStarting === false) {
             const { filter } = entry;
             const name = filter && filter.type === 'lifecycle' ? filter.name as string : '';
-            if (STICKY.indexOf(name) !== -1 && emittedAtStart.indexOf(name) !== -1) {
+            // all lifecycle events of the start have been emitted then, see `endStarting()`
+            if (STICKY.indexOf(name) !== -1) {
                 callListener(entry, createStartupEvent(name));
             }
             return;
