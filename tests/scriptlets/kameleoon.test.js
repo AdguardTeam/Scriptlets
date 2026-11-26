@@ -1,5 +1,11 @@
 /* eslint-disable no-underscore-dangle, func-names */
-import { clearGlobalProps, runScriptlet, sleep } from '../helpers';
+import {
+    clearGlobalProps,
+    evalWrapper,
+    getRedirectsInstance,
+    runScriptlet,
+    sleep,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'kameleoon';
@@ -110,6 +116,24 @@ test('Works if run before the root element exists', (assert) => {
         'ontouchend' in document.documentElement ? 'touchend' : 'mousedown',
         'click event is detected by the root element once it exists',
     );
+});
+
+test('Site code stays unknown if the redirect for the engine runs after the scriptlet', async (assert) => {
+    runScriptlet(name);
+    const scriptletApi = window.Kameleoon;
+    const redirects = await getRedirectsInstance();
+    // the redirect knows the site code from the URL of the engine, see its tests
+    Object.defineProperty(document, 'currentScript', {
+        configurable: true,
+        get: () => ({ src: 'https://abc123.kameleoon.io/engine.js' }),
+    });
+    try {
+        evalWrapper(redirects.getRedirect(name).content);
+    } finally {
+        delete document.currentScript;
+    }
+    assert.strictEqual(window.Kameleoon, scriptletApi, 'the object of the scriptlet is kept');
+    assert.strictEqual(window.Kameleoon.API.Core.getConfiguration().siteCode, '', 'site code is not known');
 });
 
 test('Keeps an existing engine and is not applied twice', (assert) => {

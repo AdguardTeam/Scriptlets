@@ -9,6 +9,8 @@ import { Optimizely, OptimizelyNames } from '../redirects/optimizely';
  *
  * Should be used together with a rule which blocks the snippet, e.g. if redirects are not supported.
  * The identity of the project, e.g. `optimizely.get('data').projectId`, is not known then and is `null`.
+ * It stays `null` also if the `optimizely` redirect resource is used for the snippet as well, although
+ * the redirect resource knows it from the URL of the snippet, as the object of the scriptlet is kept then.
  * As the scriptlet runs before the page code, the lifecycle events, e.g. `initialized`, are delivered
  * to the listeners which the page adds later while it is loading. If the page replaces `window.optimizely`,
  * e.g. by `window.optimizely = []` instead of `window.optimizely = window.optimizely || []`,

@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import { clearGlobalProps, runScriptlet } from '../helpers';
+import {
+    clearGlobalProps,
+    evalWrapper,
+    getRedirectsInstance,
+    runScriptlet,
+} from '../helpers';
 
 const { test, module } = QUnit;
 const name = 'optimizely';
@@ -116,6 +121,24 @@ test('Project identity is not known if injected by a script with src', async (as
     URL.revokeObjectURL(url);
 
     assert.strictEqual(typeof window.optimizely.get, 'function', 'API is installed');
+    assert.deepEqual(getIdentity(), NO_IDENTITY, 'no project identity');
+});
+
+test('Project identity stays unknown if the redirect for the snippet runs after the scriptlet', async (assert) => {
+    runScriptlet(name);
+    const scriptletApi = window.optimizely;
+    const redirects = await getRedirectsInstance();
+    // the redirect knows the project from the URL of the snippet, see its tests
+    Object.defineProperty(document, 'currentScript', {
+        configurable: true,
+        get: () => ({ src: 'https://cdn.optimizely.com/js/1234567890.js' }),
+    });
+    try {
+        evalWrapper(redirects.getRedirect(name).content);
+    } finally {
+        delete document.currentScript;
+    }
+    assert.strictEqual(window.optimizely, scriptletApi, 'the object of the scriptlet is kept');
     assert.deepEqual(getIdentity(), NO_IDENTITY, 'no project identity');
 });
 
