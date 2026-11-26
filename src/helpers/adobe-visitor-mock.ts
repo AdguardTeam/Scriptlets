@@ -3,7 +3,7 @@
 import { noopFunc } from './noop-utils';
 import { runProtected } from './run-protected';
 
-type AnyRecord = Record<string, unknown>;
+type PlainRecord = Record<string, unknown>;
 
 /**
  * Creates an instance of the mock of `Visitor` of the Experience Cloud Identity Service of Adobe,
@@ -23,7 +23,7 @@ type AnyRecord = Record<string, unknown>;
  * @param prototype Prototype of the instance, e.g. of `Visitor`, so that it is an instance of it.
  * @returns Visitor instance.
  */
-export function createAdobeVisitorInstance(orgId: string, config?: unknown, prototype?: object): AnyRecord {
+export function createAdobeVisitorInstance(orgId: string, config?: unknown, prototype?: object): PlainRecord {
     const FIELDS = ['MCMID', 'MCOPTOUT', 'MCAID', 'MCAAMLH', 'MCAAMB'];
 
     /**
@@ -120,17 +120,17 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
         return null;
     };
 
-    const visitor: AnyRecord = prototype ? Object.create(prototype) : {};
+    const visitor: PlainRecord = prototype ? Object.create(prototype) : {};
     // default, which the configuration may change, as in the library; the names of the cookies are set below
     visitor.loadTimeout = 30000;
     // the values of the configuration, each read once
-    let configValues: AnyRecord = {};
+    let configValues: PlainRecord = {};
     if (config && typeof config === 'object') {
         // as the library, a copy, whose settings may be changed by the page, see `getInstance()` of the mock;
         // each value is read once here, as a getter of the page may fail on the next read
         const configs = Object.create(null);
         Object.keys(config).forEach((key) => {
-            const value = (config as AnyRecord)[key];
+            const value = (config as PlainRecord)[key];
             visitor[key] = value;
             configs[key] = value;
         });
@@ -236,9 +236,9 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
     };
     visitor.FIELDS = {};
     FIELDS.forEach((field) => {
-        (visitor.FIELDS as AnyRecord)[field] = field;
+        (visitor.FIELDS as PlainRecord)[field] = field;
     });
-    const customerIds: AnyRecord = {};
+    const customerIds: PlainRecord = {};
 
     visitor.getMarketingCloudVisitorID = emptyId;
     visitor.getAnalyticsVisitorID = emptyId;
@@ -253,7 +253,7 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
     // no supplemental data id is generated
     visitor.getSupplementalDataID = () => '';
     visitor.getVisitorValues = (callback: unknown, fields?: unknown) => {
-        const values: AnyRecord = {};
+        const values: PlainRecord = {};
         (Array.isArray(fields) ? fields : FIELDS).forEach((field) => {
             // as the library, the opt-out is a boolean, of the global scope
             values[String(field)] = field === 'MCOPTOUT' ? isOptedOutOf() : '';
@@ -268,9 +268,9 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
     visitor.isAllowed = () => true;
     visitor.isClientSideMarketingCloudVisitorID = () => null;
     visitor.getCustomerIDs = () => {
-        const copy: AnyRecord = {};
+        const copy: PlainRecord = {};
         Object.keys(customerIds).forEach((key) => {
-            const entry = customerIds[key] as AnyRecord;
+            const entry = customerIds[key] as PlainRecord;
             copy[key] = { id: entry.id, authState: entry.authState };
         });
         return copy;
@@ -282,11 +282,11 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
             return;
         }
         Object.keys(ids).forEach((key) => {
-            const value = (ids as AnyRecord)[key];
+            const value = (ids as PlainRecord)[key];
             if (value && typeof value === 'object') {
-                const { authState } = value as AnyRecord;
+                const { authState } = value as PlainRecord;
                 customerIds[key] = {
-                    id: (value as AnyRecord).id,
+                    id: (value as PlainRecord).id,
                     authState: authState === undefined ? 0 : authState,
                 };
             } else if (value !== undefined && value !== null) {
@@ -392,7 +392,7 @@ export function getAdobeOptInCookieDomain(configuredDomain?: unknown): string {
  * @returns `true` if anything was installed.
  */
 export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
-    const w = window as unknown as AnyRecord;
+    const w = window as unknown as PlainRecord;
     let installed = false;
 
     const CATEGORIES: Record<string, string> = {
@@ -491,9 +491,9 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * @param permissions Permissions by category.
      * @param storage Settings of the storage of the configuration.
      */
-    const storePermissions = (permissions: AnyRecord, storage: AnyRecord) => {
+    const storePermissions = (permissions: PlainRecord, storage: PlainRecord) => {
         try {
-            let stored: AnyRecord = {};
+            let stored: PlainRecord = {};
             const json = readStoredPermissions();
             if (typeof json === 'string') {
                 try {
@@ -552,7 +552,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * @returns The opt-in service, i.e. `adobe.optIn`, and `configure()`, which applies a configuration to it later,
      * for the opt-in service of a mock of Adobe Tags.
      */
-    const createOptIn = (configuration: AnyRecord) => {
+    const createOptIn = (configuration: PlainRecord) => {
         const values = Object.values(CATEGORIES);
         // other names which the library accepts in permissions
         const OTHER_NAMES = ['videoaa', 'iabConsentHash'];
@@ -563,7 +563,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
          * @param value Permissions of the configuration.
          * @returns Permissions by category, empty if they are not valid.
          */
-        const toPermissions = (value: unknown): AnyRecord => {
+        const toPermissions = (value: unknown): PlainRecord => {
             let result = value;
             if (typeof result === 'string') {
                 try {
@@ -573,11 +573,11 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
                 }
             }
             return result !== null && typeof result === 'object' && !Array.isArray(result)
-                ? result as AnyRecord
+                ? result as PlainRecord
                 : {};
         };
         // as the library, a saved decision completes the opt-in if it has only names of categories
-        const isDecision = (permissionsToCheck: AnyRecord): boolean => {
+        const isDecision = (permissionsToCheck: PlainRecord): boolean => {
             const names = Object.keys(permissionsToCheck);
             return names.length > 0
                 && names.every((name) => values.indexOf(name) > -1 || OTHER_NAMES.indexOf(name) > -1);
@@ -587,20 +587,20 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         let doesOptInApply = true;
         // The permissions before any change of the page, set by `configure()`: all categories, approved only
         // if opt-in does not apply, otherwise with the ones of the configuration.
-        const initialPermissions: AnyRecord = {};
+        const initialPermissions: PlainRecord = {};
         // The pre-approvals of the configuration, i.e. its own object, which the page may change, as in the library,
         // and whether it has any, also an empty object
-        let preApprovals: AnyRecord = {};
+        let preApprovals: PlainRecord = {};
         let hasPreApprovals = false;
         // The current permissions, and the ones with the changes waiting for `complete()`. As in the library,
         // they are two objects until the page completes a change, and one object then, so that a change
         // which waits for `complete()` is in the current permissions only after the first completion.
-        let permissions: AnyRecord = Object.assign({}, initialPermissions);
-        const changedPermissions: AnyRecord = Object.assign({}, initialPermissions);
+        let permissions: PlainRecord = Object.assign({}, initialPermissions);
+        const changedPermissions: PlainRecord = Object.assign({}, initialPermissions);
         // The changes of the page, by category: all of them, and the ones which were completed last,
         // i.e. without the ones waiting for `complete()`. They are kept only for `configure()` called after them.
-        const pageChanges: AnyRecord = {};
-        let completedChanges: AnyRecord = {};
+        const pageChanges: PlainRecord = {};
+        let completedChanges: PlainRecord = {};
 
         const listeners: Array<{ event: unknown; callback: unknown; context: unknown }> = [];
         // Callbacks of `fetchPermissions()` which have not been called yet, as the visitor has not decided:
@@ -609,8 +609,8 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         // as well as whether the opt-in was pending, i.e. the page had changed nothing yet.
         let waitingCallbacks: Array<{ callback: unknown; listener?: object; wasPending: boolean }> = [];
         // settings of the storage, if it is enabled
-        let storageSettings: AnyRecord | undefined;
-        const optIn: AnyRecord = {
+        let storageSettings: PlainRecord | undefined;
+        const optIn: PlainRecord = {
             Categories: CATEGORIES,
             permissions,
             doesOptInApply,
@@ -653,7 +653,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
          * @param approvals Permissions by category.
          * @returns `true` if all of them are approved.
          */
-        const areApproved = (categories: unknown, approvals: AnyRecord): boolean => {
+        const areApproved = (categories: unknown, approvals: PlainRecord): boolean => {
             const list = toList(categories);
             if (list.length > 0) {
                 return list.every((category) => !!approvals[category as string]);
@@ -746,7 +746,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
          * - `storedPermissions`: JSON of the decision stored by the library, see `readStoredPermissions()`;
          * - `storage`: settings of the storage, if it is enabled, see `storePermissions()`.
          */
-        const configure = (options: AnyRecord) => {
+        const configure = (options: PlainRecord) => {
             const wasAnsweredAtOnce = isAnsweredAtOnce();
             if (typeof options.doesOptInApply === 'boolean') {
                 doesOptInApply = options.doesOptInApply;
@@ -758,7 +758,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             }
             const previous = toPermissions(options.previousPermissions);
             const stored = toPermissions(options.storedPermissions);
-            storageSettings = (options.storage as AnyRecord | undefined) || storageSettings;
+            storageSettings = (options.storage as PlainRecord | undefined) || storageSettings;
             values.forEach((category) => {
                 initialPermissions[category] = !doesOptInApply;
             });
@@ -862,17 +862,17 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      *
      * @returns The `adobe` object.
      */
-    const getAdobe = (): AnyRecord => {
+    const getAdobe = (): PlainRecord => {
         if (!w.adobe || typeof w.adobe !== 'object') {
             w.adobe = {};
         }
-        return w.adobe as AnyRecord;
+        return w.adobe as PlainRecord;
     };
 
     // the opt-in service which a mock of Adobe Tags creates at once, without the configuration of the site,
     // and its `configure()`, see `createOptIn()`, until the page passes a configuration
     let optInOfUnknownConfig: unknown = null;
-    let configureOptInOfUnknownConfig: ((options: AnyRecord) => void) | null = null;
+    let configureOptInOfUnknownConfig: ((options: PlainRecord) => void) | null = null;
 
     /**
      * Sets the `AMCV_<orgId>` cookie with a dummy id for a new instance, see `setDummyIdCookie()`, when the library
@@ -899,7 +899,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * @param visitor New instance of the Visitor API.
      * @param optInConfig Opt-in configuration of the instance, see `getOptInConfig()`.
      */
-    const setDummyIdCookieOfInstance = (visitor: AnyRecord, optInConfig: AnyRecord) => {
+    const setDummyIdCookieOfInstance = (visitor: PlainRecord, optInConfig: PlainRecord) => {
         if (optInConfig.hasFailed) {
             return;
         }
@@ -914,8 +914,8 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         // as the library, which keeps the `adobe` object of the page when the instance is created,
         // and reads its current opt-in service
         const adobeOfInstance = getAdobe();
-        const getOptIn = (): AnyRecord | null => {
-            const current = adobeOfInstance.optIn as AnyRecord | undefined;
+        const getOptIn = (): PlainRecord | null => {
+            const current = adobeOfInstance.optIn as PlainRecord | undefined;
             return current && typeof current.isApproved === 'function' ? current : null;
         };
         try {
@@ -934,14 +934,14 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
                     return false;
                 }
                 try {
-                    const configs = visitor.configs as AnyRecord | undefined;
+                    const configs = visitor.configs as PlainRecord | undefined;
                     return !!configs && !!configs.isIabContext;
                 } catch (e) {
                     return true;
                 }
             };
             // as the library, which writes the id only while ECID is approved, and not in IAB context
-            const isEcidApproved = (service: AnyRecord) => {
+            const isEcidApproved = (service: PlainRecord) => {
                 return !!(service.isApproved as (category: unknown) => unknown)(CATEGORIES.ECID) && !isIabContext();
             };
             if (isEcidApproved(optIn)) {
@@ -985,7 +985,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * @param config Configuration of the page, copied to the instance.
      * @returns Visitor instance.
      */
-    const createInstance = (orgId: string, config: unknown): AnyRecord => {
+    const createInstance = (orgId: string, config: unknown): PlainRecord => {
         // as the library, an instance of `Visitor` of this mock
         const visitor = createAdobeVisitorInstance(orgId, config, visitorPrototype);
         if (!w.s_c_in) {
@@ -1009,8 +1009,8 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * @param config Configuration of the page.
      * @returns Whether opt-in applies, and the permissions of the configuration.
      */
-    const getOptInConfig = (config: unknown): AnyRecord => {
-        const result: AnyRecord = { doesOptInApply: false, hasFailed: false };
+    const getOptInConfig = (config: unknown): PlainRecord => {
+        const result: PlainRecord = { doesOptInApply: false, hasFailed: false };
         if (!config || typeof config !== 'object') {
             return result;
         }
@@ -1025,7 +1025,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         };
         // as `Object.keys()` of the library
         const getOwn = (name: string): unknown => {
-            return Object.prototype.propertyIsEnumerable.call(config, name) ? (config as AnyRecord)[name] : undefined;
+            return Object.prototype.propertyIsEnumerable.call(config, name) ? (config as PlainRecord)[name] : undefined;
         };
         try {
             // as a boolean setting of the library, a function is called
@@ -1070,12 +1070,12 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * @returns Visitor instance.
      * @throws Error without an organization id, as the library.
      */
-    const getInstance = (orgId: unknown, config?: unknown): AnyRecord => {
+    const getInstance = (orgId: unknown, config?: unknown): PlainRecord => {
         if (!orgId) {
             throw new Error('Visitor requires Adobe Marketing Cloud Org ID.');
         }
         const id = String(orgId).indexOf('@') < 0 ? `${orgId}@AdobeOrg` : String(orgId);
-        const instances = Array.isArray(w.s_c_il) ? w.s_c_il as AnyRecord[] : [];
+        const instances = Array.isArray(w.s_c_il) ? w.s_c_il as PlainRecord[] : [];
         for (let i = 0; i < instances.length; i += 1) {
             const instance = instances[i];
             if (instance && instance._c === 'Visitor' && instance.marketingCloudOrgID === id) {
@@ -1092,12 +1092,12 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         // It is taken before any code of the page is called, e.g. a function of `previousPermissions` which
         // calls `getInstance()` itself, so that the configuration of this call is applied, as by the library,
         // whose opt-in service of this call replaces the one of such a call.
-        let configureOptIn: ((options: AnyRecord) => void) | null = null;
+        let configureOptIn: ((options: PlainRecord) => void) | null = null;
         if (adobe.optIn === optInOfUnknownConfig && optInConfig.hasOptInSettings) {
             configureOptIn = configureOptInOfUnknownConfig;
             configureOptInOfUnknownConfig = null;
         }
-        let visitor: AnyRecord;
+        let visitor: PlainRecord;
         try {
             visitor = createInstance(id, config);
         } catch (e) {
@@ -1112,7 +1112,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             throw e;
         }
         // as the library, the copy of the configuration has the values of the settings, e.g. a function called once
-        const configs = visitor.configs as AnyRecord | undefined;
+        const configs = visitor.configs as PlainRecord | undefined;
         if (configs && !optInConfig.hasFailed && Object.prototype.hasOwnProperty.call(configs, 'isIabContext')) {
             configs.isIabContext = optInConfig.isIabContext;
         }
@@ -1134,7 +1134,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         if (storedPermissions === null) {
             optInConfig.hasFailed = true;
         }
-        const optInOptions: AnyRecord = {
+        const optInOptions: PlainRecord = {
             previousPermissions,
             preOptInApprovals: optInConfig.preOptInApprovals,
             storedPermissions,
@@ -1168,7 +1168,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
          */
         const Visitor = function Visitor() {
             // instances are created by getInstance()
-        } as unknown as AnyRecord;
+        } as unknown as PlainRecord;
         Visitor.getInstance = getInstance;
         Visitor.AuthState = { UNKNOWN: 0, AUTHENTICATED: 1, LOGGED_OUT: 2 };
         Visitor.OptOut = { GLOBAL: 'global' };

@@ -3,7 +3,7 @@
 import { createAdobeVisitorInstance } from './adobe-visitor-mock';
 import { noopFunc } from './noop-utils';
 
-type AnyRecord = Record<string, unknown>;
+type PlainRecord = Record<string, unknown>;
 
 /**
  * Installs a mock of `_satellite`, the API of Adobe Tags (formerly Launch), as the library, version 29,
@@ -24,16 +24,16 @@ type AnyRecord = Record<string, unknown>;
  * @returns `true` if the mock was installed.
  */
 export function mockAdobeSatellite(): boolean {
-    const w = window as unknown as AnyRecord;
+    const w = window as unknown as PlainRecord;
     const existing = w._satellite;
     const isObject = !!existing && (typeof existing === 'object' || typeof existing === 'function');
-    if (isObject && typeof (existing as AnyRecord).track === 'function') {
+    if (isObject && typeof (existing as PlainRecord).track === 'function') {
         return false;
     }
     // Members are plain own properties, as pages copy the object, e.g. by `{ ...window._satellite }`.
-    const satellite: AnyRecord = isObject ? existing as AnyRecord : {};
-    const customVars: AnyRecord = {};
-    let visitorInstance: AnyRecord | null = null;
+    const satellite: PlainRecord = isObject ? existing as PlainRecord : {};
+    const customVars: PlainRecord = {};
+    let visitorInstance: PlainRecord | null = null;
 
     /**
      * Returns the value at a path of properties, as `getVar()` of the library: `getAttribute(<name>)` calls
@@ -45,7 +45,7 @@ export function mockAdobeSatellite(): boolean {
      * @returns The value, or `undefined` if a part of the path is missing.
      */
     const getProperty = (host: unknown, chain: string[], supportSpecial?: boolean): unknown => {
-        let value = host as AnyRecord | null | undefined;
+        let value = host as PlainRecord | null | undefined;
         for (let i = 0; i < chain.length; i += 1) {
             if (value === null || value === undefined) {
                 return undefined;
@@ -55,18 +55,18 @@ export function mockAdobeSatellite(): boolean {
             if (supportSpecial && prop.charAt(0) === '@') {
                 const text = (value as unknown as Node).textContent;
                 if (prop === '@text') {
-                    value = text as unknown as AnyRecord;
+                    value = text as unknown as PlainRecord;
                 } else if (prop === '@cleanText') {
                     const clean = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : text;
-                    value = clean as unknown as AnyRecord;
+                    value = clean as unknown as PlainRecord;
                 } else {
                     // the library throws for an unknown special property
                     return undefined;
                 }
             } else if (typeof value.getAttribute === 'function' && attributeMatch) {
-                value = (value as unknown as Element).getAttribute(attributeMatch[1]) as unknown as AnyRecord;
+                value = (value as unknown as Element).getAttribute(attributeMatch[1]) as unknown as PlainRecord;
             } else {
-                value = value[prop] as AnyRecord;
+                value = value[prop] as PlainRecord;
             }
         }
         return value;
@@ -87,7 +87,7 @@ export function mockAdobeSatellite(): boolean {
         }
         const chain = variable.split('.');
         const hostName = chain.shift() as string;
-        const event = syntheticEvent as AnyRecord | undefined;
+        const event = syntheticEvent as PlainRecord | undefined;
         if (hostName === 'this') {
             return event ? getProperty(event.element, chain, true) : undefined;
         }
@@ -114,7 +114,7 @@ export function mockAdobeSatellite(): boolean {
             customVars[name] = value;
         } else if (name && typeof name === 'object') {
             Object.keys(name).forEach((key) => {
-                customVars[key] = (name as AnyRecord)[key];
+                customVars[key] = (name as PlainRecord)[key];
             });
         }
     };
@@ -126,7 +126,7 @@ export function mockAdobeSatellite(): boolean {
      * @returns Value of the cookie, `undefined` if it is missing, or an object with all cookies without a name.
      */
     const getCookie = (key?: unknown): unknown => {
-        const jar: AnyRecord = {};
+        const jar: PlainRecord = {};
         let cookies: string[] = [];
         try {
             cookies = window.document.cookie ? window.document.cookie.split('; ') : [];
@@ -161,8 +161,8 @@ export function mockAdobeSatellite(): boolean {
      *
      * @returns Visitor instance.
      */
-    const getVisitorId = (): AnyRecord => {
-        const instances = Array.isArray(w.s_c_il) ? w.s_c_il as AnyRecord[] : [];
+    const getVisitorId = (): PlainRecord => {
+        const instances = Array.isArray(w.s_c_il) ? w.s_c_il as PlainRecord[] : [];
         for (let i = 0; i < instances.length; i += 1) {
             const instance = instances[i];
             if (instance && instance._c === 'Visitor') {

@@ -4,7 +4,7 @@ import { appMeasurementUnescape, getAppMeasurementQueryParam } from './app-measu
 import { noopFunc } from './noop-utils';
 import { runProtected } from './run-protected';
 
-type AnyRecord = Record<string, unknown>;
+type PlainRecord = Record<string, unknown>;
 
 /**
  * Installs a mock of AppMeasurement, the library of Adobe Analytics, as version 2.22.1 behaves,
@@ -19,7 +19,7 @@ type AnyRecord = Record<string, unknown>;
  * @returns `true` if anything was installed.
  */
 export function mockAdobeAnalytics(): boolean {
-    const w = window as unknown as AnyRecord;
+    const w = window as unknown as PlainRecord;
     const doc = window.document;
     let installed = false;
 
@@ -112,7 +112,7 @@ export function mockAdobeAnalytics(): boolean {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const AppMeasurement = function AppMeasurement(this: any, account?: unknown) {
-        const s = this as AnyRecord;
+        const s = this as PlainRecord;
         // registration in the list of instances, with the quirk of the real one
         if (!w.s_c_in) {
             w.s_c_il = [];
@@ -137,7 +137,7 @@ export function mockAdobeAnalytics(): boolean {
         s.maxDelay = 250;
         s.useForcedLinkTracking = 1;
 
-        const modules: AnyRecord = {};
+        const modules: PlainRecord = {};
 
         // As the real one, the report suites of the previous accounts are kept, sorted and without duplicates,
         // so that `s_gi()` still returns this instance for them.
@@ -204,7 +204,7 @@ export function mockAdobeAnalytics(): boolean {
                     runProtected(doneAction, []);
                     return;
                 }
-                const href = linkObject && (linkObject as AnyRecord).href;
+                const href = linkObject && (linkObject as PlainRecord).href;
                 if (href) {
                     doc.location.href = String(href);
                 }
@@ -220,20 +220,20 @@ export function mockAdobeAnalytics(): boolean {
         };
         s.loadModule = (name: unknown, onLoad?: unknown) => {
             const moduleName = String(name);
-            let module = modules[moduleName] as AnyRecord | undefined;
+            let module = modules[moduleName] as PlainRecord | undefined;
             if (!module) {
                 module = {};
                 const ModuleConstructor = w[`AppMeasurement_Module_${moduleName}`];
                 if (typeof ModuleConstructor === 'function') {
                     try {
                         // eslint-disable-next-line new-cap
-                        module = new (ModuleConstructor as new (tracker: unknown) => AnyRecord)(s);
+                        module = new (ModuleConstructor as new (tracker: unknown) => PlainRecord)(s);
                     } catch (e) {
                         // a real module may need the real library
                         module = {};
                     }
                 }
-                const loaded = module as AnyRecord;
+                const loaded = module as PlainRecord;
                 modules[moduleName] = loaded;
                 s[moduleName] = loaded;
                 let onLoadCallback: unknown;
@@ -280,7 +280,7 @@ export function mockAdobeAnalytics(): boolean {
      * @param args Arguments.
      */
     const callMethod = (tracker: unknown, name: string, args: unknown[]) => {
-        runProtected(tracker ? (tracker as AnyRecord)[name] : undefined, args, tracker);
+        runProtected(tracker ? (tracker as PlainRecord)[name] : undefined, args, tracker);
     };
 
     /**
@@ -291,7 +291,7 @@ export function mockAdobeAnalytics(): boolean {
      * @returns AppMeasurement instance.
      */
     const sGi = (account: unknown): unknown => {
-        const instances = Array.isArray(w.s_c_il) ? w.s_c_il as AnyRecord[] : [];
+        const instances = Array.isArray(w.s_c_il) ? w.s_c_il as PlainRecord[] : [];
         const wanted = splitAccounts(account);
         for (let i = 0; i < instances.length; i += 1) {
             const instance = instances[i];
@@ -314,7 +314,7 @@ export function mockAdobeAnalytics(): boolean {
     };
 
     if (typeof w.AppMeasurement !== 'function') {
-        (AppMeasurement as unknown as AnyRecord).getInstance = sGi;
+        (AppMeasurement as unknown as PlainRecord).getInstance = sGi;
         w.AppMeasurement = AppMeasurement;
         installed = true;
     }
@@ -327,8 +327,8 @@ export function mockAdobeAnalytics(): boolean {
         w.s_pgicq = () => {
             const queue = w.s_giq;
             if (Array.isArray(queue)) {
-                queue.forEach((item: AnyRecord) => {
-                    const tracker = (w.s_gi as (account: unknown) => AnyRecord)(item && item.oun);
+                queue.forEach((item: PlainRecord) => {
+                    const tracker = (w.s_gi as (account: unknown) => PlainRecord)(item && item.oun);
                     callMethod(tracker, 'setAccount', [item && item.un]);
                     callMethod(tracker, 'setTagContainer', [item && item.tagContainerName]);
                 });
