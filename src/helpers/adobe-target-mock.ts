@@ -81,7 +81,7 @@ export function mockAdobeTarget(): boolean {
      */
     const removePrehiding = () => {
         PREHIDING_IDS.forEach((id) => {
-            const styles = doc.querySelectorAll(`style[id="${id}"]`);
+            const styles = doc.querySelectorAll(`style#${id}`);
             for (let i = 0; i < styles.length; i += 1) {
                 const style = styles[i];
                 if (style.parentNode) {
