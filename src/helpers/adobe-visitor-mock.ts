@@ -395,7 +395,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
     const w = window as unknown as AnyRecord;
     let installed = false;
 
-    const CATEGORIES: AnyRecord = {
+    const CATEGORIES: Record<string, string> = {
         AAM: 'aam',
         ADCLOUD: 'adcloud',
         ANALYTICS: 'aa',
@@ -553,7 +553,7 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
      * for the opt-in service of a mock of Adobe Tags.
      */
     const createOptIn = (configuration: AnyRecord) => {
-        const values = Object.keys(CATEGORIES).map((key) => CATEGORIES[key]) as string[];
+        const values = Object.values(CATEGORIES);
         // other names which the library accepts in permissions
         const OTHER_NAMES = ['videoaa', 'iabConsentHash'];
 
