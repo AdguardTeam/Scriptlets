@@ -23,6 +23,8 @@ import { type Source } from '../scriptlets';
  * is not included.
  * No experiments or variations are applied, no data is sent and no cookies or storage items are set,
  * and the custom JavaScript of the project is not run.
+ * A client which is already loaded, of Web Experimentation or of Classic, is kept, e.g. if the redirect
+ * is applied to another snippet of the page after the real one.
  *
  * The rule should match only the snippet, e.g. `cdn.optimizely.com/js/<projectId>.js`,
  * its Performance Edge variant `cdn.optimizely.com/public/<accountId>/<projectId>/..._edge_helper.js`,
@@ -116,12 +118,31 @@ export function Optimizely(source: Source) {
     const w = window as OptimizelyWindow;
     const doc = w.document;
     const existing = w.optimizely;
-    // An initialized client, the real one or this redirect loaded before, is kept.
-    if (
-        existing
-        && !Array.isArray(existing)
-        && typeof (existing as { get?: unknown }).get === 'function'
-    ) {
+    // A loaded client is kept: the real one of Web Experimentation, or this redirect loaded before, which have
+    // `get()`, or the real one of Classic, which has no `get()`, but `push()`, `trackEvent()` and `data`,
+    // unlike the array which queues the commands before a client is loaded. Each property is read once,
+    // and an object whose property cannot be read, e.g. a getter of a placeholder of the page which throws,
+    // is replaced, as any other object which is not a loaded client.
+    let isLoadedClient = false;
+    if (existing && !Array.isArray(existing)) {
+        try {
+            const client = existing as {
+                get?: unknown;
+                push?: unknown;
+                trackEvent?: unknown;
+                data?: unknown;
+            };
+            if (typeof client.get === 'function') {
+                isLoadedClient = true;
+            } else if (typeof client.push === 'function' && typeof client.trackEvent === 'function') {
+                const { data } = client;
+                isLoadedClient = !!data && typeof data === 'object';
+            }
+        } catch (e) {
+            isLoadedClient = false;
+        }
+    }
+    if (isLoadedClient) {
         return;
     }
 

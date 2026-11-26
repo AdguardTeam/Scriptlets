@@ -162,10 +162,69 @@ test('Keeps an initialized client and is not applied again', (assert) => {
     assert.strictEqual(window.optimizely, first, 'repeated loading keeps the first API');
 });
 
+test('Keeps a loaded Optimizely Classic client', (assert) => {
+    // the real Classic client has no get(), but trackEvent() and data, e.g. `cdn.optimizely.com/js/168948327.js`
+    const client = {
+        trackEvent() {},
+        data: { state: {} },
+        activeExperiments: [],
+        push() {},
+        getProjectId: () => 168948327,
+    };
+    window.optimizely = client;
+    runRedirect();
+    assert.strictEqual(window.optimizely, client, 'Classic client is kept');
+    assert.strictEqual(window.optimizely.getProjectId(), 168948327, 'with its project id');
+
+    // each property is read once, as a getter of the page may return another value on the next read
+    clearGlobalProps('optimizely');
+    let dataReads = 0;
+    const data = { state: {} };
+    const withDataGetter = {
+        push() {},
+        trackEvent() {},
+        get data() {
+            dataReads += 1;
+            return data;
+        },
+    };
+    window.optimizely = withDataGetter;
+    runRedirect();
+    // counted before the assertions, as QUnit reads the properties of the values which it compares
+    const readsByRedirect = dataReads;
+    assert.ok(window.optimizely === withDataGetter, 'Classic client with a data getter is kept');
+    assert.strictEqual(readsByRedirect, 1, 'data is read once');
+});
+
 test('Replaces other values of window.optimizely', (assert) => {
     window.optimizely = { initialized: true };
     runRedirect();
     assert.strictEqual(typeof window.optimizely.get, 'function', 'object without get() is replaced');
+
+    const placeholders = {
+        'trackEvent() without data': { push() {}, trackEvent() {}, data: null },
+        'non-function trackEvent': { push() {}, trackEvent: 'not a function', data: {} },
+        'trackEvent() and data without push()': { trackEvent() {}, data: {} },
+        'data getter which throws': {
+            push() {},
+            trackEvent() {},
+            get data() {
+                throw new Error('SDK not loaded');
+            },
+        },
+        'get getter which throws': {
+            get get() {
+                throw new Error('SDK not loaded');
+            },
+        },
+    };
+    Object.keys(placeholders).forEach((label) => {
+        clearGlobalProps('optimizely');
+        window.optimizely = placeholders[label];
+        runRedirect();
+        assert.strictEqual(typeof window.optimizely.get, 'function', `${label} is replaced`);
+        assert.strictEqual(window.optimizely.push({ type: 'log' }), true, `${label}: push() works`);
+    });
 
     clearGlobalProps('optimizely');
     window.optimizely = { get: 'not a function' };
