@@ -25,7 +25,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `adobe-analytics` redirect resource and scriptlet which mock AppMeasurement of Adobe Analytics.
 - `adobe-visitor` redirect resource and scriptlet which mock the Experience Cloud Identity Service of Adobe,
   and set a session `AMCV_<orgId>` cookie with a dummy id, the same for every visitor, if there is none,
-  as some sites read the id from it, e.g. video players.
+  once the ECID category of `adobe.optIn` is approved, as the library, as some sites read the id from it,
+  e.g. video players; with `isOptInStorageEnabled`, they store the decision of the visitor in the `adobeujs-optin`
+  cookie, as the library.
 - `adobe-tags` redirect resource and scriptlet which mock the library of Adobe Tags, `_satellite`,
   with the Adobe libraries which it usually contains, so it sets the cookie of `adobe-visitor` as well,
   and show the page hidden by the prehiding snippet of Adobe Target or of the Adobe Web SDK at once [#588].

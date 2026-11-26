@@ -16,6 +16,11 @@ import { AdobeTags, AdobeTagsNames } from '../redirects/adobe-tags';
  * i.e. Adobe Tags and Adobe Target are disabled on the site.
  * Functions which the library of a site defines in its custom code, e.g. `digitalView()` of BBVA, are not defined,
  * see the redirect resource.
+ * As the `adobe-visitor` scriptlet, `Visitor.getInstance()` called by the page sets the `AMCV_<orgId>` cookie
+ * with a dummy id, by default only if the page approves the ECID category of `adobe.optIn` with the first decision
+ * of the visitor. The opt-in configuration of that call is applied to `adobe.optIn`, e.g. `doesOptInApply`
+ * or `preOptInApprovals`, and the decision is stored in the `adobeujs-optin` cookie if it enables it,
+ * i.e. `isOptInStorageEnabled`, see the redirect resource.
  *
  * ### Examples
  *

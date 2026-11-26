@@ -742,6 +742,14 @@ Project-specific rules:
   `trackPageWatchers()` from `tests/helpers.js` in `beforeEach` and the function
   which it returns in `afterEach`.
 
+- Behavior which depends on the order of calls of the page, e.g. the opt-in
+  service of `adobe-tags`, whose storage the page may enable before or after
+  its other calls, SHOULD be defined by one rule and tested by enumerating
+  the sequences of calls against a reference, e.g. the same resource called
+  in the order of the library, rather than by a test for each order which
+  has been reported, see "A configuration passed later…" in
+  `tests/redirects/adobe-tags.test.js`.
+
 - Every new scriptlet or redirect MUST have a corresponding `.test.js` file
   in the appropriate `tests/` subdirectory.
 

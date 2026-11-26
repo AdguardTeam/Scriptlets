@@ -1,6 +1,7 @@
 import {
     appMeasurementUnescape,
     createAdobeVisitorInstance,
+    getAdobeOptInCookieDomain,
     getAppMeasurementQueryParam,
     hit,
     mockAdobeAnalytics,
@@ -29,7 +30,7 @@ import { type Source } from '../scriptlets';
  *
  * `_satellite` is defined as the library defines it without rules, data elements and extensions,
  * so `_satellite.track()` and `_satellite.pageBottom()` do nothing, `_satellite.getVar()` returns only the values
- * set by `_satellite.setVar()`, `_satellite.cookie.get()` reads the cookies of the page, but no cookies are written,
+ * set by `_satellite.setVar()`, `_satellite.cookie.get()` reads the cookies of the page, but writes none,
  * and the logger logs nothing. `_satellite.getVisitorId()` returns the first instance of the Visitor API
  * on the page, e.g. created by its code, otherwise an instance of the mock whose ids are empty strings,
  * without the `AMCV_<orgId>` cookie, as the organization of the site is not known.
@@ -42,6 +43,14 @@ import { type Source } from '../scriptlets';
  * the page is not told that the visitor has consented, also on sites which do not use opt-in, where the library
  * approves all categories. As by the library, a callback of `adobe.optIn.fetchPermissions()` is called then
  * once the page has completed the decision of the visitor.
+ * As by the `adobe-visitor` resource, `Visitor.getInstance()` called by the page sets the `AMCV_<orgId>` cookie
+ * with a dummy id once the ECID category is approved, i.e. by default only if the page approves it with the first
+ * decision of the visitor, as opt-in applies.
+ * The opt-in configuration which the page passes to `Visitor.getInstance()` itself is applied to `adobe.optIn`
+ * by its first such call, as by the library when it creates the opt-in service, whatever the page has changed
+ * before: `doesOptInApply`, e.g. all categories are approved if it is `false`, `preOptInApprovals`,
+ * `previousPermissions` and, with `isOptInStorageEnabled`, the decision of the visitor in the `adobeujs-optin`
+ * cookie, in which it is stored then as well, as by the `adobe-visitor` resource.
  * Limitation: `adobe.optIn` is not created at once if the mock of the Visitor API is already on the page,
  * e.g. as the `adobe-visitor` resource has run before, as it cannot be told from a Visitor API of the page;
  * it is then created by the first `Visitor.getInstance()` call, as by the `adobe-visitor` resource.
@@ -119,6 +128,7 @@ AdobeTags.injections = [
     appMeasurementUnescape,
     getAppMeasurementQueryParam,
     createAdobeVisitorInstance,
+    getAdobeOptInCookieDomain,
     mockAdobeVisitor,
     mockAdobeAnalytics,
     mockAdobeTarget,

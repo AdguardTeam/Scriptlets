@@ -417,6 +417,444 @@ test('getInstance() sets a session AMCV cookie with a dummy id, not taken over b
     assert.ok(document.cookie.split('; ').includes('AMCV_QRS@AdobeOrg=MCMID|7'), 'an existing one is not replaced');
 });
 
+test('getInstance() sets the AMCV cookie only once the ECID category is approved, as the library', (assert) => {
+    // the cases are the ones of the real library 5.5.0, which writes its cookie only then
+    const hasCookie = (orgId) => document.cookie.split('; ').some((cookie) => cookie.startsWith(`AMCV_${orgId}=`));
+    const check = (orgId, config, steps = []) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        removeAmcvCookies();
+        run();
+        window.Visitor.getInstance(orgId, config);
+        const result = [hasCookie(orgId)];
+        const { optIn, OptInCategories } = window.adobe;
+        steps.forEach((step) => {
+            step(optIn, OptInCategories);
+            result.push(hasCookie(orgId));
+        });
+        window.Visitor.getInstance(orgId, config);
+        result.push(hasCookie(orgId));
+        return result;
+    };
+    assert.deepEqual(check('A@AdobeOrg'), [true, true], 'without opt-in');
+    assert.deepEqual(check('B@AdobeOrg', { doesOptInApply: true }, []), [false, false], 'not before consent');
+    assert.deepEqual(
+        check('C@AdobeOrg', { doesOptInApply: true }, [(optIn, C) => optIn.approve(C.ECID)]),
+        [false, true, true],
+        'once ECID is approved',
+    );
+    assert.deepEqual(
+        check('D@AdobeOrg', { doesOptInApply: true }, [(optIn, C) => optIn.approve(C.TARGET)]),
+        [false, false, false],
+        'not if another category is approved',
+    );
+    assert.deepEqual(
+        check('E@AdobeOrg', { doesOptInApply: true }, [(optIn) => optIn.approveAll()]),
+        [false, true, true],
+        'once all categories are approved',
+    );
+    assert.deepEqual(
+        check('F@AdobeOrg', { doesOptInApply: true }, [
+            (optIn, C) => optIn.approve(C.ECID, true),
+            (optIn) => optIn.complete(),
+        ]),
+        [false, false, true, true],
+        'once a deferred approval is completed',
+    );
+    assert.deepEqual(
+        check('G@AdobeOrg', { doesOptInApply: true, preOptInApprovals: { ecid: true } }, []),
+        [true, true],
+        'pre-approved',
+    );
+    assert.deepEqual(
+        check('H@AdobeOrg', { doesOptInApply: true, previousPermissions: { ecid: true } }, []),
+        [true, true],
+        'approved by the saved decision of the visitor',
+    );
+
+    assert.deepEqual(
+        check('K@AdobeOrg', { doesOptInApply: true }, [
+            (optIn, C) => optIn.deny(C.ECID),
+            (optIn, C) => optIn.approve(C.ECID),
+        ]),
+        [false, false, false, false],
+        'not if ECID is approved after it has been denied, as the instance is disabled then',
+    );
+    assert.deepEqual(
+        check('L@AdobeOrg', { doesOptInApply: true }, [
+            (optIn, C) => optIn.deny(C.ECID),
+            (optIn, C) => optIn.approve(C.ECID, true),
+            () => window.Visitor.getInstance('L@AdobeOrg', { doesOptInApply: true }),
+        ]),
+        [false, false, false, false, false],
+        'not by getInstance() for an existing instance, also with a deferred approval',
+    );
+    assert.deepEqual(
+        check('M@AdobeOrg', { doesOptInApply: true, isIabContext: true }, [(optIn, C) => optIn.approve(C.ECID)]),
+        [false, false, false],
+        'not in IAB context, as the consent of the IAB platform is not known',
+    );
+    assert.deepEqual(
+        check('N@AdobeOrg', { doesOptInApply: true, isIabContext: true, preOptInApprovals: { ecid: true } }),
+        [false, false],
+        'not in IAB context if ECID is pre-approved either',
+    );
+    assert.deepEqual(check('O@AdobeOrg', { useLocalStorage: true }), [false, false], 'not with useLocalStorage');
+    assert.deepEqual(check('P@AdobeOrg', { cookieLifetime: 'none' }), [false, false], 'not with cookieLifetime NONE');
+
+    // an instance created after the visitor has denied ECID is not set later either
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    window.Visitor.getInstance('T@AdobeOrg', { doesOptInApply: true });
+    window.adobe.optIn.deny(window.adobe.OptInCategories.ECID);
+    window.Visitor.getInstance('U@AdobeOrg', { doesOptInApply: true });
+    window.adobe.optIn.approve(window.adobe.OptInCategories.ECID);
+    assert.false(hasCookie('U@AdobeOrg'), 'not for an instance created after ECID has been denied');
+
+    // an opt-in service of the page without its API is a consent which is not known
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    window.adobe.optIn = { doesOptInApply: true, permissions: { ecid: false } };
+    window.Visitor.getInstance('Q@AdobeOrg');
+    assert.false(hasCookie('Q@AdobeOrg'), 'not with an opt-in service without isApproved()');
+
+    // an instance waits for the opt-in service of its creation, but the decision is the one of the current service
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    window.Visitor.getInstance('R@AdobeOrg', { doesOptInApply: true });
+    const firstOptIn = window.adobe.optIn;
+    delete window.adobe.optIn;
+    window.Visitor.getInstance('S@AdobeOrg', { doesOptInApply: true });
+    firstOptIn.approve(window.adobe.OptInCategories.ECID);
+    assert.false(hasCookie('R@AdobeOrg'), 'not while the current opt-in service is not complete');
+    window.adobe.optIn.deny(window.adobe.OptInCategories.ECID);
+    firstOptIn.approve(window.adobe.OptInCategories.ECID);
+    assert.deepEqual(
+        [hasCookie('R@AdobeOrg'), hasCookie('S@AdobeOrg')],
+        [false, false],
+        'not if the current opt-in service denies ECID',
+    );
+
+    // and it waits while the current service is not complete
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    window.Visitor.getInstance('PEND@AdobeOrg', { doesOptInApply: true });
+    const pendingOptIn = window.adobe.optIn;
+    delete window.adobe.optIn;
+    window.Visitor.getInstance('CUR@AdobeOrg', { doesOptInApply: true });
+    pendingOptIn.approve(window.adobe.OptInCategories.ECID);
+    window.adobe.optIn.approve(window.adobe.OptInCategories.ECID);
+    assert.false(hasCookie('PEND@AdobeOrg'), 'not by a completion of the current service');
+    pendingOptIn.deny(window.adobe.OptInCategories.TARGET);
+    assert.true(hasCookie('PEND@AdobeOrg'), 'by the next completion of its service, as the current one approves ECID');
+
+    // the configuration of each instance, as the library
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    // The library writes the id only while ECID is approved by `adobe.optIn`, also for an instance to which
+    // opt-in does not apply, whose cookie has no id otherwise; such an instance does not wait for the decision.
+    window.Visitor.getInstance('V@AdobeOrg', { doesOptInApply: true });
+    window.Visitor.getInstance('W@AdobeOrg', { doesOptInApply: false });
+    window.Visitor.getInstance('Y@AdobeOrg');
+    window.Visitor.getInstance('Z@AdobeOrg', {
+        doesOptInApply() {
+            throw new Error('error of the page');
+        },
+    });
+    const orgs = ['V', 'W', 'Y', 'Z'];
+    const beforeApproval = orgs.map((org) => hasCookie(`${org}@AdobeOrg`));
+    window.adobe.optIn.approve(window.adobe.OptInCategories.ECID);
+    const afterApproval = orgs.map((org) => hasCookie(`${org}@AdobeOrg`));
+    window.Visitor.getInstance('X@AdobeOrg', { doesOptInApply: 'false' });
+    assert.deepEqual(beforeApproval, [false, false, false, false], 'no cookie while ECID is not approved');
+    assert.deepEqual(
+        afterApproval,
+        [true, false, false, false],
+        'only an instance with opt-in waits for the approval; none if its configuration cannot be read',
+    );
+    assert.true(hasCookie('X@AdobeOrg'), 'at once for an instance created while ECID is approved');
+
+    // as the library, `isPreApproved()` reads the pre-approvals of the configuration, which the page may change
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    const preOptInApprovals = { ecid: true };
+    window.Visitor.getInstance('PRE@AdobeOrg', { doesOptInApply: true, preOptInApprovals });
+    preOptInApprovals.ecid = false;
+    assert.deepEqual(
+        [window.adobe.optIn.isPreApproved('ecid'), window.adobe.optIn.isApproved('ecid')],
+        [false, true],
+        'isPreApproved() follows the object of the configuration, isApproved() does not',
+    );
+    assert.deepEqual(
+        check('IAB1@AdobeOrg', { doesOptInApply: true, isIabContext: () => false }, [
+            (optIn, C) => optIn.approve(C.ECID),
+        ]),
+        [false, true, true],
+        'isIabContext which is a function is called',
+    );
+
+    // the decision which the library has stored, e.g. on another page of the site
+    const withStored = (orgId, stored, config) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        removeAmcvCookies();
+        document.cookie = `adobeujs-optin=${encodeURIComponent(JSON.stringify(stored))}; path=/`;
+        run();
+        window.Visitor.getInstance(orgId, config);
+        const result = [hasCookie(orgId), window.adobe.optIn.status];
+        document.cookie = 'adobeujs-optin=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        return result;
+    };
+    const storage = { doesOptInApply: true, isOptInStorageEnabled: true };
+    assert.deepEqual(
+        withStored('ST1@AdobeOrg', { ecid: false }, { ...storage, preOptInApprovals: { ecid: true } }),
+        [false, 'complete'],
+        'a stored denial overrides a pre-approval',
+    );
+    assert.deepEqual(
+        withStored('ST2@AdobeOrg', { ecid: true }, { ...storage, preOptInApprovals: { ecid: false } }),
+        [true, 'complete'],
+        'a stored approval',
+    );
+    assert.deepEqual(
+        withStored('ST3@AdobeOrg', { ecid: false }, { ...storage, previousPermissions: { ecid: true } }),
+        [false, 'complete'],
+        'a stored denial overrides the previous permissions',
+    );
+    assert.deepEqual(
+        withStored('ST4@AdobeOrg', { ecid: true }, { doesOptInApply: true }),
+        [false, 'pending'],
+        'not read without isOptInStorageEnabled',
+    );
+
+    // the decision of the visitor is stored as by the library, so a revocation holds on the next page
+    const removeOptInCookies = () => {
+        ['adobeujs-optin', 'sale%off'].forEach((cookieName) => {
+            document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        });
+    };
+    const readStored = () => {
+        const match = document.cookie.match(/(?:^|; )adobeujs-optin=([^;]*)/);
+        return match ? JSON.parse(decodeURIComponent(match[1])) : null;
+    };
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    document.cookie = `adobeujs-optin=${encodeURIComponent(JSON.stringify({ ecid: true, custom: 1 }))}; path=/`;
+    run();
+    window.Visitor.getInstance('REV@AdobeOrg', storage);
+    window.adobe.optIn.deny('ecid');
+    const storedAfterDenial = readStored();
+    // the next page
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    window.Visitor.getInstance('REV@AdobeOrg', storage);
+    const nextPage = [window.adobe.optIn.isApproved('ecid'), hasCookie('REV@AdobeOrg')];
+    removeOptInCookies();
+    assert.strictEqual(storedAfterDenial.ecid, false, 'the denial is stored');
+    assert.notOk(document.cookie.includes('TEST_AMCV_COOKIE_WRITE'), 'no test cookie of the domain is left');
+    assert.strictEqual(storedAfterDenial.custom, 1, 'merged into the stored values, as the library');
+    assert.deepEqual(nextPage, [false, false], 'and holds on the next page');
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    run();
+    window.Visitor.getInstance('NOSTORE@AdobeOrg', { doesOptInApply: true });
+    window.adobe.optIn.deny('ecid');
+    assert.strictEqual(readStored(), null, 'nothing is stored without isOptInStorageEnabled');
+
+    // as the library, the stored decision is read after the function of previousPermissions is called,
+    // e.g. one which stores a revocation itself
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    document.cookie = `adobeujs-optin=${encodeURIComponent(JSON.stringify({ ecid: true }))}; path=/`;
+    run();
+    window.Visitor.getInstance('PROVIDER@AdobeOrg', {
+        ...storage,
+        previousPermissions: () => {
+            document.cookie = `adobeujs-optin=${encodeURIComponent(JSON.stringify({ ecid: false }))}; path=/`;
+            return { ecid: false };
+        },
+    });
+    const afterProvider = [window.adobe.optIn.isApproved('ecid'), hasCookie('PROVIDER@AdobeOrg')];
+    window.adobe.optIn.approve('target');
+    const storedAfterProvider = readStored();
+    removeOptInCookies();
+    assert.deepEqual(afterProvider, [false, false], 'a decision stored by previousPermissions() is read');
+    assert.deepEqual(
+        [storedAfterProvider.ecid, storedAfterProvider.target],
+        [false, true],
+        'and is not replaced by the older one when the next decision is stored',
+    );
+
+    // cookies which cannot be read, e.g. in a sandboxed frame: the stored decision is not known, as the library
+    // throws then, so a pre-approval of the configuration is not applied
+    const getPreApproved = (isReadable) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        removeAmcvCookies();
+        run();
+        if (!isReadable) {
+            Object.defineProperty(document, 'cookie', {
+                configurable: true,
+                get() {
+                    throw new DOMException('The document is sandboxed', 'SecurityError');
+                },
+                set() {
+                    throw new DOMException('The document is sandboxed', 'SecurityError');
+                },
+            });
+        }
+        try {
+            window.Visitor.getInstance('SANDBOX@AdobeOrg', { ...storage, preOptInApprovals: { ecid: true } });
+        } finally {
+            delete document.cookie;
+        }
+        return [window.adobe.optIn.isApproved('ecid'), hasCookie('SANDBOX@AdobeOrg')];
+    };
+    assert.deepEqual(getPreApproved(true), [true, true], 'pre-approval with cookies which can be read');
+    assert.deepEqual(getPreApproved(false), [false, false], 'not with cookies which cannot be read');
+
+    // the next organization while the stored decision cannot be decoded
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    document.cookie = 'adobeujs-optin=%E0%A4%A; path=/';
+    run();
+    window.Visitor.getInstance('BADA@AdobeOrg', { ...storage, doesOptInApply: false });
+    window.Visitor.getInstance('BADB@AdobeOrg', { ...storage, doesOptInApply: false });
+    const badOrgs = [hasCookie('BADA@AdobeOrg'), hasCookie('BADB@AdobeOrg')];
+    removeOptInCookies();
+    assert.deepEqual(badOrgs, [false, false], 'no cookie for any organization while it cannot be decoded');
+
+    // nothing is stored with optInStorageExpiry NONE, as the library
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    run();
+    window.Visitor.getInstance('NONE@AdobeOrg', { ...storage, optInStorageExpiry: 'NONE' });
+    window.adobe.optIn.deny('ecid');
+    assert.strictEqual(readStored(), null, 'nothing stored with optInStorageExpiry NONE');
+
+    // as the library, other fields of the permissions of the configuration are stored with them
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    run();
+    window.Visitor.getInstance('EXTRA@AdobeOrg', { ...storage, previousPermissions: { ecid: true, reference: 'r1' } });
+    window.adobe.optIn.deny('ecid');
+    const storedWithExtra = readStored();
+    removeOptInCookies();
+    assert.deepEqual(
+        [storedWithExtra.ecid, storedWithExtra.reference],
+        [false, 'r1'],
+        'other fields of the permissions are kept',
+    );
+
+    // as the library, each setting of the configuration is read twice, e.g. a getter which fails then
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    let iabReads = 0;
+    const withGetter = { doesOptInApply: true };
+    Object.defineProperty(withGetter, 'isIabContext', {
+        enumerable: true,
+        get() {
+            iabReads += 1;
+            if (iabReads > 2) {
+                throw new Error('error of the page');
+            }
+            return false;
+        },
+    });
+    const visitorOfGetter = window.Visitor.getInstance('GETTER@AdobeOrg', withGetter);
+    assert.deepEqual([iabReads, visitorOfGetter.configs.isIabContext], [2, false], 'a getter is read twice');
+
+    // the stored decision is found by its name as it is, and one which cannot be decoded is not known
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    document.cookie = 'sale%off=1; path=/';
+    document.cookie = `adobeujs-optin=${encodeURIComponent(JSON.stringify({ ecid: false }))}; path=/`;
+    run();
+    window.Visitor.getInstance('LOOK@AdobeOrg', { ...storage, preOptInApprovals: { ecid: true } });
+    const afterLookAlike = hasCookie('LOOK@AdobeOrg');
+    removeOptInCookies();
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    document.cookie = 'adobeujs-optin=%E0%A4%A; path=/';
+    run();
+    window.Visitor.getInstance('BAD@AdobeOrg', { ...storage, preOptInApprovals: { ecid: true } });
+    const afterBadValue = hasCookie('BAD@AdobeOrg');
+    removeOptInCookies();
+    assert.false(afterLookAlike, 'a stored denial after a cookie whose name cannot be decoded');
+    assert.false(afterBadValue, 'no cookie if the stored decision cannot be decoded');
+
+    // an instance keeps the `adobe` object of its creation, as the library
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    window.Visitor.getInstance('NS1@AdobeOrg', { doesOptInApply: true });
+    const oldOptIn = window.adobe.optIn;
+    window.adobe = {};
+    window.Visitor.getInstance('NS2@AdobeOrg', { doesOptInApply: true });
+    window.adobe.optIn.approve('ecid');
+    oldOptIn.deny('ecid');
+    assert.deepEqual(
+        [hasCookie('NS1@AdobeOrg'), hasCookie('NS2@AdobeOrg')],
+        [false, true],
+        'the opt-in service of the adobe object of the instance',
+    );
+
+    // the IAB context of the configuration of the instance when it is decided
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    const iabLater = window.Visitor.getInstance('IAB2@AdobeOrg', { doesOptInApply: true });
+    iabLater.configs.isIabContext = true;
+    window.adobe.optIn.approve('ecid');
+    assert.false(hasCookie('IAB2@AdobeOrg'), 'not in IAB context set before the decision');
+
+    // as the library, the setting is read once, into the copy of the configuration of the instance
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    let iabCalls = 0;
+    window.Visitor.getInstance('IAB3@AdobeOrg', {
+        doesOptInApply: true,
+        isIabContext: () => {
+            iabCalls += 1;
+            return iabCalls === 1;
+        },
+    });
+    window.adobe.optIn.approve('ecid');
+    assert.deepEqual([iabCalls, hasCookie('IAB3@AdobeOrg')], [1, false], 'a function is called once');
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    const options = { doesOptInApply: true, isIabContext: false };
+    window.Visitor.getInstance('IAB4@AdobeOrg', options);
+    options.isIabContext = true;
+    window.adobe.optIn.approve('ecid');
+    assert.true(hasCookie('IAB4@AdobeOrg'), 'a change of the options of the page after the call is not read');
+
+    // the settings of the instance when the cookie would be written
+    const later = (orgId, setting) => {
+        clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+        removeAmcvCookies();
+        run();
+        const visitor = window.Visitor.getInstance(orgId, { doesOptInApply: true });
+        Object.assign(visitor, setting);
+        window.adobe.optIn.approve(window.adobe.OptInCategories.ECID);
+        return hasCookie(orgId);
+    };
+    assert.false(later('LS@AdobeOrg', { useLocalStorage: true }), 'not with useLocalStorage set later');
+    assert.false(later('CL@AdobeOrg', { cookieLifetime: 'NONE' }), 'not with cookieLifetime NONE set later');
+
+    // each organization which has waited for the approval gets its cookie
+    clearGlobalProps('Visitor', 'adobe', 's_c_il', 's_c_in');
+    removeAmcvCookies();
+    run();
+    window.Visitor.getInstance('I@AdobeOrg', { doesOptInApply: true });
+    window.Visitor.getInstance('J@AdobeOrg', { doesOptInApply: true });
+    window.adobe.optIn.approve(window.adobe.OptInCategories.ECID);
+    assert.deepEqual([hasCookie('I@AdobeOrg'), hasCookie('J@AdobeOrg')], [true, true], 'all waiting organizations');
+});
+
 test('No requests, cookies or storage items, except the dummy AMCV cookie', async (assert) => {
     const calls = [];
     const record = (label) => () => {

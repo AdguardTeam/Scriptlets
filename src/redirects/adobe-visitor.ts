@@ -1,5 +1,6 @@
 import {
     createAdobeVisitorInstance,
+    getAdobeOptInCookieDomain,
     hit,
     mockAdobeVisitor,
     noopFunc,
@@ -23,9 +24,16 @@ import { type Source } from '../scriptlets';
  * `getMarketingCloudVisitorID()` or `getVisitorValues()`, `appendVisitorIDsTo()` returns the URL unchanged,
  * and `adobe.optIn`, created by the first `getInstance()` call, follows its configuration, as the library:
  * with `doesOptInApply`, only the categories of `preOptInApprovals` and of `previousPermissions`, i.e. of the saved
- * decision of the visitor, are approved until the page approves the other ones, e.g. by its consent manager,
- * otherwise all categories are approved.
- * No visitor id is generated, no data is sent and no storage items are set, except a cookie with a dummy id,
+ * decision of the visitor, and with `isOptInStorageEnabled` of the decision which the library has stored
+ * in the `adobeujs-optin` cookie, e.g. on another page of the site, are approved until the page approves
+ * the other ones, e.g. by its consent manager, otherwise all categories are approved.
+ * With `isOptInStorageEnabled`, the decision of the visitor is stored in this cookie as by the library, on the same
+ * domain, e.g. `example.org` on `www.example.org`, so that a decision made on a page where the library is blocked,
+ * e.g. a revoked approval, holds on the next pages, also where the library is not blocked, which would read
+ * an older one otherwise. It has the permissions, and other fields of the permissions of the configuration
+ * or of the stored value, if any, which the library keeps as well. As the library, the domain is found
+ * by a test cookie, `TEST_AMCV_COOKIE_WRITE_<random>`, which is removed at once.
+ * No visitor id is generated, no data is sent and no other storage items are set, except a cookie with a dummy id,
  * see below.
  *
  * ### Why a cookie is set
@@ -39,8 +47,14 @@ import { type Source } from '../scriptlets';
  * Other sites of A+E Networks, e.g. `play.aetv.com`, `play.mylifetime.com` and `play.fyi.tv`,
  * use the same player and organization.
  *
- * So, as the library, `getInstance()` sets this cookie if the organization has none, though only a session one
- * with a dummy id, the same for every visitor, so it does not identify anyone, e.g.
+ * So `getInstance()` sets this cookie for a new instance if the organization has none, when the library
+ * writes the id, i.e. only while the ECID category is approved by `adobe.optIn`: at once if it is approved,
+ * i.e. if opt-in does not apply, or if the category is pre-approved or approved by the saved decision
+ * of the visitor; otherwise, if opt-in applies to the instance, when the page approves it with its first decision,
+ * e.g. by `adobe.optIn.approve('ecid')`. It is not set in IAB context, i.e. if opt-in applies to the instance
+ * with `isIabContext`, as the consent of the IAB platform is not known, nor, as by the library,
+ * with `useLocalStorage` or `cookieLifetime: 'NONE'`.
+ * It is only a session cookie with a dummy id, the same for every visitor, so it does not identify anyone, e.g.
  * `AMCV_08AC467352782D0D0A490D45@AdobeOrg=MCMID|00000000000000000000000000000000000000`.
  * A cookie which already exists, e.g. set by the library before, is not changed.
  * Its name is not encoded, unlike the one of the library, e.g. `AMCV_08AC467352782D0D0A490D45%40AdobeOrg`,
@@ -75,5 +89,6 @@ AdobeVisitor.injections = [
     noopFunc,
     runProtected,
     createAdobeVisitorInstance,
+    getAdobeOptInCookieDomain,
     mockAdobeVisitor,
 ];

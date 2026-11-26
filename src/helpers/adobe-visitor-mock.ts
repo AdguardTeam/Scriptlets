@@ -126,10 +126,15 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
     visitor.cookieName = `AMCV_${orgId}`;
     visitor.sessionCookieName = `AMCVS_${orgId}`;
     if (config && typeof config === 'object') {
+        // as the library, a copy, whose settings may be changed by the page, see `getInstance()` of the mock;
+        // each value is read once here, as a getter of the page may fail on the next read
+        const configs = Object.create(null);
         Object.keys(config).forEach((key) => {
-            visitor[key] = (config as AnyRecord)[key];
+            const value = (config as AnyRecord)[key];
+            visitor[key] = value;
+            configs[key] = value;
         });
-        visitor.configs = config;
+        visitor.configs = configs;
     }
     visitor._c = 'Visitor';
     visitor.version = '5.5.0';
@@ -295,6 +300,45 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
 }
 
 /**
+ * Returns the domain of the `adobeujs-optin` cookie, in which the Visitor API stores the decision of the visitor,
+ * as the library chooses it, so that a decision stored by a mock replaces the one which the library has stored,
+ * e.g. on another page or another subdomain of the site, instead of being stored next to it:
+ * the domain of the configuration, i.e. `optInCookieDomain`, otherwise `cookieDomain`, otherwise the widest domain
+ * of the host of the page on which a cookie can be set, e.g. `example.org` on `www.example.org`.
+ * As `getDomain()` of the library, the widest domain is found by setting a test cookie on each domain of the host,
+ * from the widest one without its top-level domain, which the browser refuses for a public suffix, e.g. `co.uk`,
+ * so the registrable domain is not guessed; the test cookie is removed at once.
+ *
+ * @param configuredDomain Domain of the configuration, if any.
+ * @returns Domain for the cookie, or an empty string for a cookie of the host of the page only, also if
+ * the domain is the host itself, as by the library.
+ */
+export function getAdobeOptInCookieDomain(configuredDomain?: unknown): string {
+    // as the library, but with a random suffix, so that it is not a cookie of the page
+    const TEST_COOKIE_NAME = `TEST_AMCV_COOKIE_WRITE_${Math.random().toString(36).slice(2, 9)}`;
+    const { hostname } = window.location;
+    let domain = configuredDomain ? String(configuredDomain) : '';
+    if (domain === '') {
+        const labels = hostname.split('.');
+        for (let i = labels.length - 2; i >= 0 && domain === ''; i -= 1) {
+            const candidate = labels.slice(i).join('.');
+            try {
+                window.document.cookie = `${TEST_COOKIE_NAME}=cookie; path=/; domain=${candidate};`;
+                if (`; ${window.document.cookie};`.indexOf(`; ${TEST_COOKIE_NAME}=cookie;`) !== -1) {
+                    const expires = 'expires=Thu, 01 Jan 1970 00:00:01 GMT';
+                    window.document.cookie = `${TEST_COOKIE_NAME}=; path=/; ${expires}; domain=${candidate};`;
+                    domain = candidate;
+                }
+            } catch (e) {
+                // cookies may not be available, e.g. in a sandboxed frame
+                return '';
+            }
+        }
+    }
+    return domain === hostname ? '' : domain;
+}
+
+/**
  * Installs a mock of the Experience Cloud Identity Service of Adobe, `VisitorAPI.js`, as version 5.5 behaves
  * when its requests are blocked, but without any visitor id: the `Visitor` global with `Visitor.getInstance()`
  * and `adobe.OptInCategories`, each only if it is missing; `adobe.optIn` is created by the first
@@ -303,16 +347,21 @@ export function createAdobeVisitorInstance(orgId: string, config?: unknown, prot
  * The opt-in service follows the configuration of the first `getInstance()` call, as the library:
  * with `doesOptInApply`, only the categories of `preOptInApprovals` and of `previousPermissions`, i.e. of the saved
  * decision of the visitor, are approved until the page approves the other ones, e.g. by its consent manager,
- * otherwise all categories are approved. Permissions are not stored, i.e. as with `isOptInStorageEnabled: false`.
+ * otherwise all categories are approved. With `isOptInStorageEnabled`, the decision which the library has stored
+ * in the `adobeujs-optin` cookie, e.g. on another page of the site, is applied as well, and the decision is stored
+ * there as by the library, see `storePermissions()`.
  * Created at once, its configuration is not known, so opt-in applies and no category is approved,
- * so that the page is not told that the visitor has consented.
+ * so that the page is not told that the visitor has consented, until the page passes an opt-in configuration
+ * to `getInstance()` itself, which is applied then, see `configure()` in `createOptIn()`.
  * Ids are empty strings, also in the callbacks, which are called asynchronously, and URLs are returned unchanged
  * by `appendVisitorIDsTo()`, while the library generates a local id and appends it to URLs.
  * As the library stores the id in the `AMCV_<orgId>` cookie, `getInstance()` sets a session cookie with a dummy
  * id, the same for every visitor, if the organization has no such cookie, as some sites read the id from it
- * directly and do not work without it, e.g. the video player of `play.history.com`, see `setDummyIdCookie()`.
+ * directly and do not work without it, e.g. the video player of `play.history.com`, see `setDummyIdCookie()`;
+ * as the library, only when the ECID category is approved, see `setDummyIdCookieOfInstance()`.
  *
- * Requires `createAdobeVisitorInstance()`, `noopFunc()` and `runProtected()` to be injected as well.
+ * Requires `createAdobeVisitorInstance()`, `getAdobeOptInCookieDomain()`, `noopFunc()` and `runProtected()`
+ * to be injected as well.
  *
  * @param isOptInCreated Whether `adobe.optIn` is created at once if `Visitor` is installed by this call,
  * i.e. not if it is a library of the page, which creates its own one.
@@ -367,27 +416,119 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         }
     };
 
+    // the cookie in which the library stores the decision of the visitor, with `isOptInStorageEnabled`
+    const OPT_IN_COOKIE_NAME = 'adobeujs-optin';
+
     /**
-     * Creates `adobe.optIn` as `OptIn` of the library, version 5.5.0, but without its storage, i.e. as with
-     * `isOptInStorageEnabled: false`, and without the IAB plugin:
+     * Returns the decision of the visitor which the library has stored in the `adobeujs-optin` cookie,
+     * i.e. with `isOptInStorageEnabled`, e.g. on another page of the site where the library is not blocked,
+     * as its JSON, which the opt-in service applies then, as the library. The cookie is found by its name as it is,
+     * as the library writes it, and only its value is decoded.
+     *
+     * @returns JSON of the stored permissions, `undefined` if there are none, or `null` if the cookies cannot be
+     * read, e.g. in a sandboxed frame, or the value cannot be decoded, i.e. a decision which is not known,
+     * as the library throws then.
+     */
+    const readStoredPermissions = (): string | null | undefined => {
+        let cookies: string[];
+        try {
+            cookies = window.document.cookie.split(';');
+        } catch (e) {
+            // Cookies may not be available, e.g. in a sandboxed frame: the visitor may have stored a decision
+            // which cannot be read then, so it is not known, rather than missing.
+            return null;
+        }
+        const prefix = `${OPT_IN_COOKIE_NAME}=`;
+        for (let i = 0; i < cookies.length; i += 1) {
+            const cookie = cookies[i].trim();
+            if (cookie.indexOf(prefix) === 0) {
+                try {
+                    return decodeURIComponent(cookie.slice(prefix.length));
+                } catch (e) {
+                    return null;
+                }
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     * Stores the decision of the visitor in the `adobeujs-optin` cookie, as the library does with
+     * `isOptInStorageEnabled` once the permissions are completed: merged into the stored ones, as JSON,
+     * for `optInStorageExpiry` seconds, by default 34190000, i.e. about 13 months, or not at all with `NONE`,
+     * on the domain which the library uses, see `getAdobeOptInCookieDomain()`, which is found when the first
+     * decision is stored,
+     * with `Secure` and `SameSite` of `secureCookie` and `sameSiteCookie`. So the decision which the visitor
+     * makes on a page where the library is blocked holds on the next pages, also where the library is not
+     * blocked, as it would read an older decision otherwise, e.g. an approval which the visitor has revoked.
+     * No id is generated: it contains the permissions, with the other fields of the permissions of the configuration
+     * or of the stored value, if any, which the library keeps as well.
+     *
+     * @param permissions Permissions by category.
+     * @param storage Settings of the storage of the configuration.
+     */
+    const storePermissions = (permissions: AnyRecord, storage: AnyRecord) => {
+        try {
+            let stored: AnyRecord = {};
+            const json = readStoredPermissions();
+            if (typeof json === 'string') {
+                try {
+                    const parsed = JSON.parse(json);
+                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                        stored = parsed;
+                    }
+                } catch (e) {
+                    // as the library, a value which is not JSON is replaced
+                }
+            }
+            const value = JSON.stringify(Object.assign(stored, permissions));
+            const lifetime = storage.expiry || 34190000;
+            // as the library, which writes no cookie then
+            if (lifetime === 'NONE') {
+                return;
+            }
+            const seconds = parseInt(String(lifetime), 10);
+            let cookie = `${encodeURIComponent(OPT_IN_COOKIE_NAME)}=${encodeURIComponent(value)}; path=/;`;
+            if (seconds) {
+                cookie += ` expires=${new Date(Date.now() + seconds * 1000).toUTCString()};`;
+            }
+            // found once, and kept in the settings, which are an object of the mock, not of the page
+            const settings = storage;
+            if (typeof settings.cookieDomain !== 'string') {
+                settings.cookieDomain = getAdobeOptInCookieDomain(settings.domain);
+            }
+            if (settings.cookieDomain) {
+                cookie += ` domain=${settings.cookieDomain};`;
+            }
+            if (storage.sameSite) {
+                cookie += `SameSite=${storage.sameSite};`;
+            }
+            if (storage.secure) {
+                cookie += 'Secure';
+            }
+            window.document.cookie = cookie;
+        } catch (e) {
+            // cookies may not be available, e.g. in a sandboxed frame
+        }
+    };
+
+    /**
+     * Creates `adobe.optIn` as `OptIn` of the library, version 5.5.0, without the IAB plugin:
      * - if opt-in does not apply, all categories are approved; otherwise none is, except the ones
      *   of `preOptInApprovals`, and then the ones of `previousPermissions`, i.e. the saved decision of the visitor,
-     *   which may also deny a pre-approved category;
-     * - the status is `complete` if valid `previousPermissions` are passed, otherwise `pending`;
+     *   and then the ones stored by the library, which may also deny a pre-approved category;
+     * - the status is `complete` if valid `previousPermissions` or stored permissions are passed, otherwise `pending`;
      * - `approve()` and `deny()` change the permissions when they are completed, at once or by `complete()`;
      * - `fetchPermissions()` calls the callback at once if opt-in does not apply, the status is `complete`
-     *   or `preOptInApprovals` are passed, otherwise once, when the permissions are completed.
+     *   or `preOptInApprovals` are passed, otherwise once, when the permissions are completed;
+     * - with `storage`, i.e. with `isOptInStorageEnabled`, the decision is stored once it is completed,
+     *   see `storePermissions()`.
      *
-     * @param doesOptInApply Whether opt-in applies, i.e. categories need the consent of the visitor.
-     * @param previousPermissions Saved permissions of the visitor, e.g. `{ aa: false }`, or their JSON.
-     * @param preOptInApprovals Categories approved before the consent, e.g. `{ aa: true }`, or their JSON.
-     * @returns Opt-in service.
+     * @param configuration Opt-in configuration of the page, see `configure()` in the function.
+     * @returns The opt-in service, i.e. `adobe.optIn`, and `configure()`, which applies a configuration to it later,
+     * for the opt-in service of a mock of Adobe Tags.
      */
-    const createOptIn = (
-        doesOptInApply: boolean,
-        previousPermissions?: unknown,
-        preOptInApprovals?: unknown,
-    ): AnyRecord => {
+    const createOptIn = (configuration: AnyRecord) => {
         const values = Object.keys(CATEGORIES).map((key) => CATEGORIES[key]) as string[];
         // other names which the library accepts in permissions
         const OTHER_NAMES = ['videoaa', 'iabConsentHash'];
@@ -411,34 +552,40 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
                 ? result as AnyRecord
                 : {};
         };
-        const previous = toPermissions(previousPermissions);
-        const preApprovals = toPermissions(preOptInApprovals);
-        const previousNames = Object.keys(previous);
         // as the library, a saved decision completes the opt-in if it has only names of categories
-        const hasPrevious = previousNames.length > 0
-            && previousNames.every((name) => values.indexOf(name) > -1 || OTHER_NAMES.indexOf(name) > -1);
+        const isDecision = (permissionsToCheck: AnyRecord): boolean => {
+            const names = Object.keys(permissionsToCheck);
+            return names.length > 0
+                && names.every((name) => values.indexOf(name) > -1 || OTHER_NAMES.indexOf(name) > -1);
+        };
 
-        // the current permissions, and the ones with the changes waiting for `complete()`,
-        // which become the current ones then, as in the library
-        let permissions: AnyRecord = {};
-        values.forEach((category) => {
-            permissions[category] = !doesOptInApply;
-        });
-        if (doesOptInApply) {
-            [preApprovals, previous].forEach((source) => {
-                Object.keys(source).forEach((name) => {
-                    permissions[name] = source[name];
-                });
-            });
-        }
-        const changedPermissions: AnyRecord = {};
-        Object.keys(permissions).forEach((name) => {
-            changedPermissions[name] = permissions[name];
-        });
+        // whether opt-in applies, i.e. categories need the consent of the visitor
+        let doesOptInApply = true;
+        // The permissions before any change of the page, set by `configure()`: all categories, approved only
+        // if opt-in does not apply, otherwise with the ones of the configuration.
+        const initialPermissions: AnyRecord = {};
+        // The pre-approvals of the configuration, i.e. its own object, which the page may change, as in the library,
+        // and whether it has any, also an empty object
+        let preApprovals: AnyRecord = {};
+        let hasPreApprovals = false;
+        // The current permissions, and the ones with the changes waiting for `complete()`. As in the library,
+        // they are two objects until the page completes a change, and one object then, so that a change
+        // which waits for `complete()` is in the current permissions only after the first completion.
+        let permissions: AnyRecord = Object.assign({}, initialPermissions);
+        const changedPermissions: AnyRecord = Object.assign({}, initialPermissions);
+        // The changes of the page, by category: all of them, and the ones which were completed last,
+        // i.e. without the ones waiting for `complete()`. They are kept only for `configure()` called after them.
+        const pageChanges: AnyRecord = {};
+        let completedChanges: AnyRecord = {};
 
         const listeners: Array<{ event: unknown; callback: unknown; context: unknown }> = [];
-        // callbacks of `fetchPermissions()` waiting for the permissions to be completed
-        let waitingCallbacks: unknown[] = [];
+        // Callbacks of `fetchPermissions()` which have not been called yet, as the visitor has not decided:
+        // the ones called once, when the permissions are completed, and the subscribed ones, with their listener
+        // of `complete`, which are kept only for `configure()` called after them, until they are unsubscribed,
+        // as well as whether the opt-in was pending, i.e. the page had changed nothing yet.
+        let waitingCallbacks: Array<{ callback: unknown; listener?: object; wasPending: boolean }> = [];
+        // settings of the storage, if it is enabled
+        let storageSettings: AnyRecord | undefined;
         const optIn: AnyRecord = {
             Categories: CATEGORIES,
             permissions,
@@ -455,7 +602,13 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             optIn.isPending = status === 'pending';
             optIn.isComplete = status === 'complete';
         };
-        setStatus(hasPrevious ? 'complete' : 'pending');
+        setStatus('pending');
+        /**
+         * Checks whether `fetchPermissions()` calls its callback at once, as in the library.
+         *
+         * @returns `true` if the permissions are known already.
+         */
+        const isAnsweredAtOnce = (): boolean => !doesOptInApply || !!optIn.isComplete || hasPreApprovals;
         /**
          * Returns the categories of a call as a list, as the library: a list, or a name.
          *
@@ -485,12 +638,12 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             return names.length > 0 && names.every((name) => approvals[name] === true);
         };
         /**
-         * Completes the changes of the permissions, notifies the listeners of `complete`,
-         * and then the callbacks of `fetchPermissions()` which wait for it, once.
+         * Sets the status `complete` and, in the order of the library, notifies the listeners of `complete`,
+         * stores the permissions, and calls the callbacks of `fetchPermissions()` which wait for it, once.
+         *
+         * @param isStored Whether the permissions are stored, if the storage is enabled.
          */
-        const complete = () => {
-            permissions = changedPermissions;
-            optIn.permissions = permissions;
+        const setComplete = (isStored: boolean) => {
             setStatus('complete');
             // a copy, as a listener may remove itself
             listeners.slice().forEach((listener) => {
@@ -498,9 +651,23 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
                     runProtected(listener.callback, [permissions], listener.context);
                 }
             });
-            const callbacks = waitingCallbacks;
+            if (storageSettings && isStored) {
+                storePermissions(permissions, storageSettings);
+            }
+            // the subscribed ones have been called as listeners
+            const callbacks = waitingCallbacks.filter((waiting) => !waiting.listener);
             waitingCallbacks = [];
-            callbacks.forEach((callback) => runProtected(callback, [permissions]));
+            callbacks.forEach((waiting) => runProtected(waiting.callback, [permissions]));
+        };
+        /**
+         * Completes the changes of the permissions, which become the current ones, as `complete()`
+         * of the library.
+         */
+        const complete = () => {
+            permissions = changedPermissions;
+            optIn.permissions = permissions;
+            completedChanges = Object.assign({}, pageChanges);
+            setComplete(true);
         };
         /**
          * Sets the permission of categories, as `approve()` and `deny()` of the library.
@@ -520,12 +687,82 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             setStatus('changed');
             list.forEach((category) => {
                 changedPermissions[category as string] = approved;
+                pageChanges[category as string] = approved;
             });
             if (!shouldWaitForComplete) {
                 complete();
             }
             return optIn;
         };
+        /**
+         * Applies an opt-in configuration of the page to the service, as the library does when it creates it.
+         * It is called when the service is created, and once more for the service of a mock of Adobe Tags,
+         * which is created without a configuration, when the page passes one to `Visitor.getInstance()`.
+         *
+         * The service is then as the one of the library would be if it had been created with the configuration,
+         * and the page had made its changes after it, whatever the page has done before:
+         * - the pre-approvals, the saved decision and, over them, as by the library, the stored decision are applied
+         *   to the permissions before the changes of the page, so a change of the page, completed or not, is kept
+         *   over them, and a change which waits for `complete()` is not in the current permissions before
+         *   the first completion, as in the library;
+         * - a saved or stored decision completes an opt-in which is pending, so its listeners and the callbacks
+         *   of `fetchPermissions()` which wait for it, which are kept, are notified, although the library,
+         *   which reads the decision when the service is created, has none to notify then; otherwise, callbacks
+         *   of `fetchPermissions()` which have not been called yet are called if the library would have called
+         *   them at once with this configuration, i.e. with pre-approvals, if opt-in does not apply, or, with
+         *   a saved or stored decision, if the page had changed nothing before them, and the status is kept;
+         * - with the storage, the changes which the page has completed are stored, as the library stores them
+         *   when they are completed, without the ones which wait for `complete()`; the next ones are stored as well.
+         *
+         * @param options Configuration:
+         * - `doesOptInApply`: whether opt-in applies, if the configuration sets it; all categories are approved
+         *   and the other permissions of the configuration are not used if it does not, as in the library;
+         * - `preOptInApprovals`: categories approved before the consent, e.g. `{ aa: true }`, or their JSON;
+         * - `previousPermissions`: saved permissions of the visitor, e.g. `{ aa: false }`, or their JSON;
+         * - `storedPermissions`: JSON of the decision stored by the library, see `readStoredPermissions()`;
+         * - `storage`: settings of the storage, if it is enabled, see `storePermissions()`.
+         */
+        const configure = (options: AnyRecord) => {
+            const wasAnsweredAtOnce = isAnsweredAtOnce();
+            if (typeof options.doesOptInApply === 'boolean') {
+                doesOptInApply = options.doesOptInApply;
+                optIn.doesOptInApply = doesOptInApply;
+            }
+            if (options.preOptInApprovals) {
+                preApprovals = toPermissions(options.preOptInApprovals);
+                hasPreApprovals = true;
+            }
+            const previous = toPermissions(options.previousPermissions);
+            const stored = toPermissions(options.storedPermissions);
+            storageSettings = (options.storage as AnyRecord | undefined) || storageSettings;
+            values.forEach((category) => {
+                initialPermissions[category] = !doesOptInApply;
+            });
+            if (doesOptInApply) {
+                Object.assign(initialPermissions, preApprovals, previous, stored);
+            }
+            // one object once the page has completed a change, see above
+            const hasCompleted = permissions === changedPermissions;
+            Object.assign(changedPermissions, initialPermissions, pageChanges);
+            if (!hasCompleted) {
+                Object.assign(permissions, initialPermissions);
+            }
+            const hasDecision = isDecision(previous) || isDecision(stored);
+            if (optIn.status === 'pending' && hasDecision) {
+                setComplete(false);
+            } else {
+                const isAnsweredNow = !wasAnsweredAtOnce && isAnsweredAtOnce();
+                const answered = waitingCallbacks.filter((waiting) => {
+                    return isAnsweredNow || (hasDecision && waiting.wasPending);
+                });
+                waitingCallbacks = waitingCallbacks.filter((waiting) => answered.indexOf(waiting) === -1);
+                answered.forEach((waiting) => runProtected(waiting.callback, [permissions]));
+            }
+            if (hasCompleted && storageSettings) {
+                storePermissions(Object.assign({}, initialPermissions, completedChanges), storageSettings);
+            }
+        };
+        configure(configuration);
         optIn.approve = (categories: unknown, wait?: unknown) => setPermissions(categories, true, wait);
         optIn.deny = (categories: unknown, wait?: unknown) => setPermissions(categories, false, wait);
         optIn.approveAll = (wait?: unknown) => setPermissions(values, true, wait);
@@ -537,46 +774,63 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
         };
         optIn.isApproved = (categories: unknown) => areApproved(categories, permissions);
         optIn.isPreApproved = (categories: unknown) => areApproved(categories, preApprovals);
-        optIn.on = (event: unknown, callback: unknown, context?: unknown) => {
+        /**
+         * Adds a listener of an event, as `on()` of the library.
+         *
+         * @param event Name of the event, e.g. `complete`.
+         * @param callback Listener of the page.
+         * @param context Optional receiver of the listener.
+         * @returns The registration of the listener.
+         * @throws Error if the listener is not a function, as the library.
+         */
+        const addListener = (event: unknown, callback: unknown, context?: unknown) => {
             if (typeof callback !== 'function') {
-                // as the library
                 throw new Error('[ON] Callback should be a function.');
             }
             const listener = { event, callback, context };
             listeners.push(listener);
-            return () => {
-                const index = listeners.indexOf(listener);
-                if (index >= 0) {
-                    listeners.splice(index, 1);
-                }
-            };
+            return listener;
         };
-        // as the library, only the listeners with the callback are removed, so none without a callback
-        optIn.off = (event: unknown, callback: unknown) => {
+        /**
+         * Removes listeners, and the callbacks of `fetchPermissions()` which wait with them, so that
+         * a subscription which the page has canceled is not kept, nor called later.
+         *
+         * @param isRemoved Returns whether a listener is removed.
+         */
+        const removeListeners = (isRemoved: (listener: { event: unknown; callback: unknown }) => boolean) => {
             for (let i = listeners.length - 1; i >= 0; i -= 1) {
-                if (listeners[i].event === event && listeners[i].callback === callback) {
+                if (isRemoved(listeners[i])) {
                     listeners.splice(i, 1);
                 }
             }
+            waitingCallbacks = waitingCallbacks.filter((waiting) => {
+                return !waiting.listener || listeners.indexOf(waiting.listener as typeof listeners[number]) !== -1;
+            });
+        };
+        optIn.on = (event: unknown, callback: unknown, context?: unknown) => {
+            const added = addListener(event, callback, context);
+            return () => removeListeners((listener) => listener === added);
+        };
+        // as the library, only the listeners with the callback are removed, so none without a callback
+        optIn.off = (event: unknown, callback: unknown) => {
+            removeListeners((listener) => listener.event === event && listener.callback === callback);
         };
         optIn.fetchPermissions = (callback: unknown, shouldAutoSubscribe?: unknown) => {
-            const unsubscribe = shouldAutoSubscribe
-                ? (optIn.on as (event: string, listener: unknown) => () => void)('complete', callback)
-                : noopFunc;
-            if (!doesOptInApply || optIn.isComplete || !!preOptInApprovals) {
+            const added = shouldAutoSubscribe ? addListener('complete', callback) : undefined;
+            if (isAnsweredAtOnce()) {
                 runProtected(callback, [permissions]);
-            } else if (!shouldAutoSubscribe) {
+            } else {
                 // the visitor has not decided yet
-                waitingCallbacks.push(callback);
+                waitingCallbacks.push({ callback, listener: added, wasPending: !!optIn.isPending });
             }
-            return unsubscribe;
+            return added ? () => removeListeners((listener) => listener === added) : noopFunc;
         };
         optIn.execute = noopFunc;
         optIn.publish = noopFunc;
         optIn.registerPlugin = noopFunc;
         optIn.memoizeContent = noopFunc;
         optIn.getMemoizedContent = noopFunc;
-        return optIn;
+        return { service: optIn, configure };
     };
 
     /**
@@ -589,6 +843,112 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             w.adobe = {};
         }
         return w.adobe as AnyRecord;
+    };
+
+    // the opt-in service which a mock of Adobe Tags creates at once, without the configuration of the site,
+    // and its `configure()`, see `createOptIn()`, until the page passes a configuration
+    let optInOfUnknownConfig: unknown = null;
+    let configureOptInOfUnknownConfig: ((options: AnyRecord) => void) | null = null;
+
+    /**
+     * Sets the `AMCV_<orgId>` cookie with a dummy id for a new instance, see `setDummyIdCookie()`, when the library
+     * writes its cookie, i.e. as `init()` of an instance of the library, once:
+     * - at once if the ECID category is approved by the opt-in service, also if it is only pre-approved,
+     *   or approved as opt-in does not apply to the service; the library writes the id only then, also for
+     *   an instance to which opt-in does not apply, whose cookie has no id otherwise; never in IAB context,
+     *   i.e. if opt-in applies to the instance with `isIabContext`, in which the library waits for the consent
+     *   of the IAB consent management platform, which is not mocked;
+     * - otherwise not if opt-in does not apply to the instance, or if the opt-in is complete already,
+     *   i.e. the visitor has not approved ECID;
+     * - otherwise when the opt-in service of the instance is completed, and `adobe.optIn` is complete then,
+     *   for the first time, if ECID is approved by `adobe.optIn` then, i.e. the current opt-in service, as the library
+     *   reads it; a later decision is ignored, as by the library, which disables an instance whose ECID is denied.
+     * Whether opt-in applies is read from the configuration of the instance, as by the library, and is assumed
+     * if it is not set and the opt-in service has been created by a mock of Adobe Tags, whose configuration
+     * is not known. A configuration which cannot be read, or an opt-in service without its API, e.g. a page object,
+     * is a consent which is not known, so no cookie is set. As the library, no cookie is set if the ids are stored
+     * in the storages, i.e. with `useLocalStorage`, or if no cookie is written, i.e. with `cookieLifetime: 'NONE'`,
+     * also if the page sets them on the instance before the cookie would be written.
+     * So no cookie is set before the visitor has consented, also not by a mock of Adobe Tags, whose opt-in
+     * applies, see `mockAdobeVisitor()`.
+     *
+     * @param visitor New instance of the Visitor API.
+     * @param optInConfig Opt-in configuration of the instance, see `getOptInConfig()`.
+     */
+    const setDummyIdCookieOfInstance = (visitor: AnyRecord, optInConfig: AnyRecord) => {
+        if (optInConfig.hasFailed) {
+            return;
+        }
+        const orgId = visitor.marketingCloudOrgID as string;
+        // as `cookieWrite()` of the library, which reads the settings of the instance when it writes
+        const setCookie = () => {
+            const lifetime = visitor.cookieLifetime ? String(visitor.cookieLifetime).toUpperCase() : '';
+            if (!visitor.useLocalStorage && lifetime !== 'NONE') {
+                setDummyIdCookie(orgId);
+            }
+        };
+        // as the library, which keeps the `adobe` object of the page when the instance is created,
+        // and reads its current opt-in service
+        const adobeOfInstance = getAdobe();
+        const getOptIn = (): AnyRecord | null => {
+            const current = adobeOfInstance.optIn as AnyRecord | undefined;
+            return current && typeof current.isApproved === 'function' ? current : null;
+        };
+        try {
+            const optIn = getOptIn();
+            if (optIn === null) {
+                return;
+            }
+            const doesOptInApply = optInConfig.hasDoesOptInApply
+                ? !!optInConfig.doesOptInApply
+                : optIn === optInOfUnknownConfig;
+            // as the library, the IAB context is read from the configuration of the instance when it is decided,
+            // so a change of the page is taken into account; a value which cannot be read is an IAB context,
+            // whose consent is not known
+            const isIabContext = () => {
+                if (!doesOptInApply) {
+                    return false;
+                }
+                try {
+                    const configs = visitor.configs as AnyRecord | undefined;
+                    return !!configs && !!configs.isIabContext;
+                } catch (e) {
+                    return true;
+                }
+            };
+            // as the library, which writes the id only while ECID is approved, and not in IAB context
+            const isEcidApproved = (service: AnyRecord) => {
+                return !!(service.isApproved as (category: unknown) => unknown)(CATEGORIES.ECID) && !isIabContext();
+            };
+            if (isEcidApproved(optIn)) {
+                setCookie();
+                return;
+            }
+            if (!doesOptInApply || optIn.isComplete || typeof optIn.on !== 'function') {
+                return;
+            }
+            let isDecided = false;
+            const onComplete = () => {
+                try {
+                    const current = getOptIn();
+                    if (isDecided || current === null || !current.isComplete) {
+                        return;
+                    }
+                    isDecided = true;
+                    if (typeof optIn.off === 'function') {
+                        (optIn.off as (event: string, listener: () => void) => unknown)('complete', onComplete);
+                    }
+                    if (isEcidApproved(current)) {
+                        setCookie();
+                    }
+                } catch (e) {
+                    // e.g. a function of a page object which throws
+                }
+            };
+            (optIn.on as (event: string, listener: () => void) => unknown)('complete', onComplete);
+        } catch (e) {
+            // e.g. a function of a page object which throws, so the consent is not known
+        }
     };
 
     // prototype of `Visitor` of this mock, set when it is installed
@@ -644,13 +1004,31 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             return Object.prototype.propertyIsEnumerable.call(config, name) ? (config as AnyRecord)[name] : undefined;
         };
         try {
-            let doesOptInApply = getOwn('doesOptInApply');
-            if (typeof doesOptInApply === 'function') {
-                doesOptInApply = doesOptInApply();
-            }
-            result.doesOptInApply = !!normalize(doesOptInApply);
+            // as a boolean setting of the library, a function is called
+            const getBoolean = (name: string): unknown => {
+                const value = getOwn(name);
+                return normalize(typeof value === 'function' ? value() : value);
+            };
+            const doesOptInApply = getBoolean('doesOptInApply');
+            result.doesOptInApply = !!doesOptInApply;
+            // whether it is set, i.e. whether the instance does not follow the opt-in service of Adobe Tags
+            result.hasDoesOptInApply = doesOptInApply !== undefined;
             result.previousPermissions = normalize(getOwn('previousPermissions'));
             result.preOptInApprovals = normalize(getOwn('preOptInApprovals'));
+            result.isIabContext = !!getBoolean('isIabContext');
+            result.isOptInStorageEnabled = !!getBoolean('isOptInStorageEnabled');
+            // whether it has settings of the opt-in service
+            result.hasOptInSettings = result.hasDoesOptInApply
+                || result.isOptInStorageEnabled
+                || result.previousPermissions !== undefined
+                || result.preOptInApprovals !== undefined;
+            result.storage = {
+                // as the library
+                domain: normalize(getOwn('optInCookieDomain')) || normalize(getOwn('cookieDomain')),
+                expiry: normalize(getOwn('optInStorageExpiry')),
+                secure: !!getBoolean('secureCookie'),
+                sameSite: normalize(getOwn('sameSiteCookie')),
+            };
         } catch (e) {
             // e.g. a getter or a function of the page which throws
             result.hasFailed = true;
@@ -673,7 +1051,6 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             throw new Error('Visitor requires Adobe Marketing Cloud Org ID.');
         }
         const id = String(orgId).indexOf('@') < 0 ? `${orgId}@AdobeOrg` : String(orgId);
-        setDummyIdCookie(id);
         const instances = Array.isArray(w.s_c_il) ? w.s_c_il as AnyRecord[] : [];
         for (let i = 0; i < instances.length; i += 1) {
             const instance = instances[i];
@@ -681,31 +1058,84 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
                 return instance;
             }
         }
-        // as the library, the configuration is read for each new instance
+        // As the library, the configuration is read for each new instance, and before any other code of the page
+        // is called, i.e. the function of `previousPermissions`, a listener or a callback of the opt-in service.
+        // The instance is registered before them as well, so they get it from `getInstance()`, not a second one.
         const optInConfig = getOptInConfig(config);
         const adobe = getAdobe();
-        if (!adobe.optIn) {
-            // as the library, saved permissions may be a function, which is called when the opt-in is created
-            let { previousPermissions } = optInConfig;
-            if (typeof previousPermissions === 'function' && !optInConfig.hasFailed) {
-                try {
-                    previousPermissions = previousPermissions();
-                } catch (e) {
-                    optInConfig.hasFailed = true;
-                }
+        const isOptInMissing = !adobe.optIn;
+        // The opt-in service of a mock of Adobe Tags gets the configuration which the page passes itself, once.
+        // It is taken before any code of the page is called, e.g. a function of `previousPermissions` which
+        // calls `getInstance()` itself, so that the configuration of this call is applied, as by the library,
+        // whose opt-in service of this call replaces the one of such a call.
+        let configureOptIn: ((options: AnyRecord) => void) | null = null;
+        if (adobe.optIn === optInOfUnknownConfig && optInConfig.hasOptInSettings) {
+            configureOptIn = configureOptInOfUnknownConfig;
+            configureOptInOfUnknownConfig = null;
+        }
+        let visitor: AnyRecord;
+        try {
+            visitor = createInstance(id, config);
+        } catch (e) {
+            // As the library, which reads the configuration again for the instance, e.g. a getter which throws.
+            // The library has no opt-in then, while here it is created with no category approved,
+            // so that page code which uses it does not throw.
+            if (isOptInMissing) {
+                adobe.optIn = createOptIn({ doesOptInApply: true }).service;
             }
-            // The library throws if a function of the configuration throws, so there is no opt-in then.
+            // the configuration is not applied, so the next call may apply its one
+            configureOptInOfUnknownConfig = configureOptInOfUnknownConfig || configureOptIn;
+            throw e;
+        }
+        // as the library, the copy of the configuration has the values of the settings, e.g. a function called once
+        const configs = visitor.configs as AnyRecord | undefined;
+        if (configs && !optInConfig.hasFailed && Object.prototype.hasOwnProperty.call(configs, 'isIabContext')) {
+            configs.isIabContext = optInConfig.isIabContext;
+        }
+        // as the library, saved permissions may be a function, which is called when the opt-in is created
+        let { previousPermissions } = optInConfig;
+        if ((isOptInMissing || configureOptIn) && typeof previousPermissions === 'function' && !optInConfig.hasFailed) {
+            try {
+                previousPermissions = previousPermissions();
+            } catch (e) {
+                optInConfig.hasFailed = true;
+            }
+        }
+        // The stored decision is read last, as by the library, e.g. after a function of `previousPermissions`
+        // which stores a decision itself, and for each new instance with the storage, as the library fails
+        // each call while it cannot be decoded: it is a decision which is not known then, so no cookie is set.
+        const storedPermissions = optInConfig.isOptInStorageEnabled && !optInConfig.hasFailed
+            ? readStoredPermissions()
+            : undefined;
+        if (storedPermissions === null) {
+            optInConfig.hasFailed = true;
+        }
+        const optInOptions: AnyRecord = {
+            previousPermissions,
+            preOptInApprovals: optInConfig.preOptInApprovals,
+            storedPermissions,
+            storage: optInConfig.isOptInStorageEnabled ? optInConfig.storage : undefined,
+        };
+        if (isOptInMissing) {
+            // The library throws if the configuration cannot be read, so there is no opt-in then.
             // Here it is still created, so that page code does not throw, but as the decision of the visitor
             // is not known, opt-in applies and no category is approved, also not a pre-approved one.
-            adobe.optIn = optInConfig.hasFailed
-                ? createOptIn(true)
-                : createOptIn(
-                    optInConfig.doesOptInApply as boolean,
-                    previousPermissions,
-                    optInConfig.preOptInApprovals,
-                );
+            optInOptions.doesOptInApply = !!optInConfig.doesOptInApply;
+            adobe.optIn = createOptIn(optInConfig.hasFailed ? { doesOptInApply: true } : optInOptions).service;
+        } else if (configureOptIn) {
+            if (optInConfig.hasFailed) {
+                // as the library, whose next call creates the opt-in service
+                configureOptInOfUnknownConfig = configureOptInOfUnknownConfig || configureOptIn;
+            } else {
+                // whether opt-in applies stays as it is, i.e. it applies, unless the configuration sets it
+                if (optInConfig.hasDoesOptInApply) {
+                    optInOptions.doesOptInApply = !!optInConfig.doesOptInApply;
+                }
+                configureOptIn(optInOptions);
+            }
         }
-        return createInstance(id, config);
+        setDummyIdCookieOfInstance(visitor, optInConfig);
+        return visitor;
     };
 
     if (typeof w.Visitor !== 'function') {
@@ -728,7 +1158,10 @@ export function mockAdobeVisitor(isOptInCreated?: boolean): boolean {
             const adobeObject = getAdobe();
             if (!adobeObject.optIn) {
                 // the configuration of the site is not known, so no consent is assumed
-                adobeObject.optIn = createOptIn(true);
+                const created = createOptIn({ doesOptInApply: true });
+                adobeObject.optIn = created.service;
+                optInOfUnknownConfig = created.service;
+                configureOptInOfUnknownConfig = created.configure;
             }
         }
     }

@@ -9,9 +9,10 @@ import { AdobeVisitor, AdobeVisitorNames } from '../redirects/adobe-visitor';
  *
  * Should be used together with a rule which blocks the library, e.g. if redirects are not supported,
  * so that code which uses it without a check, e.g. `Visitor.getInstance(orgId)`, does not throw.
- * As the library, `getInstance()` sets the `AMCV_<orgId>` cookie, though with a dummy id, as some sites read
- * the id from it directly and do not work without it, e.g. the video player of `play.history.com`,
- * see the redirect resource.
+ * As the library, `getInstance()` sets the `AMCV_<orgId>` cookie once the ECID category of `adobe.optIn`
+ * is approved, though with a dummy id, as some sites read the id from it directly and do not work without it,
+ * e.g. the video player of `play.history.com`, and stores the decision of the visitor in the `adobeujs-optin` cookie
+ * if the configuration of the page enables it, i.e. `isOptInStorageEnabled`, see the redirect resource.
  *
  * ### Examples
  *
