@@ -4,7 +4,7 @@ import { KameleoonEngine, KameleoonEngineNames } from '../redirects/kameleoon';
  * @scriptlet kameleoon
  *
  * @description
- * Mocks the Kameleoon Web Experimentation engine.
+ * Mocks the Kameleoon Web Experimentation engine, see the `kameleoon` redirect resource.
  *
  * Should be used together with a rule which blocks the engine, e.g. if redirects are not supported.
  * It prevents the anti-flicker snippet of Kameleoon, which runs after the scriptlet, from hiding the page.

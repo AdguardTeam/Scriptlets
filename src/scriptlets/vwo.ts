@@ -4,7 +4,7 @@ import { Vwo, VwoNames } from '../redirects/vwo';
  * @scriptlet vwo
  *
  * @description
- * Mocks the library of VWO (Visual Website Optimizer, Wingify).
+ * Mocks the library of VWO (Visual Website Optimizer, Wingify), see the `vwo` redirect resource.
  *
  * Should be used together with a rule which blocks the library, e.g. if redirects are not supported.
  * It prevents the asynchronous VWO SmartCode, which runs after the scriptlet, from hiding the page.
