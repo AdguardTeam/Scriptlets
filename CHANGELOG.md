@@ -22,38 +22,44 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   and show the page hidden by its SmartCode at once [#588].
 - `adobe-target` redirect resource and scriptlet which mock at.js of Adobe Target
   and show the page hidden by the prehiding snippet of Adobe Target or of the Adobe Web SDK at once [#588].
-- `adobe-analytics` redirect resource and scriptlet which mock AppMeasurement of Adobe Analytics [#588].
-- `adobe-visitor` redirect resource and scriptlet which mock the Experience Cloud Identity Service of Adobe [#588].
+- `adobe-analytics` redirect resource and scriptlet which mock AppMeasurement of Adobe Analytics.
+- `adobe-visitor` redirect resource and scriptlet which mock the Experience Cloud Identity Service of Adobe,
+  and set a session `AMCV_<orgId>` cookie with a dummy id, the same for every visitor, if there is none,
+  as some sites read the id from it, e.g. video players.
 - `adobe-tags` redirect resource and scriptlet which mock the library of Adobe Tags, `_satellite`,
-  with the Adobe libraries which it usually contains [#588].
+  with the Adobe libraries which it usually contains, so it sets the cookie of `adobe-visitor` as well,
+  and show the page hidden by the prehiding snippet of Adobe Target or of the Adobe Web SDK at once [#588].
 - `cxense` redirect resource and scriptlet which mock `cx.js` and `cx.cce.js` of Cxense (Piano),
   so that pages which use them work without them, including the Cxense site search, and widgets
-  of recommended pages, which are shown as a plain list of links with their images [#588].
+  of recommended pages, which are shown as a plain list of links with their images. It sends the search request
+  of the page and the requests of the widget items itself, with `fetch()` and without cookies, so where `cxense.com`
+  is blocked, they need exception rules, e.g. for widgets
+  `@@||api.cxense.com/public/widget/data?json=$xmlhttprequest,domain=example.org`.
 - `sensors-analytics` redirect resource and scriptlet which mock the JavaScript SDK of Sensors Analytics,
-  so that pages which call it without a check work without it [#588].
+  so that pages which call it without a check work without it.
 - `chartbeat` redirect resource and scriptlet which mock `chartbeat.js` and `chartbeat_mab.js` of Chartbeat,
   and remove the styles and classes of its flicker control, which hide the page, its headlines or images
   until the script is loaded [#588].
 - `wurfl` redirect resource and scriptlet which mock WURFL.js Lite of ScientiaMobile, with the device detected
-  locally, so that pages which read `WURFL` work without it [#588].
+  locally, so that pages which read `WURFL` work without it.
 - `piano-analytics` redirect resource and scriptlet which mock the JavaScript SDK of Piano Analytics,
-  so that pages which call it without a check work without it [#588].
+  so that pages which call it without a check work without it.
 - `jad` redirect resource and scriptlet which mock JAD, the ad library of Webedia, as with ads disabled,
-  so that the Dailymotion videos of pages which wait for it are started without it [#588].
+  so that the Dailymotion videos of pages which wait for it are started without it.
 
 ### Changed
 
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet call `google_ad_loaded_callback`
   of the `params` of a rewarded ad, i.e. `google_ad_format: 'rewarded'`, without an ad, so that pages which wait
-  for it, e.g. for a download, continue [#588].
+  for it, e.g. for a download, continue.
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet answer `adBreak()` and `adConfig()`
   of the Ad Placement API of H5 games without an ad and without waiting: `onReady()` and `adBreakDone()`
-  are called, and the reward of a rewarded break is granted once the player accepts it in the game [#588].
+  are called, and the reward of a rewarded break is granted once the player accepts it in the game.
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet set `data-ad-status="filled"` on the filled
   ad placeholders, as AdSense, unless it is already set, and `data-load-complete` on their frames, as pages
-  detect ad blockers by them [#588].
+  detect ad blockers by them.
 - `prebid` redirect resource and scriptlet mock `pbjs.rp` of the Prebid wrapper of Magnite, whose
-  `requestVideoBids()` calls its callback without an ad, so that video players which wait for it are started [#588].
+  `requestVideoBids()` calls its callback without an ad, so that video players which wait for it are started.
 - `engines` in `package.json`: added the `node` requirement `>=22.23.5`,
   because Node.js 22.23.4 is the first version with the fix for
   CVE-2026-111497. This drops Node.js < 22.23.5 for package consumers and needs
@@ -69,10 +75,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
   after it is run, e.g. if run as a scriptlet [#525].
 - `googlesyndication-adsbygoogle` redirect resource and scriptlet dropping objects which the page has pushed
   before it is run, ignoring objects of another frame, and throwing out of `adsbygoogle.push()` on a page
-  with more frames than the browser allows [#588].
+  with more frames than the browser allows.
 - `prebid` redirect resource and scriptlet replacing the `pbjs` object of the page and dropping the commands
   which the page has queued before it is run, not calling `bidsBackHandler` of an object of another frame,
-  and `requestBids()` not returning a promise, nor empty bids of an auction with ad units [#588].
+  and `requestBids()` not returning a promise, nor empty bids of an auction with ad units.
 
 ### Security
 
