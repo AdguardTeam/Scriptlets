@@ -131,6 +131,12 @@ You MUST follow the following rules for EVERY task that you perform:
   (e.g. `.github/workflows/` or `Dockerfile`) MUST NOT add CHANGELOG entries —
   they are internal infrastructure and do not affect the published library.
 
+- Write each `CHANGELOG.md` entry for a user: one or two sentences about what
+  changes for them, about as long as the neighboring entries, one bullet per
+  user-visible effect. Do not narrate the old behavior or what did not change,
+  and leave out internal mechanics and follow-up tickets. When an example needs
+  a domain, use `example.com` or `example.org`.
+
 - CI/CD runs on GitHub Actions (`.github/workflows/`): `ci.yml` uses the shared
   `set-dev-version` action before Docker builds, while `mirror.yml`,
   `prepare-release.yml`, and `publish-release.yml` delegate to shared reusable
